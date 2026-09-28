@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
+use crate::campaign::{self, HouseBooks, VictoryPathStatus};
 use crate::content;
 use crate::economy::TradeReceipt;
 use crate::model::{Captain, Standing, Voyage, World};
@@ -11,13 +12,14 @@ use crate::voyage::VoyageEvent;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Snapshot {
-    pub seed: i64,
+    pub seed: i128,
     pub day: i64,
     pub trade_seq: u64,
     pub captain: CaptainSnap,
     pub voyage: VoyageSnap,
     pub pending_duel: Option<DuelSnap>,
     pub ports: Vec<PortSnap>,
+    pub victory: Vec<VictoryPathStatus>,
     pub log: Vec<LogEntry>,
 }
 
@@ -311,7 +313,7 @@ fn voyage_snap(voyage: &Voyage) -> VoyageSnap {
     }
 }
 
-pub fn capture(world: &World, trade_seq: u64, log: Vec<LogEntry>) -> Snapshot {
+pub fn capture(world: &World, trade_seq: u64, books: &HouseBooks, log: Vec<LogEntry>) -> Snapshot {
     Snapshot {
         seed: world.seed,
         day: world.day,
@@ -344,6 +346,7 @@ pub fn capture(world: &World, trade_seq: u64, log: Vec<LogEntry>) -> Snapshot {
                     .collect(),
             })
             .collect(),
+        victory: campaign::compute_victory_progress(world, books),
         log,
     }
 }
@@ -382,6 +385,7 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
         },
         pending_duel: None,
         ports: Vec::new(),
+        victory: Vec::new(),
         log,
     }
 }

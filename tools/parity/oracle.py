@@ -36,8 +36,16 @@ from portlight.engine.reputation import (
     tick_reputation,
 )
 from portlight.engine.ship_stats import compute_daily_wages
+from portlight.engine.campaign import (
+    CampaignState,
+    SessionSnapshot,
+    compute_victory_progress,
+    evaluate_victory_closure,
+)
+from portlight.engine.contracts import ContractBoard
+from portlight.engine.infrastructure import InfrastructureState
 from portlight.engine.voyage import advance_day, arrive, depart
-from portlight.receipts.models import TradeReceipt
+from portlight.receipts.models import ReceiptLedger, TradeReceipt
 
 
 REGIONS = [
@@ -136,6 +144,7 @@ def do_buy(state, good_id: str, qty: int, entry: dict) -> None:
     if isinstance(result, str):
         raise ScriptError(result)
     state["trade_seq"] += 1
+    state["ledger"].append(result)
     reprice_port(world, port)
     entry["receipt"] = receipt_view(result)
 
@@ -178,7 +187,20 @@ def do_sell(state, good_id: str, qty: int, entry: dict) -> None:
         is_sell=True,
     )
     reprice_port(world, port)
+    state["ledger"].append(result)
     entry["receipt"] = receipt_view(result)
+
+
+def session_snapshot(state):
+    world = state["world"]
+    return SessionSnapshot(
+        captain=world.captain,
+        world=world,
+        board=state["board"],
+        infra=state["infra"],
+        ledger=state["ledger"],
+        campaign=state["campaign"],
+    )
 
 
 def do_advance(state, entry: dict) -> None:
@@ -224,6 +246,9 @@ def do_advance(state, entry: dict) -> None:
                 record_port_arrival(world.captain.standing, world.day, port.id, port.region)
         entry["events"] = [event_view(event) for event in events]
     reprice_all(world)
+    newly = evaluate_victory_closure(session_snapshot(state))
+    if newly:
+        state["campaign"].completed_paths.extend(newly)
 
 
 def dispatch(state, tokens: list[str], entry: dict) -> None:
@@ -244,6 +269,10 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         state["world"] = world
         state["rng"] = random.Random(world.seed)
         state["trade_seq"] = 0
+        state["ledger"] = ReceiptLedger()
+        state["board"] = ContractBoard()
+        state["infra"] = InfrastructureState()
+        state["campaign"] = CampaignState()
         return
     if state.get("world") is None:
         raise ScriptError("No active game")
@@ -337,6 +366,7 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             },
             "pending_duel": None,
             "ports": [],
+            "victory": [],
             "log": log,
         }
     ship = world.captain.ship
@@ -422,12 +452,43 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             }
             for port in world.ports.values()
         ],
+        "victory": victory_view(compute_victory_progress(session_snapshot(state))),
         "log": log,
     }
 
 
+def victory_view(paths) -> list:
+    return [
+        {
+            "path_id": path.path_id,
+            "name": path.name,
+            "candidate_strength": path.candidate_strength,
+            "completion_day": path.completion_day,
+            "completion_summary": path.completion_summary,
+            "requirements": [
+                {
+                    "description": req.description,
+                    "status": req.status.value,
+                    "detail": req.detail,
+                    "action": req.action,
+                }
+                for req in path.requirements
+            ],
+        }
+        for path in paths
+    ]
+
+
 def run(script: str) -> dict:
-    state: dict = {"world": None, "rng": None, "trade_seq": 0}
+    state: dict = {
+        "world": None,
+        "rng": None,
+        "trade_seq": 0,
+        "ledger": ReceiptLedger(),
+        "board": ContractBoard(),
+        "infra": InfrastructureState(),
+        "campaign": CampaignState(),
+    }
     log: list[dict] = []
     for line in script.splitlines():
         raw = line.strip()

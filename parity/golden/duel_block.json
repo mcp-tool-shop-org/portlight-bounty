@@ -1404,6 +1404,188 @@
       ]
     }
   ],
+  "victory": [
+    {
+      "path_id": "lawful_house",
+      "name": "Lawful Trade House",
+      "candidate_strength": 26.7,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "Trusted commercial standing",
+          "status": "missing",
+          "detail": "Currently: credible",
+          "action": "Reach trusted trust tier (currently credible)"
+        },
+        {
+          "description": "High Reputation Commercial Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the High Reputation Commercial Charter"
+        },
+        {
+          "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+          "status": "missing",
+          "detail": "Licenses: 0, regions at 15+: none",
+          "action": "Acquire 2 more license(s) or build standing in another region"
+        },
+        {
+          "description": "8+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 8 more contracts"
+        },
+        {
+          "description": "Max heat <= 5",
+          "status": "met",
+          "detail": "Max heat: 0",
+          "action": "Reduce customs heat from 0 to 5 or below"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "missing",
+          "detail": "Silver: 480",
+          "action": "Earn 1520 more silver"
+        }
+      ]
+    },
+    {
+      "path_id": "shadow_network",
+      "name": "Shadow Network",
+      "candidate_strength": 0.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "2+ discreet luxury completions",
+          "status": "missing",
+          "detail": "Discreet completions: 0",
+          "action": "Complete 2 more discreet luxury deliveries"
+        },
+        {
+          "description": "Operated under meaningful heat (>= 10)",
+          "status": "missing",
+          "detail": "Max heat: 0",
+          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+        },
+        {
+          "description": "Heat manageable (<= 40)",
+          "status": "met",
+          "detail": "Max heat: 0",
+          "action": "Reduce heat from 0 \u2014 network collapses above 40"
+        },
+        {
+          "description": "Profitable under pressure (profit >= 2000)",
+          "status": "missing",
+          "detail": "Profit: -64, heat: 0",
+          "action": "Build profitability while maintaining shadow operations"
+        },
+        {
+          "description": "1500+ silver on hand",
+          "status": "missing",
+          "detail": "Silver: 480",
+          "action": "Accumulate 1020 more silver"
+        },
+        {
+          "description": "Trade volume under heat (8+ trades)",
+          "status": "missing",
+          "detail": "Trades: 1, max heat: 0",
+          "action": "Complete more trades while operating under customs pressure"
+        }
+      ]
+    },
+    {
+      "path_id": "oceanic_reach",
+      "name": "Oceanic Reach",
+      "candidate_strength": 0.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "East Indies Access Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the East Indies Access Charter"
+        },
+        {
+          "description": "East Indies commercial foothold (broker or warehouse)",
+          "status": "missing",
+          "detail": "EI broker: no, EI warehouse: no",
+          "action": "Open a broker office or warehouse in the East Indies"
+        },
+        {
+          "description": "East Indies standing >= 15",
+          "status": "missing",
+          "detail": "EI standing: 0",
+          "action": "Build East Indies standing from 0 to 15"
+        },
+        {
+          "description": "Long-haul ship capability (Brigantine or Galleon)",
+          "status": "missing",
+          "detail": "Ship: sloop",
+          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+        },
+        {
+          "description": "5+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 5 more contracts"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "missing",
+          "detail": "Silver: 480",
+          "action": "Earn 1520 more silver"
+        }
+      ]
+    },
+    {
+      "path_id": "commercial_empire",
+      "name": "Commercial Empire",
+      "candidate_strength": 0.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "Infrastructure in 3 regions",
+          "status": "missing",
+          "detail": "Regions: none",
+          "action": "Expand infrastructure to 3 more region(s)"
+        },
+        {
+          "description": "Reliable+ trust",
+          "status": "missing",
+          "detail": "Trust: credible",
+          "action": "Build trust to reliable tier (currently credible)"
+        },
+        {
+          "description": "Insurance and credit both used successfully",
+          "status": "missing",
+          "detail": "Insurance: no, Credit: no",
+          "action": "Use insurance and Draw on credit"
+        },
+        {
+          "description": "10+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 10 more contracts"
+        },
+        {
+          "description": "3000+ silver",
+          "status": "missing",
+          "detail": "Silver: 480",
+          "action": "Earn 2520 more silver"
+        },
+        {
+          "description": "3+ active licenses",
+          "status": "missing",
+          "detail": "Active: 0",
+          "action": "Acquire 3 more license(s)"
+        }
+      ]
+    }
+  ],
   "log": [
     {
       "command": "new merchant Ada 42",

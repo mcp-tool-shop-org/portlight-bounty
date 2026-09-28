@@ -35,8 +35,9 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | `content/factions.py` | content JSON | Partial. Id, name, territory, and the eight captains' id, name, personality, and strength, which voyage events need. Dialogue and faction diplomacy are not ported. |
 | `content/crew_roles.py` | wage table in `ship.rs` | Partial. The six role wages only. |
 | `receipts/models.py` | receipt id in `economy.rs` | Partial. The 16-hex SHA-256 id used by buy/sell. Ledger export and wall-clock timestamps are not ported (they are not deterministic). |
-| `app/session.py` | `script.rs` | Partial. See "What the script runner includes" below. |
+| `app/session.py` | `session.rs`, `script.rs` | Partial. `Session` is the public turn API (`new`, `buy`, `sell`, `depart`, `advance`, `world`, `sail_lanes`, `victory`). `run_script` only calls those methods. See "Public session" below. |
 | `app/cli.py`, `app/tui/**`, `app/views.py` | `portlight-cli` (new, not a port); lane query in `voyage.rs` | UI not started. The sail picker's lane list is in the sim (`sail_lanes`), so a later screen can render it without reimplementing the quirks below. |
+| `engine/campaign.py` victory paths | `campaign.rs` | Ported. `compute_victory_progress` and `evaluate_victory_closure` for `lawful_house`, `shadow_network`, `oceanic_reach`, and `commercial_empire`. Milestone evaluation is not ported. |
 | Everything else under `engine/`, `content/`, `balance/`, `stress/`, `printandplay/` | — | Not started. Listed in the checklist. |
 
 `world/`, `world-map/`, `atlas/`, `site/`, and the translated Python READMEs are reference material for later. They are not copied into this repo.
@@ -46,7 +47,7 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 A run is determined by:
 
 1. **Content.** The JSON snapshot of the Python catalogs at commit `9b02494`.
-2. **Seed.** `new_game` stores `world.seed`. The script runner builds `random.Random(seed)` exactly once and threads it through market ticks and voyage days, matching `GameSession.new`.
+2. **Seed.** `new_game` stores `world.seed` as an `i128`. `PyRandom::from_seed` follows CPython: absolute value, split into little-endian 32-bit words. That covers every `u64`, `2**63`, and `i128::MIN` (magnitude `2**127`). Python also accepts integers outside `i128`; the script and CLI reject those with `Invalid number`. The runner builds `Random(seed)` once and threads it through market ticks and voyage days, matching `GameSession.new`.
 3. **RNG algorithm.** `pyrand.rs` is CPython's MT19937 (`_random`): `init_by_array` seeding, `random()` (53-bit), `getrandbits`, `_randbelow`, `randint`, `choice`, and weighted `choices` with `bisect_right` and `hi = n - 1`. It was checked against CPython 3.12.3, including `Random(2**70 + 12345)`.
 4. **Rounding.** Prices and several voyage formulas use Python 3 `round` (half away from zero, then half-to-even when the value is exactly halfway) and `int()` truncation. Rust's `f64::round` alone is not enough; `util::py_round` follows CPython's `float.__round__`.
 
@@ -74,13 +75,30 @@ For each command the oracle calls the Python engine and the Rust runner calls th
 - **advance, in port.** Heat decay, `tick_markets` for one day, day and provision and wage updates, reprice every port with captain modifiers.
 - **advance, at sea.** Heat decay, `advance_day`, inspection reputation, `arrive` plus arrival reputation when the ship reaches the destination, reprice every port. A pending pirate duel returns no events and does not spend the day, matching the engine. The session can auto-resolve duels; this slice does not.
 
-Not in the comparison: contracts, infrastructure, credit, insurance, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, campaign milestones, narrative beats, saves.
+Not in the comparison: contract offers, infrastructure purchases, credit draws, insurance policies, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, milestone evaluation, narrative beats, saves. Victory-path evaluation does run, on the ledger and the empty contract and infrastructure books, and the snapshot includes it.
+
+## Public session
+
+`portlight_sim::Session` is the API a gdext front end drives. It is stable for that consumer:
+
+| Method | Role |
+| --- | --- |
+| `Session::new(name, captain_type, seed, starting_port)` | New game. `seed` is an `i128`. |
+| `world()` | Ports (`map_x`, `map_y`), ship, cargo, voyage, standing. |
+| `sail_lanes()` | Picker lanes, including blocked ones and raw-speed day estimates. |
+| `victory()` | The four victory paths. |
+| `books()` / `books_mut()` | Ledger plus contract, license, warehouse, broker, policy, and credit records. Buy and sell update the ledger. The systems that grant the other records are not ported, so those lists start empty. |
+| `buy` / `sell` / `depart` / `advance` | One action. `advance` returns `Turn { events, shocks }`. |
+
+There is no save/load. Do not add a format in the UI crate; the sim does not have one yet.
+
+`run_script` only calls these methods, then writes the parity snapshot. The snapshot omits map coordinates on purpose. A map should read `world()`, not the snapshot.
 
 ## Known Python quirks
 
 These are real disagreements inside the Python game. The Rust port keeps them. A later UI should call `sail_lanes` rather than "correcting" the numbers.
 
-**Sail-picker days ignore modifiers.** `execute_sail_flow`, `routes_view`, `formatting.travel_time`, and `_estimate_sail_days` all estimate days as `max(1, round(distance / speed))` where `speed` is the template `ship.speed`. They do not apply crew ratio, morale, season, captain speed bonus, or the event modifier that `advance_day` uses. From Porto Novo a coastal sloop (speed 8) shows Ironhaven (distance 36) as 4 days, because `round(4.5)` is 4. The same ship's first sea day in spring in the Mediterranean actually advances about 7.15 progress, and `round(36 / 7.15)` is 5. `sail_lanes` returns 4.
+**Sail-picker days ignore modifiers.** `execute_sail_flow`, `routes_view`, `formatting.travel_time`, and `_estimate_sail_days` all estimate days as `max(1, round(distance / speed))` where `speed` is the template `ship.speed`. They do not apply crew ratio, morale, season, captain speed bonus, or the event modifier that `advance_day` uses. From Porto Novo a coastal sloop (speed 8) shows Ironhaven (distance 36) as 4 days, because `round(4.5)` is 4. The sea day applies those modifiers, so the sailed progress is a different number. `sail_lanes` returns 4.
 
 When there is no ship the three call sites disagree on the fallback speed: the TUI picker uses 5, `routes_view` uses 4, and `_estimate_sail_days` uses 6. `sail_lanes` uses 5. `new_game` always fits a ship, so that fallback is unused on the ported path.
 
@@ -88,14 +106,14 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 
 `routes_view` keeps catalog order. The TUI picker stable-sorts by distance. `sail_lanes` follows the TUI sort. Provisions shown in the routes table are estimated days plus 2; that buffer is on `SailLane.provisions_needed`.
 
-**Victory path id `commercial_empire` versus milestone family `commercial_finance`.** These are not two names for a rename that should be collapsed. `VictoryPathStatus.path_id`, `COMPLETION_SUMMARIES`, `CANDIDATE_BOOSTS`, and the TUI `_PATH_NAMES` key are `commercial_empire`. `MilestoneFamily.COMMERCIAL_FINANCE` and `PROFILE_MILESTONE_FAMILIES` use `commercial_finance`. The other three victory path ids (`lawful_house`, `shadow_network`, `oceanic_reach`) match a milestone family of the same string. Campaign evaluation is not ported yet. When it is, both strings stay as they are in Python.
+**Victory path id `commercial_empire` versus milestone family `commercial_finance`.** These are not two names for a rename that should be collapsed. `VictoryPathStatus.path_id`, `COMPLETION_SUMMARIES`, `CANDIDATE_BOOSTS`, and the TUI `_PATH_NAMES` key are `commercial_empire`. `MilestoneFamily.COMMERCIAL_FINANCE` and `PROFILE_MILESTONE_FAMILIES` use `commercial_finance`. The other three victory path ids (`lawful_house`, `shadow_network`, `oceanic_reach`) match a milestone family of the same string. The Rust evaluators keep both strings. `commercial_finance` is not a path id.
 
 ## Porting order
 
-1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival.
+1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`.
 2. **Next, still stage 1.** Ship purchase and upgrades (unblocks stat resolution), contracts and the contract RNG (`seed + 7919`), save/load, then combat and duels so a pending duel can be answered inside the script. After duels, sea-culture enrichment can be added and the harness can move from the engine slice to `GameSession.advance`.
-3. **Then.** Infrastructure, credit, insurance, injuries, companions, hunting, fleet convoys, campaign victory checks. Balance and stress runners should call the Rust sim once those systems exist.
-4. **Stage 2.** A dimetric renderer that only reads `World`: port `map_x`/`map_y` on the 50×36 grid, `sail_lanes` for the route overlay, and voyage progress. It must not move rules back into the UI crate.
+3. **Then.** Infrastructure, credit, insurance, injuries, companions, hunting, fleet convoys, and milestone evaluation (`evaluate_milestones`). Those systems should write the records `HouseBooks` already holds. Balance and stress runners should call the Rust sim once those systems exist.
+4. **Stage 2.** A dimetric front end drives `Session` only: `world()` for `map_x`/`map_y` on the 50×36 grid, `sail_lanes()` for the route overlay, `victory()` for the four paths, and `advance` one turn at a time. It must not move rules back into the UI crate.
 
 ## Parity harness
 
@@ -103,11 +121,12 @@ Regenerate content and goldens from a Python checkout of commit `9b02494`:
 
 ```
 PYTHONPATH=/path/to/portlight/src python3 tools/extract_content.py
-cargo build -p portlight-cli
+cargo build --locked -p portlight-cli
 PYTHONPATH=/path/to/portlight/src python3 tools/parity/check.py --write-golden
+PYTHONPATH=/path/to/portlight/src python3 tools/parity/victory_cases.py
 ```
 
-`python3 tools/parity/check.py` diffs the live oracle against the Rust binary when `portlight` imports, and always diffs Rust against `parity/golden/`. `cargo test` does the golden comparison with no Python installed. Goldens were produced with CPython 3.12.3.
+`python3 tools/parity/check.py` diffs the live oracle against the Rust binary when `portlight` imports, and always diffs Rust against `parity/golden/`. `cargo test` does the golden comparison with no Python installed. Goldens were produced with CPython 3.12.3. CI also runs the live oracle: the Portlight repo is public, so the workflow checks out commit `9b02494` and runs `check.py`. The Rust toolchain is pinned in `rust-toolchain.toml` (1.83.0) and CI passes `--locked`.
 
 Scripts checked in:
 
@@ -119,6 +138,12 @@ Scripts checked in:
 | `voyage.txt` | Seed 9, Porto Novo to Silva Bay, events through arrival, in-port days after, sell one grain at the destination |
 | `smuggler.txt` | Seed 5, luxury sell modifier, provision burn below 1, Palm Cove to Sun Harbor |
 | `duel_block.txt` | Seed 42, Scarlet Ana's duel challenge, further `advance` does not move the day |
+| `inspection_rep.txt` | Seed 4, patrol inspection, inspection incident on the standing list |
+| `cargo_loss.txt` | Seed 2, damaged grain, plus lighthouse, pirates, and star navigation |
+| `crew_minimum.txt` | Provisions burned in port, a sea day with `crew_delta`, then `depart` refuses a short crew. That voyage's progress also locks below-minimum speed |
+| `contraband_sell.txt` | Opium bought at Corsairs Rest, sale refused at Porto Novo |
+| `event_musician.txt`, `event_whale.txt`, `event_foreign.txt`, `event_ceremony.txt` | Musician, whale, foreign vessel, sea ceremony. Together with the scripts above, every event type in the table appears in a golden |
+| `parity/golden/victory_cases.json` | Nine victory fixtures from `tools/parity/victory_cases.py`, including a completed commercial empire and a recorded `commercial_empire` summary |
 
 ## Coverage checklist
 
@@ -137,16 +162,17 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [x] `new_game` initial prices without captain modifiers
 - [x] Scarcity price formula, flood penalty, captain buy/sell/luxury modifiers
 - [x] Buy: silver, stock, hold weight, merged provenance lots, receipt id
-- [x] Sell: FIFO lots, same-port three-day sell-back cap, contraband refusal, flood
+- [x] Sell: FIFO lots, same-port three-day sell-back cap, contraband refusal (`contraband_sell.txt`), flood
 - [x] Trade reputation (suspicion, heat, standing, trust, incidents)
 - [x] In-port day: heat decay, market tick, provisions, wages, reprice
-- [x] Depart: port fee with captain multiplier, crew minimum
-- [x] Sea day: provision burn (including fractional), wages, morale, weighted events, recent-event damping, seasonal danger and speed, undermanned speed, hull wear on day 20
-- [x] Event resolution for the full table, including named pirate duels
+- [x] Depart: port fee with captain multiplier, crew minimum (`crew_minimum.txt` ends on the refusal)
+- [x] Sea day: provision burn (including fractional), wages, morale, weighted events, recent-event damping, seasonal danger and speed, undermanned speed, hull wear on day 20. Below-minimum speed is in `crew_minimum.txt` and in `short_crew_slows_the_day_and_day_20_wears_hull`. Day-20 hull wear is that unit test: no route a starting ship may sail lasts 20 days, because ship purchase is not ported and the longest sloop-legal route is 40.
+- [x] Event resolution for the full table, including named pirate duels. `goldens_guard_the_checklist_paths` fails if any event type disappears from the goldens, and each golden locks the payload.
 - [x] Pending duel blocks `advance_day`
 - [x] Arrival morale and arrival reputation
-- [x] Inspection reputation recorded on the sea day
-- [x] Cargo loss and crew casualties through the roster
+- [x] Inspection reputation recorded on the sea day (`inspection_rep.txt`)
+- [x] Cargo loss and crew casualties through the roster (`cargo_loss.txt`, `crew_minimum.txt`)
+- [x] Four victory paths. Path id `commercial_empire` and milestone family `commercial_finance` stay distinct. `victory_cases.json` plus the `victory` field on every script snapshot.
 
 ### Partial (data or formula present, system not finished)
 
@@ -157,12 +183,12 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [ ] Upgrade-aware ship stats (functions assume no upgrades)
 - [ ] Crew roles beyond wages and casualty weights
 - [ ] Reputation fee and service modifiers
-- [ ] Receipt ledger totals and content hashes
+- [ ] Receipt ledger export and content hashes. Buy/sell totals and receipt count are kept on `HouseBooks` because victory reads them.
 - [ ] Bounty-hunter sea event (code is in `advance_day` for wanted level 3; no golden script sets that)
 
 ### Not started
 
-- [ ] `engine/campaign.py` victory paths and milestones. Keep path id `commercial_empire` and milestone family `commercial_finance` as separate strings.
+- [ ] `engine/campaign.py` milestone evaluation (`evaluate_milestones`, career profiles beyond the family table). Victory paths are done. Keep `commercial_finance` as the family id.
 - [ ] `engine/combat.py`, `engine/duel.py`, `engine/naval.py`
 - [ ] `engine/encounter.py`, `engine/hunting.py`, `engine/loot.py`
 - [ ] `engine/contracts.py` and `content/contracts.py`

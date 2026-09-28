@@ -1,0 +1,21 @@
+new merchant Ada 1
+depart corsairs_rest
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+buy opium 1
+depart porto_novo
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+sell opium 1

@@ -72,3 +72,124 @@ fn golden_scripts_match_python() {
         close(&golden, &got, stem);
     }
 }
+
+#[test]
+fn goldens_guard_the_checklist_paths() {
+    let root = parity_root().join("golden");
+    let mut events = std::collections::BTreeSet::new();
+    let mut saw_inspection_incident = false;
+    let mut saw_cargo_loss = false;
+    let mut saw_crew_delta = false;
+    let mut saw_contraband = false;
+    let mut saw_crew_minimum = false;
+    let mut saw_victory = false;
+    for entry in fs::read_dir(&root).expect("golden dir") {
+        let entry = entry.expect("entry");
+        if entry.path().extension().and_then(|ext| ext.to_str()) != Some("json") {
+            continue;
+        }
+        if entry.file_name() == "victory_cases.json" {
+            saw_victory = true;
+            continue;
+        }
+        let value: Value =
+            serde_json::from_str(&fs::read_to_string(entry.path()).expect("golden")).expect("json");
+        if value
+            .get("victory")
+            .and_then(|item| item.as_array())
+            .is_some_and(|paths| !paths.is_empty())
+        {
+            saw_victory = true;
+            let ids: Vec<_> = value["victory"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|path| path.get("path_id").and_then(|id| id.as_str()))
+                .collect();
+            assert!(
+                ids.contains(&"commercial_empire"),
+                "{}",
+                entry.path().display()
+            );
+            assert!(!ids.contains(&"commercial_finance"));
+        }
+        let empty = Vec::new();
+        for log in value["log"].as_array().unwrap() {
+            if let Some(error) = log.get("error").and_then(|item| item.as_str()) {
+                if error.contains("won't touch") {
+                    saw_contraband = true;
+                }
+                if error.contains("Need at least") && error.contains("crew") {
+                    saw_crew_minimum = true;
+                }
+            }
+            for event in log
+                .get("events")
+                .and_then(|item| item.as_array())
+                .unwrap_or(&empty)
+            {
+                if let Some(kind) = event.get("event_type").and_then(|item| item.as_str()) {
+                    events.insert(kind.to_string());
+                }
+                if event
+                    .get("cargo_lost")
+                    .and_then(|item| item.as_array())
+                    .is_some_and(|lost| !lost.is_empty())
+                {
+                    saw_cargo_loss = true;
+                }
+                if event
+                    .get("crew_delta")
+                    .and_then(|item| item.as_i64())
+                    .unwrap_or(0)
+                    != 0
+                {
+                    saw_crew_delta = true;
+                }
+            }
+        }
+        for incident in value["captain"]["standing"]["incidents"]
+            .as_array()
+            .unwrap_or(&empty)
+        {
+            if incident.get("incident_type").and_then(|item| item.as_str()) == Some("inspection") {
+                saw_inspection_incident = true;
+            }
+        }
+    }
+    let required = [
+        "storm",
+        "pirates",
+        "inspection",
+        "calm_seas",
+        "favorable_wind",
+        "provisions_spoiled",
+        "cargo_damaged",
+        "merchant_encounter",
+        "flotsam",
+        "nothing",
+        "foreign_vessel",
+        "cultural_waters",
+        "sea_ceremony",
+        "whale_sighting",
+        "lighthouse",
+        "musician_aboard",
+        "drifting_offering",
+        "star_navigation",
+    ];
+    for kind in required {
+        assert!(events.contains(kind), "no golden contains {kind}");
+    }
+    assert!(
+        saw_inspection_incident,
+        "inspection reputation is not in a golden"
+    );
+    assert!(saw_cargo_loss, "cargo loss is not in a golden");
+    assert!(saw_crew_delta, "crew casualty is not in a golden");
+    assert!(saw_contraband, "contraband refusal is not in a golden");
+    assert!(
+        saw_crew_minimum,
+        "crew minimum on depart is not in a golden"
+    );
+    assert!(saw_victory, "victory paths are not in a golden");
+}

@@ -1,0 +1,6 @@
+new bounty_hunter C 13
+depart jade_port
+advance
+advance
+advance
+advance

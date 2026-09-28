@@ -16,6 +16,18 @@ pub fn py_round(x: f64) -> i64 {
     rounded as i64
 }
 
+/// Python 3 `round(x, ndigits)` for `ndigits >= 0`.
+///
+/// Scales by `10**ndigits`, applies [`py_round`], and scales back. That matches
+/// CPython for the magnitudes the victory-path scores use.
+pub fn py_round_places(x: f64, places: u32) -> f64 {
+    if !x.is_finite() {
+        return 0.0;
+    }
+    let scale = 10f64.powi(places as i32);
+    py_round(x * scale) as f64 / scale
+}
+
 /// Python `int(x)` for a finite float: truncate toward zero.
 pub fn py_trunc(x: f64) -> i64 {
     if !x.is_finite() {
@@ -47,6 +59,16 @@ mod tests {
         for (input, expected) in cases {
             assert_eq!(py_round(input), expected, "round({input})");
         }
+    }
+
+    #[test]
+    fn round_places_matches_cpython() {
+        // Checked against CPython 3.12 `round(x, 1)`.
+        assert_eq!(py_round_places(26.666666666666668, 1), 26.7);
+        assert_eq!(py_round_places(16.666666666666668, 1), 16.7);
+        assert_eq!(py_round_places(-3.333333333333332, 1), -3.3);
+        assert_eq!(py_round_places(1.25, 1), 1.2);
+        assert_eq!(py_round_places(0.0, 1), 0.0);
     }
 
     #[test]

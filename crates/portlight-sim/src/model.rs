@@ -345,7 +345,9 @@ pub struct World {
     pub routes: Vec<Route>,
     pub voyage: Voyage,
     pub day: i64,
-    pub seed: i64,
+    /// `random.Random` seed. Any `i128`, matching CPython's absolute-value
+    /// seeding for that range. See [`crate::pyrand::PyRandom::from_seed`].
+    pub seed: i128,
     pub pending_duel: Option<PendingDuel>,
 }
 

@@ -1,0 +1,3 @@
+new merchant Ada 23
+depart silva_bay
+advance

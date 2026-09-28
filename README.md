@@ -6,7 +6,7 @@ The simulation crate does not depend on a UI. A dimetric map can sit on it later
 
 ## Layout
 
-- `crates/portlight-sim` — goods, ports, prices, trade, voyages, the Python-compatible RNG
+- `crates/portlight-sim` — goods, ports, prices, trade, voyages, victory paths, and `Session` (the turn-by-turn API)
 - `crates/portlight-cli` — `portlight` binary
 - `parity/` — action scripts and golden snapshots from the Python engine
 - `tools/parity/` — oracle and diff harness
@@ -16,7 +16,7 @@ The simulation crate does not depend on a UI. A dimetric map can sit on it later
 ```
 cargo run -p portlight-cli -- new --captain merchant --name Ada --seed 42
 cargo run -p portlight-cli -- script parity/scripts/voyage.txt
-cargo test --workspace
+cargo test --locked --workspace
 ```
 
 Script commands: `new`, `buy`, `sell`, `depart`, `advance`.

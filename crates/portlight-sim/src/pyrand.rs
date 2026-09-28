@@ -18,7 +18,14 @@ pub struct PyRandom {
 }
 
 impl PyRandom {
-    pub fn from_seed(seed: i64) -> Self {
+    /// Seed from any signed 128-bit integer.
+    ///
+    /// CPython's `Random.seed(int)` takes the absolute value and splits it into
+    /// little-endian 32-bit words. Every `i128` follows that rule, including
+    /// the full `u64` range and `2**63`. `i128::MIN` uses magnitude `2**127`.
+    /// Python also accepts integers outside `i128`; those are rejected at the
+    /// script and CLI parsers (`Invalid number`).
+    pub fn from_seed(seed: i128) -> Self {
         let mut rng = Self {
             mt: [0; N],
             index: N,
@@ -27,8 +34,13 @@ impl PyRandom {
         rng
     }
 
-    pub fn seed(&mut self, seed: i64) {
-        self.seed_u128(seed.unsigned_abs() as u128);
+    pub fn seed(&mut self, seed: i128) {
+        let magnitude = if seed == i128::MIN {
+            1u128 << 127
+        } else {
+            seed.unsigned_abs()
+        };
+        self.seed_u128(magnitude);
     }
 
     /// Seed from a non-negative integer, split into little-endian 32-bit words
@@ -250,8 +262,29 @@ mod tests {
     #[test]
     fn big_seed_matches_cpython() {
         // random.Random(2**70 + 12345).random()
-        let mut rng = PyRandom::from_seed(0);
-        rng.seed_u128((1u128 << 70) + 12_345);
+        let mut rng = PyRandom::from_seed((1i128 << 70) + 12_345);
         assert_eq!(rng.random(), 0.960_280_354_602_301_1);
+    }
+
+    #[test]
+    fn signed_64_bit_boundary_matches_cpython() {
+        // 2**63 and -(2**63) share an absolute value, so the sequences match.
+        // 2**63 does not fit in i64; i128 accepts it. Integers outside i128
+        // are not representable here.
+        let mut pos = PyRandom::from_seed(1i128 << 63);
+        let mut neg = PyRandom::from_seed(-(1i128 << 63));
+        let expected = [
+            0.553_463_998_391_419_9,
+            0.940_614_470_909_046_2,
+            0.241_994_321_116_908_33,
+        ];
+        for value in expected {
+            assert_eq!(pos.random(), value);
+            assert_eq!(neg.random(), value);
+        }
+        assert_eq!(pos.randint(1, 6), 5);
+        assert_eq!(neg.randint(1, 6), 5);
+        assert_eq!(pos.choice_index(3), 0);
+        assert_eq!(neg.choice_index(3), 0);
     }
 }

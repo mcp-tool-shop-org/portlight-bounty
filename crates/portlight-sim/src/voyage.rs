@@ -145,8 +145,14 @@ fn pick_event(
     EVENT_WEIGHTS[rng.choices_weighted(&weights)].0
 }
 
-fn resolve_event(event_type: EventType, rng: &mut PyRandom, world: &World) -> VoyageEvent {
-    let ship = world.captain.ship.as_ref().expect("ship");
+fn resolve_event(
+    event_type: EventType,
+    rng: &mut PyRandom,
+    world: &World,
+) -> Result<VoyageEvent, String> {
+    let Some(ship) = world.captain.ship.as_ref() else {
+        return Err("No ship".to_string());
+    };
     let mut storm_resist = resolve_storm_resist(ship);
     let mods = captain_mods(&world.captain.captain_type);
     let (cargo_dmg_mult, fine_mult, seizure_risk) = if let Some(mods) = mods {
@@ -160,7 +166,7 @@ fn resolve_event(event_type: EventType, rng: &mut PyRandom, world: &World) -> Vo
         (1.0, 1.0, 0.0)
     };
 
-    match event_type {
+    Ok(match event_type {
         EventType::Storm => {
             let raw = rng.randint(5, 18);
             let dmg = 1.max(py_trunc(raw as f64 * (1.0 - storm_resist)));
@@ -199,7 +205,10 @@ fn resolve_event(event_type: EventType, rng: &mut PyRandom, world: &World) -> Vo
         .with_speed(0.6),
         EventType::CargoDamaged => {
             if world.captain.cargo.is_empty() {
-                return VoyageEvent::new(EventType::Nothing, "An uneventful day at sea.");
+                return Ok(VoyageEvent::new(
+                    EventType::Nothing,
+                    "An uneventful day at sea.",
+                ));
             }
             let idx = rng.choice_index(world.captain.cargo.len());
             let good_id = world.captain.cargo[idx].good_id.clone();
@@ -271,7 +280,7 @@ fn resolve_event(event_type: EventType, rng: &mut PyRandom, world: &World) -> Vo
             ev
         }
         EventType::Nothing => VoyageEvent::new(EventType::Nothing, "An uneventful day at sea."),
-    }
+    })
 }
 
 impl VoyageEvent {
@@ -784,7 +793,9 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
     };
     let distance = route.distance;
     let min_class = route.min_ship_class.clone();
-    let ship = world.captain.ship.as_ref().expect("ship");
+    let Some(ship) = world.captain.ship.as_ref() else {
+        return Err("No ship".to_string());
+    };
     if let Some(note) = check_route_suitability(&min_class, &ship.template_id, &ship.name) {
         if note.starts_with("BLOCKED") {
             return Err(note);
@@ -831,12 +842,12 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
     Ok(())
 }
 
-pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Vec<VoyageEvent> {
+pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEvent>, String> {
     if world.voyage.status != VoyageStatus::AtSea || world.captain.ship.is_none() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
     if world.pending_duel.is_some() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
     let mods = captain_mods(&world.captain.captain_type);
     let provision_burn = mods.map(|m| m.voyage.provision_burn).unwrap_or(1.0);
@@ -904,7 +915,7 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Vec<VoyageEvent> {
     }
     let recent = world.voyage.recent_events.clone();
     let event_type = pick_event(danger, rng, inspection_mult, &recent);
-    let event = resolve_event(event_type, rng, world);
+    let event = resolve_event(event_type, rng, world)?;
     let picked = event_type.as_str().to_string();
 
     if world.captain.wanted_level >= 3 && event.pending_duel.is_none() && rng.random() < 0.15 {
@@ -986,7 +997,9 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Vec<VoyageEvent> {
         .map(|p| p.speed_mult)
         .unwrap_or(1.0);
     let day_progress = {
-        let ship = world.captain.ship.as_ref().expect("ship");
+        let Some(ship) = world.captain.ship.as_ref() else {
+            return Err("No ship".to_string());
+        };
         let mut base_speed = resolve_speed(ship) + speed_bonus + navigator_speed_bonus(ship);
         let crew_min = template_crew_min(ship);
         if ship.crew < crew_min {
@@ -1015,7 +1028,7 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Vec<VoyageEvent> {
     if world.voyage.progress >= world.voyage.distance {
         world.voyage.status = VoyageStatus::Arrived;
     }
-    events
+    Ok(events)
 }
 
 pub fn arrive(world: &mut World) -> Result<(), String> {
@@ -1079,9 +1092,9 @@ mod tests {
         assert_eq!(silva.estimated_days, 2);
         assert_eq!(silva.provisions_needed, 4);
 
-        // 36 / 8 = 4.5. Python round half-to-even yields 4. Crew, morale, and
-        // the Mediterranean spring multiplier bring the real day speed to
-        // about 7.15, and 36 / 7.15 rounds to 5. The picker must stay on 4.
+        // 36 / 8 = 4.5. Python round half-to-even yields 4. The sea day applies
+        // crew, morale, season, and the event modifier, so the sailed progress
+        // is a different number. The picker must stay on 4.
         let ironhaven = lane(&lanes, "ironhaven");
         assert_eq!(ironhaven.min_ship_class, "cutter");
         assert_eq!(ironhaven.suitability, LaneSuitability::Warning);
@@ -1127,5 +1140,78 @@ mod tests {
         depart(&mut world, "porto_novo", false).expect("warning still sails");
         assert_eq!(world.voyage.status, VoyageStatus::AtSea);
         assert!(sail_lanes(&world).is_empty());
+    }
+
+    #[test]
+    fn short_crew_slows_the_day_and_day_20_wears_hull() {
+        use crate::model::Voyage;
+        use crate::pyrand::PyRandom;
+
+        fn one_day(crew: i64) -> i64 {
+            let mut world = new_game("Ada", "merchant", 99, None).expect("game");
+            let ship = world.captain.ship.as_mut().expect("ship");
+            ship.crew = crew;
+            ship.sailors = crew;
+            ship.gunners = 0;
+            ship.navigators = 0;
+            ship.surgeons = 0;
+            ship.marines = 0;
+            ship.quartermasters = 0;
+            world.captain.provisions = 40;
+            world.captain.silver = 500;
+            world.voyage = Voyage {
+                origin_id: "porto_novo".to_string(),
+                destination_id: "silva_bay".to_string(),
+                distance: 10_000,
+                progress: 0,
+                days_elapsed: 0,
+                status: VoyageStatus::AtSea,
+                recent_events: Vec::new(),
+            };
+            let mut rng = PyRandom::from_seed(99);
+            advance_day(&mut world, &mut rng).expect("day");
+            world.voyage.progress
+        }
+
+        let full = one_day(8);
+        let partial = one_day(3);
+        let short = one_day(1);
+        assert!(full > partial, "full {full} partial {partial}");
+        assert!(partial > short, "partial {partial} short {short}");
+
+        let mut world = new_game("Ada", "merchant", 99, None).expect("game");
+        let hull_max = world.captain.ship.as_ref().expect("ship").hull_max;
+        world.voyage = Voyage {
+            origin_id: "porto_novo".to_string(),
+            destination_id: "silva_bay".to_string(),
+            distance: 10_000,
+            progress: 0,
+            days_elapsed: 0,
+            status: VoyageStatus::AtSea,
+            recent_events: Vec::new(),
+        };
+        world.captain.provisions = 80;
+        world.captain.silver = 5_000;
+        let mut rng = PyRandom::from_seed(99);
+        let mut wore = false;
+        for _ in 0..40 {
+            if world.pending_duel.is_some() {
+                world.pending_duel = None;
+            }
+            let before_days = world.voyage.days_elapsed;
+            let before_hull = world.captain.ship.as_ref().expect("ship").hull_max;
+            advance_day(&mut world, &mut rng).expect("day");
+            let after_days = world.voyage.days_elapsed;
+            let after_hull = world.captain.ship.as_ref().expect("ship").hull_max;
+            if after_days == 20 {
+                assert_eq!(after_hull, before_hull - 1);
+                wore = true;
+                break;
+            } else if after_days != before_days {
+                assert_eq!(after_hull, before_hull);
+            }
+        }
+        assert!(wore, "hull wear did not fire");
+        assert!(hull_max > 20);
     }
 }

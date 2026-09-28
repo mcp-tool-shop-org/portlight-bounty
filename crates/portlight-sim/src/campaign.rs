@@ -1,0 +1,1050 @@
+//! The four victory paths from `portlight.engine.campaign`.
+//!
+//! Path id `commercial_empire` and milestone family `commercial_finance` are
+//! different strings in Python. This module keeps both. Milestone *evaluation*
+//! (`evaluate_milestones`) is not ported; the family id is, so a later port
+//! does not collapse the names.
+//!
+//! Candidate strength uses Python `round(strength, 1)`, then clamps at 0.
+
+use serde::Serialize;
+
+use crate::content::{self, class_rank};
+use crate::model::World;
+use crate::util::py_round_places;
+
+pub const PATH_LAWFUL_HOUSE: &str = "lawful_house";
+pub const PATH_SHADOW_NETWORK: &str = "shadow_network";
+pub const PATH_OCEANIC_REACH: &str = "oceanic_reach";
+/// Victory-path id. Not the milestone family.
+pub const PATH_COMMERCIAL_EMPIRE: &str = "commercial_empire";
+/// `MilestoneFamily.COMMERCIAL_FINANCE`. Not a victory-path id.
+pub const MILESTONE_FAMILY_COMMERCIAL_FINANCE: &str = "commercial_finance";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MilestoneFamily {
+    RegionalFoothold,
+    LawfulHouse,
+    ShadowNetwork,
+    OceanicReach,
+    CommercialFinance,
+    IntegratedHouse,
+}
+
+impl MilestoneFamily {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RegionalFoothold => "regional_foothold",
+            Self::LawfulHouse => "lawful_house",
+            Self::ShadowNetwork => "shadow_network",
+            Self::OceanicReach => "oceanic_reach",
+            Self::CommercialFinance => MILESTONE_FAMILY_COMMERCIAL_FINANCE,
+            Self::IntegratedHouse => "integrated_house",
+        }
+    }
+}
+
+/// Families that feed each career-profile tag. `commercial_finance` is the
+/// family string; the victory path that uses the same theme is
+/// [`PATH_COMMERCIAL_EMPIRE`].
+pub const PROFILE_MILESTONE_FAMILIES: &[(&str, &[&str])] = &[
+    ("Lawful House", &["lawful_house", "regional_foothold"]),
+    ("Shadow Operator", &["shadow_network"]),
+    ("Oceanic Carrier", &["oceanic_reach"]),
+    (
+        "Contract Specialist",
+        &["regional_foothold", "integrated_house"],
+    ),
+    (
+        "Infrastructure Builder",
+        &["integrated_house", "commercial_finance"],
+    ),
+    ("Leveraged Trader", &["commercial_finance"]),
+    ("Risk-Managed Merchant", &["commercial_finance"]),
+];
+
+#[derive(Debug, Clone)]
+pub struct CompletedContract {
+    pub outcome_type: String,
+    /// `None` matches a Python contract whose `family` is missing.
+    pub family: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct WarehouseSite {
+    pub port_id: String,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct BrokerSite {
+    pub region: String,
+    pub active: bool,
+    /// `"none"` is `BrokerTier.NONE` and does not count.
+    pub tier: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ActiveLicense {
+    pub license_id: String,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct CreditBook {
+    pub total_borrowed: i64,
+    pub defaults: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct VictoryRecord {
+    pub path_id: String,
+    pub completion_day: i64,
+    pub summary: String,
+    pub is_first: bool,
+}
+
+/// Ledger, contracts, and infrastructure the victory evaluators read.
+///
+/// Buy and sell update the ledger. The contract, license, warehouse, broker,
+/// insurance, and credit systems are not ported, so those lists stay empty
+/// until something records them here.
+#[derive(Debug, Clone, Default)]
+pub struct HouseBooks {
+    pub total_buys: i64,
+    pub total_sells: i64,
+    pub net_profit: i64,
+    pub trade_count: i64,
+    pub completed_contracts: Vec<CompletedContract>,
+    pub warehouses: Vec<WarehouseSite>,
+    pub brokers: Vec<BrokerSite>,
+    pub licenses: Vec<ActiveLicense>,
+    pub policies: i64,
+    pub credit: Option<CreditBook>,
+    pub completed_paths: Vec<VictoryRecord>,
+}
+
+impl HouseBooks {
+    pub fn note_receipt(&mut self, action: &str, total_price: i64) {
+        if action == "buy" {
+            self.total_buys += total_price;
+        } else {
+            self.total_sells += total_price;
+        }
+        self.net_profit = self.total_sells - self.total_buys;
+        self.trade_count += 1;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct VictoryRequirement {
+    pub description: String,
+    pub status: String,
+    pub detail: String,
+    pub action: String,
+}
+
+impl VictoryRequirement {
+    fn met(&self) -> bool {
+        self.status == "met"
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct VictoryPathStatus {
+    pub path_id: String,
+    pub name: String,
+    pub candidate_strength: f64,
+    pub completion_day: i64,
+    pub completion_summary: String,
+    pub requirements: Vec<VictoryRequirement>,
+}
+
+impl VictoryPathStatus {
+    fn is_complete(&self) -> bool {
+        self.requirements.iter().all(VictoryRequirement::met)
+    }
+}
+
+fn req(
+    description: impl Into<String>,
+    met: bool,
+    detail: impl Into<String>,
+    action: impl Into<String>,
+    blocker: bool,
+) -> VictoryRequirement {
+    let status = if met {
+        "met"
+    } else if blocker {
+        "blocked"
+    } else {
+        "missing"
+    };
+    VictoryRequirement {
+        description: description.into(),
+        status: status.to_string(),
+        detail: detail.into(),
+        action: action.into(),
+    }
+}
+
+fn trust_tier(trust: i64) -> &'static str {
+    if trust >= 40 {
+        "trusted"
+    } else if trust >= 25 {
+        "reliable"
+    } else if trust >= 10 {
+        "credible"
+    } else if trust >= 1 {
+        "new"
+    } else {
+        "unproven"
+    }
+}
+
+fn trust_rank(tier: &str) -> i64 {
+    match tier {
+        "unproven" => 0,
+        "new" => 1,
+        "credible" => 2,
+        "reliable" => 3,
+        "trusted" => 4,
+        _ => 0,
+    }
+}
+
+fn regions_at(world: &World, min_standing: i64) -> Vec<&'static str> {
+    content::REGIONS
+        .iter()
+        .copied()
+        .enumerate()
+        .filter(|(index, _)| world.captain.standing.regional[*index] >= min_standing)
+        .map(|(_, region)| region)
+        .collect()
+}
+
+fn max_heat(world: &World) -> i64 {
+    world
+        .captain
+        .standing
+        .heat
+        .iter()
+        .copied()
+        .max()
+        .unwrap_or(0)
+}
+
+fn ship_class(world: &World) -> String {
+    world
+        .captain
+        .ship
+        .as_ref()
+        .and_then(|ship| content::content().ship(&ship.template_id))
+        .map(|ship| ship.ship_class.clone())
+        .unwrap_or_else(|| "sloop".to_string())
+}
+
+fn completed_contracts(books: &HouseBooks) -> usize {
+    books
+        .completed_contracts
+        .iter()
+        .filter(|contract| {
+            matches!(
+                contract.outcome_type.as_str(),
+                "completed" | "completed_bonus"
+            )
+        })
+        .count()
+}
+
+fn discreet_completions(books: &HouseBooks) -> usize {
+    books
+        .completed_contracts
+        .iter()
+        .filter(|contract| {
+            if !matches!(
+                contract.outcome_type.as_str(),
+                "completed" | "completed_bonus"
+            ) {
+                return false;
+            }
+            match contract.family.as_deref() {
+                Some("luxury_discreet") => true,
+                None => {
+                    let summary = contract.summary.to_lowercase();
+                    summary.contains("luxury") || summary.contains("discreet")
+                }
+                Some(_) => false,
+            }
+        })
+        .count()
+}
+
+fn seizure_count(world: &World) -> usize {
+    world
+        .captain
+        .standing
+        .incidents
+        .iter()
+        .filter(|incident| incident.description.to_lowercase().contains("seized"))
+        .count()
+}
+
+fn active_licenses(books: &HouseBooks) -> usize {
+    books
+        .licenses
+        .iter()
+        .filter(|license| license.active)
+        .count()
+}
+
+fn has_license(books: &HouseBooks, license_id: &str) -> bool {
+    books
+        .licenses
+        .iter()
+        .any(|license| license.active && license.license_id == license_id)
+}
+
+fn broker_regions(books: &HouseBooks) -> Vec<String> {
+    let mut regions: Vec<String> = books
+        .brokers
+        .iter()
+        .filter(|broker| broker.active && broker.tier != "none")
+        .map(|broker| broker.region.clone())
+        .collect();
+    regions.sort();
+    regions.dedup();
+    regions
+}
+
+fn warehouse_regions(world: &World, books: &HouseBooks) -> Vec<String> {
+    let mut regions: Vec<String> = books
+        .warehouses
+        .iter()
+        .filter(|site| site.active)
+        .filter_map(|site| world.port(&site.port_id).map(|port| port.region.clone()))
+        .collect();
+    regions.sort();
+    regions.dedup();
+    regions
+}
+
+fn infra_regions(world: &World, books: &HouseBooks) -> Vec<String> {
+    let mut regions = warehouse_regions(world, books);
+    for region in broker_regions(books) {
+        if !regions.contains(&region) {
+            regions.push(region);
+        }
+    }
+    regions.sort();
+    regions
+}
+
+fn scored(strength: f64) -> f64 {
+    py_round_places(strength, 1).max(0.0)
+}
+
+fn met_ratio(reqs: &[VictoryRequirement]) -> f64 {
+    let met = reqs.iter().filter(|req| req.met()).count();
+    met as f64 / reqs.len() as f64 * 100.0
+}
+
+fn completion_summary(path_id: &str) -> &'static str {
+    match path_id {
+        PATH_LAWFUL_HOUSE => {
+            "Your company earned trust across multiple regions, secured premium charters, and scaled lawful commerce without surrendering discipline to heat."
+        }
+        PATH_SHADOW_NETWORK => {
+            "Your operation survived scrutiny, moved sensitive luxury cargo profitably, and built a resilient gray-market network under pressure."
+        }
+        PATH_OCEANIC_REACH => {
+            "Your house established East Indies access, commercialized long-haul routes, and proved that distant trade could be run at serious scale."
+        }
+        PATH_COMMERCIAL_EMPIRE => {
+            "You built an integrated trade concern with infrastructure, access, finance, and multi-region business power beyond a single ship or route."
+        }
+        _ => "",
+    }
+}
+
+fn evaluate_lawful(world: &World, books: &HouseBooks) -> VictoryPathStatus {
+    let tier = trust_tier(world.captain.standing.commercial_trust);
+    let rank = trust_rank(tier);
+    let max_h = max_heat(world);
+    let contracts = completed_contracts(books);
+    let regions_15 = regions_at(world, 15);
+    let lic_count = active_licenses(books);
+    let regions_listed = if regions_15.is_empty() {
+        "none".to_string()
+    } else {
+        regions_15.join(", ")
+    };
+    let breadth_met = lic_count >= 2 || regions_15.len() >= 2;
+    let breadth_action = if lic_count < 2 && regions_15.len() < 2 {
+        format!(
+            "Acquire {} more license(s) or build standing in another region",
+            2 - lic_count
+        )
+    } else {
+        String::new()
+    };
+    let contract_action = if contracts < 8 {
+        format!("Complete {} more contracts", 8 - contracts)
+    } else {
+        String::new()
+    };
+    let silver_action = if world.captain.silver < 2000 {
+        format!("Earn {} more silver", 2000 - world.captain.silver)
+    } else {
+        String::new()
+    };
+    let reqs = vec![
+        req(
+            "Trusted commercial standing",
+            rank >= 4,
+            format!("Currently: {tier}"),
+            format!("Reach trusted trust tier (currently {tier})"),
+            false,
+        ),
+        req(
+            "High Reputation Commercial Charter",
+            has_license(books, "high_rep_charter"),
+            "",
+            "Acquire the High Reputation Commercial Charter",
+            false,
+        ),
+        req(
+            "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            breadth_met,
+            format!("Licenses: {lic_count}, regions at 15+: {regions_listed}"),
+            breadth_action,
+            false,
+        ),
+        req(
+            "8+ contracts completed",
+            contracts >= 8,
+            format!("Completed: {contracts}"),
+            contract_action,
+            false,
+        ),
+        req(
+            "Max heat <= 5",
+            max_h <= 5,
+            format!("Max heat: {max_h}"),
+            format!("Reduce customs heat from {max_h} to 5 or below"),
+            max_h > 5,
+        ),
+        req(
+            "2000+ silver",
+            world.captain.silver >= 2000,
+            format!("Silver: {}", world.captain.silver),
+            silver_action,
+            false,
+        ),
+    ];
+    let mut strength = met_ratio(&reqs);
+    strength += (rank - 2).max(0) as f64 * 5.0;
+    if regions_at(world, 10).len() >= 2 {
+        strength += 8.0;
+    }
+    if max_h <= 3 {
+        strength += 10.0;
+    }
+    strength += seizure_count(world) as f64 * -15.0;
+    if max_h > 5 {
+        strength += (max_h - 5) as f64 * -3.0;
+    }
+    if books
+        .credit
+        .as_ref()
+        .is_some_and(|credit| credit.defaults > 0)
+    {
+        strength += -20.0;
+    }
+    VictoryPathStatus {
+        path_id: PATH_LAWFUL_HOUSE.to_string(),
+        name: "Lawful Trade House".to_string(),
+        requirements: reqs,
+        candidate_strength: scored(strength),
+        completion_day: 0,
+        completion_summary: String::new(),
+    }
+}
+
+fn evaluate_shadow(world: &World, books: &HouseBooks) -> VictoryPathStatus {
+    let max_h = max_heat(world);
+    let profit = books.net_profit;
+    let trades = books.trade_count;
+    let discreet = discreet_completions(books);
+    let seizures = seizure_count(world);
+    let discreet_action = if discreet < 2 {
+        format!("Complete {} more discreet luxury deliveries", 2 - discreet)
+    } else {
+        String::new()
+    };
+    let silver_action = if world.captain.silver < 1500 {
+        format!("Accumulate {} more silver", 1500 - world.captain.silver)
+    } else {
+        String::new()
+    };
+    let reqs = vec![
+        req(
+            "2+ discreet luxury completions",
+            discreet >= 2,
+            format!("Discreet completions: {discreet}"),
+            discreet_action,
+            false,
+        ),
+        req(
+            "Operated under meaningful heat (>= 10)",
+            max_h >= 10,
+            format!("Max heat: {max_h}"),
+            format!(
+                "Shadow commerce requires operating under customs pressure (heat {max_h}, need 10+)"
+            ),
+            max_h < 10 && profit > 1000,
+        ),
+        req(
+            "Heat manageable (<= 40)",
+            max_h <= 40,
+            format!("Max heat: {max_h}"),
+            format!("Reduce heat from {max_h} — network collapses above 40"),
+            max_h > 40,
+        ),
+        req(
+            "Profitable under pressure (profit >= 2000)",
+            profit >= 2000 && max_h >= 10,
+            format!("Profit: {profit}, heat: {max_h}"),
+            "Build profitability while maintaining shadow operations",
+            false,
+        ),
+        req(
+            "1500+ silver on hand",
+            world.captain.silver >= 1500,
+            format!("Silver: {}", world.captain.silver),
+            silver_action,
+            false,
+        ),
+        req(
+            "Trade volume under heat (8+ trades)",
+            trades >= 8 && max_h >= 10,
+            format!("Trades: {trades}, max heat: {max_h}"),
+            "Complete more trades while operating under customs pressure",
+            false,
+        ),
+    ];
+    let mut strength = met_ratio(&reqs);
+    strength += discreet as f64 * 6.0;
+    if profit >= 2000 && max_h >= 10 {
+        strength += 10.0;
+    }
+    if seizures > 0 && world.captain.silver >= 200 {
+        strength += 8.0;
+    }
+    if max_h < 3 {
+        strength += -20.0;
+    }
+    if world.captain.silver < 100 {
+        strength += -25.0;
+    }
+    VictoryPathStatus {
+        path_id: PATH_SHADOW_NETWORK.to_string(),
+        name: "Shadow Network".to_string(),
+        requirements: reqs,
+        candidate_strength: scored(strength),
+        completion_day: 0,
+        completion_summary: String::new(),
+    }
+}
+
+fn evaluate_oceanic(world: &World, books: &HouseBooks) -> VictoryPathStatus {
+    let ei_standing = world.captain.standing.regional_of("East Indies");
+    let contracts = completed_contracts(books);
+    let ship = ship_class(world);
+    let has_ei_charter = has_license(books, "ei_access_charter");
+    let brokers = broker_regions(books);
+    let warehouses = warehouse_regions(world, books);
+    let ei_broker = brokers.iter().any(|region| region == "East Indies");
+    let ei_warehouse = warehouses.iter().any(|region| region == "East Indies");
+    let ship_ok = class_rank(&ship) >= class_rank("brigantine");
+    let contract_action = if contracts < 5 {
+        format!("Complete {} more contracts", 5 - contracts)
+    } else {
+        String::new()
+    };
+    let silver_action = if world.captain.silver < 2000 {
+        format!("Earn {} more silver", 2000 - world.captain.silver)
+    } else {
+        String::new()
+    };
+    let reqs = vec![
+        req(
+            "East Indies Access Charter",
+            has_ei_charter,
+            "",
+            "Acquire the East Indies Access Charter",
+            false,
+        ),
+        req(
+            "East Indies commercial foothold (broker or warehouse)",
+            ei_broker || ei_warehouse,
+            format!(
+                "EI broker: {}, EI warehouse: {}",
+                if ei_broker { "yes" } else { "no" },
+                if ei_warehouse { "yes" } else { "no" }
+            ),
+            "Open a broker office or warehouse in the East Indies",
+            false,
+        ),
+        req(
+            "East Indies standing >= 15",
+            ei_standing >= 15,
+            format!("EI standing: {ei_standing}"),
+            format!("Build East Indies standing from {ei_standing} to 15"),
+            false,
+        ),
+        req(
+            "Long-haul ship capability (Brigantine or Galleon)",
+            ship_ok,
+            format!("Ship: {ship}"),
+            "Upgrade to a Brigantine or Galleon for long-haul routes",
+            false,
+        ),
+        req(
+            "5+ contracts completed",
+            contracts >= 5,
+            format!("Completed: {contracts}"),
+            contract_action,
+            false,
+        ),
+        req(
+            "2000+ silver",
+            world.captain.silver >= 2000,
+            format!("Silver: {}", world.captain.silver),
+            silver_action,
+            false,
+        ),
+    ];
+    let mut strength = met_ratio(&reqs);
+    strength += ei_standing as f64 * 2.0;
+    if ship == "galleon" {
+        strength += 15.0;
+    }
+    if ei_broker && ei_warehouse {
+        strength += 10.0;
+    }
+    if ei_standing == 0 && !has_ei_charter {
+        strength += -15.0;
+    }
+    VictoryPathStatus {
+        path_id: PATH_OCEANIC_REACH.to_string(),
+        name: "Oceanic Reach".to_string(),
+        requirements: reqs,
+        candidate_strength: scored(strength),
+        completion_day: 0,
+        completion_summary: String::new(),
+    }
+}
+
+fn evaluate_empire(world: &World, books: &HouseBooks) -> VictoryPathStatus {
+    let tier = trust_tier(world.captain.standing.commercial_trust);
+    let rank = trust_rank(tier);
+    let regions = infra_regions(world, books);
+    let contracts = completed_contracts(books);
+    let lic_count = active_licenses(books);
+    let credit_used = books
+        .credit
+        .as_ref()
+        .is_some_and(|credit| credit.total_borrowed > 0);
+    let insurance_used = books.policies >= 1;
+    let finance_ok = credit_used && insurance_used;
+    let listed = if regions.is_empty() {
+        "none".to_string()
+    } else {
+        regions.join(", ")
+    };
+    let infra_action = if regions.len() < 3 {
+        format!(
+            "Expand infrastructure to {} more region(s)",
+            3 - regions.len()
+        )
+    } else {
+        String::new()
+    };
+    let contract_action = if contracts < 10 {
+        format!("Complete {} more contracts", 10 - contracts)
+    } else {
+        String::new()
+    };
+    let silver_action = if world.captain.silver < 3000 {
+        format!("Earn {} more silver", 3000 - world.captain.silver)
+    } else {
+        String::new()
+    };
+    let license_action = if lic_count < 3 {
+        format!("Acquire {} more license(s)", 3 - lic_count)
+    } else {
+        String::new()
+    };
+    let finance_action = format!(
+        "{}{}{}",
+        if insurance_used { "" } else { "Use insurance" },
+        if !insurance_used && !credit_used {
+            " and "
+        } else {
+            ""
+        },
+        if credit_used { "" } else { "Draw on credit" },
+    );
+    let reqs = vec![
+        req(
+            "Infrastructure in 3 regions",
+            regions.len() >= 3,
+            format!("Regions: {listed}"),
+            infra_action,
+            false,
+        ),
+        req(
+            "Reliable+ trust",
+            rank >= 3,
+            format!("Trust: {tier}"),
+            format!("Build trust to reliable tier (currently {tier})"),
+            false,
+        ),
+        req(
+            "Insurance and credit both used successfully",
+            finance_ok,
+            format!(
+                "Insurance: {}, Credit: {}",
+                if insurance_used { "yes" } else { "no" },
+                if credit_used { "yes" } else { "no" }
+            ),
+            finance_action,
+            false,
+        ),
+        req(
+            "10+ contracts completed",
+            contracts >= 10,
+            format!("Completed: {contracts}"),
+            contract_action,
+            false,
+        ),
+        req(
+            "3000+ silver",
+            world.captain.silver >= 3000,
+            format!("Silver: {}", world.captain.silver),
+            silver_action,
+            false,
+        ),
+        req(
+            "3+ active licenses",
+            lic_count >= 3,
+            format!("Active: {lic_count}"),
+            license_action,
+            false,
+        ),
+    ];
+    let mut strength = met_ratio(&reqs);
+    strength += regions.len() as f64 * 5.0;
+    if finance_ok {
+        strength += 10.0;
+    }
+    if contracts >= 10 {
+        strength += 8.0;
+    }
+    if regions.len() <= 1 {
+        strength += -10.0;
+    }
+    if books
+        .credit
+        .as_ref()
+        .is_some_and(|credit| credit.defaults > 0)
+    {
+        strength += -15.0;
+    }
+    VictoryPathStatus {
+        path_id: PATH_COMMERCIAL_EMPIRE.to_string(),
+        name: "Commercial Empire".to_string(),
+        requirements: reqs,
+        candidate_strength: scored(strength),
+        completion_day: 0,
+        completion_summary: String::new(),
+    }
+}
+
+fn attach_records(books: &HouseBooks, mut path: VictoryPathStatus) -> VictoryPathStatus {
+    if let Some(record) = books
+        .completed_paths
+        .iter()
+        .find(|record| record.path_id == path.path_id)
+    {
+        path.completion_day = record.completion_day;
+        path.completion_summary = record.summary.clone();
+    }
+    if path.is_complete() && path.completion_summary.is_empty() {
+        path.completion_summary = completion_summary(&path.path_id).to_string();
+    }
+    path
+}
+
+/// Evaluate all four paths. Sorted by candidate strength, highest first.
+/// Ties keep lawful, shadow, oceanic, empire order.
+pub fn compute_victory_progress(world: &World, books: &HouseBooks) -> Vec<VictoryPathStatus> {
+    let mut paths = vec![
+        attach_records(books, evaluate_lawful(world, books)),
+        attach_records(books, evaluate_shadow(world, books)),
+        attach_records(books, evaluate_oceanic(world, books)),
+        attach_records(books, evaluate_empire(world, books)),
+    ];
+    paths.sort_by(|left, right| right.candidate_strength.total_cmp(&left.candidate_strength));
+    paths
+}
+
+/// Paths that just became complete and are not already recorded.
+pub fn evaluate_victory_closure(world: &World, books: &HouseBooks) -> Vec<VictoryRecord> {
+    let already: Vec<&str> = books
+        .completed_paths
+        .iter()
+        .map(|record| record.path_id.as_str())
+        .collect();
+    let is_first = already.is_empty();
+    let mut newly = Vec::new();
+    for path in [
+        evaluate_lawful(world, books),
+        evaluate_shadow(world, books),
+        evaluate_oceanic(world, books),
+        evaluate_empire(world, books),
+    ] {
+        if already.iter().any(|id| *id == path.path_id) {
+            continue;
+        }
+        if path.is_complete() {
+            newly.push(VictoryRecord {
+                path_id: path.path_id.clone(),
+                completion_day: world.day,
+                summary: completion_summary(&path.path_id).to_string(),
+                is_first: is_first && newly.is_empty(),
+            });
+        }
+    }
+    newly
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Incident, World};
+    use crate::world::new_game;
+    use serde_json::Value;
+
+    fn apply(input: &Value) -> (World, HouseBooks) {
+        let mut world = new_game("Ada", "merchant", 1, None).expect("game");
+        if let Some(silver) = input.get("silver").and_then(Value::as_i64) {
+            world.captain.silver = silver;
+        }
+        if let Some(trust) = input.get("trust").and_then(Value::as_i64) {
+            world.captain.standing.commercial_trust = trust;
+        }
+        if let Some(day) = input.get("day").and_then(Value::as_i64) {
+            world.day = day;
+        }
+        if let Some(regional) = input.get("regional").and_then(Value::as_object) {
+            for (region, value) in regional {
+                world
+                    .captain
+                    .standing
+                    .set_regional(region, value.as_i64().unwrap_or(0));
+            }
+        }
+        if let Some(heat) = input.get("heat").and_then(Value::as_object) {
+            for (region, value) in heat {
+                world
+                    .captain
+                    .standing
+                    .set_heat(region, value.as_i64().unwrap_or(0));
+            }
+        }
+        if let Some(template) = input.get("ship_template").and_then(Value::as_str) {
+            if let Some(ship) = world.captain.ship.as_mut() {
+                ship.template_id = template.to_string();
+            }
+        }
+        if let Some(incidents) = input.get("incidents").and_then(Value::as_array) {
+            for description in incidents {
+                world.captain.standing.incidents.insert(
+                    0,
+                    Incident {
+                        day: 1,
+                        port_id: "porto_novo".to_string(),
+                        region: "Mediterranean".to_string(),
+                        incident_type: "inspection".to_string(),
+                        description: description.as_str().unwrap_or("").to_string(),
+                        heat_delta: 0,
+                        standing_delta: 0,
+                        trust_delta: 0,
+                    },
+                );
+            }
+        }
+        let mut books = HouseBooks {
+            net_profit: input.get("net_profit").and_then(Value::as_i64).unwrap_or(0),
+            trade_count: input
+                .get("trade_count")
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            policies: input.get("policies").and_then(Value::as_i64).unwrap_or(0),
+            ..HouseBooks::default()
+        };
+        if let Some(contracts) = input.get("contracts").and_then(Value::as_array) {
+            for contract in contracts {
+                books.completed_contracts.push(CompletedContract {
+                    outcome_type: contract["outcome_type"].as_str().unwrap_or("").to_string(),
+                    family: match contract.get("family") {
+                        None | Some(Value::Null) => None,
+                        Some(value) => value.as_str().map(str::to_string),
+                    },
+                    summary: contract
+                        .get("summary")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_string(),
+                });
+            }
+        }
+        if let Some(warehouses) = input.get("warehouses").and_then(Value::as_array) {
+            for site in warehouses {
+                let (port_id, active) = if let Some(port_id) = site.as_str() {
+                    (port_id.to_string(), true)
+                } else {
+                    (
+                        site["port_id"].as_str().unwrap_or("").to_string(),
+                        site.get("active").and_then(Value::as_bool).unwrap_or(true),
+                    )
+                };
+                books.warehouses.push(WarehouseSite { port_id, active });
+            }
+        }
+        if let Some(brokers) = input.get("brokers").and_then(Value::as_array) {
+            for broker in brokers {
+                books.brokers.push(BrokerSite {
+                    region: broker["region"].as_str().unwrap_or("").to_string(),
+                    tier: broker["tier"].as_str().unwrap_or("none").to_string(),
+                    active: broker
+                        .get("active")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(true),
+                });
+            }
+        }
+        if let Some(licenses) = input.get("licenses").and_then(Value::as_array) {
+            for license in licenses {
+                books.licenses.push(ActiveLicense {
+                    license_id: license.as_str().unwrap_or("").to_string(),
+                    active: true,
+                });
+            }
+        }
+        if let Some(credit) = input.get("credit").filter(|value| !value.is_null()) {
+            books.credit = Some(CreditBook {
+                total_borrowed: credit["total_borrowed"].as_i64().unwrap_or(0),
+                defaults: credit["defaults"].as_i64().unwrap_or(0),
+            });
+        }
+        if let Some(records) = input.get("completed_paths").and_then(Value::as_array) {
+            for record in records {
+                books.completed_paths.push(VictoryRecord {
+                    path_id: record["path_id"].as_str().unwrap_or("").to_string(),
+                    completion_day: record["completion_day"].as_i64().unwrap_or(0),
+                    summary: record["summary"].as_str().unwrap_or("").to_string(),
+                    is_first: record
+                        .get("is_first")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false),
+                });
+            }
+        }
+        (world, books)
+    }
+
+    fn close(left: &Value, right: &Value, path: &str) {
+        match (left, right) {
+            (Value::Number(a), Value::Number(b)) => {
+                let af = a.as_f64().unwrap();
+                let bf = b.as_f64().unwrap();
+                let diff = (af - bf).abs();
+                assert!(
+                    diff <= 1e-6 || diff <= 1e-9 * af.abs().max(bf.abs()),
+                    "{path}: {af} != {bf}"
+                );
+            }
+            (Value::String(a), Value::String(b)) => assert_eq!(a, b, "{path}"),
+            (Value::Bool(a), Value::Bool(b)) => assert_eq!(a, b, "{path}"),
+            (Value::Null, Value::Null) => {}
+            (Value::Array(a), Value::Array(b)) => {
+                assert_eq!(a.len(), b.len(), "{path} length");
+                for (index, (item, other)) in a.iter().zip(b).enumerate() {
+                    close(item, other, &format!("{path}[{index}]"));
+                }
+            }
+            (Value::Object(a), Value::Object(b)) => {
+                assert_eq!(a.len(), b.len(), "{path} keys");
+                for (key, value) in a {
+                    close(
+                        value,
+                        b.get(key).unwrap_or(&Value::Null),
+                        &format!("{path}.{key}"),
+                    );
+                }
+            }
+            _ => panic!("{path}: type mismatch {left} vs {right}"),
+        }
+    }
+
+    #[test]
+    fn commercial_ids_stay_distinct() {
+        assert_ne!(PATH_COMMERCIAL_EMPIRE, MILESTONE_FAMILY_COMMERCIAL_FINANCE);
+        assert_eq!(
+            MilestoneFamily::CommercialFinance.as_str(),
+            "commercial_finance"
+        );
+        let families: Vec<&str> = PROFILE_MILESTONE_FAMILIES
+            .iter()
+            .flat_map(|(_, families)| families.iter().copied())
+            .collect();
+        assert!(families.contains(&"commercial_finance"));
+        assert!(!families.contains(&"commercial_empire"));
+        let world = new_game("Ada", "merchant", 1, None).expect("game");
+        let paths = compute_victory_progress(&world, &HouseBooks::default());
+        let ids: Vec<_> = paths.iter().map(|path| path.path_id.as_str()).collect();
+        assert!(ids.contains(&"commercial_empire"));
+        assert!(!ids.iter().any(|id| *id == "commercial_finance"));
+        assert_eq!(
+            paths
+                .iter()
+                .find(|path| path.path_id == "lawful_house")
+                .map(|path| path.candidate_strength),
+            Some(26.7)
+        );
+    }
+
+    #[test]
+    fn victory_fixtures_match_python() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../parity/golden/victory_cases.json");
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run tools/parity/victory_cases.py",
+                path.display()
+            )
+        });
+        let cases: Vec<Value> = serde_json::from_str(&text).expect("victory cases");
+        assert!(cases.len() >= 8, "fixture set is too small");
+        for case in cases {
+            let name = case["name"].as_str().unwrap_or("case");
+            let (world, books) = apply(&case["input"]);
+            let got = serde_json::to_value(compute_victory_progress(&world, &books)).expect("json");
+            close(&case["paths"], &got, name);
+        }
+    }
+}

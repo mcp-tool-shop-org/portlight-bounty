@@ -8,7 +8,7 @@ use crate::model::{Captain, Port, Route, Ship, Standing, Voyage, VoyageStatus, W
 pub fn new_game(
     captain_name: &str,
     captain_type: &str,
-    seed: i64,
+    seed: i128,
     starting_port: Option<&str>,
 ) -> Result<World, String> {
     let catalog = content::content();

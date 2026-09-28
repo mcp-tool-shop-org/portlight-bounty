@@ -90,7 +90,7 @@ fn script_cmd(args: &[String]) -> ExitCode {
 fn new_cmd(args: &[String]) -> ExitCode {
     let mut captain = "merchant".to_string();
     let mut name = "Captain".to_string();
-    let mut seed: i64 = 1;
+    let mut seed: i128 = 1;
     let mut json = false;
     let mut i = 0;
     while i < args.len() {

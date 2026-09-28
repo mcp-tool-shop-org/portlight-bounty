@@ -1,0 +1,1942 @@
+[
+  {
+    "name": "fresh_merchant",
+    "input": {},
+    "paths": [
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 26.7,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: credible",
+            "action": "Reach trusted trust tier (currently credible)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "missing",
+            "detail": "Licenses: 0, regions at 15+: none",
+            "action": "Acquire 2 more license(s) or build standing in another region"
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 8 more contracts"
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce customs heat from 0 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 1450 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 0",
+            "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 0",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Accumulate 950 more silver"
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 0",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 5 more contracts"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 1450 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "missing",
+            "detail": "Trust: credible",
+            "action": "Build trust to reliable tier (currently credible)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 10 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 2450 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 0",
+            "action": "Acquire 3 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "lawful_complete",
+    "input": {
+      "silver": 2500,
+      "trust": 40,
+      "regional": {
+        "Mediterranean": 16,
+        "North Atlantic": 15
+      },
+      "heat": {
+        "Mediterranean": 2
+      },
+      "licenses": [
+        "high_rep_charter",
+        "regional_charter"
+      ],
+      "contracts": [
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        }
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 128.0,
+        "completion_day": 0,
+        "completion_summary": "Your company earned trust across multiple regions, secured premium charters, and scaled lawful commerce without surrendering discipline to heat.",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "met",
+            "detail": "Currently: trusted",
+            "action": "Reach trusted trust tier (currently trusted)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "met",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "met",
+            "detail": "Licenses: 2, regions at 15+: Mediterranean, North Atlantic",
+            "action": ""
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 8",
+            "action": ""
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 2",
+            "action": "Reduce customs heat from 2 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 2500",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 18.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 8",
+            "action": ""
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 2500",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 13.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 2",
+            "action": "Shadow commerce requires operating under customs pressure (heat 2, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 2",
+            "action": "Reduce heat from 2 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 2",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "met",
+            "detail": "Silver: 2500",
+            "action": ""
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 2",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 6.7,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "met",
+            "detail": "Trust: trusted",
+            "action": "Build trust to reliable tier (currently trusted)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 8",
+            "action": "Complete 2 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 2500",
+            "action": "Earn 500 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 2",
+            "action": "Acquire 1 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "lawful_heat_blocked",
+    "input": {
+      "silver": 2500,
+      "trust": 40,
+      "heat": {
+        "West Africa": 9
+      },
+      "licenses": [
+        "high_rep_charter",
+        "regional_charter"
+      ],
+      "contracts": [
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        }
+      ],
+      "credit": {
+        "total_borrowed": 0,
+        "defaults": 1
+      },
+      "incidents": [
+        "Cargo seized during inspection (fined 20 silver)"
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 46.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "met",
+            "detail": "Currently: trusted",
+            "action": "Reach trusted trust tier (currently trusted)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "met",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "met",
+            "detail": "Licenses: 2, regions at 15+: none",
+            "action": ""
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 8",
+            "action": ""
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "blocked",
+            "detail": "Max heat: 9",
+            "action": "Reduce customs heat from 9 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 2500",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 41.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 9",
+            "action": "Shadow commerce requires operating under customs pressure (heat 9, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 9",
+            "action": "Reduce heat from 9 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 9",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "met",
+            "detail": "Silver: 2500",
+            "action": ""
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 9",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 18.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 8",
+            "action": ""
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 2500",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "met",
+            "detail": "Trust: trusted",
+            "action": "Build trust to reliable tier (currently trusted)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 8",
+            "action": "Complete 2 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 2500",
+            "action": "Earn 500 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 2",
+            "action": "Acquire 1 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "shadow_under_heat",
+    "input": {
+      "silver": 1800,
+      "heat": {
+        "Mediterranean": 12,
+        "East Indies": 4
+      },
+      "net_profit": 2500,
+      "trade_count": 9,
+      "contracts": [
+        {
+          "outcome_type": "completed",
+          "family": "luxury_discreet",
+          "summary": "quiet delivery"
+        },
+        {
+          "outcome_type": "completed_bonus",
+          "family": null,
+          "summary": "A discreet luxury run"
+        },
+        {
+          "outcome_type": "expired",
+          "family": "luxury_discreet",
+          "summary": "late"
+        }
+      ],
+      "incidents": [
+        "Cargo seized during inspection"
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 130.0,
+        "completion_day": 0,
+        "completion_summary": "Your operation survived scrutiny, moved sensitive luxury cargo profitably, and built a resilient gray-market network under pressure.",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "met",
+            "detail": "Discreet completions: 2",
+            "action": ""
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "met",
+            "detail": "Max heat: 12",
+            "action": "Shadow commerce requires operating under customs pressure (heat 12, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 12",
+            "action": "Reduce heat from 12 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "met",
+            "detail": "Profit: 2500, heat: 12",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "met",
+            "detail": "Silver: 1800",
+            "action": ""
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "met",
+            "detail": "Trades: 9, max heat: 12",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: credible",
+            "action": "Reach trusted trust tier (currently credible)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "missing",
+            "detail": "Licenses: 0, regions at 15+: none",
+            "action": "Acquire 2 more license(s) or build standing in another region"
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 2",
+            "action": "Complete 6 more contracts"
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "blocked",
+            "detail": "Max heat: 12",
+            "action": "Reduce customs heat from 12 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 1800",
+            "action": "Earn 200 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 2",
+            "action": "Complete 3 more contracts"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 1800",
+            "action": "Earn 200 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "missing",
+            "detail": "Trust: credible",
+            "action": "Build trust to reliable tier (currently credible)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 2",
+            "action": "Complete 8 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 1800",
+            "action": "Earn 1200 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 0",
+            "action": "Acquire 3 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "shadow_clean_profit_blocked",
+    "input": {
+      "silver": 80,
+      "net_profit": 1500,
+      "heat": {
+        "Mediterranean": 0
+      }
+    },
+    "paths": [
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 26.7,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: credible",
+            "action": "Reach trusted trust tier (currently credible)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "missing",
+            "detail": "Licenses: 0, regions at 15+: none",
+            "action": "Acquire 2 more license(s) or build standing in another region"
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 8 more contracts"
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce customs heat from 0 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 80",
+            "action": "Earn 1920 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "blocked",
+            "detail": "Max heat: 0",
+            "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 1500, heat: 0",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "missing",
+            "detail": "Silver: 80",
+            "action": "Accumulate 1420 more silver"
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 0",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 5 more contracts"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 80",
+            "action": "Earn 1920 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "missing",
+            "detail": "Trust: credible",
+            "action": "Build trust to reliable tier (currently credible)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 10 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 80",
+            "action": "Earn 2920 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 0",
+            "action": "Acquire 3 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "oceanic_galleon",
+    "input": {
+      "silver": 2200,
+      "ship_template": "merchant_galleon",
+      "regional": {
+        "East Indies": 18
+      },
+      "licenses": [
+        "ei_access_charter"
+      ],
+      "warehouses": [
+        "jade_port"
+      ],
+      "brokers": [
+        {
+          "region": "East Indies",
+          "tier": "local"
+        }
+      ],
+      "contracts": [
+        {
+          "outcome_type": "completed",
+          "family": "circuit"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "circuit"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "circuit"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "circuit"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "circuit"
+        }
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 161.0,
+        "completion_day": 0,
+        "completion_summary": "Your house established East Indies access, commercialized long-haul routes, and proved that distant trade could be run at serious scale.",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "met",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "met",
+            "detail": "EI broker: yes, EI warehouse: yes",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "met",
+            "detail": "EI standing: 18",
+            "action": "Build East Indies standing from 18 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "met",
+            "detail": "Ship: galleon",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 5",
+            "action": ""
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 2200",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 51.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: credible",
+            "action": "Reach trusted trust tier (currently credible)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "missing",
+            "detail": "Licenses: 1, regions at 15+: East Indies",
+            "action": "Acquire 1 more license(s) or build standing in another region"
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 5",
+            "action": "Complete 3 more contracts"
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce customs heat from 0 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 2200",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 13.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 0",
+            "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 0",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "met",
+            "detail": "Silver: 2200",
+            "action": ""
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 0",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: East Indies",
+            "action": "Expand infrastructure to 2 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "missing",
+            "detail": "Trust: credible",
+            "action": "Build trust to reliable tier (currently credible)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 5",
+            "action": "Complete 5 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 2200",
+            "action": "Earn 800 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 1",
+            "action": "Acquire 2 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "commercial_empire_complete",
+    "input": {
+      "silver": 4000,
+      "trust": 30,
+      "day": 40,
+      "licenses": [
+        "high_rep_charter",
+        "ei_access_charter",
+        "regional_charter"
+      ],
+      "warehouses": [
+        "porto_novo",
+        "sun_harbor"
+      ],
+      "brokers": [
+        {
+          "region": "East Indies",
+          "tier": "established"
+        }
+      ],
+      "policies": 1,
+      "credit": {
+        "total_borrowed": 500,
+        "defaults": 0
+      },
+      "contracts": [
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        },
+        {
+          "outcome_type": "completed",
+          "family": "procurement"
+        }
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 133.0,
+        "completion_day": 0,
+        "completion_summary": "You built an integrated trade concern with infrastructure, access, finance, and multi-region business power beyond a single ship or route.",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "met",
+            "detail": "Regions: East Indies, Mediterranean, West Africa",
+            "action": ""
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "met",
+            "detail": "Trust: reliable",
+            "action": "Build trust to reliable tier (currently reliable)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "met",
+            "detail": "Insurance: yes, Credit: yes",
+            "action": ""
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 10",
+            "action": ""
+          },
+          {
+            "description": "3000+ silver",
+            "status": "met",
+            "detail": "Silver: 4000",
+            "action": ""
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "met",
+            "detail": "Active: 3",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 98.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: reliable",
+            "action": "Reach trusted trust tier (currently reliable)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "met",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "met",
+            "detail": "Licenses: 3, regions at 15+: none",
+            "action": ""
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 10",
+            "action": ""
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce customs heat from 0 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 4000",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 66.7,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "met",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "met",
+            "detail": "EI broker: yes, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "met",
+            "detail": "Completed: 10",
+            "action": ""
+          },
+          {
+            "description": "2000+ silver",
+            "status": "met",
+            "detail": "Silver: 4000",
+            "action": ""
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 13.3,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 0",
+            "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 0",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "met",
+            "detail": "Silver: 4000",
+            "action": ""
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 0",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "recorded_path_keeps_its_summary",
+    "input": {
+      "completed_paths": [
+        {
+          "path_id": "commercial_empire",
+          "completion_day": 12,
+          "summary": "recorded earlier",
+          "is_first": true
+        }
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 26.7,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: credible",
+            "action": "Reach trusted trust tier (currently credible)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "missing",
+            "detail": "Licenses: 0, regions at 15+: none",
+            "action": "Acquire 2 more license(s) or build standing in another region"
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 8 more contracts"
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce customs heat from 0 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 1450 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 0",
+            "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 0",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Accumulate 950 more silver"
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 0",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 5 more contracts"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 1450 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 12,
+        "completion_summary": "recorded earlier",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "missing",
+            "detail": "Trust: credible",
+            "action": "Build trust to reliable tier (currently credible)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 10 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 2450 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 0",
+            "action": "Acquire 3 more license(s)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "inactive_broker_and_none_tier_do_not_count",
+    "input": {
+      "brokers": [
+        {
+          "region": "East Indies",
+          "tier": "none"
+        },
+        {
+          "region": "South Seas",
+          "tier": "local",
+          "active": false
+        }
+      ],
+      "warehouses": [
+        {
+          "port_id": "jade_port",
+          "active": false
+        }
+      ]
+    },
+    "paths": [
+      {
+        "path_id": "lawful_house",
+        "name": "Lawful Trade House",
+        "candidate_strength": 26.7,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Trusted commercial standing",
+            "status": "missing",
+            "detail": "Currently: credible",
+            "action": "Reach trusted trust tier (currently credible)"
+          },
+          {
+            "description": "High Reputation Commercial Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the High Reputation Commercial Charter"
+          },
+          {
+            "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+            "status": "missing",
+            "detail": "Licenses: 0, regions at 15+: none",
+            "action": "Acquire 2 more license(s) or build standing in another region"
+          },
+          {
+            "description": "8+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 8 more contracts"
+          },
+          {
+            "description": "Max heat <= 5",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce customs heat from 0 to 5 or below"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 1450 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "shadow_network",
+        "name": "Shadow Network",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "2+ discreet luxury completions",
+            "status": "missing",
+            "detail": "Discreet completions: 0",
+            "action": "Complete 2 more discreet luxury deliveries"
+          },
+          {
+            "description": "Operated under meaningful heat (>= 10)",
+            "status": "missing",
+            "detail": "Max heat: 0",
+            "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          },
+          {
+            "description": "Heat manageable (<= 40)",
+            "status": "met",
+            "detail": "Max heat: 0",
+            "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          },
+          {
+            "description": "Profitable under pressure (profit >= 2000)",
+            "status": "missing",
+            "detail": "Profit: 0, heat: 0",
+            "action": "Build profitability while maintaining shadow operations"
+          },
+          {
+            "description": "1500+ silver on hand",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Accumulate 950 more silver"
+          },
+          {
+            "description": "Trade volume under heat (8+ trades)",
+            "status": "missing",
+            "detail": "Trades: 0, max heat: 0",
+            "action": "Complete more trades while operating under customs pressure"
+          }
+        ]
+      },
+      {
+        "path_id": "oceanic_reach",
+        "name": "Oceanic Reach",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "East Indies Access Charter",
+            "status": "missing",
+            "detail": "",
+            "action": "Acquire the East Indies Access Charter"
+          },
+          {
+            "description": "East Indies commercial foothold (broker or warehouse)",
+            "status": "missing",
+            "detail": "EI broker: no, EI warehouse: no",
+            "action": "Open a broker office or warehouse in the East Indies"
+          },
+          {
+            "description": "East Indies standing >= 15",
+            "status": "missing",
+            "detail": "EI standing: 0",
+            "action": "Build East Indies standing from 0 to 15"
+          },
+          {
+            "description": "Long-haul ship capability (Brigantine or Galleon)",
+            "status": "missing",
+            "detail": "Ship: sloop",
+            "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+          },
+          {
+            "description": "5+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 5 more contracts"
+          },
+          {
+            "description": "2000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 1450 more silver"
+          }
+        ]
+      },
+      {
+        "path_id": "commercial_empire",
+        "name": "Commercial Empire",
+        "candidate_strength": 0.0,
+        "completion_day": 0,
+        "completion_summary": "",
+        "requirements": [
+          {
+            "description": "Infrastructure in 3 regions",
+            "status": "missing",
+            "detail": "Regions: none",
+            "action": "Expand infrastructure to 3 more region(s)"
+          },
+          {
+            "description": "Reliable+ trust",
+            "status": "missing",
+            "detail": "Trust: credible",
+            "action": "Build trust to reliable tier (currently credible)"
+          },
+          {
+            "description": "Insurance and credit both used successfully",
+            "status": "missing",
+            "detail": "Insurance: no, Credit: no",
+            "action": "Use insurance and Draw on credit"
+          },
+          {
+            "description": "10+ contracts completed",
+            "status": "missing",
+            "detail": "Completed: 0",
+            "action": "Complete 10 more contracts"
+          },
+          {
+            "description": "3000+ silver",
+            "status": "missing",
+            "detail": "Silver: 550",
+            "action": "Earn 2450 more silver"
+          },
+          {
+            "description": "3+ active licenses",
+            "status": "missing",
+            "detail": "Active: 0",
+            "action": "Acquire 3 more license(s)"
+          }
+        ]
+      }
+    ]
+  }
+]
