@@ -53,6 +53,9 @@ pub fn new_game(
             fleet: Vec::new(),
             naval_victories: 0,
             naval_defeats: 0,
+            learned_styles: Vec::new(),
+            skills: Vec::new(),
+            party: crate::model::Party::default(),
         },
         ports,
         routes,
@@ -68,6 +71,7 @@ pub fn new_game(
         day: 1,
         seed,
         pending_duel: None,
+        captain_memories: Vec::new(),
     })
 }
 

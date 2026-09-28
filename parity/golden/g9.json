@@ -1590,6 +1590,20 @@
       ]
     }
   ],
+  "milestones": [
+    {
+      "milestone_id": "integrated_brigantine",
+      "completed_day": 2,
+      "evidence": "Operating a cutter",
+      "family": "integrated_house"
+    },
+    {
+      "milestone_id": "foothold_two_regions",
+      "completed_day": 46,
+      "evidence": "Established in North Atlantic, East Indies",
+      "family": "regional_foothold"
+    }
+  ],
   "log": [
     {
       "command": "new bounty_hunter T9 435326599206",

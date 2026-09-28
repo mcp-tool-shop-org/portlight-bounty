@@ -49,6 +49,9 @@ Script commands:
   advance
   accept_contract <offer_id>
   complete_contract <offer_id>
+  train <style_id>
+  recruit <companion_id>
+  skill <skill_id>
 "
     );
 }

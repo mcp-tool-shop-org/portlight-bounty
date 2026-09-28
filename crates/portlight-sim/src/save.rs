@@ -13,8 +13,8 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value};
 
 use crate::campaign::{
-    ActiveLicense, BrokerSite, CompletedContract, CreditBook, HouseBooks, VictoryRecord,
-    WarehouseSite,
+    ActiveLicense, BrokerSite, CompletedContract, CreditBook, HouseBooks, MilestoneCompletion,
+    VictoryRecord, WarehouseSite,
 };
 use crate::combat::CombatantState;
 use crate::content::{self, REGIONS};
@@ -22,9 +22,10 @@ use crate::economy::TradeReceipt;
 use crate::encounter::{self, EncounterState};
 use crate::error::SimError;
 use crate::model::{
-    ActiveContract, BreachRecord, Captain, CargoItem, Contract, ContractBoard, ContractOutcome,
-    DeferredFee, Incident, MarketSlot, Officer, PendingDuel, PirateEncounterRecord, Port, Route,
-    Ship, Standing, Voyage, VoyageStatus, World,
+    ActiveContract, BreachRecord, Captain, CaptainMemory, CaptainRelationship, CargoItem,
+    Companion, Contract, ContractBoard, ContractOutcome, DeferredFee, EncounterMemory, Incident,
+    MarketSlot, Officer, Party, PendingDuel, PirateEncounterRecord, Port, Route, Ship, Skill,
+    Standing, Voyage, VoyageStatus, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -602,6 +603,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
     }
     if let Some(campaign) = truthy(data.get("campaign")) {
         books.completed_paths = paths_from(campaign)?;
+        books.completed_milestones = milestones_from(campaign)?;
     }
     Some(LoadedGame {
         world: World {
@@ -612,6 +614,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
             day,
             seed,
             pending_duel,
+            captain_memories: pirate.captain_memories,
         },
         receipts: ledger.receipts,
         run_id: ledger.run_id,
@@ -640,6 +643,16 @@ fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
         ("day", Value::from(captain.day)),
         ("standing", standing_value(&captain.standing)),
         (
+            "learned_styles",
+            Value::Array(
+                captain
+                    .learned_styles
+                    .iter()
+                    .map(|id| Value::from(id.as_str()))
+                    .collect(),
+            ),
+        ),
+        (
             "active_style",
             captain
                 .active_style
@@ -647,6 +660,8 @@ fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
                 .map(|id| Value::from(id.as_str()))
                 .unwrap_or(Value::Null),
         ),
+        ("skills", skills_value(&captain.skills)),
+        ("party", party_value(&captain.party)),
         (
             "deferred_fees",
             Value::Array(captain.deferred_fees.iter().map(fee_value).collect()),
@@ -710,6 +725,93 @@ fn captain_from(value: &Value) -> Option<Captain> {
         fleet: Vec::new(),
         naval_victories: 0,
         naval_defeats: 0,
+        learned_styles: string_list(map.get("learned_styles"))?,
+        skills: skills_from(map.get("skills"))?,
+        party: party_from(map.get("party"))?,
+    })
+}
+
+fn skills_value(skills: &[Skill]) -> Value {
+    let mut map = Map::new();
+    for skill in skills {
+        map.insert(skill.id.clone(), Value::from(skill.level));
+    }
+    Value::Object(map)
+}
+
+fn skills_from(value: Option<&Value>) -> Option<Vec<Skill>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    if value.is_null() {
+        return Some(Vec::new());
+    }
+    let mut skills = Vec::new();
+    for (id, level) in value.as_object()? {
+        skills.push(Skill {
+            id: id.clone(),
+            level: json_i64(level)?,
+        });
+    }
+    Some(skills)
+}
+
+fn party_value(party: &Party) -> Value {
+    json_obj(&[
+        (
+            "companions",
+            Value::Array(party.companions.iter().map(companion_value).collect()),
+        ),
+        ("max_size", Value::from(party.max_size)),
+        (
+            "departed",
+            Value::Array(
+                party
+                    .departed
+                    .iter()
+                    .map(|id| Value::from(id.as_str()))
+                    .collect(),
+            ),
+        ),
+    ])
+}
+
+fn companion_value(companion: &Companion) -> Value {
+    json_obj(&[
+        ("companion_id", Value::from(companion.companion_id.as_str())),
+        ("role_id", Value::from(companion.role_id.as_str())),
+        ("morale", Value::from(companion.morale)),
+        ("joined_day", Value::from(companion.joined_day)),
+        ("personality", Value::from(companion.personality.as_str())),
+    ])
+}
+
+fn party_from(value: Option<&Value>) -> Option<Party> {
+    let Some(value) = value else {
+        return Some(Party::default());
+    };
+    if value.is_null() {
+        return Some(Party::default());
+    }
+    let map = value.as_object()?;
+    let mut companions = Vec::new();
+    if let Some(saved) = map.get("companions") {
+        for item in saved.as_array()? {
+            let item = item.as_object()?;
+            companions.push(Companion {
+                companion_id: req_str(item, "companion_id")?,
+                role_id: req_str(item, "role_id")?,
+                morale: opt_i64(item, "morale").unwrap_or(70),
+                joined_day: opt_i64(item, "joined_day").unwrap_or(0),
+                personality: opt_str(item, "personality")
+                    .unwrap_or_else(|| "pragmatic".to_string()),
+            });
+        }
+    }
+    Some(Party {
+        companions,
+        max_size: opt_i64(map, "max_size").unwrap_or(2),
+        departed: string_list(map.get("departed"))?,
     })
 }
 
@@ -1209,7 +1311,136 @@ fn pirate_value(
             ]),
         );
     }
+    if !world.captain_memories.is_empty() {
+        map.insert(
+            "captain_memories".to_string(),
+            memories_value(&world.captain_memories),
+        );
+    }
     Value::Object(map)
+}
+
+fn memories_value(memories: &[CaptainMemory]) -> Value {
+    let mut map = Map::new();
+    for memory in memories {
+        map.insert(memory.captain_id.clone(), memory_value(memory));
+    }
+    Value::Object(map)
+}
+
+fn memory_value(memory: &CaptainMemory) -> Value {
+    json_obj(&[
+        ("captain_id", Value::from(memory.captain_id.as_str())),
+        (
+            "relationship",
+            json_obj(&[
+                ("respect", Value::from(memory.relationship.respect)),
+                ("fear", Value::from(memory.relationship.fear)),
+                ("grudge", Value::from(memory.relationship.grudge)),
+                ("familiarity", Value::from(memory.relationship.familiarity)),
+            ]),
+        ),
+        (
+            "encounters",
+            Value::Array(
+                memory
+                    .encounters
+                    .iter()
+                    .map(memory_encounter_value)
+                    .collect(),
+            ),
+        ),
+        ("last_seen_day", Value::from(memory.last_seen_day)),
+        (
+            "last_seen_region",
+            Value::from(memory.last_seen_region.as_str()),
+        ),
+        ("times_spared", Value::from(memory.times_spared)),
+        (
+            "times_defeated_by_player",
+            Value::from(memory.times_defeated_by_player),
+        ),
+        (
+            "times_defeated_player",
+            Value::from(memory.times_defeated_player),
+        ),
+        (
+            "player_sank_their_ship",
+            Value::from(memory.player_sank_their_ship),
+        ),
+    ])
+}
+
+fn memory_encounter_value(encounter: &EncounterMemory) -> Value {
+    json_obj(&[
+        ("day", Value::from(encounter.day)),
+        ("region", Value::from(encounter.region.as_str())),
+        ("outcome", Value::from(encounter.outcome.as_str())),
+        ("player_spared", Value::from(encounter.player_spared)),
+        (
+            "player_used_firearm",
+            Value::from(encounter.player_used_firearm),
+        ),
+        ("crew_killed", Value::from(encounter.crew_killed)),
+        ("respect_delta", Value::from(encounter.respect_delta)),
+        ("fear_delta", Value::from(encounter.fear_delta)),
+        ("grudge_delta", Value::from(encounter.grudge_delta)),
+        (
+            "familiarity_delta",
+            Value::from(encounter.familiarity_delta),
+        ),
+    ])
+}
+
+fn memories_from(value: Option<&Value>) -> Option<Vec<CaptainMemory>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    if value.is_null() {
+        return Some(Vec::new());
+    }
+    let mut memories = Vec::new();
+    for (id, item) in value.as_object()? {
+        let item = item.as_object()?;
+        let rel = item.get("relationship").and_then(Value::as_object);
+        let relationship = CaptainRelationship {
+            respect: rel.and_then(|map| opt_i64(map, "respect")).unwrap_or(0),
+            fear: rel.and_then(|map| opt_i64(map, "fear")).unwrap_or(0),
+            grudge: rel.and_then(|map| opt_i64(map, "grudge")).unwrap_or(0),
+            familiarity: rel.and_then(|map| opt_i64(map, "familiarity")).unwrap_or(0),
+        };
+        let mut encounters = Vec::new();
+        if let Some(saved) = item.get("encounters") {
+            for encounter in saved.as_array()? {
+                let encounter = encounter.as_object()?;
+                encounters.push(EncounterMemory {
+                    day: opt_i64(encounter, "day").unwrap_or(0),
+                    region: opt_str(encounter, "region").unwrap_or_default(),
+                    outcome: opt_str(encounter, "outcome").unwrap_or_default(),
+                    player_spared: opt_bool(encounter, "player_spared").unwrap_or(false),
+                    player_used_firearm: opt_bool(encounter, "player_used_firearm")
+                        .unwrap_or(false),
+                    crew_killed: opt_i64(encounter, "crew_killed").unwrap_or(0),
+                    respect_delta: opt_i64(encounter, "respect_delta").unwrap_or(0),
+                    fear_delta: opt_i64(encounter, "fear_delta").unwrap_or(0),
+                    grudge_delta: opt_i64(encounter, "grudge_delta").unwrap_or(0),
+                    familiarity_delta: opt_i64(encounter, "familiarity_delta").unwrap_or(0),
+                });
+            }
+        }
+        memories.push(CaptainMemory {
+            captain_id: opt_str(item, "captain_id").unwrap_or_else(|| id.clone()),
+            relationship,
+            encounters,
+            last_seen_day: opt_i64(item, "last_seen_day").unwrap_or(0),
+            last_seen_region: opt_str(item, "last_seen_region").unwrap_or_default(),
+            times_spared: opt_i64(item, "times_spared").unwrap_or(0),
+            times_defeated_by_player: opt_i64(item, "times_defeated_by_player").unwrap_or(0),
+            times_defeated_player: opt_i64(item, "times_defeated_player").unwrap_or(0),
+            player_sank_their_ship: opt_bool(item, "player_sank_their_ship").unwrap_or(false),
+        });
+    }
+    Some(memories)
 }
 
 fn encounter_record_value(record: &PirateEncounterRecord) -> Value {
@@ -1321,6 +1552,7 @@ struct PirateLoaded {
     encounter: Option<EncounterState>,
     player: Option<CombatantState>,
     opponent: Option<CombatantState>,
+    captain_memories: Vec<CaptainMemory>,
 }
 
 fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
@@ -1360,6 +1592,7 @@ fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
         encounter,
         player,
         opponent,
+        captain_memories: memories_from(map.get("captain_memories"))?,
     })
 }
 
@@ -1964,8 +2197,8 @@ fn infra_value(books: &HouseBooks) -> Value {
                 ("next_due_day", Value::from(0)),
                 ("defaults", Value::from(credit.defaults)),
                 ("total_borrowed", Value::from(credit.total_borrowed)),
-                ("total_repaid", Value::from(0)),
-                ("active", Value::from(true)),
+                ("total_repaid", Value::from(credit.total_repaid)),
+                ("active", Value::from(credit.active)),
             ]),
         );
     }
@@ -2026,6 +2259,8 @@ fn apply_infra(books: &mut HouseBooks, value: &Value) -> Option<()> {
         books.credit = Some(CreditBook {
             total_borrowed: opt_i64(credit, "total_borrowed").unwrap_or(0),
             defaults: opt_i64(credit, "defaults").unwrap_or(0),
+            active: opt_bool(credit, "active").unwrap_or(false),
+            total_repaid: opt_i64(credit, "total_repaid").unwrap_or(0),
         });
     }
     Some(())
@@ -2033,7 +2268,16 @@ fn apply_infra(books: &mut HouseBooks, value: &Value) -> Option<()> {
 
 fn campaign_value(books: &HouseBooks) -> Value {
     json_obj(&[
-        ("completed", Value::Array(Vec::new())),
+        (
+            "completed",
+            Value::Array(
+                books
+                    .completed_milestones
+                    .iter()
+                    .map(milestone_value)
+                    .collect(),
+            ),
+        ),
         (
             "completed_paths",
             Value::Array(
@@ -2052,6 +2296,31 @@ fn campaign_value(books: &HouseBooks) -> Value {
             ),
         ),
     ])
+}
+
+fn milestone_value(milestone: &MilestoneCompletion) -> Value {
+    json_obj(&[
+        ("milestone_id", Value::from(milestone.milestone_id.as_str())),
+        ("completed_day", Value::from(milestone.completed_day)),
+        ("evidence", Value::from(milestone.evidence.as_str())),
+    ])
+}
+
+fn milestones_from(value: &Value) -> Option<Vec<MilestoneCompletion>> {
+    let map = value.as_object()?;
+    let Some(saved) = map.get("completed") else {
+        return Some(Vec::new());
+    };
+    let mut milestones = Vec::new();
+    for item in saved.as_array()? {
+        let item = item.as_object()?;
+        milestones.push(MilestoneCompletion {
+            milestone_id: req_str(item, "milestone_id")?,
+            completed_day: opt_i64(item, "completed_day").unwrap_or(0),
+            evidence: opt_str(item, "evidence").unwrap_or_default(),
+        });
+    }
+    Some(milestones)
 }
 
 fn paths_from(value: &Value) -> Option<Vec<VictoryRecord>> {

@@ -261,6 +261,161 @@ pub struct ContractDef {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct SkillLevelDef {
+    pub level: i64,
+    pub name: String,
+    pub silver_cost: i64,
+    pub training_days: i64,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SkillDef {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub training_port_feature: String,
+    pub max_level: i64,
+    pub levels: Vec<SkillLevelDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SkillTrainerDef {
+    pub id: String,
+    pub name: String,
+    pub skill_id: String,
+    pub port_id: String,
+    pub max_teach_level: i64,
+    pub description: String,
+    pub dialog: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BlacksmithEffectDef {
+    pub level: i64,
+    pub maintenance_discount: f64,
+    pub degrade_slow: f64,
+    pub upgrade_discount: f64,
+    pub field_repair: bool,
+    pub field_max_quality: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SkillCatalog {
+    pub skills: Vec<SkillDef>,
+    pub trainers: Vec<SkillTrainerDef>,
+    pub blacksmith_effects: Vec<BlacksmithEffectDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CompanionRoleDef {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub combat_damage_bonus: i64,
+    pub combat_interception_chance: f64,
+    pub speed_bonus: f64,
+    pub danger_reduction: f64,
+    pub heal_rate_bonus: f64,
+    pub inspection_evasion: f64,
+    pub trade_bonus: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CompanionDef {
+    pub id: String,
+    pub name: String,
+    pub role_id: String,
+    pub home_port_id: String,
+    pub region: String,
+    pub description: String,
+    pub personality: String,
+    pub hire_cost: i64,
+    pub required_standing: i64,
+    pub greeting: String,
+    pub hire_dialog: String,
+    pub loyalty_line: String,
+    pub warning_line: String,
+    pub departure_line: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MoraleReactionDef {
+    pub trigger: String,
+    pub deltas: BTreeMap<String, i64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PersonalityModDef {
+    pub personality: String,
+    pub deltas: BTreeMap<String, i64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CompanionCatalog {
+    pub roles: Vec<CompanionRoleDef>,
+    pub companions: Vec<CompanionDef>,
+    pub morale_reactions: Vec<MoraleReactionDef>,
+    pub personality_modifiers: Vec<PersonalityModDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MerchantDef {
+    pub id: String,
+    pub name: String,
+    pub port_id: String,
+    pub title: String,
+    pub personality: String,
+    pub description: String,
+    pub greeting: String,
+    pub inventory_types: Vec<String>,
+    pub price_markup: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OfficerNamePool {
+    pub region: String,
+    pub names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OfficerNames {
+    pub regions: Vec<OfficerNamePool>,
+    pub traits: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct StyleMasterDef {
+    pub id: String,
+    pub name: String,
+    pub style_id: String,
+    pub port_id: String,
+    pub description: String,
+    pub dialog: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MilestoneSpecDef {
+    pub id: String,
+    pub name: String,
+    pub family: String,
+    pub description: String,
+    pub evaluator: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProfileFamilyDef {
+    pub tag: String,
+    pub families: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CampaignCatalog {
+    pub milestones: Vec<MilestoneSpecDef>,
+    pub profile_milestone_families: Vec<ProfileFamilyDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Content {
     pub source_commit: String,
     pub goods: Vec<GoodDef>,
@@ -280,6 +435,12 @@ pub struct Content {
     pub ranged_weapons: Vec<RangedWeaponDef>,
     #[serde(default)]
     pub fighting_styles: Vec<FightingStyleDef>,
+    pub skills: SkillCatalog,
+    pub companions: CompanionCatalog,
+    pub merchants: Vec<MerchantDef>,
+    pub officer_names: OfficerNames,
+    pub style_masters: Vec<StyleMasterDef>,
+    pub campaign: CampaignCatalog,
 }
 
 pub const REGIONS: [&str; 5] = [
@@ -358,6 +519,109 @@ impl Content {
 
     pub fn fighting_style(&self, id: &str) -> Option<&FightingStyleDef> {
         self.fighting_styles.iter().find(|s| s.id == id)
+    }
+
+    pub fn skill(&self, id: &str) -> Option<&SkillDef> {
+        self.skills.skills.iter().find(|skill| skill.id == id)
+    }
+
+    pub fn skill_by_name(&self, name: &str) -> Option<&SkillDef> {
+        let name = name.to_lowercase();
+        self.skills
+            .skills
+            .iter()
+            .find(|skill| skill.name.to_lowercase() == name)
+    }
+
+    /// Trainers at `port_id`, in catalog order. `skill_id` filters further.
+    pub fn trainers_at(&self, port_id: &str, skill_id: Option<&str>) -> Vec<&SkillTrainerDef> {
+        self.skills
+            .trainers
+            .iter()
+            .filter(|trainer| trainer.port_id == port_id)
+            .filter(|trainer| skill_id.is_none_or(|id| trainer.skill_id == id))
+            .collect()
+    }
+
+    pub fn blacksmith_effect(&self, level: i64) -> &BlacksmithEffectDef {
+        let key = level.min(3);
+        self.skills
+            .blacksmith_effects
+            .iter()
+            .find(|effect| effect.level == key)
+            .or_else(|| {
+                self.skills
+                    .blacksmith_effects
+                    .iter()
+                    .find(|effect| effect.level == 0)
+            })
+            .expect("blacksmith effects")
+    }
+
+    pub fn companion(&self, id: &str) -> Option<&CompanionDef> {
+        self.companions
+            .companions
+            .iter()
+            .find(|companion| companion.id == id)
+    }
+
+    pub fn companion_role(&self, id: &str) -> Option<&CompanionRoleDef> {
+        self.companions.roles.iter().find(|role| role.id == id)
+    }
+
+    pub fn morale_reaction(&self, trigger: &str) -> Option<&MoraleReactionDef> {
+        self.companions
+            .morale_reactions
+            .iter()
+            .find(|row| row.trigger == trigger)
+    }
+
+    pub fn personality_modifier(&self, personality: &str) -> Option<&PersonalityModDef> {
+        self.companions
+            .personality_modifiers
+            .iter()
+            .find(|row| row.personality == personality)
+    }
+
+    pub fn merchant(&self, id: &str) -> Option<&MerchantDef> {
+        self.merchants.iter().find(|merchant| merchant.id == id)
+    }
+
+    pub fn merchants_at(&self, port_id: &str) -> Vec<&MerchantDef> {
+        self.merchants
+            .iter()
+            .filter(|merchant| merchant.port_id == port_id)
+            .collect()
+    }
+
+    /// Region name pool. Unknown regions use the Mediterranean list, matching
+    /// `generate_officer_name`.
+    pub fn officer_pool(&self, region: &str) -> &[String] {
+        self.officer_names
+            .regions
+            .iter()
+            .find(|pool| pool.region == region)
+            .or_else(|| self.officer_names.regions.first())
+            .map(|pool| pool.names.as_slice())
+            .unwrap_or(&[])
+    }
+
+    pub fn styles_at(&self, port_id: &str) -> Vec<&FightingStyleDef> {
+        self.fighting_styles
+            .iter()
+            .filter(|style| style.training_port_ids.iter().any(|id| id == port_id))
+            .collect()
+    }
+
+    pub fn masters_at(&self, port_id: &str) -> Vec<&StyleMasterDef> {
+        self.style_masters
+            .iter()
+            .filter(|master| master.port_id == port_id)
+            .collect()
+    }
+
+    pub fn milestone(&self, id: &str) -> Option<&MilestoneSpecDef> {
+        self.campaign.milestones.iter().find(|spec| spec.id == id)
     }
 }
 

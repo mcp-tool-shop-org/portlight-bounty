@@ -111,6 +111,8 @@ fn played() -> Session {
         books.credit = Some(CreditBook {
             total_borrowed: 500,
             defaults: 0,
+            active: true,
+            total_repaid: 0,
         });
         books.completed_paths.push(VictoryRecord {
             path_id: "lawful_house".to_string(),

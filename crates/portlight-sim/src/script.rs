@@ -205,6 +205,27 @@ fn dispatch(
             entry.encounter = Some(snapshot::from_encounter(&step));
             Ok(())
         }
+        "train" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageTrain);
+            }
+            session.train_crew(&tokens[1])
+        }
+        "recruit" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageRecruit);
+            }
+            session.recruit_companion(&tokens[1])
+        }
+        "skill" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageSkill);
+            }
+            session.spend_skill_point(&tokens[1])
+        }
         other => Err(SimError::UnknownCommand(other.to_string())),
     }
 }

@@ -1,0 +1,2 @@
+new merchant Ada 3 corsairs_rest
+recruit red_tomas

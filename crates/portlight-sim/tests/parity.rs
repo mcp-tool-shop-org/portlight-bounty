@@ -292,3 +292,68 @@ fn goldens_guard_the_checklist_paths() {
         );
     }
 }
+
+/// Area 3 scripts. `golden_scripts_match_python` also runs every file in
+/// `parity/scripts`; this test names the four that must exist.
+const AREA3_SCRIPTS: &[&str] = &[
+    "train_crew",
+    "recruit_companion",
+    "skill_spend",
+    "milestone_reached",
+];
+
+#[test]
+fn area3_goldens_cover_training_recruiting_skill_and_milestone() {
+    let root = parity_root();
+    for stem in AREA3_SCRIPTS {
+        let script_path = root.join("scripts").join(format!("{stem}.txt"));
+        let golden_path = root.join("golden").join(format!("{stem}.json"));
+        let script = fs::read_to_string(&script_path)
+            .unwrap_or_else(|_| panic!("missing {}", script_path.display()));
+        let golden: Value = serde_json::from_str(
+            &fs::read_to_string(&golden_path)
+                .unwrap_or_else(|_| panic!("missing {}", golden_path.display())),
+        )
+        .expect("golden json");
+        let got = serde_json::to_value(run_script(&script)).expect("snapshot");
+        close(&golden, &got, stem);
+    }
+    let train = load_golden("train_crew");
+    assert!(train["captain"]["learned_styles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|style| style == "la_destreza"));
+    let recruit = load_golden("recruit_companion");
+    assert_eq!(
+        recruit["captain"]["companions"][0]["companion_id"],
+        "red_tomas"
+    );
+    let skill = load_golden("skill_spend");
+    assert_eq!(skill["captain"]["skills"][0]["id"], "blacksmith");
+    assert_eq!(skill["captain"]["skills"][0]["level"], 1);
+    let milestone = load_golden("milestone_reached");
+    let ids: Vec<_> = milestone["milestones"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|item| item["milestone_id"].as_str())
+        .collect();
+    assert!(ids.contains(&"foothold_standing_established"));
+    assert!(ids.contains(&"lawful_credible_trust"));
+    let families: Vec<_> = milestone["milestones"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|item| item["family"].as_str())
+        .collect();
+    assert!(families.contains(&"regional_foothold"));
+    assert!(families.contains(&"lawful_house"));
+    assert!(!families.contains(&"commercial_empire"));
+    assert!(!ids.contains(&"commercial_finance"));
+}
+
+fn load_golden(stem: &str) -> Value {
+    let path = parity_root().join("golden").join(format!("{stem}.json"));
+    serde_json::from_str(&fs::read_to_string(path).expect("golden")).expect("json")
+}

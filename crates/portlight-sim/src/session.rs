@@ -19,13 +19,15 @@
 //! all met.
 //!
 //! Not included: infrastructure purchases, credit draws, insurance policies,
-//! sea-culture enrichment, narrative, and milestone evaluation. Those books
-//! stay empty until those systems run. A fulfilled contract is written by
-//! [`Session::sell`], which also calls [`Session::complete_contract`]'s
-//! settlement. A second `complete_contract` does not pay again. Callers do
-//! not use [`Session::books_mut`] for that. The new-game board is drawn from
+//! sea-culture enrichment, and narrative. Those books stay empty until those
+//! systems run. A fulfilled contract is written by [`Session::sell`], which
+//! also calls [`Session::complete_contract`]'s settlement. A second
+//! `complete_contract` does not pay again. Callers do not use
+//! [`Session::books_mut`] for that. The new-game board is drawn from
 //! `Random(seed + 7919)` and then the session RNG is restored. Arrival and
-//! later in-port refreshes draw the session stream.
+//! later in-port refreshes draw the session stream. Milestone evaluation runs
+//! at the end of [`Session::advance`], in the same place as
+//! `GameSession._evaluate_campaign`, before victory closure.
 //!
 //! A pending pirate duel still freezes [`Session::advance`] until
 //! [`Session::duel`] or [`Session::resolve_pending_duel`] clears it. That is
@@ -41,6 +43,7 @@ use std::path::{Path, PathBuf};
 
 use crate::campaign::{self, CompletedContract, HouseBooks, VictoryPathStatus};
 use crate::combat::{self, CombatRound, CombatantState};
+use crate::companion;
 use crate::content::{self, PricingDef};
 use crate::contracts;
 use crate::duel::{self, DuelOutcome};
@@ -55,6 +58,8 @@ use crate::pyrand::PyRandom;
 use crate::reputation::{self, record_trade_outcome};
 use crate::save::{self, LoadedGame};
 use crate::ship::wage_bill;
+use crate::skills;
+use crate::training;
 use crate::util::py_trunc;
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
 use crate::world::new_game;
@@ -1239,6 +1244,8 @@ impl Session {
         };
         turn.contracts = contracts;
         reprice_all(&mut self.world);
+        let milestones = campaign::evaluate_milestones(&self.world, &self.books);
+        self.books.completed_milestones.extend(milestones);
         let newly = campaign::evaluate_victory_closure(&self.world, &self.books);
         self.books.completed_paths.extend(newly);
         Ok(turn)
@@ -1350,6 +1357,84 @@ impl Session {
         let saved = std::mem::replace(&mut self.rng, PyRandom::from_seed(seed + 7919));
         self.refresh_contract_board();
         self.rng = saved;
+    }
+
+    /// Learn a fighting style at the current port (`portlight train`).
+    ///
+    /// On success the style's silver is spent, then the clock advances
+    /// `training_days` times through [`Session::advance`].
+    pub fn train_crew(&mut self, style_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToTrain)?;
+        if let Some(error) = training::can_learn_style(
+            &self.world.captain.learned_styles,
+            &[],
+            self.world.captain.silver,
+            &port_id,
+            style_id,
+        ) {
+            return Err(SimError::Rejected(error));
+        }
+        let days = training::learn_style(
+            &mut self.world.captain.learned_styles,
+            &mut self.world.captain.silver,
+            style_id,
+        );
+        for _ in 0..days {
+            self.advance()?;
+        }
+        Ok(())
+    }
+
+    /// Recruit a companion at the current port (`portlight recruit`).
+    ///
+    /// Hire cost is subtracted here, then [`companion::recruit`] records the
+    /// companion. That is the CLI order.
+    pub fn recruit_companion(&mut self, companion_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToRecruit)?;
+        if let Some(error) = companion::can_recruit(&self.world.captain, companion_id, &port_id) {
+            return Err(SimError::Rejected(error));
+        }
+        let cost = content::content()
+            .companion(companion_id)
+            .expect("can_recruit accepted this companion")
+            .hire_cost;
+        self.world.captain.silver -= cost;
+        companion::recruit(&mut self.world.captain, companion_id, self.world.day);
+        Ok(())
+    }
+
+    /// Learn the next level of a skill (`portlight learn-skill`).
+    ///
+    /// Python spends silver and training days, not a separate point currency.
+    /// This method is that spend: pay the level cost, then advance one session
+    /// day per training day.
+    pub fn spend_skill_point(&mut self, skill_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToLearnSkill)?;
+        let skill_id = skills::resolve_skill_id(skill_id);
+        if let Some(error) = skills::can_learn_skill(
+            &self.world.captain.skills,
+            self.world.captain.silver,
+            &port_id,
+            &skill_id,
+        ) {
+            return Err(SimError::Rejected(error));
+        }
+        let (silver, days) = skills::learn_skill(
+            &mut self.world.captain.skills,
+            self.world.captain.silver,
+            &skill_id,
+        );
+        self.world.captain.silver = silver;
+        for _ in 0..days {
+            self.advance()?;
+        }
+        Ok(())
     }
 }
 
@@ -1478,88 +1563,14 @@ fn set_role_count(ship: &mut crate::model::Ship, role: &str, count: i64) {
     }
 }
 
-const OFFICER_NAMES: &[(&str, &[&str])] = &[
-    (
-        "Mediterranean",
-        &[
-            "Marco",
-            "Sophia",
-            "Nikolaos",
-            "Fatima",
-            "Lorenzo",
-            "Valentina",
-            "Dimitri",
-            "Leila",
-            "Antonio",
-            "Isadora",
-        ],
-    ),
-    (
-        "North Atlantic",
-        &[
-            "William",
-            "Margaret",
-            "Henrik",
-            "Brigitte",
-            "Duncan",
-            "Eleanor",
-            "Gunnar",
-            "Astrid",
-            "Thomas",
-            "Catherine",
-        ],
-    ),
-    (
-        "West Africa",
-        &[
-            "Kwame", "Aminata", "Kofi", "Adaeze", "Sekou", "Mariam", "Ousmane", "Aisha", "Yusuf",
-            "Zara",
-        ],
-    ),
-    (
-        "East Indies",
-        &[
-            "Rajan", "Mei Lin", "Arjun", "Suki", "Bao", "Padma", "Kenji", "Lien", "Haruki",
-            "Kamala",
-        ],
-    ),
-    (
-        "South Seas",
-        &[
-            "Tane", "Moana", "Rangi", "Leilani", "Makoa", "Aroha", "Koa", "Nalani", "Ioane", "Mele",
-        ],
-    ),
-];
-
-const OFFICER_TRAITS: &[&str] = &[
-    "loyal",
-    "cautious",
-    "bold",
-    "superstitious",
-    "sharp-eyed",
-    "steady",
-    "hot-tempered",
-    "quiet",
-    "gregarious",
-    "shrewd",
-    "resourceful",
-    "fearless",
-    "meticulous",
-    "jovial",
-    "stoic",
-];
-
 fn officer_name(region: &str, rng: &mut PyRandom) -> String {
-    let pool = OFFICER_NAMES
-        .iter()
-        .find(|(name, _)| *name == region)
-        .map(|(_, pool)| *pool)
-        .unwrap_or(OFFICER_NAMES[0].1);
-    pool[rng.choice_index(pool.len())].to_string()
+    let pool = content::content().officer_pool(region);
+    pool[rng.choice_index(pool.len())].clone()
 }
 
 fn officer_trait(rng: &mut PyRandom) -> String {
-    OFFICER_TRAITS[rng.choice_index(OFFICER_TRAITS.len())].to_string()
+    let traits = &content::content().officer_names.traits;
+    traits[rng.choice_index(traits.len())].clone()
 }
 
 #[cfg(test)]
