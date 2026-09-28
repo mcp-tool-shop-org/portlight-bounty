@@ -8,7 +8,10 @@ use crate::campaign::{self, HouseBooks, VictoryPathStatus};
 use crate::content;
 use crate::duel::{DuelOutcome, DuelRound};
 use crate::economy::TradeReceipt;
-use crate::model::{ActiveContract, Captain, ContractOutcome, Standing, Voyage, World};
+use crate::model::{
+    ActiveContract, ActivePolicy, BrokerOffice, Captain, ContractOutcome, CreditState,
+    InfrastructureRecord, InsuranceClaim, OwnedLicense, Standing, Voyage, WarehouseLease, World,
+};
 use crate::session::EncounterStep;
 use crate::voyage::VoyageEvent;
 
@@ -22,6 +25,8 @@ pub struct Snapshot {
     pub pending_duel: Option<DuelSnap>,
     pub ports: Vec<PortSnap>,
     pub victory: Vec<VictoryPathStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub infrastructure: Option<InfraSnap>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub milestones: Vec<MilestoneSnap>,
     pub log: Vec<LogEntry>,
@@ -308,6 +313,9 @@ pub struct LogEntry {
     /// `tick_sea_captain_agency` result, when that command ran.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agency: Option<AgencyLog>,
+    /// Infrastructure and credit messages from this day.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub notes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -361,6 +369,7 @@ impl LogEntry {
             contracts: Vec::new(),
             encounter: None,
             agency: None,
+            notes: Vec::new(),
         }
     }
 }
@@ -733,7 +742,108 @@ fn voyage_snap(voyage: &Voyage) -> VoyageSnap {
     }
 }
 
-pub fn capture(world: &World, trade_seq: u64, books: &HouseBooks, log: Vec<LogEntry>) -> Snapshot {
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct InfraSnap {
+    pub warehouses: Vec<WarehouseSnap>,
+    pub brokers: Vec<BrokerSnap>,
+    pub licenses: Vec<LicenseSnap>,
+    pub policies: Vec<PolicySnap>,
+    pub claims: Vec<ClaimSnap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credit: Option<CreditSnap>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct WarehouseSnap {
+    pub id: String,
+    pub port_id: String,
+    pub tier: String,
+    pub capacity: i64,
+    pub lease_cost: i64,
+    pub upkeep_per_day: i64,
+    pub inventory: Vec<LotSnap>,
+    pub opened_day: i64,
+    pub upkeep_paid_through: i64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct LotSnap {
+    pub good_id: String,
+    pub quantity: i64,
+    pub acquired_port: String,
+    pub acquired_region: String,
+    pub acquired_day: i64,
+    pub deposited_day: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct BrokerSnap {
+    pub region: String,
+    pub tier: String,
+    pub opened_day: i64,
+    pub upkeep_paid_through: i64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct LicenseSnap {
+    pub license_id: String,
+    pub purchased_day: i64,
+    pub upkeep_paid_through: i64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct PolicySnap {
+    pub id: String,
+    pub spec_id: String,
+    pub family: String,
+    pub scope: String,
+    pub purchased_day: i64,
+    pub coverage_pct: f64,
+    pub coverage_cap: i64,
+    pub premium_paid: i64,
+    pub target_id: String,
+    pub claims_made: i64,
+    pub total_paid_out: i64,
+    pub active: bool,
+    pub voyage_origin: String,
+    pub voyage_destination: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ClaimSnap {
+    pub policy_id: String,
+    pub day: i64,
+    pub incident_type: String,
+    pub loss_value: i64,
+    pub payout: i64,
+    pub denied: bool,
+    pub denial_reason: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct CreditSnap {
+    pub tier: String,
+    pub credit_limit: i64,
+    pub outstanding: i64,
+    pub interest_accrued: i64,
+    pub last_interest_day: i64,
+    pub next_due_day: i64,
+    pub defaults: i64,
+    pub total_borrowed: i64,
+    pub total_repaid: i64,
+    pub active: bool,
+}
+
+pub fn capture(
+    world: &World,
+    trade_seq: u64,
+    books: &HouseBooks,
+    infra: &InfrastructureRecord,
+    log: Vec<LogEntry>,
+) -> Snapshot {
     Snapshot {
         seed: world.seed,
         day: world.day,
@@ -767,6 +877,7 @@ pub fn capture(world: &World, trade_seq: u64, books: &HouseBooks, log: Vec<LogEn
             })
             .collect(),
         victory: campaign::compute_victory_progress(world, books),
+        infrastructure: infra.is_visible().then(|| infra_snap(infra)),
         milestones: books
             .completed_milestones
             .iter()
@@ -781,6 +892,121 @@ pub fn capture(world: &World, trade_seq: u64, books: &HouseBooks, log: Vec<LogEn
             })
             .collect(),
         log,
+    }
+}
+
+fn infra_snap(infra: &InfrastructureRecord) -> InfraSnap {
+    InfraSnap {
+        warehouses: infra.warehouses.iter().map(warehouse_snap).collect(),
+        brokers: infra.brokers.iter().map(broker_snap).collect(),
+        licenses: infra.licenses.iter().map(license_snap).collect(),
+        policies: infra.policies.iter().map(policy_snap).collect(),
+        claims: infra.claims.iter().map(claim_snap).collect(),
+        credit: infra
+            .credit
+            .as_ref()
+            .filter(credit_visible)
+            .map(credit_snap),
+    }
+}
+
+fn credit_visible(credit: &&CreditState) -> bool {
+    credit.active
+        || credit.outstanding != 0
+        || credit.interest_accrued != 0
+        || credit.defaults != 0
+        || credit.total_borrowed != 0
+        || credit.total_repaid != 0
+}
+
+fn warehouse_snap(lease: &WarehouseLease) -> WarehouseSnap {
+    WarehouseSnap {
+        id: lease.id.clone(),
+        port_id: lease.port_id.clone(),
+        tier: lease.tier.clone(),
+        capacity: lease.capacity,
+        lease_cost: lease.lease_cost,
+        upkeep_per_day: lease.upkeep_per_day,
+        inventory: lease.inventory.iter().map(lot_snap).collect(),
+        opened_day: lease.opened_day,
+        upkeep_paid_through: lease.upkeep_paid_through,
+        active: lease.active,
+    }
+}
+
+fn lot_snap(lot: &crate::model::StoredLot) -> LotSnap {
+    LotSnap {
+        good_id: lot.good_id.clone(),
+        quantity: lot.quantity,
+        acquired_port: lot.acquired_port.clone(),
+        acquired_region: lot.acquired_region.clone(),
+        acquired_day: lot.acquired_day,
+        deposited_day: lot.deposited_day,
+    }
+}
+
+fn broker_snap(broker: &BrokerOffice) -> BrokerSnap {
+    BrokerSnap {
+        region: broker.region.clone(),
+        tier: broker.tier.clone(),
+        opened_day: broker.opened_day,
+        upkeep_paid_through: broker.upkeep_paid_through,
+        active: broker.active,
+    }
+}
+
+fn license_snap(license: &OwnedLicense) -> LicenseSnap {
+    LicenseSnap {
+        license_id: license.license_id.clone(),
+        purchased_day: license.purchased_day,
+        upkeep_paid_through: license.upkeep_paid_through,
+        active: license.active,
+    }
+}
+
+fn policy_snap(policy: &ActivePolicy) -> PolicySnap {
+    PolicySnap {
+        id: policy.id.clone(),
+        spec_id: policy.spec_id.clone(),
+        family: policy.family.clone(),
+        scope: policy.scope.clone(),
+        purchased_day: policy.purchased_day,
+        coverage_pct: policy.coverage_pct,
+        coverage_cap: policy.coverage_cap,
+        premium_paid: policy.premium_paid,
+        target_id: policy.target_id.clone(),
+        claims_made: policy.claims_made,
+        total_paid_out: policy.total_paid_out,
+        active: policy.active,
+        voyage_origin: policy.voyage_origin.clone(),
+        voyage_destination: policy.voyage_destination.clone(),
+    }
+}
+
+fn claim_snap(claim: &InsuranceClaim) -> ClaimSnap {
+    ClaimSnap {
+        policy_id: claim.policy_id.clone(),
+        day: claim.day,
+        incident_type: claim.incident_type.clone(),
+        loss_value: claim.loss_value,
+        payout: claim.payout,
+        denied: claim.denied,
+        denial_reason: claim.denial_reason.clone(),
+    }
+}
+
+fn credit_snap(credit: &CreditState) -> CreditSnap {
+    CreditSnap {
+        tier: credit.tier.clone(),
+        credit_limit: credit.credit_limit,
+        outstanding: credit.outstanding,
+        interest_accrued: credit.interest_accrued,
+        last_interest_day: credit.last_interest_day,
+        next_due_day: credit.next_due_day,
+        defaults: credit.defaults,
+        total_borrowed: credit.total_borrowed,
+        total_repaid: credit.total_repaid,
+        active: credit.active,
     }
 }
 
@@ -828,6 +1054,7 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
         pending_duel: None,
         ports: Vec::new(),
         victory: Vec::new(),
+        infrastructure: None,
         milestones: Vec::new(),
         log,
     }

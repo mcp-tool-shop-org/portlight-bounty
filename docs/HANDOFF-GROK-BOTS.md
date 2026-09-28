@@ -354,7 +354,7 @@ Inside your own area, do the work in this order:
 
 As you add catalogs, tick them off:
 - [x] `contracts`
-- [ ] `infrastructure`
+- [x] `infrastructure`
 - [x] `armor`
 - [x] `melee_weapons`
 - [x] `ranged_weapons`
@@ -369,9 +369,9 @@ As you add catalogs, tick them off:
 - [ ] `culture`
 - [ ] `sea_culture`
 - [ ] `port_politics`
-- [ ] `port_institutions`
-- [ ] `port_institutions_east`
-- [ ] `cross_port_networks`
+- [x] `port_institutions`
+- [x] `port_institutions_east`
+- [x] `cross_port_networks`
 - [x] `campaign`
 
 ---

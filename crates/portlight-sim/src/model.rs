@@ -639,3 +639,145 @@ impl Default for ContractBoard {
         }
     }
 }
+
+/// Cargo sitting in a warehouse. Provenance is kept; cost basis is not.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredLot {
+    pub good_id: String,
+    pub quantity: i64,
+    pub acquired_port: String,
+    pub acquired_region: String,
+    pub acquired_day: i64,
+    pub deposited_day: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WarehouseLease {
+    pub id: String,
+    pub port_id: String,
+    pub tier: String,
+    pub capacity: i64,
+    pub lease_cost: i64,
+    pub upkeep_per_day: i64,
+    pub inventory: Vec<StoredLot>,
+    pub opened_day: i64,
+    pub upkeep_paid_through: i64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrokerOffice {
+    pub region: String,
+    pub tier: String,
+    pub opened_day: i64,
+    pub upkeep_paid_through: i64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwnedLicense {
+    pub license_id: String,
+    pub purchased_day: i64,
+    pub upkeep_paid_through: i64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ActivePolicy {
+    pub id: String,
+    pub spec_id: String,
+    pub family: String,
+    pub scope: String,
+    pub purchased_day: i64,
+    pub coverage_pct: f64,
+    pub coverage_cap: i64,
+    pub premium_paid: i64,
+    pub target_id: String,
+    pub claims_made: i64,
+    pub total_paid_out: i64,
+    pub active: bool,
+    pub voyage_origin: String,
+    pub voyage_destination: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InsuranceClaim {
+    pub policy_id: String,
+    pub day: i64,
+    pub incident_type: String,
+    pub loss_value: i64,
+    pub payout: i64,
+    pub denied: bool,
+    pub denial_reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CreditState {
+    pub tier: String,
+    pub credit_limit: i64,
+    pub outstanding: i64,
+    pub interest_accrued: i64,
+    pub last_interest_day: i64,
+    pub next_due_day: i64,
+    pub defaults: i64,
+    pub total_borrowed: i64,
+    pub total_repaid: i64,
+    pub active: bool,
+}
+
+impl Default for CreditState {
+    fn default() -> Self {
+        Self {
+            tier: "none".to_string(),
+            credit_limit: 0,
+            outstanding: 0,
+            interest_accrued: 0,
+            last_interest_day: 0,
+            next_due_day: 0,
+            defaults: 0,
+            total_borrowed: 0,
+            total_repaid: 0,
+            active: false,
+        }
+    }
+}
+
+/// Live warehouses, brokers, licenses, policies, claims, and credit.
+///
+/// Victory reads the projection on [`crate::campaign::HouseBooks`]. Session
+/// methods write that projection themselves.
+#[derive(Debug, Clone, Default)]
+pub struct InfrastructureRecord {
+    pub warehouses: Vec<WarehouseLease>,
+    pub brokers: Vec<BrokerOffice>,
+    pub licenses: Vec<OwnedLicense>,
+    pub policies: Vec<ActivePolicy>,
+    pub claims: Vec<InsuranceClaim>,
+    pub credit: Option<CreditState>,
+}
+
+impl InfrastructureRecord {
+    /// True when a snapshot should show this record.
+    ///
+    /// `tick_credit` materializes an inactive zero account. That account is
+    /// not player-visible and is omitted, matching a game that has not opened
+    /// credit.
+    pub fn is_visible(&self) -> bool {
+        if !self.warehouses.is_empty()
+            || !self.brokers.is_empty()
+            || !self.licenses.is_empty()
+            || !self.policies.is_empty()
+            || !self.claims.is_empty()
+        {
+            return true;
+        }
+        self.credit.as_ref().is_some_and(|credit| {
+            credit.active
+                || credit.outstanding != 0
+                || credit.interest_accrued != 0
+                || credit.defaults != 0
+                || credit.total_borrowed != 0
+                || credit.total_repaid != 0
+        })
+    }
+}

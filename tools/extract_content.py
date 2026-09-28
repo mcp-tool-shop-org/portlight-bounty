@@ -13,19 +13,74 @@ from __future__ import annotations
 import json
 import os
 import sys
+from enum import Enum
 
 from portlight.content.armor import ARMOR
+from portlight.content.cross_port_networks import ALL_CROSS_PORT_RELATIONSHIPS
 from portlight.content.contracts import TEMPLATES
 from portlight.content.factions import FACTIONS, PIRATE_CAPTAINS
 from portlight.content.fighting_styles import FIGHTING_STYLES
 from portlight.content.goods import GOODS
+from portlight.content.infrastructure import (
+    BROKER_SPECS,
+    CREDIT_TIERS,
+    LICENSE_CATALOG,
+    POLICY_CATALOG,
+    PORT_WAREHOUSE_TIERS,
+    WAREHOUSE_TIERS,
+)
 from portlight.content.melee_weapons import MELEE_WEAPONS
+from portlight.content.port_institutions import PORT_INSTITUTIONAL_PROFILES
+from portlight.content.port_institutions_east import EAST_PROFILES
 from portlight.content.ports import PORTS
 from portlight.content.ranged_weapons import RANGED_WEAPONS
 from portlight.content.routes import ROUTES
 from portlight.content.seasons import SEASONAL_PROFILES
 from portlight.content.ships import SHIPS
 from portlight.engine.captain_identity import CAPTAIN_TEMPLATES
+
+
+def _plain(value):
+    """JSON-ready view of a dataclass, enum, or container."""
+    if isinstance(value, Enum):
+        return value.value
+    if hasattr(value, "__dataclass_fields__"):
+        return {name: _plain(getattr(value, name)) for name in value.__dataclass_fields__}
+    if isinstance(value, dict):
+        return {
+            _plain(key) if not isinstance(key, str) else key: _plain(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_plain(item) for item in value]
+    return value
+
+
+def _infrastructure():
+    brokers = []
+    for (region, _tier), spec in BROKER_SPECS.items():
+        row = _plain(spec)
+        row["region"] = region
+        brokers.append(row)
+    return {
+        "warehouse_tiers": [_plain(spec) for spec in WAREHOUSE_TIERS.values()],
+        "port_warehouse_tiers": {
+            port_id: [tier.value for tier in tiers]
+            for port_id, tiers in PORT_WAREHOUSE_TIERS.items()
+        },
+        "brokers": brokers,
+        "licenses": [_plain(spec) for spec in LICENSE_CATALOG.values()],
+        "policies": [_plain(spec) for spec in POLICY_CATALOG.values()],
+        "credit_tiers": [_plain(spec) for spec in CREDIT_TIERS.values()],
+    }
+
+
+def _profiles(profiles):
+    return [_plain(profile) for profile in profiles.values()]
+
+
+def _networks():
+    return [_plain(rel) for rel in ALL_CROSS_PORT_RELATIONSHIPS]
 
 
 def skills_payload() -> dict:
@@ -446,6 +501,16 @@ def main() -> None:
         "officer_names": officer_names_payload(),
         "style_masters": style_masters_payload(),
         "campaign": campaign_payload(),
+        "infrastructure": _infrastructure(),
+        "port_institutions": _profiles(
+            {
+                port_id: profile
+                for port_id, profile in PORT_INSTITUTIONAL_PROFILES.items()
+                if port_id not in EAST_PROFILES
+            }
+        ),
+        "port_institutions_east": _profiles(EAST_PROFILES),
+        "cross_port_networks": _networks(),
     }
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "crates", "portlight-sim", "data", "content.json")

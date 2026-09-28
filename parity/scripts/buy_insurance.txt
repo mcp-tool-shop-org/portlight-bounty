@@ -1,0 +1,3 @@
+# Buy basic hull cover for the next voyage.
+new merchant Ada 4 porto_novo
+buy_insurance hull_basic

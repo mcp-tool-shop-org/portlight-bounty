@@ -381,3 +381,33 @@ fn load_golden(stem: &str) -> Value {
     let path = parity_root().join("golden").join(format!("{stem}.json"));
     serde_json::from_str(&fs::read_to_string(path).expect("golden")).expect("json")
 }
+
+#[test]
+fn infrastructure_goldens_cover_warehouse_broker_credit_and_insurance() {
+    let warehouse = load_golden("buy_warehouse");
+    let wh = &warehouse["infrastructure"]["warehouses"][0];
+    assert_eq!(wh["tier"], "depot");
+    assert_eq!(wh["port_id"], "porto_novo");
+    assert_eq!(wh["upkeep_paid_through"], 4);
+    assert_eq!(wh["active"], true);
+    let broker = load_golden("buy_broker");
+    assert_eq!(
+        broker["infrastructure"]["brokers"][0]["region"],
+        "Mediterranean"
+    );
+    assert_eq!(broker["infrastructure"]["brokers"][0]["tier"], "local");
+    let credit = load_golden("take_credit");
+    assert_eq!(credit["infrastructure"]["credit"]["total_borrowed"], 100);
+    assert!(
+        credit["infrastructure"]["credit"]["total_repaid"]
+            .as_i64()
+            .unwrap_or(0)
+            > 0
+    );
+    let insurance = load_golden("buy_insurance");
+    assert_eq!(
+        insurance["infrastructure"]["policies"][0]["spec_id"],
+        "hull_basic"
+    );
+    assert_eq!(insurance["infrastructure"]["policies"][0]["family"], "hull");
+}

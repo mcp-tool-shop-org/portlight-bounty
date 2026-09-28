@@ -31,7 +31,6 @@ from portlight.engine.economy import (
     tick_markets,
     work_docks,
 )
-from portlight.engine.models import VoyageStatus
 from portlight.engine.reputation import (
     record_inspection_outcome,
     record_port_arrival,
@@ -55,7 +54,35 @@ from portlight.engine.contracts import (
     resolve_completed,
     tick_contracts,
 )
-from portlight.engine.infrastructure import InfrastructureState
+from portlight.content.infrastructure import (
+    BrokerTier,
+    CreditTier,
+    WarehouseTier,
+    available_tiers,
+    get_broker_spec,
+    get_credit_spec,
+    get_license_spec,
+    get_policy_spec,
+    get_tier_spec,
+)
+from portlight.engine.models import PortFeature, VoyageStatus
+from portlight.engine.infrastructure import (
+    InfrastructureState,
+    deposit_cargo,
+    draw_credit,
+    emergency_loan,
+    expire_voyage_policies,
+    lease_warehouse,
+    open_broker_office,
+    open_credit_line,
+    purchase_license,
+    purchase_policy,
+    repay_credit,
+    resolve_claim,
+    tick_credit,
+    tick_infrastructure,
+    withdraw_cargo,
+)
 from portlight.engine.duel import resolve_duel
 from portlight.engine.reputation import get_service_modifier
 from portlight.engine.voyage import advance_day, arrive, depart
@@ -310,6 +337,18 @@ def do_advance(state, entry: dict) -> None:
             outcome,
         ))
     attach_contracts(entry, rows)
+    for outcome in outcomes:
+        if outcome.outcome_type in ("expired", "abandoned"):
+            loss_value = abs(outcome.trust_delta) * 50 + abs(outcome.standing_delta) * 30
+            resolve_claim(
+                state["infra"],
+                world.captain,
+                "contract_failure",
+                loss_value,
+                world.day,
+                contract_id=outcome.contract_id,
+            )
+    notes = apply_upkeep(state)
     if world.voyage.status != VoyageStatus.AT_SEA:
         shocks = tick_markets(world.ports, days=1, rng=rng)
         world.day += 1
@@ -342,13 +381,17 @@ def do_advance(state, entry: dict) -> None:
                     abs(event.silver_delta),
                     seized,
                 )
+            settle_event_insurance(state, event, world.voyage.destination_id)
         if world.voyage.status == VoyageStatus.ARRIVED:
             arrive(world)
+            notes.extend(expire_voyage_policies(state["infra"]))
             port = world.ports.get(world.voyage.destination_id)
             if port is not None:
                 record_port_arrival(world.captain.standing, world.day, port.id, port.region)
                 refresh_board(state, port)
         entry["events"] = [event_view(event) for event in events]
+    if notes:
+        entry["notes"] = notes
     reprice_all(world)
     milestone_newly = evaluate_milestones(MILESTONE_SPECS, session_snapshot(state))
     if milestone_newly:
@@ -442,6 +485,52 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         do_duel(state, stances, entry)
     elif cmd == "resolve_duel":
         do_resolve_duel(state, entry)
+    elif cmd == "buy_infrastructure":
+        if len(tokens) < 2:
+            raise ScriptError(
+                "Usage: buy_infrastructure warehouse <tier> | broker <region> <tier> | license <id> | dry_dock [ship]"
+            )
+        do_buy_infrastructure(state, tokens[1], tokens[2:])
+    elif cmd == "take_credit":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: take_credit <tier> <amount>")
+        try:
+            amount = int(tokens[2])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[2]}") from exc
+        do_take_credit(state, tokens[1], amount)
+    elif cmd == "buy_insurance":
+        if len(tokens) < 2 or len(tokens) > 5:
+            raise ScriptError("Usage: buy_insurance <policy_id> [target_id] [origin] [destination]")
+        target = tokens[2] if len(tokens) > 2 else ""
+        origin = tokens[3] if len(tokens) > 3 else ""
+        destination = tokens[4] if len(tokens) > 4 else ""
+        do_buy_insurance(state, tokens[1], target, origin, destination)
+    elif cmd == "deposit":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: deposit <good> <qty>")
+        try:
+            qty = int(tokens[2])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[2]}") from exc
+        do_deposit(state, tokens[1], qty)
+    elif cmd == "withdraw":
+        if len(tokens) < 3 or len(tokens) > 4:
+            raise ScriptError("Usage: withdraw <good> <qty> [source_port]")
+        try:
+            qty = int(tokens[2])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[2]}") from exc
+        source = tokens[3] if len(tokens) > 3 else None
+        do_withdraw(state, tokens[1], qty, source)
+    elif cmd == "repay_credit":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: repay_credit <amount>")
+        try:
+            amount = int(tokens[1])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        do_repay_credit(state, amount)
     elif cmd == "accept_contract":
         if len(tokens) != 2:
             raise ScriptError("Usage: accept_contract <offer_id>")
@@ -1537,11 +1626,365 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             "evidence": completion.evidence,
             "family": spec.family.value if spec else "",
         })
+    infra = _infra_view(state["infra"])
+    if infra is not None:
+        logged = snap.pop("log")
+        snap["infrastructure"] = infra
+        snap["log"] = logged
     if milestones:
         logged = snap.pop("log")
         snap["milestones"] = milestones
         snap["log"] = logged
     return snap
+
+
+def credit_rank(tier: str) -> int:
+    return {
+        "merchant_line": 1,
+        "house_credit": 2,
+        "premier_commercial": 3,
+    }.get(tier, 0)
+
+
+def insurance_region(world) -> str:
+    if world.voyage.status == VoyageStatus.AT_SEA:
+        dest = world.ports.get(world.voyage.destination_id)
+        return dest.region if dest else "Mediterranean"
+    port = current_port(world)
+    return port.region if port else "Mediterranean"
+
+
+def apply_upkeep(state) -> list[str]:
+    """Infrastructure and credit ticks, before the in-port or at-sea split."""
+    world = state["world"]
+    infra = state["infra"]
+    notes: list[str] = []
+    for message in tick_infrastructure(infra, world.captain, world.day):
+        notes.append(message)
+        if "seized" in message.lower():
+            resolve_claim(infra, world.captain, "cargo_damage", 100, world.day)
+    for message in tick_credit(infra, world.captain, world.day):
+        notes.append(message)
+        if "DEFAULT" in message:
+            world.captain.standing.commercial_trust = max(
+                0, world.captain.standing.commercial_trust - 15
+            )
+    return notes
+
+
+def settle_event_insurance(state, event, destination: str) -> None:
+    world = state["world"]
+    incident = event.event_type.value
+    if event.hull_delta < 0:
+        resolve_claim(
+            state["infra"],
+            world.captain,
+            incident,
+            abs(event.hull_delta) * 3,
+            world.day,
+            voyage_destination=destination,
+        )
+    if event.cargo_lost:
+        for good_id, qty in event.cargo_lost.items():
+            good = GOODS.get(good_id)
+            if good is None:
+                continue
+            category = good.category.value if hasattr(good.category, "value") else str(good.category)
+            resolve_claim(
+                state["infra"],
+                world.captain,
+                incident,
+                good.base_price * qty,
+                world.day,
+                cargo_category=category,
+                voyage_destination=destination,
+            )
+
+
+def _engine_result(result) -> None:
+    if isinstance(result, str):
+        raise ScriptError(result)
+
+
+def do_buy_infrastructure(state, kind: str, args: list[str]) -> None:
+    if kind == "warehouse":
+        if not args:
+            raise ScriptError(
+                "Usage: buy_infrastructure warehouse <tier> | broker <region> <tier> | license <id> | dry_dock [ship]"
+            )
+        do_lease_warehouse(state, args[0])
+    elif kind == "broker":
+        if len(args) < 2:
+            raise ScriptError(
+                "Usage: buy_infrastructure warehouse <tier> | broker <region> <tier> | license <id> | dry_dock [ship]"
+            )
+        do_open_broker(state, args[0], args[1])
+    elif kind == "license":
+        if not args:
+            raise ScriptError(
+                "Usage: buy_infrastructure warehouse <tier> | broker <region> <tier> | license <id> | dry_dock [ship]"
+            )
+        do_purchase_license(state, args[0])
+    elif kind == "dry_dock":
+        do_dry_dock(state, args[0] if args else None)
+    else:
+        raise ScriptError(
+            "Usage: buy_infrastructure warehouse <tier> | broker <region> <tier> | license <id> | dry_dock [ship]"
+        )
+
+
+def do_lease_warehouse(state, tier: str) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to lease a warehouse")
+    try:
+        spec = get_tier_spec(WarehouseTier(tier))
+    except ValueError as exc:
+        raise ScriptError(f"Unknown warehouse tier: {tier}") from exc
+    offered = {item.tier.value for item in available_tiers(port.id)}
+    if tier not in offered:
+        raise ScriptError(f"{tier} warehouse is not available at {port.name}")
+    _engine_result(lease_warehouse(state["infra"], world.captain, port.id, spec, world.day))
+
+
+def do_open_broker(state, region: str, tier: str) -> None:
+    try:
+        spec = get_broker_spec(region, BrokerTier(tier))
+    except ValueError as exc:
+        raise ScriptError(f"Unknown broker: {region} {tier}") from exc
+    if spec is None:
+        raise ScriptError(f"Unknown broker: {region} {tier}")
+    _engine_result(open_broker_office(state["infra"], state["world"].captain, region, spec, state["world"].day))
+
+
+def do_purchase_license(state, license_id: str) -> None:
+    spec = get_license_spec(license_id)
+    if spec is None:
+        raise ScriptError(f"Unknown license: {license_id}")
+    world = state["world"]
+    _engine_result(purchase_license(state["infra"], world.captain, spec, world.captain.standing, world.day))
+
+
+def do_dry_dock(state, ship_name: str | None) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    if PortFeature.SHIPYARD not in port.features:
+        raise ScriptError(f"{port.name} has no shipyard")
+    if ship_name:
+        raise ScriptError(f"No ship named '{ship_name}' docked at this port")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    template = SHIPS.get(ship.template_id)
+    if template is None:
+        raise ScriptError(f"Unknown ship: {ship.template_id}")
+    degradation = template.hull_max - ship.hull_max
+    if degradation <= 0:
+        raise ScriptError("Ship hull is not degraded")
+    service = get_service_modifier(world.captain.standing, port.id)
+    cost_per = max(1, int(port.repair_cost * service * 5))
+    cost = degradation * cost_per
+    if cost > world.captain.silver:
+        raise ScriptError(
+            f"Need {cost} silver for dry dock ({degradation} points at {cost_per}/point), have {world.captain.silver}"
+        )
+    world.captain.silver -= cost
+    ship.hull_max = template.hull_max
+    ship.hull = min(ship.hull + degradation, ship.hull_max)
+
+
+def do_take_credit(state, tier: str, amount: int) -> None:
+    world = state["world"]
+    if tier == "emergency":
+        _engine_result(emergency_loan(world.captain, amount))
+        return
+    try:
+        spec = get_credit_spec(CreditTier(tier))
+    except ValueError as exc:
+        raise ScriptError(f"Unknown credit tier: {tier}") from exc
+    if spec is None:
+        raise ScriptError(f"Unknown credit tier: {tier}")
+    credit = state["infra"].credit
+    if credit is None:
+        current_rank, active, current_name = 0, False, "none"
+    else:
+        current_rank = credit_rank(credit.tier.value)
+        active = credit.active
+        current_name = credit.tier.value
+    requested = credit_rank(tier)
+    if active and current_rank > requested:
+        raise ScriptError(f"Already have {current_name} or better")
+    if not active or current_rank < requested:
+        err = open_credit_line(state["infra"], spec, world.captain.standing, world.day)
+        if err:
+            raise ScriptError(err)
+    elif amount == 0:
+        raise ScriptError(f"Already have {current_name} or better")
+    if amount > 0:
+        err = draw_credit(state["infra"], world.captain, amount)
+        if err:
+            raise ScriptError(err)
+
+
+def do_buy_insurance(state, policy_id: str, target: str, origin: str, destination: str) -> None:
+    spec = get_policy_spec(policy_id)
+    if spec is None:
+        raise ScriptError(f"Unknown policy: {policy_id}")
+    world = state["world"]
+    region = insurance_region(world)
+    heat = world.captain.standing.customs_heat.get(region, 0)
+    _engine_result(purchase_policy(
+        state["infra"],
+        world.captain,
+        spec,
+        world.day,
+        heat=heat,
+        target_id=target,
+        voyage_origin=origin,
+        voyage_destination=destination,
+    ))
+
+
+def do_deposit(state, good_id: str, qty: int) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to deposit")
+    _engine_result(deposit_cargo(state["infra"], port.id, world.captain, good_id, qty, world.day))
+
+
+def do_withdraw(state, good_id: str, qty: int, source: str | None) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to withdraw")
+    _engine_result(withdraw_cargo(state["infra"], port.id, world.captain, good_id, qty, source))
+
+
+def do_repay_credit(state, amount: int) -> None:
+    err = repay_credit(state["infra"], state["world"].captain, amount)
+    if err:
+        raise ScriptError(err)
+
+
+def _credit_visible(credit) -> bool:
+    if credit is None:
+        return False
+    return bool(
+        credit.active
+        or credit.outstanding
+        or credit.interest_accrued
+        or credit.defaults
+        or credit.total_borrowed
+        or credit.total_repaid
+    )
+
+
+def _infra_view(infra) -> dict | None:
+    if not (
+        infra.warehouses
+        or infra.brokers
+        or infra.licenses
+        or infra.policies
+        or infra.claims
+        or _credit_visible(infra.credit)
+    ):
+        return None
+    view = {
+        "warehouses": [
+            {
+                "id": lease.id,
+                "port_id": lease.port_id,
+                "tier": lease.tier.value,
+                "capacity": lease.capacity,
+                "lease_cost": lease.lease_cost,
+                "upkeep_per_day": lease.upkeep_per_day,
+                "inventory": [
+                    {
+                        "good_id": lot.good_id,
+                        "quantity": lot.quantity,
+                        "acquired_port": lot.acquired_port,
+                        "acquired_region": lot.acquired_region,
+                        "acquired_day": lot.acquired_day,
+                        "deposited_day": lot.deposited_day,
+                    }
+                    for lot in lease.inventory
+                ],
+                "opened_day": lease.opened_day,
+                "upkeep_paid_through": lease.upkeep_paid_through,
+                "active": lease.active,
+            }
+            for lease in infra.warehouses
+        ],
+        "brokers": [
+            {
+                "region": broker.region,
+                "tier": broker.tier.value,
+                "opened_day": broker.opened_day,
+                "upkeep_paid_through": broker.upkeep_paid_through,
+                "active": broker.active,
+            }
+            for broker in infra.brokers
+        ],
+        "licenses": [
+            {
+                "license_id": lic.license_id,
+                "purchased_day": lic.purchased_day,
+                "upkeep_paid_through": lic.upkeep_paid_through,
+                "active": lic.active,
+            }
+            for lic in infra.licenses
+        ],
+        "policies": [
+            {
+                "id": policy.id,
+                "spec_id": policy.spec_id,
+                "family": policy.family.value,
+                "scope": policy.scope.value,
+                "purchased_day": policy.purchased_day,
+                "coverage_pct": policy.coverage_pct,
+                "coverage_cap": policy.coverage_cap,
+                "premium_paid": policy.premium_paid,
+                "target_id": policy.target_id,
+                "claims_made": policy.claims_made,
+                "total_paid_out": policy.total_paid_out,
+                "active": policy.active,
+                "voyage_origin": policy.voyage_origin,
+                "voyage_destination": policy.voyage_destination,
+            }
+            for policy in infra.policies
+        ],
+        "claims": [
+            {
+                "policy_id": claim.policy_id,
+                "day": claim.day,
+                "incident_type": claim.incident_type,
+                "loss_value": claim.loss_value,
+                "payout": claim.payout,
+                "denied": claim.denied,
+                "denial_reason": claim.denial_reason,
+            }
+            for claim in infra.claims
+        ],
+    }
+    if _credit_visible(infra.credit):
+        credit = infra.credit
+        view["credit"] = {
+            "tier": credit.tier.value,
+            "credit_limit": credit.credit_limit,
+            "outstanding": credit.outstanding,
+            "interest_accrued": credit.interest_accrued,
+            "last_interest_day": credit.last_interest_day,
+            "next_due_day": credit.next_due_day,
+            "defaults": credit.defaults,
+            "total_borrowed": credit.total_borrowed,
+            "total_repaid": credit.total_repaid,
+            "active": credit.active,
+        }
+    return view
 
 
 def victory_view(paths) -> list:

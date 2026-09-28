@@ -109,9 +109,9 @@ pub struct VictoryRecord {
 
 /// Ledger, contracts, and infrastructure the victory evaluators read.
 ///
-/// Buy and sell update the ledger. The contract, license, warehouse, broker,
-/// insurance, and credit systems are not ported, so those lists stay empty
-/// until something records them here.
+/// Buy and sell update the ledger. `Session::buy_infrastructure`,
+/// `Session::take_credit`, and `Session::buy_insurance` write the warehouse,
+/// broker, license, policy, and credit records. Victory reads those fields.
 #[derive(Debug, Clone, Default)]
 pub struct HouseBooks {
     pub total_buys: i64,

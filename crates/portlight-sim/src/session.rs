@@ -18,9 +18,10 @@
 //! captain's modifiers, and records a victory path when its requirements are
 //! all met.
 //!
-//! Not included: infrastructure purchases, credit draws, insurance policies,
-//! sea-culture enrichment, and narrative. Those books stay empty until those
-//! systems run. A fulfilled contract is written by [`Session::sell`], which
+//! [`Session::buy_infrastructure`], [`Session::take_credit`], and
+//! [`Session::buy_insurance`] write warehouses, brokers, licenses, policies,
+//! and credit onto the house books. Sea-culture enrichment and narrative are
+//! not on this type. A fulfilled contract is written by [`Session::sell`], which
 //! also calls [`Session::complete_contract`]'s settlement. A second
 //! `complete_contract` does not pay again. Callers do not use
 //! [`Session::books_mut`] for that. The new-game board is drawn from
@@ -41,7 +42,10 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::campaign::{self, CompletedContract, HouseBooks, VictoryPathStatus};
+use crate::campaign::{
+    self, ActiveLicense, BrokerSite, CompletedContract, CreditBook, HouseBooks, VictoryPathStatus,
+    WarehouseSite,
+};
 use crate::combat::{self, CombatRound, CombatantState};
 use crate::companion;
 use crate::content::{self, PricingDef};
@@ -50,10 +54,11 @@ use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::encounter::{self, BoardingOutcome, EncounterState};
 use crate::error::SimError;
+use crate::infrastructure::{self, dry_dock_service};
 use crate::memory;
 use crate::model::{
-    ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, PendingDuel, VoyageStatus,
-    World,
+    ActiveContract, Contract, ContractBoard, ContractOutcome, InfrastructureRecord, Officer,
+    PendingDuel, VoyageStatus, World,
 };
 use crate::naval::{self, NavalRound};
 use crate::pyrand::PyRandom;
@@ -73,6 +78,8 @@ pub struct Turn {
     pub shocks: Vec<String>,
     /// Contracts that expired on this day. Empty when nothing lapsed.
     pub contracts: Vec<ContractOutcome>,
+    /// Infrastructure and credit messages from this day.
+    pub notes: Vec<String>,
 }
 
 /// A sale, plus any contracts that sale completed.
@@ -147,6 +154,7 @@ pub struct Session {
     encounter: Option<EncounterState>,
     player_combat: Option<CombatantState>,
     opponent_combat: Option<CombatantState>,
+    infra: InfrastructureRecord,
 }
 
 impl Session {
@@ -174,6 +182,7 @@ impl Session {
             encounter: None,
             player_combat: None,
             opponent_combat: None,
+            infra: InfrastructureRecord::default(),
         };
         session.refresh_new_game_board();
         Ok(session)
@@ -200,6 +209,7 @@ impl Session {
                 player: self.player_combat.as_ref(),
                 opponent: self.opponent_combat.as_ref(),
             },
+            &self.infra,
         )
     }
 
@@ -235,13 +245,30 @@ impl Session {
             encounter: loaded.encounter,
             player_combat: loaded.player_combat,
             opponent_combat: loaded.opponent_combat,
+            infra: loaded.infra,
         };
         reprice_all(&mut session.world);
+        session.project_books();
         Ok(session)
     }
 
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    /// Warehouses, brokers, licenses, policies, claims, and credit.
+    pub fn infrastructure(&self) -> &InfrastructureRecord {
+        &self.infra
+    }
+
+    /// Install a record and project it onto the house books.
+    ///
+    /// Purchases go through [`Session::buy_infrastructure`],
+    /// [`Session::take_credit`], and [`Session::buy_insurance`]. Load uses
+    /// this after reading a version-12 `infrastructure` object.
+    pub fn adopt_infrastructure(&mut self, infra: InfrastructureRecord) {
+        self.infra = infra;
+        self.project_books();
     }
 
     /// Offers, accepted work, and resolved outcomes. Save writes this board.
@@ -1195,16 +1222,176 @@ impl Session {
         step
     }
 
+    /// Buy a warehouse, broker office, license, or dry-dock the current ship.
+    ///
+    /// `kind` is `warehouse`, `broker`, `license`, or `dry_dock`.
+    /// Warehouse args are `[tier]`. Broker args are `[region, tier]`.
+    /// License args are `[id]`. Dry dock takes an optional fleet ship name;
+    /// a name searches the fleet, which this slice does not own.
+    pub fn buy_infrastructure(&mut self, kind: &str, args: &[&str]) -> Result<(), SimError> {
+        match kind {
+            "warehouse" => {
+                let tier = args.first().copied().unwrap_or("");
+                if tier.is_empty() {
+                    return Err(SimError::UsageBuyInfrastructure);
+                }
+                self.lease_warehouse(tier)
+            }
+            "broker" => {
+                if args.len() < 2 {
+                    return Err(SimError::UsageBuyInfrastructure);
+                }
+                self.open_broker(args[0], args[1])
+            }
+            "license" => {
+                let id = args.first().copied().unwrap_or("");
+                if id.is_empty() {
+                    return Err(SimError::UsageBuyInfrastructure);
+                }
+                self.purchase_license(id)
+            }
+            "dry_dock" => self.dry_dock(args.first().copied()),
+            _ => Err(SimError::UsageBuyInfrastructure),
+        }
+    }
+
+    /// Open `tier` when the player does not already hold it, then draw `amount`.
+    ///
+    /// `tier` `emergency` is `emergency_loan` and does not open a line.
+    /// `amount` of 0 only opens the line.
+    pub fn take_credit(&mut self, tier: &str, amount: i64) -> Result<i64, SimError> {
+        if tier == "emergency" {
+            let received = infrastructure::emergency_loan(&mut self.world.captain, amount)?;
+            return Ok(received);
+        }
+        let Some(spec) = content::content().credit_tier(tier).cloned() else {
+            return Err(SimError::Rejected(format!("Unknown credit tier: {tier}")));
+        };
+        let (current_rank, active, current_name) = self
+            .infra
+            .credit
+            .as_ref()
+            .map(|credit| {
+                (
+                    credit_rank(&credit.tier),
+                    credit.active,
+                    credit.tier.clone(),
+                )
+            })
+            .unwrap_or((0, false, "none".to_string()));
+        let requested = credit_rank(tier);
+        if active && current_rank > requested {
+            return Err(SimError::Rejected(format!(
+                "Already have {current_name} or better"
+            )));
+        }
+        if !active || current_rank < requested {
+            let day = self.world.day;
+            infrastructure::open_credit_line(
+                &mut self.infra,
+                &spec,
+                &self.world.captain.standing,
+                day,
+            )?;
+        } else if amount == 0 {
+            return Err(SimError::Rejected(format!(
+                "Already have {current_name} or better"
+            )));
+        }
+        if amount > 0 {
+            infrastructure::draw_credit(&mut self.infra, &mut self.world.captain, amount)?;
+        }
+        self.project_books();
+        Ok(amount)
+    }
+
+    /// `repay_credit`. Interest is paid before principal.
+    pub fn repay_credit(&mut self, amount: i64) -> Result<(), SimError> {
+        infrastructure::repay_credit(&mut self.infra, &mut self.world.captain, amount)?;
+        self.project_books();
+        Ok(())
+    }
+
+    /// Buy `policy_id`. Heat is the customs heat of the current port, or of
+    /// the voyage destination while at sea.
+    pub fn buy_insurance(
+        &mut self,
+        policy_id: &str,
+        target_id: &str,
+        voyage_origin: &str,
+        voyage_destination: &str,
+    ) -> Result<(), SimError> {
+        let Some(spec) = content::content().policy(policy_id).cloned() else {
+            return Err(SimError::Rejected(format!("Unknown policy: {policy_id}")));
+        };
+        let region = self.insurance_region();
+        let heat = self.world.captain.standing.heat_of(&region);
+        let day = self.world.day;
+        infrastructure::purchase_policy(
+            &mut self.infra,
+            &mut self.world.captain,
+            &spec,
+            day,
+            heat,
+            target_id,
+            voyage_origin,
+            voyage_destination,
+        )?;
+        self.project_books();
+        Ok(())
+    }
+
+    /// Move cargo from the ship into the warehouse at the current port.
+    pub fn deposit_cargo(&mut self, good_id: &str, quantity: i64) -> Result<i64, SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Rejected("Must be docked to deposit".to_string()))?;
+        let day = self.world.day;
+        infrastructure::deposit_cargo(
+            &mut self.infra,
+            &port_id,
+            &mut self.world.captain,
+            good_id,
+            quantity,
+            day,
+        )
+    }
+
+    /// Move cargo from the warehouse at the current port onto the ship.
+    pub fn withdraw_cargo(
+        &mut self,
+        good_id: &str,
+        quantity: i64,
+        source_port: Option<&str>,
+    ) -> Result<i64, SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Rejected("Must be docked to withdraw".to_string()))?;
+        infrastructure::withdraw_cargo(
+            &mut self.infra,
+            &port_id,
+            &mut self.world.captain,
+            good_id,
+            quantity,
+            source_port,
+        )
+    }
+
     /// One session day. In port this ticks markets. At sea this sails.
     ///
-    /// A pending duel returns no events and does not spend the day. Call
-    /// [`Session::duel`] or [`Session::resolve_pending_duel`] first.
+    /// Order matches `GameSession.advance`: reputation, contract expiry and
+    /// the contract-failure claim, infrastructure upkeep, credit, then the
+    /// in-port day or the sea day. A pending duel returns no events and does
+    /// not spend the day. Call [`Session::duel`] or
+    /// [`Session::resolve_pending_duel`] first.
     pub fn advance(&mut self) -> Result<Turn, SimError> {
         reputation::tick_reputation(&mut self.world.captain.standing);
         // Same position as GameSession.advance: after the reputation tick,
-        // before the in-port day or the sea day. The captain is omitted, so a
-        // default does not record a breach.
+        // before infrastructure upkeep. The captain is omitted, so a default
+        // does not record a breach.
         let contracts = self.expire_contracts();
+        self.file_contract_claims(&contracts);
+        let mut notes = self.tick_upkeep();
         let mut turn = if self.world.voyage.status != VoyageStatus::AtSea {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
             self.world.day += 1;
@@ -1222,12 +1409,15 @@ impl Session {
                 events: Vec::new(),
                 shocks,
                 contracts: Vec::new(),
+                notes,
             }
         } else {
             let events = voyage::advance_day(&mut self.world, &mut self.rng)?;
-            record_sea_consequences(&mut self.world, &events);
+            let destination = self.world.voyage.destination_id.clone();
+            record_sea_consequences(&mut self.world, &mut self.infra, &events, &destination);
             if self.world.voyage.status == VoyageStatus::Arrived {
                 let _ = voyage::arrive(&mut self.world);
+                notes.extend(infrastructure::expire_voyage_policies(&mut self.infra));
                 if let Some(port) = self.world.port(&self.world.voyage.destination_id) {
                     let port_id = port.id.clone();
                     let region = port.region.clone();
@@ -1243,9 +1433,11 @@ impl Session {
                 events,
                 shocks: Vec::new(),
                 contracts: Vec::new(),
+                notes,
             }
         };
         turn.contracts = contracts;
+        self.project_books();
         reprice_all(&mut self.world);
         let milestones = campaign::evaluate_milestones(&self.world, &self.books);
         self.books.completed_milestones.extend(milestones);
@@ -1315,6 +1507,230 @@ impl Session {
             self.note_contract_on_books(outcome);
         }
         outcomes
+    }
+
+    /// `GameSession.advance` files a `contract_failure` claim for expiry and
+    /// abandonment before infrastructure upkeep.
+    fn file_contract_claims(&mut self, outcomes: &[ContractOutcome]) {
+        let day = self.world.day;
+        for outcome in outcomes {
+            if outcome.outcome_type != "expired" && outcome.outcome_type != "abandoned" {
+                continue;
+            }
+            let loss = outcome.trust_delta.abs() * 50 + outcome.standing_delta.abs() * 30;
+            infrastructure::resolve_claim(
+                &mut self.infra,
+                &mut self.world.captain,
+                "contract_failure",
+                loss,
+                day,
+                "",
+                &outcome.contract_id,
+                "",
+            );
+        }
+    }
+
+    fn tick_upkeep(&mut self) -> Vec<String> {
+        let day = self.world.day;
+        let mut notes =
+            infrastructure::tick_infrastructure(&mut self.infra, &mut self.world.captain, day);
+        let seized = notes
+            .iter()
+            .any(|message| message.to_lowercase().contains("seized"));
+        if seized {
+            infrastructure::resolve_claim(
+                &mut self.infra,
+                &mut self.world.captain,
+                "cargo_damage",
+                100,
+                day,
+                "",
+                "",
+                "",
+            );
+        }
+        let credit_notes =
+            infrastructure::tick_credit(&mut self.infra, &mut self.world.captain, day);
+        for message in &credit_notes {
+            if message.contains("DEFAULT") {
+                let trust = self.world.captain.standing.commercial_trust;
+                self.world.captain.standing.commercial_trust = 0.max(trust - 15);
+            }
+        }
+        notes.extend(credit_notes);
+        notes
+    }
+
+    fn project_books(&mut self) {
+        self.books.warehouses = self
+            .infra
+            .warehouses
+            .iter()
+            .map(|lease| WarehouseSite {
+                port_id: lease.port_id.clone(),
+                active: lease.active,
+            })
+            .collect();
+        self.books.brokers = self
+            .infra
+            .brokers
+            .iter()
+            .map(|broker| BrokerSite {
+                region: broker.region.clone(),
+                active: broker.active,
+                tier: broker.tier.clone(),
+            })
+            .collect();
+        self.books.licenses = self
+            .infra
+            .licenses
+            .iter()
+            .map(|license| ActiveLicense {
+                license_id: license.license_id.clone(),
+                active: license.active,
+            })
+            .collect();
+        self.books.policies = self.infra.policies.len() as i64;
+        self.books.claims_paid = self
+            .infra
+            .claims
+            .iter()
+            .filter(|claim| !claim.denied && claim.payout > 0)
+            .count() as i64;
+        self.books.credit = self.infra.credit.as_ref().and_then(|credit| {
+            let visible = credit.active
+                || credit.outstanding != 0
+                || credit.interest_accrued != 0
+                || credit.defaults != 0
+                || credit.total_borrowed != 0
+                || credit.total_repaid != 0;
+            if !visible {
+                return None;
+            }
+            Some(CreditBook {
+                total_borrowed: credit.total_borrowed,
+                defaults: credit.defaults,
+                active: credit.active,
+                total_repaid: credit.total_repaid,
+            })
+        });
+    }
+
+    fn lease_warehouse(&mut self, tier: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Rejected("Must be docked to lease a warehouse".to_string()))?;
+        let catalog = content::content();
+        let Some(spec) = catalog.warehouse_tier(tier).cloned() else {
+            return Err(SimError::Rejected(format!(
+                "Unknown warehouse tier: {tier}"
+            )));
+        };
+        if !catalog
+            .port_warehouse_tiers(&port_id)
+            .iter()
+            .any(|offered| offered == tier)
+        {
+            let name = self
+                .world
+                .port(&port_id)
+                .map(|port| port.name.clone())
+                .unwrap_or(port_id);
+            return Err(SimError::Rejected(format!(
+                "{tier} warehouse is not available at {name}"
+            )));
+        }
+        let day = self.world.day;
+        infrastructure::lease_warehouse(
+            &mut self.infra,
+            &mut self.world.captain,
+            &port_id,
+            &spec,
+            day,
+        )?;
+        self.project_books();
+        Ok(())
+    }
+
+    fn open_broker(&mut self, region: &str, tier: &str) -> Result<(), SimError> {
+        let Some(spec) = content::content().broker(region, tier).cloned() else {
+            return Err(SimError::Rejected(format!(
+                "Unknown broker: {region} {tier}"
+            )));
+        };
+        let day = self.world.day;
+        infrastructure::open_broker_office(
+            &mut self.infra,
+            &mut self.world.captain,
+            region,
+            &spec,
+            day,
+        )?;
+        self.project_books();
+        Ok(())
+    }
+
+    fn purchase_license(&mut self, license_id: &str) -> Result<(), SimError> {
+        let Some(spec) = content::content().license(license_id).cloned() else {
+            return Err(SimError::Rejected(format!("Unknown license: {license_id}")));
+        };
+        let day = self.world.day;
+        let standing = self.world.captain.standing.clone();
+        infrastructure::purchase_license(
+            &mut self.infra,
+            &mut self.world.captain,
+            &spec,
+            &standing,
+            day,
+        )?;
+        self.project_books();
+        Ok(())
+    }
+
+    fn dry_dock(&mut self, ship_name: Option<&str>) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Rejected("Must be docked".to_string()))?;
+        let port_name = self
+            .world
+            .port(&port_id)
+            .map(|port| port.name.clone())
+            .unwrap_or_else(|| port_id.clone());
+        let has_yard = self
+            .world
+            .port(&port_id)
+            .is_some_and(|port| port.has_feature("shipyard"));
+        if !has_yard {
+            return Err(SimError::Rejected(format!("{port_name} has no shipyard")));
+        }
+        if let Some(name) = ship_name {
+            return Err(SimError::Rejected(format!(
+                "No ship named '{name}' docked at this port"
+            )));
+        }
+        let repair = self
+            .world
+            .port(&port_id)
+            .map(|port| port.repair_cost)
+            .unwrap_or(0);
+        let service = dry_dock_service(&self.world.captain.standing, &port_id);
+        infrastructure::dry_dock(&mut self.world.captain, repair, service)?;
+        Ok(())
+    }
+
+    fn insurance_region(&self) -> String {
+        if self.world.voyage.status == VoyageStatus::AtSea {
+            return self
+                .world
+                .port(&self.world.voyage.destination_id)
+                .map(|port| port.region.clone())
+                .unwrap_or_else(|| "Mediterranean".to_string());
+        }
+        current_port_id(&self.world)
+            .and_then(|port_id| self.world.port(port_id))
+            .map(|port| port.region.clone())
+            .unwrap_or_else(|| "Mediterranean".to_string())
     }
 
     fn note_contract_on_books(&mut self, outcome: &ContractOutcome) {
@@ -1545,7 +1961,21 @@ fn current_port_id(world: &World) -> Option<&str> {
     }
 }
 
-fn record_sea_consequences(world: &mut World, events: &[VoyageEvent]) {
+fn credit_rank(tier: &str) -> i64 {
+    match tier {
+        "merchant_line" => 1,
+        "house_credit" => 2,
+        "premier_commercial" => 3,
+        _ => 0,
+    }
+}
+
+fn record_sea_consequences(
+    world: &mut World,
+    infra: &mut InfrastructureRecord,
+    events: &[VoyageEvent],
+    destination: &str,
+) {
     let region = world
         .port(&world.voyage.destination_id)
         .map(|port| port.region.clone())
@@ -1564,6 +1994,46 @@ fn record_sea_consequences(world: &mut World, events: &[VoyageEvent]) {
                 seized,
             );
         }
+        settle_event_insurance(world, infra, event, destination, day);
+    }
+}
+
+fn settle_event_insurance(
+    world: &mut World,
+    infra: &mut InfrastructureRecord,
+    event: &VoyageEvent,
+    destination: &str,
+    day: i64,
+) {
+    let incident = event.event_type.as_str();
+    if event.hull_delta < 0 {
+        infrastructure::resolve_claim(
+            infra,
+            &mut world.captain,
+            incident,
+            event.hull_delta.abs() * 3,
+            day,
+            "",
+            "",
+            destination,
+        );
+    }
+    for (good_id, qty) in &event.cargo_lost {
+        let Some(good) = content::content().good(good_id) else {
+            continue;
+        };
+        let category = good.category.clone();
+        let value = good.base_price * qty;
+        infrastructure::resolve_claim(
+            infra,
+            &mut world.captain,
+            incident,
+            value,
+            day,
+            &category,
+            "",
+            destination,
+        );
     }
 }
 
@@ -2024,5 +2494,98 @@ mod tests {
                 .map(|enc| enc.enemy_captain_id.as_str()),
             Some("the_butcher")
         );
+    }
+
+    #[test]
+    fn purchases_write_the_house_books() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.buy_infrastructure("warehouse", &["depot"]).unwrap();
+        session
+            .buy_infrastructure("broker", &["Mediterranean", "local"])
+            .unwrap();
+        session.buy_insurance("hull_basic", "", "", "").unwrap();
+        session.take_credit("merchant_line", 80).unwrap();
+        let books = session.books();
+        assert_eq!(books.warehouses.len(), 1);
+        assert!(books.warehouses[0].active);
+        assert_eq!(books.warehouses[0].port_id, "porto_novo");
+        assert_eq!(books.brokers[0].region, "Mediterranean");
+        assert_eq!(books.brokers[0].tier, "local");
+        assert_eq!(books.policies, 1);
+        assert_eq!(books.claims_paid, 0);
+        let credit = books.credit.as_ref().unwrap();
+        assert_eq!(credit.total_borrowed, 80);
+        assert_eq!(credit.defaults, 0);
+        assert!(credit.active);
+        assert_eq!(credit.total_repaid, 0);
+        let oceanic = session
+            .victory()
+            .into_iter()
+            .find(|path| path.path_id == "oceanic_reach")
+            .unwrap();
+        let foothold = oceanic
+            .requirements
+            .iter()
+            .find(|req| req.description.contains("foothold"))
+            .unwrap();
+        assert_eq!(foothold.status, "missing");
+        assert!(foothold.detail.contains("EI warehouse: no"));
+    }
+
+    #[test]
+    fn claims_paid_counts_only_paid_claims() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.buy_insurance("hull_basic", "", "", "").unwrap();
+        infrastructure::resolve_claim(
+            &mut session.infra,
+            &mut session.world.captain,
+            "storm",
+            80,
+            session.world.day,
+            "",
+            "",
+            "",
+        );
+        session.project_books();
+        assert_eq!(session.books().claims_paid, 1);
+        session.buy_insurance("cargo_standard", "", "", "").unwrap();
+        infrastructure::resolve_claim(
+            &mut session.infra,
+            &mut session.world.captain,
+            "inspection",
+            100,
+            session.world.day,
+            "contraband",
+            "",
+            "",
+        );
+        session.project_books();
+        assert_eq!(session.books().claims_paid, 1);
+        assert_eq!(session.infrastructure().claims.len(), 2);
+        session.advance().unwrap();
+        let ids: Vec<_> = session
+            .books()
+            .completed_milestones
+            .iter()
+            .map(|row| row.milestone_id.as_str())
+            .collect();
+        assert!(ids.contains(&"finance_first_insurance"));
+    }
+
+    #[test]
+    fn credit_draw_opens_the_finance_milestone() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.take_credit("merchant_line", 80).unwrap();
+        session.advance().unwrap();
+        let ids: Vec<_> = session
+            .books()
+            .completed_milestones
+            .iter()
+            .map(|row| row.milestone_id.as_str())
+            .collect();
+        assert!(ids.contains(&"finance_credit_opened"));
+        let credit = session.books().credit.as_ref().unwrap();
+        assert!(credit.active);
+        assert_eq!(credit.total_repaid, 0);
     }
 }

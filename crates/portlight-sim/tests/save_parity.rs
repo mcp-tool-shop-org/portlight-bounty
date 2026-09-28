@@ -4,10 +4,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::process;
 
-use portlight_sim::campaign::{
-    ActiveLicense, BrokerSite, CompletedContract, CreditBook, VictoryRecord, WarehouseSite,
+use portlight_sim::campaign::{CompletedContract, VictoryRecord};
+use portlight_sim::model::{
+    ActivePolicy, BrokerOffice, CreditState, InfrastructureRecord, OwnedLicense, VoyageStatus,
+    WarehouseLease,
 };
-use portlight_sim::model::VoyageStatus;
 use portlight_sim::snapshot;
 use portlight_sim::Session;
 use serde_json::Value;
@@ -67,6 +68,7 @@ fn snap(session: &Session) -> Value {
         session.world(),
         session.trade_seq(),
         session.books(),
+        session.infrastructure(),
         Vec::new(),
     ))
     .unwrap()
@@ -94,26 +96,6 @@ fn played() -> Session {
             family: Some("luxury_discreet".to_string()),
             summary: "Silk moved quietly".to_string(),
         });
-        books.warehouses.push(WarehouseSite {
-            port_id: "porto_novo".to_string(),
-            active: true,
-        });
-        books.brokers.push(BrokerSite {
-            region: "East Indies".to_string(),
-            tier: "local".to_string(),
-            active: true,
-        });
-        books.licenses.push(ActiveLicense {
-            license_id: "ei_access_charter".to_string(),
-            active: true,
-        });
-        books.policies = 1;
-        books.credit = Some(CreditBook {
-            total_borrowed: 500,
-            defaults: 0,
-            active: true,
-            total_repaid: 0,
-        });
         books.completed_paths.push(VictoryRecord {
             path_id: "lawful_house".to_string(),
             completion_day: 4,
@@ -121,6 +103,62 @@ fn played() -> Session {
             is_first: true,
         });
     }
+    session.adopt_infrastructure(InfrastructureRecord {
+        warehouses: vec![WarehouseLease {
+            id: "b21e3e594ab0".to_string(),
+            port_id: "porto_novo".to_string(),
+            tier: "depot".to_string(),
+            capacity: 20,
+            lease_cost: 50,
+            upkeep_per_day: 1,
+            inventory: Vec::new(),
+            opened_day: 1,
+            upkeep_paid_through: 1,
+            active: true,
+        }],
+        brokers: vec![BrokerOffice {
+            region: "East Indies".to_string(),
+            tier: "local".to_string(),
+            opened_day: 1,
+            upkeep_paid_through: 1,
+            active: true,
+        }],
+        licenses: vec![OwnedLicense {
+            license_id: "ei_access_charter".to_string(),
+            purchased_day: 1,
+            upkeep_paid_through: 1,
+            active: true,
+        }],
+        policies: vec![ActivePolicy {
+            id: "ec4d4839a293".to_string(),
+            spec_id: "hull_basic".to_string(),
+            family: "hull".to_string(),
+            scope: "next_voyage".to_string(),
+            purchased_day: 1,
+            coverage_pct: 0.5,
+            coverage_cap: 150,
+            premium_paid: 40,
+            target_id: String::new(),
+            claims_made: 0,
+            total_paid_out: 0,
+            active: true,
+            voyage_origin: String::new(),
+            voyage_destination: String::new(),
+        }],
+        claims: Vec::new(),
+        credit: Some(CreditState {
+            tier: "house_credit".to_string(),
+            credit_limit: 800,
+            outstanding: 500,
+            interest_accrued: 0,
+            last_interest_day: 1,
+            next_due_day: 11,
+            defaults: 0,
+            total_borrowed: 500,
+            total_repaid: 0,
+            active: true,
+        }),
+    });
     session
 }
 
@@ -383,5 +421,57 @@ fn legacy_filename_moves_to_the_default_slot() {
     assert_eq!(loaded.world().seed, 7);
     assert!(saves.join("default.json").exists());
     assert!(!saves.join("portlight_save.json").exists());
+    let _ = fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn python_v12_infrastructure_round_trips() {
+    let root = parity_root();
+    let python: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("saves/infrastructure_v12.json")).unwrap(),
+    )
+    .unwrap();
+    let loaded = Session::load(&root, "infrastructure_v12").unwrap().unwrap();
+    let infra = loaded.infrastructure();
+    assert_eq!(infra.warehouses.len(), 1);
+    assert_eq!(infra.warehouses[0].id, "b21e3e594ab0");
+    assert_eq!(infra.warehouses[0].tier, "depot");
+    assert_eq!(infra.warehouses[0].port_id, "porto_novo");
+    assert_eq!(infra.warehouses[0].capacity, 20);
+    assert_eq!(infra.warehouses[0].upkeep_paid_through, 1);
+    assert_eq!(infra.brokers[0].region, "Mediterranean");
+    assert_eq!(infra.brokers[0].tier, "local");
+    assert_eq!(infra.policies[0].id, "ec4d4839a293");
+    assert_eq!(infra.policies[0].spec_id, "hull_basic");
+    assert!((infra.policies[0].coverage_pct - 0.5).abs() < 1e-9);
+    assert_eq!(infra.claims.len(), 1);
+    assert!(!infra.claims[0].denied);
+    assert_eq!(infra.claims[0].payout, 40);
+    let credit = infra.credit.as_ref().unwrap();
+    assert_eq!(credit.tier, "merchant_line");
+    assert_eq!(credit.credit_limit, 300);
+    assert_eq!(credit.outstanding, 100);
+    assert_eq!(credit.total_borrowed, 100);
+    assert!(credit.active);
+    assert_eq!(loaded.books().claims_paid, 1);
+    assert_eq!(loaded.books().policies, 1);
+    assert_eq!(loaded.books().credit.as_ref().unwrap().total_borrowed, 100);
+    assert!(loaded.books().credit.as_ref().unwrap().active);
+
+    let dir = scratch("infra-v12");
+    let mut loaded = loaded;
+    loaded.save(&dir, "infrastructure_v12").unwrap();
+    let rust: Value = serde_json::from_str(
+        &fs::read_to_string(dir.join("saves").join("infrastructure_v12.json")).unwrap(),
+    )
+    .unwrap();
+    close(
+        &python["infrastructure"],
+        &rust["infrastructure"],
+        "infrastructure",
+    );
+    let again = Session::load(&dir, "infrastructure_v12").unwrap().unwrap();
+    assert_eq!(again.infrastructure().warehouses[0].id, "b21e3e594ab0");
+    assert_eq!(again.books().claims_paid, 1);
     let _ = fs::remove_dir_all(&dir);
 }

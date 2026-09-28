@@ -1,0 +1,7 @@
+# Lease a depot and pay its daily upkeep across later days.
+new merchant Ada 7 porto_novo
+buy_infrastructure warehouse depot
+advance
+advance
+advance
+advance

@@ -416,6 +416,141 @@ pub struct CampaignCatalog {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct WarehouseTierDef {
+    pub tier: String,
+    pub name: String,
+    pub capacity: i64,
+    pub lease_cost: i64,
+    pub upkeep_per_day: i64,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BrokerOfficeDef {
+    pub region: String,
+    pub tier: String,
+    pub name: String,
+    pub purchase_cost: i64,
+    pub upkeep_per_day: i64,
+    pub board_quality_bonus: f64,
+    pub market_signal_bonus: f64,
+    pub trade_term_modifier: f64,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct LicenseDef {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub region_scope: Option<String>,
+    pub purchase_cost: i64,
+    pub upkeep_per_day: i64,
+    pub required_trust_tier: String,
+    pub required_standing: i64,
+    pub required_heat_max: Option<i64>,
+    pub required_broker_tier: Option<String>,
+    pub effects: BTreeMap<String, f64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PolicyDef {
+    pub id: String,
+    pub family: String,
+    pub name: String,
+    pub description: String,
+    pub premium: i64,
+    pub coverage_pct: f64,
+    pub coverage_cap: i64,
+    pub scope: String,
+    pub covered_risks: Vec<String>,
+    pub exclusions: Vec<String>,
+    pub heat_max: Option<i64>,
+    pub heat_premium_mult: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CreditTierDef {
+    pub tier: String,
+    pub name: String,
+    pub credit_limit: i64,
+    pub interest_rate: f64,
+    pub interest_period: i64,
+    pub required_trust_tier: String,
+    pub required_standing: i64,
+    pub required_heat_max: Option<i64>,
+    pub required_license: Option<String>,
+    pub description: String,
+}
+
+/// Catalog from `content/infrastructure.py`: warehouses, brokers, licenses,
+/// insurance policies, and credit tiers.
+#[derive(Debug, Clone, Deserialize)]
+pub struct InfrastructureDef {
+    pub warehouse_tiers: Vec<WarehouseTierDef>,
+    pub port_warehouse_tiers: BTreeMap<String, Vec<String>>,
+    pub brokers: Vec<BrokerOfficeDef>,
+    pub licenses: Vec<LicenseDef>,
+    pub policies: Vec<PolicyDef>,
+    pub credit_tiers: Vec<CreditTierDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct InstitutionSiteDef {
+    pub id: String,
+    pub name: String,
+    pub port_id: String,
+    pub institution_type: String,
+    pub description: String,
+    pub function: String,
+    pub political_leaning: String,
+    pub npc_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PortNpcDef {
+    pub id: String,
+    pub name: String,
+    pub title: String,
+    pub port_id: String,
+    pub institution: String,
+    pub personality: String,
+    pub description: String,
+    pub agenda: String,
+    pub greeting_neutral: String,
+    pub greeting_friendly: String,
+    pub greeting_hostile: String,
+    pub rumor: String,
+    pub relationship_notes: BTreeMap<String, String>,
+}
+
+/// One port's institutions and NPCs (`PortInstitutionalProfile`).
+#[derive(Debug, Clone, Deserialize)]
+pub struct PortInstitutionDef {
+    pub port_id: String,
+    pub governor_title: String,
+    pub power_structure: String,
+    pub internal_tension: String,
+    pub institutions: Vec<InstitutionSiteDef>,
+    pub npcs: Vec<PortNpcDef>,
+}
+
+/// One cross-port NPC relationship.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CrossPortNetworkDef {
+    pub npc_a_id: String,
+    pub npc_a_name: String,
+    pub npc_a_port: String,
+    pub npc_b_id: String,
+    pub npc_b_name: String,
+    pub npc_b_port: String,
+    pub network: String,
+    pub disposition: String,
+    pub description: String,
+    pub player_impact: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Content {
     pub source_commit: String,
     pub goods: Vec<GoodDef>,
@@ -441,6 +576,10 @@ pub struct Content {
     pub officer_names: OfficerNames,
     pub style_masters: Vec<StyleMasterDef>,
     pub campaign: CampaignCatalog,
+    pub infrastructure: InfrastructureDef,
+    pub port_institutions: Vec<PortInstitutionDef>,
+    pub port_institutions_east: Vec<PortInstitutionDef>,
+    pub cross_port_networks: Vec<CrossPortNetworkDef>,
 }
 
 pub const REGIONS: [&str; 5] = [
@@ -622,6 +761,64 @@ impl Content {
 
     pub fn milestone(&self, id: &str) -> Option<&MilestoneSpecDef> {
         self.campaign.milestones.iter().find(|spec| spec.id == id)
+    }
+
+    pub fn warehouse_tier(&self, tier: &str) -> Option<&WarehouseTierDef> {
+        self.infrastructure
+            .warehouse_tiers
+            .iter()
+            .find(|spec| spec.tier == tier)
+    }
+
+    pub fn port_warehouse_tiers(&self, port_id: &str) -> &[String] {
+        self.infrastructure
+            .port_warehouse_tiers
+            .get(port_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
+    pub fn broker(&self, region: &str, tier: &str) -> Option<&BrokerOfficeDef> {
+        self.infrastructure
+            .brokers
+            .iter()
+            .find(|spec| spec.region == region && spec.tier == tier)
+    }
+
+    pub fn license(&self, id: &str) -> Option<&LicenseDef> {
+        self.infrastructure
+            .licenses
+            .iter()
+            .find(|spec| spec.id == id)
+    }
+
+    pub fn policy(&self, id: &str) -> Option<&PolicyDef> {
+        self.infrastructure
+            .policies
+            .iter()
+            .find(|spec| spec.id == id)
+    }
+
+    pub fn credit_tier(&self, tier: &str) -> Option<&CreditTierDef> {
+        self.infrastructure
+            .credit_tiers
+            .iter()
+            .find(|spec| spec.tier == tier)
+    }
+
+    pub fn port_institution(&self, port_id: &str) -> Option<&PortInstitutionDef> {
+        self.port_institutions
+            .iter()
+            .chain(self.port_institutions_east.iter())
+            .find(|profile| profile.port_id == port_id)
+    }
+
+    pub fn npc(&self, id: &str) -> Option<&PortNpcDef> {
+        self.port_institutions
+            .iter()
+            .chain(self.port_institutions_east.iter())
+            .flat_map(|profile| profile.npcs.iter())
+            .find(|npc| npc.id == id)
     }
 }
 
