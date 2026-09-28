@@ -26,7 +26,7 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | `engine/models.py` | `model.rs` | Goods, markets, ports, ships, cargo, standing, voyage, and world. Combat, culture, festival, and fleet structs are merged in the sim. The Godot view does not draw them. |
 | `engine/economy.py` | `economy.rs` | Partial. Price formula, `tick_markets`, buy, sell, FIFO cargo, receipt ids, and `work_docks`. Gear sell-back is not ported. |
 | `engine/voyage.py` | `voyage.rs` | Ported for `depart`, `advance_day`, `arrive`, the event table, and the sail-picker lane list (`sail_lanes`), including ship-class block versus warning. |
-| `engine/reputation.py` | `reputation.rs` | Partial. Trade, inspection, arrival, daily heat decay, inspection-chance modifier. Fee and service modifiers exist in Python and are not applied by `depart` today; they are not ported. |
+| `engine/reputation.py` | `reputation.rs` | Partial. Trade, inspection, arrival, daily heat decay, inspection-chance modifier, and `get_service_modifier`. `provision`, single-ship `repair`, and dry dock apply that service modifier. `depart` applies the captain port-fee multiplier and does not apply `get_fee_modifier`. The Python reputation view is what reads that fee modifier, and the sim does not port it. |
 | `engine/ship_stats.py` | `ship.rs` | Speed, cargo, storm resist, wages, morale, and casualty selection. Installed upgrades add hull, speed, cargo, cannons, and maneuver. A stock ship still has zero bonuses. The Godot view does not offer upgrades. |
 | `engine/captain_identity.py` | content JSON `captains` | Partial. All nine archetypes' numbers (prices, voyage, inspection, reputation seed, home port, ship, silver). Backstory and mentor text are not copied. |
 | `content/world.py` | `world.rs` `new_game` | Ported. Initial prices ignore captain modifiers, matching Python. |
@@ -41,7 +41,7 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | `app/session.py` | `session.rs`, `script.rs` | Partial. `Session` in this crate is the only turn API. The Godot view calls it and does not define a second session type. See "Public session" and "Rebasing stage 2". |
 | `app/cli.py`, `app/tui/**`, `app/views.py` | `portlight-cli` (new, not a port); `portlight-godot` chart and market panel | First playable only. The panel lists `sail_lanes` and the docked market. It does not reimplement the quirks below. |
 | `engine/campaign.py` victory paths | `campaign.rs` | Ported. `compute_victory_progress` and `evaluate_victory_closure` for `lawful_house`, `shadow_network`, `oceanic_reach`, and `commercial_empire`. Milestone evaluation is merged in the sim and is not yet offered by the Godot view. |
-| Remaining `engine/` and `content/` modules | see the checklist | Merged areas are in the sim and are not yet offered by the Godot view. Hunting, bounties, the underworld, custom captains, `balance/`, `stress/`, and `printandplay/` are still unported. |
+| Remaining `engine/` and `content/` modules | see the checklist | Merged areas are in the sim and are not yet offered by the Godot view. Hunting and bounties are merged in the sim and are not yet offered by the Godot view. `engine/custom_captain.py` and the invariant tests from `stress/` are not started. `engine/underworld.py` and `engine/merchant.py` are deprioritized, because the Python session never calls them. `printandplay/` and `balance/` are skipped unless Mike asks. |
 
 `world/`, `world-map/`, `atlas/`, `site/`, and the translated Python READMEs are reference material for later. They are not copied into this repo.
 
@@ -54,7 +54,7 @@ A run is determined by:
 3. **RNG algorithm.** `pyrand.rs` is CPython's MT19937 (`_random`): `init_by_array` seeding, `random()` (53-bit), `getrandbits`, `_randbelow`, `randint`, `choice`, and weighted `choices` with `bisect_right` and `hi = n - 1`. It was checked against CPython 3.12.3, including `Random(2**70 + 12345)`.
 4. **Rounding.** Prices and several voyage formulas use Python 3 `round` (half away from zero, then half-to-even when the value is exactly halfway) and `int()` truncation. Rust's `f64::round` alone is not enough; `util::py_round` follows CPython's `float.__round__`.
 
-Exact parity is possible for any code path that only uses those RNG calls and the ported rules. It is not blocked by the RNG. The goldens lock the ported `Session::advance`, including the systems merged after the first slice. Hunting, bounties, the underworld, custom captains, and the TUI are still unported.
+Exact parity is possible for any code path that only uses those RNG calls and the ported rules. It is not blocked by the RNG. The goldens lock the ported `Session::advance`, including the systems merged after the first slice. Hunting and bounties are merged in the sim and are not yet offered by the Godot view. `engine/custom_captain.py` and the invariant tests from `stress/` are not started. `engine/underworld.py` and `engine/merchant.py` are deprioritized, because the Python session never calls them. The TUI is not ported. The Godot view replaces it, and the screens still open are listed below. |
 
 `Session.advance` calls `tick_markets` without `current_day`, so seasonal stock drains never run on that path (`current_day` defaults to 0). Voyage danger and speed do use the season. The Rust market tick accepts a day and applies seasons when it is non-zero; the script runner passes 0 so it matches the session.
 
@@ -81,7 +81,7 @@ For each command the oracle calls the Python engine and the Rust runner calls th
 - **work.** `GameSession.work` / `work_docks`: one `randint(3, 5)` on the session RNG, silver added, then `world.day` set from `captain.day`. Markets, provisions, wages, and reputation do not tick. That is the dock-work safety valve.
 - **duel / resolve_duel.** `portlight duel` (`engine/duel.py` `resolve_duel`) and `GameSession._resolve_pending_duel` (five random stances, then the same resolver). Both apply `silver_delta`, leave `standing_delta` off the reputation record, and clear `pending_duel`.
 
-The comparison also covers contract offers, infrastructure purchases, credit draws, insurance policies, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, milestone evaluation, narrative beats, saves, and the interactive encounter machine (`negotiate` / `flee` / `fight`, naval rounds, boarding, `engine/combat.py`). Those systems are merged in the sim and are not yet offered by the Godot view. `Session::sell` writes a fulfilled contract onto the books. Callers do not use `books_mut()` for that.
+The comparison also covers contract offers, infrastructure purchases, credit draws, insurance policies, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, milestone evaluation, narrative beats, saves, the interactive encounter machine (`negotiate` / `flee` / `fight`, naval rounds, boarding, `engine/combat.py`), area 7a (`rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `abandon_contract`, single-ship `repair`), and area 7b (`hunt`, `bounty` list / accept / hunt / claim, and the wanted-level-3 bounty-hunter sea event). Those systems are merged in the sim and are not yet offered by the Godot view. `Session::sell` writes a fulfilled contract onto the books. Callers do not use `books_mut()` for that.
 
 ## Public session
 
@@ -97,7 +97,9 @@ The comparison also covers contract offers, infrastructure purchases, credit dra
 | `buy` / `sell` / `depart` / `advance` | One action. `advance` returns `Turn { events, shocks }`. A pending duel makes `advance` return no events and leave the day unchanged. |
 | `hire_crew(count, role)` / `provision(days)` | Port hiring and provisions. Sailors use `crew_cost`. Specialists cost `wage * 10` and get a name and trait. Provisions use `max(1, int(provision_cost * service_modifier))`. |
 | `work()` | One day on the docks. Returns 3 to 5 silver. Does not tick markets, provisions, wages, or reputation. |
-| `duel(stances)` / `resolve_pending_duel()` | Clear a pending pirate duel. `duel` is the CLI stance fight (`thrust` / `slash` / `parry`, at least three). `resolve_pending_duel` is the bot auto-resolve. Both return `DuelOutcome`. |
+| `duel(stances)` / `resolve_pending_duel()` | Clear a pending pirate duel. `duel` is the CLI stance fight (`thrust` / `slash` / `parry`, at least three). `resolve_pending_duel` is the bot auto-resolve. Both return `DuelOutcome`. The chart offers this fight. |
+| `hunt()` | Hunt or forage. Merged in the sim and not yet offered by the Godot view. |
+| `bounty_board()` / `accept_bounty(id)` / `hunt_bounty(id)` / `claim_bounty(id)` | Bounty board, accept, hunt, and claim. Merged in the sim and not yet offered by the Godot view. |
 | errors | `SimError`. `Display` text is the Python sentence. |
 
 `Session::save` and `Session::load` are merged in the sim. They speak the Python version-12 JSON slot. The Godot view does not offer save or load. Do not add a second format in the UI crate.
@@ -120,11 +122,12 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 
 ## Porting order
 
-1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`. The sim on `main` is `f6dc82e46fc622783ce495267dab141e10f33fdf`.
-2. **Landed early, on purpose.** The chart and the Godot view. This stage 2 slice did not wait for the rest of the sim. It is the dimetric chart over `Session`: port `map_x`/`map_y` rotated for display only, `sail_lanes` for the current port's overlay, voyage progress for the ship. See "Stage 2" below. Still later inside the view: a harbour scene in the playable, terrain, weather, NPC ships, and the rest of the TUI.
-3. **Merged in the sim, not yet offered by the Godot view.** Negotiate, flee, naval combat, and boarding (`engine/encounter.py`, `engine/naval.py`, `engine/combat.py`) are on `Session` (`encounter_choice`, `naval_round`, `resolve_boarding`). The chart still shows the voyage-event stance duel (`duel` and `resolve_pending_duel`). Flee is not a stance in that duel. Sea-culture enrichment is merged and runs inside `Session::advance`.
-4. **Merged in the sim, not yet offered by the Godot view.** Ship purchase and upgrades, contracts and the contract RNG (`seed + 7919`), and save/load. The view does not call `buy_ship`, `board`, `accept_contract`, `save`, or `load`. Area 7a is also merged and not offered: `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair`.
-5. **Merged in the sim, not yet offered by the Godot view.** Infrastructure, credit, insurance, injuries, companions, fleet convoys, and milestone evaluation (`evaluate_milestones`). Hunting is still unported. The Godot view does not call these `Session` methods.
+1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`. The sim on `main` is `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b`.
+2. **Landed, on purpose.** The chart and the Godot view, merged as #2 at `110469ff1aaa82cf1cf2c98454f878caf3f72d28`. It is the dimetric chart over `Session`: port `map_x`/`map_y` rotated for display only, `sail_lanes` for the current port's overlay, voyage progress for the ship. See "Stage 2" below. The encounter screen is in progress. Not started in the view: new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Chart ship-class plates and the water-variant fix are in progress. Terrain, weather, and NPC ships are not in this view.
+3. **Merged in the sim, not yet offered by the Godot view.** Negotiate, flee, naval combat, and boarding (`engine/encounter.py`, `engine/naval.py`, `engine/combat.py`) are on `Session` (`encounter_choice`, `naval_round`, `resolve_boarding`). #5 is `f970259a023c97dd11925c8bc4bf82300bfcb3db`. The chart still shows the voyage-event stance duel (`duel` and `resolve_pending_duel`). Flee is not a stance in that duel. The Godot encounter screen is in progress. Sea-culture enrichment is merged and runs inside `Session::advance`.
+4. **Merged in the sim, not yet offered by the Godot view.** Ship purchase and upgrades, contracts and the contract RNG (`seed + 7919`), and save/load. #3 is `1adb966351c7936fb635afc0fb69b2e82f5dc7f2`. #4 is `9dce614d0c5e85964cbd796f7482db438ba15569`. The view does not call `buy_ship`, `board`, `accept_contract`, `save`, or `load`. Area 7a is also merged and not offered: `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair`. #10 is `f6dc82e46fc622783ce495267dab141e10f33fdf`.
+5. **Merged in the sim, not yet offered by the Godot view.** Infrastructure, credit, and insurance (#7 `33e2e2b93883fa94a4fec986aa8ade376f6bdfb2`), skills and career (#6 `711ed6b84a8b4ec783eedd1bc1742baa87ec4e7f`), fleet, injuries, weapons, and loot (#8 `b2e4aba76d4c22cb1713004d8a71df257be87800`), narrative, culture, and consequences (#9 `33ff36254882a3fb58db30f017d3f6d0fd77155e`), and milestone evaluation (`evaluate_milestones`). The Godot view does not call these `Session` methods.
+6. **Merged in the sim, not yet offered by the Godot view.** Hunting and bounty (#11 `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b`): `hunt`, the bounty board, accept, hunt, and claim, and the bounty-hunter voyage. The Godot view does not call `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, or `claim_bounty`.
 
 ## Parity harness
 
@@ -139,7 +142,7 @@ PYTHONPATH=/path/to/portlight/src python3 tools/parity/victory_cases.py
 
 `python3 tools/parity/check.py` diffs the live oracle against the Rust binary when `portlight` imports, and always diffs Rust against `parity/golden/`. `--require-oracle` exits non-zero when that import fails, instead of falling back to goldens. `cargo test` does the golden comparison with no Python installed. Goldens were produced with CPython 3.12.3. CI checks out commit `9b02494`, runs `check.py --require-oracle`, and re-runs `victory_cases.py --check` against the committed JSON. The Rust toolchain is pinned in `rust-toolchain.toml` (1.83.0) and CI passes `--locked`.
 
-Scripts checked in:
+Scripts checked in are exactly the `.txt` files in `parity/scripts/`. The README lists that set. `parity/golden/victory_cases.json` is the extra victory fixture. What each script locks:
 
 | Script | What it locks |
 | --- | --- |
@@ -164,6 +167,16 @@ Scripts checked in:
 | `contraband_sell.txt` | Opium bought at Corsairs Rest, sale refused at Porto Novo |
 | `event_musician.txt`, `event_whale.txt`, `event_foreign.txt`, `event_ceremony.txt` | Musician, whale, foreign vessel, sea ceremony. Together with the scripts above, every event type in the table appears in a golden |
 | `parity/golden/victory_cases.json` | Nine victory fixtures from `tools/parity/victory_cases.py`, including a completed commercial empire and a recorded `commercial_empire` summary |
+| `contract_accept.txt`, `contract_complete.txt`, `contract_expire.txt`, `contract_arrival_rng.txt` | Accept, complete, expire, and the arrival board drawn from the session RNG |
+| `encounter_negotiate.txt`, `encounter_flee.txt`, `naval_combat.txt`, `boarding.txt` | Negotiate, flee across the three strength bands, naval rounds, and the personal fight after boarding |
+| `buy_broker.txt`, `buy_warehouse.txt`, `buy_insurance.txt`, `take_credit.txt` | Broker office, warehouse lease, hull insurance, and the merchant credit line |
+| `train_crew.txt`, `recruit_companion.txt`, `skill_spend.txt`, `milestone_reached.txt` | Training, a companion, a skill point, and a reached milestone |
+| `fleet_form.txt`, `fleet_convoy.txt`, `fleet_transfer.txt`, `repair_fleet.txt`, `upgrade_naval.txt`, `gear_armor.txt`, `injury_heal.txt`, `maintain.txt`, `maintain_blacksmith.txt` | Fleet form, convoy speed, cargo transfer, flagship-only `repair_fleet`, a cannon upgrade, armor in the personal fight, injury healing, and weapon maintenance |
+| `narrative_beats.txt`, `consequences.txt`, `sea_culture.txt`, `port_arrival.txt`, `sea_captain_agency.txt` | Narrative beats, consequences, sea-culture enrichment, arrival prose, and captain agency |
+| `victory_spare.txt`, `victory_takeall.txt`, `victory_provenance.txt` | Spare, take all, and a named blade after the boarding kill |
+| `rename_ship.txt`, `dock_current_ship.txt`, `board_fleet_ship.txt`, `sell_fleet_ship.txt`, `fire_crew.txt`, `abandon_contract.txt`, `repair_ship.txt`, `dry_dock_named.txt`, `dock_work.txt` | Area 7a. Rename, dock and board a fleet hull, sell a docked hull, fire crew, abandon a contract, single-ship repair, named dry dock, and dock work at the start port |
+| `hunt_port_success.txt`, `hunt_port_fail.txt`, `hunt_sea_success.txt`, `hunt_sea_fail.txt`, `hunt_sea_morale.txt` | Area 7b hunt. Port success and failure, sea success and failure, and the morale refusal |
+| `bounty_board.txt`, `bounty_claim.txt`, `bounty_max.txt`, `bounty_not_defeated.txt`, `bounty_not_hunting.txt`, `bounty_unknown.txt`, `bounty_hunter_voyage.txt` | Area 7b bounty board, claim, the fourth-bounty refusal, claim and hunt refusals, an unknown captain, and the wanted-level-3 sea event |
 
 ## Coverage checklist
 
@@ -194,6 +207,8 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [x] Inspection reputation recorded on the sea day (`inspection_rep.txt`)
 - [x] Cargo loss and crew casualties through the roster (`cargo_loss.txt`, `crew_minimum.txt`)
 - [x] Four victory paths. Path id `commercial_empire` and milestone family `commercial_finance` stay distinct. `victory_cases.json` plus the `victory` field on every script snapshot. Contracts are merged in the sim, so a played game can complete a path. The Godot view does not offer that play, and callers do not finish it through `books_mut()`.
+- [x] `get_service_modifier`. `provision`, single-ship `repair`, and dry dock apply it.
+- [x] Bounty-hunter sea event. `advance_day` fires it at wanted level 3. `bounty_hunter_voyage.txt` sets that level and locks seed 2.
 
 ### Partial (data or formula present, system not finished)
 
@@ -202,9 +217,8 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [ ] Season weather copy and travel warnings
 - [ ] Captain backstory, mentor, bloc text
 - [ ] Crew roles beyond wages, casualty weights, hiring, the quartermaster's 10% wage discount, and the navigator's +0.5 speed. That speed bonus is applied on the sea day, matching `voyage.py`. Gunner, marine, and surgeon effects belong to combat, boarding, and injuries. Python defines `navigator_storm_resist_bonus` and `quartermaster_sell_bonus` and never calls them, so they are not applied here either.
-- [ ] Reputation fee modifier on services other than provisions. `get_service_modifier` is used by `provision`
+- [ ] `get_fee_modifier`. The Python reputation view displays it. `depart` does not apply it, and the sim does not port it.
 - [ ] Receipt ledger export and content hashes. Buy/sell totals and receipt count are kept on `HouseBooks` because victory reads them.
-- [ ] Bounty-hunter sea event (code is in `advance_day` for wanted level 3; no golden script sets that)
 
 ### Merged in the sim, not yet offered by the Godot view
 
@@ -218,24 +232,36 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [x] `engine/culture_engine.py`, `engine/sea_culture_engine.py`, `engine/port_arrival_engine.py`
 - [x] `engine/companion_engine.py`, `engine/skill_engine.py`, `engine/training.py`
 - [x] `engine/injuries.py`, `engine/weapon_quality.py`, `engine/weapon_provenance.py`
-- [x] `engine/fleet.py` convoys. Area 7a commands `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view.
-- [x] `engine/merchant.py`
+- [x] `engine/fleet.py` convoys. Area 7a commands `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view. #10 is `f6dc82e46fc622783ce495267dab141e10f33fdf`.
+- [x] `engine/hunting.py` and `engine/bounty.py`. `Session::hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, and `claim_bounty` are merged in the sim and are not yet offered by the Godot view. #11 is `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b`.
 - [x] `content/armor.py`, `melee_weapons.py`, `ranged_weapons.py`, `fighting_styles.py`
 - [x] `content/skills.py`, `injuries.py`, `loot_tables.py`, `upgrades.py`
 - [x] `content/merchants.py`, `officer_names.py`, `companions.py`
 - [x] `content/culture.py`, `sea_culture.py`, `port_politics.py`
 - [x] `content/port_institutions.py`, `port_institutions_east.py`
 - [x] `content/cross_port_networks.py`, `content/campaign.py`
-- [x] Dimetric first playable (stage 2). Mediterranean chart, current-port lanes, sail Porto Novo to Al-Manar, market buy and sell. Limits are in the stage 2 section.
+
+### In the Godot view
+
+- [x] Dimetric first playable (stage 2), merged as #2 at `110469ff1aaa82cf1cf2c98454f878caf3f72d28`. Mediterranean chart, current-port lanes, sail Porto Novo to Al-Manar, market buy and sell, hire, provisions, dock work, and the voyage-event stance duel. Limits are in the stage 2 section.
 
 ### Not started
 
-- [ ] `engine/hunting.py`, `engine/bounty.py`, `engine/underworld.py`, `engine/custom_captain.py`
-- [ ] `app/cli.py` command surface, `app/tui/**`, `app/views.py`, `app/formatting.py`, `app/combat_views.py`
-- [ ] `balance/**` and `stress/**` runners
-- [ ] `printandplay/**`
+- [ ] Godot encounter screen (in progress). The chart still shows the stance duel. Negotiate, flee, naval combat, and boarding are merged in the sim and are not yet offered by the Godot view.
+- [ ] Godot screens for new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Those systems are merged in the sim and are not yet offered by the Godot view. The view's New game button starts merchant Ada, seed 1, at Porto Novo. It does not call `save` or `load`.
+- [ ] Chart ship-class plates and the water-variant fix (in progress). `ship_asset` draws `ship_sloop_f0`–`f7` only. Cutter, brigantine, and galleon plates are in the landing bundle and are not drawn. `water_tiles` already calls `chart_water_id`.
+- [ ] `engine/custom_captain.py` and the invariant tests from `stress/`
+- [ ] `app/cli.py` command surface, `app/tui/**`, `app/views.py`, `app/formatting.py`, `app/combat_views.py`. The Godot view replaces them. The open screens are the Godot items above.
 - [ ] `receipts/core.py` export
 - [ ] Python `tests/` suite re-expressed against the Rust sim (the golden scripts are the current stand-in)
+
+### Deprioritized
+
+- [ ] `engine/underworld.py` and `engine/merchant.py`. Deprioritized, because the Python session never calls them. There is no `underworld.rs`. `encounter.rs` has its own hostility function. `merchant.rs` is the markup helper, and `Session` does not call that module. `Session::buy_gear` still buys one stocked item at a merchant markup for the gear scripts.
+
+### Skipped unless Mike asks
+
+- [ ] `printandplay/**` and `balance/**`
 
 ## Stage 2
 
@@ -272,13 +298,13 @@ The market panel calls `Session::buy` and `Session::sell` for quantity 1. Next d
 
 Stage 2 does not own `crates/portlight-sim/src/session.rs`. The chart and the Godot view call `portlight_sim::Session` and nothing else for rules. There is no shim and no second `Session` type.
 
-This branch is rebased onto `main` at `f6dc82e46fc622783ce495267dab141e10f33fdf`. `crates/portlight-sim` matches that commit. Area 7a commands `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view. Do not resurrect a local `session.rs`.
+Stage 2 is merged on `main` at `110469ff1aaa82cf1cf2c98454f878caf3f72d28`. `main` is `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b`. `crates/portlight-sim` matches that commit. Area 7a commands `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view. Area 7b `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, and `claim_bounty` are merged in the sim and are not yet offered by the Godot view. Do not resurrect a local `session.rs`.
 
 New game in the view is merchant Ada, seed 1, home Porto Novo. That seed completes Porto Novo to Al-Manar without a pending duel. The scripted smoke buys grain, sails, advances until docked, sells the grain, and buys and sells one spice.
 
 ### Not in this slice
 
-No harbour scene in the playable, and no terrain, weather overlay, or NPC ships. Ship purchase, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view. The five Mediterranean sloop routes exist in the sim; the chart draws the current port's lanes, not all five at once. Chart water and the port marker are the approved plates. The approved harbour tiles are in the repo and only shown by the seam scene.
+No harbour scene in the playable, and no terrain, weather overlay, or NPC ships. The encounter screen is in progress. Not started in the view: new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Chart ship-class plates and the water-variant fix are in progress. Ship purchase, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, single-ship `repair`, `hunt`, and the bounty board are merged in the sim and are not yet offered by the Godot view. The five Mediterranean sloop routes exist in the sim; the chart draws the current port's lanes, not all five at once. Chart water and the port marker are the approved plates. The approved harbour tiles are in the repo and only shown by the seam scene.
 
 ### Checks
 
