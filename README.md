@@ -75,6 +75,8 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
   res://scenes/harbour_seam.tscn
 ```
 
+The seam scene validates the layout before it writes. An illegal layout (pilings on a pier cell, or a pier on a quay cell) prints the fault, exits non-zero, and does not save a PNG. A blank or mostly flat frame fails the same check as `PORTLIGHT_SHOT` and also exits non-zero.
+
 ## Parity
 
 `cargo test` compares those scripts to `parity/golden/`. To regenerate the goldens from the Python checkout:

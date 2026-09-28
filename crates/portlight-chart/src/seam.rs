@@ -8,7 +8,7 @@
 
 use crate::harbour::{
     build_harbour, harbour_anchor, harbour_water_cells, harbour_water_tile, harbour_work_tile,
-    seam_view, HarbourTile, WorkKind,
+    seam_view, HarbourFault, HarbourTile, WorkKind,
 };
 
 /// One corner of a harbour diamond, named in screen space.
@@ -110,7 +110,10 @@ fn seam_works() -> Vec<HarbourTile> {
 }
 
 /// Water past both capture zooms, then the three works in draw order.
-pub fn harbour_seam() -> Vec<HarbourTile> {
+///
+/// An illegal work layout is [`Err`], not a panic. The seam capture checks
+/// this before it writes a PNG and exits non-zero when it fails.
+pub fn harbour_seam() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
     let center = seam_camera_center();
     // 0.72 shows more world than 1.0, so covering it covers the tighter frame.
     let view = seam_view(center, 0.72);
@@ -126,7 +129,7 @@ pub fn harbour_seam() -> Vec<HarbourTile> {
         .into_iter()
         .map(|(col, row)| harbour_water_tile(col, row))
         .collect();
-    build_harbour(water, seam_works()).expect("seam layout")
+    build_harbour(water, seam_works())
 }
 
 fn pier_path(id: &str) -> &'static str {
@@ -182,8 +185,31 @@ mod tests {
         assert!(!placer.contains("STEP_U"));
         assert!(!scene.contains("(col - row) * 128"));
         assert!(!placer.contains("(col - row) * 128"));
+        assert!(
+            scene.contains("illegal layout"),
+            "an illegal layout must be named and must not fall through to a blank PNG"
+        );
+        assert!(
+            scene.contains("capture_frame_rejected"),
+            "the seam capture must use the same blank-frame check as PORTLIGHT_SHOT"
+        );
+        let process = scene
+            .split_once("fn process")
+            .expect("process")
+            .1
+            .split_once("fn save_viewport")
+            .expect("save")
+            .0;
+        let illegal_at = process
+            .find("self.illegal")
+            .expect("process checks the layout");
+        let save_at = process.find("save_viewport").expect("process saves");
+        assert!(
+            illegal_at < save_at,
+            "an illegal layout must exit before any seam PNG is written"
+        );
 
-        for tile in harbour_seam() {
+        for tile in harbour_seam().expect("seam layout") {
             let (sx, sy) = grid_to_screen(tile.col, tile.row, HARBOUR_CELL_W, HARBOUR_CELL_H);
             assert_eq!(
                 sx,
@@ -210,7 +236,7 @@ mod tests {
 
     #[test]
     fn seam_is_a_3x3_with_a_water_pier_root() {
-        let tiles = harbour_seam();
+        let tiles = harbour_seam().expect("seam layout");
         assert!(validate_harbour(&tiles).is_ok());
         for row in 0..3 {
             for col in 0..3 {
@@ -286,7 +312,7 @@ mod tests {
 
     #[test]
     fn seam_keeps_pilings_off_the_pier() {
-        let tiles = harbour_seam();
+        let tiles = harbour_seam().expect("seam layout");
         let err = validate_harbour(&tiles);
         assert_eq!(err, Ok(()));
         let bad = vec![

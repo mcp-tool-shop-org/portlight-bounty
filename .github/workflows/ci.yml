@@ -113,3 +113,20 @@ jobs:
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
             godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
+          # The seam capture validates the layout before it writes. An illegal
+          # layout, a blank image, or a flat frame exits non-zero. This run is
+          # the legal plate, so it must print ok and must not report a fault.
+          mkdir -p /tmp/seam-shots
+          run_godot /tmp/godot-seam.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SEAM_DIR=/tmp/seam-shots \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot \
+            res://scenes/harbour_seam.tscn
+          if ! grep -q 'harbour seam ok' /tmp/godot-seam.log; then
+            echo "harbour seam capture did not report ok"
+            exit 1
+          fi
+          if grep -q 'illegal layout' /tmp/godot-seam.log; then
+            echo "harbour seam reported an illegal layout"
+            exit 1
+          fi

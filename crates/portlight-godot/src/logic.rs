@@ -2,6 +2,10 @@
 //!
 //! Projection and facing stay in `portlight-chart`. This module is the view's
 //! use of that math, plus the button rules that sit beside `Session`.
+//! Sampling a captured image only reads pixels; it does not draw.
+
+use godot::classes::Image;
+use godot::prelude::*;
 
 /// Playable window in `godot/project.godot`.
 pub(crate) const WINDOW_W: f32 = 1280.0;
@@ -32,6 +36,52 @@ pub(crate) fn duel_button_enabled(pending: bool) -> bool {
 /// The broken 1280×720 chart shot was the clear colour below a 28 px strip.
 pub(crate) fn frame_mostly_flat(samples: &[[u8; 3]]) -> bool {
     dominant_color_fraction(samples) >= 0.80
+}
+
+/// `PORTLIGHT_SHOT` and the harbour seam share this rejection.
+/// An empty image, the wrong size, or one colour over most of the frame fails.
+pub(crate) fn capture_frame_rejected(
+    width: i32,
+    height: i32,
+    expect_w: i32,
+    expect_h: i32,
+    samples: &[[u8; 3]],
+) -> bool {
+    samples.is_empty() || width != expect_w || height != expect_h || frame_mostly_flat(samples)
+}
+
+/// Process status for `harbour_seam.tscn`.
+/// An illegal layout and a rejected frame both exit non-zero.
+/// The scene must not write a PNG when `layout_ok` is false.
+pub(crate) fn seam_exit_code(layout_ok: bool, frames_ok: bool) -> i32 {
+    if layout_ok && frames_ok {
+        0
+    } else {
+        1
+    }
+}
+
+/// Every eighth pixel. `PORTLIGHT_SHOT` and the harbour seam both use this.
+pub(crate) fn frame_samples(image: &Gd<Image>) -> Vec<[u8; 3]> {
+    let width = image.get_width();
+    let height = image.get_height();
+    let mut samples = Vec::new();
+    let step = 8;
+    let mut y = 0;
+    while y < height {
+        let mut x = 0;
+        while x < width {
+            let color = image.get_pixel(x, y);
+            samples.push([
+                (color.r.clamp(0.0, 1.0) * 255.0).round() as u8,
+                (color.g.clamp(0.0, 1.0) * 255.0).round() as u8,
+                (color.b.clamp(0.0, 1.0) * 255.0).round() as u8,
+            ]);
+            x += step;
+        }
+        y += step;
+    }
+    samples
 }
 
 fn dominant_color_fraction(samples: &[[u8; 3]]) -> f32 {
@@ -110,5 +160,26 @@ mod tests {
         chart.extend([[32, 78, 112]; 30]);
         chart.extend([[232, 196, 120]; 30]);
         assert!(!frame_mostly_flat(&chart));
+    }
+
+    #[test]
+    fn an_illegal_layout_and_a_flat_seam_frame_exit_nonzero() {
+        // The old capture wrote the clear colour and exited 0 when the
+        // layout panic was swallowed. Both of those outcomes are failures.
+        assert_eq!(seam_exit_code(false, true), 1);
+        assert_eq!(seam_exit_code(true, false), 1);
+        assert_eq!(seam_exit_code(false, false), 1);
+        assert_eq!(seam_exit_code(true, true), 0);
+
+        let clear = [13, 25, 41];
+        assert!(capture_frame_rejected(1280, 720, 1280, 720, &[clear; 100]));
+        assert!(capture_frame_rejected(0, 0, 1280, 720, &[]));
+        let mut chart = vec![clear; 40];
+        chart.extend([[32, 78, 112]; 30]);
+        chart.extend([[232, 196, 120]; 30]);
+        assert!(!capture_frame_rejected(1280, 720, 1280, 720, &chart));
+        // A crop uses its own size. A flat crop is still rejected.
+        assert!(capture_frame_rejected(192, 128, 192, 128, &[clear; 40]));
+        assert!(!capture_frame_rejected(192, 128, 192, 128, &chart));
     }
 }

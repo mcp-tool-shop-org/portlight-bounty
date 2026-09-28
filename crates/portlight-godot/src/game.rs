@@ -32,8 +32,8 @@ use portlight_sim::{content, DuelOutcome, LaneSuitability, Session};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::logic::{
-    chart_host_width, duel_button_enabled, frame_mostly_flat, layout_fits_window, PANEL_MIN_W,
-    ROW_SEPARATION, WINDOW_H, WINDOW_W,
+    capture_frame_rejected, chart_host_width, duel_button_enabled, frame_mostly_flat,
+    frame_samples, layout_fits_window, PANEL_MIN_W, ROW_SEPARATION, WINDOW_H, WINDOW_W,
 };
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -1322,6 +1322,8 @@ impl PortlightGame {
         let err = image.save_png(path);
         let samples = frame_samples(&image);
         let flat = frame_mostly_flat(&samples);
+        let rejected =
+            capture_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples);
         godot_print!(
             "screenshot {path} {width}x{height} samples={} flat={flat} error={err:?}",
             samples.len()
@@ -1330,7 +1332,7 @@ impl PortlightGame {
             godot_print!("screenshot save failed");
             return false;
         }
-        if width != WINDOW_W as i32 || height != WINDOW_H as i32 || flat {
+        if rejected {
             godot_print!(
                 "screenshot rejected: expected a full 1280x720 frame that is not one flat colour"
             );
@@ -1521,28 +1523,6 @@ fn clear_children(node: &mut Gd<VBoxContainer>) {
         node.remove_child(&child);
         child.queue_free();
     }
-}
-
-fn frame_samples(image: &Gd<godot::classes::Image>) -> Vec<[u8; 3]> {
-    let width = image.get_width();
-    let height = image.get_height();
-    let mut samples = Vec::new();
-    let step = 8;
-    let mut y = 0;
-    while y < height {
-        let mut x = 0;
-        while x < width {
-            let color = image.get_pixel(x, y);
-            samples.push([
-                (color.r.clamp(0.0, 1.0) * 255.0).round() as u8,
-                (color.g.clamp(0.0, 1.0) * 255.0).round() as u8,
-                (color.b.clamp(0.0, 1.0) * 255.0).round() as u8,
-            ]);
-            x += step;
-        }
-        y += step;
-    }
-    samples
 }
 
 fn flag_set(name: &str) -> bool {

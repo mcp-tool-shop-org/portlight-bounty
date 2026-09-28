@@ -1,6 +1,10 @@
 //! Draws [`portlight_chart::harbour_seam`]. Positions come from that list.
 //! The list is [`portlight_chart::grid_to_screen`] plus the sea datum.
 //! No label. Captures zoom 1, zoom 0.72, and a crop of the interior vertex.
+//!
+//! The layout is validated before any PNG is written. An illegal layout
+//! exits non-zero and does not save a frame. A blank or mostly flat frame
+//! fails the same check as `PORTLIGHT_SHOT`.
 
 use godot::classes::{Camera2D, INode2D, Image, Node2D};
 use godot::global::Error;
@@ -8,6 +12,10 @@ use godot::prelude::*;
 use portlight_chart::{harbour_seam, seam_camera_center, seam_interior_vertex};
 
 use crate::harbour::place_harbour;
+use crate::logic::{capture_frame_rejected, frame_samples, seam_exit_code, WINDOW_H, WINDOW_W};
+
+const CROP_W: i32 = 192;
+const CROP_H: i32 = 128;
 
 #[derive(GodotClass)]
 #[class(base = Node2D)]
@@ -17,6 +25,8 @@ struct HarbourSeam {
     frames: i32,
     shot_dir: String,
     failed: bool,
+    illegal: bool,
+    done: bool,
 }
 
 #[godot_api]
@@ -28,11 +38,23 @@ impl INode2D for HarbourSeam {
             frames: 0,
             shot_dir: std::env::var("PORTLIGHT_SEAM_DIR").unwrap_or_else(|_| "/tmp".to_string()),
             failed: false,
+            illegal: false,
+            done: false,
         }
     }
 
     fn ready(&mut self) {
-        let tiles = harbour_seam();
+        let tiles = match harbour_seam() {
+            Ok(tiles) => tiles,
+            Err(faults) => {
+                for fault in &faults {
+                    godot_print!("harbour seam illegal layout: {fault}");
+                }
+                self.illegal = true;
+                self.failed = true;
+                return;
+            }
+        };
         if !place_harbour(&mut self.base_mut(), &tiles) {
             godot_print!("harbour seam missing a plate");
             self.failed = true;
@@ -48,6 +70,13 @@ impl INode2D for HarbourSeam {
     }
 
     fn process(&mut self, _delta: f64) {
+        if self.done {
+            return;
+        }
+        if self.illegal {
+            self.finish();
+            return;
+        }
         self.frames += 1;
         if self.frames == 4 {
             self.save_viewport("harbour-seam-z100.png");
@@ -59,22 +88,30 @@ impl INode2D for HarbourSeam {
         }
         if self.frames == 8 {
             self.save_viewport("harbour-seam-z072.png");
-            let code = if self.failed { 1 } else { 0 };
-            godot_print!("harbour seam {}", if self.failed { "FAILED" } else { "ok" });
-            let mut tree = self.base().get_tree();
-            tree.quit_ex().exit_code(code).done();
+            self.finish();
         }
     }
 }
 
 impl HarbourSeam {
+    fn finish(&mut self) {
+        if self.done {
+            return;
+        }
+        self.done = true;
+        let code = seam_exit_code(!self.illegal, !self.failed);
+        godot_print!("harbour seam {}", if code == 0 { "ok" } else { "FAILED" });
+        let mut tree = self.base().get_tree();
+        tree.quit_ex().exit_code(code).done();
+    }
+
     fn save_viewport(&mut self, name: &str) {
         let Some(image) = self.viewport_image() else {
             godot_print!("harbour seam viewport image was empty");
             self.failed = true;
             return;
         };
-        self.write_png(&image, name);
+        self.write_checked(&image, name, WINDOW_W as i32, WINDOW_H as i32);
     }
 
     fn save_vertex_crop(&mut self, name: &str) {
@@ -88,16 +125,32 @@ impl HarbourSeam {
             return;
         };
         let screen = viewport.get_canvas_transform() * Vector2::new(wx as f32, wy as f32);
-        let crop_w = 192;
-        let crop_h = 128;
-        let x = (screen.x.round() as i32 - crop_w / 2).clamp(0, image.get_width() - crop_w);
-        let y = (screen.y.round() as i32 - crop_h / 2).clamp(0, image.get_height() - crop_h);
-        let Some(crop) = image.get_region(Rect2i::from_components(x, y, crop_w, crop_h)) else {
+        let x = (screen.x.round() as i32 - CROP_W / 2).clamp(0, image.get_width() - CROP_W);
+        let y = (screen.y.round() as i32 - CROP_H / 2).clamp(0, image.get_height() - CROP_H);
+        let Some(crop) = image.get_region(Rect2i::from_components(x, y, CROP_W, CROP_H)) else {
             godot_print!("harbour seam vertex crop was empty");
             self.failed = true;
             return;
         };
-        self.write_png(&crop, name);
+        self.write_checked(&crop, name, CROP_W, CROP_H);
+    }
+
+    fn write_checked(&mut self, image: &Gd<Image>, name: &str, expect_w: i32, expect_h: i32) {
+        let samples = frame_samples(image);
+        if capture_frame_rejected(
+            image.get_width(),
+            image.get_height(),
+            expect_w,
+            expect_h,
+            &samples,
+        ) {
+            godot_print!(
+                "harbour seam rejected {name}: expected a {expect_w}x{expect_h} frame that is not blank or one flat colour"
+            );
+            self.failed = true;
+            return;
+        }
+        self.write_png(image, name);
     }
 
     fn viewport_image(&self) -> Option<Gd<Image>> {

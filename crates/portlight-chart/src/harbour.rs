@@ -43,6 +43,17 @@ pub enum HarbourFault {
     PierOnQuay { col: i32, row: i32 },
 }
 
+impl std::fmt::Display for HarbourFault {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PilingsOnPier { col, row } => {
+                write!(f, "pilings on a pier cell ({col}, {row})")
+            }
+            Self::PierOnQuay { col, row } => write!(f, "pier on a quay cell ({col}, {row})"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HarbourLayer {
     Water,
@@ -291,5 +302,7 @@ mod tests {
         let on_quay = validate_harbour(&[pier(0, 1), quay(0, 1)]).unwrap_err();
         assert_eq!(on_quay, vec![HarbourFault::PierOnQuay { col: 0, row: 1 }]);
         assert!(validate_harbour(&[pilings(2, 0), pier(0, 2), quay(0, 1)]).is_ok());
+        assert_eq!(on_pier[0].to_string(), "pilings on a pier cell (0, 2)");
+        assert_eq!(on_quay[0].to_string(), "pier on a quay cell (0, 1)");
     }
 }

@@ -120,10 +120,11 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 
 ## Porting order
 
-1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`.
-2. **Next, still stage 1.** Ship purchase and upgrades (unblocks stat resolution), contracts and the contract RNG (`seed + 7919`), save/load, then the interactive encounter (`negotiate` / `flee` / `fight`, naval, boarding, `engine/combat.py`). The stance duel that the voyage event asks for, and the five-stance auto-resolve, are already on `Session`. After the encounter machine, sea-culture enrichment can be added and the harness can move from the engine slice to `GameSession.advance`.
-3. **Then.** Infrastructure, credit, insurance, injuries, companions, hunting, fleet convoys, and milestone evaluation (`evaluate_milestones`). Those systems should write the records `HouseBooks` already holds. Balance and stress runners should call the Rust sim once those systems exist.
-4. **Stage 2, first playable done.** Dimetric chart over `Session`: port `map_x`/`map_y` rotated for display only, `sail_lanes` for the current port's overlay, voyage progress for the ship. See "Stage 2" below. Still later: harbour, terrain, weather, NPC ships, and the rest of the TUI.
+1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`. Stage 1 is on `main` (`5decf672b6918a11db016123fe49642ee6ba0348`).
+2. **Landed early, on purpose.** The chart and the Godot view. This stage 2 slice did not wait for the rest of stage 1. It is the dimetric chart over `Session`: port `map_x`/`map_y` rotated for display only, `sail_lanes` for the current port's overlay, voyage progress for the ship. See "Stage 2" below. Still later inside the view: a harbour scene in the playable, terrain, weather, NPC ships, and the rest of the TUI.
+3. **Deferred.** Negotiate, flee, naval combat, and boarding (`engine/encounter.py`, `engine/naval.py`, `engine/combat.py`). The pirate-captain encounter stays the direct stance duel already on `Session` (`duel` and `resolve_pending_duel`), with the auto-resolve option, matching Python. Flee is not a stance and is not being added to that duel. If flee is ported later, it is a port of Python's `resolve_flee` into naval combat, as its own sim slice with goldens. After that encounter machine, sea-culture enrichment can be added and the harness can move from the engine slice to `GameSession.advance`.
+4. **Still stage 1.** Ship purchase and upgrades (unblocks stat resolution), contracts and the contract RNG (`seed + 7919`), and save/load.
+5. **Then.** Infrastructure, credit, insurance, injuries, companions, hunting, fleet convoys, and milestone evaluation (`evaluate_milestones`). Those systems should write the records `HouseBooks` already holds. Balance and stress runners should call the Rust sim once those systems exist.
 
 ## Parity harness
 
@@ -209,7 +210,7 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 ### Not started
 
 - [ ] `engine/campaign.py` milestone evaluation (`evaluate_milestones`, career profiles beyond the family table). Victory paths are done. Keep `commercial_finance` as the family id.
-- [ ] `engine/combat.py`, `engine/naval.py`, and `engine/encounter.py` (negotiate, flee, fight, naval rounds, boarding, prize capture). `engine/duel.py` `resolve_duel` is ported; that is the voyage event's stance fight and the auto-resolve. `standing_delta` is returned and not applied, matching the CLI. Encounter history counters (`duels_won`, `PirateEncounterRecord`) are not stored.
+- [ ] `engine/combat.py`, `engine/naval.py`, and `engine/encounter.py` (negotiate, flee, fight, naval rounds, boarding, prize capture). Deferred. The chart view landed first on purpose and does not offer these. `engine/duel.py` `resolve_duel` is ported; that is the voyage event's stance fight and the auto-resolve, and the pirate-captain flow stays that duel. Flee is not part of it. A later flee port is Python's `resolve_flee` in naval combat, with goldens, not a fourth stance. `standing_delta` is returned and not applied, matching the CLI. Encounter history counters (`duels_won`, `PirateEncounterRecord`) are not stored.
 - [ ] `engine/hunting.py`, `engine/loot.py`
 - [ ] `engine/contracts.py` and `content/contracts.py`
 - [ ] `engine/infrastructure.py`, `content/infrastructure.py` (brokers, warehouses, insurance, credit)
@@ -235,7 +236,7 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 
 ## Stage 2
 
-The chart is a view. `portlight-sim` stays a plain crate. `portlight-chart` has no Godot dependency and owns the display math. `portlight-godot` is a gdext 0.5.5 extension (`api-4-7`) that loads that view into a Godot 4.7.2 project under `godot/`.
+The chart is a view. `portlight-sim` stays a plain crate. `portlight-chart` has no Godot dependency and owns the display math. `portlight-godot` is a gdext 0.5.5 extension (`api-4-7`) that loads that view into a Godot 4.7.2 project under `godot/`. This slice landed before negotiate, flee, naval combat, and boarding, on purpose. Those stay deferred. The pirate-captain encounter remains the stance duel.
 
 ### Display
 
@@ -266,16 +267,9 @@ The market panel calls `Session::buy` and `Session::sell` for quantity 1. Next d
 
 ### Rebasing stage 2 onto a squashed stage 1
 
-Stage 2 does not own `crates/portlight-sim/src/session.rs`. The chart and the Godot view call `portlight_sim::Session` and nothing else for rules. There is no shim and no second `Session` type. The sim tree on this branch matches stage 1.
+Stage 2 does not own `crates/portlight-sim/src/session.rs`. The chart and the Godot view call `portlight_sim::Session` and nothing else for rules. There is no shim and no second `Session` type.
 
-When stage 1 is squash-merged, rebase this branch onto that commit:
-
-```
-git fetch origin
-git rebase --onto <squashed-stage1> <old-stage1-tip> cursor/rust-port-stage2-dimetric-e4ee
-```
-
-`<old-stage1-tip>` is the stage 1 commit this branch was last stacked on (`d4eee429d7b436fc133896e3e700a83da6ce19fc` until the next stack). The replay should only touch `crates/portlight-chart`, `crates/portlight-godot`, `godot/`, `docs/PORTING-PLAN.md`, `README.md`, and the lockfile lines those crates need. If `crates/portlight-sim` conflicts, take the squashed stage 1 file. Do not resurrect a local `session.rs`.
+Stage 1 was squash-merged to `main` as `5decf672b6918a11db016123fe49642ee6ba0348`. This branch is rebased onto that commit. `crates/portlight-sim` matches `main`. Do not resurrect a local `session.rs`.
 
 New game in the view is merchant Ada, seed 1, home Porto Novo. That seed completes Porto Novo to Al-Manar without a pending duel. The scripted smoke buys grain, sails, advances until docked, sells the grain, and buys and sells one spice.
 
@@ -287,4 +281,4 @@ No harbour scene in the playable, and no terrain, weather overlay, or NPC ships.
 
 `portlight-chart` unit tests cover the projection, the eight facings, the water datum, and the seed-1 trade loop against `Session`. `cargo test --workspace` still runs the stage 1 goldens.
 
-The sim stays on the Rust 1.83.0 pin. `godot` 0.5.5 does not build there, so the sim CI job passes `--exclude portlight-godot`. A separate job uses stable Rust, builds the extension, and runs Godot 4.7.2. Headless Godot cannot draw: the dummy renderer has no viewport texture, and reading it logs `Parameter "t" is null` plus `viewport image was empty`. The headless `--smoke` checks the session only and does not capture. The frame is `xvfb-run` with `--rendering-driver opengl3`. That capture exits non-zero if the image is empty or mostly one flat colour, and the job greps the Godot log for those renderer errors. `set_anchors_preset` alone keeps a new control at its minimum size, which collapsed the chart row to the panel's 28 px content margin; the row uses `set_anchors_and_offsets_preset` so it fills 1280×720.
+The sim stays on the Rust 1.83.0 pin. `godot` 0.5.5 does not build there, so the sim CI job passes `--exclude portlight-godot`. A separate job uses stable Rust, builds the extension, and runs Godot 4.7.2. Headless Godot cannot draw: the dummy renderer has no viewport texture, and reading it logs `Parameter "t" is null` plus `viewport image was empty`. The headless `--smoke` checks the session only and does not capture. The frame is `xvfb-run` with `--rendering-driver opengl3`. That capture exits non-zero if the image is empty or mostly one flat colour, and the job greps the Godot log for those renderer errors. The harbour seam scene (`PORTLIGHT_SEAM_DIR`, `godot/scenes/harbour_seam.tscn`) validates the layout first. An illegal layout exits non-zero and does not write a PNG. A blank or mostly flat seam frame fails the same check and also exits non-zero. `set_anchors_preset` alone keeps a new control at its minimum size, which collapsed the chart row to the panel's 28 px content margin; the row uses `set_anchors_and_offsets_preset` so it fills 1280×720.
