@@ -551,6 +551,68 @@ pub struct CrossPortNetworkDef {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct UpgradeDef {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub price: i64,
+    pub speed_bonus: f64,
+    pub hull_max_bonus: i64,
+    pub cargo_bonus: i64,
+    pub cannon_bonus: i64,
+    pub maneuver_bonus: f64,
+    pub storm_resist_bonus: f64,
+    pub crew_max_bonus: i64,
+    pub speed_penalty: f64,
+    pub special: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct InjuryDef {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub severity: String,
+    pub body_part: String,
+    pub melee_damage_mod: i64,
+    pub stamina_max_mod: i64,
+    pub hp_max_mod: i64,
+    pub ranged_accuracy_mod: f64,
+    pub can_dodge: bool,
+    pub can_use_firearms: bool,
+    pub thrust_multiplier: f64,
+    pub heal_days: Option<i64>,
+    pub heal_silver: i64,
+    pub blocked_body_parts: Vec<String>,
+    pub attack_types: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct LootEntryDef {
+    pub item_type: String,
+    pub item_id: String,
+    pub quantity_min: i64,
+    pub quantity_max: i64,
+    pub weight: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct LootTableDef {
+    pub id: String,
+    pub entries: Vec<LootEntryDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AmmoDef {
+    pub id: String,
+    pub name: String,
+    pub weapon_type: String,
+    pub silver_cost: i64,
+    pub quantity: i64,
+    pub available_regions: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Content {
     pub source_commit: String,
     pub goods: Vec<GoodDef>,
@@ -580,6 +642,16 @@ pub struct Content {
     pub port_institutions: Vec<PortInstitutionDef>,
     pub port_institutions_east: Vec<PortInstitutionDef>,
     pub cross_port_networks: Vec<CrossPortNetworkDef>,
+    #[serde(default)]
+    pub upgrades: Vec<UpgradeDef>,
+    #[serde(default)]
+    pub injuries: Vec<InjuryDef>,
+    #[serde(default)]
+    pub loot_tables: Vec<LootTableDef>,
+    #[serde(default)]
+    pub captain_loot: Vec<LootTableDef>,
+    #[serde(default)]
+    pub ammo: Vec<AmmoDef>,
 }
 
 pub const REGIONS: [&str; 5] = [
@@ -819,6 +891,40 @@ impl Content {
             .chain(self.port_institutions_east.iter())
             .flat_map(|profile| profile.npcs.iter())
             .find(|npc| npc.id == id)
+    }
+
+    pub fn upgrade(&self, id: &str) -> Option<&UpgradeDef> {
+        self.upgrades.iter().find(|u| u.id == id)
+    }
+
+    pub fn injury(&self, id: &str) -> Option<&InjuryDef> {
+        self.injuries.iter().find(|inj| inj.id == id)
+    }
+
+    pub fn loot_table(&self, id: &str) -> Option<&LootTableDef> {
+        self.loot_tables.iter().find(|table| table.id == id)
+    }
+
+    pub fn captain_loot(&self, id: &str) -> Option<&LootTableDef> {
+        self.captain_loot.iter().find(|table| table.id == id)
+    }
+
+    pub fn ammo(&self, id: &str) -> Option<&AmmoDef> {
+        self.ammo.iter().find(|ammo| ammo.id == id)
+    }
+
+    /// Strength tiers from `get_loot_table_for_strength`.
+    pub fn loot_table_for_strength(&self, strength: i64) -> Option<&LootTableDef> {
+        let id = if strength >= 9 {
+            "loot_boss"
+        } else if strength >= 7 {
+            "loot_strong"
+        } else if strength >= 5 {
+            "loot_medium"
+        } else {
+            "loot_weak"
+        };
+        self.loot_table(id)
     }
 }
 

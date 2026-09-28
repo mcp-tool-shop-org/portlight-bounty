@@ -1,0 +1,3 @@
+new merchant Ada 1
+buy_ship swift_cutter
+form_convoy

@@ -301,6 +301,60 @@ fn dispatch(
             entry.agency = Some(snapshot::agency_log(ambush, encounter.as_ref(), &notices));
             Ok(())
         }
+        "spare" => {
+            let session = active(session)?;
+            session.spare()
+        }
+        "take_all" => {
+            let session = active(session)?;
+            session.take_all()
+        }
+        "gear" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: gear <id>".into()));
+            }
+            session.buy_gear(&tokens[1])
+        }
+        "buy_ship" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: buy_ship <template_id>".into()));
+            }
+            session.buy_ship(&tokens[1])
+        }
+        "upgrade" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: upgrade <upgrade_id>".into()));
+            }
+            session.install_upgrade(&tokens[1])
+        }
+        "form_convoy" => {
+            let session = active(session)?;
+            session.form_convoy()
+        }
+        "repair_fleet" => {
+            let session = active(session)?;
+            session.repair_fleet().map(|_| ())
+        }
+        "transfer" => {
+            let session = active(session)?;
+            if tokens.len() != 5 {
+                return Err(SimError::Sentence(
+                    "Usage: transfer <good> <qty> <from> <to>".into(),
+                ));
+            }
+            let qty = parse_qty(&tokens[2])?;
+            session.transfer_cargo(&tokens[1], qty, &tokens[3], &tokens[4])
+        }
+        "maintain" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: maintain <weapon_id>".into()));
+            }
+            session.maintain_weapon(&tokens[1])
+        }
         other => Err(SimError::UnknownCommand(other.to_string())),
     }
 }

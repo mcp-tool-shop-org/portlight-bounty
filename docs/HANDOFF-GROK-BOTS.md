@@ -323,13 +323,13 @@ Inside your own area, do the work in this order:
 - Victory evaluators read infrastructure from `HouseBooks`
 
 ### Area 5: Fleet, Injuries & Weapons
-- `UpgradeDef`, `InjuryDef`, `LootTableDef` in `content.rs`
-- `FleetShip`, `Injury`, `WeaponQuality` in `model.rs`
-- `fleet.rs` — convoy formation, fleet speed calculation, shared cargo
-- `injuries.rs` — injury table rolls, surgeon recovery bonus, permanent effects
-- `weapon_quality.rs` — durability loss on use, breakage check
-- `weapon_provenance.rs` — origin bonuses, provenance chains
-- `Session::form_convoy()`, `Session::repair_fleet()`
+- [x] `UpgradeDef`, `InjuryDef`, `LootTableDef` in `content.rs`
+- [x] `FleetShip`, `Injury`, `WeaponQuality` in `model.rs`
+- [x] `fleet.rs` — convoy formation, fleet speed calculation, shared cargo
+- [x] `injuries.rs` — injury table rolls, surgeon recovery bonus, permanent effects
+- [x] `weapon_quality.rs` — durability loss on use, breakage check
+- [x] `weapon_provenance.rs` — origin bonuses, provenance chains
+- [x] `Session::form_convoy()`, `Session::repair_fleet()`
 
 ### Area 6: Narrative, Culture & Consequences
 - `CultureDef`, `SeaCultureDef`, `PortPoliticsDef` in `content.rs`
@@ -360,9 +360,9 @@ As you add catalogs, tick them off:
 - [x] `ranged_weapons`
 - [x] `fighting_styles`
 - [x] `skills`
-- [ ] `injuries`
-- [ ] `loot_tables`
-- [ ] `upgrades`
+- [x] `injuries`
+- [x] `loot_tables`
+- [x] `upgrades`
 - [x] `merchants`
 - [x] `officer_names`
 - [x] `companions`

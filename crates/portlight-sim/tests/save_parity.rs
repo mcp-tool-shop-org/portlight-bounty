@@ -380,6 +380,80 @@ fn python_v12_save_restores_the_contract_board() {
 }
 
 #[test]
+fn python_v12_area5_round_trips() {
+    let root = parity_root();
+    let fixture: Value =
+        serde_json::from_str(&fs::read_to_string(root.join("saves/area5_v12.json")).unwrap())
+            .unwrap();
+    let loaded = Session::load(&root, "area5_v12").unwrap().unwrap();
+    let captain = &loaded.world().captain;
+    assert_eq!(captain.injuries.len(), 2);
+    assert_eq!(captain.injuries[0].injury_id, "cut_hand");
+    assert_eq!(captain.injuries[0].heal_remaining, Some(10));
+    assert_eq!(captain.injuries[1].injury_id, "blinded_eye");
+    assert_eq!(captain.injuries[1].heal_remaining, None);
+    assert_eq!(captain.armor.as_ref().unwrap().id, "chain_shirt");
+    assert_eq!(captain.armor.as_ref().unwrap().damage_reduction, 1);
+    assert_eq!(captain.armor.as_ref().unwrap().dodge_penalty, 1);
+    assert_eq!(captain.melee.as_ref().unwrap().id, "cutlass");
+    assert_eq!(captain.quality_of("cutlass"), "fine");
+    assert_eq!(captain.usage_of("cutlass"), 9);
+    let provenance = captain
+        .weapon_provenance
+        .iter()
+        .find(|(id, _)| id == "cutlass")
+        .map(|(_, prov)| prov)
+        .unwrap();
+    assert_eq!(provenance.epithet.as_deref(), Some("Raj the Quiet's Bane"));
+    assert_eq!(provenance.kills, 1);
+    assert_eq!(captain.fleet.len(), 1);
+    assert_eq!(captain.fleet[0].ship.template_id, "coastal_sloop");
+    assert_eq!(captain.fleet[0].ship.hull, 40);
+    assert_eq!(captain.fleet[0].docked_port_id, "porto_novo");
+    assert_eq!(captain.fleet[0].cargo[0].good_id, "grain");
+    assert_eq!(captain.fleet[0].cargo[0].quantity, 3);
+    assert_eq!(captain.fleet[0].cargo[0].acquired_port, "loot");
+    assert_eq!(
+        captain.ship.as_ref().unwrap().upgrades[0].upgrade_id,
+        "extra_gun_ports"
+    );
+    assert!(loaded.pending_victory());
+
+    let dir = scratch("area5");
+    let mut loaded = loaded;
+    loaded.save(&dir, "area5_v12").unwrap();
+    let again = Session::load(&dir, "area5_v12").unwrap().unwrap();
+    assert!(again.pending_victory());
+    assert_eq!(again.world().captain.injuries.len(), 2);
+    let rust: Value = serde_json::from_str(
+        &fs::read_to_string(dir.join("saves").join("area5_v12.json")).unwrap(),
+    )
+    .unwrap();
+    for path in [
+        "captain.injuries",
+        "captain.combat_gear",
+        "captain.fleet",
+        "captain.ship.upgrades",
+    ] {
+        close(&dig(&fixture, path), &dig(&rust, path), path);
+    }
+    close(
+        &fixture["pirate_state"]["encounter_state"]["pending_victory"],
+        &rust["pirate_state"]["encounter_state"]["pending_victory"],
+        "pending_victory",
+    );
+    let _ = fs::remove_dir_all(&dir);
+}
+
+fn dig(value: &Value, path: &str) -> Value {
+    let mut cursor = value;
+    for key in path.split('.') {
+        cursor = &cursor[key];
+    }
+    cursor.clone()
+}
+
+#[test]
 fn load_reseeds_with_seed_plus_day() {
     let mut session = Session::new("Ada", "merchant", 42, None).unwrap();
     let dir = scratch("reseed");

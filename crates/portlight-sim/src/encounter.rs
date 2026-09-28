@@ -332,6 +332,8 @@ pub fn create_duel_combatants(
     encounter: &EncounterState,
     player: &Captain,
 ) -> (CombatantState, CombatantState) {
+    // CLI fight path: create_duel_combatants does not receive armor or melee.
+    // Those are applied afterwards, and armor does not change max stamina.
     let crew = player.ship.as_ref().map(|ship| ship.crew).unwrap_or(5);
     let throwing_ids: Vec<String> = player
         .throwing
@@ -343,29 +345,44 @@ pub fn create_duel_combatants(
         .iter()
         .map(|weapon| weapon.ammo.max(0))
         .sum();
-    let p = combat::create_player_combatant(
+    let injuries: Vec<String> = player
+        .injuries
+        .iter()
+        .map(|injury| injury.injury_id.clone())
+        .collect();
+    let melee_quality = player
+        .melee
+        .as_ref()
+        .map(|weapon| player.quality_of(&weapon.id).to_string())
+        .unwrap_or_else(|| "standard".to_string());
+    let ranged_quality = player
+        .firearm
+        .as_ref()
+        .map(|weapon| player.quality_of(&weapon.id).to_string())
+        .unwrap_or_else(|| "standard".to_string());
+    let mut p = combat::create_player_combatant(
         crew,
         player.active_style.as_deref(),
-        &[],
+        &injuries,
         player.firearm.as_ref().map(|w| w.id.as_str()),
         player.firearm.as_ref().map(|w| w.ammo).unwrap_or(0),
         throwing_count,
         &throwing_ids,
         player.mechanical.as_ref().map(|w| w.id.as_str()),
         player.mechanical.as_ref().map(|w| w.ammo).unwrap_or(0),
-        player.armor.as_ref().map(|a| a.id.as_str()),
-        player.melee.as_ref().map(|w| w.id.as_str()),
-        player
-            .melee
-            .as_ref()
-            .map(|w| w.quality.as_str())
-            .unwrap_or("standard"),
-        player
-            .firearm
-            .as_ref()
-            .map(|w| w.quality.as_str())
-            .unwrap_or("standard"),
+        None,
+        None,
+        "standard",
+        "standard",
     );
+    p.throwing_weapon_ids = throwing_ids;
+    p.melee_weapon_id = player.melee.as_ref().map(|weapon| weapon.id.clone());
+    p.melee_quality = melee_quality;
+    p.ranged_quality = ranged_quality;
+    if let Some(armor) = player.armor.as_ref() {
+        p.armor_dr = armor.damage_reduction;
+        p.dodge_stamina_penalty = armor.dodge_penalty;
+    }
     let opp_ammo = 2.min(encounter.enemy_strength / 4);
     let opp_throwing = 3.min(encounter.enemy_strength / 3);
     let o = combat::create_opponent_combatant(

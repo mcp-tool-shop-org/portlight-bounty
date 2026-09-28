@@ -1,0 +1,6 @@
+# Full-crew cutter (speed 9) is capped by the sloop escort (speed 8).
+new merchant Ada 1
+buy_ship swift_cutter
+hire 7
+depart silva_bay
+advance

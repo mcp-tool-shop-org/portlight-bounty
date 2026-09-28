@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "privateer",
-    "silver": 475,
+    "silver": 395,
     "provisions": 30,
     "day": 1,
     "wanted_level": 0,
@@ -57,7 +57,14 @@
         "heal_remaining": 30,
         "treated": false
       }
-    ]
+    ],
+    "armor": "chain_shirt",
+    "weapon_quality": {
+      "chain_shirt": "standard"
+    },
+    "weapon_usage": {
+      "chain_shirt": 1
+    }
   },
   "voyage": {
     "origin_id": "stormwall",
@@ -1437,8 +1444,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 1525 more silver"
+          "detail": "Silver: 395",
+          "action": "Earn 1605 more silver"
         }
       ]
     },
@@ -1476,8 +1483,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Accumulate 1025 more silver"
+          "detail": "Silver: 395",
+          "action": "Accumulate 1105 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1527,8 +1534,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 1525 more silver"
+          "detail": "Silver: 395",
+          "action": "Earn 1605 more silver"
         }
       ]
     },
@@ -1566,8 +1573,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 2525 more silver"
+          "detail": "Silver: 395",
+          "action": "Earn 2605 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1581,6 +1588,13 @@
   "log": [
     {
       "command": "new privateer Ada 4",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "gear chain_shirt",
       "error": null,
       "receipt": null,
       "events": [],
@@ -2205,7 +2219,7 @@
         "damage_to_player": 0,
         "player_hp": 12,
         "opponent_hp": 8,
-        "player_stamina_delta": -1,
+        "player_stamina_delta": -2,
         "opponent_stamina_delta": -1,
         "player_won": false,
         "draw": false,
@@ -2214,7 +2228,7 @@
         "style_effect": "",
         "prize_ok": false,
         "prize_reason": "",
-        "player_stamina": 7,
+        "player_stamina": 6,
         "player_stamina_max": 8
       }
     },
@@ -2268,7 +2282,7 @@
         "style_effect": "",
         "prize_ok": false,
         "prize_reason": "",
-        "player_stamina": 7,
+        "player_stamina": 6,
         "player_stamina_max": 8
       }
     },
@@ -2322,7 +2336,7 @@
         "style_effect": "",
         "prize_ok": false,
         "prize_reason": "",
-        "player_stamina": 7,
+        "player_stamina": 6,
         "player_stamina_max": 8
       }
     },
@@ -2376,7 +2390,7 @@
         "style_effect": "",
         "prize_ok": false,
         "prize_reason": "",
-        "player_stamina": 7,
+        "player_stamina": 6,
         "player_stamina_max": 8
       }
     },
@@ -2418,8 +2432,8 @@
         "enemy_crew_lost": 0,
         "player_advantage": false,
         "damage_to_opponent": 3,
-        "damage_to_player": 6,
-        "player_hp": 6,
+        "damage_to_player": 5,
+        "player_hp": 7,
         "opponent_hp": 0,
         "player_stamina_delta": 0,
         "opponent_stamina_delta": 1,
@@ -2430,7 +2444,7 @@
         "style_effect": "",
         "prize_ok": false,
         "prize_reason": "",
-        "player_stamina": 7,
+        "player_stamina": 6,
         "player_stamina_max": 8
       }
     }

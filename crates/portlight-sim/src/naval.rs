@@ -548,6 +548,7 @@ pub fn capture_prize(
         marines: 0,
         quartermasters: 0,
         officers: Vec::new(),
+        upgrades: Vec::new(),
     };
     if let Some(flagship) = captain.ship.as_mut() {
         for _ in 0..crew_to_prize.max(0) {
@@ -563,6 +564,7 @@ pub fn capture_prize(
     OwnedShip {
         ship: prize,
         docked_port_id: docked_port_id.to_string(),
+        cargo: Vec::new(),
     }
 }
 
@@ -592,6 +594,7 @@ mod tests {
             marines: 0,
             quartermasters: 0,
             officers: Vec::new(),
+            upgrades: Vec::new(),
         }
     }
 

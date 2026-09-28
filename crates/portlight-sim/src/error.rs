@@ -138,6 +138,8 @@ pub enum SimError {
     UsageRemember,
     /// A sentence copied from the Python rules engine.
     Rejected(String),
+    /// A Python sentence this area surfaces directly.
+    Sentence(String),
 }
 
 impl fmt::Display for SimError {
@@ -297,6 +299,7 @@ impl fmt::Display for SimError {
             Self::UsageWithdraw => write!(f, "Usage: withdraw <good> <qty> [source_port]"),
             Self::UsageRepayCredit => write!(f, "Usage: repay_credit <amount>"),
             Self::Rejected(message) => write!(f, "{message}"),
+            Self::Sentence(message) => write!(f, "{message}"),
         }
     }
 }

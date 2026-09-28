@@ -4322,6 +4322,1036 @@
       ]
     }
   ],
+  "upgrades": [
+    {
+      "id": "lateen_rigging",
+      "name": "Lateen Rigging",
+      "category": "sails",
+      "price": 120,
+      "speed_bonus": 0.5,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "square_sails",
+      "name": "Square Sails",
+      "category": "sails",
+      "price": 300,
+      "speed_bonus": 1.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "storm_canvas",
+      "name": "Storm Canvas",
+      "category": "sails",
+      "price": 250,
+      "speed_bonus": 0.3,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.1,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "iron_strapping",
+      "name": "Iron Strapping",
+      "category": "hull_plating",
+      "price": 100,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 15,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "copper_sheathing",
+      "name": "Copper Sheathing",
+      "category": "hull_plating",
+      "price": 350,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 25,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.1,
+      "special": ""
+    },
+    {
+      "id": "lead_lined",
+      "name": "Lead-Lined Hull",
+      "category": "hull_plating",
+      "price": 500,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 40,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.3,
+      "special": ""
+    },
+    {
+      "id": "extra_gun_ports",
+      "name": "Extra Gun Ports",
+      "category": "armament",
+      "price": 200,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 2,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "chain_shot_racks",
+      "name": "Chain Shot Racks",
+      "category": "armament",
+      "price": 350,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 1,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": "chain_shot"
+    },
+    {
+      "id": "swivel_guns",
+      "name": "Swivel Guns",
+      "category": "armament",
+      "price": 150,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 1,
+      "maneuver_bonus": 0.05,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "extended_hold",
+      "name": "Extended Hold",
+      "category": "cargo",
+      "price": 80,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 10,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "reinforced_bulkheads",
+      "name": "Reinforced Bulkheads",
+      "category": "cargo",
+      "price": 250,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 20,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.1,
+      "special": ""
+    },
+    {
+      "id": "hidden_compartments",
+      "name": "Hidden Compartments",
+      "category": "cargo",
+      "price": 400,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 5,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": "contraband_immune"
+    },
+    {
+      "id": "improved_rudder",
+      "name": "Improved Rudder",
+      "category": "navigation",
+      "price": 100,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.1,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "crows_nest",
+      "name": "Crow's Nest",
+      "category": "navigation",
+      "price": 150,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.05,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": "danger_reduction"
+    },
+    {
+      "id": "compass_rose",
+      "name": "Compass Rose",
+      "category": "navigation",
+      "price": 200,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.1,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "hammock_deck",
+      "name": "Hammock Deck",
+      "category": "crew_quarters",
+      "price": 60,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 5,
+      "speed_penalty": 0.0,
+      "special": ""
+    },
+    {
+      "id": "officers_cabin",
+      "name": "Officer's Cabin",
+      "category": "crew_quarters",
+      "price": 200,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 3,
+      "speed_penalty": 0.0,
+      "special": "morale_bonus"
+    },
+    {
+      "id": "surgeons_bay",
+      "name": "Surgeon's Bay",
+      "category": "crew_quarters",
+      "price": 350,
+      "speed_bonus": 0.0,
+      "hull_max_bonus": 0,
+      "cargo_bonus": 0,
+      "cannon_bonus": 0,
+      "maneuver_bonus": 0.0,
+      "storm_resist_bonus": 0.0,
+      "crew_max_bonus": 0,
+      "speed_penalty": 0.0,
+      "special": "injury_heal"
+    }
+  ],
+  "injuries": [
+    {
+      "id": "cut_hand",
+      "name": "Cut Hand",
+      "description": "A deep cut across the palm. Grip weakened.",
+      "severity": "minor",
+      "body_part": "hand",
+      "melee_damage_mod": -1,
+      "stamina_max_mod": 0,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": true,
+      "can_use_firearms": true,
+      "thrust_multiplier": 1.0,
+      "heal_days": 10,
+      "heal_silver": 0,
+      "blocked_body_parts": [
+        "hand"
+      ],
+      "attack_types": [
+        "slash"
+      ]
+    },
+    {
+      "id": "bruised_ribs",
+      "name": "Bruised Ribs",
+      "description": "Cracked ribs from a heavy blow. Every breath hurts.",
+      "severity": "minor",
+      "body_part": "torso",
+      "melee_damage_mod": 0,
+      "stamina_max_mod": -1,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": true,
+      "can_use_firearms": true,
+      "thrust_multiplier": 1.0,
+      "heal_days": 15,
+      "heal_silver": 0,
+      "blocked_body_parts": [
+        "torso"
+      ],
+      "attack_types": [
+        "slash",
+        "thrust"
+      ]
+    },
+    {
+      "id": "deep_slash",
+      "name": "Deep Slash",
+      "description": "A long cut down the sword arm. Two-handed techniques are impossible.",
+      "severity": "major",
+      "body_part": "arm",
+      "melee_damage_mod": -1,
+      "stamina_max_mod": 0,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": true,
+      "can_use_firearms": true,
+      "thrust_multiplier": 1.0,
+      "heal_days": 30,
+      "heal_silver": 0,
+      "blocked_body_parts": [
+        "arm"
+      ],
+      "attack_types": [
+        "slash"
+      ]
+    },
+    {
+      "id": "shattered_knee",
+      "name": "Shattered Knee",
+      "description": "The kneecap is cracked. Footwork is agony.",
+      "severity": "major",
+      "body_part": "leg",
+      "melee_damage_mod": 0,
+      "stamina_max_mod": -1,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": false,
+      "can_use_firearms": true,
+      "thrust_multiplier": 1.0,
+      "heal_days": 45,
+      "heal_silver": 0,
+      "blocked_body_parts": [
+        "leg"
+      ],
+      "attack_types": [
+        "slash",
+        "thrust"
+      ]
+    },
+    {
+      "id": "blinded_eye",
+      "name": "Blinded Eye",
+      "description": "One eye gone. Depth perception ruined.",
+      "severity": "crippling",
+      "body_part": "eye",
+      "melee_damage_mod": 0,
+      "stamina_max_mod": 0,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": -0.15,
+      "can_dodge": true,
+      "can_use_firearms": true,
+      "thrust_multiplier": 1.0,
+      "heal_days": null,
+      "heal_silver": 0,
+      "blocked_body_parts": [
+        "eye"
+      ],
+      "attack_types": [
+        "slash",
+        "thrust"
+      ]
+    },
+    {
+      "id": "broken_sword_arm",
+      "name": "Broken Sword Arm",
+      "description": "The sword arm is shattered. Fighting is barely possible.",
+      "severity": "crippling",
+      "body_part": "arm",
+      "melee_damage_mod": -2,
+      "stamina_max_mod": 0,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": true,
+      "can_use_firearms": true,
+      "thrust_multiplier": 0.5,
+      "heal_days": 60,
+      "heal_silver": 200,
+      "blocked_body_parts": [
+        "arm"
+      ],
+      "attack_types": [
+        "slash",
+        "thrust"
+      ]
+    },
+    {
+      "id": "gunshot_wound",
+      "name": "Gunshot Wound",
+      "description": "A musket ball lodged near the ribs. Movement is agony.",
+      "severity": "major",
+      "body_part": "torso",
+      "melee_damage_mod": 0,
+      "stamina_max_mod": -2,
+      "hp_max_mod": -2,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": true,
+      "can_use_firearms": true,
+      "thrust_multiplier": 1.0,
+      "heal_days": 30,
+      "heal_silver": 100,
+      "blocked_body_parts": [
+        "torso"
+      ],
+      "attack_types": [
+        "shoot"
+      ]
+    },
+    {
+      "id": "severed_fingers",
+      "name": "Severed Fingers",
+      "description": "Two fingers lost. Grip is weak. Trigger pull impossible.",
+      "severity": "crippling",
+      "body_part": "hand",
+      "melee_damage_mod": -1,
+      "stamina_max_mod": 0,
+      "hp_max_mod": 0,
+      "ranged_accuracy_mod": 0.0,
+      "can_dodge": true,
+      "can_use_firearms": false,
+      "thrust_multiplier": 1.0,
+      "heal_days": null,
+      "heal_silver": 0,
+      "blocked_body_parts": [
+        "hand"
+      ],
+      "attack_types": [
+        "slash"
+      ]
+    }
+  ],
+  "loot_tables": [
+    {
+      "id": "loot_weak",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 5,
+          "quantity_max": 20,
+          "weight": 4.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "grain",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "rum",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.5
+        },
+        {
+          "item_type": "ammo",
+          "item_id": "pistol_shot",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "loot_medium",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 15,
+          "quantity_max": 45,
+          "weight": 4.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "iron",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "cotton",
+          "quantity_min": 2,
+          "quantity_max": 5,
+          "weight": 1.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "rum",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 1.5
+        },
+        {
+          "item_type": "ammo",
+          "item_id": "pistol_shot",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "cutlass",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.8
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "dagger",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "loot_strong",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 30,
+          "quantity_max": 80,
+          "weight": 4.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "spice",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "silk",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "tea",
+          "quantity_min": 2,
+          "quantity_max": 4,
+          "weight": 1.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "weapons",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.0
+        },
+        {
+          "item_type": "ammo",
+          "item_id": "pistol_shot",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "rapier",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "boarding_axe",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.6
+        },
+        {
+          "item_type": "armor",
+          "item_id": "leather_vest",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.4
+        },
+        {
+          "item_type": "armor",
+          "item_id": "chain_shirt",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.2
+        }
+      ]
+    },
+    {
+      "id": "loot_boss",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 60,
+          "quantity_max": 150,
+          "weight": 4.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "pearls",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "silk",
+          "quantity_min": 2,
+          "quantity_max": 5,
+          "weight": 1.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "porcelain",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "rapier",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.8
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "kris",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.6
+        },
+        {
+          "item_type": "armor",
+          "item_id": "chain_shirt",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.5
+        },
+        {
+          "item_type": "armor",
+          "item_id": "brigandine",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.3
+        },
+        {
+          "item_type": "ranged_weapon",
+          "item_id": "wheellock_pistol",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.3
+        },
+        {
+          "item_type": "ammo",
+          "item_id": "pistol_shot",
+          "quantity_min": 2,
+          "quantity_max": 4,
+          "weight": 1.5
+        }
+      ]
+    }
+  ],
+  "captain_loot": [
+    {
+      "id": "scarlet_ana",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 40,
+          "quantity_max": 90,
+          "weight": 3.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "weapons",
+          "quantity_min": 2,
+          "quantity_max": 5,
+          "weight": 2.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "black_powder",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "cutlass",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 1.0
+        },
+        {
+          "item_type": "armor",
+          "item_id": "chain_shirt",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.5
+        }
+      ]
+    },
+    {
+      "id": "the_butcher",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 60,
+          "quantity_max": 120,
+          "weight": 4.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "weapons",
+          "quantity_min": 3,
+          "quantity_max": 6,
+          "weight": 2.0
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "boarding_axe",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 1.0
+        },
+        {
+          "item_type": "armor",
+          "item_id": "leather_vest",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "id": "raj_the_quiet",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 30,
+          "quantity_max": 70,
+          "weight": 3.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "spice",
+          "quantity_min": 2,
+          "quantity_max": 5,
+          "weight": 3.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "silk",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "opium",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.0
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "kris",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "id": "typhoon_mei",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 50,
+          "quantity_max": 100,
+          "weight": 3.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "spice",
+          "quantity_min": 1,
+          "quantity_max": 4,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "tea",
+          "quantity_min": 2,
+          "quantity_max": 5,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "kris",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.6
+        },
+        {
+          "item_type": "armor",
+          "item_id": "brigandine",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.4
+        }
+      ]
+    },
+    {
+      "id": "old_coral",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 25,
+          "quantity_max": 60,
+          "weight": 3.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "pearls",
+          "quantity_min": 2,
+          "quantity_max": 4,
+          "weight": 3.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "medicines",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.0
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "dagger",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "the_diver",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 40,
+          "quantity_max": 80,
+          "weight": 3.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "pearls",
+          "quantity_min": 1,
+          "quantity_max": 3,
+          "weight": 2.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "stolen_cargo",
+          "quantity_min": 1,
+          "quantity_max": 2,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "cutlass",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "id": "sergeant_kruze",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 50,
+          "quantity_max": 100,
+          "weight": 3.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "iron",
+          "quantity_min": 3,
+          "quantity_max": 6,
+          "weight": 2.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "weapons",
+          "quantity_min": 2,
+          "quantity_max": 4,
+          "weight": 2.0
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "boarding_axe",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 1.0
+        },
+        {
+          "item_type": "armor",
+          "item_id": "chain_shirt",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.6
+        }
+      ]
+    },
+    {
+      "id": "gnaw",
+      "entries": [
+        {
+          "item_type": "silver",
+          "item_id": "silver",
+          "quantity_min": 80,
+          "quantity_max": 150,
+          "weight": 3.5
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "iron",
+          "quantity_min": 2,
+          "quantity_max": 5,
+          "weight": 2.0
+        },
+        {
+          "item_type": "cargo",
+          "item_id": "black_powder",
+          "quantity_min": 2,
+          "quantity_max": 4,
+          "weight": 1.5
+        },
+        {
+          "item_type": "melee_weapon",
+          "item_id": "halberd",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.5
+        },
+        {
+          "item_type": "armor",
+          "item_id": "chain_shirt",
+          "quantity_min": 1,
+          "quantity_max": 1,
+          "weight": 0.4
+        }
+      ]
+    }
+  ],
+  "ammo": [
+    {
+      "id": "pistol_shot",
+      "name": "Pistol Shot & Powder",
+      "weapon_type": "firearm",
+      "silver_cost": 5,
+      "quantity": 3,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic",
+        "East Indies",
+        "West Africa"
+      ]
+    },
+    {
+      "id": "crossbow_bolts",
+      "name": "Crossbow Bolts",
+      "weapon_type": "mechanical",
+      "silver_cost": 4,
+      "quantity": 5,
+      "available_regions": [
+        "Mediterranean"
+      ]
+    },
+    {
+      "id": "blowgun_darts",
+      "name": "Blowgun Darts (poisoned)",
+      "weapon_type": "mechanical",
+      "silver_cost": 3,
+      "quantity": 8,
+      "available_regions": [
+        "East Indies",
+        "South Seas"
+      ]
+    }
+  ],
   "skills": {
     "skills": [
       {

@@ -7,11 +7,12 @@
 use crate::content::{self, class_rank, ship_class_rank, CaptainDef};
 use crate::economy::{cargo_quantity, consume_cargo_fifo};
 use crate::error::SimError;
+use crate::fleet;
 use crate::model::{PendingDuel, Voyage, VoyageStatus, World};
 use crate::pyrand::PyRandom;
 use crate::reputation::inspection_modifier;
 use crate::ship::{
-    apply_crew_delta, morale_speed_modifier, navigator_speed_bonus, resolve_speed,
+    apply_crew_delta, has_special, morale_speed_modifier, navigator_speed_bonus, resolve_speed,
     resolve_storm_resist, template_crew_min, tick_morale_at_port, tick_morale_at_sea, wage_bill,
 };
 use crate::util::{py_round, py_trunc};
@@ -834,6 +835,7 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
             world.captain.silver -= fee;
         }
     }
+    fleet::form_convoy(&mut world.captain, &current);
     world.voyage = Voyage {
         origin_id: current,
         destination_id: destination_id.to_string(),
@@ -881,7 +883,8 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
         events.push(ev);
     }
 
-    let wage_cost = world.captain.ship.as_ref().map(wage_bill).unwrap_or(0);
+    let wage_cost = world.captain.ship.as_ref().map(wage_bill).unwrap_or(0)
+        + fleet::fleet_daily_wages(&world.captain);
     let wages_paid = if wage_cost > 0 && world.captain.silver >= wage_cost {
         world.captain.silver -= wage_cost;
         true
@@ -968,6 +971,7 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
     if let Some(ship) = world.captain.ship.as_mut() {
         ship.hull = 0.max(ship.hull + route_event.hull_delta);
     }
+    fleet::damage_convoy(&mut world.captain, route_event.hull_delta);
     world.captain.provisions = 0.max(world.captain.provisions + route_event.provision_delta);
     world.captain.silver = 0.max(world.captain.silver + route_event.silver_delta);
 
@@ -1012,6 +1016,7 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
             let crew_ratio = ship.crew as f64 / ship.crew_max as f64;
             base_speed *= 0.7 + 0.3 * crew_ratio;
         }
+        base_speed = fleet::convoy_speed(&world.captain, base_speed);
         base_speed *= morale_speed_modifier(ship.morale);
         base_speed *= season_speed;
         py_trunc(base_speed * route_event.speed_modifier)
@@ -1028,6 +1033,7 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
                 ship.hull = ship.hull.min(ship.hull_max);
             }
         }
+        fleet::wear_convoy(&mut world.captain);
     }
     if world.voyage.progress >= world.voyage.distance {
         world.voyage.status = VoyageStatus::Arrived;
@@ -1041,8 +1047,11 @@ pub fn arrive(world: &mut World) -> Result<(), SimError> {
     }
     world.voyage.status = VoyageStatus::InPort;
     if let Some(ship) = world.captain.ship.as_mut() {
-        ship.morale = tick_morale_at_port(ship, false);
+        let cabin = has_special(ship, "morale_bonus");
+        ship.morale = tick_morale_at_port(ship, cabin);
     }
+    let destination = world.voyage.destination_id.clone();
+    fleet::dock_convoy(&mut world.captain, &destination);
     if !world.captain.deferred_fees.is_empty() {
         let mut remaining = Vec::new();
         for fee in world.captain.deferred_fees.drain(..) {

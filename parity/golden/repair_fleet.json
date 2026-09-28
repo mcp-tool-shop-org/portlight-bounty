@@ -1,36 +1,27 @@
 {
-  "seed": 42,
-  "day": 3,
-  "trade_seq": 1,
+  "seed": 9,
+  "day": 4,
+  "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 444,
-    "provisions": 28,
-    "day": 3,
+    "silver": 16,
+    "provisions": 27,
+    "day": 4,
     "wanted_level": 0,
-    "cargo": [
-      {
-        "good_id": "grain",
-        "quantity": 8,
-        "cost_basis": 64,
-        "acquired_port": "porto_novo",
-        "acquired_region": "Mediterranean",
-        "acquired_day": 1
-      }
-    ],
+    "cargo": [],
     "ship": {
-      "template_id": "coastal_sloop",
-      "name": "Coastal Sloop",
-      "hull": 60,
-      "hull_max": 60,
-      "cargo_capacity": 30,
-      "speed": 8.0,
-      "crew": 3,
-      "crew_max": 8,
-      "morale": 52,
-      "cannons": 0,
-      "sailors": 3,
+      "template_id": "swift_cutter",
+      "name": "Swift Cutter",
+      "hull": 62,
+      "hull_max": 70,
+      "cargo_capacity": 50,
+      "speed": 9.0,
+      "crew": 12,
+      "crew_max": 12,
+      "morale": 58,
+      "cannons": 2,
+      "sailors": 12,
       "gunners": 0,
       "navigators": 0,
       "surgeons": 0,
@@ -39,7 +30,7 @@
     },
     "standing": {
       "regional": {
-        "Mediterranean": 10,
+        "Mediterranean": 11,
         "North Atlantic": 0,
         "West Africa": 0,
         "East Indies": 0,
@@ -53,30 +44,36 @@
         "South Seas": 0
       },
       "commercial_trust": 15,
-      "port_standing": [],
+      "port_standing": [
+        {
+          "port_id": "silva_bay",
+          "value": 1
+        }
+      ],
       "underworld": {},
       "incidents": []
     },
-    "encounters": [
+    "fleet": [
       {
-        "captain_id": "scarlet_ana",
-        "faction_id": "crimson_tide",
-        "day": 2,
-        "outcome": "duel_loss",
-        "region": "Mediterranean"
+        "template_id": "coastal_sloop",
+        "name": "Coastal Sloop",
+        "hull": 60,
+        "hull_max": 60,
+        "crew": 3,
+        "docked_port_id": "silva_bay"
       }
-    ],
-    "duels_lost": 1
+    ]
   },
   "voyage": {
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 14,
-    "days_elapsed": 2,
-    "status": "at_sea",
+    "progress": 17,
+    "days_elapsed": 3,
+    "status": "in_port",
     "recent_events": [
-      "pirates",
+      "storm",
+      "calm_seas",
       "nothing"
     ]
   },
@@ -87,9 +84,9 @@
       "market": [
         {
           "good_id": "grain",
-          "stock": 32,
-          "buy_price": 9,
-          "sell_price": 9,
+          "stock": 40,
+          "buy_price": 7,
+          "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
@@ -1449,8 +1446,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 444",
-          "action": "Earn 1556 more silver"
+          "detail": "Silver: 16",
+          "action": "Earn 1984 more silver"
         }
       ]
     },
@@ -1482,19 +1479,19 @@
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -64, heat: 0",
+          "detail": "Profit: 0, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 444",
-          "action": "Accumulate 1056 more silver"
+          "detail": "Silver: 16",
+          "action": "Accumulate 1484 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 1, max heat: 0",
+          "detail": "Trades: 0, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1527,7 +1524,7 @@
         {
           "description": "Long-haul ship capability (Brigantine or Galleon)",
           "status": "missing",
-          "detail": "Ship: sloop",
+          "detail": "Ship: cutter",
           "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
         },
         {
@@ -1539,8 +1536,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 444",
-          "action": "Earn 1556 more silver"
+          "detail": "Silver: 16",
+          "action": "Earn 1984 more silver"
         }
       ]
     },
@@ -1578,8 +1575,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 444",
-          "action": "Earn 2556 more silver"
+          "detail": "Silver: 16",
+          "action": "Earn 2984 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1590,42 +1587,25 @@
       ]
     }
   ],
-  "milestones": [
-    {
-      "milestone_id": "foothold_standing_established",
-      "completed_day": 2,
-      "evidence": "Standing 10+ in Mediterranean",
-      "family": "regional_foothold"
-    },
-    {
-      "milestone_id": "lawful_credible_trust",
-      "completed_day": 2,
-      "evidence": "Trust tier: credible",
-      "family": "lawful_house"
-    }
-  ],
   "log": [
     {
-      "command": "new merchant Ada 42",
+      "command": "new merchant Ada 9",
       "error": null,
       "receipt": null,
       "events": [],
       "shocks": []
     },
     {
-      "command": "buy grain 8",
+      "command": "buy_ship swift_cutter",
       "error": null,
-      "receipt": {
-        "receipt_id": "42471bdaf1a4a6ea",
-        "action": "buy",
-        "good_id": "grain",
-        "quantity": 8,
-        "unit_price": 8,
-        "total_price": 64,
-        "stock_before": 40,
-        "stock_after": 32,
-        "day": 1
-      },
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "hire 7",
+      "error": null,
+      "receipt": null,
       "events": [],
       "shocks": []
     },
@@ -1642,56 +1622,37 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "pirates",
-          "message": "Scarlet Ana of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-8 hull)",
+          "hull_delta": -8,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.0,
+          "speed_modifier": 0.5,
           "cargo_lost": [],
-          "flavor": "Strength 6, balanced fighter."
+          "flavor": ""
         }
       ],
       "shocks": []
     },
     {
-      "command": "duel thrust,thrust,thrust",
+      "command": "advance",
       "error": null,
       "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "scarlet_ana",
-        "opponent_name": "Scarlet Ana",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -33,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 0,
-            "damage_to_player": 2,
-            "flavor": "You lunge forward, but their parry turns your blade aside."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 0,
-            "damage_to_player": 2,
-            "flavor": "You lunge forward, but their parry turns your blade aside."
-          }
-        ]
-      }
+      "events": [
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
     },
     {
       "command": "advance",
@@ -1710,6 +1671,13 @@
           "flavor": ""
         }
       ],
+      "shocks": []
+    },
+    {
+      "command": "repair_fleet",
+      "error": null,
+      "receipt": null,
+      "events": [],
       "shocks": []
     }
   ]

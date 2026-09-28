@@ -1,0 +1,19 @@
+# The finishing wound is on the captain. One in-port day heals it.
+new privateer Ada 4
+encounter fight raj_the_quiet
+naval broadside
+naval broadside
+naval rake
+naval evade
+naval close
+naval close
+board
+fight thrust
+fight slash
+fight parry
+fight dodge
+fight thrust
+fight thrust
+fight thrust
+fight thrust
+advance

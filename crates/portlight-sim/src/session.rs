@@ -54,21 +54,26 @@ use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::encounter::{self, BoardingOutcome, EncounterState};
 use crate::error::SimError;
+use crate::fleet;
 use crate::infrastructure::{self, dry_dock_service};
+use crate::injuries;
+use crate::loot;
 use crate::memory;
 use crate::model::{
-    ActiveContract, Contract, ContractBoard, ContractOutcome, InfrastructureRecord, Officer,
-    PendingDuel, VoyageStatus, World,
+    ActiveContract, Armor, Contract, ContractBoard, ContractOutcome, InfrastructureRecord,
+    InstalledUpgrade, Officer, PendingDuel, PirateEncounterRecord, VoyageStatus, Weapon, World,
 };
 use crate::naval::{self, NavalRound};
 use crate::pyrand::PyRandom;
 use crate::reputation::{self, record_trade_outcome};
 use crate::save::{self, LoadedGame};
-use crate::ship::wage_bill;
+use crate::ship::{self, wage_bill};
 use crate::skills;
 use crate::training;
 use crate::util::py_trunc;
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
+use crate::weapon_provenance;
+use crate::weapon_quality;
 use crate::world::new_game;
 
 /// One turn of [`Session::advance`].
@@ -138,6 +143,8 @@ pub struct EncounterStep {
     pub style_effect: String,
     pub prize_ok: bool,
     pub prize_reason: String,
+    pub player_stamina: i64,
+    pub player_stamina_max: i64,
 }
 
 /// Encounter returned by [`Session::tick_sea_captain_agency`].
@@ -155,6 +162,8 @@ pub struct Session {
     player_combat: Option<CombatantState>,
     opponent_combat: Option<CombatantState>,
     infra: InfrastructureRecord,
+    /// Personal-combat win is waiting on spare or take-all.
+    pending_victory: bool,
 }
 
 impl Session {
@@ -183,6 +192,7 @@ impl Session {
             player_combat: None,
             opponent_combat: None,
             infra: InfrastructureRecord::default(),
+            pending_victory: false,
         };
         session.refresh_new_game_board();
         Ok(session)
@@ -208,6 +218,7 @@ impl Session {
                 encounter: self.encounter.as_ref(),
                 player: self.player_combat.as_ref(),
                 opponent: self.opponent_combat.as_ref(),
+                pending_victory: self.pending_victory,
             },
             &self.infra,
         )
@@ -246,6 +257,7 @@ impl Session {
             player_combat: loaded.player_combat,
             opponent_combat: loaded.opponent_combat,
             infra: loaded.infra,
+            pending_victory: loaded.pending_victory,
         };
         reprice_all(&mut session.world);
         session.project_books();
@@ -269,6 +281,11 @@ impl Session {
     pub fn adopt_infrastructure(&mut self, infra: InfrastructureRecord) {
         self.infra = infra;
         self.project_books();
+    }
+
+    /// Spare/take-all is waiting on a personal-combat win.
+    pub fn pending_victory(&self) -> bool {
+        self.pending_victory
     }
 
     /// Offers, accepted work, and resolved outcomes. Save writes this board.
@@ -422,7 +439,7 @@ impl Session {
             (port.crew_cost, port.region.clone())
         };
         let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
-        let space = ship.crew_max - ship.crew;
+        let space = ship::resolve_crew_max(ship) - ship.crew;
         if space <= 0 {
             return Err(SimError::CrewFull);
         }
@@ -574,6 +591,25 @@ impl Session {
             crew,
         );
         self.world.captain.silver = 0.max(self.world.captain.silver + outcome.silver_delta);
+        let outcome_str = if outcome.player_won {
+            "duel_win"
+        } else if outcome.draw {
+            "duel_draw"
+        } else {
+            "duel_loss"
+        };
+        self.world.captain.encounters.push(PirateEncounterRecord {
+            captain_id: pending.captain_id.clone(),
+            faction_id: pending.faction_id.clone(),
+            day: self.world.day,
+            outcome: outcome_str.to_string(),
+            region: pending.region.clone(),
+        });
+        if outcome.player_won {
+            self.world.captain.duels_won += 1;
+        } else if !outcome.draw {
+            self.world.captain.duels_lost += 1;
+        }
         self.world.pending_duel = None;
         Ok(outcome)
     }
@@ -630,7 +666,7 @@ impl Session {
             .captain
             .ship
             .as_ref()
-            .map(|ship| ship.cannons)
+            .map(ship::resolve_cannons)
             .unwrap_or(0);
         let valid = naval::valid_actions(cannons);
         if !valid.contains(&action.as_str()) {
@@ -640,9 +676,9 @@ impl Session {
             return self.naval_flee();
         }
         let round = {
-            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let ship = self.combat_ship()?;
             let encounter = self.encounter.as_mut().ok_or(SimError::NotInNavalCombat)?;
-            encounter::resolve_naval_turn(encounter, &action, ship, &mut self.rng)
+            encounter::resolve_naval_turn(encounter, &action, &ship, &mut self.rng)
         };
         let crew_lost = 0.max(-round.player_crew_delta);
         if let Some(ship) = self.world.captain.ship.as_mut() {
@@ -771,27 +807,94 @@ impl Session {
         }
         let mut step = self.fight_step(round, player_hp, opponent_hp, player_won, draw);
         if finished {
-            if player_won || draw {
-                self.world.captain.duels_won += 1;
-            } else {
-                self.world.captain.duels_lost += 1;
-                let loss = 15 + self.enemy_strength() * 3;
-                self.world.captain.silver = 0.max(self.world.captain.silver - loss);
+            self.finish_personal_fight(&step, player_won, draw);
+            if !player_won {
+                step.phase = "resolved".into();
             }
-            let outcome = if player_won {
-                "duel_win"
-            } else if draw {
-                "duel_draw"
-            } else {
-                "duel_loss"
-            };
-            if let Some(enc) = self.encounter.clone() {
-                encounter::remember(&mut self.world.captain, &enc, self.world.day, outcome);
-            }
-            self.clear_encounter();
-            step.phase = "resolved".into();
         }
         Ok(step)
+    }
+
+    /// Mercy after a personal-combat win. Less silver, more underworld standing.
+    pub fn spare(&mut self) -> Result<(), SimError> {
+        self.finalize_victory(true)
+    }
+
+    /// Take the defeated captain's silver and loot.
+    pub fn take_all(&mut self) -> Result<(), SimError> {
+        self.finalize_victory(false)
+    }
+
+    /// Mark fleet hulls at the current port as in transit. `depart` calls this.
+    pub fn form_convoy(&mut self) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        fleet::form_convoy(&mut self.world.captain, &port_id);
+        Ok(())
+    }
+
+    /// Repair fleet hulls docked at the current port. The flagship uses
+    /// `GameSession.repair`; this is the same per-point price for escorts.
+    pub fn repair_fleet(&mut self) -> Result<(i64, i64), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?;
+        let (repair_cost, _) = {
+            let port = self
+                .world
+                .port(&port_id)
+                .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?;
+            (port.repair_cost, port.name.clone())
+        };
+        let mult = reputation::service_modifier(&self.world.captain.standing, &port_id);
+        let cost_per = 1.max(py_trunc(repair_cost as f64 * mult));
+        let mut total_points = 0;
+        let mut total_cost = 0;
+        let mut any_damage = false;
+        for owned in &mut self.world.captain.fleet {
+            if owned.docked_port_id != port_id {
+                continue;
+            }
+            let damage = owned.ship.hull_max - owned.ship.hull;
+            if damage <= 0 {
+                continue;
+            }
+            any_damage = true;
+            let mut amount = damage;
+            let mut cost = amount * cost_per;
+            if cost > self.world.captain.silver {
+                let affordable = if cost_per > 0 {
+                    self.world.captain.silver / cost_per
+                } else {
+                    0
+                };
+                if affordable == 0 {
+                    if total_points == 0 {
+                        return Err(SimError::Sentence("Can't afford any repairs".into()));
+                    }
+                    break;
+                }
+                amount = affordable;
+                cost = amount * cost_per;
+            }
+            self.world.captain.silver -= cost;
+            owned.ship.hull += amount;
+            total_points += amount;
+            total_cost += cost;
+            if amount < damage {
+                break;
+            }
+        }
+        if !any_damage {
+            return Err(SimError::Sentence(
+                "Ship is already in perfect condition".into(),
+            ));
+        }
+        if total_points == 0 {
+            return Err(SimError::Sentence("Can't afford any repairs".into()));
+        }
+        Ok((total_points, total_cost))
     }
 
     /// Take the sunk enemy as a prize, or pass `0` to let it go under.
@@ -908,6 +1011,7 @@ impl Session {
         self.encounter = Some(created);
         self.player_combat = None;
         self.opponent_combat = None;
+        self.pending_victory = false;
         Ok(())
     }
 
@@ -933,9 +1037,9 @@ impl Session {
             Ok(step)
         } else {
             let fight = {
-                let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+                let ship = self.combat_ship()?;
                 let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
-                encounter::begin_fight(encounter, ship)
+                encounter::begin_fight(encounter, &ship)
             };
             message.push('\n');
             message.push_str(&fight);
@@ -945,9 +1049,9 @@ impl Session {
 
     fn choose_flee(&mut self) -> Result<EncounterStep, SimError> {
         let (escaped, damage, mut message) = {
-            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let ship = self.combat_ship()?;
             let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
-            encounter::resolve_flee(encounter, ship, &mut self.rng)
+            encounter::resolve_flee(encounter, &ship, &mut self.rng)
         };
         if damage > 0 {
             if let Some(ship) = self.world.captain.ship.as_mut() {
@@ -963,9 +1067,9 @@ impl Session {
             Ok(step)
         } else {
             let fight = {
-                let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+                let ship = self.combat_ship()?;
                 let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
-                encounter::begin_fight(encounter, ship)
+                encounter::begin_fight(encounter, &ship)
             };
             message.push('\n');
             message.push_str(&fight);
@@ -975,19 +1079,19 @@ impl Session {
 
     fn choose_fight(&mut self) -> Result<EncounterStep, SimError> {
         let message = {
-            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let ship = self.combat_ship()?;
             let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
-            encounter::begin_fight(encounter, ship)
+            encounter::begin_fight(encounter, &ship)
         };
         Ok(self.choice_step("fight", true, false, 0, message))
     }
 
     fn naval_flee(&mut self) -> Result<EncounterStep, SimError> {
         let (escaped, damage) = {
-            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let ship = self.combat_ship()?;
             let encounter = self.encounter.as_ref().ok_or(SimError::NotInNavalCombat)?;
             let enemy = encounter::enemy_ship(encounter);
-            naval::attempt_flee(ship, &enemy, &mut self.rng)
+            naval::attempt_flee(&ship, &enemy, &mut self.rng)
         };
         if let Some(ship) = self.world.captain.ship.as_mut() {
             ship.hull = 0.max(ship.hull - damage);
@@ -1080,6 +1184,170 @@ impl Session {
         self.encounter = None;
         self.player_combat = None;
         self.opponent_combat = None;
+        self.pending_victory = false;
+    }
+
+    fn combat_ship(&self) -> Result<crate::model::Ship, SimError> {
+        self.world
+            .captain
+            .ship
+            .as_ref()
+            .map(ship::resolved_ship)
+            .ok_or(SimError::NoShip)
+    }
+
+    fn finish_personal_fight(&mut self, step: &EncounterStep, player_won: bool, draw: bool) {
+        if !step.injury.is_empty() {
+            let day = self.world.day;
+            self.world
+                .captain
+                .injuries
+                .push(injuries::create_injury(&step.injury, day));
+        }
+        self.degrade_equipped();
+        self.sync_combat_ammo();
+        if player_won {
+            self.pending_victory = true;
+        } else if draw {
+            self.world.captain.duels_won += 1;
+            self.clear_encounter();
+        } else {
+            let loss = 15 + self.enemy_strength() * 3;
+            self.world.captain.silver = 0.max(self.world.captain.silver - loss);
+            self.world.captain.duels_lost += 1;
+            self.clear_encounter();
+        }
+    }
+
+    fn degrade_equipped(&mut self) {
+        let melee = self
+            .world
+            .captain
+            .melee
+            .as_ref()
+            .map(|weapon| weapon.id.clone());
+        let armor = self
+            .world
+            .captain
+            .armor
+            .as_ref()
+            .map(|armor| armor.id.clone());
+        let captain = &mut self.world.captain;
+        if let Some(id) = melee {
+            let _ = weapon_quality::tick_weapon_degradation(
+                &mut captain.weapon_quality,
+                &mut captain.weapon_usage,
+                &id,
+                "melee",
+                1,
+                0,
+            );
+        }
+        if let Some(id) = armor {
+            let _ = weapon_quality::tick_weapon_degradation(
+                &mut captain.weapon_quality,
+                &mut captain.weapon_usage,
+                &id,
+                "armor",
+                1,
+                0,
+            );
+        }
+    }
+
+    fn sync_combat_ammo(&mut self) {
+        let Some(player) = self.player_combat.as_ref() else {
+            return;
+        };
+        let ammo = player.ammo;
+        let mechanical = player.mechanical_ammo;
+        let throwing_left = player.throwing_weapons;
+        if let Some(weapon) = self.world.captain.firearm.as_mut() {
+            weapon.ammo = ammo;
+        }
+        if let Some(weapon) = self.world.captain.mechanical.as_mut() {
+            weapon.ammo = mechanical;
+        }
+        if !self.world.captain.throwing.is_empty() {
+            let total: i64 = self
+                .world
+                .captain
+                .throwing
+                .iter()
+                .map(|weapon| weapon.ammo.max(0))
+                .sum();
+            let mut spent = total - throwing_left;
+            for weapon in &mut self.world.captain.throwing {
+                if spent <= 0 {
+                    break;
+                }
+                let take = spent.min(weapon.ammo);
+                weapon.ammo -= take;
+                spent -= take;
+            }
+            self.world.captain.throwing.retain(|weapon| weapon.ammo > 0);
+        }
+    }
+
+    fn finalize_victory(&mut self, spared: bool) -> Result<(), SimError> {
+        if !self.pending_victory || self.encounter.is_none() {
+            if self.encounter.as_ref().map(|enc| enc.phase.as_str()) == Some("capture_available") {
+                return Err(SimError::Sentence(
+                    "Prize waiting. Use portlight capture <crew> (or 0 to decline).".into(),
+                ));
+            }
+            return Err(SimError::Sentence(if spared {
+                "No defeated opponent to spare. Win a duel first.".into()
+            } else {
+                "No defeated opponent. Win a duel first.".into()
+            }));
+        }
+        let enc = self.encounter.clone().ok_or(SimError::NoActiveEncounter)?;
+        let silver_gain = if spared {
+            20 + enc.enemy_strength * 3
+        } else {
+            20 + enc.enemy_strength * 7
+        };
+        self.world.captain.silver += silver_gain;
+        self.world.captain.duels_won += 1;
+        record_duel_standing(
+            &mut self.world.captain.standing,
+            &enc.enemy_faction_id,
+            true,
+            spared,
+        );
+        if let Some(weapon_id) = self
+            .world
+            .captain
+            .melee
+            .as_ref()
+            .map(|weapon| weapon.id.clone())
+        {
+            if self.world.captain.provenance_mut(&weapon_id).is_none() {
+                self.world.captain.weapon_provenance.push((
+                    weapon_id.clone(),
+                    weapon_provenance::create_provenance(&weapon_id, "", "", 0),
+                ));
+            }
+            if let Some(prov) = self.world.captain.provenance_mut(&weapon_id) {
+                weapon_provenance::record_kill(
+                    prov,
+                    Some(&enc.enemy_captain_id),
+                    Some(&enc.enemy_captain_name),
+                );
+            }
+        }
+        if !spared {
+            let drops = loot::roll_loot(
+                enc.enemy_strength,
+                Some(&enc.enemy_captain_id),
+                &mut self.rng,
+                2,
+            );
+            loot::apply_loot(&mut self.world.captain, &drops);
+        }
+        self.clear_encounter();
+        Ok(())
     }
 
     fn blank_step(&self, kind: &str) -> EncounterStep {
@@ -1131,6 +1399,8 @@ impl Session {
             style_effect: String::new(),
             prize_ok: false,
             prize_reason: String::new(),
+            player_stamina: 0,
+            player_stamina_max: 0,
         }
     }
 
@@ -1219,6 +1489,10 @@ impl Session {
         step.injury = round.injury_inflicted.unwrap_or_default();
         step.opponent_injury = round.opponent_injury.unwrap_or_default();
         step.style_effect = round.style_effect.unwrap_or_default();
+        if let Some(player) = self.player_combat.as_ref() {
+            step.player_stamina = player.stamina;
+            step.player_stamina_max = player.stamina_max;
+        }
         step
     }
 
@@ -1392,6 +1666,7 @@ impl Session {
         let contracts = self.expire_contracts();
         self.file_contract_claims(&contracts);
         let mut notes = self.tick_upkeep();
+        self.heal_injuries();
         let mut turn = if self.world.voyage.status != VoyageStatus::AtSea {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
             self.world.day += 1;
@@ -1400,7 +1675,7 @@ impl Session {
                 self.world.captain.provisions -= 1;
             }
             if let Some(ship) = self.world.captain.ship.as_ref() {
-                let wage = wage_bill(ship);
+                let wage = wage_bill(ship) + fleet::fleet_daily_wages(&self.world.captain);
                 if wage > 0 && self.world.captain.silver >= wage {
                     self.world.captain.silver -= wage;
                 }
@@ -1733,6 +2008,283 @@ impl Session {
             .unwrap_or_else(|| "Mediterranean".to_string())
     }
 
+    fn heal_injuries(&mut self) {
+        if self.world.captain.injuries.is_empty() {
+            return;
+        }
+        let in_port = self.world.voyage.status != VoyageStatus::AtSea;
+        let bay = self.world.captain.ship.as_ref().is_some_and(|ship| {
+            ship.upgrades
+                .iter()
+                .any(|upgrade| upgrade.upgrade_id == "surgeons_bay")
+        });
+        if !(in_port || bay) {
+            return;
+        }
+        let medicines = self
+            .world
+            .captain
+            .cargo
+            .iter()
+            .any(|item| item.good_id == "medicines");
+        self.world.captain.injuries =
+            injuries::heal_injury_tick(&self.world.captain.injuries, 1, true, medicines);
+    }
+
+    /// Buy a hull at a shipyard. The old hull joins the fleet until
+    /// [`naval::max_fleet_size`] is full, then it sells for 40%.
+    pub fn buy_ship(&mut self, ship_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let port_name = self
+            .world
+            .port(&port_id)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?
+            .name
+            .clone();
+        let shipyard = self
+            .world
+            .port(&port_id)
+            .is_some_and(|port| port.has_feature("shipyard"));
+        if !shipyard {
+            return Err(SimError::Sentence(format!("{port_name} has no shipyard")));
+        }
+        let template = content::content()
+            .ship(ship_id)
+            .cloned()
+            .ok_or_else(|| SimError::Sentence(format!("Unknown ship: {ship_id}")))?;
+        let current_id = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.template_id.clone())
+            .ok_or(SimError::NoShip)?;
+        if template.id == current_id {
+            return Err(SimError::Sentence("You already have this ship".into()));
+        }
+        if template.price > self.world.captain.silver {
+            return Err(SimError::NeedSilver {
+                need: template.price,
+                have: self.world.captain.silver,
+            });
+        }
+        let trust = self.world.captain.standing.commercial_trust;
+        let fleet_limit = naval::max_fleet_size(trust);
+        let fleet_count = self.world.captain.fleet.len() as i64 + 1;
+        if fleet_count < fleet_limit {
+            let old = self.world.captain.ship.take().ok_or(SimError::NoShip)?;
+            self.world.captain.fleet.push(crate::model::FleetShip {
+                ship: old,
+                docked_port_id: port_id,
+                cargo: Vec::new(),
+            });
+        } else if let Some(old) = self.world.captain.ship.as_ref() {
+            let price = content::content()
+                .ship(&old.template_id)
+                .map(|ship| ship.price)
+                .unwrap_or(0);
+            self.world.captain.silver += py_trunc(price as f64 * 0.4);
+        }
+        self.world.captain.silver -= template.price;
+        self.world.captain.ship = Some(crate::model::Ship::from_template(&template));
+        trim_cargo(&mut self.world.captain.cargo, template.cargo_capacity);
+        Ok(())
+    }
+
+    pub fn install_upgrade(&mut self, upgrade_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let port_name = self
+            .world
+            .port(&port_id)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?
+            .name
+            .clone();
+        if !self
+            .world
+            .port(&port_id)
+            .is_some_and(|port| port.has_feature("shipyard"))
+        {
+            return Err(SimError::Sentence(format!("{port_name} has no shipyard")));
+        }
+        let template = content::content()
+            .upgrade(upgrade_id)
+            .cloned()
+            .ok_or_else(|| SimError::Sentence(format!("Unknown upgrade: {upgrade_id}")))?;
+        let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+        if ship.upgrades.len() as i64 >= ship.upgrade_slots {
+            return Err(SimError::Sentence(format!(
+                "No upgrade slots remaining ({}/{} used)",
+                ship.upgrade_slots, ship.upgrade_slots
+            )));
+        }
+        if template.price > self.world.captain.silver {
+            return Err(SimError::NeedSilver {
+                need: template.price,
+                have: self.world.captain.silver,
+            });
+        }
+        self.world.captain.silver -= template.price;
+        let day = self.world.day;
+        self.world
+            .captain
+            .ship
+            .as_mut()
+            .ok_or(SimError::NoShip)?
+            .upgrades
+            .push(InstalledUpgrade {
+                upgrade_id: upgrade_id.to_string(),
+                installed_day: day,
+            });
+        Ok(())
+    }
+
+    pub fn remove_upgrade(&mut self, upgrade_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let port_name = self
+            .world
+            .port(&port_id)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?
+            .name
+            .clone();
+        if !self
+            .world
+            .port(&port_id)
+            .is_some_and(|port| port.has_feature("shipyard"))
+        {
+            return Err(SimError::Sentence(format!("{port_name} has no shipyard")));
+        }
+        let ship = self.world.captain.ship.as_mut().ok_or(SimError::NoShip)?;
+        if let Some(index) = ship
+            .upgrades
+            .iter()
+            .position(|upgrade| upgrade.upgrade_id == upgrade_id)
+        {
+            ship.upgrades.remove(index);
+            return Ok(());
+        }
+        Err(SimError::Sentence(format!(
+            "Upgrade not installed: {upgrade_id}"
+        )))
+    }
+
+    pub fn transfer_cargo(
+        &mut self,
+        good_id: &str,
+        qty: i64,
+        from_ship: &str,
+        to_ship: &str,
+    ) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        fleet::transfer_cargo(
+            &mut self.world.captain,
+            good_id,
+            qty,
+            from_ship,
+            to_ship,
+            &port_id,
+        )
+        .map_err(SimError::Sentence)
+    }
+
+    /// Buy armor or a melee weapon at catalog price and equip it.
+    ///
+    /// Python sells these through merchants with a markup. This command is the
+    /// catalog price so a golden can equip gear without that area.
+    pub fn buy_gear(&mut self, gear_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let region = self
+            .world
+            .port(&port_id)
+            .map(|port| port.region.clone())
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let catalog = content::content();
+        if let Some(armor) = catalog.armor(gear_id) {
+            if !armor.available_regions.iter().any(|item| item == &region) {
+                return Err(SimError::Sentence(format!(
+                    "{} is not sold in {region}",
+                    armor.name
+                )));
+            }
+            if armor.silver_cost > self.world.captain.silver {
+                return Err(SimError::NeedSilver {
+                    need: armor.silver_cost,
+                    have: self.world.captain.silver,
+                });
+            }
+            self.world.captain.silver -= armor.silver_cost;
+            let id = armor.id.clone();
+            self.world.captain.armor = Some(Armor {
+                id: id.clone(),
+                name: armor.name.clone(),
+                armor_type: armor.armor_type.clone(),
+                damage_reduction: armor.damage_reduction,
+                dodge_penalty: armor.dodge_penalty,
+                stamina_penalty: armor.stamina_penalty,
+                quality: "standard".into(),
+            });
+            self.world.captain.set_quality(&id, "standard");
+            return Ok(());
+        }
+        if let Some(weapon) = catalog.melee_weapon(gear_id) {
+            if !weapon.available_regions.iter().any(|item| item == &region) {
+                return Err(SimError::Sentence(format!(
+                    "{} is not sold in {region}",
+                    weapon.name
+                )));
+            }
+            if weapon.silver_cost > self.world.captain.silver {
+                return Err(SimError::NeedSilver {
+                    need: weapon.silver_cost,
+                    have: self.world.captain.silver,
+                });
+            }
+            self.world.captain.silver -= weapon.silver_cost;
+            let id = weapon.id.clone();
+            let name = weapon.name.clone();
+            self.world.captain.melee = Some(Weapon {
+                id: id.clone(),
+                name,
+                kind: "melee".into(),
+                quality: "standard".into(),
+                ammo: 0,
+            });
+            self.world.captain.set_quality(&id, "standard");
+            let day = self.world.day;
+            if self.world.captain.provenance_mut(&id).is_none() {
+                self.world.captain.weapon_provenance.push((
+                    id.clone(),
+                    weapon_provenance::create_provenance(&id, &port_id, &region, day),
+                ));
+            }
+            return Ok(());
+        }
+        Err(SimError::Sentence(format!("Unknown gear: {gear_id}")))
+    }
+
+    pub fn maintain_weapon(&mut self, weapon_id: &str) -> Result<(), SimError> {
+        let _port = current_port_id(&self.world)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let silver = weapon_quality::maintain_weapon(
+            &self.world.captain.weapon_quality,
+            &mut self.world.captain.weapon_usage,
+            weapon_id,
+            self.world.captain.silver,
+        )
+        .map_err(SimError::Sentence)?;
+        self.world.captain.silver = silver;
+        Ok(())
+    }
+
     fn note_contract_on_books(&mut self, outcome: &ContractOutcome) {
         self.world.captain.silver += outcome.silver_delta;
         self.books.completed_contracts.push(CompletedContract {
@@ -1936,6 +2488,63 @@ impl Session {
         let memory = memory::get_or_create_memory(&mut self.world.captain_memories, captain_id);
         memory::record_encounter(memory, day, &region, outcome, false, false, 0);
         Ok(())
+    }
+}
+
+fn record_duel_standing(
+    standing: &mut crate::model::Standing,
+    faction_id: &str,
+    player_won: bool,
+    spared: bool,
+) -> i64 {
+    let delta = if player_won {
+        if spared {
+            5
+        } else {
+            2
+        }
+    } else {
+        -2
+    };
+    if let Some(slot) = standing
+        .underworld
+        .iter_mut()
+        .find(|(id, _)| id == faction_id)
+    {
+        slot.1 = (slot.1 + delta).clamp(0, 100);
+    } else {
+        standing
+            .underworld
+            .push((faction_id.to_string(), delta.clamp(0, 100)));
+    }
+    delta
+}
+
+fn trim_cargo(cargo: &mut Vec<crate::model::CargoItem>, mut capacity: i64) {
+    if capacity < 0 {
+        capacity = 0;
+    }
+    while !cargo.is_empty() && cargo.iter().map(|item| item.quantity).sum::<i64>() > capacity {
+        let last_qty = cargo.last().map(|item| item.quantity).unwrap_or(0);
+        if last_qty <= 0 {
+            cargo.pop();
+            continue;
+        }
+        let overflow = cargo.iter().map(|item| item.quantity).sum::<i64>() - capacity;
+        let drop = last_qty.min(overflow);
+        let last = cargo.last_mut().unwrap();
+        if drop <= 0 {
+            break;
+        }
+        let original_qty = last.quantity;
+        last.quantity -= drop;
+        if original_qty > 0 && last.cost_basis != 0 {
+            last.cost_basis =
+                py_trunc(last.cost_basis as f64 * last.quantity as f64 / original_qty as f64);
+        }
+        if last.quantity <= 0 {
+            cargo.pop();
+        }
     }
 }
 

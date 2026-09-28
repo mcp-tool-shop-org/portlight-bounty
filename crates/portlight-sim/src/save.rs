@@ -22,11 +22,12 @@ use crate::economy::TradeReceipt;
 use crate::encounter::{self, EncounterState};
 use crate::error::SimError;
 use crate::model::{
-    ActiveContract, ActivePolicy, BreachRecord, BrokerOffice, Captain, CaptainMemory,
+    ActiveContract, ActivePolicy, Armor, BreachRecord, BrokerOffice, Captain, CaptainMemory,
     CaptainRelationship, CargoItem, Companion, Contract, ContractBoard, ContractOutcome,
-    CreditState, DeferredFee, EncounterMemory, Incident, InfrastructureRecord, InsuranceClaim,
-    MarketSlot, Officer, OwnedLicense, Party, PendingDuel, PirateEncounterRecord, Port, Route,
-    Ship, Skill, Standing, StoredLot, Voyage, VoyageStatus, WarehouseLease, World,
+    CreditState, DeferredFee, EncounterMemory, FightingStyle, FleetShip, Incident,
+    InfrastructureRecord, Injury, InstalledUpgrade, InsuranceClaim, MarketSlot, Officer,
+    OwnedLicense, Party, PendingDuel, PirateEncounterRecord, Port, Route, Ship, Skill, Standing,
+    StoredLot, Voyage, VoyageStatus, WarehouseLease, Weapon, WeaponProvenance, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -67,6 +68,7 @@ pub(crate) struct LiveEncounter<'a> {
     pub encounter: Option<&'a EncounterState>,
     pub player: Option<&'a CombatantState>,
     pub opponent: Option<&'a CombatantState>,
+    pub pending_victory: bool,
 }
 
 /// A slot `load_game` would turn back into a session.
@@ -81,6 +83,7 @@ pub(crate) struct LoadedGame {
     pub encounter: Option<EncounterState>,
     pub player_combat: Option<CombatantState>,
     pub opponent_combat: Option<CombatantState>,
+    pub pending_victory: bool,
 }
 
 /// Filename for a slot. Characters outside letters, digits, `-`, and `_` are
@@ -525,7 +528,13 @@ fn encode(
         ("seed", seed_value(world.seed)),
         (
             "pirate_state",
-            pirate_value(world, live.encounter, live.player, live.opponent),
+            pirate_value(
+                world,
+                live.encounter,
+                live.player,
+                live.opponent,
+                live.pending_victory,
+            ),
         ),
         ("ledger", ledger_value(receipts, run_id, books)),
         ("contract_board", board_value(board, books)),
@@ -633,6 +642,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         encounter: pirate.encounter,
         player_combat: pirate.player,
         opponent_combat: pirate.opponent,
+        pending_victory: pirate.pending_victory,
     })
 }
 
@@ -670,8 +680,17 @@ fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
                 .map(|id| Value::from(id.as_str()))
                 .unwrap_or(Value::Null),
         ),
+        ("combat_gear", combat_gear_value(captain)),
+        (
+            "injuries",
+            Value::Array(captain.injuries.iter().map(injury_value).collect()),
+        ),
         ("skills", skills_value(&captain.skills)),
         ("party", party_value(&captain.party)),
+        (
+            "fleet",
+            Value::Array(captain.fleet.iter().map(fleet_value).collect()),
+        ),
         (
             "deferred_fees",
             Value::Array(captain.deferred_fees.iter().map(fee_value).collect()),
@@ -722,22 +741,27 @@ fn captain_from(value: &Value) -> Option<Captain> {
         wanted_level: opt_i64(map, "wanted_level").unwrap_or(0),
         active_bounties: string_list(map.get("active_bounties"))?,
         deferred_fees: fee_list(map.get("deferred_fees"))?,
-        melee: None,
-        firearm: None,
-        mechanical: None,
-        throwing: Vec::new(),
-        armor: None,
+        melee: gear_melee(map),
+        firearm: gear_firearm(map),
+        mechanical: gear_mechanical(map),
+        throwing: gear_throwing(map),
+        armor: gear_armor(map),
         styles: Vec::new(),
         active_style: opt_str(map, "active_style"),
         duels_won: 0,
         duels_lost: 0,
         encounters: Vec::new(),
-        fleet: Vec::new(),
+        fleet: fleet_from(map.get("fleet"))?,
         naval_victories: 0,
         naval_defeats: 0,
         learned_styles: string_list(map.get("learned_styles"))?,
         skills: skills_from(map.get("skills"))?,
         party: party_from(map.get("party"))?,
+        injuries: injuries_from(map.get("injuries"))?,
+        weapon_quality: string_map(gear_field(map, "weapon_quality"))?,
+        weapon_usage: i64_map(gear_field(map, "weapon_usage"))?,
+        weapon_provenance: provenance_from(gear_field(map, "weapon_provenance"))?,
+        weapon_upgrades: upgrade_map(gear_field(map, "weapon_upgrades"))?,
     })
 }
 
@@ -825,6 +849,417 @@ fn party_from(value: Option<&Value>) -> Option<Party> {
     })
 }
 
+fn gear_map(map: &Map<String, Value>) -> Option<&Map<String, Value>> {
+    map.get("combat_gear").and_then(Value::as_object)
+}
+
+fn gear_field<'a>(map: &'a Map<String, Value>, key: &str) -> Option<&'a Value> {
+    gear_map(map).and_then(|gear| gear.get(key))
+}
+
+fn gear_str(map: &Map<String, Value>, key: &str) -> Option<String> {
+    gear_field(map, key)
+        .and_then(Value::as_str)
+        .map(str::to_string)
+}
+
+fn gear_melee(map: &Map<String, Value>) -> Option<Weapon> {
+    let id = gear_str(map, "melee_weapon")?;
+    let def = content::content().melee_weapon(&id);
+    Some(Weapon {
+        name: def
+            .map(|weapon| weapon.name.clone())
+            .unwrap_or_else(|| id.clone()),
+        kind: "melee".to_string(),
+        quality: quality_of_gear(map, &id),
+        ammo: 0,
+        id,
+    })
+}
+
+fn gear_firearm(map: &Map<String, Value>) -> Option<Weapon> {
+    let id = gear_str(map, "firearm")?;
+    let def = content::content().ranged_weapon(&id);
+    Some(Weapon {
+        name: def
+            .map(|weapon| weapon.name.clone())
+            .unwrap_or_else(|| id.clone()),
+        kind: "firearm".to_string(),
+        quality: quality_of_gear(map, &id),
+        ammo: gear_field(map, "firearm_ammo")
+            .and_then(json_i64)
+            .unwrap_or(0),
+        id,
+    })
+}
+
+fn gear_mechanical(map: &Map<String, Value>) -> Option<Weapon> {
+    let id = gear_str(map, "mechanical_weapon")?;
+    let def = content::content().ranged_weapon(&id);
+    Some(Weapon {
+        name: def
+            .map(|weapon| weapon.name.clone())
+            .unwrap_or_else(|| id.clone()),
+        kind: "mechanical".to_string(),
+        quality: quality_of_gear(map, &id),
+        ammo: gear_field(map, "mechanical_ammo")
+            .and_then(json_i64)
+            .unwrap_or(0),
+        id,
+    })
+}
+
+fn gear_armor(map: &Map<String, Value>) -> Option<Armor> {
+    let id = gear_str(map, "armor")?;
+    let def = content::content().armor(&id);
+    Some(Armor {
+        name: def
+            .map(|armor| armor.name.clone())
+            .unwrap_or_else(|| id.clone()),
+        armor_type: def
+            .map(|armor| armor.armor_type.clone())
+            .unwrap_or_default(),
+        damage_reduction: def.map(|armor| armor.damage_reduction).unwrap_or(0),
+        dodge_penalty: def.map(|armor| armor.dodge_penalty).unwrap_or(0),
+        stamina_penalty: def.map(|armor| armor.stamina_penalty).unwrap_or(0),
+        quality: quality_of_gear(map, &id),
+        id,
+    })
+}
+
+fn gear_throwing(map: &Map<String, Value>) -> Vec<Weapon> {
+    let Some(Value::Object(items)) = gear_field(map, "throwing_weapons") else {
+        return Vec::new();
+    };
+    let mut weapons = Vec::new();
+    for (id, qty) in items {
+        let Some(qty) = json_i64(qty) else {
+            continue;
+        };
+        if qty <= 0 {
+            continue;
+        }
+        let def = content::content().ranged_weapon(id);
+        weapons.push(Weapon {
+            id: id.clone(),
+            name: def
+                .map(|weapon| weapon.name.clone())
+                .unwrap_or_else(|| id.clone()),
+            kind: "thrown".to_string(),
+            quality: quality_of_gear(map, id),
+            ammo: qty,
+        });
+    }
+    weapons
+}
+
+fn quality_of_gear(map: &Map<String, Value>, weapon_id: &str) -> String {
+    gear_field(map, "weapon_quality")
+        .and_then(Value::as_object)
+        .and_then(|qualities| qualities.get(weapon_id))
+        .and_then(Value::as_str)
+        .unwrap_or("standard")
+        .to_string()
+}
+
+fn styles_from(value: Option<&Value>) -> Vec<FightingStyle> {
+    let Some(Value::Array(items)) = value else {
+        return Vec::new();
+    };
+    items
+        .iter()
+        .filter_map(Value::as_str)
+        .map(|id| {
+            let def = content::content().fighting_style(id);
+            FightingStyle {
+                id: id.to_string(),
+                name: def
+                    .map(|style| style.name.clone())
+                    .unwrap_or_else(|| id.to_string()),
+                region: def.map(|style| style.region.clone()).unwrap_or_default(),
+            }
+        })
+        .collect()
+}
+
+fn string_map(value: Option<&Value>) -> Option<Vec<(String, String)>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let map = value.as_object()?;
+    Some(
+        map.iter()
+            .filter_map(|(key, item)| item.as_str().map(|text| (key.clone(), text.to_string())))
+            .collect(),
+    )
+}
+
+fn i64_map(value: Option<&Value>) -> Option<Vec<(String, i64)>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let map = value.as_object()?;
+    Some(
+        map.iter()
+            .filter_map(|(key, item)| json_i64(item).map(|number| (key.clone(), number)))
+            .collect(),
+    )
+}
+
+fn upgrade_map(value: Option<&Value>) -> Option<Vec<(String, Vec<String>)>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let map = value.as_object()?;
+    let mut rows = Vec::new();
+    for (key, item) in map {
+        let list = item.as_array()?;
+        let ids = list
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect();
+        rows.push((key.clone(), ids));
+    }
+    Some(rows)
+}
+
+fn provenance_from(value: Option<&Value>) -> Option<Vec<(String, WeaponProvenance)>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let map = value.as_object()?;
+    let mut rows = Vec::new();
+    for (key, item) in map {
+        let item = item.as_object()?;
+        rows.push((
+            key.clone(),
+            WeaponProvenance {
+                weapon_id: opt_str(item, "weapon_id").unwrap_or_else(|| key.clone()),
+                acquired_port: opt_str(item, "acquired_port").unwrap_or_default(),
+                acquired_day: opt_i64(item, "acquired_day").unwrap_or(0),
+                acquired_region: opt_str(item, "acquired_region").unwrap_or_default(),
+                kills: opt_i64(item, "kills").unwrap_or(0),
+                named_kills: string_list(item.get("named_kills"))?,
+                epithet: opt_str(item, "epithet"),
+                custom_name: opt_str(item, "custom_name"),
+                times_recognized: opt_i64(item, "times_recognized").unwrap_or(0),
+            },
+        ));
+    }
+    Some(rows)
+}
+
+fn injuries_from(value: Option<&Value>) -> Option<Vec<Injury>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let items = value.as_array()?;
+    let mut injuries = Vec::new();
+    for item in items {
+        let map = item.as_object()?;
+        let heal_remaining = match map.get("heal_remaining") {
+            None | Some(Value::Null) => None,
+            Some(value) => Some(json_i64(value)?),
+        };
+        injuries.push(Injury {
+            injury_id: req_str(map, "injury_id")?,
+            acquired_day: opt_i64(map, "acquired_day").unwrap_or(0),
+            heal_remaining,
+            treated: opt_bool(map, "treated").unwrap_or(false),
+        });
+    }
+    Some(injuries)
+}
+
+fn fleet_from(value: Option<&Value>) -> Option<Vec<FleetShip>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let items = value.as_array()?;
+    let mut fleet = Vec::new();
+    for item in items {
+        let map = item.as_object()?;
+        fleet.push(FleetShip {
+            ship: ship_from(map.get("ship")?)?,
+            docked_port_id: req_str(map, "docked_port_id")?,
+            cargo: cargo_list(map.get("cargo"))?,
+        });
+    }
+    Some(fleet)
+}
+
+fn combat_gear_value(captain: &Captain) -> Value {
+    let mut throwing = Map::new();
+    for weapon in &captain.throwing {
+        let entry = throwing
+            .entry(weapon.id.clone())
+            .or_insert(Value::from(0_i64));
+        if let Some(qty) = entry.as_i64() {
+            *entry = Value::from(qty + weapon.ammo);
+        }
+    }
+    json_obj(&[
+        (
+            "firearm",
+            captain
+                .firearm
+                .as_ref()
+                .map(|weapon| Value::from(weapon.id.as_str()))
+                .unwrap_or(Value::Null),
+        ),
+        (
+            "firearm_ammo",
+            Value::from(
+                captain
+                    .firearm
+                    .as_ref()
+                    .map(|weapon| weapon.ammo)
+                    .unwrap_or(0),
+            ),
+        ),
+        ("throwing_weapons", Value::Object(throwing)),
+        (
+            "mechanical_weapon",
+            captain
+                .mechanical
+                .as_ref()
+                .map(|weapon| Value::from(weapon.id.as_str()))
+                .unwrap_or(Value::Null),
+        ),
+        (
+            "mechanical_ammo",
+            Value::from(
+                captain
+                    .mechanical
+                    .as_ref()
+                    .map(|weapon| weapon.ammo)
+                    .unwrap_or(0),
+            ),
+        ),
+        (
+            "armor",
+            captain
+                .armor
+                .as_ref()
+                .map(|armor| Value::from(armor.id.as_str()))
+                .unwrap_or(Value::Null),
+        ),
+        (
+            "melee_weapon",
+            captain
+                .melee
+                .as_ref()
+                .map(|weapon| Value::from(weapon.id.as_str()))
+                .unwrap_or(Value::Null),
+        ),
+        ("weapon_upgrades", pair_list_value(&captain.weapon_upgrades)),
+        ("weapon_quality", pair_string_value(&captain.weapon_quality)),
+        ("weapon_usage", pair_i64_value(&captain.weapon_usage)),
+        (
+            "weapon_provenance",
+            provenance_value(&captain.weapon_provenance),
+        ),
+    ])
+}
+
+fn pair_string_value(pairs: &[(String, String)]) -> Value {
+    let mut map = Map::new();
+    for (key, value) in pairs {
+        map.insert(key.clone(), Value::from(value.as_str()));
+    }
+    Value::Object(map)
+}
+
+fn pair_i64_value(pairs: &[(String, i64)]) -> Value {
+    let mut map = Map::new();
+    for (key, value) in pairs {
+        map.insert(key.clone(), Value::from(*value));
+    }
+    Value::Object(map)
+}
+
+fn pair_list_value(pairs: &[(String, Vec<String>)]) -> Value {
+    let mut map = Map::new();
+    for (key, values) in pairs {
+        map.insert(
+            key.clone(),
+            Value::Array(values.iter().map(|id| Value::from(id.as_str())).collect()),
+        );
+    }
+    Value::Object(map)
+}
+
+fn provenance_value(pairs: &[(String, WeaponProvenance)]) -> Value {
+    let mut map = Map::new();
+    for (key, prov) in pairs {
+        map.insert(
+            key.clone(),
+            json_obj(&[
+                ("weapon_id", Value::from(prov.weapon_id.as_str())),
+                ("acquired_port", Value::from(prov.acquired_port.as_str())),
+                ("acquired_day", Value::from(prov.acquired_day)),
+                (
+                    "acquired_region",
+                    Value::from(prov.acquired_region.as_str()),
+                ),
+                ("kills", Value::from(prov.kills)),
+                (
+                    "named_kills",
+                    Value::Array(
+                        prov.named_kills
+                            .iter()
+                            .map(|id| Value::from(id.as_str()))
+                            .collect(),
+                    ),
+                ),
+                (
+                    "epithet",
+                    prov.epithet
+                        .as_ref()
+                        .map(|text| Value::from(text.as_str()))
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "custom_name",
+                    prov.custom_name
+                        .as_ref()
+                        .map(|text| Value::from(text.as_str()))
+                        .unwrap_or(Value::Null),
+                ),
+                ("times_recognized", Value::from(prov.times_recognized)),
+            ]),
+        );
+    }
+    Value::Object(map)
+}
+
+fn injury_value(injury: &Injury) -> Value {
+    json_obj(&[
+        ("injury_id", Value::from(injury.injury_id.as_str())),
+        ("acquired_day", Value::from(injury.acquired_day)),
+        (
+            "heal_remaining",
+            injury
+                .heal_remaining
+                .map(Value::from)
+                .unwrap_or(Value::Null),
+        ),
+        ("treated", Value::from(injury.treated)),
+    ])
+}
+
+fn fleet_value(owned: &FleetShip) -> Value {
+    json_obj(&[
+        ("ship", ship_value(&owned.ship)),
+        ("docked_port_id", Value::from(owned.docked_port_id.as_str())),
+        (
+            "cargo",
+            Value::Array(owned.cargo.iter().map(cargo_value).collect()),
+        ),
+    ])
+}
+
 fn ship_value(ship: &Ship) -> Value {
     json_obj(&[
         ("template_id", Value::from(ship.template_id.as_str())),
@@ -837,7 +1272,10 @@ fn ship_value(ship: &Ship) -> Value {
         ("crew_max", Value::from(ship.crew_max)),
         ("cannons", Value::from(ship.cannons)),
         ("maneuver", f64_value(ship.maneuver)),
-        ("upgrades", Value::Array(Vec::new())),
+        (
+            "upgrades",
+            Value::Array(ship.upgrades.iter().map(installed_upgrade_value).collect()),
+        ),
         ("upgrade_slots", Value::from(ship.upgrade_slots)),
         (
             "roster",
@@ -904,7 +1342,38 @@ fn ship_from(value: &Value) -> Option<Ship> {
         marines,
         quartermasters,
         officers: officers_from(map.get("officers"))?,
+        upgrades: installed_upgrades_from(map.get("upgrades"))?,
     })
+}
+
+fn installed_upgrade_value(upgrade: &InstalledUpgrade) -> Value {
+    json_obj(&[
+        ("upgrade_id", Value::from(upgrade.upgrade_id.as_str())),
+        ("installed_day", Value::from(upgrade.installed_day)),
+    ])
+}
+
+fn installed_upgrades_from(value: Option<&Value>) -> Option<Vec<InstalledUpgrade>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let items = value.as_array()?;
+    let mut upgrades = Vec::new();
+    for item in items {
+        if let Some(id) = item.as_str() {
+            upgrades.push(InstalledUpgrade {
+                upgrade_id: id.to_string(),
+                installed_day: 0,
+            });
+            continue;
+        }
+        let map = item.as_object()?;
+        upgrades.push(InstalledUpgrade {
+            upgrade_id: req_str(map, "upgrade_id")?,
+            installed_day: opt_i64(map, "installed_day").unwrap_or(0),
+        });
+    }
+    Some(upgrades)
 }
 
 fn officer_value(officer: &Officer) -> Value {
@@ -1275,6 +1744,7 @@ fn pirate_value(
     encounter: Option<&EncounterState>,
     player: Option<&CombatantState>,
     opponent: Option<&CombatantState>,
+    pending_victory: bool,
 ) -> Value {
     let captain = &world.captain;
     let mut map = Map::new();
@@ -1305,7 +1775,7 @@ fn pirate_value(
     );
     map.insert(
         "encounter_state".to_string(),
-        encounter_blob(encounter, player, opponent),
+        encounter_blob(encounter, player, opponent, pending_victory),
     );
     map.insert("bounty_board".to_string(), Value::Array(Vec::new()));
     if let Some(duel) = &world.pending_duel {
@@ -1463,12 +1933,12 @@ fn encounter_record_value(record: &PirateEncounterRecord) -> Value {
     ])
 }
 
-/// `app.session.encounter_persist_blob`. `pending_victory` stays false: the
-/// spare/take-all choice is not on this session.
+/// `app.session.encounter_persist_blob`. `pending_victory` is the spare choice.
 fn encounter_blob(
     encounter: Option<&EncounterState>,
     player: Option<&CombatantState>,
     opponent: Option<&CombatantState>,
+    pending_victory: bool,
 ) -> Value {
     let Some(enc) = encounter else {
         return Value::Object(Map::new());
@@ -1536,7 +2006,7 @@ fn encounter_blob(
     );
     map.insert("naval_turns".to_string(), Value::from(enc.naval_turns));
     map.insert("duel_turns".to_string(), Value::from(enc.duel_turns));
-    map.insert("pending_victory".to_string(), Value::from(false));
+    map.insert("pending_victory".to_string(), Value::from(pending_victory));
     if let Some(player) = player {
         map.insert("player_hp".to_string(), Value::from(player.hp));
         map.insert("player_stamina".to_string(), Value::from(player.stamina));
@@ -1563,6 +2033,7 @@ struct PirateLoaded {
     player: Option<CombatantState>,
     opponent: Option<CombatantState>,
     captain_memories: Vec<CaptainMemory>,
+    pending_victory: bool,
 }
 
 fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
@@ -1603,6 +2074,7 @@ fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
         player,
         opponent,
         captain_memories: memories_from(map.get("captain_memories"))?,
+        pending_victory: opt_bool(estate, "pending_victory").unwrap_or(false),
     })
 }
 
