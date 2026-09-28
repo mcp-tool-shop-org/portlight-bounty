@@ -2872,14 +2872,16 @@
       "territory_regions": [
         "Mediterranean",
         "North Atlantic"
-      ]
+      ],
+      "smuggler_attitude": "neutral"
     },
     {
       "id": "monsoon_syndicate",
       "name": "The Monsoon Syndicate",
       "territory_regions": [
         "East Indies"
-      ]
+      ],
+      "smuggler_attitude": "friendly"
     },
     {
       "id": "deep_reef",
@@ -2887,14 +2889,16 @@
       "territory_regions": [
         "South Seas",
         "West Africa"
-      ]
+      ],
+      "smuggler_attitude": "respectful"
     },
     {
       "id": "iron_wolves",
       "name": "The Iron Wolves",
       "territory_regions": [
         "North Atlantic"
-      ]
+      ],
+      "smuggler_attitude": "business"
     }
   ],
   "pirate_captains": [
@@ -3737,6 +3741,585 @@
         "contraband"
       ],
       "cultural_flavor": "The faction that controls these waters needs resupply. Help them, and you'll have friends where others have enemies."
+    }
+  ],
+  "armor": [
+    {
+      "id": "leather_vest",
+      "name": "Leather Vest",
+      "armor_type": "light",
+      "damage_reduction": 1,
+      "dodge_penalty": 0,
+      "stamina_penalty": 0,
+      "silver_cost": 30,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic",
+        "West Africa"
+      ],
+      "description": "Stiff cowhide shaped to the torso. Won't stop a bullet, but a blade has to work for it."
+    },
+    {
+      "id": "padded_coat",
+      "name": "Padded Coat",
+      "armor_type": "light",
+      "damage_reduction": 1,
+      "dodge_penalty": 0,
+      "stamina_penalty": 0,
+      "silver_cost": 35,
+      "available_regions": [
+        "North Atlantic",
+        "East Indies"
+      ],
+      "description": "Layered cotton quilting over a wool core. Surprisingly effective against slashing attacks."
+    },
+    {
+      "id": "chain_shirt",
+      "name": "Chain Shirt",
+      "armor_type": "medium",
+      "damage_reduction": 1,
+      "dodge_penalty": 1,
+      "stamina_penalty": -1,
+      "silver_cost": 80,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ],
+      "description": "Riveted iron rings over a linen undershirt. The weight is real, but so is the protection."
+    },
+    {
+      "id": "brigandine",
+      "name": "Brigandine",
+      "armor_type": "medium",
+      "damage_reduction": 1,
+      "dodge_penalty": 1,
+      "stamina_penalty": -1,
+      "silver_cost": 90,
+      "available_regions": [
+        "East Indies",
+        "West Africa"
+      ],
+      "description": "Small steel plates riveted between layers of cloth. Eastern craftsmanship, flexible and quiet."
+    },
+    {
+      "id": "coconut_fiber_armor",
+      "name": "Coconut Fiber Armor",
+      "armor_type": "light",
+      "damage_reduction": 1,
+      "dodge_penalty": 0,
+      "stamina_penalty": 0,
+      "silver_cost": 20,
+      "available_regions": [
+        "South Seas"
+      ],
+      "description": "Woven coconut husk and pandanus leaves, layered thick. Surprisingly tough against blades, and it floats."
+    },
+    {
+      "id": "cuirass",
+      "name": "Steel Cuirass",
+      "armor_type": "heavy",
+      "damage_reduction": 2,
+      "dodge_penalty": 2,
+      "stamina_penalty": -2,
+      "silver_cost": 200,
+      "available_regions": [
+        "North Atlantic"
+      ],
+      "description": "A hammered breastplate from a Northern foundry. You feel every ounce, but blades bounce off."
+    }
+  ],
+  "melee_weapons": [
+    {
+      "id": "cutlass",
+      "name": "Cutlass",
+      "weapon_class": "blade",
+      "damage_bonus": 1,
+      "thrust_bonus": 0,
+      "slash_bonus": 1,
+      "silver_cost": 25,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic",
+        "West Africa",
+        "East Indies",
+        "South Seas"
+      ],
+      "description": "The sailor's sword. Short, curved, and built for close quarters on a rolling deck.",
+      "compatible_styles": [],
+      "speed_mod": 0
+    },
+    {
+      "id": "rapier",
+      "name": "Rapier",
+      "weapon_class": "blade",
+      "damage_bonus": 1,
+      "thrust_bonus": 2,
+      "slash_bonus": 0,
+      "silver_cost": 45,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ],
+      "description": "A long, thin thrusting sword. Devastating in trained hands, awkward in untrained ones.",
+      "compatible_styles": [
+        "la_destreza"
+      ],
+      "speed_mod": 0
+    },
+    {
+      "id": "boarding_axe",
+      "name": "Boarding Axe",
+      "weapon_class": "axe",
+      "damage_bonus": 2,
+      "thrust_bonus": 0,
+      "slash_bonus": 1,
+      "silver_cost": 35,
+      "available_regions": [
+        "North Atlantic"
+      ],
+      "description": "Half hatchet, half hook. Made for cutting ropes and skulls in equal measure.",
+      "compatible_styles": [
+        "highland_broadsword"
+      ],
+      "speed_mod": 0
+    },
+    {
+      "id": "dagger",
+      "name": "Dagger",
+      "weapon_class": "dagger",
+      "damage_bonus": 0,
+      "thrust_bonus": 1,
+      "slash_bonus": 0,
+      "silver_cost": 10,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic",
+        "West Africa",
+        "East Indies",
+        "South Seas"
+      ],
+      "description": "A short blade for close work. Fast in the hand, light on the belt.",
+      "compatible_styles": [],
+      "speed_mod": 1
+    },
+    {
+      "id": "kris",
+      "name": "Kris",
+      "weapon_class": "blade",
+      "damage_bonus": 1,
+      "thrust_bonus": 1,
+      "slash_bonus": 1,
+      "silver_cost": 40,
+      "available_regions": [
+        "East Indies",
+        "South Seas"
+      ],
+      "description": "A wavy-bladed dagger of spiritual significance. Every kris has a name and a history.",
+      "compatible_styles": [
+        "silat"
+      ],
+      "speed_mod": 0
+    },
+    {
+      "id": "ida_sword",
+      "name": "Ida Sword",
+      "weapon_class": "blade",
+      "damage_bonus": 1,
+      "thrust_bonus": 0,
+      "slash_bonus": 2,
+      "silver_cost": 35,
+      "available_regions": [
+        "West Africa"
+      ],
+      "description": "A broad, leaf-shaped blade from the Yoruba kingdoms. Built for powerful slashing arcs.",
+      "compatible_styles": [
+        "dambe"
+      ],
+      "speed_mod": 0
+    },
+    {
+      "id": "leiomano",
+      "name": "Leiomano",
+      "weapon_class": "club",
+      "damage_bonus": 2,
+      "thrust_bonus": 0,
+      "slash_bonus": 1,
+      "silver_cost": 30,
+      "available_regions": [
+        "South Seas"
+      ],
+      "description": "A war club edged with shark teeth. The wounds it leaves never heal cleanly.",
+      "compatible_styles": [
+        "lua"
+      ],
+      "speed_mod": 0
+    },
+    {
+      "id": "halberd",
+      "name": "Halberd",
+      "weapon_class": "polearm",
+      "damage_bonus": 3,
+      "thrust_bonus": 0,
+      "slash_bonus": 2,
+      "silver_cost": 60,
+      "available_regions": [
+        "Mediterranean"
+      ],
+      "description": "An axe blade on a six-foot shaft. Reach and power, but slow in tight spaces.",
+      "compatible_styles": [],
+      "speed_mod": -1
+    }
+  ],
+  "ranged_weapons": [
+    {
+      "id": "matchlock_pistol",
+      "name": "Matchlock Pistol",
+      "weapon_type": "firearm",
+      "damage_min": 4,
+      "damage_max": 6,
+      "accuracy": 0.65,
+      "reload_turns": 1,
+      "silver_cost": 50,
+      "ammo_per_purchase": 1,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ],
+      "description": "A clumsy but devastating single-shot pistol. The slow match glows in the dark.",
+      "stun_turns": 0,
+      "loud": true
+    },
+    {
+      "id": "wheellock_pistol",
+      "name": "Wheellock Pistol",
+      "weapon_type": "firearm",
+      "damage_min": 5,
+      "damage_max": 7,
+      "accuracy": 0.75,
+      "reload_turns": 1,
+      "silver_cost": 120,
+      "ammo_per_purchase": 1,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ],
+      "description": "German engineering. The spring-wound mechanism fires faster and more reliably than matchlock.",
+      "stun_turns": 0,
+      "loud": true
+    },
+    {
+      "id": "arquebus_pistol",
+      "name": "Arquebus Pistol",
+      "weapon_type": "firearm",
+      "damage_min": 4,
+      "damage_max": 7,
+      "accuracy": 0.6,
+      "reload_turns": 1,
+      "silver_cost": 65,
+      "ammo_per_purchase": 1,
+      "available_regions": [
+        "East Indies",
+        "West Africa"
+      ],
+      "description": "A Portuguese trade pistol, common wherever the carracks sailed. Rough but reliable.",
+      "stun_turns": 0,
+      "loud": true
+    },
+    {
+      "id": "hand_crossbow",
+      "name": "Hand Crossbow",
+      "weapon_type": "mechanical",
+      "damage_min": 3,
+      "damage_max": 5,
+      "accuracy": 0.8,
+      "reload_turns": 2,
+      "silver_cost": 40,
+      "ammo_per_purchase": 1,
+      "available_regions": [
+        "Mediterranean"
+      ],
+      "description": "A compact crossbow that fits in a belt holster. Silent and accurate, but slow to reload.",
+      "stun_turns": 0,
+      "loud": false
+    },
+    {
+      "id": "throwing_knife",
+      "name": "Throwing Knife",
+      "weapon_type": "thrown",
+      "damage_min": 2,
+      "damage_max": 3,
+      "accuracy": 0.7,
+      "reload_turns": 0,
+      "silver_cost": 8,
+      "ammo_per_purchase": 1,
+      "available_regions": [
+        "Mediterranean",
+        "North Atlantic",
+        "West Africa",
+        "East Indies",
+        "South Seas"
+      ],
+      "description": "A balanced blade weighted for throwing. Cheap, silent, disposable.",
+      "stun_turns": 0,
+      "loud": false
+    },
+    {
+      "id": "sling",
+      "name": "Sling",
+      "weapon_type": "thrown",
+      "damage_min": 1,
+      "damage_max": 3,
+      "accuracy": 0.6,
+      "reload_turns": 0,
+      "silver_cost": 5,
+      "ammo_per_purchase": 3,
+      "available_regions": [
+        "West Africa",
+        "South Seas"
+      ],
+      "description": "A leather sling and smooth stones. Ancient, effective, and completely silent.",
+      "stun_turns": 0,
+      "loud": false
+    },
+    {
+      "id": "blowgun",
+      "name": "Blowgun",
+      "weapon_type": "mechanical",
+      "damage_min": 1,
+      "damage_max": 2,
+      "accuracy": 0.85,
+      "reload_turns": 0,
+      "silver_cost": 20,
+      "ammo_per_purchase": 5,
+      "available_regions": [
+        "East Indies",
+        "South Seas"
+      ],
+      "description": "A slender bamboo tube firing poisoned darts. Almost no damage, but the toxin weakens. Silent as breath.",
+      "stun_turns": 1,
+      "loud": false
+    },
+    {
+      "id": "bolas",
+      "name": "Bolas",
+      "weapon_type": "thrown",
+      "damage_min": 1,
+      "damage_max": 2,
+      "accuracy": 0.55,
+      "reload_turns": 0,
+      "silver_cost": 15,
+      "ammo_per_purchase": 1,
+      "available_regions": [
+        "South Seas"
+      ],
+      "description": "Three weighted stones on cord. Wraps around legs, arms, or weapons. More disabling than damaging.",
+      "stun_turns": 1,
+      "loud": false
+    }
+  ],
+  "fighting_styles": [
+    {
+      "id": "la_destreza",
+      "name": "La Destreza",
+      "region": "Mediterranean",
+      "description": "The Spanish science of defense. Every movement calculated, every thrust placed with geometric precision.",
+      "historical_note": "Systematized by Jeronimo Sanchez de Carranza in 1569. The first European martial art treated as an academic discipline.",
+      "passive_thrust_bonus": 1,
+      "passive_slash_bonus": 0,
+      "passive_parry_bonus": 1,
+      "passive_hp_bonus": 0,
+      "passive_dodge_counter": 0,
+      "passive_ranged_accuracy": 0.0,
+      "passive_injury_bonus": 0.0,
+      "special_action": {
+        "id": "estocada",
+        "name": "Estocada",
+        "action_type": "attack",
+        "stamina_cost": 3,
+        "beats": [
+          "parry",
+          "slash"
+        ],
+        "loses_to": [
+          "dodge"
+        ],
+        "damage_bonus": 2,
+        "flavor": "A geometric thrust \u2014 the blade finds the only open line.",
+        "cooldown": 2
+      },
+      "training_port_ids": [
+        "porto_novo",
+        "al_manar"
+      ],
+      "silver_cost": 80,
+      "training_days": 5,
+      "prerequisite_styles": 0,
+      "required_body_parts": [
+        "hand",
+        "arm"
+      ]
+    },
+    {
+      "id": "highland_broadsword",
+      "name": "Highland Broadsword",
+      "region": "North Atlantic",
+      "description": "The broadsword tradition of the Scottish Highlands and Norse raiders. No finesse, no subtlety \u2014 overwhelming force.",
+      "historical_note": "Highland sword-and-targe techniques documented across Scotland and Scandinavia. The two-handed claymore was already legendary by the 1500s.",
+      "passive_thrust_bonus": 0,
+      "passive_slash_bonus": 1,
+      "passive_parry_bonus": 0,
+      "passive_hp_bonus": 2,
+      "passive_dodge_counter": 0,
+      "passive_ranged_accuracy": 0.0,
+      "passive_injury_bonus": 0.0,
+      "special_action": {
+        "id": "cleave",
+        "name": "Cleave",
+        "action_type": "attack",
+        "stamina_cost": 2,
+        "beats": [
+          "parry"
+        ],
+        "loses_to": [
+          "thrust",
+          "dodge"
+        ],
+        "damage_bonus": 4,
+        "flavor": "A devastating overhead arc that shatters guards and bones alike.",
+        "cooldown": 1
+      },
+      "training_port_ids": [
+        "ironhaven",
+        "thornport"
+      ],
+      "silver_cost": 100,
+      "training_days": 7,
+      "prerequisite_styles": 0,
+      "required_body_parts": [
+        "arm"
+      ]
+    },
+    {
+      "id": "dambe",
+      "name": "Dambe",
+      "region": "West Africa",
+      "description": "The fighting art of the Hausa people. The lead fist is the spear, the rear hand is the shield, and the legs finish every fight.",
+      "historical_note": "Practiced across West Africa since at least the 15th century. Dambe bouts were a central part of harvest festivals and market days.",
+      "passive_thrust_bonus": 0,
+      "passive_slash_bonus": 0,
+      "passive_parry_bonus": 0,
+      "passive_hp_bonus": 0,
+      "passive_dodge_counter": 1,
+      "passive_ranged_accuracy": 0.0,
+      "passive_injury_bonus": 0.0,
+      "special_action": {
+        "id": "leg_sweep",
+        "name": "Leg Sweep",
+        "action_type": "counter",
+        "stamina_cost": 2,
+        "beats": [
+          "thrust"
+        ],
+        "loses_to": [
+          "slash",
+          "dodge"
+        ],
+        "damage_bonus": 1,
+        "flavor": "A low spinning sweep \u2014 the opponent's legs are taken from under them. They crash to the deck.",
+        "cooldown": 3
+      },
+      "training_port_ids": [
+        "sun_harbor",
+        "pearl_shallows"
+      ],
+      "silver_cost": 60,
+      "training_days": 6,
+      "prerequisite_styles": 0,
+      "required_body_parts": [
+        "leg"
+      ]
+    },
+    {
+      "id": "silat",
+      "name": "Silat",
+      "region": "East Indies",
+      "description": "The blade and grappling art of the Malay Archipelago. Low stances, curved blades, trapping hands, and devastating close-range techniques.",
+      "historical_note": "Pencak Silat was already ancient when Portuguese traders first documented it in the 1500s. The kris dagger is both weapon and cultural artifact.",
+      "passive_thrust_bonus": 0,
+      "passive_slash_bonus": 0,
+      "passive_parry_bonus": 0,
+      "passive_hp_bonus": 0,
+      "passive_dodge_counter": 0,
+      "passive_ranged_accuracy": 0.15,
+      "passive_injury_bonus": 0.0,
+      "special_action": {
+        "id": "keris_strike",
+        "name": "Keris Strike",
+        "action_type": "attack",
+        "stamina_cost": 3,
+        "beats": [
+          "slash"
+        ],
+        "loses_to": [
+          "parry",
+          "dodge"
+        ],
+        "damage_bonus": 1,
+        "flavor": "The curved kris finds the gap between guard and grip \u2014 the opponent's weapon arm goes numb.",
+        "cooldown": 2
+      },
+      "training_port_ids": [
+        "jade_port",
+        "monsoon_reach"
+      ],
+      "silver_cost": 120,
+      "training_days": 8,
+      "prerequisite_styles": 1,
+      "required_body_parts": [
+        "hand",
+        "leg"
+      ]
+    },
+    {
+      "id": "lua",
+      "name": "Lua",
+      "region": "South Seas",
+      "description": "The bone-breaking art of Polynesia. Joint locks, pressure points, and techniques designed not to wound but to permanently disable.",
+      "historical_note": "Hawaiian Lua was restricted to the warrior class. Its techniques were so dangerous that training was conducted in secret, at night, under oath.",
+      "passive_thrust_bonus": 0,
+      "passive_slash_bonus": 0,
+      "passive_parry_bonus": 1,
+      "passive_hp_bonus": 0,
+      "passive_dodge_counter": 0,
+      "passive_ranged_accuracy": 0.0,
+      "passive_injury_bonus": 0.2,
+      "special_action": {
+        "id": "joint_lock",
+        "name": "Joint Lock",
+        "action_type": "utility",
+        "stamina_cost": 3,
+        "beats": [
+          "parry"
+        ],
+        "loses_to": [
+          "thrust",
+          "slash"
+        ],
+        "damage_bonus": 0,
+        "flavor": "You seize the opponent's arm and twist. Bone grinds against joint. They can only writhe and dodge.",
+        "cooldown": 3
+      },
+      "training_port_ids": [
+        "coral_throne",
+        "typhoon_anchorage"
+      ],
+      "silver_cost": 150,
+      "training_days": 10,
+      "prerequisite_styles": 1,
+      "required_body_parts": [
+        "hand",
+        "arm"
+      ]
     }
   ]
 }

@@ -11,12 +11,15 @@
 //! same API.
 
 pub mod campaign;
+pub mod combat;
 pub mod content;
 pub mod contracts;
 pub mod duel;
 pub mod economy;
+pub mod encounter;
 pub mod error;
 pub mod model;
+pub mod naval;
 pub mod pyrand;
 pub mod reputation;
 pub mod save;

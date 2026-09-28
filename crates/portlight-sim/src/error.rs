@@ -108,6 +108,20 @@ pub enum SimError {
     ContractNotFulfilled,
     UsageAcceptContract,
     UsageCompleteContract,
+    NoActiveEncounter,
+    NotInNavalCombat,
+    NotBoarding,
+    NotInPersonalCombat,
+    ChooseApproach,
+    InvalidAction(String),
+    NoPirateCaptain,
+    UnknownPirate(String),
+    UsageEncounter,
+    UsageNaval,
+    UsageBoard,
+    UsageFight,
+    UsageCapture,
+    CannotCapture(String),
 }
 
 impl fmt::Display for SimError {
@@ -224,6 +238,28 @@ impl fmt::Display for SimError {
             Self::ContractNotFulfilled => write!(f, "Contract is not yet fulfilled"),
             Self::UsageAcceptContract => write!(f, "Usage: accept_contract <offer_id>"),
             Self::UsageCompleteContract => write!(f, "Usage: complete_contract <offer_id>"),
+            Self::NoActiveEncounter => write!(
+                f,
+                "No active encounter. Encounters happen during pirate encounters at sea."
+            ),
+            Self::NotInNavalCombat => write!(f, "Not in naval combat."),
+            Self::NotBoarding => write!(f, "Not boarding."),
+            Self::NotInPersonalCombat => write!(f, "Not in personal combat."),
+            Self::ChooseApproach => write!(f, "Choose: negotiate, flee, or fight"),
+            Self::InvalidAction(actions) => {
+                write!(f, "Invalid action. Available: {actions}")
+            }
+            Self::NoPirateCaptain => write!(f, "No pirate captain in this region."),
+            Self::UnknownPirate(id) => write!(f, "Unknown pirate captain: {id}"),
+            Self::UsageEncounter => write!(
+                f,
+                "Usage: encounter <negotiate|flee|fight> [captain_id|strength:N]"
+            ),
+            Self::UsageNaval => write!(f, "Usage: naval <action>"),
+            Self::UsageBoard => write!(f, "Usage: board"),
+            Self::UsageFight => write!(f, "Usage: fight <action>"),
+            Self::UsageCapture => write!(f, "Usage: capture <crew>"),
+            Self::CannotCapture(reason) => write!(f, "Cannot capture: {reason}"),
         }
     }
 }

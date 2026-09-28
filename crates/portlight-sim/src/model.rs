@@ -312,6 +312,54 @@ pub struct DeferredFee {
     pub day: i64,
 }
 
+/// A weapon the captain is carrying. Catalog stats stay on the content defs.
+#[derive(Debug, Clone)]
+pub struct Weapon {
+    pub id: String,
+    pub name: String,
+    /// `melee`, `firearm`, `thrown`, or `mechanical`.
+    pub kind: String,
+    pub quality: String,
+    pub ammo: i64,
+}
+
+/// Armor the captain is wearing.
+#[derive(Debug, Clone)]
+pub struct Armor {
+    pub id: String,
+    pub name: String,
+    pub armor_type: String,
+    pub damage_reduction: i64,
+    pub dodge_penalty: i64,
+    pub stamina_penalty: i64,
+    pub quality: String,
+}
+
+/// A fighting style the captain has learned.
+#[derive(Debug, Clone)]
+pub struct FightingStyle {
+    pub id: String,
+    pub name: String,
+    pub region: String,
+}
+
+/// One finished meeting with a named pirate, kept on the captain.
+#[derive(Debug, Clone)]
+pub struct PirateEncounterRecord {
+    pub captain_id: String,
+    pub faction_id: String,
+    pub day: i64,
+    pub outcome: String,
+    pub region: String,
+}
+
+/// A prize or docked hull besides the flagship.
+#[derive(Debug, Clone)]
+pub struct OwnedShip {
+    pub ship: Ship,
+    pub docked_port_id: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct Captain {
     pub name: String,
@@ -325,6 +373,19 @@ pub struct Captain {
     pub wanted_level: i64,
     pub active_bounties: Vec<String>,
     pub deferred_fees: Vec<DeferredFee>,
+    pub melee: Option<Weapon>,
+    pub firearm: Option<Weapon>,
+    pub mechanical: Option<Weapon>,
+    pub throwing: Vec<Weapon>,
+    pub armor: Option<Armor>,
+    pub styles: Vec<FightingStyle>,
+    pub active_style: Option<String>,
+    pub duels_won: i64,
+    pub duels_lost: i64,
+    pub encounters: Vec<PirateEncounterRecord>,
+    pub fleet: Vec<OwnedShip>,
+    pub naval_victories: i64,
+    pub naval_defeats: i64,
 }
 
 #[derive(Debug, Clone)]

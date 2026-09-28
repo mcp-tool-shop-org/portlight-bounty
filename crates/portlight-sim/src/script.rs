@@ -158,12 +158,72 @@ fn dispatch(
             entry.duel = Some(snapshot::from_duel(&outcome));
             Ok(())
         }
+        "encounter" => {
+            let session = active(session)?;
+            if tokens.len() < 2 || tokens.len() > 3 {
+                return Err(SimError::UsageEncounter);
+            }
+            let (captain_id, band) = parse_encounter_target(tokens.get(2).map(String::as_str))?;
+            let step = session.encounter_choice_with(&tokens[1], captain_id.as_deref(), band)?;
+            entry.encounter = Some(snapshot::from_encounter(&step));
+            Ok(())
+        }
+        "naval" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageNaval);
+            }
+            let step = session.naval_round(&tokens[1])?;
+            entry.encounter = Some(snapshot::from_encounter(&step));
+            Ok(())
+        }
+        "board" => {
+            let session = active(session)?;
+            if tokens.len() != 1 {
+                return Err(SimError::UsageBoard);
+            }
+            let step = session.resolve_boarding()?;
+            entry.encounter = Some(snapshot::from_encounter(&step));
+            Ok(())
+        }
+        "fight" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageFight);
+            }
+            let step = session.fight(&tokens[1])?;
+            entry.encounter = Some(snapshot::from_encounter(&step));
+            Ok(())
+        }
+        "capture" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageCapture);
+            }
+            let crew = parse_qty(&tokens[1])?;
+            let step = session.capture(crew)?;
+            entry.encounter = Some(snapshot::from_encounter(&step));
+            Ok(())
+        }
         other => Err(SimError::UnknownCommand(other.to_string())),
     }
 }
 
 fn active(session: &mut Option<Session>) -> Result<&mut Session, SimError> {
     session.as_mut().ok_or(SimError::NoActiveGame)
+}
+
+fn parse_encounter_target(token: Option<&str>) -> Result<(Option<String>, Option<i64>), SimError> {
+    let Some(token) = token else {
+        return Ok((None, None));
+    };
+    if let Some(rest) = token.strip_prefix("strength:") {
+        let strength = rest
+            .parse()
+            .map_err(|_| SimError::InvalidNumber(rest.to_string()))?;
+        return Ok((None, Some(strength)));
+    }
+    Ok((Some(token.to_string()), None))
 }
 
 fn parse_qty(token: &str) -> Result<i64, SimError> {

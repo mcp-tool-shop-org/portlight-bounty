@@ -14,10 +14,14 @@ import json
 import os
 import sys
 
+from portlight.content.armor import ARMOR
 from portlight.content.contracts import TEMPLATES
 from portlight.content.factions import FACTIONS, PIRATE_CAPTAINS
+from portlight.content.fighting_styles import FIGHTING_STYLES
 from portlight.content.goods import GOODS
+from portlight.content.melee_weapons import MELEE_WEAPONS
 from portlight.content.ports import PORTS
+from portlight.content.ranged_weapons import RANGED_WEAPONS
 from portlight.content.routes import ROUTES
 from portlight.content.seasons import SEASONAL_PROFILES
 from portlight.content.ships import SHIPS
@@ -149,6 +153,7 @@ def main() -> None:
                 "id": f.id,
                 "name": f.name,
                 "territory_regions": list(f.territory_regions),
+                "smuggler_attitude": f.smuggler_attitude,
             }
             for f in FACTIONS.values()
         ],
@@ -186,6 +191,89 @@ def main() -> None:
                 "cultural_flavor": t.cultural_flavor,
             }
             for t in TEMPLATES
+        ],
+        "armor": [
+            {
+                "id": a.id,
+                "name": a.name,
+                "armor_type": a.armor_type,
+                "damage_reduction": a.damage_reduction,
+                "dodge_penalty": a.dodge_penalty,
+                "stamina_penalty": a.stamina_penalty,
+                "silver_cost": a.silver_cost,
+                "available_regions": list(a.available_regions),
+                "description": a.description,
+            }
+            for a in ARMOR.values()
+        ],
+        "melee_weapons": [
+            {
+                "id": w.id,
+                "name": w.name,
+                "weapon_class": w.weapon_class,
+                "damage_bonus": w.damage_bonus,
+                "thrust_bonus": w.thrust_bonus,
+                "slash_bonus": w.slash_bonus,
+                "silver_cost": w.silver_cost,
+                "available_regions": list(w.available_regions),
+                "description": w.description,
+                "compatible_styles": list(w.compatible_styles),
+                "speed_mod": w.speed_mod,
+            }
+            for w in MELEE_WEAPONS.values()
+        ],
+        "ranged_weapons": [
+            {
+                "id": w.id,
+                "name": w.name,
+                "weapon_type": w.weapon_type,
+                "damage_min": w.damage_min,
+                "damage_max": w.damage_max,
+                "accuracy": w.accuracy,
+                "reload_turns": w.reload_turns,
+                "silver_cost": w.silver_cost,
+                "ammo_per_purchase": w.ammo_per_purchase,
+                "available_regions": list(w.available_regions),
+                "description": w.description,
+                "stun_turns": w.stun_turns,
+                "loud": w.loud,
+            }
+            for w in RANGED_WEAPONS.values()
+        ],
+        "fighting_styles": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "region": s.region,
+                "description": s.description,
+                "historical_note": s.historical_note,
+                "passive_thrust_bonus": s.passive_thrust_bonus,
+                "passive_slash_bonus": s.passive_slash_bonus,
+                "passive_parry_bonus": s.passive_parry_bonus,
+                "passive_hp_bonus": s.passive_hp_bonus,
+                "passive_dodge_counter": s.passive_dodge_counter,
+                "passive_ranged_accuracy": s.passive_ranged_accuracy,
+                "passive_injury_bonus": s.passive_injury_bonus,
+                "special_action": None
+                if s.special_action is None
+                else {
+                    "id": s.special_action.id,
+                    "name": s.special_action.name,
+                    "action_type": s.special_action.action_type,
+                    "stamina_cost": s.special_action.stamina_cost,
+                    "beats": list(s.special_action.beats),
+                    "loses_to": list(s.special_action.loses_to),
+                    "damage_bonus": s.special_action.damage_bonus,
+                    "flavor": s.special_action.flavor,
+                    "cooldown": s.special_action.cooldown,
+                },
+                "training_port_ids": list(s.training_port_ids),
+                "silver_cost": s.silver_cost,
+                "training_days": s.training_days,
+                "prerequisite_styles": s.prerequisite_styles,
+                "required_body_parts": list(s.required_body_parts),
+            }
+            for s in FIGHTING_STYLES.values()
         ],
     }
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
