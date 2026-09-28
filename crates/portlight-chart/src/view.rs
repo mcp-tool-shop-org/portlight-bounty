@@ -3,7 +3,7 @@
 use portlight_sim::model::{VoyageStatus, World};
 use portlight_sim::{LaneSuitability, SailLane, Session};
 
-use crate::assets::{self, chart_water_id, ship_asset, Asset, PORT_MARKER, SLOOP_WAKE};
+use crate::assets::{self, chart_water_id, ship_draw, Asset, PORT_MARKER};
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{
     chart_to_screen_f, facing_from_chart_delta, follow_ship, frame_to_view, sprite_origin,
@@ -107,6 +107,8 @@ pub struct ShipMarker {
     pub wake_origin: (f32, f32),
     pub asset_id: &'static str,
     pub wake_id: &'static str,
+    /// Catalog class. A man-of-war drawn with galleon plates still says `man_of_war`.
+    pub class_name: &'static str,
     pub docked: bool,
 }
 
@@ -418,18 +420,24 @@ fn ship_marker(world: &World) -> ShipMarker {
         at.0 += DOCKED_OFFSET_X;
         at.1 += DOCKED_OFFSET_Y;
     }
-    let hull = ship_asset(facing);
-    let wake = assets::asset(SLOOP_WAKE).expect("wake");
+    let template_id = world
+        .captain
+        .ship
+        .as_ref()
+        .map(|ship| ship.template_id.as_str())
+        .unwrap_or("");
+    let drawn = ship_draw(template_id, facing);
     ShipMarker {
         chart_x,
         chart_y,
         footprint: SHIP_FOOTPRINT_CELLS,
         facing,
         at,
-        sprite_origin: placed(at, hull),
-        wake_origin: placed(at, wake),
-        asset_id: hull.id,
-        wake_id: wake.id,
+        sprite_origin: placed(at, drawn.hull),
+        wake_origin: placed(at, drawn.wake),
+        asset_id: drawn.hull.id,
+        wake_id: drawn.wake.id,
+        class_name: drawn.class_name,
         docked,
     }
 }
@@ -443,18 +451,18 @@ pub fn docked_sloop_marker(map_x: i64, map_y: i64) -> ShipMarker {
     let mut at = chart_to_screen_f(chart_x, chart_y);
     at.0 += DOCKED_OFFSET_X;
     at.1 += DOCKED_OFFSET_Y;
-    let hull = ship_asset(Facing::F1);
-    let wake = assets::asset(SLOOP_WAKE).expect("wake");
+    let drawn = ship_draw("coastal_sloop", Facing::F1);
     ShipMarker {
         chart_x,
         chart_y,
         footprint: SHIP_FOOTPRINT_CELLS,
         facing: Facing::F1,
         at,
-        sprite_origin: placed(at, hull),
-        wake_origin: placed(at, wake),
-        asset_id: hull.id,
-        wake_id: wake.id,
+        sprite_origin: placed(at, drawn.hull),
+        wake_origin: placed(at, drawn.wake),
+        asset_id: drawn.hull.id,
+        wake_id: drawn.wake.id,
+        class_name: drawn.class_name,
         docked: true,
     }
 }
@@ -540,6 +548,7 @@ fn segment_distance(from: (f32, f32), to: (f32, f32), p: (f32, f32)) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assets::ship_asset;
     use crate::cover::{grid_covers_view, TIP_FEATHER_PX};
     use crate::project::{chart_to_screen, chart_to_uv, uv_to_screen, CELL_HEIGHT, CELL_WIDTH};
     use portlight_sim::LaneSuitability;
@@ -882,5 +891,43 @@ mod tests {
                 .any(|lane| lane.suitability == LaneSuitability::Blocked),
             "Al-Manar still lists the lane depart will refuse"
         );
+    }
+
+    #[test]
+    fn a_bought_cutter_keeps_the_shared_dock_offset() {
+        let mut session = Session::new("Ada", "merchant", FIRST_PLAYABLE_SEED, None).unwrap();
+        session.buy_ship("swift_cutter").unwrap();
+        assert_eq!(
+            session.world().captain.ship.as_ref().unwrap().template_id,
+            "swift_cutter"
+        );
+        let chart = project_chart(&session);
+        assert_eq!(chart.ship.class_name, "cutter");
+        assert_eq!(chart.ship.asset_id, "ship_cutter_f1");
+        assert_eq!(chart.ship.wake_id, "ship_cutter_wake");
+        assert!(chart.ship.docked);
+        let here = chart.ports.iter().find(|port| port.is_here).unwrap();
+        let sloop = docked_sloop_marker(here.chart_x, here.chart_y);
+        assert!((chart.ship.at.0 - sloop.at.0).abs() < 1e-4);
+        assert!((chart.ship.at.1 - sloop.at.1).abs() < 1e-4);
+        assert!((chart.ship.at.0 - (here.at.0 + DOCKED_OFFSET_X)).abs() < 0.01);
+        assert!((chart.ship.at.1 - (here.at.1 + DOCKED_OFFSET_Y)).abs() < 0.01);
+        let hull = crate::assets::asset("ship_cutter_f1").unwrap();
+        assert_eq!((hull.canvas_w, hull.canvas_h), (72, 80));
+        assert_eq!((hull.anchor_x, hull.anchor_y), (36, 64));
+        assert_eq!(
+            chart.ship.sprite_origin,
+            sprite_origin(chart.ship.at, hull.anchor_x, hull.anchor_y)
+        );
+        assert_ne!(chart.ship.sprite_origin, sloop.sprite_origin);
+
+        session.depart("al_manar").unwrap();
+        session.advance().unwrap();
+        let sailing = project_chart(&session);
+        assert_eq!(sailing.ship.facing, Facing::F7);
+        assert!(!sailing.ship.docked);
+        assert_eq!(sailing.ship.asset_id, "ship_cutter_f7");
+        assert_eq!(sailing.ship.wake_id, "ship_cutter_wake");
+        assert_eq!(sailing.ship.class_name, "cutter");
     }
 }

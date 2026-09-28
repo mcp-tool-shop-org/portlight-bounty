@@ -460,29 +460,46 @@ impl PortlightGame {
         self.refresh();
     }
 
-    /// One chart frame for the art gate: docked sloop at Porto Novo, and the
-    /// seed-1 ship one day along the Grain Road at facing f7 with its wake.
+    /// One chart frame for the art gate: docked sloop at Porto Novo, and a
+    /// cutter bought through Session, one day along the Grain Road at facing
+    /// f7 with its own wake.
     fn run_art(&mut self) {
         self.art = true;
+        let bought = {
+            let Some(session) = self.session.as_mut() else {
+                self.smoke_ok = false;
+                self.push_log("Art: no session.".to_string());
+                self.refresh();
+                return;
+            };
+            session.buy_ship("swift_cutter")
+        };
+        if let Err(err) = bought {
+            self.smoke_ok = false;
+            self.push_log(format!("Art: could not buy a cutter: {err}"));
+        }
         self.perform(Action::Sail("al_manar".into()));
         self.perform(Action::NextDay);
         let chart = self.chart_now();
         let ok = chart.as_ref().is_some_and(|chart| {
             chart.ship.facing == Facing::F7
                 && !chart.ship.docked
-                && chart.ship.asset_id == "ship_sloop_f7"
+                && chart.ship.class_name == "cutter"
+                && chart.ship.asset_id == "ship_cutter_f7"
+                && chart.ship.wake_id == "ship_cutter_wake"
                 && chart.gallery.len() == 1
                 && chart.gallery[0].docked
                 && chart.gallery[0].asset_id == "ship_sloop_f1"
+                && chart.gallery[0].class_name == "sloop"
         });
         if ok {
             self.push_log(
-                "Art check: docked sloop at Porto Novo, sailing sloop at f7 with wake, on the approved chart water."
+                "Art check: docked sloop at Porto Novo, sailing cutter at f7 with wake, on the approved chart water."
                     .to_string(),
             );
         } else {
             self.smoke_ok = false;
-            self.push_log("Art: expected a docked f1 sloop and a sailing f7 sloop.".to_string());
+            self.push_log("Art: expected a docked f1 sloop and a sailing f7 cutter.".to_string());
         }
         self.refresh();
     }
@@ -1153,8 +1170,12 @@ impl PortlightGame {
         };
         let ship_line = ship
             .map(|ship| {
+                let class = content::content()
+                    .ship(&ship.template_id)
+                    .map(|template| template.ship_class.as_str())
+                    .unwrap_or(ship.template_id.as_str());
                 format!(
-                    "{}   hull {}/{}   crew {}",
+                    "{}   {class}   hull {}/{}   crew {}",
                     ship.name, ship.hull, ship.hull_max, ship.crew
                 )
             })
