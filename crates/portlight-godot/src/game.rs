@@ -227,7 +227,7 @@ impl PortlightGame {
         self.log_lines.clear();
         self.market_open = false;
         self.armed_sail = None;
-        match Session::new_game(
+        match Session::new(
             FIRST_PLAYABLE_NAME,
             FIRST_PLAYABLE_CAPTAIN,
             FIRST_PLAYABLE_SEED,
@@ -241,7 +241,7 @@ impl PortlightGame {
             Err(err) => {
                 self.session = None;
                 self.smoke_ok = false;
-                self.push_log(err);
+                self.push_log(err.to_string());
             }
         }
         self.refresh();
@@ -328,7 +328,7 @@ impl PortlightGame {
         };
         match result {
             Ok(name) => self.push_log(format!("Departed for {name}.")),
-            Err(err) => self.push_log(err),
+            Err(err) => self.push_log(err.to_string()),
         }
         self.refresh();
     }
@@ -385,32 +385,43 @@ impl PortlightGame {
             self.refresh();
             return;
         }
+        let mut failed = false;
         let notes = {
             let Some(session) = self.session.as_mut() else {
                 return;
             };
-            let report = session.advance();
-            let mut notes: Vec<String> = report
-                .events
-                .iter()
-                .map(|event| event.message.clone())
-                .chain(report.shocks.iter().cloned())
-                .filter(|line| !line.is_empty())
-                .collect();
-            if report.docked {
-                let place = docked_name(session).unwrap_or_else(|| "port".to_string());
-                notes.push(format!("Docked at {place}."));
-            } else if session.world().voyage.status == VoyageStatus::AtSea {
-                notes.push(format!(
-                    "At sea. Progress {}/{}.",
-                    session.world().voyage.progress,
-                    session.world().voyage.distance
-                ));
-            } else if session.world().pending_duel.is_some() {
-                notes.push("A duel is pending. The day does not advance.".to_string());
+            match session.advance() {
+                Err(err) => {
+                    failed = true;
+                    vec![err.to_string()]
+                }
+                Ok(turn) => {
+                    let mut notes: Vec<String> = turn
+                        .events
+                        .iter()
+                        .map(|event| event.message.clone())
+                        .chain(turn.shocks.iter().cloned())
+                        .filter(|line| !line.is_empty())
+                        .collect();
+                    if session.world().voyage.status == VoyageStatus::InPort {
+                        let place = docked_name(session).unwrap_or_else(|| "port".to_string());
+                        notes.push(format!("Docked at {place}."));
+                    } else if session.world().voyage.status == VoyageStatus::AtSea {
+                        notes.push(format!(
+                            "At sea. Progress {}/{}.",
+                            session.world().voyage.progress,
+                            session.world().voyage.distance
+                        ));
+                    } else if session.world().pending_duel.is_some() {
+                        notes.push("A duel is pending. The day does not advance.".to_string());
+                    }
+                    notes
+                }
             }
-            notes
         };
+        if failed && self.smoke {
+            self.smoke_ok = false;
+        }
         for note in notes {
             self.push_log(note);
         }
@@ -437,7 +448,7 @@ impl PortlightGame {
                 if self.smoke {
                     self.smoke_ok = false;
                 }
-                self.push_log(err);
+                self.push_log(err.to_string());
             }
         }
         self.refresh();
@@ -554,7 +565,7 @@ impl PortlightGame {
 
     fn market_rows(&self) -> Option<(String, Vec<MarketRow>)> {
         let session = self.session.as_ref()?;
-        let port_id = session.docked_port_id()?;
+        let port_id = docked_port_id(session)?;
         let world = session.world();
         let port = world.port(port_id)?;
         let port_name = port.name.clone();
@@ -643,9 +654,7 @@ impl PortlightGame {
     }
 
     fn docked_id(&self) -> Option<&str> {
-        self.session
-            .as_ref()
-            .and_then(|session| session.docked_port_id())
+        self.session.as_ref().and_then(docked_port_id)
     }
 
     fn held(&self, good: &str) -> i64 {
@@ -691,8 +700,17 @@ impl PortlightGame {
     }
 }
 
+fn docked_port_id(session: &Session) -> Option<&str> {
+    let world = session.world();
+    if world.voyage.status == VoyageStatus::InPort {
+        Some(world.voyage.destination_id.as_str())
+    } else {
+        None
+    }
+}
+
 fn docked_name(session: &Session) -> Option<String> {
-    let id = session.docked_port_id()?;
+    let id = docked_port_id(session)?;
     Some(session.world().port(id)?.name.clone())
 }
 

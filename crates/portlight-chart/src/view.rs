@@ -18,7 +18,7 @@ pub const MEDITERRANEAN: &str = "Mediterranean";
 /// to Al-Manar without a pending duel (see the playable test).
 pub const FIRST_PLAYABLE_NAME: &str = "Ada";
 pub const FIRST_PLAYABLE_CAPTAIN: &str = "merchant";
-pub const FIRST_PLAYABLE_SEED: i64 = 1;
+pub const FIRST_PLAYABLE_SEED: i128 = 1;
 
 /// Viewport the Godot chart camera fits. The market panel sits beside it.
 pub const CHART_VIEW_W: f32 = 900.0;
@@ -519,6 +519,14 @@ mod tests {
         new_game("Ada", "merchant", 42, port).expect("game")
     }
 
+    fn docked_port(world: &World) -> Option<&str> {
+        if world.voyage.status == VoyageStatus::InPort {
+            Some(world.voyage.destination_id.as_str())
+        } else {
+            None
+        }
+    }
+
     #[test]
     fn starting_chart_is_four_mediterranean_ports_and_picker_lanes() {
         let world = merchant_at(None);
@@ -675,7 +683,7 @@ mod tests {
 
     #[test]
     fn grain_road_faces_bucket_seven_and_rests_on_the_lane() {
-        let mut session = Session::new_game("Ada", "merchant", FIRST_PLAYABLE_SEED, None).unwrap();
+        let mut session = Session::new("Ada", "merchant", FIRST_PLAYABLE_SEED, None).unwrap();
         assert_eq!(session.world().captain.silver, 550);
         session.depart("al_manar").unwrap();
         assert_eq!(session.world().captain.silver, 547);
@@ -693,7 +701,7 @@ mod tests {
         assert!((chart.ship.chart_x - 18.0).abs() < 1e-6);
         assert!((chart.ship.chart_y - 8.0).abs() < 1e-6);
 
-        session.advance();
+        session.advance().unwrap();
         let chart = project_chart(session.world());
         assert!(chart.ship.chart_x > 18.0);
         assert!(chart.ship.chart_x <= 24.0);
@@ -709,14 +717,14 @@ mod tests {
 
     #[test]
     fn projecting_the_chart_does_not_change_the_sim() {
-        let mut with_view = Session::new_game("Ada", "merchant", 9, None).unwrap();
-        let mut bare = Session::new_game("Ada", "merchant", 9, None).unwrap();
+        let mut with_view = Session::new("Ada", "merchant", 9, None).unwrap();
+        let mut bare = Session::new("Ada", "merchant", 9, None).unwrap();
         with_view.depart("silva_bay").unwrap();
         bare.depart("silva_bay").unwrap();
         for _ in 0..6 {
             let _ = project_chart(with_view.world());
-            with_view.advance();
-            bare.advance();
+            with_view.advance().unwrap();
+            bare.advance().unwrap();
         }
         assert_eq!(
             format!("{:?}", with_view.world()),
@@ -744,14 +752,14 @@ mod tests {
 
     #[test]
     fn first_playable_sails_to_al_manar_and_trades() {
-        let mut session = Session::new_game(
+        let mut session = Session::new(
             FIRST_PLAYABLE_NAME,
             FIRST_PLAYABLE_CAPTAIN,
             FIRST_PLAYABLE_SEED,
             None,
         )
         .unwrap();
-        assert_eq!(session.docked_port_id(), Some("porto_novo"));
+        assert_eq!(docked_port(session.world()), Some("porto_novo"));
         session.buy("grain", 5).unwrap();
         session.depart("al_manar").unwrap();
         let mut docked = false;
@@ -760,9 +768,9 @@ mod tests {
                 session.world().pending_duel.is_none(),
                 "seed {FIRST_PLAYABLE_SEED} hit a duel"
             );
-            let report = session.advance();
-            if session.docked_port_id() == Some("al_manar") {
-                assert!(report.docked);
+            session.advance().unwrap();
+            if docked_port(session.world()) == Some("al_manar") {
+                assert_eq!(session.world().voyage.status, VoyageStatus::InPort);
                 docked = true;
                 break;
             }

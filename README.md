@@ -19,19 +19,19 @@ The simulation crate does not depend on a UI. The Godot project is a view over `
 ```
 cargo run -p portlight-cli -- new --captain merchant --name Ada --seed 42
 cargo run -p portlight-cli -- script parity/scripts/voyage.txt
-cargo test --locked --workspace
+cargo test --locked --workspace --exclude portlight-godot
 ```
 
 Script commands: `new`, `buy`, `sell`, `depart`, `advance`, `hire`, `provision`, `work`, `duel`, `resolve_duel`.
 
-`godot` 0.5.5 needs a recent stable Rust (1.94 or newer). CI uses `dtolnay/rust-toolchain@stable`.
+`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job uses stable Rust. Build the extension with `cargo +stable build -p portlight-godot`.
 
 ## Run the chart
 
 Godot 4.7.2, official build. The extension looks for `target/debug/libportlight_godot.so` (and the release and other-platform names in `godot/portlight.gdextension`).
 
 ```
-cargo build -p portlight-godot
+cargo +stable build -p portlight-godot
 godot --path godot
 ```
 
