@@ -2018,7 +2018,10 @@ mod tests {
         assert_eq!(session.world.day, 4);
         assert_eq!(session.world.voyage.progress, progress);
         assert_eq!(
-            session.encounter.as_ref().map(|enc| enc.enemy_captain_id.as_str()),
+            session
+                .encounter
+                .as_ref()
+                .map(|enc| enc.enemy_captain_id.as_str()),
             Some("the_butcher")
         );
     }
