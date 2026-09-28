@@ -1,0 +1,16 @@
+new merchant Ada 9
+buy grain 8
+depart silva_bay
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+sell grain 1

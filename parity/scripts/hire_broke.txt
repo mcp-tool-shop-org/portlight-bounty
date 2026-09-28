@@ -1,0 +1,3 @@
+new merchant Ada 1
+provision 540
+hire 1 navigator

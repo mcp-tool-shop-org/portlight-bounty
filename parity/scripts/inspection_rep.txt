@@ -1,0 +1,9 @@
+new merchant Ada 4
+buy grain 2
+depart sun_harbor
+advance
+advance
+advance
+advance
+advance
+advance

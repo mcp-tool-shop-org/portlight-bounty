@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.83.0
+        with:
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+      - name: Test
+        run: cargo test --locked --workspace
+
+  # The Python game is public, so CI can check the live oracle out at the
+  # source commit. Goldens alone still run in the test job.
+  oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: mcp-tool-shop-org/portlight
+          ref: 9b02494cca9cd8f58c4531c41f75be02c9720e43
+          path: vendor/portlight
+      - uses: dtolnay/rust-toolchain@1.83.0
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build
+        run: cargo build --locked -p portlight-cli
+      - name: Live Python oracle
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
+      - name: Victory fixtures
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check

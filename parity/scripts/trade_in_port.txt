@@ -1,0 +1,5 @@
+new merchant Ada 42
+buy grain 10
+sell grain 4
+buy porcelain 2
+sell porcelain 1

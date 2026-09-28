@@ -1,0 +1,16 @@
+new smuggler Quin 5
+buy silk 1
+sell silk 1
+depart sun_harbor
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance

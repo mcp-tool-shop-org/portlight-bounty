@@ -1,0 +1,3 @@
+new corsair C 2
+depart porto_novo
+advance

@@ -1,0 +1,15 @@
+[package]
+name = "portlight-cli"
+description = "Thin CLI for the Portlight simulation core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "portlight"
+path = "src/main.rs"
+
+[dependencies]
+portlight-sim = { path = "../portlight-sim" }
+serde_json = "1"

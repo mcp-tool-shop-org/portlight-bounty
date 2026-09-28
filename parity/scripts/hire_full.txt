@@ -1,0 +1,3 @@
+new merchant Ada 1
+hire 5
+hire 1
