@@ -109,11 +109,37 @@ fn seam_works() -> Vec<HarbourTile> {
     ]
 }
 
+/// Pilings on the pier cell. [`build_harbour`] rejects this; nothing is drawn.
+fn illegal_seam_plate() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
+    build_harbour(
+        Vec::new(),
+        vec![
+            harbour_work_tile(
+                0,
+                2,
+                WorkKind::Pilings,
+                "res://assets/landing/props/pier_pilings_1x1/beauty.png",
+            ),
+            harbour_work_tile(
+                0,
+                2,
+                WorkKind::Pier,
+                "res://assets/landing/structures/pier_UR/beauty.png",
+            ),
+        ],
+    )
+}
+
 /// Water past both capture zooms, then the three works in draw order.
 ///
 /// An illegal work layout is [`Err`], not a panic. The seam capture checks
 /// this before it writes a PNG and exits non-zero when it fails.
+/// `PORTLIGHT_SEAM_ILLEGAL=1` returns the known-bad plate through that same
+/// [`Err`] path. The legal plate is unchanged when the flag is unset.
 pub fn harbour_seam() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
+    if std::env::var("PORTLIGHT_SEAM_ILLEGAL").ok().as_deref() == Some("1") {
+        return illegal_seam_plate();
+    }
     let center = seam_camera_center();
     // 0.72 shows more world than 1.0, so covering it covers the tighter frame.
     let view = seam_view(center, 0.72);
@@ -322,6 +348,26 @@ mod tests {
         assert_eq!(
             validate_harbour(&bad),
             Err(vec![HarbourFault::PilingsOnPier { col: 0, row: 2 }])
+        );
+    }
+
+    #[test]
+    fn the_illegal_flag_plate_is_pilings_on_the_pier_cell() {
+        let body = include_str!("seam.rs")
+            .split_once("pub fn harbour_seam()")
+            .expect("harbour_seam")
+            .1;
+        let flag = body
+            .find("PORTLIGHT_SEAM_ILLEGAL")
+            .expect("flag is checked inside harbour_seam");
+        let legal = body.find("seam_works()").expect("legal plate");
+        assert!(
+            flag < legal,
+            "the flag returns the bad plate before the legal layout is built"
+        );
+        assert_eq!(
+            illegal_seam_plate().expect_err("pilings on a pier"),
+            vec![HarbourFault::PilingsOnPier { col: 0, row: 2 }]
         );
     }
 }

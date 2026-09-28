@@ -130,3 +130,34 @@ jobs:
             echo "harbour seam reported an illegal layout"
             exit 1
           fi
+          # Expected failure. run_godot treats any non-zero exit as a job
+          # failure, so this wrapper records the code itself. The scene must
+          # take harbour_seam()'s Err path: name the fault, exit 1, write no PNG.
+          expect_illegal_seam() {
+            local log="$1"
+            shift
+            set +e
+            "$@" >"$log" 2>&1
+            local code=$?
+            set -e
+            cat "$log"
+            reject_renderer_errors "$log"
+            if [ "$code" -ne 1 ]; then
+              echo "illegal harbour seam exited ${code}, expected 1"
+              exit 1
+            fi
+          }
+          mkdir -p /tmp/seam-illegal
+          expect_illegal_seam /tmp/godot-seam-illegal.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SEAM_ILLEGAL=1 PORTLIGHT_SEAM_DIR=/tmp/seam-illegal \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot \
+            res://scenes/harbour_seam.tscn
+          if ! grep -q 'illegal layout' /tmp/godot-seam-illegal.log; then
+            echo "illegal harbour seam did not report the layout"
+            exit 1
+          fi
+          if find /tmp/seam-illegal -name '*.png' | grep -q .; then
+            echo "illegal harbour seam wrote a PNG"
+            exit 1
+          fi
