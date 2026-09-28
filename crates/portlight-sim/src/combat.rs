@@ -786,8 +786,7 @@ pub fn resolve_combat_round(
         if opp_action == "parry" {
             o_stamina_delta += PARRY_STAMINA_BONUS;
         }
-    } else if player_special && player_style.is_some() && !is_ranged(&opp_action) {
-        let style = player_style.unwrap();
+    } else if let Some(style) = player_style.filter(|_| player_special && !is_ranged(&opp_action)) {
         let (outcome, bonus_dmg, effect_desc) =
             resolve_style_action(player_action, &opp_action, style);
         style_effect = Some(effect_desc.clone());

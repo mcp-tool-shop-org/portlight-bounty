@@ -564,10 +564,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
     for route in routes_value {
         routes.push(route_from(route)?);
     }
-    let voyage = match truthy(data.get("voyage")) {
-        Some(value) => voyage_from(value)?,
-        None => return None,
-    };
+    let voyage = voyage_from(truthy(data.get("voyage"))?)?;
     let day = json_i64(data.get("day")?)?;
     let seed = match data.get("seed") {
         None => 0,

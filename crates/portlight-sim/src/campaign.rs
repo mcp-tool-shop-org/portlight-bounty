@@ -1670,7 +1670,7 @@ mod tests {
         let paths = compute_victory_progress(&world, &HouseBooks::default());
         let ids: Vec<_> = paths.iter().map(|path| path.path_id.as_str()).collect();
         assert!(ids.contains(&"commercial_empire"));
-        assert!(!ids.iter().any(|id| *id == "commercial_finance"));
+        assert!(!ids.contains(&"commercial_finance"));
         assert_eq!(
             paths
                 .iter()

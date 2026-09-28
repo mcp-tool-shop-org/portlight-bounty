@@ -372,7 +372,7 @@ pub fn tick_captain_agency(
         } else {
             5
         };
-        if hash_val % modulus != 0 {
+        if !hash_val.is_multiple_of(modulus) {
             continue;
         }
         let captain_region = if !memory.last_seen_region.is_empty() {
