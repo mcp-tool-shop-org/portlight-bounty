@@ -24,7 +24,7 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Script commands: `new`, `buy`, `sell`, `depart`, `advance`, `hire`, `provision`, `work`, `duel`, `resolve_duel`.
 
-`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job uses stable Rust. Build the extension with `cargo +stable build -p portlight-godot`.
+`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`; without it Cargo 1.83 parses `godot-bindings` and the job fails before Godot starts. The job still downloads Godot 4.7.2 and runs the headless import and `--smoke`. Build the extension locally with `cargo +stable build -p portlight-godot`.
 
 ## Run the chart
 
@@ -43,7 +43,7 @@ Chart water and the port marker are generated placeholders, stamped PH:
 cargo run -p portlight-chart --bin gen_placeholders -- godot/assets
 ```
 
-That command does not rewrite `godot/assets/landing/`. The sloop frames and wake there are the approved plates (MANIFEST v0.2.0). `cargo test -p portlight-chart` checks every manifest sha256 against the committed file. Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
+That command does not rewrite `godot/assets/landing/`. That directory is the whole v0.2.0 bundle: 66 PNGs (sloop, cutter, brigantine, and galleon, nine plates each, plus 30 harbour tiles) and `MANIFEST.json`. `cargo test -p portlight-chart` checks the manifest hash, every entry sha256, that the committed PNG set matches the manifest, and that every plate `.import` is lossless with mipmaps, premultiply, and Fix Alpha Border off. Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
 
 `godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files are lossless, with mipmaps off, Fix Alpha Border off, and premultiplied alpha off. The canvas filter is Nearest, so a plate drawn at 1:1 keeps its pixels. No import setting was changed away from that.
 

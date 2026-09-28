@@ -50,9 +50,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Build the GDExtension
-        run: cargo build --locked -p portlight-godot
-      - name: Install Godot 4.7.2
+        # rust-toolchain.toml pins 1.83.0 for the sim. Inside this checkout that
+        # file overrides the stable toolchain installed above, and Cargo 1.83
+        # cannot parse godot-bindings 0.5.5 (it needs edition 2024).
+        # RUSTUP_TOOLCHAIN wins over the toolchain file. Do not drop it.
+        # This job stays required: Godot 4.7.2 runs headless here. Do not skip it.
+        env:
+          RUSTUP_TOOLCHAIN: stable
         run: |
+          rustc --version
+          cargo build --locked -p portlight-godot
+      - name: Install Godot 4.7.2
+        # The official Linux binary dlopens X11, GL, and fontconfig even for
+        # --headless. ubuntu-latest usually has them; install them so a thinner
+        # image does not fail the smoke after the extension builds.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libx11-6 libxcursor1 libxinerama1 libxrandr2 libxi6 libxext6 \
+            libgl1 libfontconfig1
           curl -fsSL -o /tmp/godot.zip \
             https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
           unzip -q /tmp/godot.zip -d /tmp/godot-bin
