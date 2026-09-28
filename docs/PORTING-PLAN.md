@@ -26,7 +26,7 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | `engine/models.py` | `model.rs` | Goods, markets, ports, ships, cargo, standing, voyage, and world. Combat, culture, festival, and fleet structs are merged in the sim. The Godot view does not draw them. |
 | `engine/economy.py` | `economy.rs` | Partial. Price formula, `tick_markets`, buy, sell, FIFO cargo, receipt ids, and `work_docks`. Gear sell-back is not ported. |
 | `engine/voyage.py` | `voyage.rs` | Ported for `depart`, `advance_day`, `arrive`, the event table, and the sail-picker lane list (`sail_lanes`), including ship-class block versus warning. |
-| `engine/reputation.py` | `reputation.rs` | Partial. Trade, inspection, arrival, daily heat decay, inspection-chance modifier, and `get_service_modifier`. `provision`, single-ship `repair`, and dry dock apply that service modifier. `depart` applies the captain port-fee multiplier and does not apply `get_fee_modifier`. The Python reputation view is what reads that fee modifier, and the sim does not port it. |
+| `engine/reputation.py` | `reputation.rs` | Ported for play. Trade, inspection, arrival, daily heat decay, inspection-chance modifier, and `get_service_modifier`. `provision`, single-ship `repair`, and dry dock apply that service modifier. `depart` applies the captain port-fee multiplier. `get_fee_modifier` is called only by the Python reputation view, not by gameplay; not applied, matching Python. |
 | `engine/ship_stats.py` | `ship.rs` | Speed, cargo, storm resist, wages, morale, and casualty selection. Installed upgrades add hull, speed, cargo, cannons, and maneuver. A stock ship still has zero bonuses. The Godot view does not offer upgrades. |
 | `engine/captain_identity.py` | content JSON `captains` | Partial. All nine archetypes' numbers (prices, voyage, inspection, reputation seed, home port, ship, silver). Backstory and mentor text are not copied. |
 | `content/world.py` | `world.rs` `new_game` | Ported. Initial prices ignore captain modifiers, matching Python. |
@@ -216,8 +216,7 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [ ] Faction and captain narrative text, attitudes, seasonal activity
 - [ ] Season weather copy and travel warnings
 - [ ] Captain backstory, mentor, bloc text
-- [ ] Crew roles beyond wages, casualty weights, hiring, the quartermaster's 10% wage discount, and the navigator's +0.5 speed. That speed bonus is applied on the sea day, matching `voyage.py`. Gunner, marine, and surgeon effects belong to combat, boarding, and injuries. Python defines `navigator_storm_resist_bonus` and `quartermaster_sell_bonus` and never calls them, so they are not applied here either.
-- [ ] `get_fee_modifier`. The Python reputation view displays it. `depart` does not apply it, and the sim does not port it.
+- [ ] Crew roles beyond wages, casualty weights, hiring, the quartermaster's 10% wage discount, and the navigator's +0.5 speed. That speed bonus is applied on the sea day, matching `voyage.py`. Python defines `navigator_storm_resist_bonus` and `quartermaster_sell_bonus` and never calls them, so they are not applied here either.
 - [ ] Receipt ledger export and content hashes. Buy/sell totals and receipt count are kept on `HouseBooks` because victory reads them.
 
 ### Merged in the sim, not yet offered by the Godot view
@@ -258,6 +257,8 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 ### Deprioritized
 
 - [ ] `engine/underworld.py` and `engine/merchant.py`. Deprioritized, because the Python session never calls them. There is no `underworld.rs`. `encounter.rs` has its own hostility function. `merchant.rs` is the markup helper, and `Session` does not call that module. `Session::buy_gear` still buys one stocked item at a merchant markup for the gear scripts.
+- [ ] `gunner_damage_mult`, `marine_boarding_bonus`, and `surgeon_death_reduction` are defined in `ship_stats.py` but never called by the Python game; not applied, matching Python.
+- [ ] `get_fee_modifier` is called only by the Python reputation view, not by gameplay; not applied, matching Python.
 
 ### Skipped unless Mike asks
 

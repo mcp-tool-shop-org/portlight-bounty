@@ -64,10 +64,6 @@ Python and the stage-1 goldens agree. A later UI calls `sail_lanes` and `Session
 - `standing_delta` is returned on a duel outcome and is not written onto reputation.
 - The navigator's storm resistance and the quartermaster's sell bonus exist in Python and are never called. The +0.5 sea-day speed and the 10% wage discount are already applied. Leave the uncalled pair uncalled.
 
-### Partial (code present, not wired to session or not fully tested)
-- Crew roles: wages, casualty weights, and hiring are done. `gunner_damage_mult`, `marine_boarding_bonus`, and `surgeon_death_reduction` are defined in Python and are not applied. A surgeon on the roster does not change the heal rate.
-- `get_fee_modifier`. The Python reputation view displays it. `depart` does not apply it, and the sim does not port it.
-
 ### Not started
 - Godot encounter screen (in progress). Negotiate, flee, naval combat, and boarding are merged in the sim and are not yet offered by the Godot view. The chart still shows the voyage-event stance duel.
 - Godot screens for new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Those systems are merged in the sim and are not yet offered by the Godot view.
@@ -76,6 +72,8 @@ Python and the stage-1 goldens agree. A later UI calls `sail_lanes` and `Session
 
 ### Deprioritized
 - `engine/underworld.py` and `engine/merchant.py`. Deprioritized, because the Python session never calls them.
+- `gunner_damage_mult`, `marine_boarding_bonus`, and `surgeon_death_reduction` are defined in `ship_stats.py` but never called by the Python game; not applied, matching Python.
+- `get_fee_modifier` is called only by the Python reputation view, not by gameplay; not applied, matching Python.
 
 ### Skipped unless Mike asks
 - `printandplay/**` and `balance/**`
