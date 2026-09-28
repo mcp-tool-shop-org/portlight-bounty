@@ -6,7 +6,7 @@ The simulation crate does not depend on a UI. The Godot project is a view over `
 
 ## Layout
 
-- `crates/portlight-sim` — goods, ports, prices, trade, voyages, victory paths, and `Session` (the turn-by-turn API)
+- `crates/portlight-sim` — goods, ports, prices, trade, voyages, victory paths, and `Session` (the turn-by-turn API). Save v12, contracts, encounters, skills and career, infrastructure, credit and insurance, fleet, injuries, weapons and loot, narrative, culture and consequences, the area 7a ship, crew, and contract commands, and hunting and bounty are merged in the sim and are not yet offered by the Godot view.
 - `crates/portlight-cli` — `portlight` binary
 - `crates/portlight-chart` — dimetric projection, ship facing, and the chart view-model (no Godot)
 - `crates/portlight-godot` — Godot 4.7 gdext extension
@@ -22,7 +22,7 @@ cargo run -p portlight-cli -- script parity/scripts/voyage.txt
 cargo test --locked --workspace --exclude portlight-godot
 ```
 
-Script commands: `new`, `buy`, `sell`, `depart`, `advance`, `hire`, `provision`, `work`, `duel`, `resolve_duel`.
+Script commands, in `script.rs` order: `new`, `buy`, `sell`, `depart`, `advance`, `arrival_narrative`, `evaluate_consequences`, `accept_contract`, `complete_contract`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `deposit`, `withdraw`, `repay_credit`, `hire`, `provision`, `work`, `duel`, `resolve_duel`, `encounter`, `naval`, `board`, `fight`, `capture`, `train`, `recruit`, `skill`, `remember`, `agency`, `spare`, `take_all`, `gear`, `buy_ship`, `upgrade`, `form_convoy`, `repair_fleet`, `repair`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `abandon_contract`, `transfer`, `maintain`, `hunt`, `bounty`, `wanted`.
 
 `godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`; without it Cargo 1.83 parses `godot-bindings` and the job fails before Godot starts. The job still downloads Godot 4.7.2, runs `cargo test -p portlight-godot`, and runs the headless import and `--smoke`. Build the extension locally with `cargo +stable build -p portlight-godot`.
 
@@ -79,7 +79,97 @@ The seam scene validates the layout before it writes. An illegal layout (pilings
 
 ## Parity
 
-`cargo test` compares those scripts to `parity/golden/`. To regenerate the goldens from the Python checkout:
+`cargo test` compares every script in `parity/scripts/` to `parity/golden/`. The file list is:
+
+- `abandon_contract.txt`
+- `board_fleet_ship.txt`
+- `boarding.txt`
+- `bounty_board.txt`
+- `bounty_claim.txt`
+- `bounty_hunter_voyage.txt`
+- `bounty_max.txt`
+- `bounty_not_defeated.txt`
+- `bounty_not_hunting.txt`
+- `bounty_unknown.txt`
+- `buy_broker.txt`
+- `buy_insurance.txt`
+- `buy_warehouse.txt`
+- `cargo_loss.txt`
+- `consequences.txt`
+- `contraband_sell.txt`
+- `contract_accept.txt`
+- `contract_arrival_rng.txt`
+- `contract_complete.txt`
+- `contract_expire.txt`
+- `crew_minimum.txt`
+- `dock_current_ship.txt`
+- `dock_work.txt`
+- `dry_dock_named.txt`
+- `duel_block.txt`
+- `duel_draw.txt`
+- `duel_invalid.txt`
+- `duel_loss.txt`
+- `duel_none.txt`
+- `duel_resolve.txt`
+- `duel_short.txt`
+- `duel_win.txt`
+- `encounter_flee.txt`
+- `encounter_negotiate.txt`
+- `event_ceremony.txt`
+- `event_foreign.txt`
+- `event_musician.txt`
+- `event_whale.txt`
+- `fire_crew.txt`
+- `fleet_convoy.txt`
+- `fleet_form.txt`
+- `fleet_transfer.txt`
+- `g9.txt`
+- `gear_armor.txt`
+- `hire_and_sail.txt`
+- `hire_broke.txt`
+- `hire_full.txt`
+- `hire_navigator.txt`
+- `hire_role.txt`
+- `hire_sea.txt`
+- `hull_day20.txt`
+- `hunt_port_fail.txt`
+- `hunt_port_success.txt`
+- `hunt_sea_fail.txt`
+- `hunt_sea_morale.txt`
+- `hunt_sea_success.txt`
+- `injury_heal.txt`
+- `inspection_rep.txt`
+- `maintain.txt`
+- `maintain_blacksmith.txt`
+- `milestone_reached.txt`
+- `narrative_beats.txt`
+- `naval_combat.txt`
+- `new_game.txt`
+- `port_arrival.txt`
+- `port_days.txt`
+- `provision_sea.txt`
+- `provision_silva.txt`
+- `provision_zero.txt`
+- `recruit_companion.txt`
+- `rename_ship.txt`
+- `repair_fleet.txt`
+- `repair_ship.txt`
+- `sea_captain_agency.txt`
+- `sea_culture.txt`
+- `sell_fleet_ship.txt`
+- `skill_spend.txt`
+- `smuggler.txt`
+- `take_credit.txt`
+- `trade_in_port.txt`
+- `train_crew.txt`
+- `upgrade_naval.txt`
+- `victory_provenance.txt`
+- `victory_spare.txt`
+- `victory_takeall.txt`
+- `voyage.txt`
+- `work_at_sea.txt`
+
+To regenerate the goldens from the Python checkout:
 
 ```
 PYTHONPATH=/path/to/portlight/src python3 tools/extract_content.py
