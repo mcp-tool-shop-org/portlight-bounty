@@ -4,6 +4,7 @@
 mod chart_canvas;
 mod game;
 mod logic;
+mod seam;
 
 use godot::prelude::*;
 

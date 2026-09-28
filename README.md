@@ -71,7 +71,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
   godot --display-driver x11 --rendering-driver opengl3 --path godot -- --art
 
 xvfb-run -a -s "-screen 0 1280x720x24" \
-  env PORTLIGHT_SHOT=/tmp/portlight-harbour-seam.png \
+  env PORTLIGHT_SEAM_DIR=/tmp \
   godot --display-driver x11 --rendering-driver opengl3 --path godot \
   res://scenes/harbour_seam.tscn
 ```

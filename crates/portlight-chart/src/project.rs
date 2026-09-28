@@ -19,6 +19,10 @@
 pub const CELL_WIDTH: i32 = 128;
 /// Chart cell height in pixels (dimetric 2:1).
 pub const CELL_HEIGHT: i32 = 64;
+/// Harbour water cell. Twice the chart cell, still 2:1.
+pub const HARBOUR_CELL_W: i32 = 256;
+/// Harbour water cell height in pixels.
+pub const HARBOUR_CELL_H: i32 = 128;
 
 /// Harbour sea, water, quay, and pier sit at this screen offset.
 ///
@@ -96,12 +100,28 @@ pub fn uv_to_chart(u: f64, v: f64) -> (f64, f64) {
     ((u - v) / s, (u + v) / s)
 }
 
+/// Dimetric grid shared by the chart and the harbour.
+///
+/// `sx = (col − row) * cell_w / 2`, `sy = (col + row) * cell_h / 2`.
+/// A 256×128 harbour cell is `(col − row) * 128`, `(col + row) * 64`.
+/// A 128×64 chart cell is the same function at half scale. The value is the
+/// cell centre. The footprint anchor sits half a cell below that.
+pub fn grid_to_screen_f(col: f64, row: f64, cell_w: i32, cell_h: i32) -> (f64, f64) {
+    (
+        (col - row) * f64::from(cell_w / 2),
+        (col + row) * f64::from(cell_h / 2),
+    )
+}
+
+/// Integer form of [`grid_to_screen_f`].
+pub fn grid_to_screen(col: i32, row: i32, cell_w: i32, cell_h: i32) -> (i32, i32) {
+    let (x, y) = grid_to_screen_f(f64::from(col), f64::from(row), cell_w, cell_h);
+    (x as i32, y as i32)
+}
+
 /// 2:1 scale of a display-cart point. Integer `(u, v)` is a water-cell centre.
 pub fn uv_to_screen(u: f64, v: f64) -> (f64, f64) {
-    (
-        (u - v) * f64::from(CELL_WIDTH / 2),
-        (u + v) * f64::from(CELL_HEIGHT / 2),
-    )
+    grid_to_screen_f(u, v, CELL_WIDTH, CELL_HEIGHT)
 }
 
 /// Screen position of a chart point. Porto Novo `(18, 8)` is about `(1629.2, 362.0)`.
@@ -119,7 +139,7 @@ pub fn chart_to_screen(x: i64, y: i64) -> (i32, i32) {
 
 /// Centre of the water cell at integer display-cart `(u, v)`.
 pub fn water_cell_center(u: i32, v: i32) -> (f32, f32) {
-    let (sx, sy) = uv_to_screen(f64::from(u), f64::from(v));
+    let (sx, sy) = grid_to_screen(u, v, CELL_WIDTH, CELL_HEIGHT);
     (sx as f32, sy as f32)
 }
 
@@ -136,10 +156,7 @@ pub fn sprite_origin(at: (f32, f32), anchor_x: i32, anchor_y: i32) -> (f32, f32)
 
 /// Screen step of a `(u, v)` delta, used to point a placeholder bow.
 pub fn uv_to_screen_delta(du: f64, dv: f64) -> (f64, f64) {
-    (
-        (du - dv) * f64::from(CELL_WIDTH / 2),
-        (du + dv) * f64::from(CELL_HEIGHT / 2),
-    )
+    grid_to_screen_f(du, dv, CELL_WIDTH, CELL_HEIGHT)
 }
 
 /// Facing for a chart step, measured in rotated `(u, v)`.
