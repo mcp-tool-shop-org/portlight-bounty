@@ -24,10 +24,10 @@ use crate::error::SimError;
 use crate::model::{
     ActiveContract, ActivePolicy, Armor, BreachRecord, BrokerOffice, Captain, CaptainMemory,
     CaptainRelationship, CargoItem, Companion, Contract, ContractBoard, ContractOutcome,
-    CreditState, DeferredFee, EncounterMemory, FightingStyle, FleetShip, Incident,
-    InfrastructureRecord, Injury, InstalledUpgrade, InsuranceClaim, MarketSlot, Officer,
-    OwnedLicense, Party, PendingDuel, PirateEncounterRecord, Port, Route, Ship, Skill, Standing,
-    StoredLot, Voyage, VoyageStatus, WarehouseLease, Weapon, WeaponProvenance, World,
+    CreditState, DeferredFee, EncounterMemory, FleetShip, Incident, InfrastructureRecord, Injury,
+    InstalledUpgrade, InsuranceClaim, MarketSlot, Officer, OwnedLicense, Party, PendingDuel,
+    PirateEncounterRecord, Port, Route, Ship, Skill, Standing, StoredLot, Voyage, VoyageStatus,
+    WarehouseLease, Weapon, WeaponProvenance, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -960,26 +960,6 @@ fn quality_of_gear(map: &Map<String, Value>, weapon_id: &str) -> String {
         .and_then(Value::as_str)
         .unwrap_or("standard")
         .to_string()
-}
-
-fn styles_from(value: Option<&Value>) -> Vec<FightingStyle> {
-    let Some(Value::Array(items)) = value else {
-        return Vec::new();
-    };
-    items
-        .iter()
-        .filter_map(Value::as_str)
-        .map(|id| {
-            let def = content::content().fighting_style(id);
-            FightingStyle {
-                id: id.to_string(),
-                name: def
-                    .map(|style| style.name.clone())
-                    .unwrap_or_else(|| id.to_string()),
-                region: def.map(|style| style.region.clone()).unwrap_or_default(),
-            }
-        })
-        .collect()
 }
 
 fn string_map(value: Option<&Value>) -> Option<Vec<(String, String)>> {

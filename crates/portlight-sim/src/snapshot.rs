@@ -69,6 +69,7 @@ pub struct CaptainSnap {
     pub learned_styles: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub companions: Vec<CompanionSnap>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub injuries: Vec<InjurySnap>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub armor: Option<String>,

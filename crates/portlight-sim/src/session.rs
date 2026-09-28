@@ -1211,6 +1211,10 @@ impl Session {
             .armor
             .as_ref()
             .map(|armor| armor.id.clone());
+        let bonus = skills::degrade_threshold_bonus(skills::skill_level(
+            &self.world.captain.skills,
+            "blacksmith",
+        ));
         let captain = &mut self.world.captain;
         if let Some(id) = melee {
             let _ = weapon_quality::tick_weapon_degradation(
@@ -1219,7 +1223,7 @@ impl Session {
                 &id,
                 "melee",
                 1,
-                0,
+                bonus,
             );
         }
         if let Some(id) = armor {
@@ -1229,7 +1233,7 @@ impl Session {
                 &id,
                 "armor",
                 1,
-                0,
+                bonus,
             );
         }
     }
@@ -1289,6 +1293,18 @@ impl Session {
         };
         self.world.captain.silver += silver_gain;
         self.world.captain.duels_won += 1;
+        let crew_killed = 0.max(enc.enemy_ship_crew_max - enc.enemy_ship_crew);
+        let memory =
+            memory::get_or_create_memory(&mut self.world.captain_memories, &enc.enemy_captain_id);
+        memory::record_encounter(
+            memory,
+            self.world.day,
+            &enc.enemy_region,
+            "player_won",
+            spared,
+            false,
+            crew_killed,
+        );
         record_duel_standing(
             &mut self.world.captain.standing,
             &enc.enemy_faction_id,
@@ -1325,6 +1341,9 @@ impl Session {
             );
             loot::apply_loot(&mut self.world.captain, &drops);
         }
+        let trigger = if spared { "spared_enemy" } else { "took_all" };
+        companion::apply_morale_trigger(&mut self.world.captain, trigger);
+        companion::check_departures(&mut self.world.captain);
         self.clear_encounter();
         Ok(())
     }

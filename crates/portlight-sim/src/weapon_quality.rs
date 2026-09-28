@@ -1,7 +1,7 @@
 //! Weapon quality, durability, and the rusted floor. Port of `engine/weapon_quality.py`.
 //!
 //! Rusted is the breakage floor: another use does not remove the weapon or
-//! drop it further. The blacksmith threshold bonus stays 0 until skills land.
+//! drop it further. The blacksmith skill adds uses before that drop.
 
 use crate::model::WeaponQuality;
 use crate::pyrand::PyRandom;

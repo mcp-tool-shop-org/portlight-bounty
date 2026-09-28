@@ -1182,18 +1182,20 @@ def ensure_combatants(state) -> None:
 
 def finish_personal_fight(state, result, player_won: bool, draw: bool) -> None:
     from portlight.engine.injuries import create_injury
+    from portlight.engine.skill_engine import get_degrade_threshold_bonus, get_skill_level
     from portlight.engine.weapon_quality import tick_weapon_degradation
     world = state["world"]
     gear = world.captain.combat_gear
     if result.injury_inflicted:
         world.captain.injuries.append(create_injury(result.injury_inflicted, world.day))
+    bonus = get_degrade_threshold_bonus(get_skill_level(world.captain.skills, "blacksmith"))
     if gear.melee_weapon:
         tick_weapon_degradation(
-            gear.weapon_quality, gear.weapon_usage, gear.melee_weapon, "melee", 1, 0,
+            gear.weapon_quality, gear.weapon_usage, gear.melee_weapon, "melee", 1, bonus,
         )
     if gear.armor:
         tick_weapon_degradation(
-            gear.weapon_quality, gear.weapon_usage, gear.armor, "armor", 1, 0,
+            gear.weapon_quality, gear.weapon_usage, gear.armor, "armor", 1, bonus,
         )
     sync_combat_ammo(state)
     if player_won:
@@ -1246,6 +1248,14 @@ def do_spare(state, spared: bool) -> None:
     silver_gain = 20 + enc.enemy_strength * (3 if spared else 7)
     world.captain.silver += silver_gain
     state["history"]["duels_won"] += 1
+    from portlight.engine.captain_memory import get_or_create_memory, record_encounter
+    from portlight.engine.companion_engine import apply_morale_trigger, check_departures
+    memory = get_or_create_memory(world.pirates.captain_memories, enc.enemy_captain_id)
+    crew_killed = max(0, enc.enemy_ship_crew_max - enc.enemy_ship_crew)
+    record_encounter(
+        memory, world.day, enc.enemy_region, "player_won",
+        player_spared=spared, player_used_firearm=False, crew_killed=crew_killed,
+    )
     record_duel_outcome(
         world.captain.standing.underworld_standing,
         enc.enemy_faction_id,
@@ -1261,6 +1271,11 @@ def do_spare(state, spared: bool) -> None:
     if not spared:
         drops = roll_loot(enc.enemy_strength, enc.enemy_captain_id, state["rng"], 2)
         apply_loot(world.captain, drops)
+    trigger = "spared_enemy" if spared else "took_all"
+    party = _party_from(world.captain.party)
+    apply_morale_trigger(party, trigger)
+    check_departures(party)
+    world.captain.party = _party_dict(party)
     clear_encounter(state)
 
 
