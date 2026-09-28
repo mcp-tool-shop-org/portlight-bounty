@@ -125,6 +125,7 @@ impl Session {
             &self.receipts,
             &self.run_id,
             &self.books,
+            &self.board,
         )
     }
 
@@ -156,7 +157,7 @@ impl Session {
             books: loaded.books,
             receipts: loaded.receipts,
             run_id: loaded.run_id,
-            board: ContractBoard::default(),
+            board: loaded.board,
         };
         reprice_all(&mut session.world);
         Ok(session)
@@ -164,6 +165,12 @@ impl Session {
 
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    /// Offers, accepted work, and resolved outcomes. Save writes this board.
+    /// Breaches are stored here and serialized as `captain.breach_records`.
+    pub fn board(&self) -> &ContractBoard {
+        &self.board
     }
 
     pub fn trade_seq(&self) -> u64 {
@@ -992,5 +999,118 @@ mod tests {
         assert_eq!(session.world.captain.wanted_level, 0);
         assert_eq!(session.books.completed_contracts[0].outcome_type, "expired");
         assert!(session.board.active.is_empty());
+    }
+
+    #[test]
+    fn save_load_restores_active_contracts_and_breaches() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let offer_id = session.board.offers[0].id.clone();
+        session.accept_contract(&offer_id).unwrap();
+        session.board.breaches.push(crate::model::BreachRecord {
+            contract_id: offer_id.clone(),
+            day: 2,
+            port_id: "porto_novo".to_string(),
+            family: session.board.active[0].family.clone(),
+        });
+        session.world.captain.wanted_level = 1;
+        session.board.completed.push(ContractOutcome {
+            contract_id: "done-1".to_string(),
+            outcome_type: "completed".to_string(),
+            silver_delta: 40,
+            trust_delta: 1,
+            standing_delta: 1,
+            heat_delta: -1,
+            completion_day: 3,
+            summary: "Delivered 2 silk to porto_novo".to_string(),
+            family: "luxury_discreet".to_string(),
+            good_id: "silk".to_string(),
+            required_quantity: 2,
+            delivered_quantity: 2,
+            destination_port_id: "porto_novo".to_string(),
+            deadline_day: 20,
+            reward_silver: 40,
+        });
+        let before = session.board.clone();
+        let dir = std::env::temp_dir().join(format!("portlight-board-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "contracts").unwrap();
+        let text = std::fs::read_to_string(dir.join("saves").join("contracts.json")).unwrap();
+        let saved: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert!(saved["contract_board"].get("breaches").is_none());
+        assert_eq!(
+            saved["captain"]["breach_records"][0]["contract_id"],
+            offer_id
+        );
+        assert_eq!(saved["captain"]["wanted_level"], 1);
+        assert_eq!(saved["contract_board"]["active"][0]["offer_id"], offer_id);
+        assert_eq!(saved["contract_board"]["active"][0]["status"], "accepted");
+        assert!(saved["contract_board"]["completed"][0]
+            .get("good_id")
+            .is_none());
+        assert_eq!(
+            saved["contract_board"]["completed"][0]["family"],
+            "luxury_discreet"
+        );
+
+        let loaded = Session::load(&dir, "contracts").unwrap().unwrap();
+        assert_eq!(loaded.board.offers, before.offers);
+        assert_eq!(loaded.board.active, before.active);
+        assert_eq!(loaded.board.last_refresh_day, before.last_refresh_day);
+        assert_eq!(loaded.board.max_offers, before.max_offers);
+        assert_eq!(loaded.board.breaches, before.breaches);
+        assert_eq!(loaded.world().captain.wanted_level, 1);
+        let completed = &loaded.board.completed[0];
+        assert_eq!(completed.contract_id, "done-1");
+        assert_eq!(completed.outcome_type, "completed");
+        assert_eq!(completed.silver_delta, 40);
+        assert_eq!(completed.trust_delta, 1);
+        assert_eq!(completed.standing_delta, 1);
+        assert_eq!(completed.heat_delta, -1);
+        assert_eq!(completed.completion_day, 3);
+        assert_eq!(completed.summary, "Delivered 2 silk to porto_novo");
+        assert_eq!(completed.family, "luxury_discreet");
+        assert!(completed.good_id.is_empty());
+        assert_eq!(completed.required_quantity, 0);
+        assert_eq!(
+            loaded.books().completed_contracts[0].family.as_deref(),
+            Some("luxury_discreet")
+        );
+        assert_eq!(
+            loaded.world().captain.silver,
+            session.world().captain.silver
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn saved_board_matches_the_python_v12_shape() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.accept_contract("63fc3f8be22a").unwrap();
+        session.board.breaches.push(crate::model::BreachRecord {
+            contract_id: "63fc3f8be22a".to_string(),
+            day: 2,
+            port_id: "porto_novo".to_string(),
+            family: "smuggling".to_string(),
+        });
+        session.world.captain.wanted_level = 1;
+        let dir = std::env::temp_dir().join(format!("portlight-shape-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "contracts").unwrap();
+        let rust: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(dir.join("saves").join("contracts.json")).unwrap(),
+        )
+        .unwrap();
+        let fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../parity/saves/contract_v12.json");
+        let python: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(fixture).unwrap()).unwrap();
+        assert_eq!(rust["contract_board"], python["contract_board"]);
+        assert_eq!(
+            rust["captain"]["breach_records"],
+            python["captain"]["breach_records"]
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

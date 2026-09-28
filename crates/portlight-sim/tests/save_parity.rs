@@ -202,6 +202,43 @@ fn played_slot_matches_the_python_loader() {
 }
 
 #[test]
+fn python_v12_save_restores_the_contract_board() {
+    let root = parity_root();
+    let loaded = Session::load(&root, "contract_v12").unwrap().unwrap();
+    let board = loaded.board();
+    assert_eq!(board.active.len(), 1);
+    assert_eq!(board.active[0].offer_id, "63fc3f8be22a");
+    assert_eq!(board.active[0].family, "smuggling");
+    assert_eq!(board.active[0].good_id, "weapons");
+    assert_eq!(board.active[0].required_quantity, 7);
+    assert_eq!(board.active[0].status, "accepted");
+    assert_eq!(board.active[0].destination_port_id, "corsairs_rest");
+    assert_eq!(
+        board
+            .offers
+            .iter()
+            .map(|offer| offer.id.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "d2c430fdaf99",
+            "71773aae754b",
+            "dd38287c23aa",
+            "0b22b57f35b1",
+        ]
+    );
+    assert_eq!(board.last_refresh_day, 1);
+    assert_eq!(board.max_offers, 5);
+    assert_eq!(board.breaches.len(), 1);
+    assert_eq!(board.breaches[0].contract_id, "63fc3f8be22a");
+    assert_eq!(board.breaches[0].day, 2);
+    assert_eq!(board.breaches[0].port_id, "porto_novo");
+    assert_eq!(board.breaches[0].family, "smuggling");
+    assert_eq!(loaded.world().captain.wanted_level, 1);
+    assert_eq!(loaded.world().day, 1);
+    assert_eq!(loaded.world().seed, 1);
+}
+
+#[test]
 fn load_reseeds_with_seed_plus_day() {
     let mut session = Session::new("Ada", "merchant", 42, None).unwrap();
     let dir = scratch("reseed");

@@ -1,9 +1,11 @@
 //! Python JSON save, version 12, from `engine/save.py`.
 //!
 //! The file is that JSON object. This module writes the state the sim already
-//! has — world, ledger, and house books — and runs the v1–v12 migrations.
-//! `trade_seq` is the number of ledger receipts. The MT19937 state is not
-//! stored; [`crate::session::Session::load`] reseeds with `seed + day`.
+//! has — world, ledger, house books, and the contract board — and runs the
+//! v1–v12 migrations. `trade_seq` is the number of ledger receipts. The
+//! MT19937 state is not stored; [`crate::session::Session::load`] reseeds with
+//! `seed + day`. Breach rows live on the board in memory and are written as
+//! `captain.breach_records`, which is where Python stores them.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -18,8 +20,9 @@ use crate::content::{self, REGIONS};
 use crate::economy::TradeReceipt;
 use crate::error::SimError;
 use crate::model::{
-    Captain, CargoItem, DeferredFee, Incident, MarketSlot, Officer, PendingDuel, Port, Route, Ship,
-    Standing, Voyage, VoyageStatus, World,
+    ActiveContract, BreachRecord, Captain, CargoItem, Contract, ContractBoard, ContractOutcome,
+    DeferredFee, Incident, MarketSlot, Officer, PendingDuel, Port, Route, Ship, Standing, Voyage,
+    VoyageStatus, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -62,6 +65,7 @@ pub(crate) struct LoadedGame {
     pub receipts: Vec<TradeReceipt>,
     pub run_id: String,
     pub books: HouseBooks,
+    pub board: ContractBoard,
 }
 
 /// Filename for a slot. Characters outside letters, digits, `-`, and `_` are
@@ -90,11 +94,12 @@ pub(crate) fn write_save(
     receipts: &[TradeReceipt],
     run_id: &str,
     books: &HouseBooks,
+    board: &ContractBoard,
 ) -> Result<PathBuf, SimError> {
     let dir = base.join(SAVE_DIR);
     fs::create_dir_all(&dir).map_err(io_err)?;
     let path = dir.join(save_filename(slot));
-    let value = encode(world, receipts, run_id, books);
+    let value = encode(world, receipts, run_id, books, board);
     let text =
         serde_json::to_string_pretty(&value).map_err(|err| SimError::SaveIo(err.to_string()))?;
     fs::write(&path, text).map_err(io_err)?;
@@ -475,14 +480,20 @@ fn setdefault(map: &mut Map<String, Value>, key: &str, value: Value) {
     }
 }
 
-fn encode(world: &World, receipts: &[TradeReceipt], run_id: &str, books: &HouseBooks) -> Value {
+fn encode(
+    world: &World,
+    receipts: &[TradeReceipt],
+    run_id: &str,
+    books: &HouseBooks,
+    board: &ContractBoard,
+) -> Value {
     let mut ports = Map::new();
     for port in &world.ports {
         ports.insert(port.id.clone(), port_value(port));
     }
     json_obj(&[
         ("version", Value::from(CURRENT_SAVE_VERSION)),
-        ("captain", captain_value(&world.captain)),
+        ("captain", captain_value(&world.captain, &board.breaches)),
         ("ports", Value::Object(ports)),
         (
             "routes",
@@ -493,7 +504,7 @@ fn encode(world: &World, receipts: &[TradeReceipt], run_id: &str, books: &HouseB
         ("seed", seed_value(world.seed)),
         ("pirate_state", pirate_value(&world.pending_duel)),
         ("ledger", ledger_value(receipts, run_id, books)),
-        ("contract_board", board_value(books)),
+        ("contract_board", board_value(board, books)),
         ("infrastructure", infra_value(books)),
         ("campaign", campaign_value(books)),
     ])
@@ -542,9 +553,24 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         trade_count: i64::try_from(ledger.receipts.len()).unwrap_or(i64::MAX),
         ..HouseBooks::default()
     };
-    if let Some(board) = truthy(data.get("contract_board")) {
-        books.completed_contracts = contracts_from(board)?;
-    }
+    let mut board = match truthy(data.get("contract_board")) {
+        Some(value) => board_from(value)?,
+        None => ContractBoard::default(),
+    };
+    board.breaches = breaches_from(data.get("captain")?)?;
+    books.completed_contracts = board
+        .completed
+        .iter()
+        .map(|outcome| CompletedContract {
+            outcome_type: outcome.outcome_type.clone(),
+            family: if outcome.family.is_empty() {
+                None
+            } else {
+                Some(outcome.family.clone())
+            },
+            summary: outcome.summary.clone(),
+        })
+        .collect();
     if let Some(infra) = truthy(data.get("infrastructure")) {
         apply_infra(&mut books, infra)?;
     }
@@ -564,10 +590,11 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         receipts: ledger.receipts,
         run_id: ledger.run_id,
         books,
+        board,
     })
 }
 
-fn captain_value(captain: &Captain) -> Value {
+fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
     json_obj(&[
         ("name", Value::from(captain.name.as_str())),
         ("captain_type", Value::from(captain.captain_type.as_str())),
@@ -586,6 +613,10 @@ fn captain_value(captain: &Captain) -> Value {
         (
             "deferred_fees",
             Value::Array(captain.deferred_fees.iter().map(fee_value).collect()),
+        ),
+        (
+            "breach_records",
+            Value::Array(breaches.iter().map(breach_value).collect()),
         ),
         ("wanted_level", Value::from(captain.wanted_level)),
         (
@@ -1198,65 +1229,340 @@ fn receipt_from(value: &Value) -> Option<Option<TradeReceipt>> {
     }))
 }
 
-fn board_value(books: &HouseBooks) -> Value {
-    let completed = books
-        .completed_contracts
-        .iter()
-        .enumerate()
-        .map(|(index, contract)| {
-            let mut map = Map::new();
-            map.insert(
-                "contract_id".to_string(),
-                Value::from(format!("contract-{index}")),
-            );
-            map.insert(
-                "outcome_type".to_string(),
-                Value::from(contract.outcome_type.as_str()),
-            );
-            map.insert("silver_delta".to_string(), Value::from(0));
-            map.insert("trust_delta".to_string(), Value::from(0));
-            map.insert("standing_delta".to_string(), Value::from(0));
-            map.insert("heat_delta".to_string(), Value::from(0));
-            map.insert("completion_day".to_string(), Value::from(0));
-            map.insert(
-                "summary".to_string(),
-                Value::from(contract.summary.as_str()),
-            );
-            if let Some(family) = &contract.family {
-                map.insert("family".to_string(), Value::from(family.as_str()));
-            }
-            Value::Object(map)
-        })
-        .collect();
+fn board_value(board: &ContractBoard, books: &HouseBooks) -> Value {
+    // Real resolutions live on the board. A books-only row (the victory seam
+    // from before the board was ported) still uses the Python outcome keys
+    // when the board has nothing completed, so that slot round-trips.
+    let completed = if board.completed.is_empty() {
+        books
+            .completed_contracts
+            .iter()
+            .enumerate()
+            .map(|(index, contract)| books_outcome_value(index, contract))
+            .collect()
+    } else {
+        board.completed.iter().map(outcome_value).collect()
+    };
     json_obj(&[
-        ("offers", Value::Array(Vec::new())),
-        ("active", Value::Array(Vec::new())),
+        (
+            "offers",
+            Value::Array(board.offers.iter().map(offer_value).collect()),
+        ),
+        (
+            "active",
+            Value::Array(board.active.iter().map(active_value).collect()),
+        ),
         ("completed", Value::Array(completed)),
-        ("last_refresh_day", Value::from(0)),
-        ("max_offers", Value::from(5)),
+        ("last_refresh_day", Value::from(board.last_refresh_day)),
+        ("max_offers", Value::from(board.max_offers)),
     ])
 }
 
-fn contracts_from(value: &Value) -> Option<Vec<CompletedContract>> {
+fn board_from(value: &Value) -> Option<ContractBoard> {
     let map = value.as_object()?;
-    let Some(saved) = map.get("completed") else {
+    Some(ContractBoard {
+        offers: offers_from(map.get("offers"))?,
+        active: active_from(map.get("active"))?,
+        completed: outcomes_from(map.get("completed"))?,
+        last_refresh_day: opt_i64(map, "last_refresh_day").unwrap_or(0),
+        max_offers: opt_i64(map, "max_offers").unwrap_or(5),
+        breaches: Vec::new(),
+    })
+}
+
+fn offer_value(offer: &Contract) -> Value {
+    json_obj(&[
+        ("id", Value::from(offer.id.as_str())),
+        ("template_id", Value::from(offer.template_id.as_str())),
+        ("family", Value::from(offer.family.as_str())),
+        ("title", Value::from(offer.title.as_str())),
+        ("description", Value::from(offer.description.as_str())),
+        ("issuer_port_id", Value::from(offer.issuer_port_id.as_str())),
+        (
+            "destination_port_id",
+            Value::from(offer.destination_port_id.as_str()),
+        ),
+        ("good_id", Value::from(offer.good_id.as_str())),
+        ("quantity", Value::from(offer.quantity)),
+        ("created_day", Value::from(offer.created_day)),
+        ("deadline_day", Value::from(offer.deadline_day)),
+        ("reward_silver", Value::from(offer.reward_silver)),
+        ("bonus_reward", Value::from(offer.bonus_reward)),
+        (
+            "required_trust_tier",
+            Value::from(offer.required_trust_tier.as_str()),
+        ),
+        ("required_standing", Value::from(offer.required_standing)),
+        ("heat_ceiling", opt_i64_value(offer.heat_ceiling)),
+        ("inspection_modifier", f64_value(offer.inspection_modifier)),
+        ("source_region", opt_string_value(&offer.source_region)),
+        ("source_port", opt_string_value(&offer.source_port)),
+        ("offer_reason", Value::from(offer.offer_reason.as_str())),
+        (
+            "tags",
+            Value::Array(
+                offer
+                    .tags
+                    .iter()
+                    .map(|tag| Value::from(tag.as_str()))
+                    .collect(),
+            ),
+        ),
+        ("acceptance_window", Value::from(offer.acceptance_window)),
+    ])
+}
+
+fn offers_from(value: Option<&Value>) -> Option<Vec<Contract>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let mut offers = Vec::new();
+    for item in value.as_array()? {
+        if let Some(offer) = offer_from(item)? {
+            offers.push(offer);
+        }
+    }
+    Some(offers)
+}
+
+/// `None` means the offer object is corrupt. `Some(None)` drops an unknown family,
+/// matching `_offer_from_dict`.
+fn offer_from(value: &Value) -> Option<Option<Contract>> {
+    let map = value.as_object()?;
+    let family = req_str(map, "family")?;
+    if !CONTRACT_FAMILIES.contains(&family.as_str()) {
+        return Some(None);
+    }
+    Some(Some(Contract {
+        id: req_str(map, "id")?,
+        template_id: req_str(map, "template_id")?,
+        family,
+        title: req_str(map, "title")?,
+        description: req_str(map, "description")?,
+        issuer_port_id: req_str(map, "issuer_port_id")?,
+        destination_port_id: req_str(map, "destination_port_id")?,
+        good_id: req_str(map, "good_id")?,
+        quantity: req_i64(map, "quantity")?,
+        created_day: req_i64(map, "created_day")?,
+        deadline_day: req_i64(map, "deadline_day")?,
+        reward_silver: req_i64(map, "reward_silver")?,
+        bonus_reward: opt_i64(map, "bonus_reward").unwrap_or(0),
+        required_trust_tier: opt_str(map, "required_trust_tier")
+            .unwrap_or_else(|| "unproven".to_string()),
+        required_standing: opt_i64(map, "required_standing").unwrap_or(0),
+        heat_ceiling: map.get("heat_ceiling").and_then(json_i64),
+        inspection_modifier: opt_f64(map, "inspection_modifier").unwrap_or(0.0),
+        source_region: opt_str(map, "source_region"),
+        source_port: opt_str(map, "source_port"),
+        offer_reason: opt_str(map, "offer_reason").unwrap_or_default(),
+        tags: string_list(map.get("tags"))?,
+        acceptance_window: opt_i64(map, "acceptance_window").unwrap_or(10),
+    }))
+}
+
+fn active_value(contract: &ActiveContract) -> Value {
+    json_obj(&[
+        ("offer_id", Value::from(contract.offer_id.as_str())),
+        ("template_id", Value::from(contract.template_id.as_str())),
+        ("family", Value::from(contract.family.as_str())),
+        ("title", Value::from(contract.title.as_str())),
+        ("accepted_day", Value::from(contract.accepted_day)),
+        ("deadline_day", Value::from(contract.deadline_day)),
+        (
+            "destination_port_id",
+            Value::from(contract.destination_port_id.as_str()),
+        ),
+        ("good_id", Value::from(contract.good_id.as_str())),
+        ("required_quantity", Value::from(contract.required_quantity)),
+        (
+            "delivered_quantity",
+            Value::from(contract.delivered_quantity),
+        ),
+        ("reward_silver", Value::from(contract.reward_silver)),
+        ("bonus_reward", Value::from(contract.bonus_reward)),
+        ("source_region", opt_string_value(&contract.source_region)),
+        ("source_port", opt_string_value(&contract.source_port)),
+        (
+            "inspection_modifier",
+            f64_value(contract.inspection_modifier),
+        ),
+        ("status", Value::from(contract.status.as_str())),
+    ])
+}
+
+fn active_from(value: Option<&Value>) -> Option<Vec<ActiveContract>> {
+    let Some(value) = value else {
         return Some(Vec::new());
     };
     let mut contracts = Vec::new();
-    for item in saved.as_array()? {
-        let item = item.as_object()?;
-        let family = item
-            .get("family")
-            .and_then(Value::as_str)
-            .filter(|family| CONTRACT_FAMILIES.contains(family))
-            .map(str::to_string);
-        contracts.push(CompletedContract {
-            outcome_type: req_str(item, "outcome_type")?,
-            family,
-            summary: req_str(item, "summary")?,
-        });
+    for item in value.as_array()? {
+        if let Some(contract) = active_one(item)? {
+            contracts.push(contract);
+        }
     }
     Some(contracts)
+}
+
+fn active_one(value: &Value) -> Option<Option<ActiveContract>> {
+    let map = value.as_object()?;
+    let family = map
+        .get("family")
+        .and_then(Value::as_str)
+        .filter(|family| CONTRACT_FAMILIES.contains(family))
+        .unwrap_or("procurement");
+    Some(Some(ActiveContract {
+        offer_id: req_str(map, "offer_id")?,
+        template_id: req_str(map, "template_id")?,
+        family: family.to_string(),
+        title: req_str(map, "title")?,
+        accepted_day: req_i64(map, "accepted_day")?,
+        deadline_day: req_i64(map, "deadline_day")?,
+        destination_port_id: req_str(map, "destination_port_id")?,
+        good_id: req_str(map, "good_id")?,
+        required_quantity: req_i64(map, "required_quantity")?,
+        delivered_quantity: opt_i64(map, "delivered_quantity").unwrap_or(0),
+        reward_silver: opt_i64(map, "reward_silver").unwrap_or(0),
+        bonus_reward: opt_i64(map, "bonus_reward").unwrap_or(0),
+        source_region: opt_str(map, "source_region"),
+        source_port: opt_str(map, "source_port"),
+        inspection_modifier: opt_f64(map, "inspection_modifier").unwrap_or(0.0),
+        status: opt_str(map, "status").unwrap_or_else(|| "accepted".to_string()),
+    }))
+}
+
+fn outcome_value(outcome: &ContractOutcome) -> Value {
+    let mut map = Map::new();
+    map.insert(
+        "contract_id".to_string(),
+        Value::from(outcome.contract_id.as_str()),
+    );
+    map.insert(
+        "outcome_type".to_string(),
+        Value::from(outcome.outcome_type.as_str()),
+    );
+    map.insert(
+        "silver_delta".to_string(),
+        Value::from(outcome.silver_delta),
+    );
+    map.insert("trust_delta".to_string(), Value::from(outcome.trust_delta));
+    map.insert(
+        "standing_delta".to_string(),
+        Value::from(outcome.standing_delta),
+    );
+    map.insert("heat_delta".to_string(), Value::from(outcome.heat_delta));
+    map.insert(
+        "completion_day".to_string(),
+        Value::from(outcome.completion_day),
+    );
+    map.insert("summary".to_string(), Value::from(outcome.summary.as_str()));
+    if !outcome.family.is_empty() && CONTRACT_FAMILIES.contains(&outcome.family.as_str()) {
+        map.insert("family".to_string(), Value::from(outcome.family.as_str()));
+    }
+    Value::Object(map)
+}
+
+fn books_outcome_value(index: usize, contract: &CompletedContract) -> Value {
+    let mut map = Map::new();
+    map.insert(
+        "contract_id".to_string(),
+        Value::from(format!("contract-{index}")),
+    );
+    map.insert(
+        "outcome_type".to_string(),
+        Value::from(contract.outcome_type.as_str()),
+    );
+    map.insert("silver_delta".to_string(), Value::from(0));
+    map.insert("trust_delta".to_string(), Value::from(0));
+    map.insert("standing_delta".to_string(), Value::from(0));
+    map.insert("heat_delta".to_string(), Value::from(0));
+    map.insert("completion_day".to_string(), Value::from(0));
+    map.insert(
+        "summary".to_string(),
+        Value::from(contract.summary.as_str()),
+    );
+    if let Some(family) = &contract.family {
+        map.insert("family".to_string(), Value::from(family.as_str()));
+    }
+    Value::Object(map)
+}
+
+fn outcomes_from(value: Option<&Value>) -> Option<Vec<ContractOutcome>> {
+    let Some(value) = value else {
+        return Some(Vec::new());
+    };
+    let mut outcomes = Vec::new();
+    for item in value.as_array()? {
+        outcomes.push(outcome_from(item)?);
+    }
+    Some(outcomes)
+}
+
+fn outcome_from(value: &Value) -> Option<ContractOutcome> {
+    let map = value.as_object()?;
+    let family = map
+        .get("family")
+        .and_then(Value::as_str)
+        .filter(|family| CONTRACT_FAMILIES.contains(family))
+        .unwrap_or("")
+        .to_string();
+    Some(ContractOutcome {
+        contract_id: req_str(map, "contract_id")?,
+        outcome_type: req_str(map, "outcome_type")?,
+        silver_delta: opt_i64(map, "silver_delta").unwrap_or(0),
+        trust_delta: opt_i64(map, "trust_delta").unwrap_or(0),
+        standing_delta: opt_i64(map, "standing_delta").unwrap_or(0),
+        heat_delta: opt_i64(map, "heat_delta").unwrap_or(0),
+        completion_day: opt_i64(map, "completion_day").unwrap_or(0),
+        summary: req_str(map, "summary")?,
+        family,
+        good_id: String::new(),
+        required_quantity: 0,
+        delivered_quantity: 0,
+        destination_port_id: String::new(),
+        deadline_day: 0,
+        reward_silver: 0,
+    })
+}
+
+fn breach_value(breach: &BreachRecord) -> Value {
+    json_obj(&[
+        ("contract_id", Value::from(breach.contract_id.as_str())),
+        ("day", Value::from(breach.day)),
+        ("port_id", Value::from(breach.port_id.as_str())),
+        ("family", Value::from(breach.family.as_str())),
+    ])
+}
+
+fn breaches_from(captain: &Value) -> Option<Vec<BreachRecord>> {
+    let map = captain.as_object()?;
+    let Some(saved) = map.get("breach_records") else {
+        return Some(Vec::new());
+    };
+    let mut breaches = Vec::new();
+    for item in saved.as_array()? {
+        let item = item.as_object()?;
+        breaches.push(BreachRecord {
+            contract_id: req_str(item, "contract_id")?,
+            day: req_i64(item, "day")?,
+            port_id: req_str(item, "port_id")?,
+            family: req_str(item, "family")?,
+        });
+    }
+    Some(breaches)
+}
+
+fn opt_i64_value(value: Option<i64>) -> Value {
+    match value {
+        Some(value) => Value::from(value),
+        None => Value::Null,
+    }
+}
+
+fn opt_string_value(value: &Option<String>) -> Value {
+    match value {
+        Some(value) => Value::from(value.as_str()),
+        None => Value::Null,
+    }
 }
 
 fn infra_value(books: &HouseBooks) -> Value {
