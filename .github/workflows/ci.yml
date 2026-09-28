@@ -76,8 +76,14 @@ jobs:
           sudo install -m 755 /tmp/godot-bin/Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
           godot --version
       - name: Import and smoke-test the chart
-        env:
-          PORTLIGHT_SHOT: /tmp/portlight-first-playable.png
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
           godot --headless --path godot --import --quit
+          # Session smoke. The dummy renderer does not return a viewport image.
           godot --headless --path godot -- --smoke
+          # Real frame. A collapsed layout is one flat colour and must fail.
+          xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SMOKE=1 PORTLIGHT_REQUIRE_FRAME=1 \
+            PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke

@@ -28,6 +28,28 @@ pub(crate) fn duel_button_enabled(pending: bool) -> bool {
     pending
 }
 
+/// A captured window is useless when one colour covers almost every sample.
+/// The broken 1280×720 chart shot was the clear colour below a 28 px strip.
+pub(crate) fn frame_mostly_flat(samples: &[[u8; 3]]) -> bool {
+    dominant_color_fraction(samples) >= 0.80
+}
+
+fn dominant_color_fraction(samples: &[[u8; 3]]) -> f32 {
+    if samples.is_empty() {
+        return 1.0;
+    }
+    let mut counts = std::collections::HashMap::<[u8; 3], usize>::new();
+    let mut best = 0usize;
+    for sample in samples {
+        let count = counts.entry(*sample).or_insert(0);
+        *count += 1;
+        if *count > best {
+            best = *count;
+        }
+    }
+    best as f32 / samples.len() as f32
+}
+
 #[cfg(test)]
 mod tests {
     use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
@@ -74,5 +96,19 @@ mod tests {
         assert!(project.contains("window/size/viewport_width=1280"));
         assert!(project.contains("window/size/viewport_height=720"));
         assert!(layout_fits_window());
+    }
+
+    #[test]
+    fn a_flat_capture_fails_and_a_chart_frame_does_not() {
+        let clear = [13, 25, 41];
+        assert!(frame_mostly_flat(&[clear; 100]));
+        // The committed chart-1280.png was clear colour under a thin strip.
+        let mut strip = vec![clear; 96];
+        strip.extend([[70, 120, 150]; 4]);
+        assert!(frame_mostly_flat(&strip));
+        let mut chart = vec![clear; 40];
+        chart.extend([[32, 78, 112]; 30]);
+        chart.extend([[232, 196, 120]; 30]);
+        assert!(!frame_mostly_flat(&chart));
     }
 }

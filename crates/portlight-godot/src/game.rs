@@ -31,7 +31,8 @@ use portlight_sim::{content, DuelOutcome, LaneSuitability, Session};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::logic::{
-    chart_host_width, duel_button_enabled, layout_fits_window, PANEL_MIN_W, ROW_SEPARATION,
+    chart_host_width, duel_button_enabled, frame_mostly_flat, layout_fits_window, PANEL_MIN_W,
+    ROW_SEPARATION, WINDOW_H, WINDOW_W,
 };
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -193,7 +194,9 @@ impl IControl for PortlightGame {
             return;
         }
         if let Some(path) = self.shot_path.clone() {
-            self.save_shot(&path);
+            if !self.save_shot(&path) {
+                self.smoke_ok = false;
+            }
         }
         if !self.smoke {
             return;
@@ -214,19 +217,25 @@ impl PortlightGame {
             layout_fits_window(),
             "panel and chart must fit the 1280x720 window"
         );
-        self.base_mut().set_anchors_preset(LayoutPreset::FULL_RECT);
+        // `set_anchors_preset` keeps the control's current size (it rewrites
+        // offsets). On a new node that size is the minimum, which here was the
+        // panel's 14+14 content margin: a 28 px strip across 1280, clear
+        // colour underneath. Offsets have to be the full-rect preset too.
+        self.base_mut()
+            .set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
 
         let mut row = HBoxContainer::new_alloc();
-        row.set_anchors_preset(LayoutPreset::FULL_RECT);
         row.set_h_size_flags(SizeFlags::EXPAND_FILL);
         row.set_v_size_flags(SizeFlags::EXPAND_FILL);
         row.add_theme_constant_override("separation", ROW_SEPARATION);
+        row.set_custom_minimum_size(Vector2::new(WINDOW_W, WINDOW_H));
         self.base_mut().add_child(&row);
+        row.set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
 
         let mut view_host = SubViewportContainer::new_alloc();
         // The viewport stays CHART_VIEW_* and stretches into the space left
         // beside the panel, so 1280 does not clip the Sail column.
-        view_host.set_custom_minimum_size(Vector2::new(chart_host_width(), 0.0));
+        view_host.set_custom_minimum_size(Vector2::new(chart_host_width(), WINDOW_H));
         view_host.set_h_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_v_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_stretch(true);
@@ -247,7 +256,7 @@ impl PortlightGame {
         self.canvas = Some(canvas);
 
         let mut panel = PanelContainer::new_alloc();
-        panel.set_custom_minimum_size(Vector2::new(PANEL_MIN_W, 0.0));
+        panel.set_custom_minimum_size(Vector2::new(PANEL_MIN_W, WINDOW_H));
         panel.set_h_size_flags(SizeFlags::SHRINK_END);
         panel.set_v_size_flags(SizeFlags::EXPAND_FILL);
         let mut style = StyleBoxFlat::new_gd();
@@ -472,7 +481,7 @@ impl PortlightGame {
     fn run_encounter(&mut self) {
         if let Some(name) = self.sail_until_duel() {
             self.push_log(format!(
-                "Duel with {name}. Advance stays refused. Pick at least 3 stances, or auto-resolve."
+                "Duel with {name}. Next day calls Session::advance; the sim refuses while this duel is pending. Pick at least 3 stances, or auto-resolve."
             ));
         }
         self.refresh();
@@ -1183,28 +1192,44 @@ impl PortlightGame {
         }
     }
 
-    fn save_shot(&self, path: &str) {
-        let Some(viewport) = self.base().get_viewport() else {
-            godot_print!("no viewport");
-            return;
-        };
-        let Some(texture) = viewport.get_texture() else {
-            godot_print!("no viewport texture");
-            return;
-        };
-        let Some(image) = texture.get_image() else {
+    /// Saves the window. Returns false when the frame is missing or mostly one
+    /// colour, which is what the collapsed 28 px chart shot looked like.
+    /// Headless Godot's dummy renderer leaves the image empty; that path does
+    /// not fail the session smoke. A GL capture sets `PORTLIGHT_REQUIRE_FRAME`.
+    fn save_shot(&self, path: &str) -> bool {
+        let image = self.base().get_viewport().and_then(|viewport| {
+            viewport
+                .get_texture()
+                .and_then(|texture| texture.get_image())
+        });
+        let Some(image) = image else {
             godot_print!("viewport image was empty");
-            return;
+            return !flag_set("PORTLIGHT_REQUIRE_FRAME");
         };
-        let err = image.save_png(path);
-        godot_print!(
-            "screenshot {path} {}x{} error={err:?}",
-            image.get_width(),
-            image.get_height()
-        );
-        if err != Error::OK && self.smoke {
-            godot_print!("screenshot save failed");
+        if image.is_empty() {
+            godot_print!("viewport image was empty");
+            return !flag_set("PORTLIGHT_REQUIRE_FRAME");
         }
+        let width = image.get_width();
+        let height = image.get_height();
+        let err = image.save_png(path);
+        let samples = frame_samples(&image);
+        let flat = frame_mostly_flat(&samples);
+        godot_print!(
+            "screenshot {path} {width}x{height} samples={} flat={flat} error={err:?}",
+            samples.len()
+        );
+        if err != Error::OK {
+            godot_print!("screenshot save failed");
+            return false;
+        }
+        if width != WINDOW_W as i32 || height != WINDOW_H as i32 || flat {
+            godot_print!(
+                "screenshot rejected: expected a full 1280x720 frame that is not one flat colour"
+            );
+            return false;
+        }
+        true
     }
 }
 
@@ -1364,6 +1389,28 @@ fn clear_children(node: &mut Gd<VBoxContainer>) {
         node.remove_child(&child);
         child.queue_free();
     }
+}
+
+fn frame_samples(image: &Gd<godot::classes::Image>) -> Vec<[u8; 3]> {
+    let width = image.get_width();
+    let height = image.get_height();
+    let mut samples = Vec::new();
+    let step = 8;
+    let mut y = 0;
+    while y < height {
+        let mut x = 0;
+        while x < width {
+            let color = image.get_pixel(x, y);
+            samples.push([
+                (color.r.clamp(0.0, 1.0) * 255.0).round() as u8,
+                (color.g.clamp(0.0, 1.0) * 255.0).round() as u8,
+                (color.b.clamp(0.0, 1.0) * 255.0).round() as u8,
+            ]);
+            x += step;
+        }
+        y += step;
+    }
+    samples
 }
 
 fn flag_set(name: &str) -> bool {

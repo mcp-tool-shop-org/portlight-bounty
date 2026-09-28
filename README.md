@@ -54,11 +54,12 @@ godot --headless --path godot --import --quit
 godot --headless --path godot -- --smoke
 ```
 
-A PNG needs a GL context. On Linux, llvmpipe under Xvfb works:
+A PNG needs a GL context. On Linux, llvmpipe under Xvfb works. That smoke exits non-zero if the 1280×720 frame is missing or mostly one flat colour (the collapsed chart was a 28 px strip over the clear colour):
 
 ```
 xvfb-run -a -s "-screen 0 1280x720x24" \
-  env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-first-playable.png \
+  env PORTLIGHT_SMOKE=1 PORTLIGHT_REQUIRE_FRAME=1 \
+  PORTLIGHT_SHOT=/tmp/portlight-first-playable.png \
   godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
 ```
 
