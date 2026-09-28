@@ -158,6 +158,15 @@ pub struct Ship {
     pub surgeons: i64,
     pub marines: i64,
     pub quartermasters: i64,
+    pub officers: Vec<Officer>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Officer {
+    pub name: String,
+    pub role: String,
+    pub origin_port: String,
+    pub trait_name: String,
 }
 
 impl Ship {
@@ -181,6 +190,7 @@ impl Ship {
             surgeons: 0,
             marines: 0,
             quartermasters: 0,
+            officers: Vec::new(),
         }
     }
 

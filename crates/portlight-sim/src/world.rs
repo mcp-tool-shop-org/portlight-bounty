@@ -3,6 +3,7 @@
 
 use crate::content;
 use crate::economy::recalculate_prices;
+use crate::error::SimError;
 use crate::model::{Captain, Port, Route, Ship, Standing, Voyage, VoyageStatus, World};
 
 pub fn new_game(
@@ -10,14 +11,14 @@ pub fn new_game(
     captain_type: &str,
     seed: i128,
     starting_port: Option<&str>,
-) -> Result<World, String> {
+) -> Result<World, SimError> {
     let catalog = content::content();
     let captain_def = catalog
         .captain(captain_type)
-        .ok_or_else(|| format!("Unknown captain type: {captain_type}"))?;
+        .ok_or_else(|| SimError::UnknownCaptainType(captain_type.to_string()))?;
     let ship_def = catalog
         .ship(&captain_def.starting_ship_id)
-        .ok_or_else(|| format!("Unknown ship: {}", captain_def.starting_ship_id))?;
+        .ok_or_else(|| SimError::UnknownShip(captain_def.starting_ship_id.clone()))?;
     let port_id = starting_port
         .unwrap_or(captain_def.home_port_id.as_str())
         .to_string();

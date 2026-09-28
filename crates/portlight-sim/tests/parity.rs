@@ -83,6 +83,12 @@ fn goldens_guard_the_checklist_paths() {
     let mut saw_contraband = false;
     let mut saw_crew_minimum = false;
     let mut saw_victory = false;
+    let mut saw_hull_wear = false;
+    let mut saw_duel_win = false;
+    let mut saw_duel_draw = false;
+    let mut saw_duel_loss = false;
+    let mut saw_hire = false;
+    let mut saw_provision = false;
     for entry in fs::read_dir(&root).expect("golden dir") {
         let entry = entry.expect("entry");
         if entry.path().extension().and_then(|ext| ext.to_str()) != Some("json") {
@@ -94,6 +100,15 @@ fn goldens_guard_the_checklist_paths() {
         }
         let value: Value =
             serde_json::from_str(&fs::read_to_string(entry.path()).expect("golden")).expect("json");
+        if entry.file_name() == "hull_day20.json" {
+            assert_eq!(
+                value["captain"]["ship"]["hull_max"].as_i64(),
+                Some(69),
+                "day-20 hull wear"
+            );
+            assert_eq!(value["voyage"]["days_elapsed"].as_i64(), Some(20));
+            saw_hull_wear = true;
+        }
         if value
             .get("victory")
             .and_then(|item| item.as_array())
@@ -121,6 +136,21 @@ fn goldens_guard_the_checklist_paths() {
                 }
                 if error.contains("Need at least") && error.contains("crew") {
                     saw_crew_minimum = true;
+                }
+            }
+            if log.get("command").and_then(|item| item.as_str()) == Some("hire 5") {
+                saw_hire = true;
+            }
+            if log.get("command").and_then(|item| item.as_str()) == Some("provision 4") {
+                saw_provision = true;
+            }
+            if let Some(duel) = log.get("duel").filter(|item| !item.is_null()) {
+                if duel.get("player_won").and_then(|item| item.as_bool()) == Some(true) {
+                    saw_duel_win = true;
+                } else if duel.get("draw").and_then(|item| item.as_bool()) == Some(true) {
+                    saw_duel_draw = true;
+                } else {
+                    saw_duel_loss = true;
                 }
             }
             for event in log
@@ -192,4 +222,10 @@ fn goldens_guard_the_checklist_paths() {
         "crew minimum on depart is not in a golden"
     );
     assert!(saw_victory, "victory paths are not in a golden");
+    assert!(saw_hull_wear, "day-20 hull wear is not in a golden");
+    assert!(saw_duel_win, "a won duel is not in a golden");
+    assert!(saw_duel_draw, "a drawn duel is not in a golden");
+    assert!(saw_duel_loss, "a lost duel is not in a golden");
+    assert!(saw_hire, "hiring crew is not in a golden");
+    assert!(saw_provision, "buying provisions is not in a golden");
 }

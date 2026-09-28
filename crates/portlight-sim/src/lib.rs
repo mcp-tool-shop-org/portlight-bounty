@@ -12,7 +12,9 @@
 
 pub mod campaign;
 pub mod content;
+pub mod duel;
 pub mod economy;
+pub mod error;
 pub mod model;
 pub mod pyrand;
 pub mod reputation;
@@ -28,6 +30,8 @@ pub use campaign::{
     compute_victory_progress, HouseBooks, MilestoneFamily, VictoryPathStatus,
     MILESTONE_FAMILY_COMMERCIAL_FINANCE, PATH_COMMERCIAL_EMPIRE,
 };
+pub use duel::{DuelOutcome, DuelRound};
+pub use error::SimError;
 pub use model::{MAP_GRID_HEIGHT, MAP_GRID_WIDTH};
 pub use script::run_script;
 pub use session::{Session, Turn};

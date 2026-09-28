@@ -199,6 +199,20 @@ pub fn tick_reputation(rep: &mut Standing) {
     }
 }
 
+/// `get_service_modifier`. Higher port standing lowers provision cost.
+pub fn service_modifier(rep: &Standing, port_id: &str) -> f64 {
+    let standing = rep.port_value(port_id).unwrap_or(0);
+    if standing >= 30 {
+        0.8
+    } else if standing >= 15 {
+        0.9
+    } else if standing >= 5 {
+        0.95
+    } else {
+        1.0
+    }
+}
+
 pub fn inspection_modifier(rep: &Standing, region: &str) -> f64 {
     let heat = rep.heat_of(region);
     if heat >= 40 {

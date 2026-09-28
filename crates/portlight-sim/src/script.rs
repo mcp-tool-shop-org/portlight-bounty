@@ -3,6 +3,7 @@
 //! The commands are a thin wrapper: each one calls the same public method a
 //! front end would call. Parity goldens therefore cover the stepwise API.
 
+use crate::error::SimError;
 use crate::session::Session;
 use crate::snapshot::{self, LogEntry, Snapshot};
 
@@ -19,7 +20,7 @@ pub fn run_script(script: &str) -> Snapshot {
         match dispatch(&mut session, &tokens, &mut entry) {
             Ok(()) => log.push(entry),
             Err(err) => {
-                entry.error = Some(err);
+                entry.error = Some(err.to_string());
                 log.push(entry);
                 break;
             }
@@ -37,28 +38,26 @@ fn dispatch(
     session: &mut Option<Session>,
     tokens: &[String],
     entry: &mut LogEntry,
-) -> Result<(), String> {
+) -> Result<(), SimError> {
     let cmd = tokens.first().map(String::as_str).unwrap_or("");
     match cmd {
         "new" => {
             if tokens.len() < 4 {
-                return Err("Usage: new <captain_type> <name> <seed> [port]".to_string());
+                return Err(SimError::UsageNew);
             }
             let captain_type = &tokens[1];
             let name = &tokens[2];
             let seed: i128 = tokens[3]
                 .parse()
-                .map_err(|_| format!("Invalid number: {}", tokens[3]))?;
+                .map_err(|_| SimError::InvalidNumber(tokens[3].clone()))?;
             let port = tokens.get(4).map(String::as_str);
             *session = Some(Session::new(name, captain_type, seed, port)?);
             Ok(())
         }
         "buy" => {
-            let session = session
-                .as_mut()
-                .ok_or_else(|| "No active game".to_string())?;
+            let session = active(session)?;
             if tokens.len() != 3 {
-                return Err("Usage: buy <good> <qty>".to_string());
+                return Err(SimError::UsageBuy);
             }
             let qty = parse_qty(&tokens[2])?;
             let receipt = session.buy(&tokens[1], qty)?;
@@ -66,11 +65,9 @@ fn dispatch(
             Ok(())
         }
         "sell" => {
-            let session = session
-                .as_mut()
-                .ok_or_else(|| "No active game".to_string())?;
+            let session = active(session)?;
             if tokens.len() != 3 {
-                return Err("Usage: sell <good> <qty>".to_string());
+                return Err(SimError::UsageSell);
             }
             let qty = parse_qty(&tokens[2])?;
             let receipt = session.sell(&tokens[1], qty)?;
@@ -78,31 +75,77 @@ fn dispatch(
             Ok(())
         }
         "depart" => {
-            let session = session
-                .as_mut()
-                .ok_or_else(|| "No active game".to_string())?;
+            let session = active(session)?;
             if tokens.len() != 2 {
-                return Err("Usage: depart <port_id>".to_string());
+                return Err(SimError::UsageDepart);
             }
             session.depart(&tokens[1])
         }
         "advance" => {
-            let session = session
-                .as_mut()
-                .ok_or_else(|| "No active game".to_string())?;
+            let session = active(session)?;
             let turn = session.advance()?;
             entry.events = turn.events.iter().map(snapshot::from_event).collect();
             entry.shocks = turn.shocks;
             Ok(())
         }
-        other => Err(format!("Unknown command: {other}")),
+        "hire" => {
+            let session = active(session)?;
+            if tokens.len() < 2 || tokens.len() > 3 {
+                return Err(SimError::UsageHire);
+            }
+            let count = parse_qty(&tokens[1])?;
+            let role = tokens.get(2).map(String::as_str).unwrap_or("sailor");
+            session.hire_crew(count, role)
+        }
+        "provision" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageProvision);
+            }
+            let days = parse_qty(&tokens[1])?;
+            session.provision(days)
+        }
+        "duel" => {
+            let session = active(session)?;
+            if tokens.len() < 2 {
+                return Err(SimError::UsageDuel);
+            }
+            let stances = split_stances(&tokens[1..]);
+            let outcome = session.duel(&stances)?;
+            entry.duel = Some(snapshot::from_duel(&outcome));
+            Ok(())
+        }
+        "resolve_duel" => {
+            let session = active(session)?;
+            let outcome = session.resolve_pending_duel()?;
+            entry.duel = Some(snapshot::from_duel(&outcome));
+            Ok(())
+        }
+        other => Err(SimError::UnknownCommand(other.to_string())),
     }
 }
 
-fn parse_qty(token: &str) -> Result<i64, String> {
+fn active(session: &mut Option<Session>) -> Result<&mut Session, SimError> {
+    session.as_mut().ok_or(SimError::NoActiveGame)
+}
+
+fn parse_qty(token: &str) -> Result<i64, SimError> {
     token
         .parse()
-        .map_err(|_| format!("Invalid number: {token}"))
+        .map_err(|_| SimError::InvalidNumber(token.to_string()))
+}
+
+fn split_stances(tokens: &[String]) -> Vec<String> {
+    let mut stances = Vec::new();
+    for token in tokens {
+        for part in token.split(',') {
+            let part = part.trim();
+            if !part.is_empty() {
+                stances.push(part.to_string());
+            }
+        }
+    }
+    stances
 }
 
 fn tokenize(line: &str) -> Vec<String> {

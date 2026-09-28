@@ -7,6 +7,7 @@
 use sha2::{Digest, Sha256};
 
 use crate::content::{self, PricingDef};
+use crate::error::SimError;
 use crate::model::{Captain, CargoItem, Port, CONTRABAND};
 use crate::pyrand::PyRandom;
 use crate::util::{py_round, py_trunc};
@@ -206,38 +207,47 @@ pub fn execute_buy(
     good_id: &str,
     qty: i64,
     seq: u64,
-) -> Result<TradeReceipt, String> {
+) -> Result<TradeReceipt, SimError> {
     let Some(slot_idx) = port.market.iter().position(|s| s.good_id == good_id) else {
         let catalog = content::content();
         for slot in &port.market {
             if let Some(good) = catalog.good(&slot.good_id) {
                 let normalized = good.name.to_lowercase().replace(' ', "_");
                 if normalized == good_id.to_lowercase() {
-                    return Err(format!(
-                        "{good_id} not available at {} -- did you mean: {}",
-                        port.name, slot.good_id
-                    ));
+                    return Err(SimError::GoodNotAvailable {
+                        good_id: good_id.to_string(),
+                        port_name: port.name.clone(),
+                        suggestion: Some(slot.good_id.clone()),
+                    });
                 }
             }
         }
-        return Err(format!("{good_id} not available at {}", port.name));
+        return Err(SimError::GoodNotAvailable {
+            good_id: good_id.to_string(),
+            port_name: port.name.clone(),
+            suggestion: None,
+        });
     };
     if qty <= 0 {
-        return Err("Quantity must be positive".to_string());
+        return Err(SimError::QuantityMustBePositive);
     }
     if qty > port.market[slot_idx].stock_current {
         let stock = port.market[slot_idx].stock_current;
-        return Err(format!(
-            "Only {stock} units available -- try: buy {good_id} {stock}"
-        ));
+        return Err(SimError::OnlyStock {
+            stock,
+            good_id: good_id.to_string(),
+        });
     }
     let unit = port.market[slot_idx].buy_price;
     let total = unit * qty;
     if total > captain.silver {
-        return Err(format!("Need {total} silver, have {}", captain.silver));
+        return Err(SimError::NeedSilver {
+            need: total,
+            have: captain.silver,
+        });
     }
     let Some(ship) = captain.ship.as_ref() else {
-        return Err("No ship".to_string());
+        return Err(SimError::NoShip);
     };
     let capacity = crate::ship::resolve_cargo_capacity(ship);
     let current_weight = cargo_weight(&captain.cargo);
@@ -246,7 +256,7 @@ pub fn execute_buy(
         .map(|g| g.weight_per_unit)
         .unwrap_or(1.0);
     if current_weight + qty as f64 * weight_per > capacity as f64 {
-        return Err("Not enough cargo space".to_string());
+        return Err(SimError::NotEnoughCargoSpace);
     }
 
     let stock_before = port.market[slot_idx].stock_current;
@@ -294,23 +304,29 @@ pub fn execute_sell(
     good_id: &str,
     qty: i64,
     seq: u64,
-) -> Result<TradeReceipt, String> {
+) -> Result<TradeReceipt, SimError> {
     if let Some(good) = content::content().good(good_id) {
         if good.category == "contraband" && !port.has_feature("black_market") {
-            return Err(format!(
-                "The harbormaster won't touch {good_id}. Try somewhere less official."
-            ));
+            return Err(SimError::Harbormaster {
+                good_id: good_id.to_string(),
+            });
         }
     }
     let Some(slot_idx) = port.market.iter().position(|s| s.good_id == good_id) else {
-        return Err(format!("{} doesn't trade {good_id}", port.name));
+        return Err(SimError::PortDoesNotTrade {
+            port_name: port.name.clone(),
+            good_id: good_id.to_string(),
+        });
     };
     if qty <= 0 {
-        return Err("Quantity must be positive".to_string());
+        return Err(SimError::QuantityMustBePositive);
     }
     let have = cargo_quantity(&captain.cargo, good_id);
     if have < qty {
-        return Err(format!("Only have {have} units of {good_id}"));
+        return Err(SimError::OnlyHave {
+            have,
+            good_id: good_id.to_string(),
+        });
     }
 
     let slices = consume_cargo_fifo(&mut captain.cargo, good_id, qty);

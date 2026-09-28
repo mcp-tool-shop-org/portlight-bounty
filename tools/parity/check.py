@@ -109,11 +109,21 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--golden-only", action="store_true")
     parser.add_argument("--write-golden", action="store_true", help="overwrite golden files from the oracle")
+    parser.add_argument(
+        "--require-oracle",
+        action="store_true",
+        help="fail if the Python game cannot be imported (no golden-only fallback)",
+    )
     args = parser.parse_args()
     if not os.path.exists(rust_bin()):
         raise SystemExit(f"missing {rust_bin()}; run cargo build -p portlight-cli")
     os.makedirs(GOLDEN, exist_ok=True)
     failed = 0
+    if args.require_oracle:
+        try:
+            import portlight  # noqa: F401
+        except ImportError as exc:
+            raise SystemExit(f"Python game not importable (--require-oracle): {exc}") from exc
     for name in scripts():
         script_path = os.path.join(SCRIPTS, name)
         golden_path = os.path.join(GOLDEN, name.replace(".txt", ".json"))
@@ -121,7 +131,11 @@ def main() -> int:
         if not args.golden_only:
             try:
                 import portlight  # noqa: F401
-            except ImportError:
+            except ImportError as exc:
+                if args.require_oracle:
+                    raise SystemExit(
+                        f"Python game not importable (--require-oracle): {exc}"
+                    ) from exc
                 print(f"{name}: Python game not importable; comparing Rust to golden only")
                 args.golden_only = True
             else:

@@ -3,8 +3,8 @@
 
 This is the reference side of the parity harness. It calls the same engine
 functions the Rust script runner calls — not the full GameSession — so
-contracts, sea culture, insurance, and duel auto-resolution stay out of the
-comparison. See docs/PORTING-PLAN.md.
+contracts, sea culture, and insurance stay out of the comparison.
+`duel` and `resolve_duel` call `engine/duel.py`. See docs/PORTING-PLAN.md.
 
 Usage:
 
@@ -44,6 +44,8 @@ from portlight.engine.campaign import (
 )
 from portlight.engine.contracts import ContractBoard
 from portlight.engine.infrastructure import InfrastructureState
+from portlight.engine.duel import resolve_duel
+from portlight.engine.reputation import get_service_modifier
 from portlight.engine.voyage import advance_day, arrive, depart
 from portlight.receipts.models import ReceiptLedger, TradeReceipt
 
@@ -300,8 +302,174 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
             raise ScriptError(result)
     elif cmd == "advance":
         do_advance(state, entry)
+    elif cmd == "hire":
+        if len(tokens) < 2 or len(tokens) > 3:
+            raise ScriptError("Usage: hire <count> [role]")
+        try:
+            count = int(tokens[1])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        role = tokens[2] if len(tokens) > 2 else "sailor"
+        do_hire(state, count, role)
+    elif cmd == "provision":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: provision <days>")
+        try:
+            days = int(tokens[1])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        do_provision(state, days)
+    elif cmd == "duel":
+        if len(tokens) < 2:
+            raise ScriptError("Usage: duel <stance>[,<stance>...]")
+        stances = split_stances(tokens[1:])
+        do_duel(state, stances, entry)
+    elif cmd == "resolve_duel":
+        do_resolve_duel(state, entry)
     else:
         raise ScriptError(f"Unknown command: {cmd}")
+
+
+def split_stances(tokens: list[str]) -> list[str]:
+    stances = []
+    for token in tokens:
+        for part in token.split(","):
+            part = part.strip()
+            if part:
+                stances.append(part)
+    return stances
+
+
+def do_hire(state, count: int, role: str) -> None:
+    """GameSession.hire_crew, without the save side effect."""
+    from portlight.content.crew_roles import ROLE_SPECS, get_role_count, set_role_count
+    from portlight.content.officer_names import generate_officer_name, generate_officer_trait
+    from portlight.content.upgrades import UPGRADES
+    from portlight.engine.models import CrewRole, Officer
+    from portlight.engine.ship_stats import resolve_crew_max
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to hire crew")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    space = resolve_crew_max(ship, UPGRADES) - ship.crew
+    if space <= 0:
+        raise ScriptError("Crew is already full")
+    try:
+        crew_role = CrewRole(role.lower())
+    except ValueError as exc:
+        valid = ", ".join(r.value for r in CrewRole)
+        raise ScriptError(f"Unknown role: {role}. Valid: {valid}") from exc
+    spec = ROLE_SPECS[crew_role]
+    if spec.max_per_ship is not None:
+        current = get_role_count(ship.roster, crew_role)
+        avail = spec.max_per_ship - current
+        if avail <= 0:
+            raise ScriptError(f"Already at maximum {spec.name}s ({spec.max_per_ship})")
+        count = min(count, avail)
+    count = min(count, space)
+    if crew_role == CrewRole.SAILOR:
+        cost_per = port.crew_cost
+    else:
+        cost_per = spec.wage * 10
+    cost = count * cost_per
+    if cost > world.captain.silver:
+        raise ScriptError(
+            f"Need {cost} silver for {count} {spec.name}(s) ({cost_per}/each), have {world.captain.silver}"
+        )
+    world.captain.silver -= cost
+    current = get_role_count(ship.roster, crew_role)
+    set_role_count(ship.roster, crew_role, current + count)
+    ship.sync_crew()
+    if crew_role != CrewRole.SAILOR:
+        for _ in range(count):
+            ship.officers.append(Officer(
+                name=generate_officer_name(port.region, state["rng"]),
+                role=crew_role,
+                origin_port=port.id,
+                trait=generate_officer_trait(state["rng"]),
+            ))
+
+
+def do_provision(state, days: int) -> None:
+    world = state["world"]
+    if days <= 0:
+        raise ScriptError("Quantity must be a positive number.")
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to provision")
+    per_day = max(1, int(port.provision_cost * get_service_modifier(world.captain.standing, port.id)))
+    cost = days * per_day
+    if cost > world.captain.silver:
+        raise ScriptError(
+            f"Need {cost} silver for {days} days of provisions ({per_day}/day here), have {world.captain.silver}"
+        )
+    world.captain.silver -= cost
+    world.captain.provisions += days
+
+
+def _apply_duel(state, stances: list[str], entry: dict) -> None:
+    world = state["world"]
+    pending = world.pirates.pending_duel
+    if pending is None:
+        raise ScriptError(
+            "No pirate has challenged you. Duels happen during pirate encounters at sea."
+        )
+    parsed = []
+    for stance in stances:
+        stance = stance.strip().lower()
+        if stance not in {"thrust", "slash", "parry"}:
+            raise ScriptError(f"Invalid stance: {stance}. Use: thrust, slash, parry")
+        parsed.append(stance)
+    if len(parsed) < 3:
+        raise ScriptError("Provide at least 3 stances (e.g. thrust,parry,slash,thrust,parry)")
+    crew = world.captain.ship.crew if world.captain.ship else 5
+    result = resolve_duel(
+        player_stances=parsed,
+        opponent_id=pending.captain_id,
+        opponent_name=pending.captain_name,
+        opponent_personality=pending.personality,
+        opponent_strength=pending.strength,
+        rng=state["rng"],
+        player_crew=crew,
+    )
+    world.captain.silver = max(0, world.captain.silver + result.silver_delta)
+    world.pirates.pending_duel = None
+    entry["duel"] = {
+        "opponent_id": result.opponent_id,
+        "opponent_name": result.opponent_name,
+        "player_won": result.player_won,
+        "draw": result.draw,
+        "silver_delta": result.silver_delta,
+        "standing_delta": result.standing_delta,
+        "rounds": [
+            {
+                "player_stance": round_.player_stance,
+                "opponent_stance": round_.opponent_stance,
+                "damage_to_opponent": round_.damage_to_opponent,
+                "damage_to_player": round_.damage_to_player,
+                "flavor": round_.flavor,
+            }
+            for round_ in result.rounds
+        ],
+    }
+
+
+def do_duel(state, stances: list[str], entry: dict) -> None:
+    _apply_duel(state, stances, entry)
+
+
+def do_resolve_duel(state, entry: dict) -> None:
+    world = state["world"]
+    if world.pirates.pending_duel is None:
+        raise ScriptError(
+            "No pirate has challenged you. Duels happen during pirate encounters at sea."
+        )
+    stances = [state["rng"].choice(["thrust", "slash", "parry"]) for _ in range(5)]
+    _apply_duel(state, stances, entry)
 
 
 def standing_view(standing) -> dict:
@@ -390,6 +558,16 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             "marines": ship.roster.marines,
             "quartermasters": ship.roster.quartermasters,
         }
+        if ship.officers:
+            ship_view["officers"] = [
+                {
+                    "name": officer.name,
+                    "role": officer.role.value if hasattr(officer.role, "value") else str(officer.role),
+                    "origin_port": officer.origin_port,
+                    "trait": officer.trait,
+                }
+                for officer in ship.officers
+            ]
     pending = None
     duel = world.pirates.pending_duel
     if duel is not None:

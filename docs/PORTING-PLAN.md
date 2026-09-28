@@ -73,9 +73,11 @@ For each command the oracle calls the Python engine and the Rust runner calls th
 - **buy / sell.** `execute_buy` / `execute_sell`, then reprice that port with the captain's modifiers. Sell also runs `record_trade_outcome`, including the session's post-sale cost-basis estimate.
 - **depart.** `depart`, including the captain port-fee multiplier and ship-class block.
 - **advance, in port.** Heat decay, `tick_markets` for one day, day and provision and wage updates, reprice every port with captain modifiers.
-- **advance, at sea.** Heat decay, `advance_day`, inspection reputation, `arrive` plus arrival reputation when the ship reaches the destination, reprice every port. A pending pirate duel returns no events and does not spend the day, matching the engine. The session can auto-resolve duels; this slice does not.
+- **advance, at sea.** Heat decay, `advance_day`, inspection reputation, `arrive` plus arrival reputation when the ship reaches the destination, reprice every port. A pending pirate duel returns no events and does not spend the day. `advance` does not auto-resolve, matching `auto_resolve_duels = False`.
+- **hire / provision.** `GameSession.hire_crew` and `GameSession.provision`, including the service-cost modifier on provisions and named specialist officers.
+- **duel / resolve_duel.** `portlight duel` (`engine/duel.py` `resolve_duel`) and `GameSession._resolve_pending_duel` (five random stances, then the same resolver). Both apply `silver_delta`, leave `standing_delta` off the reputation record, and clear `pending_duel`.
 
-Not in the comparison: contract offers, infrastructure purchases, credit draws, insurance policies, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, milestone evaluation, narrative beats, saves. Victory-path evaluation does run, on the ledger and the empty contract and infrastructure books, and the snapshot includes it.
+Not in the comparison: contract offers, infrastructure purchases, credit draws, insurance policies, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, milestone evaluation, narrative beats, saves, and the interactive encounter machine (`negotiate` / `flee` / `fight`, naval rounds, boarding, `engine/combat.py`). Victory-path evaluation does run, on the ledger and the empty contract and infrastructure books, and the snapshot includes it. Contracts are not ported, so a played game cannot complete a path: `victory()` is display-only until something writes completed contracts through `books_mut()`.
 
 ## Public session
 
@@ -86,9 +88,12 @@ Not in the comparison: contract offers, infrastructure purchases, credit draws, 
 | `Session::new(name, captain_type, seed, starting_port)` | New game. `seed` is an `i128`. |
 | `world()` | Ports (`map_x`, `map_y`), ship, cargo, voyage, standing. |
 | `sail_lanes()` | Picker lanes, including blocked ones and raw-speed day estimates. |
-| `victory()` | The four victory paths. |
+| `victory()` | The four victory paths. Display-only in play: contracts are not ported, so no path can complete unless a caller writes them through `books_mut()`. |
 | `books()` / `books_mut()` | Ledger plus contract, license, warehouse, broker, policy, and credit records. Buy and sell update the ledger. The systems that grant the other records are not ported, so those lists start empty. |
-| `buy` / `sell` / `depart` / `advance` | One action. `advance` returns `Turn { events, shocks }`. |
+| `buy` / `sell` / `depart` / `advance` | One action. `advance` returns `Turn { events, shocks }`. A pending duel makes `advance` return no events and leave the day unchanged. |
+| `hire_crew(count, role)` / `provision(days)` | Port hiring and provisions. Sailors use `crew_cost`. Specialists cost `wage * 10` and get a name and trait. Provisions use `max(1, int(provision_cost * service_modifier))`. |
+| `duel(stances)` / `resolve_pending_duel()` | Clear a pending pirate duel. `duel` is the CLI stance fight (`thrust` / `slash` / `parry`, at least three). `resolve_pending_duel` is the bot auto-resolve. Both return `DuelOutcome`. |
+| errors | `SimError`. `Display` text is the Python sentence. |
 
 There is no save/load. Do not add a format in the UI crate; the sim does not have one yet.
 
@@ -111,7 +116,7 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 ## Porting order
 
 1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`.
-2. **Next, still stage 1.** Ship purchase and upgrades (unblocks stat resolution), contracts and the contract RNG (`seed + 7919`), save/load, then combat and duels so a pending duel can be answered inside the script. After duels, sea-culture enrichment can be added and the harness can move from the engine slice to `GameSession.advance`.
+2. **Next, still stage 1.** Ship purchase and upgrades (unblocks stat resolution), contracts and the contract RNG (`seed + 7919`), save/load, then the interactive encounter (`negotiate` / `flee` / `fight`, naval, boarding, `engine/combat.py`). The stance duel that the voyage event asks for, and the five-stance auto-resolve, are already on `Session`. After the encounter machine, sea-culture enrichment can be added and the harness can move from the engine slice to `GameSession.advance`.
 3. **Then.** Infrastructure, credit, insurance, injuries, companions, hunting, fleet convoys, and milestone evaluation (`evaluate_milestones`). Those systems should write the records `HouseBooks` already holds. Balance and stress runners should call the Rust sim once those systems exist.
 4. **Stage 2.** A dimetric front end drives `Session` only: `world()` for `map_x`/`map_y` on the 50×36 grid, `sail_lanes()` for the route overlay, `victory()` for the four paths, and `advance` one turn at a time. It must not move rules back into the UI crate.
 
@@ -126,7 +131,7 @@ PYTHONPATH=/path/to/portlight/src python3 tools/parity/check.py --write-golden
 PYTHONPATH=/path/to/portlight/src python3 tools/parity/victory_cases.py
 ```
 
-`python3 tools/parity/check.py` diffs the live oracle against the Rust binary when `portlight` imports, and always diffs Rust against `parity/golden/`. `cargo test` does the golden comparison with no Python installed. Goldens were produced with CPython 3.12.3. CI also runs the live oracle: the Portlight repo is public, so the workflow checks out commit `9b02494` and runs `check.py`. The Rust toolchain is pinned in `rust-toolchain.toml` (1.83.0) and CI passes `--locked`.
+`python3 tools/parity/check.py` diffs the live oracle against the Rust binary when `portlight` imports, and always diffs Rust against `parity/golden/`. `--require-oracle` exits non-zero when that import fails, instead of falling back to goldens. `cargo test` does the golden comparison with no Python installed. Goldens were produced with CPython 3.12.3. CI checks out commit `9b02494`, runs `check.py --require-oracle`, and re-runs `victory_cases.py --check` against the committed JSON. The Rust toolchain is pinned in `rust-toolchain.toml` (1.83.0) and CI passes `--locked`.
 
 Scripts checked in:
 
@@ -138,6 +143,13 @@ Scripts checked in:
 | `voyage.txt` | Seed 9, Porto Novo to Silva Bay, events through arrival, in-port days after, sell one grain at the destination |
 | `smuggler.txt` | Seed 5, luxury sell modifier, provision burn below 1, Palm Cove to Sun Harbor |
 | `duel_block.txt` | Seed 42, Scarlet Ana's duel challenge, further `advance` does not move the day |
+| `duel_win.txt`, `duel_loss.txt`, `duel_draw.txt` | The same challenge resolved with stances: win, loss, and draw, then one `advance` so the day moves |
+| `duel_resolve.txt` | `_resolve_pending_duel`: five random stances, then the day moves |
+| `duel_invalid.txt`, `duel_short.txt`, `duel_none.txt` | Invalid stance, fewer than three stances, duel with no challenge |
+| `hull_day20.txt` | Bounty hunter, swift cutter, Iron Point warning lane. Day 20 wears `hull_max` from 70 to 69 |
+| `hire_full.txt`, `hire_navigator.txt`, `hire_role.txt`, `hire_sea.txt`, `hire_broke.txt` | Hire sailors to the cap, a named navigator, unknown role, hire at sea, hire without silver |
+| `hire_and_sail.txt` | The short crew in `crew_minimum.txt` hires one sailor and leaves port |
+| `provision_silva.txt`, `provision_zero.txt`, `provision_sea.txt` | Buy provisions at Silva Bay's rate, a non-positive quantity, provision at sea |
 | `inspection_rep.txt` | Seed 4, patrol inspection, inspection incident on the standing list |
 | `cargo_loss.txt` | Seed 2, damaged grain, plus lighthouse, pirates, and star navigation |
 | `crew_minimum.txt` | Provisions burned in port, a sea day with `crew_delta`, then `depart` refuses a short crew. That voyage's progress also locks below-minimum speed |
@@ -166,13 +178,13 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [x] Trade reputation (suspicion, heat, standing, trust, incidents)
 - [x] In-port day: heat decay, market tick, provisions, wages, reprice
 - [x] Depart: port fee with captain multiplier, crew minimum (`crew_minimum.txt` ends on the refusal)
-- [x] Sea day: provision burn (including fractional), wages, morale, weighted events, recent-event damping, seasonal danger and speed, undermanned speed, hull wear on day 20. Below-minimum speed is in `crew_minimum.txt` and in `short_crew_slows_the_day_and_day_20_wears_hull`. Day-20 hull wear is that unit test: no route a starting ship may sail lasts 20 days, because ship purchase is not ported and the longest sloop-legal route is 40.
+- [x] Sea day: provision burn (including fractional), wages, morale, weighted events, recent-event damping, seasonal danger and speed, undermanned speed, hull wear on day 20. Below-minimum speed is in `crew_minimum.txt` and in `short_crew_slows_the_day_and_day_20_wears_hull`. Day-20 wear is `hull_day20.txt`: a bounty hunter's swift cutter is only warned, not blocked, on the brigantine lane Iron Point–Crosswind Isle (distance 60). Undermanned, low morale, season, and calm slowdowns stack, and the crew falls once provisions and silver run out, so day 20 is reached and `hull_max` goes from 70 to 69.
 - [x] Event resolution for the full table, including named pirate duels. `goldens_guard_the_checklist_paths` fails if any event type disappears from the goldens, and each golden locks the payload.
-- [x] Pending duel blocks `advance_day`
+- [x] Pending duel blocks `advance_day` until `duel` or `resolve_pending_duel` (`duel_block.txt`, `duel_win.txt`, `duel_loss.txt`, `duel_draw.txt`, `duel_resolve.txt`)
 - [x] Arrival morale and arrival reputation
 - [x] Inspection reputation recorded on the sea day (`inspection_rep.txt`)
 - [x] Cargo loss and crew casualties through the roster (`cargo_loss.txt`, `crew_minimum.txt`)
-- [x] Four victory paths. Path id `commercial_empire` and milestone family `commercial_finance` stay distinct. `victory_cases.json` plus the `victory` field on every script snapshot.
+- [x] Four victory paths. Path id `commercial_empire` and milestone family `commercial_finance` stay distinct. `victory_cases.json` plus the `victory` field on every script snapshot. Contracts are not ported, so no path can complete in play and `victory()` is display-only until `books_mut()` records completed contracts.
 
 ### Partial (data or formula present, system not finished)
 
@@ -181,16 +193,16 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [ ] Season weather copy and travel warnings
 - [ ] Captain backstory, mentor, bloc text
 - [ ] Upgrade-aware ship stats (functions assume no upgrades)
-- [ ] Crew roles beyond wages and casualty weights
-- [ ] Reputation fee and service modifiers
+- [ ] Crew roles beyond wages, casualty weights, and hiring (specialist voyage bonuses are not applied)
+- [ ] Reputation fee modifier on services other than provisions. `get_service_modifier` is used by `provision`
 - [ ] Receipt ledger export and content hashes. Buy/sell totals and receipt count are kept on `HouseBooks` because victory reads them.
 - [ ] Bounty-hunter sea event (code is in `advance_day` for wanted level 3; no golden script sets that)
 
 ### Not started
 
 - [ ] `engine/campaign.py` milestone evaluation (`evaluate_milestones`, career profiles beyond the family table). Victory paths are done. Keep `commercial_finance` as the family id.
-- [ ] `engine/combat.py`, `engine/duel.py`, `engine/naval.py`
-- [ ] `engine/encounter.py`, `engine/hunting.py`, `engine/loot.py`
+- [ ] `engine/combat.py`, `engine/naval.py`, and `engine/encounter.py` (negotiate, flee, fight, naval rounds, boarding, prize capture). `engine/duel.py` `resolve_duel` is ported; that is the voyage event's stance fight and the auto-resolve. `standing_delta` is returned and not applied, matching the CLI. Encounter history counters (`duels_won`, `PirateEncounterRecord`) are not stored.
+- [ ] `engine/hunting.py`, `engine/loot.py`
 - [ ] `engine/contracts.py` and `content/contracts.py`
 - [ ] `engine/infrastructure.py`, `content/infrastructure.py` (brokers, warehouses, insurance, credit)
 - [ ] `engine/save.py`

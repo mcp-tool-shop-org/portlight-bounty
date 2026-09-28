@@ -9,6 +9,7 @@ expected output. Regenerate with:
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -266,6 +267,13 @@ def view(paths) -> list:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="compare with the committed golden and do not write it",
+    )
+    args = parser.parse_args()
     cases = []
     for case in CASES:
         snap = apply(case["input"])
@@ -276,14 +284,22 @@ def main() -> int:
                 "paths": view(compute_victory_progress(snap)),
             }
         )
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as fh:
-        json.dump(cases, fh, indent=2)
-        fh.write("\n")
+    payload = json.dumps(cases, indent=2) + "\n"
     ids = {path["path_id"] for case in cases for path in case["paths"]}
     if "commercial_finance" in ids or "commercial_empire" not in ids:
         print("victory path ids drifted", ids, file=sys.stderr)
         return 1
+    if args.check:
+        with open(OUT, encoding="utf-8") as fh:
+            existing = fh.read()
+        if existing != payload:
+            print(f"{OUT} drifted from the live Python evaluator", file=sys.stderr)
+            return 1
+        print(f"{OUT} matches Python ({len(cases)} cases)")
+        return 0
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    with open(OUT, "w", encoding="utf-8") as fh:
+        fh.write(payload)
     print(f"wrote {OUT} ({len(cases)} cases)")
     return 0
 

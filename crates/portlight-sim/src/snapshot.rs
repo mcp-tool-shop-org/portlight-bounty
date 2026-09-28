@@ -6,6 +6,7 @@ use serde::Serialize;
 
 use crate::campaign::{self, HouseBooks, VictoryPathStatus};
 use crate::content;
+use crate::duel::{DuelOutcome, DuelRound};
 use crate::economy::TradeReceipt;
 use crate::model::{Captain, Standing, Voyage, World};
 use crate::voyage::VoyageEvent;
@@ -64,6 +65,17 @@ pub struct ShipSnap {
     pub surgeons: i64,
     pub marines: i64,
     pub quartermasters: i64,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub officers: Vec<OfficerSnap>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OfficerSnap {
+    pub name: String,
+    pub role: String,
+    pub origin_port: String,
+    #[serde(rename = "trait")]
+    pub trait_name: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -169,6 +181,28 @@ pub struct LogEntry {
     pub receipt: Option<ReceiptSnap>,
     pub events: Vec<EventSnap>,
     pub shocks: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duel: Option<DuelLog>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DuelLog {
+    pub opponent_id: String,
+    pub opponent_name: String,
+    pub player_won: bool,
+    pub draw: bool,
+    pub silver_delta: i64,
+    pub standing_delta: i64,
+    pub rounds: Vec<DuelRoundLog>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DuelRoundLog {
+    pub player_stance: String,
+    pub opponent_stance: String,
+    pub damage_to_opponent: i64,
+    pub damage_to_player: i64,
+    pub flavor: String,
 }
 
 impl LogEntry {
@@ -179,7 +213,30 @@ impl LogEntry {
             receipt: None,
             events: Vec::new(),
             shocks: Vec::new(),
+            duel: None,
         }
+    }
+}
+
+pub fn from_duel(outcome: &DuelOutcome) -> DuelLog {
+    DuelLog {
+        opponent_id: outcome.opponent_id.clone(),
+        opponent_name: outcome.opponent_name.clone(),
+        player_won: outcome.player_won,
+        draw: outcome.draw,
+        silver_delta: outcome.silver_delta,
+        standing_delta: outcome.standing_delta,
+        rounds: outcome.rounds.iter().map(from_round).collect(),
+    }
+}
+
+fn from_round(round: &DuelRound) -> DuelRoundLog {
+    DuelRoundLog {
+        player_stance: round.player_stance.clone(),
+        opponent_stance: round.opponent_stance.clone(),
+        damage_to_opponent: round.damage_to_opponent,
+        damage_to_player: round.damage_to_player,
+        flavor: round.flavor.clone(),
     }
 }
 
@@ -296,6 +353,16 @@ fn captain_snap(captain: &Captain) -> CaptainSnap {
             surgeons: ship.surgeons,
             marines: ship.marines,
             quartermasters: ship.quartermasters,
+            officers: ship
+                .officers
+                .iter()
+                .map(|officer| OfficerSnap {
+                    name: officer.name.clone(),
+                    role: officer.role.clone(),
+                    origin_port: officer.origin_port.clone(),
+                    trait_name: officer.trait_name.clone(),
+                })
+                .collect(),
         }),
         standing: standing_snap(&captain.standing),
     }

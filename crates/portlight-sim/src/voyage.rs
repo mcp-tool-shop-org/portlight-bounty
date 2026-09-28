@@ -1,11 +1,12 @@
 //! Voyage state machine: depart, one day at sea, arrival.
 //!
 //! Event text and RNG call order follow `portlight.engine.voyage`. A pending
-//! pirate duel blocks further days, matching the engine (the Python session
-//! can auto-resolve duels; this slice does not).
+//! pirate duel blocks further days until `Session::duel` or
+//! `Session::resolve_pending_duel` clears it. `advance` does not auto-resolve.
 
 use crate::content::{self, class_rank, ship_class_rank, CaptainDef};
 use crate::economy::{cargo_quantity, consume_cargo_fifo};
+use crate::error::SimError;
 use crate::model::{PendingDuel, Voyage, VoyageStatus, World};
 use crate::pyrand::PyRandom;
 use crate::reputation::inspection_modifier;
@@ -149,9 +150,9 @@ fn resolve_event(
     event_type: EventType,
     rng: &mut PyRandom,
     world: &World,
-) -> Result<VoyageEvent, String> {
+) -> Result<VoyageEvent, SimError> {
     let Some(ship) = world.captain.ship.as_ref() else {
-        return Err("No ship".to_string());
+        return Err(SimError::NoShip);
     };
     let mut storm_resist = resolve_storm_resist(ship);
     let mods = captain_mods(&world.captain.captain_type);
@@ -777,36 +778,39 @@ pub fn check_route_suitability(
     None
 }
 
-pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Result<(), String> {
+pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Result<(), SimError> {
     if world.captain.ship.is_none() {
-        return Err("No ship".to_string());
+        return Err(SimError::NoShip);
     }
     if world.voyage.status == VoyageStatus::AtSea {
-        return Err("Already at sea".to_string());
+        return Err(SimError::AlreadyAtSea);
     }
     let current = world.voyage.destination_id.clone();
     if current == destination_id {
-        return Err("Already at this port".to_string());
+        return Err(SimError::AlreadyAtThisPort);
     }
     let Some(route) = world.find_route(&current, destination_id) else {
-        return Err(format!("No route from {current} to {destination_id}"));
+        return Err(SimError::NoRoute {
+            from: current,
+            to: destination_id.to_string(),
+        });
     };
     let distance = route.distance;
     let min_class = route.min_ship_class.clone();
     let Some(ship) = world.captain.ship.as_ref() else {
-        return Err("No ship".to_string());
+        return Err(SimError::NoShip);
     };
     if let Some(note) = check_route_suitability(&min_class, &ship.template_id, &ship.name) {
         if note.starts_with("BLOCKED") {
-            return Err(note);
+            return Err(SimError::RouteBlocked(note));
         }
     }
     let crew_min = template_crew_min(ship);
     if ship.crew < crew_min {
-        return Err(format!(
-            "Need at least {crew_min} crew to sail, have {}. Hire crew first.",
-            ship.crew
-        ));
+        return Err(SimError::CrewMinimum {
+            need: crew_min,
+            have: ship.crew,
+        });
     }
     if let Some(port) = world.port(&current) {
         let fee_mult = captain_mods(&world.captain.captain_type)
@@ -821,10 +825,10 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
                     day: world.captain.day,
                 });
             } else {
-                return Err(format!(
-                    "Need {fee} silver for port fee, have {}",
-                    world.captain.silver
-                ));
+                return Err(SimError::NeedPortFee {
+                    fee,
+                    have: world.captain.silver,
+                });
             }
         } else {
             world.captain.silver -= fee;
@@ -842,7 +846,7 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
     Ok(())
 }
 
-pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEvent>, String> {
+pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEvent>, SimError> {
     if world.voyage.status != VoyageStatus::AtSea || world.captain.ship.is_none() {
         return Ok(Vec::new());
     }
@@ -998,7 +1002,7 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
         .unwrap_or(1.0);
     let day_progress = {
         let Some(ship) = world.captain.ship.as_ref() else {
-            return Err("No ship".to_string());
+            return Err(SimError::NoShip);
         };
         let mut base_speed = resolve_speed(ship) + speed_bonus + navigator_speed_bonus(ship);
         let crew_min = template_crew_min(ship);
@@ -1031,9 +1035,9 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
     Ok(events)
 }
 
-pub fn arrive(world: &mut World) -> Result<(), String> {
+pub fn arrive(world: &mut World) -> Result<(), SimError> {
     if world.voyage.status != VoyageStatus::Arrived {
-        return Err("Not arrived yet".to_string());
+        return Err(SimError::NotArrivedYet);
     }
     world.voyage.status = VoyageStatus::InPort;
     if let Some(ship) = world.captain.ship.as_mut() {
@@ -1132,7 +1136,7 @@ mod tests {
         assert_eq!(al_manar.suitability, LaneSuitability::Blocked);
 
         let err = depart(&mut world, "crosswind_isle", false).expect_err("blocked");
-        assert!(err.starts_with("BLOCKED"), "{err}");
+        assert!(err.to_string().starts_with("BLOCKED"), "{err}");
         assert_eq!(world.voyage.status, VoyageStatus::InPort);
 
         let warned = lane(&lanes, "porto_novo");

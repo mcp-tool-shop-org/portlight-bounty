@@ -39,4 +39,6 @@ jobs:
       - name: Build
         run: cargo build --locked -p portlight-cli
       - name: Live Python oracle
-        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
+      - name: Victory fixtures
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check
