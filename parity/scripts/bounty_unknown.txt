@@ -1,0 +1,3 @@
+# Accept refuses a captain who is not on the live pirate list.
+new merchant Ada 1
+bounty accept shadow_vex

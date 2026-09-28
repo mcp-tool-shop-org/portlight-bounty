@@ -62,7 +62,7 @@ use crate::injuries;
 use crate::loot;
 use crate::memory;
 use crate::model::{
-    ActiveContract, Armor, Consequence, Contract, ContractBoard, ContractOutcome,
+    ActiveContract, Armor, CargoItem, Consequence, Contract, ContractBoard, ContractOutcome,
     InfrastructureRecord, InstalledUpgrade, NarrativeState, Officer, PendingDuel,
     PirateEncounterRecord, VoyageStatus, Weapon, World,
 };
@@ -547,6 +547,132 @@ impl Session {
         let earned = economy::work_docks(&mut self.world.captain, &mut self.rng);
         self.world.day = self.world.captain.day;
         Ok(earned)
+    }
+
+    /// Hunt or forage. `GameSession.hunt` (`session.py` line 1335).
+    ///
+    /// At sea when the voyage is `at_sea`, otherwise in port. Applies the
+    /// yield from [`crate::hunting::hunt`] and copies `captain.day` onto
+    /// `world.day`. Markets, wages, and provisions do not tick.
+    pub fn hunt(&mut self) -> Result<crate::hunting::HuntResult, SimError> {
+        let at_sea = self.world.voyage.status == VoyageStatus::AtSea;
+        let location = if at_sea { "sea" } else { "port" };
+        if at_sea {
+            if let Some(ship) = self.world.captain.ship.as_ref() {
+                if ship.morale < 20 {
+                    return Err(SimError::Sentence(
+                        "Crew morale too low for hunting at sea (need 20+).".into(),
+                    ));
+                }
+            }
+        }
+        let crew_count = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.crew)
+            .unwrap_or(1);
+        let result =
+            crate::hunting::hunt(&mut self.world.captain, location, crew_count, &mut self.rng);
+        self.world.day = self.world.captain.day;
+        if result.success {
+            if result.provisions_gained > 0 {
+                self.world.captain.provisions += result.provisions_gained;
+            }
+            if result.pelts_gained > 0 {
+                if let Some(existing) = self
+                    .world
+                    .captain
+                    .cargo
+                    .iter_mut()
+                    .find(|item| item.good_id == "pelts")
+                {
+                    existing.quantity += result.pelts_gained;
+                } else {
+                    let acquired_port = current_port_id(&self.world).unwrap_or("").to_string();
+                    let acquired_day = self.world.captain.day;
+                    self.world.captain.cargo.push(CargoItem {
+                        good_id: "pelts".to_string(),
+                        quantity: result.pelts_gained,
+                        cost_basis: 0,
+                        acquired_port,
+                        acquired_region: String::new(),
+                        acquired_day,
+                    });
+                }
+            }
+            if result.silver_gained > 0 {
+                self.world.captain.silver += result.silver_gained;
+            }
+        }
+        if result.crew_lost > 0 {
+            if let Some(ship) = self.world.captain.ship.as_mut() {
+                naval::apply_crew_casualties(ship, result.crew_lost, 1);
+            }
+        }
+        if result.hull_damage > 0 {
+            if let Some(ship) = self.world.captain.ship.as_mut() {
+                ship.hull = 1.max(ship.hull - result.hull_damage);
+            }
+        }
+        if result.morale_cost > 0 {
+            if let Some(ship) = self.world.captain.ship.as_mut() {
+                ship.morale = 0.max(ship.morale - result.morale_cost);
+            }
+        }
+        Ok(result)
+    }
+
+    /// `generate_bounty_board` on the session RNG. Listing does not save the board.
+    pub fn bounty_board(&mut self) -> Vec<crate::bounty::BountyTarget> {
+        crate::bounty::generate_bounty_board(&self.world.captain_memories, &mut self.rng, 3)
+    }
+
+    /// `accept_bounty` (`engine/bounty.py` line 120). The CLI saves after a success.
+    pub fn accept_bounty(&mut self, target_id: &str) -> Result<(), SimError> {
+        crate::bounty::accept_bounty(&mut self.world.captain, target_id).map_err(SimError::Sentence)
+    }
+
+    /// `GameSession.hunt_bounty_cmd` (`session.py` line 1402).
+    ///
+    /// Spawns the locked encounter, writes `pending_duel`, and keeps the
+    /// encounter on the session so a later `encounter` command does not re-roll.
+    pub fn hunt_bounty(&mut self, target_id: &str) -> Result<EncounterState, SimError> {
+        let enc = crate::bounty::hunt_bounty(&self.world, target_id, &mut self.rng)
+            .map_err(SimError::Sentence)?;
+        self.world.pending_duel = Some(PendingDuel {
+            captain_id: enc.enemy_captain_id.clone(),
+            captain_name: enc.enemy_captain_name.clone(),
+            faction_id: enc.enemy_faction_id.clone(),
+            personality: enc.enemy_personality.clone(),
+            strength: enc.enemy_strength,
+            region: enc.enemy_region.clone(),
+        });
+        self.encounter = Some(enc.clone());
+        self.player_combat = None;
+        self.opponent_combat = None;
+        self.pending_victory = false;
+        Ok(enc)
+    }
+
+    /// `claim_bounty` (`engine/bounty.py` line 165). Pays the table reward.
+    pub fn claim_bounty(&mut self, target_id: &str) -> Result<i64, SimError> {
+        crate::bounty::claim_bounty(
+            &mut self.world.captain,
+            &self.world.captain_memories,
+            target_id,
+        )
+        .map_err(SimError::Sentence)
+    }
+
+    /// Assign `captain.wanted_level`.
+    ///
+    /// `GameSession.advance` and `abandon_contract_cmd` omit the captain, so
+    /// play never writes this field. The voyage bounty-hunter check still
+    /// reads it. The parity script uses this assignment to reach that check.
+    pub fn set_wanted_level(&mut self, level: i64) {
+        self.world.captain.wanted_level = level;
     }
 
     /// Fight the pending pirate with the given stances (`portlight duel`).
@@ -1825,7 +1951,8 @@ impl Session {
                 notes,
             }
         } else {
-            let mut events = voyage::advance_day(&mut self.world, &mut self.rng)?;
+            let breaches = self.board.breaches.len() as i64;
+            let mut events = voyage::advance_day(&mut self.world, &mut self.rng, breaches)?;
             events = crate::sea_culture::enrich_voyage_day(
                 &mut self.world,
                 events,

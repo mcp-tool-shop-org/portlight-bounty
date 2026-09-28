@@ -1,0 +1,6 @@
+# A fourth active bounty is refused.
+new merchant Ada 1
+bounty accept scarlet_ana
+bounty accept the_butcher
+bounty accept raj_the_quiet
+bounty accept typhoon_mei

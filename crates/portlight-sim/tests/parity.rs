@@ -379,6 +379,62 @@ fn sea_captain_agency_golden_records_the_ambush() {
     assert_eq!(golden["day"], 4);
 }
 
+#[test]
+fn hunting_and_bounty_goldens_cover_yields_refusals_and_the_hunter() {
+    let success = load_golden("hunt_port_success");
+    assert_eq!(success["log"][1]["hunt"]["success"], true);
+    assert_eq!(success["log"][1]["hunt"]["location"], "port");
+    assert_eq!(success["captain"]["cargo"][0]["good_id"], "pelts");
+
+    let miss = load_golden("hunt_port_fail");
+    assert_eq!(miss["log"][1]["hunt"]["success"], false);
+    assert_eq!(miss["captain"]["cargo"].as_array().unwrap().len(), 0);
+
+    let sea = load_golden("hunt_sea_success");
+    assert_eq!(sea["log"][2]["hunt"]["location"], "sea");
+    assert_eq!(sea["log"][2]["hunt"]["success"], true);
+
+    let sea_miss = load_golden("hunt_sea_fail");
+    assert_eq!(sea_miss["log"][2]["hunt"]["success"], false);
+    assert_eq!(sea_miss["log"][2]["hunt"]["danger_text"], "");
+
+    let morale = load_golden("hunt_sea_morale");
+    let last = morale["log"].as_array().unwrap().last().unwrap();
+    assert_eq!(
+        last["error"],
+        "Crew morale too low for hunting at sea (need 20+)."
+    );
+
+    let claim = load_golden("bounty_claim");
+    let claim_log = claim["log"].as_array().unwrap();
+    assert_eq!(claim_log[claim_log.len() - 2]["bounty"]["reward"], 120);
+    assert_eq!(
+        claim_log[claim_log.len() - 2]["bounty"]["target_id"],
+        "raj_the_quiet"
+    );
+    assert_eq!(
+        claim["log"].as_array().unwrap().last().unwrap()["error"],
+        "Bounty already claimed"
+    );
+
+    let hunter = load_golden("bounty_hunter_voyage");
+    assert_eq!(hunter["captain"]["wanted_level"], 3);
+    let flavors: Vec<_> = hunter["log"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|entry| entry["events"].as_array().into_iter().flatten())
+        .map(|event| event["flavor"].as_str().unwrap_or(""))
+        .collect();
+    assert!(
+        flavors
+            .iter()
+            .any(|flavor| flavor.starts_with("Bounty hunter")),
+        "bounty hunter event missing: {flavors:?}"
+    );
+    assert_eq!(hunter["pending_duel"]["captain_id"], "iron_hound");
+}
+
 fn load_golden(stem: &str) -> Value {
     let path = parity_root().join("golden").join(format!("{stem}.json"));
     serde_json::from_str(&fs::read_to_string(path).expect("golden")).expect("json")

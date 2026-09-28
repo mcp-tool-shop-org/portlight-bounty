@@ -1,0 +1,13 @@
+# Sea hunts until morale drops below 20. The last hunt is refused.
+new merchant Ada 1
+depart silva_bay
+hunt
+hunt
+hunt
+hunt
+hunt
+hunt
+hunt
+hunt
+hunt
+hunt

@@ -295,7 +295,7 @@ mod tests {
         let mut world = new_game("Ada", "merchant", 3, Some("porto_novo")).unwrap();
         crate::voyage::depart(&mut world, "silva_bay", false).unwrap();
         let mut rng = PyRandom::from_seed(3);
-        let _ = crate::voyage::advance_day(&mut world, &mut rng).unwrap();
+        let _ = crate::voyage::advance_day(&mut world, &mut rng, 0).unwrap();
         let board = ContractBoard::default();
         let once = enrich_voyage_day(
             &mut world.clone(),
@@ -308,7 +308,7 @@ mod tests {
         let mut world2 = new_game("Ada", "merchant", 3, Some("porto_novo")).unwrap();
         crate::voyage::depart(&mut world2, "silva_bay", false).unwrap();
         let mut rng2 = PyRandom::from_seed(3);
-        let _ = crate::voyage::advance_day(&mut world2, &mut rng2).unwrap();
+        let _ = crate::voyage::advance_day(&mut world2, &mut rng2, 0).unwrap();
         let twice = enrich_voyage_day(&mut world2, Vec::new(), &mut rng2, &[], 0, &board);
         let left: Vec<_> = once.iter().map(|event| event.message.clone()).collect();
         let right: Vec<_> = twice.iter().map(|event| event.message.clone()).collect();

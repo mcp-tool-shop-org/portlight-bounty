@@ -328,18 +328,30 @@ pub fn resolve_boarding(player_crew: i64, enemy_crew: i64, rng: &mut PyRandom) -
     (p_lost, e_lost, player_advantage)
 }
 
-/// Sailors first, then specialists, matching `apply_crew_casualties`.
+/// Sailors first, then specialists, matching `apply_crew_casualties` with no floor.
 pub fn apply_crew_loss(ship: &mut Ship, lost: i64) -> i64 {
+    apply_crew_casualties(ship, lost, 0)
+}
+
+/// `apply_crew_casualties`. Sailors first, then specialists and named officers.
+///
+/// `keep_at_least` is the roster floor. Hunting passes `1`.
+pub fn apply_crew_casualties(ship: &mut Ship, lost: i64, keep_at_least: i64) -> i64 {
     if lost <= 0 {
         return 0;
     }
+    let floor = keep_at_least.max(0);
     let current = ship.roster_total();
     if current <= 0 {
-        let applied = lost.min(0.max(ship.crew));
-        ship.crew = 0.max(ship.crew - lost);
+        let applied = lost.min(0.max(ship.crew - floor));
+        ship.crew = floor.max(ship.crew - lost);
         return applied;
     }
-    let lost = lost.min(current);
+    let lost = lost.min(0.max(current - floor));
+    if lost <= 0 {
+        ship.sync_crew();
+        return 0;
+    }
     let mut remaining = lost;
     let take = ship.sailors.min(remaining);
     ship.sailors -= take;

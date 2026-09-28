@@ -10,6 +10,7 @@
 //! Front ends drive [`Session`] one turn at a time. [`run_script`] calls that
 //! same API.
 
+pub mod bounty;
 pub mod campaign;
 pub mod combat;
 pub mod companion;
@@ -23,6 +24,7 @@ pub mod economy;
 pub mod encounter;
 pub mod error;
 pub mod fleet;
+pub mod hunting;
 pub mod infrastructure;
 pub mod injuries;
 pub mod loot;

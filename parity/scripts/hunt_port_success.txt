@@ -1,0 +1,3 @@
+# Port hunt. Seed 1 succeeds: provisions, pelts, and silver.
+new merchant Ada 1
+hunt

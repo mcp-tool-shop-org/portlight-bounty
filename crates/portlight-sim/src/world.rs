@@ -40,6 +40,7 @@ pub fn new_game(
             standing: Standing::from_captain(captain_def),
             wanted_level: 0,
             active_bounties: Vec::new(),
+            claimed_bounties: Vec::new(),
             deferred_fees: Vec::new(),
             melee: None,
             firearm: None,

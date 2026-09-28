@@ -1,0 +1,4 @@
+# Sea hunt. Seed 1 succeeds. Higher silver, morale cost, no danger.
+new merchant Ada 1
+depart silva_bay
+hunt
