@@ -120,10 +120,10 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 
 ## Porting order
 
-1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`. The sim on `main` is `33ff36254882a3fb58db30f017d3f6d0fd77155e`.
+1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`. The sim on `main` is `f6dc82e46fc622783ce495267dab141e10f33fdf`.
 2. **Landed early, on purpose.** The chart and the Godot view. This stage 2 slice did not wait for the rest of the sim. It is the dimetric chart over `Session`: port `map_x`/`map_y` rotated for display only, `sail_lanes` for the current port's overlay, voyage progress for the ship. See "Stage 2" below. Still later inside the view: a harbour scene in the playable, terrain, weather, NPC ships, and the rest of the TUI.
 3. **Merged in the sim, not yet offered by the Godot view.** Negotiate, flee, naval combat, and boarding (`engine/encounter.py`, `engine/naval.py`, `engine/combat.py`) are on `Session` (`encounter_choice`, `naval_round`, `resolve_boarding`). The chart still shows the voyage-event stance duel (`duel` and `resolve_pending_duel`). Flee is not a stance in that duel. Sea-culture enrichment is merged and runs inside `Session::advance`.
-4. **Merged in the sim, not yet offered by the Godot view.** Ship purchase and upgrades, contracts and the contract RNG (`seed + 7919`), and save/load. The view does not call `buy_ship`, `board`, `accept_contract`, `save`, or `load`.
+4. **Merged in the sim, not yet offered by the Godot view.** Ship purchase and upgrades, contracts and the contract RNG (`seed + 7919`), and save/load. The view does not call `buy_ship`, `board`, `accept_contract`, `save`, or `load`. Area 7a is also merged and not offered: `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair`.
 5. **Merged in the sim, not yet offered by the Godot view.** Infrastructure, credit, insurance, injuries, companions, fleet convoys, and milestone evaluation (`evaluate_milestones`). Hunting is still unported. The Godot view does not call these `Session` methods.
 
 ## Parity harness
@@ -218,7 +218,7 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [x] `engine/culture_engine.py`, `engine/sea_culture_engine.py`, `engine/port_arrival_engine.py`
 - [x] `engine/companion_engine.py`, `engine/skill_engine.py`, `engine/training.py`
 - [x] `engine/injuries.py`, `engine/weapon_quality.py`, `engine/weapon_provenance.py`
-- [x] `engine/fleet.py` convoys
+- [x] `engine/fleet.py` convoys. Area 7a commands `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view.
 - [x] `engine/merchant.py`
 - [x] `content/armor.py`, `melee_weapons.py`, `ranged_weapons.py`, `fighting_styles.py`
 - [x] `content/skills.py`, `injuries.py`, `loot_tables.py`, `upgrades.py`
@@ -272,13 +272,13 @@ The market panel calls `Session::buy` and `Session::sell` for quantity 1. Next d
 
 Stage 2 does not own `crates/portlight-sim/src/session.rs`. The chart and the Godot view call `portlight_sim::Session` and nothing else for rules. There is no shim and no second `Session` type.
 
-This branch is rebased onto `main` at `33ff36254882a3fb58db30f017d3f6d0fd77155e`. `crates/portlight-sim` matches that commit. It differs from `b2e4aba76d4c22cb1713004d8a71df257be87800` in 19 files: narrative, culture, consequences, arrival, sea culture, and the session, content, save, script, snapshot, voyage, world, and parity tests those systems touch. Do not resurrect a local `session.rs`.
+This branch is rebased onto `main` at `f6dc82e46fc622783ce495267dab141e10f33fdf`. `crates/portlight-sim` matches that commit. Area 7a commands `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view. Do not resurrect a local `session.rs`.
 
 New game in the view is merchant Ada, seed 1, home Porto Novo. That seed completes Porto Novo to Al-Manar without a pending duel. The scripted smoke buys grain, sails, advances until docked, sells the grain, and buys and sells one spice.
 
 ### Not in this slice
 
-No harbour scene in the playable, and no terrain, weather overlay, or NPC ships. Ship purchase is merged in the sim and is not yet offered by the Godot view. The five Mediterranean sloop routes exist in the sim; the chart draws the current port's lanes, not all five at once. Chart water and the port marker are the approved plates. The approved harbour tiles are in the repo and only shown by the seam scene.
+No harbour scene in the playable, and no terrain, weather overlay, or NPC ships. Ship purchase, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `abandon_contract`, and single-ship `repair` are merged in the sim and are not yet offered by the Godot view. The five Mediterranean sloop routes exist in the sim; the chart draws the current port's lanes, not all five at once. Chart water and the port marker are the approved plates. The approved harbour tiles are in the repo and only shown by the seam scene.
 
 ### Checks
 
