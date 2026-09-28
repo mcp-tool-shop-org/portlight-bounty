@@ -1977,18 +1977,68 @@ impl Session {
         if !has_yard {
             return Err(SimError::Rejected(format!("{port_name} has no shipyard")));
         }
-        if let Some(name) = ship_name {
-            return Err(SimError::Rejected(format!(
-                "No ship named '{name}' docked at this port"
-            )));
-        }
         let repair = self
             .world
             .port(&port_id)
             .map(|port| port.repair_cost)
             .unwrap_or(0);
         let service = dry_dock_service(&self.world.captain.standing, &port_id);
+        if let Some(name) = ship_name {
+            return self.dry_dock_fleet_ship(&port_id, name, repair, service);
+        }
         infrastructure::dry_dock(&mut self.world.captain, repair, service)?;
+        Ok(())
+    }
+
+    /// `GameSession.dry_dock` when a fleet hull is named.
+    ///
+    /// The ship must be docked at this port. The match is the display name or
+    /// the template id, case-insensitive. Cost and the hull restore are
+    /// `_do_dry_dock`: template `hull_max` at 5× the repair rate.
+    fn dry_dock_fleet_ship(
+        &mut self,
+        port_id: &str,
+        name: &str,
+        repair_cost: i64,
+        service: f64,
+    ) -> Result<(), SimError> {
+        let wanted = name.to_lowercase();
+        let index = self.world.captain.fleet.iter().position(|owned| {
+            owned.docked_port_id == port_id
+                && (owned.ship.name.to_lowercase() == wanted
+                    || owned.ship.template_id.to_lowercase() == wanted)
+        });
+        let Some(index) = index else {
+            return Err(SimError::Rejected(format!(
+                "No ship named '{name}' docked at this port"
+            )));
+        };
+        let (template_id, hull_max, hull) = {
+            let ship = &self.world.captain.fleet[index].ship;
+            (ship.template_id.clone(), ship.hull_max, ship.hull)
+        };
+        let Some(template_hull) = content::content()
+            .ship(&template_id)
+            .map(|ship| ship.hull_max)
+        else {
+            return Err(SimError::Rejected("Unknown ship template".to_string()));
+        };
+        let degradation = template_hull - hull_max;
+        if degradation <= 0 {
+            return Err(SimError::Rejected("Ship hull is not degraded".to_string()));
+        }
+        let cost_per = 1.max(py_trunc(repair_cost as f64 * service * 5.0));
+        let cost = degradation * cost_per;
+        if cost > self.world.captain.silver {
+            return Err(SimError::Rejected(format!(
+                "Need {cost} silver for dry dock ({degradation} points at {cost_per}/point), have {}",
+                self.world.captain.silver
+            )));
+        }
+        self.world.captain.silver -= cost;
+        let ship = &mut self.world.captain.fleet[index].ship;
+        ship.hull_max = template_hull;
+        ship.hull = (hull + degradation).min(ship.hull_max);
         Ok(())
     }
 
@@ -2235,17 +2285,22 @@ impl Session {
         Ok(())
     }
 
+    /// `portlight maintain`. The blacksmith discount is applied here, as in
+    /// the CLI, not inside `weapon_quality.maintain_weapon`.
     pub fn maintain_weapon(&mut self, weapon_id: &str) -> Result<(), SimError> {
         let _port = current_port_id(&self.world)
             .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
-        let silver = weapon_quality::maintain_weapon(
-            &self.world.captain.weapon_quality,
-            &mut self.world.captain.weapon_usage,
-            weapon_id,
-            self.world.captain.silver,
-        )
-        .map_err(SimError::Sentence)?;
-        self.world.captain.silver = silver;
+        let base = weapon_quality::maintenance_cost(&self.world.captain.weapon_quality, weapon_id);
+        let level = skills::skill_level(&self.world.captain.skills, "blacksmith");
+        let cost = skills::apply_maintenance_discount(base, level);
+        if self.world.captain.silver < cost {
+            return Err(SimError::Sentence(format!(
+                "Maintenance costs {cost} silver. You have {}.",
+                self.world.captain.silver
+            )));
+        }
+        self.world.captain.silver -= cost;
+        self.world.captain.set_usage(weapon_id, 0);
         Ok(())
     }
 
@@ -3324,5 +3379,56 @@ mod tests {
         let credit = session.books().credit.as_ref().unwrap();
         assert!(credit.active);
         assert_eq!(credit.total_repaid, 0);
+    }
+
+    #[test]
+    fn named_dry_dock_restores_only_the_docked_fleet_ship() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.buy_ship("swift_cutter").unwrap();
+        {
+            let escort = &mut session.world.captain.fleet[0].ship;
+            escort.hull_max -= 3;
+            escort.hull = escort.hull.min(escort.hull_max);
+        }
+        let flag_before = session.world.captain.ship.as_ref().unwrap().hull_max;
+        let before = session.world.captain.silver;
+        session
+            .buy_infrastructure("dry_dock", &["Coastal Sloop"])
+            .unwrap();
+        let escort = &session.world.captain.fleet[0].ship;
+        assert_eq!(escort.template_id, "coastal_sloop");
+        assert_eq!(escort.hull_max, 60);
+        assert_eq!(escort.hull, 60);
+        let repair = session.world.port("porto_novo").unwrap().repair_cost;
+        let cost_per = 1.max(py_trunc(repair as f64 * 5.0));
+        assert_eq!(session.world.captain.silver, before - 3 * cost_per);
+        assert_eq!(
+            session.world.captain.ship.as_ref().unwrap().hull_max,
+            flag_before
+        );
+        session.world.captain.fleet[0].docked_port_id = "silva_bay".to_string();
+        let err = session
+            .buy_infrastructure("dry_dock", &["coastal_sloop"])
+            .unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "No ship named 'coastal_sloop' docked at this port"
+        );
+    }
+
+    #[test]
+    fn blacksmith_maintenance_uses_the_discounted_cost() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.world.captain.skills.push(crate::model::Skill {
+            id: "blacksmith".to_string(),
+            level: 1,
+        });
+        session.buy_gear("cutlass").unwrap();
+        session.world.captain.set_usage("cutlass", 4);
+        let before = session.world.captain.silver;
+        session.maintain_weapon("cutlass").unwrap();
+        // Level 1 discount is 0.25. int(15 * 0.75) = 11.
+        assert_eq!(session.world.captain.silver, before - 11);
+        assert_eq!(session.world.captain.usage_of("cutlass"), 0);
     }
 }

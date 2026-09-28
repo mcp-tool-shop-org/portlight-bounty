@@ -1413,17 +1413,22 @@ def do_gear(state, gear_id: str) -> None:
 
 
 def do_maintain(state, weapon_id: str) -> None:
-    from portlight.engine.weapon_quality import maintain_weapon
+    """CLI `maintain`: blacksmith discount, then reset usage."""
+    from portlight.engine.skill_engine import apply_maintenance_discount, get_skill_level
+    from portlight.engine.weapon_quality import get_maintenance_cost
     world = state["world"]
     if current_port(world) is None:
         raise ScriptError("Must be docked")
     gear = world.captain.combat_gear
-    silver, err = maintain_weapon(
-        weapon_id, gear.weapon_quality, gear.weapon_usage, world.captain.silver,
-    )
-    if err:
-        raise ScriptError(err)
-    world.captain.silver = silver
+    level = get_skill_level(world.captain.skills, "blacksmith")
+    base = get_maintenance_cost(weapon_id, gear.weapon_quality)
+    cost = apply_maintenance_discount(base, level)
+    if world.captain.silver < cost:
+        raise ScriptError(
+            f"Maintenance costs {cost} silver. You have {world.captain.silver}."
+        )
+    gear.weapon_usage[weapon_id] = 0
+    world.captain.silver -= cost
 
 
 def cargo_snap(item) -> dict:
@@ -2201,21 +2206,11 @@ def do_purchase_license(state, license_id: str) -> None:
     _engine_result(purchase_license(state["infra"], world.captain, spec, world.captain.standing, world.day))
 
 
-def do_dry_dock(state, ship_name: str | None) -> None:
-    world = state["world"]
-    port = current_port(world)
-    if port is None:
-        raise ScriptError("Must be docked")
-    if PortFeature.SHIPYARD not in port.features:
-        raise ScriptError(f"{port.name} has no shipyard")
-    if ship_name:
-        raise ScriptError(f"No ship named '{ship_name}' docked at this port")
-    ship = world.captain.ship
-    if ship is None:
-        raise ScriptError("No ship")
+def _dry_dock_ship(world, ship, port, missing: str) -> None:
+    """`GameSession._do_dry_dock`. `missing` is the flagship's existing sentence."""
     template = SHIPS.get(ship.template_id)
     if template is None:
-        raise ScriptError(f"Unknown ship: {ship.template_id}")
+        raise ScriptError(missing)
     degradation = template.hull_max - ship.hull_max
     if degradation <= 0:
         raise ScriptError("Ship hull is not degraded")
@@ -2229,6 +2224,29 @@ def do_dry_dock(state, ship_name: str | None) -> None:
     world.captain.silver -= cost
     ship.hull_max = template.hull_max
     ship.hull = min(ship.hull + degradation, ship.hull_max)
+
+
+def do_dry_dock(state, ship_name: str | None) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    if PortFeature.SHIPYARD not in port.features:
+        raise ScriptError(f"{port.name} has no shipyard")
+    if ship_name:
+        wanted = ship_name.lower()
+        for owned in world.captain.fleet:
+            if owned.docked_port_id == port.id and (
+                owned.ship.name.lower() == wanted
+                or owned.ship.template_id.lower() == wanted
+            ):
+                _dry_dock_ship(world, owned.ship, port, "Unknown ship template")
+                return
+        raise ScriptError(f"No ship named '{ship_name}' docked at this port")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    _dry_dock_ship(world, ship, port, f"Unknown ship: {ship.template_id}")
 
 
 def do_take_credit(state, tier: str, amount: int) -> None:
