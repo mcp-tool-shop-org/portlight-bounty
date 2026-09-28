@@ -253,8 +253,8 @@ mod tests {
 
     #[test]
     fn a_front_cell_sorts_after_a_back_cell() {
-        // The old seam listed the quay last with a higher z, so the back
-        // wall overdrew the pier. Depth is col+row, not insertion order.
+        // Depth sort is col+row. An older plate listed the quay last and
+        // gave it a higher z, which drew the back wall over the pier.
         let front = pier(0, 2);
         let back = quay(0, 1);
         assert!(front.depth() > back.depth());

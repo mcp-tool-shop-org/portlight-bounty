@@ -8,9 +8,12 @@
 //! advance fails for another reason. The stance fight is `Session::duel`
 //! (the sim requires at least three of thrust, slash, and parry) or
 //! `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown and
-//! not written onto reputation. Negotiate, flee, naval rounds, and boarding
-//! are not on `Session` and are not offered. Hire and provisions call
-//! `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
+//! not written onto reputation. `Session::sell` returns `Sale`: the log shows
+//! the receipt and any contract summaries. `Session::board` is the contract
+//! board. Deck melee is `Session::resolve_boarding`. The view does not call
+//! `board`, `encounter_choice`, `naval_round`, or `resolve_boarding`. Hire
+//! and provisions call `hire_crew` and `provision`; a `SimError` is shown
+//! with its `Display`.
 
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
@@ -27,7 +30,9 @@ use portlight_chart::{
     Facing, PortPress, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME,
     FIRST_PLAYABLE_SEED,
 };
+use portlight_sim::economy::TradeReceipt;
 use portlight_sim::model::VoyageStatus;
+use portlight_sim::session::Sale;
 use portlight_sim::{content, DuelOutcome, LaneSuitability, Session};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
@@ -764,16 +769,23 @@ impl PortlightGame {
                 return;
             };
             if buy {
-                session.buy(good, 1)
+                match session.buy(good, 1) {
+                    Ok(receipt) => Ok(vec![receipt_line(&receipt)]),
+                    Err(err) => Err(err),
+                }
             } else {
-                session.sell(good, 1)
+                match session.sell(good, 1) {
+                    Ok(sale) => Ok(sale_lines(&sale)),
+                    Err(err) => Err(err),
+                }
             }
         };
         match result {
-            Ok(receipt) => self.push_log(format!(
-                "{} {} {} for {} silver.",
-                receipt.action, receipt.quantity, receipt.good_id, receipt.total_price
-            )),
+            Ok(lines) => {
+                for line in lines {
+                    self.push_log(line);
+                }
+            }
             Err(err) => {
                 if self.smoke {
                     self.smoke_ok = false;
@@ -1394,6 +1406,23 @@ impl PortlightGame {
             port.crew_cost, port.provision_cost
         )
     }
+}
+
+fn receipt_line(receipt: &TradeReceipt) -> String {
+    format!(
+        "{} {} {} for {} silver.",
+        receipt.action, receipt.quantity, receipt.good_id, receipt.total_price
+    )
+}
+
+fn sale_lines(sale: &Sale) -> Vec<String> {
+    let mut lines = vec![receipt_line(&sale.receipt)];
+    for contract in &sale.contracts {
+        if !contract.summary.is_empty() {
+            lines.push(contract.summary.clone());
+        }
+    }
+    lines
 }
 
 fn duel_outcome_line(outcome: &DuelOutcome) -> String {

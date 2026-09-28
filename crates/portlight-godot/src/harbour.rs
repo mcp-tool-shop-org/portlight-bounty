@@ -2,10 +2,9 @@
 //!
 //! Water stays on its own layer. Every raised work is a child of one
 //! `y_sort_enabled` node, positioned on the footprint-bottom anchor, so
-//! Godot orders them by that Y (`col + row`). Equal Y keeps tree order,
-//! which is the builder's tie-break (pilings before a pier or quay).
-//! Sprites do not get a z of their own: a fixed z per id is what drew the
-//! back quay over the front pier.
+//! Godot orders them by footprint depth (`col + row`). The seam uses that
+//! depth sort. Equal Y keeps tree order, which is the builder's tie-break
+//! (pilings before a pier or quay). Sprites do not get a z of their own.
 
 use godot::classes::canvas_item::TextureFilter;
 use godot::classes::{Node2D, ResourceLoader, Sprite2D, Texture2D};
