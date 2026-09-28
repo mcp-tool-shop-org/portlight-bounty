@@ -1,0 +1,292 @@
+{
+  "seed": 42,
+  "day": 4,
+  "trade_seq": 0,
+  "captain": {
+    "name": "Ada",
+    "captain_type": "merchant",
+    "silver": 80,
+    "provisions": 12,
+    "day": 4,
+    "wanted_level": 2,
+    "cargo": [
+      {
+        "good_id": "grain",
+        "quantity": 2,
+        "cost_basis": 10,
+        "acquired_port": "porto_novo",
+        "acquired_region": "Mediterranean",
+        "acquired_day": 1
+      }
+    ],
+    "ship": {
+      "template_id": "coastal_sloop",
+      "name": "Tern",
+      "hull": 40,
+      "hull_max": 60,
+      "cargo_capacity": 30,
+      "speed": 7.5,
+      "crew": 4,
+      "crew_max": 8,
+      "morale": 50,
+      "cannons": 0,
+      "sailors": 4,
+      "gunners": 0,
+      "navigators": 0,
+      "surgeons": 0,
+      "marines": 0,
+      "quartermasters": 0,
+      "officers": [
+        {
+          "name": "Ned",
+          "role": "sailor",
+          "origin_port": "porto_novo",
+          "trait": "loyal"
+        }
+      ]
+    },
+    "standing": {
+      "regional": {
+        "Mediterranean": 4,
+        "North Atlantic": 0,
+        "West Africa": 0,
+        "East Indies": 0,
+        "South Seas": 0
+      },
+      "heat": {
+        "Mediterranean": 2,
+        "North Atlantic": 0,
+        "West Africa": 0,
+        "East Indies": 0,
+        "South Seas": 0
+      },
+      "commercial_trust": 3,
+      "port_standing": [
+        {
+          "port_id": "porto_novo",
+          "value": 1
+        }
+      ],
+      "underworld": {},
+      "incidents": [
+        {
+          "day": 2,
+          "port_id": "porto_novo",
+          "region": "Mediterranean",
+          "incident_type": "trade",
+          "description": "Sold grain",
+          "heat_delta": 0,
+          "standing_delta": 1,
+          "trust_delta": 0
+        }
+      ]
+    }
+  },
+  "voyage": {
+    "origin_id": "porto_novo",
+    "destination_id": "porto_novo",
+    "distance": 0,
+    "progress": 0,
+    "days_elapsed": 0,
+    "status": "in_port",
+    "recent_events": []
+  },
+  "pending_duel": null,
+  "ports": [
+    {
+      "id": "porto_novo",
+      "market": [
+        {
+          "good_id": "grain",
+          "stock": 40,
+          "buy_price": 12,
+          "sell_price": 12,
+          "flood_penalty": 0.1
+        }
+      ]
+    }
+  ],
+  "victory": [
+    {
+      "path_id": "lawful_house",
+      "name": "Lawful Trade House",
+      "candidate_strength": 26.7,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "Trusted commercial standing",
+          "status": "missing",
+          "detail": "Currently: new",
+          "action": "Reach trusted trust tier (currently new)"
+        },
+        {
+          "description": "High Reputation Commercial Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the High Reputation Commercial Charter"
+        },
+        {
+          "description": "Regional breadth (2+ licenses or standing 15+ in 2 regions)",
+          "status": "missing",
+          "detail": "Licenses: 0, regions at 15+: none",
+          "action": "Acquire 2 more license(s) or build standing in another region"
+        },
+        {
+          "description": "8+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 8 more contracts"
+        },
+        {
+          "description": "Max heat <= 5",
+          "status": "met",
+          "detail": "Max heat: 2",
+          "action": "Reduce customs heat from 2 to 5 or below"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "missing",
+          "detail": "Silver: 80",
+          "action": "Earn 1920 more silver"
+        }
+      ]
+    },
+    {
+      "path_id": "shadow_network",
+      "name": "Shadow Network",
+      "candidate_strength": 0.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "2+ discreet luxury completions",
+          "status": "missing",
+          "detail": "Discreet completions: 0",
+          "action": "Complete 2 more discreet luxury deliveries"
+        },
+        {
+          "description": "Operated under meaningful heat (>= 10)",
+          "status": "missing",
+          "detail": "Max heat: 2",
+          "action": "Shadow commerce requires operating under customs pressure (heat 2, need 10+)"
+        },
+        {
+          "description": "Heat manageable (<= 40)",
+          "status": "met",
+          "detail": "Max heat: 2",
+          "action": "Reduce heat from 2 \u2014 network collapses above 40"
+        },
+        {
+          "description": "Profitable under pressure (profit >= 2000)",
+          "status": "missing",
+          "detail": "Profit: 0, heat: 2",
+          "action": "Build profitability while maintaining shadow operations"
+        },
+        {
+          "description": "1500+ silver on hand",
+          "status": "missing",
+          "detail": "Silver: 80",
+          "action": "Accumulate 1420 more silver"
+        },
+        {
+          "description": "Trade volume under heat (8+ trades)",
+          "status": "missing",
+          "detail": "Trades: 0, max heat: 2",
+          "action": "Complete more trades while operating under customs pressure"
+        }
+      ]
+    },
+    {
+      "path_id": "oceanic_reach",
+      "name": "Oceanic Reach",
+      "candidate_strength": 0.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "East Indies Access Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the East Indies Access Charter"
+        },
+        {
+          "description": "East Indies commercial foothold (broker or warehouse)",
+          "status": "missing",
+          "detail": "EI broker: no, EI warehouse: no",
+          "action": "Open a broker office or warehouse in the East Indies"
+        },
+        {
+          "description": "East Indies standing >= 15",
+          "status": "missing",
+          "detail": "EI standing: 0",
+          "action": "Build East Indies standing from 0 to 15"
+        },
+        {
+          "description": "Long-haul ship capability (Brigantine or Galleon)",
+          "status": "missing",
+          "detail": "Ship: sloop",
+          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+        },
+        {
+          "description": "5+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 5 more contracts"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "missing",
+          "detail": "Silver: 80",
+          "action": "Earn 1920 more silver"
+        }
+      ]
+    },
+    {
+      "path_id": "commercial_empire",
+      "name": "Commercial Empire",
+      "candidate_strength": 0.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "Infrastructure in 3 regions",
+          "status": "missing",
+          "detail": "Regions: none",
+          "action": "Expand infrastructure to 3 more region(s)"
+        },
+        {
+          "description": "Reliable+ trust",
+          "status": "missing",
+          "detail": "Trust: new",
+          "action": "Build trust to reliable tier (currently new)"
+        },
+        {
+          "description": "Insurance and credit both used successfully",
+          "status": "missing",
+          "detail": "Insurance: no, Credit: no",
+          "action": "Use insurance and Draw on credit"
+        },
+        {
+          "description": "10+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 10 more contracts"
+        },
+        {
+          "description": "3000+ silver",
+          "status": "missing",
+          "detail": "Silver: 80",
+          "action": "Earn 2920 more silver"
+        },
+        {
+          "description": "3+ active licenses",
+          "status": "missing",
+          "detail": "Active: 0",
+          "action": "Acquire 3 more license(s)"
+        }
+      ]
+    }
+  ],
+  "log": []
+}

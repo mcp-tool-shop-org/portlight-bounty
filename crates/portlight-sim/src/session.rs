@@ -7,8 +7,8 @@
 //! [`Session::victory`] for the four victory paths.
 //!
 //! `run_script` is a thin wrapper over these methods, so the parity harness
-//! covers the same path. There is no save/load yet; do not invent a format
-//! in the UI crate.
+//! covers the same path. [`Session::save`] and [`Session::load`] speak the
+//! Python version-12 JSON slot. The CLI does not grow a second format.
 //!
 //! This is the slice of `GameSession` the port compares with Python: new game,
 //! buy, sell (including trade reputation and the receipt ledger), depart,
@@ -30,6 +30,8 @@
 //! naval combat, boarding, and `engine/combat.py` are not on this type.
 //! `advance` does not auto-resolve, matching `auto_resolve_duels = False`.
 
+use std::path::{Path, PathBuf};
+
 use crate::campaign::{self, HouseBooks, VictoryPathStatus};
 use crate::content::{self, PricingDef};
 use crate::duel::{self, DuelOutcome};
@@ -38,6 +40,7 @@ use crate::error::SimError;
 use crate::model::{Officer, VoyageStatus, World};
 use crate::pyrand::PyRandom;
 use crate::reputation::{self, record_trade_outcome};
+use crate::save::{self, LoadedGame};
 use crate::ship::wage_bill;
 use crate::util::py_trunc;
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
@@ -57,6 +60,8 @@ pub struct Session {
     rng: PyRandom,
     trade_seq: u64,
     books: HouseBooks,
+    receipts: Vec<TradeReceipt>,
+    run_id: String,
 }
 
 impl Session {
@@ -72,12 +77,66 @@ impl Session {
     ) -> Result<Self, SimError> {
         let world = new_game(captain_name, captain_type, seed, starting_port)?;
         let rng = PyRandom::from_seed(world.seed);
+        let run_id = format!("run-{}", world.seed);
         Ok(Self {
             world,
             rng,
             trade_seq: 0,
             books: HouseBooks::default(),
+            receipts: Vec::new(),
+            run_id,
         })
+    }
+
+    /// Write this game to a Python version-12 JSON slot under `base_path/saves`.
+    ///
+    /// Silver is clamped at zero first, matching `GameSession._save`. The
+    /// MT19937 state is not written. `trade_seq` is the length of the ledger.
+    pub fn save(&mut self, base_path: impl AsRef<Path>, slot: &str) -> Result<PathBuf, SimError> {
+        if self.world.captain.silver < 0 {
+            self.world.captain.silver = 0;
+        }
+        save::write_save(
+            base_path.as_ref(),
+            slot,
+            &self.world,
+            &self.receipts,
+            &self.run_id,
+            &self.books,
+        )
+    }
+
+    /// Load a Python JSON slot.
+    ///
+    /// `Ok(None)` means the file is missing or corrupt, which is `load_game`
+    /// returning `None`. A newer version or a broken migration chain returns
+    /// the Python `SaveVersionError` text. The RNG is reseeded with
+    /// `Random(seed + day)`. Prices are recalculated with the captain's
+    /// modifiers, matching `GameSession.load`.
+    pub fn load(base_path: impl AsRef<Path>, slot: &str) -> Result<Option<Self>, SimError> {
+        let Some(loaded) = save::read_save(base_path.as_ref(), slot)? else {
+            return Ok(None);
+        };
+        Ok(Some(Self::from_loaded(loaded)?))
+    }
+
+    fn from_loaded(loaded: LoadedGame) -> Result<Self, SimError> {
+        let rng_seed = loaded
+            .world
+            .seed
+            .checked_add(i128::from(loaded.world.day))
+            .ok_or(SimError::SaveCorrupt)?;
+        let trade_seq = loaded.receipts.len() as u64;
+        let mut session = Self {
+            world: loaded.world,
+            rng: PyRandom::from_seed(rng_seed),
+            trade_seq,
+            books: loaded.books,
+            receipts: loaded.receipts,
+            run_id: loaded.run_id,
+        };
+        reprice_all(&mut session.world);
+        Ok(session)
     }
 
     pub fn world(&self) -> &World {
@@ -122,8 +181,7 @@ impl Session {
                 .ok_or(SimError::NotDocked)?;
             economy::execute_buy(&mut world.captain, port, good_id, qty, seq)?
         };
-        self.trade_seq += 1;
-        self.books.note_receipt(receipt.action, receipt.total_price);
+        record_receipt(self, &receipt);
         let pricing = pricing(&self.world).cloned();
         if let Some(port) = self.world.port_mut(&port_id) {
             recalculate_prices(port, pricing.as_ref());
@@ -154,8 +212,7 @@ impl Session {
                 .ok_or(SimError::NotDocked)?;
             economy::execute_sell(&mut world.captain, port, good_id, qty, seq)?
         };
-        self.trade_seq += 1;
-        self.books.note_receipt(receipt.action, receipt.total_price);
+        record_receipt(self, &receipt);
         let cost_basis =
             economy::estimate_cost_basis(&self.world.captain, good_id, receipt.quantity);
         let margin_pct = if cost_basis > 0 {
@@ -414,6 +471,14 @@ impl Session {
     }
 }
 
+fn record_receipt(session: &mut Session, receipt: &TradeReceipt) {
+    session.trade_seq += 1;
+    session
+        .books
+        .note_receipt(receipt.action, receipt.total_price);
+    session.receipts.push(receipt.clone());
+}
+
 fn pricing(world: &World) -> Option<&PricingDef> {
     content::content()
         .captain(&world.captain.captain_type)
@@ -654,5 +719,19 @@ mod tests {
                 .abs()
                 < 1e-9
         );
+    }
+
+    #[test]
+    fn save_clamps_negative_silver() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.world.captain.silver = -3;
+        let dir = std::env::temp_dir().join(format!("portlight-clamp-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "default").unwrap();
+        assert_eq!(session.world().captain.silver, 0);
+        let loaded = Session::load(&dir, "default").unwrap().unwrap();
+        assert_eq!(loaded.world().captain.silver, 0);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
