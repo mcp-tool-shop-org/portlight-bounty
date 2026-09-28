@@ -112,7 +112,7 @@ struct PortlightGame {
     market_open: bool,
     armed_sail: Option<String>,
     smoke: bool,
-    /// Art-director frame: a docked sloop plus the sailing sloop. Not play.
+    /// Art-director frame: a docked sloop plus a sailing cutter. Not play.
     art: bool,
     smoke_ok: bool,
     shot_path: Option<String>,
@@ -180,7 +180,7 @@ impl IControl for PortlightGame {
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some("/tmp/portlight-art-sloop.png".to_string());
+                self.shot_path = Some("/tmp/portlight-art-cutter.png".to_string());
             }
             self.run_art();
             self.capture_frames = 4;
