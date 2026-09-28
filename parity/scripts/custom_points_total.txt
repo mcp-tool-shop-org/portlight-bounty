@@ -1,0 +1,2 @@
+# Must allocate exactly 10 points (allocated 20)
+custom Ada 1 trade=5 sailing=5 shadow=5 reputation=5 home=porto_novo region=Mediterranean

@@ -1,0 +1,44 @@
+{
+  "seed": 0,
+  "day": 0,
+  "trade_seq": 0,
+  "captain": {
+    "name": "",
+    "captain_type": "",
+    "silver": 0,
+    "provisions": 0,
+    "day": 0,
+    "wanted_level": 0,
+    "cargo": [],
+    "ship": null,
+    "standing": {
+      "regional": {},
+      "heat": {},
+      "commercial_trust": 0,
+      "port_standing": [],
+      "underworld": {},
+      "incidents": []
+    }
+  },
+  "voyage": {
+    "origin_id": "",
+    "destination_id": "",
+    "distance": 0,
+    "progress": 0,
+    "days_elapsed": 0,
+    "status": "",
+    "recent_events": []
+  },
+  "pending_duel": null,
+  "ports": [],
+  "victory": [],
+  "log": [
+    {
+      "command": "custom Ada 1 trade=3 sailing=3 shadow=2 reputation=2 home=porto_novo region=Narnia",
+      "error": "Port 'porto_novo' is in Mediterranean, not Narnia\nUnknown region: 'Narnia'",
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    }
+  ]
+}

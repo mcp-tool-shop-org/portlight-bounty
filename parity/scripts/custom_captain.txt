@@ -1,0 +1,8 @@
+# Valid custom captain: trade at Porto Novo, then sail toward Silva Bay.
+custom "Mara Voss" 42 trade=4 sailing=3 shadow=2 reputation=1 home=porto_novo region=Mediterranean title="Freelance Captain" bloc=exchange_alliance faction=crimson_tide mentor=pn_marta backstory="Born on the quay."
+buy grain 6
+sell grain 2
+depart silva_bay
+advance
+advance
+advance

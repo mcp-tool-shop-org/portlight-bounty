@@ -368,7 +368,7 @@ pub fn check_port_consequences(
         }
     }
 
-    if let Some(template) = content::content().captain(&captain.captain_type) {
+    if let Some(template) = crate::custom_captain::active_captain(world) {
         if template.home_port_id == port_id && captain.day > 30 {
             let visit_count = world.culture.visits(port_id);
             if visit_count <= 2 && rng.random() < 0.5 {

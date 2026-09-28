@@ -53,6 +53,7 @@ use crate::combat::{self, CombatRound, CombatantState};
 use crate::companion;
 use crate::content::{self, PricingDef};
 use crate::contracts;
+use crate::custom_captain::{self, CustomCaptainSpec};
 use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::encounter::{self, BoardingOutcome, EncounterState};
@@ -78,7 +79,7 @@ use crate::util::{py_round, py_trunc};
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
 use crate::weapon_provenance;
 use crate::weapon_quality;
-use crate::world::new_game;
+use crate::world::{new_game, new_game_with_def};
 
 /// One turn of [`Session::advance`].
 #[derive(Debug, Clone)]
@@ -182,7 +183,37 @@ impl Session {
         seed: i128,
         starting_port: Option<&str>,
     ) -> Result<Self, SimError> {
-        let world = new_game(captain_name, captain_type, seed, starting_port)?;
+        Ok(Self::open(new_game(
+            captain_name,
+            captain_type,
+            seed,
+            starting_port,
+        )?))
+    }
+
+    /// Start from a custom captain spec.
+    ///
+    /// Python validates, builds the template, registers it, then calls
+    /// `GameSession.new(..., captain_type="custom")` (`app/cli.py` line 286).
+    /// Validation failures use the same sentences, joined by newlines in the
+    /// order `validate_spec` returns them. `starting_port` overrides the
+    /// spec's home port the way `new_game` does.
+    pub fn new_custom(
+        spec: &CustomCaptainSpec,
+        seed: i128,
+        starting_port: Option<&str>,
+    ) -> Result<Self, SimError> {
+        let errors = custom_captain::validate_spec(spec);
+        if !errors.is_empty() {
+            return Err(SimError::Sentence(errors.join("\n")));
+        }
+        let template = custom_captain::build_custom_template(spec);
+        let def = template.to_captain_def();
+        let world = new_game_with_def(&spec.name, &def, seed, starting_port, true)?;
+        Ok(Self::open(world))
+    }
+
+    fn open(world: World) -> Self {
         let rng = PyRandom::from_seed(world.seed);
         let run_id = format!("run-{}", world.seed);
         let mut session = Self {
@@ -201,7 +232,7 @@ impl Session {
             narrative: NarrativeState::default(),
         };
         session.refresh_new_game_board();
-        Ok(session)
+        session
     }
 
     /// Write this game to a Python version-12 JSON slot under `base_path/saves`.
@@ -3128,9 +3159,7 @@ fn record_receipt(session: &mut Session, receipt: &TradeReceipt) {
 }
 
 fn pricing(world: &World) -> Option<&PricingDef> {
-    content::content()
-        .captain(&world.captain.captain_type)
-        .map(|captain| &captain.pricing)
+    custom_captain::active_captain(world).map(|captain| &captain.pricing)
 }
 
 fn current_port_id(world: &World) -> Option<&str> {

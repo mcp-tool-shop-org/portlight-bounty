@@ -1,0 +1,2 @@
+# Reputation points cannot be negative
+custom Ada 1 trade=4 sailing=4 shadow=3 reputation=-1 home=porto_novo region=Mediterranean

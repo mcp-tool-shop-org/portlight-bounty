@@ -1,0 +1,2 @@
+# Port 'porto_novo' is in Mediterranean, not East Indies
+custom Ada 1 trade=3 sailing=3 shadow=2 reputation=2 home=porto_novo region="East Indies"

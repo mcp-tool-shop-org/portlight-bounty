@@ -713,6 +713,10 @@ pub struct World {
     pub sea_culture: SeaCultureState,
     /// `pirate_state.nemesis_id`. Python never assigns it during play.
     pub nemesis_id: Option<String>,
+    /// Template built for `captain_type == "custom"`. Archetypes leave this
+    /// empty and read `content.json`. Python keeps the same object on
+    /// `CAPTAIN_TEMPLATES[CaptainType.CUSTOM]` for the process.
+    pub custom_captain: Option<CaptainDef>,
 }
 
 impl World {

@@ -1,7 +1,7 @@
 //! New-game factory. Prices are computed without captain modifiers, matching
 //! `portlight.content.world.new_game`. The script layer applies modifiers later.
 
-use crate::content;
+use crate::content::{self, CaptainDef};
 use crate::economy::recalculate_prices;
 use crate::error::SimError;
 use crate::model::{Captain, Port, Route, Ship, Standing, Voyage, VoyageStatus, World};
@@ -12,10 +12,25 @@ pub fn new_game(
     seed: i128,
     starting_port: Option<&str>,
 ) -> Result<World, SimError> {
-    let catalog = content::content();
-    let captain_def = catalog
+    let captain_def = content::content()
         .captain(captain_type)
-        .ok_or_else(|| SimError::UnknownCaptainType(captain_type.to_string()))?;
+        .ok_or_else(|| SimError::UnknownCaptainType(captain_type.to_string()))?
+        .clone();
+    new_game_with_def(captain_name, &captain_def, seed, starting_port, false)
+}
+
+/// `portlight.content.world.new_game` from an already built template.
+///
+/// `keep_template` stores `captain_def` on the world. Custom captains need
+/// that because the catalog has no `custom` row. Archetype games pass `false`.
+pub fn new_game_with_def(
+    captain_name: &str,
+    captain_def: &CaptainDef,
+    seed: i128,
+    starting_port: Option<&str>,
+    keep_template: bool,
+) -> Result<World, SimError> {
+    let catalog = content::content();
     let ship_def = catalog
         .ship(&captain_def.starting_ship_id)
         .ok_or_else(|| SimError::UnknownShip(captain_def.starting_ship_id.clone()))?;
@@ -30,7 +45,7 @@ pub fn new_game(
     Ok(World {
         captain: Captain {
             name: captain_name.to_string(),
-            captain_type: captain_type.to_string(),
+            captain_type: captain_def.id.clone(),
             silver: captain_def.starting_silver,
             reputation: 0,
             ship: Some(Ship::from_template(ship_def)),
@@ -82,6 +97,11 @@ pub fn new_game(
         culture: crate::model::CulturalState::default(),
         sea_culture: crate::model::SeaCultureState::default(),
         nemesis_id: None,
+        custom_captain: if keep_template {
+            Some(captain_def.clone())
+        } else {
+            None
+        },
     })
 }
 

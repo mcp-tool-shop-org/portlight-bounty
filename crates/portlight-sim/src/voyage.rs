@@ -126,8 +126,8 @@ const EVENT_WEIGHTS: [(EventType, f64); 18] = [
     (EventType::StarNavigation, 0.015),
 ];
 
-fn captain_mods(captain_type: &str) -> Option<&'static CaptainDef> {
-    content::content().captain(captain_type)
+fn captain_mods(world: &World) -> Option<&CaptainDef> {
+    crate::custom_captain::active_captain(world)
 }
 
 fn pick_event(
@@ -166,7 +166,7 @@ fn resolve_event(
         return Err(SimError::NoShip);
     };
     let mut storm_resist = resolve_storm_resist(ship);
-    let mods = captain_mods(&world.captain.captain_type);
+    let mods = captain_mods(world);
     let (cargo_dmg_mult, fine_mult, seizure_risk) = if let Some(mods) = mods {
         storm_resist = 0.9_f64.min(storm_resist + mods.voyage.storm_resist_bonus);
         (
@@ -824,7 +824,7 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
         });
     }
     if let Some(port) = world.port(&current) {
-        let fee_mult = captain_mods(&world.captain.captain_type)
+        let fee_mult = captain_mods(world)
             .map(|m| m.pricing.port_fee_mult)
             .unwrap_or(1.0);
         let fee = 1.max(py_trunc(port.port_fee as f64 * fee_mult));
@@ -869,7 +869,7 @@ pub fn advance_day(
     if world.pending_duel.is_some() {
         return Ok(Vec::new());
     }
-    let mods = captain_mods(&world.captain.captain_type);
+    let mods = captain_mods(world);
     let provision_burn = mods.map(|m| m.voyage.provision_burn).unwrap_or(1.0);
     let speed_bonus = mods.map(|m| m.voyage.speed_bonus).unwrap_or(0.0);
     let mut inspection_mult = mods
