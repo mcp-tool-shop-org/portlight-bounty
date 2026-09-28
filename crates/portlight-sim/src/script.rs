@@ -353,6 +353,69 @@ fn dispatch(
             let session = active(session)?;
             session.repair_fleet().map(|_| ())
         }
+        "repair" => {
+            let session = active(session)?;
+            if tokens.len() > 2 {
+                return Err(SimError::Sentence("Usage: repair [points]".into()));
+            }
+            let amount = if tokens.len() == 2 {
+                Some(parse_qty(&tokens[1])?)
+            } else {
+                None
+            };
+            session.repair(amount).map(|_| ())
+        }
+        "rename_ship" => {
+            let session = active(session)?;
+            if tokens.len() < 2 || tokens.len() > 3 {
+                return Err(SimError::Sentence(
+                    "Usage: rename_ship <new_name> [ship]".into(),
+                ));
+            }
+            let fleet_ship = tokens.get(2).map(String::as_str);
+            session.rename_ship(&tokens[1], fleet_ship)
+        }
+        "dock_current_ship" => {
+            let session = active(session)?;
+            if tokens.len() != 1 {
+                return Err(SimError::Sentence("Usage: dock_current_ship".into()));
+            }
+            session.dock_current_ship()
+        }
+        "board_fleet_ship" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: board_fleet_ship <ship>".into()));
+            }
+            session.board_fleet_ship(&tokens[1])
+        }
+        "sell_fleet_ship" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: sell_fleet_ship <ship>".into()));
+            }
+            session.sell_fleet_ship(&tokens[1]).map(|_| ())
+        }
+        "fire" => {
+            let session = active(session)?;
+            if tokens.len() < 2 || tokens.len() > 3 {
+                return Err(SimError::Sentence("Usage: fire <count> [role]".into()));
+            }
+            let count = parse_qty(&tokens[1])?;
+            let role = tokens.get(2).map(String::as_str).unwrap_or("sailor");
+            session.fire_crew(count, role)
+        }
+        "abandon_contract" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence(
+                    "Usage: abandon_contract <offer_id>".into(),
+                ));
+            }
+            let outcome = session.abandon_contract(&tokens[1])?;
+            entry.contracts = vec![snapshot::from_contract_outcome(&outcome)];
+            Ok(())
+        }
         "transfer" => {
             let session = active(session)?;
             if tokens.len() != 5 {

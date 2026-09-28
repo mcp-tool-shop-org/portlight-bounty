@@ -1,0 +1,6 @@
+# Two gunners, then fire one. The officer removed is the last one hired.
+# An unknown role is refused with the role text as given.
+new merchant Ada 1
+hire 2 gunner
+fire 1 gunner
+fire 1 wizard

@@ -852,6 +852,17 @@ impl Session {
     /// Python has no escort hull repair. `dry_dock` restores template `hull_max`
     /// and is a different call. Arrival only docks the convoy.
     pub fn repair_fleet(&mut self) -> Result<(i64, i64), SimError> {
+        self.repair(None)
+    }
+
+    /// `GameSession.repair` (`session.py` line 996). Restores the flagship only.
+    ///
+    /// `amount` is hull points. `None` restores every missing point, which is
+    /// what [`Session::repair_fleet`] calls. A non-positive amount is rejected
+    /// only after the "already perfect" check, matching Python's order.
+    /// Python's `repair` does not take a ship name. The named-ship yard job is
+    /// `dry_dock` (line 1028), already reached through `buy_infrastructure`.
+    pub fn repair(&mut self, amount: Option<i64>) -> Result<(i64, i64), SimError> {
         let port_id = current_port_id(&self.world)
             .map(str::to_string)
             .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?;
@@ -867,10 +878,17 @@ impl Session {
                 "Ship is already in perfect condition".into(),
             ));
         }
+        let mut points = if let Some(asked) = amount {
+            if asked <= 0 {
+                return Err(SimError::QuantityMustBeAPositiveNumber);
+            }
+            asked.min(damage)
+        } else {
+            damage
+        };
         let mult = reputation::service_modifier(&self.world.captain.standing, &port_id);
         let cost_per = 1.max(py_trunc(repair_cost as f64 * mult));
-        let mut amount = damage;
-        let mut cost = amount * cost_per;
+        let mut cost = points * cost_per;
         if cost > self.world.captain.silver {
             let affordable = if cost_per > 0 {
                 self.world.captain.silver / cost_per
@@ -880,13 +898,121 @@ impl Session {
             if affordable == 0 {
                 return Err(SimError::Sentence("Can't afford any repairs".into()));
             }
-            amount = affordable;
-            cost = amount * cost_per;
+            points = affordable;
+            cost = points * cost_per;
         }
         self.world.captain.silver -= cost;
         let ship = self.world.captain.ship.as_mut().ok_or(SimError::NoShip)?;
-        ship.hull += amount;
-        Ok((amount, cost))
+        ship.hull += points;
+        Ok((points, cost))
+    }
+
+    /// `GameSession.rename_ship`. The flagship when `ship_name` is omitted,
+    /// otherwise the first fleet hull whose name or template id matches.
+    /// The stored name is stripped and capped at 30 characters.
+    pub fn rename_ship(&mut self, new_name: &str, ship_name: Option<&str>) -> Result<(), SimError> {
+        let trimmed = new_name.trim();
+        if trimmed.is_empty() {
+            return Err(SimError::Sentence("Name cannot be empty".into()));
+        }
+        let new_name: String = trimmed.chars().take(30).collect();
+        if let Some(ship_name) = ship_name {
+            let needle = ship_name.to_lowercase();
+            let found = self.world.captain.fleet.iter_mut().find(|owned| {
+                owned.ship.name.to_lowercase() == needle
+                    || owned.ship.template_id.to_lowercase() == needle
+            });
+            let Some(owned) = found else {
+                return Err(SimError::Sentence(format!(
+                    "No ship named '{ship_name}' in fleet"
+                )));
+            };
+            owned.ship.name = new_name;
+            return Ok(());
+        }
+        let ship = self.world.captain.ship.as_mut().ok_or(SimError::NoShip)?;
+        ship.name = new_name;
+        Ok(())
+    }
+
+    /// `GameSession.dock_current_ship`. The flagship joins the fleet at this
+    /// port and the first hull already docked here becomes the flagship.
+    pub fn dock_current_ship(&mut self) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        fleet::dock_flagship(&mut self.world.captain, &port_id).map_err(SimError::Sentence)
+    }
+
+    /// `GameSession.board_fleet_ship`. Swap the flagship with a hull docked
+    /// here, matched by display name or template id.
+    pub fn board_fleet_ship(&mut self, ship_name: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        fleet::board_ship(&mut self.world.captain, ship_name, &port_id).map_err(SimError::Sentence)
+    }
+
+    /// `GameSession.sell_fleet_ship`. A shipyard buys a docked hull for
+    /// `int(template_price * 0.3 * hull / hull_max)`. Cargo blocks the sale.
+    pub fn sell_fleet_ship(&mut self, ship_name: &str) -> Result<(i64, String), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let port_name = self
+            .world
+            .port(&port_id)
+            .map(|port| port.name.clone())
+            .unwrap_or_else(|| port_id.clone());
+        let shipyard = self
+            .world
+            .port(&port_id)
+            .is_some_and(|port| port.has_feature("shipyard"));
+        if !shipyard {
+            return Err(SimError::Sentence(format!("{port_name} has no shipyard")));
+        }
+        fleet::sell_docked_ship(&mut self.world.captain, ship_name, &port_id)
+            .map_err(SimError::Sentence)
+    }
+
+    /// `GameSession.fire_crew`. Specialists lose named officers from the end
+    /// of the list. Sailors have no officer records.
+    pub fn fire_crew(&mut self, count: i64, role: &str) -> Result<(), SimError> {
+        if current_port_id(&self.world).is_none() {
+            return Err(SimError::Sentence("Must be docked to fire crew".into()));
+        }
+        let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+        let spec = role_spec(&role.to_lowercase())
+            .ok_or_else(|| SimError::Sentence(format!("Unknown role: {role}")))?;
+        let current = role_count(ship, spec.role);
+        if current <= 0 {
+            return Err(SimError::Sentence(format!("No {role}s to fire")));
+        }
+        let fired = count.min(current);
+        let ship = self.world.captain.ship.as_mut().ok_or(SimError::NoShip)?;
+        set_role_count(ship, spec.role, current - fired);
+        ship.sync_crew();
+        if spec.role != "sailor" && fired > 0 {
+            let mut to_remove = fired;
+            let mut kept = Vec::new();
+            for officer in ship.officers.iter().rev() {
+                if officer.role == spec.role && to_remove > 0 {
+                    to_remove -= 1;
+                } else {
+                    kept.push(officer.clone());
+                }
+            }
+            kept.reverse();
+            ship.officers = kept;
+        }
+        Ok(())
+    }
+
+    /// `GameSession.abandon_contract_cmd`. The engine call does not receive
+    /// the captain, so it does not write a breach or raise wanted level.
+    /// Trust, standing, and heat stay on the outcome record.
+    pub fn abandon_contract(&mut self, offer_id: &str) -> Result<ContractOutcome, SimError> {
+        contracts::abandon_contract(&mut self.board, offer_id, self.world.day, None)
     }
 
     /// Take the sunk enemy as a prize, or pass `0` to let it go under.
@@ -3549,5 +3675,195 @@ mod tests {
         // Level 1 discount is 0.25. int(15 * 0.75) = 11.
         assert_eq!(session.world.captain.silver, before - 11);
         assert_eq!(session.world.captain.usage_of("cutlass"), 0);
+    }
+
+    #[test]
+    fn rename_strips_caps_and_finds_a_fleet_hull() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session
+            .rename_ship("  The Very Long Name Of This Fine Ship Indeed  ", None)
+            .unwrap();
+        assert_eq!(
+            session.world.captain.ship.as_ref().unwrap().name,
+            "The Very Long Name Of This Fin"
+        );
+        assert_eq!(
+            session.rename_ship("   ", None).unwrap_err().to_string(),
+            "Name cannot be empty"
+        );
+        session.buy_ship("swift_cutter").unwrap();
+        session
+            .rename_ship("Holdfast", Some("COASTAL_SLOOP"))
+            .unwrap();
+        assert_eq!(session.world.captain.fleet[0].ship.name, "Holdfast");
+        assert_eq!(
+            session
+                .rename_ship("X", Some("Ghost"))
+                .unwrap_err()
+                .to_string(),
+            "No ship named 'Ghost' in fleet"
+        );
+    }
+
+    #[test]
+    fn dock_board_and_sell_match_python_sentences() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        assert_eq!(
+            session.dock_current_ship().unwrap_err().to_string(),
+            "No other ship at this port to switch to"
+        );
+        session.buy_ship("swift_cutter").unwrap();
+        session.world.voyage.destination_id = "al_manar".into();
+        assert_eq!(
+            session
+                .sell_fleet_ship("Coastal Sloop")
+                .unwrap_err()
+                .to_string(),
+            "Al-Manar has no shipyard"
+        );
+        session.world.voyage.destination_id = "porto_novo".into();
+        session.board_fleet_ship("coastal_sloop").unwrap();
+        assert_eq!(
+            session.world.captain.ship.as_ref().unwrap().name,
+            "Coastal Sloop"
+        );
+        assert_eq!(
+            session.board_fleet_ship("ghost").unwrap_err().to_string(),
+            "No ship named 'ghost' docked at this port"
+        );
+        session.dock_current_ship().unwrap();
+        session.world.captain.cargo.push(crate::model::CargoItem {
+            good_id: "grain".into(),
+            quantity: 1,
+            cost_basis: 8,
+            acquired_port: "porto_novo".into(),
+            acquired_region: "Mediterranean".into(),
+            acquired_day: 1,
+        });
+        session.dock_current_ship().unwrap();
+        assert_eq!(
+            session
+                .sell_fleet_ship("Swift Cutter")
+                .unwrap_err()
+                .to_string(),
+            "Ship has cargo — transfer it first"
+        );
+        session.world.captain.fleet[0].cargo.clear();
+        session.world.captain.fleet[0].ship.hull = 10;
+        let before = session.world.captain.silver;
+        let (silver, name) = session.sell_fleet_ship("swift cutter").unwrap();
+        assert_eq!(name, "Swift Cutter");
+        // int(450 * 0.3 * (10 / 70)) == 19
+        assert_eq!(silver, 19);
+        assert_eq!(session.world.captain.silver, before + 19);
+        assert_eq!(
+            session
+                .sell_fleet_ship("Swift Cutter")
+                .unwrap_err()
+                .to_string(),
+            "No ship named 'Swift Cutter' docked at this port"
+        );
+        session.depart("silva_bay").unwrap();
+        assert_eq!(
+            session.dock_current_ship().unwrap_err().to_string(),
+            "Must be docked"
+        );
+    }
+
+    #[test]
+    fn fire_drops_the_last_specialist_and_refuses_unknown_roles() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.hire_crew(2, "gunner").unwrap();
+        let names: Vec<_> = session
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .unwrap()
+            .officers
+            .iter()
+            .map(|officer| officer.name.clone())
+            .collect();
+        session.fire_crew(1, "gunner").unwrap();
+        let ship = session.world.captain.ship.as_ref().unwrap();
+        assert_eq!(ship.gunners, 1);
+        assert_eq!(ship.officers.len(), 1);
+        assert_eq!(ship.officers[0].name, names[0]);
+        assert_eq!(
+            session.fire_crew(1, "Wizard").unwrap_err().to_string(),
+            "Unknown role: Wizard"
+        );
+        session.fire_crew(1, "gunner").unwrap();
+        assert_eq!(
+            session.fire_crew(1, "gunner").unwrap_err().to_string(),
+            "No gunners to fire"
+        );
+        session.depart("silva_bay").unwrap();
+        assert_eq!(
+            session.fire_crew(1, "sailor").unwrap_err().to_string(),
+            "Must be docked to fire crew"
+        );
+    }
+
+    #[test]
+    fn abandon_records_the_outcome_and_does_not_breach() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let trust = session.world.captain.standing.commercial_trust;
+        session.accept_contract("71773aae754b").unwrap();
+        let outcome = session.abandon_contract("71773aae754b").unwrap();
+        assert_eq!(outcome.outcome_type, "abandoned");
+        assert_eq!(outcome.trust_delta, -2);
+        assert_eq!(outcome.standing_delta, -1);
+        assert_eq!(outcome.heat_delta, 1);
+        assert_eq!(outcome.silver_delta, 0);
+        assert_eq!(
+            outcome.summary,
+            "Abandoned contract: Famine relief: grain to Corsair's Rest"
+        );
+        assert!(session.board.active.is_empty());
+        assert_eq!(session.board.completed.len(), 1);
+        assert_eq!(session.world.captain.standing.commercial_trust, trust);
+        assert_eq!(session.world.captain.wanted_level, 0);
+        assert!(session.books().completed_contracts.is_empty());
+        assert_eq!(
+            session
+                .abandon_contract("71773aae754b")
+                .unwrap_err()
+                .to_string(),
+            "No active contract with that ID"
+        );
+    }
+
+    #[test]
+    fn repair_amount_follows_python_order_and_silver() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        assert_eq!(
+            session.repair(Some(1)).unwrap_err().to_string(),
+            "Ship is already in perfect condition"
+        );
+        let ship = session.world.captain.ship.as_mut().unwrap();
+        ship.hull -= 5;
+        assert_eq!(
+            session.repair(Some(0)).unwrap_err().to_string(),
+            "Quantity must be a positive number."
+        );
+        session.world.captain.silver = 0;
+        assert_eq!(
+            session.repair(None).unwrap_err().to_string(),
+            "Can't afford any repairs"
+        );
+        // Porto Novo repair_cost is 2 and standing is below 5, so 2 silver per point.
+        session.world.captain.silver = 2;
+        assert_eq!(session.repair(None).unwrap(), (1, 2));
+        assert_eq!(session.world.captain.ship.as_ref().unwrap().hull, 56);
+        session.world.captain.silver = 20;
+        assert_eq!(session.repair(Some(100)).unwrap(), (4, 8));
+        assert_eq!(session.world.captain.ship.as_ref().unwrap().hull, 60);
+        session.depart("silva_bay").unwrap();
+        session.world.captain.ship.as_mut().unwrap().hull -= 1;
+        assert_eq!(
+            session.repair(Some(1)).unwrap_err().to_string(),
+            "Must be docked to repair"
+        );
     }
 }

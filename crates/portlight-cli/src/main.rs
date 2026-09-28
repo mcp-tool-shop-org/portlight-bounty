@@ -49,6 +49,13 @@ Script commands:
   advance
   accept_contract <offer_id>
   complete_contract <offer_id>
+  abandon_contract <offer_id>
+  repair [points]
+  rename_ship <new_name> [ship]
+  dock_current_ship
+  board_fleet_ship <ship>
+  sell_fleet_ship <ship>
+  fire <count> [role]
   train <style_id>
   recruit <companion_id>
   skill <skill_id>

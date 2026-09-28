@@ -1,0 +1,7 @@
+# Buying a cutter docks the sloop. Docking swaps them back, then sailing
+# makes the next dock refuse.
+new merchant Ada 1
+buy_ship swift_cutter
+dock_current_ship
+depart silva_bay
+dock_current_ship

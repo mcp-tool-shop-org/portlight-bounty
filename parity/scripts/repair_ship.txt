@@ -1,0 +1,11 @@
+# Same crossing as repair_fleet, which leaves the flagship short of hull.
+# Repair one point, then refuse a non-positive amount.
+new merchant Ada 1
+buy_ship swift_cutter
+hire 7
+depart silva_bay
+advance
+advance
+advance
+repair 1
+repair 0

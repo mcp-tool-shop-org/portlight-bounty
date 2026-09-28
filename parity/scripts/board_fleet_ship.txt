@@ -1,0 +1,5 @@
+# Board the docked sloop by display name, then refuse a hull that is not here.
+new merchant Ada 1
+buy_ship swift_cutter
+board_fleet_ship "Coastal Sloop"
+board_fleet_ship ghost

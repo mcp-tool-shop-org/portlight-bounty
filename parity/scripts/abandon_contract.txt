@@ -1,0 +1,5 @@
+# Accept the seed-1 grain offer, abandon it, then abandon the same id again.
+new merchant Ada 1
+accept_contract 71773aae754b
+abandon_contract 71773aae754b
+abandon_contract 71773aae754b
