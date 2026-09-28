@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Build the GDExtension
-        run: cargo build -p portlight-godot
+        run: cargo build --locked -p portlight-godot
       - name: Install Godot 4.7.2
         run: |
           curl -fsSL -o /tmp/godot.zip \
