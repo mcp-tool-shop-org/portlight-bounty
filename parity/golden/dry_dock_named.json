@@ -1,27 +1,27 @@
 {
   "seed": 6,
-  "day": 9,
+  "day": 89,
   "trade_seq": 2,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 2783,
-    "provisions": 18,
-    "day": 9,
+    "silver": 0,
+    "provisions": 0,
+    "day": 89,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
-      "template_id": "coastal_sloop",
-      "name": "Coastal Sloop",
-      "hull": 44,
-      "hull_max": 60,
-      "cargo_capacity": 30,
-      "speed": 8.0,
-      "crew": 3,
-      "crew_max": 8,
-      "morale": 68,
-      "cannons": 0,
-      "sailors": 3,
+      "template_id": "merchant_galleon",
+      "name": "Merchant Galleon",
+      "hull": 89,
+      "hull_max": 157,
+      "cargo_capacity": 150,
+      "speed": 4.0,
+      "crew": 0,
+      "crew_max": 40,
+      "morale": 5,
+      "cannons": 12,
+      "sailors": 0,
       "gunners": 0,
       "navigators": 0,
       "surgeons": 0,
@@ -30,17 +30,17 @@
     },
     "standing": {
       "regional": {
-        "Mediterranean": 10,
+        "Mediterranean": 12,
         "North Atlantic": 0,
         "West Africa": 0,
-        "East Indies": 0,
+        "East Indies": 1,
         "South Seas": 0
       },
       "heat": {
-        "Mediterranean": 4,
+        "Mediterranean": 2,
         "North Atlantic": 0,
         "West Africa": 0,
-        "East Indies": 0,
+        "East Indies": 3,
         "South Seas": 0
       },
       "commercial_trust": 14,
@@ -52,10 +52,62 @@
         {
           "port_id": "silva_bay",
           "value": 1
+        },
+        {
+          "port_id": "porto_novo",
+          "value": 1
+        },
+        {
+          "port_id": "al_manar",
+          "value": 1
+        },
+        {
+          "port_id": "monsoon_reach",
+          "value": 1
         }
       ],
       "underworld": {},
       "incidents": [
+        {
+          "day": 74,
+          "port_id": "al_manar",
+          "region": "East Indies",
+          "incident_type": "inspection",
+          "description": "Routine inspection (0 silver fee)",
+          "heat_delta": 2,
+          "standing_delta": 0,
+          "trust_delta": 0
+        },
+        {
+          "day": 71,
+          "port_id": "al_manar",
+          "region": "East Indies",
+          "incident_type": "inspection",
+          "description": "Routine inspection (0 silver fee)",
+          "heat_delta": 2,
+          "standing_delta": 0,
+          "trust_delta": 0
+        },
+        {
+          "day": 62,
+          "port_id": "al_manar",
+          "region": "East Indies",
+          "incident_type": "inspection",
+          "description": "Routine inspection (0 silver fee)",
+          "heat_delta": 2,
+          "standing_delta": 0,
+          "trust_delta": 0
+        },
+        {
+          "day": 57,
+          "port_id": "al_manar",
+          "region": "East Indies",
+          "incident_type": "inspection",
+          "description": "Routine inspection (0 silver fee)",
+          "heat_delta": 2,
+          "standing_delta": 0,
+          "trust_delta": 0
+        },
         {
           "day": 6,
           "port_id": "silva_bay",
@@ -67,20 +119,64 @@
           "trust_delta": -1
         }
       ]
-    }
+    },
+    "encounters": [
+      {
+        "captain_id": "raj_the_quiet",
+        "faction_id": "monsoon_syndicate",
+        "day": 27,
+        "outcome": "duel_loss",
+        "region": "East Indies"
+      },
+      {
+        "captain_id": "raj_the_quiet",
+        "faction_id": "monsoon_syndicate",
+        "day": 34,
+        "outcome": "duel_loss",
+        "region": "East Indies"
+      },
+      {
+        "captain_id": "typhoon_mei",
+        "faction_id": "monsoon_syndicate",
+        "day": 49,
+        "outcome": "duel_loss",
+        "region": "East Indies"
+      },
+      {
+        "captain_id": "typhoon_mei",
+        "faction_id": "monsoon_syndicate",
+        "day": 68,
+        "outcome": "duel_loss",
+        "region": "East Indies"
+      }
+    ],
+    "duels_lost": 4,
+    "fleet": [
+      {
+        "template_id": "coastal_sloop",
+        "name": "Coastal Sloop",
+        "hull": 3,
+        "hull_max": 60,
+        "crew": 3,
+        "docked_port_id": "monsoon_reach"
+      }
+    ]
   },
   "voyage": {
-    "origin_id": "silva_bay",
-    "destination_id": "porto_novo",
-    "distance": 16,
-    "progress": 14,
-    "days_elapsed": 3,
-    "status": "at_sea",
+    "origin_id": "al_manar",
+    "destination_id": "monsoon_reach",
+    "distance": 72,
+    "progress": 72,
+    "days_elapsed": 62,
+    "status": "in_port",
     "recent_events": [
+      "You catch the monsoon wind and FLY. The ship heels over, sails taut, crew bracing. This is why they call it the Shortcut \u2014 if you time it right, nothing's faster.",
+      "pirates",
+      "A small boat with a saffron sail drifts past the Wind Temple headland. Brother Anand sits cross-legged on the deck, eyes closed, reading the wind by feel. His forecast will be posted at dawn.",
       "storm",
-      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
-      "drifting_offering",
-      "calm_seas"
+      "nothing",
+      "Wind shifts. The monsoon is changing direction \u2014 a day early. Your navigator adjusts instantly. The margin between 'Shortcut' and 'death sentence' is measured in hours.",
+      "Whispered conversations below deck. 'How long can we keep sailing?' your bosun hears. He doesn't repeat it."
     ]
   },
   "pending_duel": null,
@@ -1413,9 +1509,54 @@
   ],
   "victory": [
     {
+      "path_id": "oceanic_reach",
+      "name": "Oceanic Reach",
+      "candidate_strength": 33.7,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "East Indies Access Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the East Indies Access Charter"
+        },
+        {
+          "description": "East Indies commercial foothold (broker or warehouse)",
+          "status": "missing",
+          "detail": "EI broker: no, EI warehouse: no",
+          "action": "Open a broker office or warehouse in the East Indies"
+        },
+        {
+          "description": "East Indies standing >= 15",
+          "status": "missing",
+          "detail": "EI standing: 1",
+          "action": "Build East Indies standing from 1 to 15"
+        },
+        {
+          "description": "Long-haul ship capability (Brigantine or Galleon)",
+          "status": "met",
+          "detail": "Ship: galleon",
+          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+        },
+        {
+          "description": "5+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 5 more contracts"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "missing",
+          "detail": "Silver: 0",
+          "action": "Earn 2000 more silver"
+        }
+      ]
+    },
+    {
       "path_id": "lawful_house",
       "name": "Lawful Trade House",
-      "candidate_strength": 33.3,
+      "candidate_strength": 26.7,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1446,21 +1587,21 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 4",
-          "action": "Reduce customs heat from 4 to 5 or below"
+          "detail": "Max heat: 3",
+          "action": "Reduce customs heat from 3 to 5 or below"
         },
         {
           "description": "2000+ silver",
-          "status": "met",
-          "detail": "Silver: 2783",
-          "action": ""
+          "status": "missing",
+          "detail": "Silver: 0",
+          "action": "Earn 2000 more silver"
         }
       ]
     },
     {
       "path_id": "shadow_network",
       "name": "Shadow Network",
-      "candidate_strength": 33.3,
+      "candidate_strength": 0.0,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1473,77 +1614,32 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "blocked",
-          "detail": "Max heat: 4",
-          "action": "Shadow commerce requires operating under customs pressure (heat 4, need 10+)"
+          "detail": "Max heat: 3",
+          "action": "Shadow commerce requires operating under customs pressure (heat 3, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 4",
-          "action": "Reduce heat from 4 \u2014 network collapses above 40"
+          "detail": "Max heat: 3",
+          "action": "Reduce heat from 3 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 2266, heat: 4",
+          "detail": "Profit: 2266, heat: 3",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
-          "status": "met",
-          "detail": "Silver: 2783",
-          "action": ""
+          "status": "missing",
+          "detail": "Silver: 0",
+          "action": "Accumulate 1500 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 2, max heat: 4",
+          "detail": "Trades: 2, max heat: 3",
           "action": "Complete more trades while operating under customs pressure"
-        }
-      ]
-    },
-    {
-      "path_id": "oceanic_reach",
-      "name": "Oceanic Reach",
-      "candidate_strength": 1.7,
-      "completion_day": 0,
-      "completion_summary": "",
-      "requirements": [
-        {
-          "description": "East Indies Access Charter",
-          "status": "missing",
-          "detail": "",
-          "action": "Acquire the East Indies Access Charter"
-        },
-        {
-          "description": "East Indies commercial foothold (broker or warehouse)",
-          "status": "missing",
-          "detail": "EI broker: no, EI warehouse: no",
-          "action": "Open a broker office or warehouse in the East Indies"
-        },
-        {
-          "description": "East Indies standing >= 15",
-          "status": "missing",
-          "detail": "EI standing: 0",
-          "action": "Build East Indies standing from 0 to 15"
-        },
-        {
-          "description": "Long-haul ship capability (Brigantine or Galleon)",
-          "status": "missing",
-          "detail": "Ship: sloop",
-          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
-        },
-        {
-          "description": "5+ contracts completed",
-          "status": "missing",
-          "detail": "Completed: 0",
-          "action": "Complete 5 more contracts"
-        },
-        {
-          "description": "2000+ silver",
-          "status": "met",
-          "detail": "Silver: 2783",
-          "action": ""
         }
       ]
     },
@@ -1581,8 +1677,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 2783",
-          "action": "Earn 217 more silver"
+          "detail": "Silver: 0",
+          "action": "Earn 3000 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1605,6 +1701,18 @@
       "completed_day": 2,
       "evidence": "Trust tier: credible",
       "family": "lawful_house"
+    },
+    {
+      "milestone_id": "oceanic_galleon",
+      "completed_day": 11,
+      "evidence": "Operating a galleon",
+      "family": "oceanic_reach"
+    },
+    {
+      "milestone_id": "integrated_brigantine",
+      "completed_day": 11,
+      "evidence": "Operating a galleon",
+      "family": "integrated_house"
     }
   ],
   "culture": {
@@ -1616,10 +1724,23 @@
       {
         "port_id": "silva_bay",
         "visits": 1
+      },
+      {
+        "port_id": "porto_novo",
+        "visits": 1
+      },
+      {
+        "port_id": "al_manar",
+        "visits": 1
+      },
+      {
+        "port_id": "monsoon_reach",
+        "visits": 1
       }
     ],
     "regions_entered": [
-      "Mediterranean"
+      "Mediterranean",
+      "East Indies"
     ],
     "cultural_encounters": 0,
     "festivals_visited": 0,
@@ -1632,7 +1753,12 @@
       "first_trade",
       "first_profit",
       "wealth_milestone",
-      "survived_storm"
+      "survived_storm",
+      "ship_upgrade",
+      "galleon_master",
+      "near_bankruptcy",
+      "first_inspection",
+      "east_indies_arrival"
     ],
     "journal": [
       {
@@ -1670,6 +1796,36 @@
         "day": 7,
         "port_id": "",
         "region": ""
+      },
+      {
+        "beat_id": "ship_upgrade",
+        "day": 11,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "galleon_master",
+        "day": 11,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "near_bankruptcy",
+        "day": 21,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "first_inspection",
+        "day": 57,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "east_indies_arrival",
+        "day": 81,
+        "port_id": "monsoon_reach",
+        "region": "East Indies"
       }
     ]
   },
@@ -1988,8 +2144,3045 @@
       "shocks": []
     },
     {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Porto Novo.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nGrain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks.\n\n[bold]Vasco da Reira:[/bold] \"Manifest and tonnage, Captain. I'll assign your berth once I've reviewed them.\"\n[bold]Marta Soares:[/bold] \"You're here for the rates? They were posted at dawn. Grain is steady, spice is climbing. What are you buying?\"\n\n[dim]Landmark: The Grain Exchange \u2014 a columned hall where prices are read aloud at dawn.[/dim]\n[dim]Custom: Captains ring the harbor bell on first arrival. It's bad luck not to.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
+        }
+      ],
+      "shocks": []
+    },
+    {
       "command": "buy_ship merchant_galleon",
-      "error": "Must be docked",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "provision 5",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "depart al_manar",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The crew is relaxed \u2014 they know this route. Someone starts humming a Porto Novo dock song. Others join.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A ship passes in the early hours \u2014 no lights, no flag, loaded heavy. Ghost's crew, running cargo. By the time you blink, they've vanished into the dark.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Ghost from corsairs_rest]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "provisions_spoiled",
+          "message": "Some provisions have spoiled. (-5 days)",
+          "hull_delta": 0,
+          "provision_delta": -5,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "merchant_encounter",
+          "message": "A passing merchant offers information and a small gift. (+19 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 19,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-4 hull)",
+          "hull_delta": -4,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A felucca from Al-Manar crosses your wake, its deck stacked with brass-bound spice chests. The crew waves.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A Porto Novo grain barge passes with the Exchange Guild flag. On the quarterdeck, Marta Soares scans the horizon with a spyglass \u2014 checking the competition's cargo, no doubt.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Marta Soares from porto_novo]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Al-Manar.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nFeluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade.\n\n[bold]Khalil al-Rashid:[/bold] \"Welcome to Al-Manar, Captain. Please \u2014 dates, water. We discuss your berth after you have rested from the sea.\"\n\n[dim]Landmark: The Spice Bazaar \u2014 a covered market where a hundred aromas compete for your attention.[/dim]\n[dim]Custom: Bargaining begins with tea. Refusing the first cup insults the seller.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "depart monsoon_reach",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "You catch the monsoon wind and FLY. The ship heels over, sails taut, crew bracing. This is why they call it the Shortcut \u2014 if you time it right, nothing's faster.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your navigator pulls out the monsoon charts \u2014 handwritten, passed down from Farouk in Al-Manar's tea house. 'He sailed this seven times,' your navigator says. 'Trust the charts.'",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[lore]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 23 silver. (-2 hull)",
+          "hull_delta": -2,
+          "provision_delta": 0,
+          "silver_delta": -23,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Incense drifts from a temple on a passing island. In the East Indies, even the air worships. The crew breathes deep and something in them quiets.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The cook stretches the provisions. Watered rum, thinner stew. The crew notices but says nothing. Loyalty has limits.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
+          "hull_delta": -6,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "merchant_encounter",
+          "message": "A passing merchant offers information and a small gift. (+7 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 7,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
+          "hull_delta": -6,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Incense drifts from a temple on a passing island. In the East Indies, even the air worships. The crew breathes deep and something in them quiets.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Raj the Quiet of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Strength 5, defensive fighter."
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "resolve_duel",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "duel": {
+        "opponent_id": "raj_the_quiet",
+        "opponent_name": "Raj the Quiet",
+        "player_won": false,
+        "draw": false,
+        "silver_delta": -30,
+        "standing_delta": -2,
+        "rounds": [
+          {
+            "player_stance": "parry",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You brace for a thrust that never comes \u2014 the slash catches your side."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You brace for a thrust that never comes \u2014 the slash catches your side."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 0,
+            "damage_to_player": 2,
+            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "A wide arc catches them mid-parry. The cut connects."
+          }
+        ]
+      }
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+4 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 4,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "merchant_encounter",
+          "message": "A passing merchant offers information and a small gift. (+10 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 10,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Whispered conversations below deck. 'How long can we keep sailing?' your bosun hears. He doesn't repeat it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "cultural_waters",
+          "message": "Turquoise shallows and coral beneath the hull. The Reef Kingdoms lie ahead.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Every border on the sea is drawn by culture, not by stone."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Wind shifts. The monsoon is changing direction \u2014 a day early. Your navigator adjusts instantly. The margin between 'Shortcut' and 'death sentence' is measured in hours.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[encounter]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Raj the Quiet of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Strength 5, defensive fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "resolve_duel",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "duel": {
+        "opponent_id": "raj_the_quiet",
+        "opponent_name": "Raj the Quiet",
+        "player_won": false,
+        "draw": false,
+        "silver_delta": -30,
+        "standing_delta": -2,
+        "rounds": [
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 0,
+            "damage_to_player": 2,
+            "flavor": "You lunge forward, but their parry turns your blade aside."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "A wide arc catches them mid-parry. The cut connects."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          }
+        ]
+      }
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "provisions_spoiled",
+          "message": "Some provisions have spoiled. (-4 days)",
+          "hull_delta": 0,
+          "provision_delta": -4,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+2 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 2,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The light in the East Indies is different from anywhere else \u2014 softer, greener, filtered through atmospheric moisture that hasn't quite dried. It makes everything look like a painting of itself.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "lighthouse",
+          "message": "Ironhaven's Great Foundry chimney glows red on the horizon \u2014 a landmark for miles.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.1,
+          "cargo_lost": [],
+          "flavor": "Known waters. The charts don't lie."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 0 silver. (-7 hull)",
+          "hull_delta": -7,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "star_navigation",
+          "message": "The navigator reads the stars and adjusts course. Ancient constellations confirm your heading.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.05,
+          "cargo_lost": [],
+          "flavor": "The sky is the oldest chart."
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+3 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 3,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The wind dies. Completely. You're becalmed in open water between the Mediterranean and the East Indies. The crew stares at limp sails.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The cook stretches the provisions. Watered rum, thinner stew. The crew notices but says nothing. Loyalty has limits.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
+          "hull_delta": -6,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your navigator pulls out the monsoon charts \u2014 handwritten, passed down from Farouk in Al-Manar's tea house. 'He sailed this seven times,' your navigator says. 'Trust the charts.'",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[lore]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Whispered conversations below deck. 'How long can we keep sailing?' your bosun hears. He doesn't repeat it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The cook stretches the provisions. Watered rum, thinner stew. The crew notices but says nothing. Loyalty has limits.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "drifting_offering",
+          "message": "A sealed clay jar bobs in the waves, marked with symbols of good fortune.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "The sea remembers everyone who sails it."
+        },
+        {
+          "event_type": "nothing",
+          "message": "The light in the East Indies is different from anywhere else \u2014 softer, greener, filtered through atmospheric moisture that hasn't quite dried. It makes everything look like a painting of itself.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A merchant vessel approaches flying a friendly flag. The captain shouts: 'You traded fairly with us at port \u2014 my employer sends 24 silver as a thank-you and an invitation to do business again.' A crate of silver is swung across on a rope. (+24 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[consequence:reward]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "pirates",
+          "message": "Typhoon Mei of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Strength 7, wild fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A merchant vessel that attempted the Shortcut last season drifts past. Abandoned. The log is gone. Whatever happened, nobody recorded it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[lore]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "resolve_duel",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "duel": {
+        "opponent_id": "typhoon_mei",
+        "opponent_name": "Typhoon Mei",
+        "player_won": false,
+        "draw": false,
+        "silver_delta": -36,
+        "standing_delta": -2,
+        "rounds": [
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 3,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 0,
+            "damage_to_player": 2,
+            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
+          }
+        ]
+      }
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "merchant_encounter",
+          "message": "A passing merchant offers information and a small gift. (+17 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 17,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your navigator pulls out the monsoon charts \u2014 handwritten, passed down from Farouk in Al-Manar's tea house. 'He sailed this seven times,' your navigator says. 'Trust the charts.'",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[lore]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 8 silver. (-5 hull)",
+          "hull_delta": -5,
+          "provision_delta": 0,
+          "silver_delta": -8,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+4 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 4,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A merchant vessel that attempted the Shortcut last season drifts past. Abandoned. The log is gone. Whatever happened, nobody recorded it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[lore]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+2 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 2,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "sea_ceremony",
+          "message": "The crew gathers at dusk. The bosun pours rum into the sea \u2014 an old offering for safe passage.",
+          "hull_delta": 0,
+          "provision_delta": -1,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Some rituals are older than the ships that carry them."
+        },
+        {
+          "event_type": "nothing",
+          "message": "The light in the East Indies is different from anywhere else \u2014 softer, greener, filtered through atmospheric moisture that hasn't quite dried. It makes everything look like a painting of itself.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "inspection",
+          "message": "A patrol inspects your cargo and levies a 9 silver fee (only 0 collected).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A small kiln-boat from Jade Port passes \u2014 Apprentice Lin testing a new glaze in sea air. She holds a tile up to the light, frowns, adjusts something, holds it up again. Obsession at twenty-two.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Apprentice Lin Yue from jade_port]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-4 hull)",
+          "hull_delta": -4,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Whispered conversations below deck. 'How long can we keep sailing?' your bosun hears. He doesn't repeat it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Wind shifts. The monsoon is changing direction \u2014 a day early. Your navigator adjusts instantly. The margin between 'Shortcut' and 'death sentence' is measured in hours.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[encounter]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 0 silver. (-5 hull)",
+          "hull_delta": -5,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "inspection",
+          "message": "A patrol inspects your cargo and levies a 7 silver fee (only 0 collected).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
+          "hull_delta": -6,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A small boat with a saffron sail drifts past the Wind Temple headland. Brother Anand sits cross-legged on the deck, eyes closed, reading the wind by feel. His forecast will be posted at dawn.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Brother Anand from monsoon_reach]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The wind dies. Completely. You're becalmed in open water between the Mediterranean and the East Indies. The crew stares at limp sails.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Incense drifts from a temple on a passing island. In the East Indies, even the air worships. The crew breathes deep and something in them quiets.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 0 silver. (-4 hull)",
+          "hull_delta": -4,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "whale_sighting",
+          "message": "A pod of whales surfaces alongside the ship. The crew watches in silence.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Some things are bigger than commerce."
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A sampan drifts past Silk Haven's harbor. Master Ink sits cross-legged, painting the sea. He doesn't look up. A perfect brushstroke captures a wave that no longer exists. The painting will outlast the ocean.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Master Ink from silk_haven]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The cook stretches the provisions. Watered rum, thinner stew. The crew notices but says nothing. Loyalty has limits.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Typhoon Mei of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Strength 7, wild fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Incense drifts from a temple on a passing island. In the East Indies, even the air worships. The crew breathes deep and something in them quiets.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "resolve_duel",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "duel": {
+        "opponent_id": "typhoon_mei",
+        "opponent_name": "Typhoon Mei",
+        "player_won": false,
+        "draw": false,
+        "silver_delta": -36,
+        "standing_delta": -2,
+        "rounds": [
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You brace for a thrust that never comes \u2014 the slash catches your side."
+          }
+        ]
+      }
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-5 hull)",
+          "hull_delta": -5,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+2 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 2,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "inspection",
+          "message": "A patrol inspects your cargo and levies a 11 silver fee (only 0 collected).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A merchant vessel that attempted the Shortcut last season drifts past. Abandoned. The log is gone. Whatever happened, nobody recorded it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[lore]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "inspection",
+          "message": "A patrol inspects your cargo and levies a 3 silver fee (only 0 collected).",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The wind dies. Completely. You're becalmed in open water between the Mediterranean and the East Indies. The crew stares at limp sails.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The cook stretches the provisions. Watered rum, thinner stew. The crew notices but says nothing. Loyalty has limits.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "drifting_offering",
+          "message": "Floating flowers and a small wooden shrine drift past \u2014 an offering for safe passage.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "The sea remembers everyone who sails it."
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "You catch the monsoon wind and FLY. The ship heels over, sails taut, crew bracing. This is why they call it the Shortcut \u2014 if you time it right, nothing's faster.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 0 silver. (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A small boat with a saffron sail drifts past the Wind Temple headland. Brother Anand sits cross-legged on the deck, eyes closed, reading the wind by feel. His forecast will be posted at dawn.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Brother Anand from monsoon_reach]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "storm",
+          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-3 hull)",
+          "hull_delta": -3,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "No provisions! The crew suffers.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Can't pay crew wages! Morale drops.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": -1,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Wind shifts. The monsoon is changing direction \u2014 a day early. Your navigator adjusts instantly. The margin between 'Shortcut' and 'death sentence' is measured in hours.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[encounter]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Whispered conversations below deck. 'How long can we keep sailing?' your bosun hears. He doesn't repeat it.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Monsoon Reach.[/bold]\n\nThe port is blooming. Literally \u2014 flowers on the docks, garlands on the warehouses, the scent of jasmine mixing with salt air. Spring arrivals in the East Indies feel like being invited to a celebration of survival.\n\nThe harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts \u2014 the monsoon demands it.\n\n[bold]Harbor Master Ravi:[/bold] \"Welcome. The wind is from the southeast today \u2014 good for arrivals, not for departures. You'll berth at the headland. The monks will post tomorrow's forecast at dawn.\"\n\n[dim]Landmark: The Wind Temple \u2014 a pagoda on the headland where monks track the monsoon.[/dim]\n[dim]Custom: Captains consult the monks before sailing. Their wind forecasts are uncannily accurate.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 5
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 5
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 3
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 3
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 5
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 3
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 3
+    },
+    {
+      "command": "work",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "earned": 3
+    },
+    {
+      "command": "buy_infrastructure dry_dock coastal_sloop",
+      "error": null,
       "receipt": null,
       "events": [],
       "shocks": []

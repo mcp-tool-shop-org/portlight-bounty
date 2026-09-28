@@ -1,25 +1,25 @@
 {
-  "seed": 9,
-  "day": 3,
+  "seed": 1,
+  "day": 4,
   "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 39,
-    "provisions": 28,
-    "day": 3,
+    "silver": 18,
+    "provisions": 27,
+    "day": 4,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
       "template_id": "swift_cutter",
       "name": "Swift Cutter",
-      "hull": 62,
+      "hull": 70,
       "hull_max": 70,
       "cargo_capacity": 50,
       "speed": 9.0,
       "crew": 12,
       "crew_max": 12,
-      "morale": 52,
+      "morale": 58,
       "cannons": 2,
       "sailors": 12,
       "gunners": 0,
@@ -30,7 +30,7 @@
     },
     "standing": {
       "regional": {
-        "Mediterranean": 10,
+        "Mediterranean": 11,
         "North Atlantic": 0,
         "West Africa": 0,
         "East Indies": 0,
@@ -44,7 +44,12 @@
         "South Seas": 0
       },
       "commercial_trust": 15,
-      "port_standing": [],
+      "port_standing": [
+        {
+          "port_id": "silva_bay",
+          "value": 1
+        }
+      ],
       "underworld": {},
       "incidents": []
     },
@@ -52,10 +57,10 @@
       {
         "template_id": "coastal_sloop",
         "name": "Coastal Sloop",
-        "hull": 52,
+        "hull": 54,
         "hull_max": 60,
         "crew": 3,
-        "docked_port_id": ""
+        "docked_port_id": "silva_bay"
       }
     ]
   },
@@ -63,25 +68,19 @@
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 12,
-    "days_elapsed": 2,
-    "status": "at_sea",
+    "progress": 20,
+    "days_elapsed": 3,
+    "status": "in_port",
     "recent_events": [
+      "nothing",
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
       "storm",
-      "pirates",
-      "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
-      "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
-      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud."
+      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+      "cargo_damaged",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous."
     ]
   },
-  "pending_duel": {
-    "captain_id": "the_butcher",
-    "captain_name": "The Butcher",
-    "faction_id": "crimson_tide",
-    "personality": "aggressive",
-    "strength": 8,
-    "region": "Mediterranean"
-  },
+  "pending_duel": null,
   "ports": [
     {
       "id": "porto_novo",
@@ -1450,8 +1449,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 39",
-          "action": "Earn 1961 more silver"
+          "detail": "Silver: 18",
+          "action": "Earn 1982 more silver"
         }
       ]
     },
@@ -1489,8 +1488,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 39",
-          "action": "Accumulate 1461 more silver"
+          "detail": "Silver: 18",
+          "action": "Accumulate 1482 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1540,8 +1539,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 39",
-          "action": "Earn 1961 more silver"
+          "detail": "Silver: 18",
+          "action": "Earn 1982 more silver"
         }
       ]
     },
@@ -1579,8 +1578,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 39",
-          "action": "Earn 2961 more silver"
+          "detail": "Silver: 18",
+          "action": "Earn 2982 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1611,12 +1610,25 @@
       "family": "integrated_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "silva_bay",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
   "narrative": {
     "fired": [
       "first_voyage",
       "ship_upgrade",
-      "survived_storm",
-      "survived_pirates"
+      "survived_storm"
     ],
     "journal": [
       {
@@ -1633,12 +1645,6 @@
       },
       {
         "beat_id": "survived_storm",
-        "day": 2,
-        "port_id": "",
-        "region": ""
-      },
-      {
-        "beat_id": "survived_pirates",
         "day": 3,
         "port_id": "",
         "region": ""
@@ -1647,7 +1653,7 @@
   },
   "log": [
     {
-      "command": "new merchant Ada 9",
+      "command": "new merchant Ada 1",
       "error": null,
       "receipt": null,
       "events": [],
@@ -1680,65 +1686,16 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-8 hull)",
-          "hull_delta": -8,
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 0.5,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "pirates",
-          "message": "The Butcher of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "Strength 8, aggressive fighter."
         },
-        {
-          "event_type": "nothing",
-          "message": "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "[sighting]"
-        },
-        {
-          "event_type": "nothing",
-          "message": "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "[crew]"
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
         {
           "event_type": "nothing",
           "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
@@ -1754,8 +1711,79 @@
       "shocks": []
     },
     {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-6 hull)",
+          "hull_delta": -6,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Silva Bay.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nSawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish.\n\n[bold]Nuno Ferreira:[/bold] \"Berth's over there. Tie up properly \u2014 I don't want you drifting into the slipways. Timber loading happens at dawn, so don't sleep late.\"\n\n[dim]Landmark: The Master Shipyard \u2014 where the finest hulls in the Mediterranean take shape.[/dim]\n[dim]Custom: Touching another captain's ship without permission is grounds for a duel.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
+        }
+      ],
+      "shocks": []
+    },
+    {
       "command": "repair_fleet",
-      "error": "Must be docked to repair",
+      "error": null,
       "receipt": null,
       "events": [],
       "shocks": []

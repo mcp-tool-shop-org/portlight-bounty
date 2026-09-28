@@ -1,7 +1,7 @@
-# Named dry dock. A weapons run funds a galleon. The escort sloop's hull_max
-# wears on the monsoon passage (days_elapsed hits a multiple of 20). Dry dock
-# restores that ship's template hull_max at 5x the repair rate. The flagship
-# stays worn. Duels are cleared with resolve_duel so the voyage can finish.
+# Named dry dock. A weapons run funds a galleon. resolve_duel clears any
+# pending pirate so each leg can finish. The monsoon passage still lasts
+# past voyage day 20, so both hulls wear. Dry dock restores the escort
+# sloop's template hull_max. The flagship stays worn.
 new merchant Ada 6
 depart corsairs_rest
 advance
@@ -13,6 +13,7 @@ advance
 advance
 sell weapons 22
 depart porto_novo
+advance
 advance
 advance
 advance
@@ -28,7 +29,6 @@ provision 5
 depart al_manar
 advance
 advance
-resolve_duel
 advance
 advance
 advance
@@ -40,6 +40,35 @@ depart monsoon_reach
 advance
 advance
 advance
+advance
+advance
+advance
+advance
+advance
+resolve_duel
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+resolve_duel
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
 resolve_duel
 advance
 advance
@@ -60,33 +89,7 @@ advance
 advance
 advance
 advance
-advance
 resolve_duel
-advance
-advance
-advance
-advance
-resolve_duel
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
-advance
 advance
 advance
 advance

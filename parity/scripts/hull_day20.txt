@@ -1,4 +1,6 @@
-new bounty_hunter C 9
+# Seed 60. Thirty-one port days, then the Iron Point warning lane.
+# Voyage day 20 is still at sea and wears hull_max from 70 to 69.
+new bounty_hunter C 60
 advance
 advance
 advance

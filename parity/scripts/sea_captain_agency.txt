@@ -1,3 +1,6 @@
+# Seed 9. Four ship_sunk memories make The Butcher a nemesis.
+# resolve_duel clears the voyage pirate so day 4 is still at sea.
+# That day's agency call is an ambush: naval phase, captain the_butcher.
 new merchant Ada 9
 remember the_butcher ship_sunk
 remember the_butcher ship_sunk
@@ -7,7 +10,7 @@ depart silva_bay
 advance
 agency
 advance
+resolve_duel
 agency
 advance
 agency
-advance
