@@ -1,0 +1,13 @@
+new merchant Ada 9
+remember the_butcher ship_sunk
+remember the_butcher ship_sunk
+remember the_butcher ship_sunk
+remember the_butcher ship_sunk
+depart silva_bay
+advance
+agency
+advance
+agency
+advance
+agency
+advance

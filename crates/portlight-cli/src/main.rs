@@ -52,6 +52,8 @@ Script commands:
   train <style_id>
   recruit <companion_id>
   skill <skill_id>
+  remember <captain_id> <outcome>
+  agency
 "
     );
 }

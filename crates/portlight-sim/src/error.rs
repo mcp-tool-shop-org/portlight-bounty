@@ -128,6 +128,8 @@ pub enum SimError {
     UsageTrain,
     UsageSkill,
     UsageRecruit,
+    UsageAgency,
+    UsageRemember,
     /// A sentence copied from the Python rules engine.
     Rejected(String),
 }
@@ -274,6 +276,8 @@ impl fmt::Display for SimError {
             Self::UsageTrain => write!(f, "Usage: train <style_id>"),
             Self::UsageSkill => write!(f, "Usage: skill <skill_id>"),
             Self::UsageRecruit => write!(f, "Usage: recruit <companion_id>"),
+            Self::UsageAgency => write!(f, "Usage: agency"),
+            Self::UsageRemember => write!(f, "Usage: remember <captain_id> <outcome>"),
             Self::Rejected(message) => write!(f, "{message}"),
         }
     }

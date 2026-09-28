@@ -353,6 +353,30 @@ fn area3_goldens_cover_training_recruiting_skill_and_milestone() {
     assert!(!ids.contains(&"commercial_finance"));
 }
 
+#[test]
+fn sea_captain_agency_golden_records_the_ambush() {
+    let root = parity_root();
+    let script = fs::read_to_string(root.join("scripts/sea_captain_agency.txt")).unwrap();
+    let golden = load_golden("sea_captain_agency");
+    let got = serde_json::to_value(run_script(&script)).expect("snapshot");
+    close(&golden, &got, "sea_captain_agency");
+    let calls: Vec<_> = golden["log"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["command"] == "agency")
+        .collect();
+    assert_eq!(calls.len(), 3);
+    assert_eq!(calls[0]["agency"]["notices"].as_array().unwrap().len(), 0);
+    assert_eq!(calls[2]["agency"]["ambush"], true);
+    assert_eq!(
+        calls[2]["agency"]["encounter"]["enemy_captain_id"],
+        "the_butcher"
+    );
+    assert_eq!(calls[2]["agency"]["encounter"]["phase"], "naval");
+    assert_eq!(golden["pending_duel"]["captain_id"], "the_butcher");
+}
+
 fn load_golden(stem: &str) -> Value {
     let path = parity_root().join("golden").join(format!("{stem}.json"));
     serde_json::from_str(&fs::read_to_string(path).expect("golden")).expect("json")

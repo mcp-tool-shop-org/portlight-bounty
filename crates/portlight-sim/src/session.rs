@@ -50,8 +50,10 @@ use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::encounter::{self, BoardingOutcome, EncounterState};
 use crate::error::SimError;
+use crate::memory;
 use crate::model::{
-    ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, VoyageStatus, World,
+    ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, PendingDuel, VoyageStatus,
+    World,
 };
 use crate::naval::{self, NavalRound};
 use crate::pyrand::PyRandom;
@@ -131,6 +133,7 @@ pub struct EncounterStep {
     pub prize_reason: String,
 }
 
+/// Encounter returned by [`Session::tick_sea_captain_agency`].
 /// One playable game.
 #[derive(Debug, Clone)]
 pub struct Session {
@@ -1436,6 +1439,88 @@ impl Session {
         }
         Ok(())
     }
+
+    /// `GameSession.tick_sea_captain_agency`.
+    ///
+    /// The CLI and the TUI call this after each sea day. It is not part of
+    /// [`Session::advance`]. In port, or with no world at sea, the result is
+    /// `(None, false, [])`.
+    ///
+    /// Silver gifts are applied immediately. An ambush or challenge consumes
+    /// the same RNG draws as `create_encounter` (faction, captain, then one
+    /// `random()` for ship speed), writes [`PendingDuel`], and returns the
+    /// encounter. `ambush` is true only when the verb is `ambush`; that
+    /// encounter's phase is `naval`.
+    pub fn tick_sea_captain_agency(
+        &mut self,
+    ) -> (Option<EncounterState>, bool, Vec<(String, String)>) {
+        if self.world.voyage.status != VoyageStatus::AtSea {
+            return (None, false, Vec::new());
+        }
+        let region = encounter::voyage_region(&self.world);
+        let actions = memory::tick_captain_agency(
+            &self.world.captain_memories,
+            &region,
+            self.world.captain.silver,
+            self.world.day,
+            &mut self.rng,
+        );
+        let mut notices = Vec::new();
+        let mut encounter = None;
+        let mut ambush = false;
+        for action in actions {
+            notices.push((action.effect_type.clone(), action.message));
+            if action.effect_type == "silver" {
+                self.world.captain.silver += action.effect_value;
+            } else if action.effect_type == "encounter" && encounter.is_none() {
+                let Some(mut rolled) =
+                    encounter::create_encounter(&self.world, &mut self.rng, None)
+                else {
+                    continue;
+                };
+                rolled.enemy_captain_id = action.captain_id.clone();
+                rolled.enemy_captain_name = action.captain_name.clone();
+                if let Some(captain) = content::content().pirate(&action.captain_id) {
+                    rolled.enemy_faction_id = captain.faction_id.clone();
+                    rolled.enemy_personality = captain.personality.clone();
+                    rolled.enemy_strength = captain.strength;
+                }
+                rolled.enemy_region = region.clone();
+                if action.verb == "ambush" {
+                    rolled.phase = "naval".to_string();
+                    ambush = true;
+                }
+                self.world.pending_duel = Some(PendingDuel {
+                    captain_id: rolled.enemy_captain_id.clone(),
+                    captain_name: rolled.enemy_captain_name.clone(),
+                    faction_id: rolled.enemy_faction_id.clone(),
+                    personality: rolled.enemy_personality.clone(),
+                    strength: rolled.enemy_strength,
+                    region: rolled.enemy_region.clone(),
+                });
+                self.player_combat = None;
+                self.opponent_combat = None;
+                self.encounter = Some(rolled.clone());
+                encounter = Some(rolled);
+                break;
+            }
+        }
+        (encounter, ambush, notices)
+    }
+
+    /// Seed one captain memory. Encounter resolution will call the same
+    /// record; the `remember` script command uses this so a sea-day golden
+    /// can fire agency without the encounter machine.
+    pub fn remember_captain(&mut self, captain_id: &str, outcome: &str) -> Result<(), SimError> {
+        if content::content().pirate(captain_id).is_none() {
+            return Err(SimError::UnknownPirate(captain_id.to_string()));
+        }
+        let region = encounter::voyage_region(&self.world);
+        let day = self.world.day;
+        let memory = memory::get_or_create_memory(&mut self.world.captain_memories, captain_id);
+        memory::record_encounter(memory, day, &region, outcome, false, false, 0);
+        Ok(())
+    }
 }
 
 fn record_receipt(session: &mut Session, receipt: &TradeReceipt) {
@@ -1882,5 +1967,59 @@ mod tests {
         .unwrap();
         assert_eq!(rust["pirate_state"], python["pirate_state"]);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn sea_agency_ambush_matches_create_encounter_rng() {
+        let mut session = Session::new("Ada", "merchant", 9, None).unwrap();
+        let (encounter, ambush, notices) = session.tick_sea_captain_agency();
+        assert!(encounter.is_none());
+        assert!(!ambush);
+        assert!(notices.is_empty());
+
+        for _ in 0..4 {
+            session
+                .remember_captain("the_butcher", "ship_sunk")
+                .unwrap();
+        }
+        session.depart("silva_bay").unwrap();
+        session.advance().unwrap();
+        let (encounter, ambush, _) = session.tick_sea_captain_agency();
+        assert!(encounter.is_none() && !ambush);
+        session.advance().unwrap();
+        session.tick_sea_captain_agency();
+        session.advance().unwrap();
+        assert_eq!(session.world.day, 4);
+        assert_eq!(session.world.captain.silver, 538);
+        let (encounter, ambush, notices) = session.tick_sea_captain_agency();
+        assert!(ambush);
+        assert_eq!(notices.len(), 1);
+        assert_eq!(notices[0].0, "encounter");
+        assert!(notices[0].1.contains("The Butcher"));
+        let encounter = encounter.expect("ambush");
+        assert_eq!(encounter.phase, "naval");
+        assert_eq!(encounter.enemy_captain_id, "the_butcher");
+        assert_eq!(encounter.enemy_strength, 8);
+        assert_eq!(encounter.enemy_ship_hull, 170);
+        assert_eq!(encounter.enemy_ship_cannons, 12);
+        assert_eq!(encounter.enemy_ship_crew, 28);
+        assert_eq!(encounter.enemy_ship_crew_max, 36);
+        assert!((encounter.enemy_ship_maneuver - 0.4).abs() < 1e-12);
+        assert!((encounter.enemy_ship_speed - 5.251391040026104).abs() < 1e-12);
+        let pending = session.world.pending_duel.as_ref().unwrap();
+        assert_eq!(pending.captain_id, "the_butcher");
+        assert_eq!(pending.faction_id, "crimson_tide");
+        assert_eq!(pending.personality, "aggressive");
+        assert_eq!(pending.strength, 8);
+        assert_eq!(pending.region, "Mediterranean");
+        let progress = session.world.voyage.progress;
+        let turn = session.advance().unwrap();
+        assert!(turn.events.is_empty());
+        assert_eq!(session.world.day, 4);
+        assert_eq!(session.world.voyage.progress, progress);
+        assert_eq!(
+            session.encounter.as_ref().map(|enc| enc.enemy_captain_id.as_str()),
+            Some("the_butcher")
+        );
     }
 }

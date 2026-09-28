@@ -305,6 +305,9 @@ pub struct LogEntry {
     pub contracts: Vec<ContractLog>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encounter: Option<EncounterLog>,
+    /// `tick_sea_captain_agency` result, when that command ran.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agency: Option<AgencyLog>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -357,6 +360,7 @@ impl LogEntry {
             earned: None,
             contracts: Vec::new(),
             encounter: None,
+            agency: None,
         }
     }
 }
@@ -444,6 +448,78 @@ pub fn from_encounter(step: &EncounterStep) -> EncounterLog {
         style_effect: step.style_effect.clone(),
         prize_ok: step.prize_ok,
         prize_reason: step.prize_reason.clone(),
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AgencyLog {
+    pub ambush: bool,
+    pub encounter: Option<AgencyEncounterSnap>,
+    pub notices: Vec<AgencyNoticeSnap>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AgencyNoticeSnap {
+    pub effect_type: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AgencyEncounterSnap {
+    pub enemy_captain_id: String,
+    pub enemy_captain_name: String,
+    pub enemy_faction_id: String,
+    pub enemy_personality: String,
+    pub enemy_strength: i64,
+    pub enemy_region: String,
+    pub enemy_ship_hull: i64,
+    pub enemy_ship_hull_max: i64,
+    pub enemy_ship_cannons: i64,
+    pub enemy_ship_maneuver: f64,
+    pub enemy_ship_speed: f64,
+    pub enemy_ship_crew: i64,
+    pub enemy_ship_crew_max: i64,
+    pub phase: String,
+    pub boarding_progress: i64,
+    pub boarding_threshold: i64,
+    pub naval_turns: i64,
+    pub duel_turns: i64,
+}
+
+pub fn agency_log(
+    ambush: bool,
+    encounter: Option<&crate::encounter::EncounterState>,
+    notices: &[(String, String)],
+) -> AgencyLog {
+    AgencyLog {
+        ambush,
+        encounter: encounter.map(|encounter| AgencyEncounterSnap {
+            enemy_captain_id: encounter.enemy_captain_id.clone(),
+            enemy_captain_name: encounter.enemy_captain_name.clone(),
+            enemy_faction_id: encounter.enemy_faction_id.clone(),
+            enemy_personality: encounter.enemy_personality.clone(),
+            enemy_strength: encounter.enemy_strength,
+            enemy_region: encounter.enemy_region.clone(),
+            enemy_ship_hull: encounter.enemy_ship_hull,
+            enemy_ship_hull_max: encounter.enemy_ship_hull_max,
+            enemy_ship_cannons: encounter.enemy_ship_cannons,
+            enemy_ship_maneuver: encounter.enemy_ship_maneuver,
+            enemy_ship_speed: encounter.enemy_ship_speed,
+            enemy_ship_crew: encounter.enemy_ship_crew,
+            enemy_ship_crew_max: encounter.enemy_ship_crew_max,
+            phase: encounter.phase.clone(),
+            boarding_progress: encounter.boarding_progress,
+            boarding_threshold: encounter.boarding_threshold,
+            naval_turns: encounter.naval_turns,
+            duel_turns: encounter.duel_turns,
+        }),
+        notices: notices
+            .iter()
+            .map(|(effect_type, message)| AgencyNoticeSnap {
+                effect_type: effect_type.clone(),
+                message: message.clone(),
+            })
+            .collect(),
     }
 }
 

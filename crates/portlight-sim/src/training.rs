@@ -99,6 +99,15 @@ mod tests {
             vec!["la_destreza".to_string()]
         );
         assert_eq!(masters_at_port("porto_novo"), vec!["maestro_luciano"]);
+        let style = content::content().fighting_style("la_destreza").unwrap();
+        assert_eq!(style.passive_thrust_bonus, 1);
+        assert_eq!(
+            style
+                .special_action
+                .as_ref()
+                .map(|action| action.id.as_str()),
+            Some("estocada")
+        );
         let mut learned = Vec::new();
         let mut silver = 550;
         assert!(can_learn_style(&learned, &[], silver, "porto_novo", "la_destreza").is_none());

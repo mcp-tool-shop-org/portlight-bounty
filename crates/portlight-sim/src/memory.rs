@@ -1,8 +1,9 @@
 //! Pirate-captain memory from `engine/captain_memory.py`.
 //!
-//! `tick_captain_agency` is not called from `GameSession.advance`. The CLI
-//! calls it from `tick_sea_captain_agency`, so [`crate::session::Session::advance`]
-//! does not draw it.
+//! `tick_captain_agency` is not called from `GameSession.advance`. The CLI and
+//! TUI call `GameSession.tick_sea_captain_agency` after each sea day.
+//! [`crate::session::Session::tick_sea_captain_agency`] is that call.
+//! [`crate::session::Session::advance`] does not draw it.
 
 use md5::{Digest, Md5};
 

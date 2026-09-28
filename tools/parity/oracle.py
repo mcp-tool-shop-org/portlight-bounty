@@ -487,6 +487,14 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         if len(tokens) != 2:
             raise ScriptError("Usage: skill <skill_id>")
         do_skill(state, tokens[1])
+    elif cmd == "remember":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: remember <captain_id> <outcome>")
+        do_remember(state, tokens[1], tokens[2])
+    elif cmd == "agency":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: agency")
+        do_agency(state, entry)
     else:
         raise ScriptError(f"Unknown command: {cmd}")
 
@@ -1069,6 +1077,103 @@ def _party_dict(party) -> dict:
         "max_size": party.max_size,
         "departed": list(party.departed),
     }
+
+
+def do_remember(state, captain_id: str, outcome: str) -> None:
+    """Seed one captain memory. Encounter resolution does this in the real game."""
+    from portlight.content.factions import PIRATE_CAPTAINS
+    from portlight.engine.captain_memory import get_or_create_memory, record_encounter
+
+    if captain_id not in PIRATE_CAPTAINS:
+        raise ScriptError(f"Unknown pirate captain: {captain_id}")
+    world = state["world"]
+    port = current_port(world)
+    region = port.region if port is not None else "Mediterranean"
+    if world.voyage is not None and port is None:
+        dest = world.ports.get(world.voyage.destination_id)
+        region = dest.region if dest is not None else "Mediterranean"
+    memory = get_or_create_memory(world.pirates.captain_memories, captain_id)
+    record_encounter(memory, world.day, region, outcome, False, False, 0)
+
+
+def do_agency(state, entry: dict) -> None:
+    """`GameSession.tick_sea_captain_agency`.
+
+    Calls `create_encounter` with no target, then overwrites identity. The
+    snapshot records `pending_duel` and the encounter fields. Rust also stores
+    that encounter on the session so the v12 `pirate_state` blob can persist it.
+    """
+    from portlight.content.factions import PIRATE_CAPTAINS
+    from portlight.engine.captain_memory import tick_captain_agency
+    from portlight.engine.encounter import create_encounter
+    from portlight.engine.models import PendingDuel
+
+    world = state["world"]
+    if world.voyage is None or world.voyage.status != VoyageStatus.AT_SEA:
+        entry["agency"] = {"ambush": False, "encounter": None, "notices": []}
+        return
+    dest = world.ports.get(world.voyage.destination_id)
+    region = dest.region if dest is not None else "Mediterranean"
+    actions = tick_captain_agency(
+        world.pirates.captain_memories,
+        region,
+        world.captain.silver,
+        world.day,
+        state["rng"],
+    )
+    notices = []
+    encounter = None
+    ambush = False
+    for action in actions:
+        notices.append({"effect_type": action.effect_type, "message": action.message})
+        if action.effect_type == "silver":
+            world.captain.silver += action.effect_value
+        elif action.effect_type == "encounter" and encounter is None:
+            dest_id = world.voyage.destination_id or "porto_novo"
+            enc = create_encounter(world.ports, dest_id, state["rng"])
+            if not enc:
+                continue
+            cap = PIRATE_CAPTAINS.get(action.captain_id)
+            enc.enemy_captain_id = action.captain_id
+            enc.enemy_captain_name = action.captain_name
+            if cap is not None:
+                enc.enemy_faction_id = cap.faction_id
+                enc.enemy_personality = cap.personality
+                enc.enemy_strength = cap.strength
+            enc.enemy_region = region
+            if action.verb == "ambush":
+                enc.phase = "naval"
+                ambush = True
+            world.pirates.pending_duel = PendingDuel(
+                captain_id=enc.enemy_captain_id,
+                captain_name=enc.enemy_captain_name,
+                faction_id=enc.enemy_faction_id,
+                personality=enc.enemy_personality,
+                strength=enc.enemy_strength,
+                region=enc.enemy_region,
+            )
+            encounter = {
+                "enemy_captain_id": enc.enemy_captain_id,
+                "enemy_captain_name": enc.enemy_captain_name,
+                "enemy_faction_id": enc.enemy_faction_id,
+                "enemy_personality": enc.enemy_personality,
+                "enemy_strength": enc.enemy_strength,
+                "enemy_region": enc.enemy_region,
+                "enemy_ship_hull": enc.enemy_ship_hull,
+                "enemy_ship_hull_max": enc.enemy_ship_hull_max,
+                "enemy_ship_cannons": enc.enemy_ship_cannons,
+                "enemy_ship_maneuver": enc.enemy_ship_maneuver,
+                "enemy_ship_speed": enc.enemy_ship_speed,
+                "enemy_ship_crew": enc.enemy_ship_crew,
+                "enemy_ship_crew_max": enc.enemy_ship_crew_max,
+                "phase": enc.phase,
+                "boarding_progress": enc.boarding_progress,
+                "boarding_threshold": enc.boarding_threshold,
+                "naval_turns": enc.naval_turns,
+                "duel_turns": enc.duel_turns,
+            }
+            break
+    entry["agency"] = {"ambush": ambush, "encounter": encounter, "notices": notices}
 
 
 def do_recruit(state, companion_id: str) -> None:
