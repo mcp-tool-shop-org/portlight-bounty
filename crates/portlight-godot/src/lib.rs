@@ -3,6 +3,7 @@
 
 mod chart_canvas;
 mod game;
+mod logic;
 
 use godot::prelude::*;
 

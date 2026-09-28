@@ -3,12 +3,13 @@
 //! Buttons call [`portlight_sim::Session`]. Labels repeat fields those queries
 //! already computed. Good names and the season name are catalog strings.
 //!
-//! A pending duel freezes the day. The panel names the pirate and offers the
-//! stance fight (`Session::duel`, at least three of thrust, slash, and parry)
-//! or `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown
-//! and not written onto reputation. Negotiate, flee, naval rounds, and
-//! boarding are not on `Session` and are not offered. Hire and provisions
-//! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
+//! A pending duel is named on the panel. Next day still calls `Session::advance`
+//! and shows `SimError` if the sim refuses. The stance fight is `Session::duel`
+//! (the sim requires at least three of thrust, slash, and parry) or
+//! `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown and
+//! not written onto reputation. Negotiate, flee, naval rounds, and boarding
+//! are not on `Session` and are not offered. Hire and provisions call
+//! `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
 
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
@@ -21,14 +22,17 @@ use godot::global::Error;
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
-    advance_refusal, docked_sloop_marker, frame_to_view, lane_inspect, press_port, project_chart,
-    ChartModel, Facing, PortPress, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN,
-    FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
+    docked_sloop_marker, frame_to_view, lane_inspect, press_port, project_chart, ChartModel,
+    Facing, PortPress, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME,
+    FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::model::VoyageStatus;
 use portlight_sim::{content, DuelOutcome, LaneSuitability, Session};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
+use crate::logic::{
+    chart_host_width, duel_button_enabled, layout_fits_window, PANEL_MIN_W, ROW_SEPARATION,
+};
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
@@ -90,7 +94,6 @@ struct PortlightGame {
     log_label: Option<Gd<Label>>,
     market_button: Option<Gd<Button>>,
     work_button: Option<Gd<Button>>,
-    next_button: Option<Gd<Button>>,
     port_row: Option<Gd<HBoxContainer>>,
     port_note: Option<Gd<Label>>,
     encounter_box: Option<Gd<VBoxContainer>>,
@@ -123,7 +126,6 @@ impl IControl for PortlightGame {
             log_label: None,
             market_button: None,
             work_button: None,
-            next_button: None,
             port_row: None,
             port_note: None,
             encounter_box: None,
@@ -208,16 +210,23 @@ impl IControl for PortlightGame {
 
 impl PortlightGame {
     fn build_ui(&mut self) {
+        assert!(
+            layout_fits_window(),
+            "panel and chart must fit the 1280x720 window"
+        );
         self.base_mut().set_anchors_preset(LayoutPreset::FULL_RECT);
 
         let mut row = HBoxContainer::new_alloc();
         row.set_anchors_preset(LayoutPreset::FULL_RECT);
         row.set_h_size_flags(SizeFlags::EXPAND_FILL);
         row.set_v_size_flags(SizeFlags::EXPAND_FILL);
+        row.add_theme_constant_override("separation", ROW_SEPARATION);
         self.base_mut().add_child(&row);
 
         let mut view_host = SubViewportContainer::new_alloc();
-        view_host.set_custom_minimum_size(Vector2::new(CHART_VIEW_W, CHART_VIEW_H));
+        // The viewport stays CHART_VIEW_* and stretches into the space left
+        // beside the panel, so 1280 does not clip the Sail column.
+        view_host.set_custom_minimum_size(Vector2::new(chart_host_width(), 0.0));
         view_host.set_h_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_v_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_stretch(true);
@@ -238,7 +247,8 @@ impl PortlightGame {
         self.canvas = Some(canvas);
 
         let mut panel = PanelContainer::new_alloc();
-        panel.set_custom_minimum_size(Vector2::new(380.0, 0.0));
+        panel.set_custom_minimum_size(Vector2::new(PANEL_MIN_W, 0.0));
+        panel.set_h_size_flags(SizeFlags::SHRINK_END);
         panel.set_v_size_flags(SizeFlags::EXPAND_FILL);
         let mut style = StyleBoxFlat::new_gd();
         style.set_bg_color(Color::from_rgb(0.1, 0.14, 0.19));
@@ -246,10 +256,16 @@ impl PortlightGame {
         panel.add_theme_stylebox_override("panel", &style);
         row.add_child(&panel);
 
+        let mut panel_scroll = ScrollContainer::new_alloc();
+        panel_scroll.set_h_size_flags(SizeFlags::EXPAND_FILL);
+        panel_scroll.set_v_size_flags(SizeFlags::EXPAND_FILL);
+        panel_scroll.set_horizontal_scroll_mode(ScrollMode::DISABLED);
+        panel.add_child(&panel_scroll);
+
         let mut column = VBoxContainer::new_alloc();
         column.set_h_size_flags(SizeFlags::EXPAND_FILL);
         column.set_v_size_flags(SizeFlags::EXPAND_FILL);
-        panel.add_child(&column);
+        panel_scroll.add_child(&column);
 
         let game_id = self.instance_id();
         column.add_child(&title_label("Portlight", 22, GOLD));
@@ -266,9 +282,7 @@ impl PortlightGame {
 
         let mut buttons = HBoxContainer::new_alloc();
         buttons.add_child(&action_button("New game", game_id, Action::NewGame));
-        let next = action_button("Next day", game_id, Action::NextDay);
-        buttons.add_child(&next);
-        self.next_button = Some(next);
+        buttons.add_child(&action_button("Next day", game_id, Action::NextDay));
         column.add_child(&buttons);
 
         let mut port_row = HBoxContainer::new_alloc();
@@ -331,7 +345,7 @@ impl PortlightGame {
             13,
             MUTED,
         ));
-        let (lane_scroll, lane_box) = scrolling(160.0);
+        let (lane_scroll, lane_box) = scrolling(220.0);
         column.add_child(&lane_scroll);
         self.lane_box = Some(lane_box);
 
@@ -689,15 +703,6 @@ impl PortlightGame {
     }
 
     fn next_day(&mut self) {
-        if let Some(message) = self
-            .session
-            .as_ref()
-            .and_then(|session| advance_refusal(session.world().pending_duel.as_ref()))
-        {
-            self.push_log(message.to_string());
-            self.refresh();
-            return;
-        }
         let mut failed = false;
         let notes = {
             let Some(session) = self.session.as_mut() else {
@@ -725,8 +730,6 @@ impl PortlightGame {
                             session.world().voyage.progress,
                             session.world().voyage.distance
                         ));
-                    } else if session.world().pending_duel.is_some() {
-                        notes.push("A duel is pending. The day does not advance.".to_string());
                     }
                     notes
                 }
@@ -926,9 +929,6 @@ impl PortlightGame {
         if !docked {
             self.market_open = false;
         }
-        if let Some(button) = self.next_button.as_mut() {
-            button.set_disabled(pending);
-        }
         if let Some(button) = self.work_button.as_mut() {
             button.set_disabled(!docked);
         }
@@ -946,7 +946,7 @@ impl PortlightGame {
         let services = self.port_services_text();
         let encounter = self.encounter_text();
         let stance_line = self.stance_line();
-        let can_duel = pending && self.stances.len() >= 3;
+        let can_duel = duel_button_enabled(pending);
         if let Some(row) = self.port_row.as_mut() {
             row.set_visible(docked);
         }
@@ -1006,13 +1006,12 @@ impl PortlightGame {
                 14,
                 Color::from_rgba8(lane.color.r, lane.color.g, lane.color.b, 255),
             );
-            label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+            shrink_label(&mut label);
             row.add_child(&label);
-            row.add_child(&action_button(
-                "Sail",
-                game_id,
-                Action::Sail(lane.destination_id.clone()),
-            ));
+            let mut sail =
+                action_button("Sail", game_id, Action::Sail(lane.destination_id.clone()));
+            sail.set_h_size_flags(SizeFlags::SHRINK_END);
+            row.add_child(&sail);
             block.add_child(&row);
             if let Some(note) = &lane.suitability_note {
                 let mut note_label = body_label(note, 12, MUTED);
@@ -1051,10 +1050,14 @@ impl PortlightGame {
                 13,
                 CREAM,
             );
-            label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+            shrink_label(&mut label);
             row.add_child(&label);
-            row.add_child(&action_button("Buy", game_id, Action::Buy(id.clone())));
-            row.add_child(&action_button("Sell", game_id, Action::Sell(id)));
+            let mut buy = action_button("Buy", game_id, Action::Buy(id.clone()));
+            buy.set_h_size_flags(SizeFlags::SHRINK_END);
+            let mut sell = action_button("Sell", game_id, Action::Sell(id));
+            sell.set_h_size_flags(SizeFlags::SHRINK_END);
+            row.add_child(&buy);
+            row.add_child(&sell);
             box_node.add_child(&row);
         }
     }
@@ -1229,7 +1232,7 @@ impl PortlightGame {
             return String::new();
         };
         format!(
-            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nAdvance will not move the day. Pick at least 3 stances, or auto-resolve.",
+            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nNext day calls the sim. Pick stances, or auto-resolve.",
             duel.captain_name, duel.faction_id, duel.personality, duel.strength, duel.region
         )
     }
@@ -1338,10 +1341,16 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     button
 }
 
+fn shrink_label(label: &mut Gd<Label>) {
+    label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+    label.set_clip_text(true);
+}
+
 fn scrolling(height: f32) -> (Gd<ScrollContainer>, Gd<VBoxContainer>) {
     let mut scroll = ScrollContainer::new_alloc();
-    scroll.set_custom_minimum_size(Vector2::new(340.0, height));
-    scroll.set_horizontal_scroll_mode(ScrollMode::SHOW_NEVER);
+    scroll.set_custom_minimum_size(Vector2::new(0.0, height));
+    scroll.set_horizontal_scroll_mode(ScrollMode::DISABLED);
     scroll.set_v_size_flags(SizeFlags::EXPAND_FILL);
     let mut inner = VBoxContainer::new_alloc();
     inner.set_h_size_flags(SizeFlags::EXPAND_FILL);

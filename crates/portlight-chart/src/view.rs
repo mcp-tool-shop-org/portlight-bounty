@@ -1,6 +1,6 @@
 //! Chart view model. Every gameplay fact here is copied from the sim.
 
-use portlight_sim::model::{PendingDuel, VoyageStatus, World};
+use portlight_sim::model::{VoyageStatus, World};
 use portlight_sim::{LaneSuitability, SailLane, Session};
 
 use crate::assets::{self, chart_water_id, ship_asset, Asset, PORT_MARKER, SLOOP_WAKE};
@@ -181,11 +181,6 @@ pub fn press_port(session: &Session, port_id: &str) -> PortPress {
     } else {
         PortPress::NoLane
     }
-}
-
-/// The map refuses Advance while a duel is pending. It does not call the sim.
-pub fn advance_refusal(pending: Option<&PendingDuel>) -> Option<&'static str> {
-    pending.map(|_| "A duel is pending. Advance is refused.")
 }
 
 pub fn hover_at(model: &ChartModel, x: f32, y: f32) -> Option<String> {
@@ -784,23 +779,6 @@ mod tests {
         );
         assert_eq!(with_view.trade_seq(), bare.trade_seq());
         assert_eq!(with_view.victory(), bare.victory());
-    }
-
-    #[test]
-    fn pending_duel_refuses_advance_without_a_sim_call() {
-        let mut world = merchant_at(None).world().clone();
-        assert!(advance_refusal(world.pending_duel.as_ref()).is_none());
-        world.pending_duel = Some(PendingDuel {
-            captain_id: "scarlet_ana".into(),
-            captain_name: "Scarlet Ana".into(),
-            faction_id: "corsairs".into(),
-            personality: "bold".into(),
-            strength: 4,
-            region: "Mediterranean".into(),
-        });
-        let day = world.day;
-        assert!(advance_refusal(world.pending_duel.as_ref()).is_some());
-        assert_eq!(world.day, day);
     }
 
     #[test]

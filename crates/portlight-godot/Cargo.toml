@@ -7,7 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
 godot = { version = "0.5.5", features = ["api-4-7"] }

@@ -143,36 +143,39 @@ fn manifest_hashes_match_the_committed_files() {
     }
 }
 
-/// Keys the studio Verifier checks. Nearest filtering is the project canvas
-/// filter, not a per-import key. Godot writes `process/fix_alpha_border=true`
-/// on a fresh import; these files keep it false because that pass recolors
-/// transparent texels.
-const IMPORT_LINES: &[&str] = &[
+/// asset-spec Rev 3, R11. Nearest filtering is the project canvas filter, not a
+/// per-import key. Fix Alpha Border is on for every plate. Mipmaps are off for
+/// ship plates and harbour plates. Approved chart-water plates use mipmaps; the
+/// files under `placeholders/chart_water_*.png` are not those plates, so they
+/// stay off until the real water lands. When it does, this test should require
+/// `mipmaps/generate=true` for those three paths.
+const R11_LINES: &[&str] = &[
     "compress/mode=0",
-    "mipmaps/generate=false",
-    "process/fix_alpha_border=false",
+    "process/fix_alpha_border=true",
     "process/premult_alpha=false",
     "process/size_limit=0",
     "process/hdr_as_srgb=false",
 ];
 
 #[test]
-fn plate_imports_are_lossless_and_hdr_2d_is_off() {
+fn plate_imports_follow_r11_and_hdr_2d_is_off() {
     let godot = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot");
-    let mut imports = Vec::new();
-    collect_files(&godot.join("assets/landing"), ".png.import", &mut imports);
-    assert_eq!(imports.len(), 66, "one import per landing plate");
+    let mut landing = Vec::new();
+    collect_files(&godot.join("assets/landing"), ".png.import", &mut landing);
+    assert_eq!(landing.len(), 66, "one import per landing plate");
+    let mut placeholders = Vec::new();
     collect_files(
         &godot.join("assets/placeholders"),
         ".png.import",
-        &mut imports,
+        &mut placeholders,
     );
-    assert_eq!(imports.len(), 70, "66 landing plates and 4 placeholders");
+    assert_eq!(placeholders.len(), 4);
+    let mut chart_water_placeholders = 0;
 
-    for path in &imports {
+    for path in landing.iter().chain(&placeholders) {
         let text =
             fs::read_to_string(path).unwrap_or_else(|err| panic!("{}: {err}", path.display()));
-        for line in IMPORT_LINES {
+        for line in R11_LINES {
             assert!(
                 text.lines().any(|existing| existing == *line),
                 "{} missing `{line}`",
@@ -184,7 +187,36 @@ fn plate_imports_are_lossless_and_hdr_2d_is_off() {
             "{} enables vram_texture",
             path.display()
         );
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        let in_landing = path.components().any(|part| part.as_os_str() == "landing");
+        let chart_water_placeholder = !in_landing && name.starts_with("chart_water_");
+        let port_marker = !in_landing && name.starts_with("chart_port_marker");
+        assert!(
+            in_landing || chart_water_placeholder || port_marker,
+            "unexpected plate {}",
+            path.display()
+        );
+        // R11: mipmaps off for ship plates and harbour plates (everything under
+        // landing/). The port marker is a placeholder and stays off too.
+        // Approved chart water turns mipmaps on; these three placeholders are
+        // not that art, so they stay off until those plates replace them.
+        assert!(
+            text.lines()
+                .any(|existing| existing == "mipmaps/generate=false"),
+            "{} mipmaps",
+            path.display()
+        );
+        if chart_water_placeholder {
+            chart_water_placeholders += 1;
+        }
     }
+    assert_eq!(
+        chart_water_placeholders, 3,
+        "chart_water_a/b/c stay placeholders with mipmaps off until approved water lands"
+    );
 
     let project = fs::read_to_string(godot.join("project.godot")).expect("project.godot");
     assert!(

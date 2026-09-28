@@ -24,7 +24,7 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Script commands: `new`, `buy`, `sell`, `depart`, `advance`, `hire`, `provision`, `work`, `duel`, `resolve_duel`.
 
-`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`; without it Cargo 1.83 parses `godot-bindings` and the job fails before Godot starts. The job still downloads Godot 4.7.2 and runs the headless import and `--smoke`. Build the extension locally with `cargo +stable build -p portlight-godot`.
+`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`; without it Cargo 1.83 parses `godot-bindings` and the job fails before Godot starts. The job still downloads Godot 4.7.2, runs `cargo test -p portlight-godot`, and runs the headless import and `--smoke`. Build the extension locally with `cargo +stable build -p portlight-godot`.
 
 ## Run the chart
 
@@ -35,7 +35,7 @@ cargo +stable build -p portlight-godot
 godot --path godot
 ```
 
-New game starts merchant Ada at Porto Novo, seed 1. The chart draws that port's `sail_lanes`, including warning and blocked lanes. Sail, Next day, and the market buttons call `Session`. They do not compute prices, days, or whether a lane is legal. While docked, Market, Hire sailor, Provisions +5, and Work sit on one row. Work calls `Session::work` (3 to 5 silver; markets, provisions, wages, and reputation do not tick). A failure shows `SimError` text. A pending duel disables Next day and offers a stance fight (`thrust`, `slash`, `parry`, at least three) or auto-resolve. The outcome's standing change is shown and not applied. Negotiate, flee, naval rounds, and boarding are not offered.
+New game starts merchant Ada at Porto Novo, seed 1. The chart draws that port's `sail_lanes`, including warning and blocked lanes. Sail, Next day, and the market buttons call `Session`. They do not compute prices, days, or whether a lane is legal. While docked, Market, Hire sailor, Provisions +5, and Work sit on one row. Work calls `Session::work` (3 to 5 silver; markets, provisions, wages, and reputation do not tick). A failure shows `SimError` text. A pending duel offers a stance fight (`thrust`, `slash`, `parry`) or auto-resolve. Next day still calls `Session::advance`, and the sim checks the stances. The outcome's standing change is shown and not applied. Negotiate, flee, naval rounds, and boarding are not offered. The lane list sits in a scroll pane beside the chart so the Sail buttons stay inside the 1280×720 window.
 
 Chart water and the port marker are generated placeholders, stamped PH:
 
@@ -43,9 +43,9 @@ Chart water and the port marker are generated placeholders, stamped PH:
 cargo run -p portlight-chart --bin gen_placeholders -- godot/assets
 ```
 
-That command does not rewrite `godot/assets/landing/`. That directory is the whole v0.2.0 bundle: 66 PNGs (sloop, cutter, brigantine, and galleon, nine plates each, plus 30 harbour tiles) and `MANIFEST.json`. `cargo test -p portlight-chart` checks the manifest hash, every entry sha256, that the committed PNG set matches the manifest, and that every plate `.import` is lossless with mipmaps, premultiply, and Fix Alpha Border off. Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
+That command does not rewrite `godot/assets/landing/`. That directory is the whole v0.2.0 bundle: 66 PNGs (sloop, cutter, brigantine, and galleon, nine plates each, plus 30 harbour tiles) and `MANIFEST.json`. `cargo test -p portlight-chart` checks the manifest hash, every entry sha256, that the committed PNG set matches the manifest, and that every plate `.import` follows asset-spec Rev 3 R11 (lossless, Fix Alpha Border on, premultiply off, mipmaps off for ships and harbour). Placeholder chart water keeps mipmaps off until the approved plates land; those plates use mipmaps. Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
 
-`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files are lossless, with mipmaps off, Fix Alpha Border off, and premultiplied alpha off. The canvas filter is Nearest, so a plate drawn at 1:1 keeps its pixels. No import setting was changed away from that.
+`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files follow R11: lossless, Fix Alpha Border on, premultiplied alpha off, VRAM off. Mipmaps are off for ship and harbour plates. The canvas filter is Nearest (`default_texture_filter=0`), so a plate drawn at 1:1 keeps its pixels.
 
 Headless smoke (session only; the dummy renderer does not return a viewport image):
 
