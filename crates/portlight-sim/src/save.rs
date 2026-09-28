@@ -641,6 +641,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
             culture: culture_from(data.get("cultural_state")),
             sea_culture: crate::model::SeaCultureState::default(),
             nemesis_id: pirate.nemesis_id,
+            custom_captain: None,
         },
         receipts: ledger.receipts,
         run_id: ledger.run_id,

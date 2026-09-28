@@ -28,6 +28,11 @@ from portlight.content.goods import GOODS
 from portlight.content.ships import SHIPS
 from portlight.content.world import new_game
 from portlight.engine.captain_identity import CAPTAIN_TEMPLATES, CaptainType
+from portlight.engine.custom_captain import (
+    CustomCaptainSpec,
+    build_custom_template,
+    validate_spec,
+)
 from portlight.engine.economy import (
     execute_buy,
     execute_sell,
@@ -524,6 +529,86 @@ def do_advance(state, entry: dict) -> None:
         run_narrative(state, events)
 
 
+CUSTOM_USAGE = (
+    "Usage: custom <name> <seed> [trade=N] [sailing=N] [shadow=N] "
+    "[reputation=N] [home=PORT] [region=REGION] [title=TITLE] [bloc=BLOC] "
+    "[faction=FACTION] [mentor=NPC] [backstory=TEXT] [port=PORT]"
+)
+
+
+def begin_game(state, name: str, captain_type: CaptainType, seed: int, port: str | None) -> None:
+    world = new_game(name, port, captain_type, seed=seed)
+    state["world"] = world
+    state["rng"] = random.Random(world.seed)
+    state["trade_seq"] = 0
+    state["ledger"] = ReceiptLedger()
+    state["board"] = ContractBoard()
+    state["infra"] = InfrastructureState()
+    state["campaign"] = CampaignState()
+    state["encounter"] = None
+    state["player_combat"] = None
+    state["opponent_combat"] = None
+    state["pending_victory"] = False
+    state["history"] = fresh_history()
+    from portlight.engine.narrative import NarrativeState
+
+    state["narrative"] = NarrativeState()
+    docked = current_port(world)
+    if docked is not None:
+        refresh_with_board_rng(state, docked)
+
+
+def parse_custom(tokens: list[str]):
+    """Match `custom_captain::parse_script_spec`."""
+    if len(tokens) < 3:
+        raise ScriptError(CUSTOM_USAGE)
+    name = tokens[1]
+    try:
+        seed = int(tokens[2])
+    except ValueError as exc:
+        raise ScriptError(f"Invalid number: {tokens[2]}") from exc
+    spec = CustomCaptainSpec(name=name)
+    port = None
+    for token in tokens[3:]:
+        if "=" not in token:
+            raise ScriptError(f"Unknown custom field: {token}")
+        key, value = token.split("=", 1)
+        if key == "trade":
+            spec.trade_points = _custom_points(value)
+        elif key == "sailing":
+            spec.sailing_points = _custom_points(value)
+        elif key == "shadow":
+            spec.shadow_points = _custom_points(value)
+        elif key == "reputation":
+            spec.reputation_points = _custom_points(value)
+        elif key == "home":
+            spec.home_port_id = value
+        elif key == "region":
+            spec.home_region = value
+        elif key == "title":
+            spec.title = value
+        elif key == "bloc":
+            spec.bloc_alignment = value
+        elif key == "faction":
+            spec.faction_alignment = value
+        elif key == "mentor":
+            spec.mentor_npc_id = value
+        elif key == "backstory":
+            spec.backstory = value
+        elif key == "port":
+            port = value or None
+        else:
+            raise ScriptError(f"Unknown custom field: {key}")
+    return spec, seed, port
+
+
+def _custom_points(value: str) -> int:
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ScriptError(f"Invalid number: {value}") from exc
+
+
 def dispatch(state, tokens: list[str], entry: dict) -> None:
     cmd = tokens[0]
     if cmd == "new":
@@ -538,25 +623,15 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
             captain_type = CaptainType(tokens[1])
         except ValueError as exc:
             raise ScriptError(f"Unknown captain type: {tokens[1]}") from exc
-        world = new_game(tokens[2], port, captain_type, seed=seed)
-        state["world"] = world
-        state["rng"] = random.Random(world.seed)
-        state["trade_seq"] = 0
-        state["ledger"] = ReceiptLedger()
-        state["board"] = ContractBoard()
-        state["infra"] = InfrastructureState()
-        state["campaign"] = CampaignState()
-        state["encounter"] = None
-        state["player_combat"] = None
-        state["opponent_combat"] = None
-        state["pending_victory"] = False
-        state["history"] = fresh_history()
-        from portlight.engine.narrative import NarrativeState
-
-        state["narrative"] = NarrativeState()
-        port = current_port(world)
-        if port is not None:
-            refresh_with_board_rng(state, port)
+        begin_game(state, tokens[2], captain_type, seed, port)
+        return
+    if cmd == "custom":
+        spec, seed, port = parse_custom(tokens)
+        errors = validate_spec(spec)
+        if errors:
+            raise ScriptError("\n".join(errors))
+        CAPTAIN_TEMPLATES[CaptainType.CUSTOM] = build_custom_template(spec)
+        begin_game(state, spec.name, CaptainType.CUSTOM, seed, port)
         return
     if state.get("world") is None:
         raise ScriptError("No active game")

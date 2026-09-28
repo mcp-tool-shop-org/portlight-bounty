@@ -106,7 +106,7 @@ pub fn generate_arrival(world: &World, port_id: &str) -> PortArrivalExperience {
             break;
         }
     }
-    if let Some(template) = catalog.captain(&world.captain.captain_type) {
+    if let Some(template) = crate::custom_captain::active_captain(world) {
         if !template.mentor_npc_id.is_empty() && template.home_port_id == port_id {
             if let Some(mentor) = catalog.npc(&template.mentor_npc_id) {
                 experience.mentor_name = mentor.name.clone();

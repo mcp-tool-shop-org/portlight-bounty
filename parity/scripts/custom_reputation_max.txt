@@ -1,0 +1,2 @@
+# Reputation points cannot exceed 7 (got 8)
+custom Ada 1 trade=1 sailing=1 shadow=0 reputation=8 home=porto_novo region=Mediterranean

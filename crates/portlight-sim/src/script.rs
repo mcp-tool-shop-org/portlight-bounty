@@ -3,6 +3,7 @@
 //! The commands are a thin wrapper: each one calls the same public method a
 //! front end would call. Parity goldens therefore cover the stepwise API.
 
+use crate::custom_captain;
 use crate::error::SimError;
 use crate::session::Session;
 use crate::snapshot::{self, LogEntry, Snapshot};
@@ -57,6 +58,12 @@ fn dispatch(
                 .map_err(|_| SimError::InvalidNumber(tokens[3].clone()))?;
             let port = tokens.get(4).map(String::as_str);
             *session = Some(Session::new(name, captain_type, seed, port)?);
+            Ok(())
+        }
+        "custom" => {
+            let start = custom_captain::parse_script_spec(tokens)?;
+            let port = start.starting_port.as_deref();
+            *session = Some(Session::new_custom(&start.spec, start.seed, port)?);
             Ok(())
         }
         "buy" => {

@@ -53,6 +53,7 @@ use crate::combat::{self, CombatRound, CombatantState};
 use crate::companion;
 use crate::content::{self, PricingDef};
 use crate::contracts;
+use crate::custom_captain::{self, CustomCaptainSpec};
 use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::encounter::{self, BoardingOutcome, EncounterState};
@@ -78,7 +79,7 @@ use crate::util::{py_round, py_trunc};
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
 use crate::weapon_provenance;
 use crate::weapon_quality;
-use crate::world::new_game;
+use crate::world::{new_game, new_game_with_def};
 
 /// One turn of [`Session::advance`].
 #[derive(Debug, Clone)]
@@ -182,7 +183,37 @@ impl Session {
         seed: i128,
         starting_port: Option<&str>,
     ) -> Result<Self, SimError> {
-        let world = new_game(captain_name, captain_type, seed, starting_port)?;
+        Ok(Self::open(new_game(
+            captain_name,
+            captain_type,
+            seed,
+            starting_port,
+        )?))
+    }
+
+    /// Start from a custom captain spec.
+    ///
+    /// Python validates, builds the template, registers it, then calls
+    /// `GameSession.new(..., captain_type="custom")` (`app/cli.py` line 286).
+    /// Validation failures use the same sentences, joined by newlines in the
+    /// order `validate_spec` returns them. `starting_port` overrides the
+    /// spec's home port the way `new_game` does.
+    pub fn new_custom(
+        spec: &CustomCaptainSpec,
+        seed: i128,
+        starting_port: Option<&str>,
+    ) -> Result<Self, SimError> {
+        let errors = custom_captain::validate_spec(spec);
+        if !errors.is_empty() {
+            return Err(SimError::Sentence(errors.join("\n")));
+        }
+        let template = custom_captain::build_custom_template(spec);
+        let def = template.to_captain_def();
+        let world = new_game_with_def(&spec.name, &def, seed, starting_port, true)?;
+        Ok(Self::open(world))
+    }
+
+    fn open(world: World) -> Self {
         let rng = PyRandom::from_seed(world.seed);
         let run_id = format!("run-{}", world.seed);
         let mut session = Self {
@@ -201,7 +232,7 @@ impl Session {
             narrative: NarrativeState::default(),
         };
         session.refresh_new_game_board();
-        Ok(session)
+        session
     }
 
     /// Write this game to a Python version-12 JSON slot under `base_path/saves`.
@@ -348,9 +379,9 @@ impl Session {
             economy::execute_buy(&mut world.captain, port, good_id, qty, seq)?
         };
         record_receipt(self, &receipt);
-        let pricing = pricing(&self.world).cloned();
+        let mods = pricing(&self.world).clone();
         if let Some(port) = self.world.port_mut(&port_id) {
-            recalculate_prices(port, pricing.as_ref());
+            recalculate_prices(port, Some(&mods));
         }
         Ok(receipt)
     }
@@ -424,9 +455,9 @@ impl Session {
         } else {
             self.settle_fulfilled()
         };
-        let pricing = pricing(&self.world).cloned();
+        let mods = pricing(&self.world).clone();
         if let Some(port) = self.world.port_mut(&port_id) {
-            recalculate_prices(port, pricing.as_ref());
+            recalculate_prices(port, Some(&mods));
         }
         self.evaluate_narrative(&[]);
         Ok(Sale { receipt, contracts })
@@ -3127,10 +3158,12 @@ fn record_receipt(session: &mut Session, receipt: &TradeReceipt) {
     session.receipts.push(receipt.clone());
 }
 
-fn pricing(world: &World) -> Option<&PricingDef> {
-    content::content()
-        .captain(&world.captain.captain_type)
-        .map(|captain| &captain.pricing)
+/// `GameSession._pricing` (`app/session.py` lines 540–543).
+///
+/// Reads [`custom_captain::captain_template`], so a missing custom template
+/// and an unknown captain type both price as the merchant.
+fn pricing(world: &World) -> &PricingDef {
+    &custom_captain::captain_template(world).pricing
 }
 
 fn current_port_id(world: &World) -> Option<&str> {
@@ -3218,9 +3251,9 @@ fn settle_event_insurance(
 }
 
 fn reprice_all(world: &mut World) {
-    let pricing = pricing(world).cloned();
+    let mods = pricing(world).clone();
     for port in &mut world.ports {
-        recalculate_prices(port, pricing.as_ref());
+        recalculate_prices(port, Some(&mods));
     }
 }
 
@@ -3312,6 +3345,19 @@ fn officer_trait(rng: &mut PyRandom) -> String {
 mod tests {
     use super::*;
 
+    fn price_rows(port: &crate::model::Port) -> Vec<(String, i64, i64)> {
+        port.market
+            .iter()
+            .map(|slot| (slot.good_id.clone(), slot.buy_price, slot.sell_price))
+            .collect()
+    }
+
+    fn assert_market(port: &crate::model::Port, mods: Option<&PricingDef>) {
+        let mut expected = port.clone();
+        recalculate_prices(&mut expected, mods);
+        assert_eq!(price_rows(port), price_rows(&expected));
+    }
+
     #[test]
     fn provision_uses_the_service_modifier() {
         let mut session = Session::new("Ada", "merchant", 1, Some("silva_bay")).unwrap();
@@ -3361,6 +3407,116 @@ mod tests {
         let loaded = Session::load(&dir, "default").unwrap().unwrap();
         assert_eq!(loaded.world().captain.silver, 0);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// `GameSession.captain_template` (`app/session.py` lines 488–496) falls
+    /// back to `CAPTAIN_TEMPLATES[MERCHANT]` on `KeyError` or `ValueError`.
+    /// `_pricing` (lines 540–543) is what `buy`, `sell`, and `_recalc` read,
+    /// including the reprice in `load` (line 536). A custom captain after a
+    /// fresh load has no registered template, so those three trade at merchant
+    /// prices. Voyage lookups do not.
+    #[test]
+    fn loaded_custom_captain_buys_and_sells_at_merchant_prices() {
+        let spec = CustomCaptainSpec {
+            trade_points: 7,
+            sailing_points: 1,
+            shadow_points: 1,
+            reputation_points: 1,
+            ..CustomCaptainSpec::default()
+        };
+        let mut session = Session::new_custom(&spec, 7, None).unwrap();
+        let custom = custom_captain::build_custom_template(&spec);
+        let merchant = content::content()
+            .captain("merchant")
+            .unwrap()
+            .pricing
+            .clone();
+        assert_eq!(
+            pricing(&session.world).buy_price_mult,
+            custom.pricing.buy_price_mult
+        );
+        assert_ne!(custom.pricing.buy_price_mult, merchant.buy_price_mult);
+
+        let port_id = session.world.voyage.destination_id.clone();
+        session.buy("grain", 1).unwrap();
+        let dock = session.world.port(&port_id).unwrap();
+        assert_market(dock, Some(&custom.pricing));
+        let custom_rows = price_rows(dock);
+        let custom_quote = dock.slot("grain").unwrap().buy_price;
+        let mut merchant_view = dock.clone();
+        recalculate_prices(&mut merchant_view, Some(&merchant));
+        assert_ne!(custom_rows, price_rows(&merchant_view));
+        let second = session.buy("grain", 1).unwrap();
+        assert_eq!(second.unit_price, custom_quote);
+
+        let dir =
+            std::env::temp_dir().join(format!("portlight-custom-pricing-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "default").unwrap();
+        let mut loaded = Session::load(&dir, "default").unwrap().unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+
+        assert_eq!(loaded.world.captain.captain_type, "custom");
+        assert!(loaded.world.custom_captain.is_none());
+        assert!(custom_captain::active_captain(&loaded.world).is_none());
+        assert_eq!(
+            custom_captain::captain_template(&loaded.world).id,
+            "merchant"
+        );
+        assert_eq!(
+            pricing(&loaded.world).buy_price_mult,
+            merchant.buy_price_mult
+        );
+        assert_eq!(
+            pricing(&loaded.world).sell_price_mult,
+            merchant.sell_price_mult
+        );
+        for port in &loaded.world.ports {
+            assert_market(port, Some(&merchant));
+        }
+        let home = loaded.world.port(&port_id).unwrap().clone();
+        let mut still_custom = home.clone();
+        recalculate_prices(&mut still_custom, Some(&custom.pricing));
+        assert_ne!(price_rows(&home), price_rows(&still_custom));
+
+        let grain_buy = home.slot("grain").unwrap().buy_price;
+        let bought = loaded.buy("grain", 1).unwrap();
+        assert_eq!(bought.unit_price, grain_buy);
+        assert_market(loaded.world.port(&port_id).unwrap(), Some(&merchant));
+
+        let grain_sell = loaded
+            .world
+            .port(&port_id)
+            .unwrap()
+            .slot("grain")
+            .unwrap()
+            .sell_price;
+        let sold = loaded.sell("grain", 1).unwrap();
+        assert_eq!(sold.receipt.unit_price, grain_sell);
+        assert_market(loaded.world.port(&port_id).unwrap(), Some(&merchant));
+
+        loaded.world.captain.captain_type = "not_a_captain".to_string();
+        loaded.world.custom_captain = Some(custom.to_captain_def());
+        assert_eq!(
+            pricing(&loaded.world).buy_price_mult,
+            merchant.buy_price_mult
+        );
+        assert!(custom_captain::active_captain(&loaded.world).is_none());
+        if let Some(port) = loaded.world.port_mut(&port_id) {
+            for slot in &mut port.market {
+                slot.buy_price = 7;
+                slot.sell_price = 7;
+            }
+        }
+        loaded.buy("grain", 1).unwrap();
+        assert_market(loaded.world.port(&port_id).unwrap(), Some(&merchant));
+        let mut unmodified = loaded.world.port(&port_id).unwrap().clone();
+        recalculate_prices(&mut unmodified, None);
+        assert_ne!(
+            price_rows(loaded.world.port(&port_id).unwrap()),
+            price_rows(&unmodified)
+        );
     }
 
     #[test]

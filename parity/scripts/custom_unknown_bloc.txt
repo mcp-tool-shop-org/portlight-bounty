@@ -1,0 +1,2 @@
+# Unknown trade bloc: 'fake_bloc'
+custom Ada 1 trade=3 sailing=3 shadow=2 reputation=2 home=porto_novo region=Mediterranean bloc=fake_bloc

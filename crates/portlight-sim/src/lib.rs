@@ -19,6 +19,7 @@ pub mod content;
 pub mod contracts;
 pub mod cross_port_networks;
 pub mod culture;
+pub mod custom_captain;
 pub mod duel;
 pub mod economy;
 pub mod encounter;
@@ -53,6 +54,9 @@ pub mod world;
 pub use campaign::{
     compute_victory_progress, HouseBooks, MilestoneFamily, VictoryPathStatus,
     MILESTONE_FAMILY_COMMERCIAL_FINANCE, PATH_COMMERCIAL_EMPIRE,
+};
+pub use custom_captain::{
+    build_custom_template, validate_spec, CustomCaptainSpec, CustomCaptainTemplate,
 };
 pub use duel::{DuelOutcome, DuelRound};
 pub use error::SimError;
