@@ -185,6 +185,40 @@ impl PyRandom {
         self.randbelow(n as u64) as usize
     }
 
+    /// `Random.sample` indices, in draw order.
+    ///
+    /// CPython 3.12 uses a pool swap when `n` fits the small-set cutoff
+    /// (`21`, plus a table term when `k > 5`) and rejection sampling otherwise.
+    pub fn sample_indices(&mut self, n: usize, k: usize) -> Vec<usize> {
+        debug_assert!(k <= n);
+        let mut setsize = 21usize;
+        if k > 5 {
+            let log = ((k * 3) as f64).log(4.0);
+            let ceil = log.ceil() as u32;
+            setsize += 4usize.pow(ceil);
+        }
+        let mut result = Vec::with_capacity(k);
+        if n <= setsize {
+            let mut pool: Vec<usize> = (0..n).collect();
+            for i in 0..k {
+                let j = self.randbelow((n - i) as u64) as usize;
+                result.push(pool[j]);
+                pool[j] = pool[n - i - 1];
+            }
+        } else {
+            let mut selected = vec![false; n];
+            for _ in 0..k {
+                let mut j = self.randbelow(n as u64) as usize;
+                while selected[j] {
+                    j = self.randbelow(n as u64) as usize;
+                }
+                selected[j] = true;
+                result.push(j);
+            }
+        }
+        result
+    }
+
     /// `Random.choices(population, weights=..., k=1)[0]` index.
     ///
     /// Uses cumulative weights and `bisect_right` with `hi = n - 1`, which is
@@ -286,5 +320,12 @@ mod tests {
         assert_eq!(neg.randint(1, 6), 5);
         assert_eq!(pos.choice_index(3), 0);
         assert_eq!(neg.choice_index(3), 0);
+    }
+
+    #[test]
+    fn sample_matches_cpython_pool_swap() {
+        // random.Random(42).sample(list("abcdefgh"), 3) == ["b", "a", "f"]
+        let mut rng = PyRandom::from_seed(42);
+        assert_eq!(rng.sample_indices(8, 3), vec![1, 0, 5]);
     }
 }

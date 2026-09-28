@@ -1,0 +1,3 @@
+# Port hunt. Seed 2 fails: empty nets, no yield.
+new merchant Ada 2
+hunt

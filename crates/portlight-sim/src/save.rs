@@ -723,6 +723,16 @@ fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
                     .collect(),
             ),
         ),
+        (
+            "claimed_bounties",
+            Value::Array(
+                captain
+                    .claimed_bounties
+                    .iter()
+                    .map(|id| Value::from(id.as_str()))
+                    .collect(),
+            ),
+        ),
     ])
 }
 
@@ -754,6 +764,7 @@ fn captain_from(value: &Value) -> Option<Captain> {
         standing,
         wanted_level: opt_i64(map, "wanted_level").unwrap_or(0),
         active_bounties: string_list(map.get("active_bounties"))?,
+        claimed_bounties: string_list(map.get("claimed_bounties"))?,
         deferred_fees: fee_list(map.get("deferred_fees"))?,
         melee: gear_melee(map),
         firearm: gear_firearm(map),

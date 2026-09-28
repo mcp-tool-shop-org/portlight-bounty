@@ -1,0 +1,3 @@
+# Hunt refuses a target that was never accepted.
+new merchant Ada 1
+bounty hunt raj_the_quiet

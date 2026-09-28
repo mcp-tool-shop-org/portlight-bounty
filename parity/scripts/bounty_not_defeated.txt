@@ -1,0 +1,4 @@
+# Claim refuses an accepted target who has not been defeated.
+new merchant Ada 1
+bounty accept raj_the_quiet
+bounty claim raj_the_quiet

@@ -826,6 +826,20 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         if len(tokens) != 2:
             raise ScriptError("Usage: maintain <weapon_id>")
         do_maintain(state, tokens[1])
+    elif cmd == "hunt":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: hunt")
+        do_hunt(state, entry)
+    elif cmd == "bounty":
+        do_bounty(state, tokens, entry)
+    elif cmd == "wanted":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: wanted <level>")
+        try:
+            level = int(tokens[1])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        state["world"].captain.wanted_level = level
     else:
         raise ScriptError(f"Unknown command: {cmd}")
 
@@ -2061,6 +2075,137 @@ def do_hire(state, count: int, role: str) -> None:
                 origin_port=port.id,
                 trait=generate_officer_trait(state["rng"]),
             ))
+
+
+def do_hunt(state, entry: dict) -> None:
+    """GameSession.hunt (session.py line 1335)."""
+    from portlight.app.session import apply_crew_casualties
+    from portlight.engine.hunting import hunt as do_hunt_engine
+    from portlight.engine.models import CargoItem
+
+    world = state["world"]
+    location = "port"
+    if world.voyage and world.voyage.status == VoyageStatus.AT_SEA:
+        location = "sea"
+    if location == "sea" and world.captain.ship and world.captain.ship.morale < 20:
+        raise ScriptError("Crew morale too low for hunting at sea (need 20+).")
+    crew_count = world.captain.ship.crew if world.captain.ship else 1
+    result = do_hunt_engine(world.captain, location, crew_count, state["rng"])
+    world.day = world.captain.day
+    if result.success:
+        if result.provisions_gained > 0:
+            world.captain.provisions += result.provisions_gained
+        if result.pelts_gained > 0:
+            existing = next((c for c in world.captain.cargo if c.good_id == "pelts"), None)
+            if existing:
+                existing.quantity += result.pelts_gained
+            else:
+                acquired_port = ""
+                port = current_port(world)
+                if port is not None:
+                    acquired_port = port.id
+                world.captain.cargo.append(CargoItem(
+                    good_id="pelts", quantity=result.pelts_gained,
+                    cost_basis=0, acquired_port=acquired_port,
+                    acquired_region="", acquired_day=world.captain.day,
+                ))
+        if result.silver_gained > 0:
+            world.captain.silver += result.silver_gained
+    if result.crew_lost > 0 and world.captain.ship:
+        apply_crew_casualties(world.captain.ship, result.crew_lost, keep_at_least=1)
+    if result.hull_damage > 0 and world.captain.ship:
+        world.captain.ship.hull = max(1, world.captain.ship.hull - result.hull_damage)
+    if result.morale_cost > 0 and world.captain.ship:
+        world.captain.ship.morale = max(0, world.captain.ship.morale - result.morale_cost)
+    entry["hunt"] = {
+        "success": result.success,
+        "location": location,
+        "provisions_gained": result.provisions_gained,
+        "pelts_gained": result.pelts_gained,
+        "silver_gained": result.silver_gained,
+        "morale_cost": result.morale_cost,
+        "crew_lost": result.crew_lost,
+        "hull_damage": result.hull_damage,
+        "flavor": result.flavor,
+        "danger_text": result.danger_text or "",
+    }
+
+
+def bounty_log(action: str, target_id: str, reward: int, targets=None) -> dict:
+    view = {"action": action, "target_id": target_id, "reward": reward}
+    if targets:
+        view["targets"] = [
+            {
+                "captain_id": target.captain_id,
+                "captain_name": target.captain_name,
+                "faction_id": target.faction_id,
+                "region": target.region,
+                "reward": target.reward,
+                "difficulty": target.difficulty,
+                "description": target.description,
+            }
+            for target in targets
+        ]
+    return view
+
+
+def do_bounty(state, tokens: list[str], entry: dict) -> None:
+    """CLI `bounty` actions: list, accept, hunt, claim."""
+    from portlight.engine.bounty import (
+        accept_bounty,
+        claim_bounty,
+        generate_bounty_board,
+        hunt_bounty,
+    )
+    from portlight.engine.models import PendingDuel
+
+    world = state["world"]
+    action = tokens[1] if len(tokens) > 1 else "list"
+    if action == "list":
+        if len(tokens) > 2:
+            raise ScriptError("Usage: bounty [list|accept <id>|hunt <id>|claim <id>]")
+        targets = generate_bounty_board(world.pirates, state["rng"])
+        entry["bounty"] = bounty_log("list", "", 0, targets)
+        return
+    if action == "accept":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: bounty accept <captain_id>")
+        err = accept_bounty(world.captain, tokens[2])
+        if err:
+            raise ScriptError(err)
+        entry["bounty"] = bounty_log("accept", tokens[2], 0)
+        return
+    if action == "hunt":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: bounty hunt <captain_id>")
+        enc = hunt_bounty(world, world.captain, tokens[2], state["rng"])
+        if isinstance(enc, str):
+            raise ScriptError(enc)
+        world.pirates.pending_duel = PendingDuel(
+            captain_id=enc.enemy_captain_id,
+            captain_name=enc.enemy_captain_name,
+            faction_id=enc.enemy_faction_id,
+            personality=enc.enemy_personality,
+            strength=enc.enemy_strength,
+            region=enc.enemy_region,
+        )
+        state["encounter"] = enc
+        state["player_combat"] = None
+        state["opponent_combat"] = None
+        state["pending_victory"] = False
+        entry["bounty"] = bounty_log("hunt", tokens[2], 0)
+        return
+    if action == "claim":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: bounty claim <captain_id>")
+        result = claim_bounty(world.captain, world.pirates, tokens[2])
+        if isinstance(result, str):
+            raise ScriptError(result)
+        entry["bounty"] = bounty_log("claim", tokens[2], result)
+        return
+    raise ScriptError(
+        f"Unknown bounty action: {action}. Use: list, accept, hunt, claim"
+    )
 
 
 def do_work(state, entry: dict) -> None:

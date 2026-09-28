@@ -433,7 +433,115 @@ fn dispatch(
             }
             session.maintain_weapon(&tokens[1])
         }
+        "hunt" => {
+            let session = active(session)?;
+            if tokens.len() != 1 {
+                return Err(SimError::Sentence("Usage: hunt".into()));
+            }
+            let result = session.hunt()?;
+            let location = if session.world().voyage.status == crate::model::VoyageStatus::AtSea {
+                "sea"
+            } else {
+                "port"
+            };
+            entry.hunt = Some(snapshot::HuntLog {
+                success: result.success,
+                location: location.to_string(),
+                provisions_gained: result.provisions_gained,
+                pelts_gained: result.pelts_gained,
+                silver_gained: result.silver_gained,
+                morale_cost: result.morale_cost,
+                crew_lost: result.crew_lost,
+                hull_damage: result.hull_damage,
+                flavor: result.flavor,
+                danger_text: result.danger_text,
+            });
+            Ok(())
+        }
+        "bounty" => dispatch_bounty(session, tokens, entry),
+        "wanted" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: wanted <level>".into()));
+            }
+            let level = parse_qty(&tokens[1])?;
+            session.set_wanted_level(level);
+            Ok(())
+        }
         other => Err(SimError::UnknownCommand(other.to_string())),
+    }
+}
+
+fn dispatch_bounty(
+    session: &mut Option<Session>,
+    tokens: &[String],
+    entry: &mut LogEntry,
+) -> Result<(), SimError> {
+    let session = active(session)?;
+    let action = tokens.get(1).map(String::as_str).unwrap_or("list");
+    if action == "list" {
+        if tokens.len() > 2 {
+            return Err(SimError::Sentence(
+                "Usage: bounty [list|accept <id>|hunt <id>|claim <id>]".into(),
+            ));
+        }
+        let targets = session.bounty_board();
+        entry.bounty = Some(snapshot::BountyLog {
+            action: "list".to_string(),
+            target_id: String::new(),
+            reward: 0,
+            targets: targets
+                .into_iter()
+                .map(|target| snapshot::BountyTargetSnap {
+                    captain_id: target.captain_id,
+                    captain_name: target.captain_name,
+                    faction_id: target.faction_id,
+                    region: target.region,
+                    reward: target.reward,
+                    difficulty: target.difficulty,
+                    description: target.description,
+                })
+                .collect(),
+        });
+        return Ok(());
+    }
+    if tokens.len() != 3 {
+        return Err(SimError::Sentence(match action {
+            "accept" => "Usage: bounty accept <captain_id>".into(),
+            "hunt" => "Usage: bounty hunt <captain_id>".into(),
+            "claim" => "Usage: bounty claim <captain_id>".into(),
+            _ => format!("Unknown bounty action: {action}. Use: list, accept, hunt, claim"),
+        }));
+    }
+    let target_id = tokens[2].as_str();
+    match action {
+        "accept" => {
+            session.accept_bounty(target_id)?;
+            entry.bounty = Some(bounty_log("accept", target_id, 0));
+            Ok(())
+        }
+        "hunt" => {
+            session.hunt_bounty(target_id)?;
+            entry.bounty = Some(bounty_log("hunt", target_id, 0));
+            Ok(())
+        }
+        "claim" => {
+            let reward = session.claim_bounty(target_id)?;
+            entry.bounty = Some(bounty_log("claim", target_id, reward));
+            Ok(())
+        }
+        _ => Err(SimError::Sentence(format!(
+            "Unknown bounty action: {action}. Use: list, accept, hunt, claim"
+        ))),
+    }
+}
+
+fn bounty_log(action: &str, target_id: &str, reward: i64) -> snapshot::BountyLog {
+    snapshot::BountyLog {
+        action: action.to_string(),
+        target_id: target_id.to_string(),
+        reward,
+        targets: Vec::new(),
     }
 }
 

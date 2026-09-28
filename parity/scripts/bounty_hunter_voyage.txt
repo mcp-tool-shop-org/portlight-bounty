@@ -1,0 +1,5 @@
+# Wanted level 3, then the first sea day. Seed 2 reaches the bounty hunter.
+new merchant Ada 2
+wanted 3
+depart silva_bay
+advance

@@ -858,7 +858,11 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
     Ok(())
 }
 
-pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEvent>, SimError> {
+pub fn advance_day(
+    world: &mut World,
+    rng: &mut PyRandom,
+    breach_count: i64,
+) -> Result<Vec<VoyageEvent>, SimError> {
     if world.voyage.status != VoyageStatus::AtSea || world.captain.ship.is_none() {
         return Ok(Vec::new());
     }
@@ -936,14 +940,15 @@ pub fn advance_day(world: &mut World, rng: &mut PyRandom) -> Result<Vec<VoyageEv
     let picked = event_type.as_str().to_string();
 
     if world.captain.wanted_level >= 3 && event.pending_duel.is_none() && rng.random() < 0.15 {
-        let demand = world
+        let loans = world
             .captain
             .deferred_fees
             .iter()
             .filter(|f| f.fee_type == "emergency_loan")
             .map(|f| f.amount)
             .sum::<i64>();
-        // Breach records are not in this slice; Python adds len(breach_records) * 50.
+        // `_bounty_hunter_event`: emergency-loan principal plus 50 silver per breach.
+        let demand = loans + breach_count * 50;
         let bh = bounty_hunter_event(demand, rng);
         if event.pending_duel.is_none() {
             if let Some(duel) = bh.pending_duel.clone() {
@@ -1192,7 +1197,7 @@ mod tests {
                 recent_events: Vec::new(),
             };
             let mut rng = PyRandom::from_seed(99);
-            advance_day(&mut world, &mut rng).expect("day");
+            advance_day(&mut world, &mut rng, 0).expect("day");
             world.voyage.progress
         }
 
@@ -1223,7 +1228,7 @@ mod tests {
             }
             let before_days = world.voyage.days_elapsed;
             let before_hull = world.captain.ship.as_ref().expect("ship").hull_max;
-            advance_day(&mut world, &mut rng).expect("day");
+            advance_day(&mut world, &mut rng, 0).expect("day");
             let after_days = world.voyage.days_elapsed;
             let after_hull = world.captain.ship.as_ref().expect("ship").hull_max;
             if after_days == 20 {

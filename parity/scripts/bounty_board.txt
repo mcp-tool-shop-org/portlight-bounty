@@ -1,0 +1,3 @@
+# Bounty board sample. Three live captains, session RNG.
+new merchant Ada 1
+bounty

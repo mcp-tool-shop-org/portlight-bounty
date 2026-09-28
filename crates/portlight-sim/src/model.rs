@@ -511,6 +511,8 @@ pub struct Captain {
     pub standing: Standing,
     pub wanted_level: i64,
     pub active_bounties: Vec<String>,
+    /// Bounty ids already paid. Python `Captain.claimed_bounties`.
+    pub claimed_bounties: Vec<String>,
     pub deferred_fees: Vec<DeferredFee>,
     pub melee: Option<Weapon>,
     pub firearm: Option<Weapon>,

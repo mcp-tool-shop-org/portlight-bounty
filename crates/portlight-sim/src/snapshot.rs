@@ -407,6 +407,46 @@ pub struct LogEntry {
     /// Infrastructure and credit messages from this day.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub notes: Vec<String>,
+    /// `GameSession.hunt` result, when that command succeeded.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hunt: Option<HuntLog>,
+    /// Bounty list, accept, hunt, or claim, when that command succeeded.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bounty: Option<BountyLog>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HuntLog {
+    pub success: bool,
+    pub location: String,
+    pub provisions_gained: i64,
+    pub pelts_gained: i64,
+    pub silver_gained: i64,
+    pub morale_cost: i64,
+    pub crew_lost: i64,
+    pub hull_damage: i64,
+    pub flavor: String,
+    pub danger_text: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BountyTargetSnap {
+    pub captain_id: String,
+    pub captain_name: String,
+    pub faction_id: String,
+    pub region: String,
+    pub reward: i64,
+    pub difficulty: String,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BountyLog {
+    pub action: String,
+    pub target_id: String,
+    pub reward: i64,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub targets: Vec<BountyTargetSnap>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -461,6 +501,8 @@ impl LogEntry {
             encounter: None,
             agency: None,
             notes: Vec::new(),
+            hunt: None,
+            bounty: None,
         }
     }
 }

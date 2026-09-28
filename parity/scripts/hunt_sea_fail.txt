@@ -1,0 +1,4 @@
+# Sea hunt. Seed 5 fails with no danger.
+new merchant Ada 5
+depart silva_bay
+hunt
