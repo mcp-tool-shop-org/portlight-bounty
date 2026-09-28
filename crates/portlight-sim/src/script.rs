@@ -27,9 +27,13 @@ pub fn run_script(script: &str) -> Snapshot {
         }
     }
     match session {
-        Some(session) => {
-            snapshot::capture(session.world(), session.trade_seq(), session.books(), log)
-        }
+        Some(session) => snapshot::capture(
+            session.world(),
+            session.trade_seq(),
+            session.books(),
+            session.infrastructure(),
+            log,
+        ),
         None => snapshot::empty(log),
     }
 }
@@ -96,6 +100,7 @@ fn dispatch(
                 .iter()
                 .map(snapshot::from_contract_outcome)
                 .collect();
+            entry.notes = turn.notes;
             Ok(())
         }
         "accept_contract" => {
@@ -115,6 +120,60 @@ fn dispatch(
             let outcome = session.complete_contract(&tokens[1])?;
             entry.contracts = vec![snapshot::from_contract_outcome(&outcome)];
             Ok(())
+        }
+        "buy_infrastructure" => {
+            let session = active(session)?;
+            if tokens.len() < 2 {
+                return Err(SimError::UsageBuyInfrastructure);
+            }
+            let args: Vec<&str> = tokens[2..].iter().map(String::as_str).collect();
+            session.buy_infrastructure(&tokens[1], &args)
+        }
+        "take_credit" => {
+            let session = active(session)?;
+            if tokens.len() != 3 {
+                return Err(SimError::UsageTakeCredit);
+            }
+            let amount = parse_qty(&tokens[2])?;
+            session.take_credit(&tokens[1], amount)?;
+            Ok(())
+        }
+        "buy_insurance" => {
+            let session = active(session)?;
+            if tokens.len() < 2 || tokens.len() > 5 {
+                return Err(SimError::UsageBuyInsurance);
+            }
+            let target = tokens.get(2).map(String::as_str).unwrap_or("");
+            let origin = tokens.get(3).map(String::as_str).unwrap_or("");
+            let destination = tokens.get(4).map(String::as_str).unwrap_or("");
+            session.buy_insurance(&tokens[1], target, origin, destination)
+        }
+        "deposit" => {
+            let session = active(session)?;
+            if tokens.len() != 3 {
+                return Err(SimError::UsageDeposit);
+            }
+            let qty = parse_qty(&tokens[2])?;
+            session.deposit_cargo(&tokens[1], qty)?;
+            Ok(())
+        }
+        "withdraw" => {
+            let session = active(session)?;
+            if tokens.len() < 3 || tokens.len() > 4 {
+                return Err(SimError::UsageWithdraw);
+            }
+            let qty = parse_qty(&tokens[2])?;
+            let source = tokens.get(3).map(String::as_str);
+            session.withdraw_cargo(&tokens[1], qty, source)?;
+            Ok(())
+        }
+        "repay_credit" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageRepayCredit);
+            }
+            let amount = parse_qty(&tokens[1])?;
+            session.repay_credit(amount)
         }
         "hire" => {
             let session = active(session)?;

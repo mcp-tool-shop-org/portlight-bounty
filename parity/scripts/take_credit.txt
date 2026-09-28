@@ -1,0 +1,14 @@
+# Draw the merchant line, then advance until the first interest period is due.
+new merchant Ada 11 porto_novo
+take_credit merchant_line 100
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance

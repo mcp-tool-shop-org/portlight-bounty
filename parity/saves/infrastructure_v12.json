@@ -1,0 +1,2739 @@
+{
+  "version": 12,
+  "captain": {
+    "name": "Ada",
+    "captain_type": "merchant",
+    "silver": 450,
+    "reputation": 0,
+    "ship": {
+      "template_id": "coastal_sloop",
+      "name": "Coastal Sloop",
+      "hull": 60,
+      "hull_max": 60,
+      "cargo_capacity": 30,
+      "speed": 8,
+      "crew": 3,
+      "crew_max": 8,
+      "cannons": 0,
+      "maneuver": 0.9,
+      "upgrades": [],
+      "upgrade_slots": 2,
+      "roster": {
+        "sailors": 3,
+        "gunners": 0,
+        "navigators": 0,
+        "surgeons": 0,
+        "marines": 0,
+        "quartermasters": 0
+      },
+      "morale": 50,
+      "officers": []
+    },
+    "cargo": [],
+    "provisions": 30,
+    "day": 1,
+    "standing": {
+      "regional_standing": {
+        "Mediterranean": 10,
+        "North Atlantic": 0,
+        "West Africa": 0,
+        "East Indies": 0,
+        "South Seas": 0
+      },
+      "port_standing": {},
+      "customs_heat": {
+        "Mediterranean": 0,
+        "North Atlantic": 0,
+        "West Africa": 0,
+        "East Indies": 0,
+        "South Seas": 0
+      },
+      "commercial_trust": 15,
+      "recent_incidents": [],
+      "underworld_standing": {},
+      "underworld_heat": 0
+    },
+    "learned_styles": [],
+    "active_style": null,
+    "combat_gear": {
+      "firearm": null,
+      "firearm_ammo": 0,
+      "throwing_weapons": {},
+      "mechanical_weapon": null,
+      "mechanical_ammo": 0,
+      "armor": null,
+      "melee_weapon": null,
+      "weapon_upgrades": {},
+      "weapon_quality": {},
+      "weapon_usage": {},
+      "weapon_provenance": {}
+    },
+    "injuries": [],
+    "skills": {},
+    "party": {
+      "companions": [],
+      "max_size": 2,
+      "departed": []
+    },
+    "fleet": [],
+    "deferred_fees": [],
+    "breach_records": [],
+    "wanted_level": 0,
+    "active_bounties": [],
+    "claimed_bounties": []
+  },
+  "ports": {
+    "porto_novo": {
+      "id": "porto_novo",
+      "name": "Porto Novo",
+      "description": "A bustling harbor city, gateway to inland trade. Grain ships fill the docks.",
+      "region": "Mediterranean",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "grain",
+          "stock_current": 40,
+          "stock_target": 35,
+          "restock_rate": 3.0,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 8,
+          "sell_price": 7,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 20,
+          "stock_target": 25,
+          "restock_rate": 2.0,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 30,
+          "sell_price": 26,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 15,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 27,
+          "sell_price": 23,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 32,
+          "sell_price": 28,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 18,
+          "stock_target": 20,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 22,
+          "sell_price": 19,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 49,
+          "sell_price": 42,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 176,
+          "sell_price": 151,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 1,
+      "repair_cost": 2,
+      "crew_cost": 4,
+      "map_x": 18,
+      "map_y": 8
+    },
+    "al_manar": {
+      "id": "al_manar",
+      "name": "Al-Manar",
+      "description": "Ancient port famed for its spice markets. Merchants bid fiercely for grain and iron.",
+      "region": "Mediterranean",
+      "features": [],
+      "market": [
+        {
+          "good_id": "spice",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 2.5,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 33,
+          "sell_price": 28,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 105,
+          "sell_price": 90,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 10,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 39,
+          "sell_price": 33,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 188,
+          "sell_price": 161,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 38,
+          "sell_price": 33,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 96,
+          "sell_price": 82,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 41,
+          "sell_price": 35,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 78,
+          "sell_price": 67,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 20,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 8,
+      "provision_cost": 3,
+      "repair_cost": 4,
+      "crew_cost": 6,
+      "map_x": 24,
+      "map_y": 6
+    },
+    "silva_bay": {
+      "id": "silva_bay",
+      "name": "Silva Bay",
+      "description": "Timber-rich bay surrounded by dense forests. The shipwrights here are the best in the region.",
+      "region": "Mediterranean",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "timber",
+          "stock_current": 45,
+          "stock_target": 40,
+          "restock_rate": 3.5,
+          "local_affinity": 1.6,
+          "spread": 0.15,
+          "buy_price": 11,
+          "sell_price": 9,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 19,
+          "sell_price": 16,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 17,
+          "sell_price": 15,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 34,
+          "sell_price": 29,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 141,
+          "sell_price": 121,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.5,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 6,
+          "sell_price": 5,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 38,
+          "sell_price": 33,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 2,
+      "repair_cost": 1,
+      "crew_cost": 5,
+      "map_x": 14,
+      "map_y": 10
+    },
+    "corsairs_rest": {
+      "id": "corsairs_rest",
+      "name": "Corsair's Rest",
+      "description": "A lawless harbor tucked between cliffs. Smugglers, pirates, and those who trade with them.",
+      "region": "Mediterranean",
+      "features": [
+        "black_market"
+      ],
+      "market": [
+        {
+          "good_id": "weapons",
+          "stock_current": 25,
+          "stock_target": 20,
+          "restock_rate": 2.5,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 26,
+          "sell_price": 22,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 3.0,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 12,
+          "sell_price": 10,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 21,
+          "sell_price": 18,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 113,
+          "sell_price": 97,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 10,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 6,
+          "sell_price": 5,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 23,
+          "sell_price": 20,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "black_powder",
+          "stock_current": 8,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 40,
+          "sell_price": 35,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "stolen_cargo",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 30,
+          "sell_price": 26,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "opium",
+          "stock_current": 3,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 174,
+          "sell_price": 150,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 3,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 2,
+      "map_x": 21,
+      "map_y": 13
+    },
+    "ironhaven": {
+      "id": "ironhaven",
+      "name": "Ironhaven",
+      "description": "Industrial port city wreathed in forge smoke. Weapons and iron flow out, everything else flows in.",
+      "region": "North Atlantic",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "iron",
+          "stock_current": 50,
+          "stock_target": 45,
+          "restock_rate": 4.0,
+          "local_affinity": 1.7,
+          "spread": 0.15,
+          "buy_price": 14,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 35,
+          "stock_target": 30,
+          "restock_rate": 3.0,
+          "local_affinity": 1.6,
+          "spread": 0.15,
+          "buy_price": 26,
+          "sell_price": 22,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 29,
+          "sell_price": 25,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 10,
+          "stock_target": 15,
+          "restock_rate": 1.0,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 35,
+          "sell_price": 30,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 8,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 48,
+          "sell_price": 42,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 42,
+          "sell_price": 36,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 9,
+          "sell_price": 7,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 279,
+          "sell_price": 240,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 57,
+          "sell_price": 49,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 1,
+      "crew_cost": 4,
+      "map_x": 8,
+      "map_y": 4
+    },
+    "stormwall": {
+      "id": "stormwall",
+      "name": "Stormwall",
+      "description": "Fortress port guarding the northern straits. Military outpost with strict inspections.",
+      "region": "North Atlantic",
+      "features": [],
+      "market": [
+        {
+          "good_id": "weapons",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 53,
+          "sell_price": 45,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 20,
+          "stock_target": 22,
+          "restock_rate": 2.0,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 11,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 18,
+          "stock_target": 20,
+          "restock_rate": 1.5,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 22,
+          "sell_price": 18,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 22,
+          "sell_price": 18,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 52,
+          "sell_price": 44,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 68,
+          "sell_price": 59,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 10,
+      "provision_cost": 2,
+      "repair_cost": 2,
+      "crew_cost": 3,
+      "map_x": 4,
+      "map_y": 8
+    },
+    "thornport": {
+      "id": "thornport",
+      "name": "Thornport",
+      "description": "Whaling town turned trading post. Tea and tobacco are the local currency. Medicines fetch gold.",
+      "region": "North Atlantic",
+      "features": [],
+      "market": [
+        {
+          "good_id": "tea",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 25,
+          "sell_price": 22,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 3.0,
+          "local_affinity": 1.6,
+          "spread": 0.15,
+          "buy_price": 16,
+          "sell_price": 13,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 15,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 18,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 5,
+          "sell_price": 4,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 134,
+          "sell_price": 115,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.6,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 177,
+          "sell_price": 153,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 258,
+          "sell_price": 222,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 1,
+      "repair_cost": 3,
+      "crew_cost": 3,
+      "map_x": 11,
+      "map_y": 10
+    },
+    "sun_harbor": {
+      "id": "sun_harbor",
+      "name": "Sun Harbor",
+      "description": "Golden coast port where cotton bales stack higher than the warehouses.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "cotton",
+          "stock_current": 35,
+          "stock_target": 30,
+          "restock_rate": 3.0,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 9,
+          "sell_price": 8,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 18,
+          "sell_price": 16,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 15,
+          "sell_price": 13,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 2.0,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 5,
+          "sell_price": 4,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 189,
+          "sell_price": 163,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 32,
+          "sell_price": 28,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 195,
+          "sell_price": 168,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 2,
+      "repair_cost": 4,
+      "crew_cost": 3,
+      "map_x": 14,
+      "map_y": 22
+    },
+    "palm_cove": {
+      "id": "palm_cove",
+      "name": "Palm Cove",
+      "description": "A sheltered cove where rum barrels outnumber the inhabitants. Cheapest provisions on the coast.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "rum",
+          "stock_current": 40,
+          "stock_target": 35,
+          "restock_rate": 3.0,
+          "local_affinity": 1.7,
+          "spread": 0.15,
+          "buy_price": 11,
+          "sell_price": 10,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 23,
+          "sell_price": 20,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 40,
+          "sell_price": 35,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 18,
+          "sell_price": 15,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 18,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 19,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 12,
+          "sell_price": 10,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 72,
+          "sell_price": 62,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 3,
+      "provision_cost": 1,
+      "repair_cost": 5,
+      "crew_cost": 3,
+      "map_x": 10,
+      "map_y": 26
+    },
+    "iron_point": {
+      "id": "iron_point",
+      "name": "Iron Point",
+      "description": "Mining settlement at the river mouth. Iron flows out, everything else flows in at a premium.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "iron",
+          "stock_current": 50,
+          "stock_target": 45,
+          "restock_rate": 4.0,
+          "local_affinity": 1.7,
+          "spread": 0.15,
+          "buy_price": 14,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 8,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 39,
+          "sell_price": 33,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 30,
+          "sell_price": 26,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 235,
+          "sell_price": 202,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 101,
+          "sell_price": 87,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 57,
+          "sell_price": 49,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 125,
+          "sell_price": 108,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 11,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 3,
+      "repair_cost": 3,
+      "crew_cost": 4,
+      "map_x": 18,
+      "map_y": 24
+    },
+    "pearl_shallows": {
+      "id": "pearl_shallows",
+      "name": "Pearl Shallows",
+      "description": "Divers bring up pearls from the warm shallows. A quiet port where fortunes are made by the patient.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "pearls",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.7,
+          "spread": 0.15,
+          "buy_price": 48,
+          "sell_price": 41,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 12,
+          "sell_price": 10,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 14,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 139,
+          "sell_price": 120,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 22,
+          "sell_price": 19,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 251,
+          "sell_price": 216,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 11,
+          "sell_price": 9,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 41,
+          "sell_price": 35,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 2,
+      "repair_cost": 4,
+      "crew_cost": 4,
+      "map_x": 12,
+      "map_y": 30
+    },
+    "jade_port": {
+      "id": "jade_port",
+      "name": "Jade Port",
+      "description": "Porcelain workshops line the waterfront. Iron and grain are worth their weight in gold here.",
+      "region": "East Indies",
+      "features": [],
+      "market": [
+        {
+          "good_id": "porcelain",
+          "stock_current": 35,
+          "stock_target": 30,
+          "restock_rate": 3.0,
+          "local_affinity": 1.6,
+          "spread": 0.15,
+          "buy_price": 35,
+          "sell_price": 30,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 51,
+          "sell_price": 44,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 30,
+          "sell_price": 26,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15,
+          "buy_price": 64,
+          "sell_price": 55,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 41,
+          "sell_price": 36,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 90,
+          "sell_price": 77,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 48,
+          "sell_price": 41,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 18,
+          "sell_price": 16,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 43,
+          "sell_price": 37,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 10,
+      "provision_cost": 3,
+      "repair_cost": 3,
+      "crew_cost": 7,
+      "map_x": 34,
+      "map_y": 10
+    },
+    "monsoon_reach": {
+      "id": "monsoon_reach",
+      "name": "Monsoon Reach",
+      "description": "Seasonal winds funnel the spice trade through this crossroads. The shipyard builds for endurance.",
+      "region": "East Indies",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "spice",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 37,
+          "sell_price": 32,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 56,
+          "sell_price": 49,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 52,
+          "sell_price": 44,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 69,
+          "sell_price": 59,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 45,
+          "sell_price": 39,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 52,
+          "sell_price": 45,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 6,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 36,
+          "sell_price": 31,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 101,
+          "sell_price": 87,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 17,
+          "sell_price": 15,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 8,
+      "provision_cost": 2,
+      "repair_cost": 2,
+      "crew_cost": 6,
+      "map_x": 38,
+      "map_y": 14
+    },
+    "silk_haven": {
+      "id": "silk_haven",
+      "name": "Silk Haven",
+      "description": "Premier silk market of the eastern waters. Rum and iron are scarce luxuries here.",
+      "region": "East Indies",
+      "features": [],
+      "market": [
+        {
+          "good_id": "silk",
+          "stock_current": 40,
+          "stock_target": 35,
+          "restock_rate": 3.5,
+          "local_affinity": 1.7,
+          "spread": 0.15,
+          "buy_price": 39,
+          "sell_price": 33,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 43,
+          "sell_price": 37,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 79,
+          "sell_price": 68,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 76,
+          "sell_price": 66,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 79,
+          "sell_price": 68,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 90,
+          "sell_price": 77,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 47,
+          "sell_price": 40,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 35,
+          "sell_price": 30,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 24,
+          "sell_price": 21,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 7,
+      "provision_cost": 3,
+      "repair_cost": 5,
+      "crew_cost": 8,
+      "map_x": 42,
+      "map_y": 8
+    },
+    "crosswind_isle": {
+      "id": "crosswind_isle",
+      "name": "Crosswind Isle",
+      "description": "Free port at the junction of all trade winds. Everything passes through, nothing stays cheap.",
+      "region": "East Indies",
+      "features": [
+        "safe_harbor"
+      ],
+      "market": [
+        {
+          "good_id": "grain",
+          "stock_current": 15,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 11,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 12,
+          "stock_target": 12,
+          "restock_rate": 1.2,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 19,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 27,
+          "sell_price": 23,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 16,
+          "sell_price": 14,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 59,
+          "sell_price": 51,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 8,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 75,
+          "sell_price": 65,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 22,
+          "sell_price": 18,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 6,
+          "stock_target": 6,
+          "restock_rate": 0.6,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 64,
+          "sell_price": 56,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 8,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 43,
+          "sell_price": 37,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 11,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 8,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 30,
+          "sell_price": 26,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 5,
+      "map_x": 32,
+      "map_y": 16
+    },
+    "dragons_gate": {
+      "id": "dragons_gate",
+      "name": "Dragon's Gate",
+      "description": "Fortress harbor controlling the eastern straits. Weapons are contraband here, but medicines are gold.",
+      "region": "East Indies",
+      "features": [],
+      "market": [
+        {
+          "good_id": "tea",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 3.0,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 24,
+          "sell_price": 21,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 45,
+          "sell_price": 38,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.4,
+          "spread": 0.15,
+          "buy_price": 157,
+          "sell_price": 135,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 86,
+          "sell_price": 74,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 90,
+          "sell_price": 78,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 48,
+          "sell_price": 41,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.65,
+          "spread": 0.15,
+          "buy_price": 40,
+          "sell_price": 34,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 18,
+          "sell_price": 16,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 9,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 7,
+      "map_x": 44,
+      "map_y": 12
+    },
+    "spice_narrows": {
+      "id": "spice_narrows",
+      "name": "Spice Narrows",
+      "description": "Hidden anchorage in the spice archipelago. The most concentrated spice market in the world.",
+      "region": "East Indies",
+      "features": [
+        "black_market"
+      ],
+      "market": [
+        {
+          "good_id": "spice",
+          "stock_current": 45,
+          "stock_target": 40,
+          "restock_rate": 4.0,
+          "local_affinity": 1.8,
+          "spread": 0.15,
+          "buy_price": 29,
+          "sell_price": 25,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pearls",
+          "stock_current": 8,
+          "stock_target": 6,
+          "restock_rate": 1.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 59,
+          "sell_price": 51,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 100,
+          "sell_price": 86,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 161,
+          "sell_price": 139,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 41,
+          "sell_price": 36,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 48,
+          "sell_price": 41,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 6,
+          "restock_rate": 0.8,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 11,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "opium",
+          "stock_current": 10,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 52,
+          "sell_price": 45,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "stolen_cargo",
+          "stock_current": 8,
+          "stock_target": 6,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15,
+          "buy_price": 32,
+          "sell_price": 28,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "black_powder",
+          "stock_current": 3,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 155,
+          "sell_price": 134,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 3,
+      "repair_cost": 5,
+      "crew_cost": 6,
+      "map_x": 38,
+      "map_y": 20
+    },
+    "ember_isle": {
+      "id": "ember_isle",
+      "name": "Ember Isle",
+      "description": "Volcanic island with obsidian beaches. Rich in rare minerals and medicinal plants.",
+      "region": "South Seas",
+      "features": [],
+      "market": [
+        {
+          "good_id": "medicines",
+          "stock_current": 25,
+          "stock_target": 20,
+          "restock_rate": 2.5,
+          "local_affinity": 1.6,
+          "spread": 0.15,
+          "buy_price": 19,
+          "sell_price": 16,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 14,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 18,
+          "sell_price": 15,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 41,
+          "sell_price": 36,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 62,
+          "sell_price": 53,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 161,
+          "sell_price": 139,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 57,
+          "sell_price": 49,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 20,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 44,
+          "sell_price": 38,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 4,
+      "crew_cost": 5,
+      "map_x": 34,
+      "map_y": 28
+    },
+    "typhoon_anchorage": {
+      "id": "typhoon_anchorage",
+      "name": "Typhoon Anchorage",
+      "description": "Storm-battered harbor that only the boldest captains visit. Pearls and rare goods reward the brave.",
+      "region": "South Seas",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "pearls",
+          "stock_current": 20,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.7,
+          "spread": 0.15,
+          "buy_price": 45,
+          "sell_price": 39,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 12,
+          "sell_price": 10,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 41,
+          "sell_price": 35,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 279,
+          "sell_price": 240,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 287,
+          "sell_price": 247,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15,
+          "buy_price": 59,
+          "sell_price": 51,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15,
+          "buy_price": 57,
+          "sell_price": 49,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15,
+          "buy_price": 13,
+          "sell_price": 11,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 35,
+          "sell_price": 30,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 1,
+      "repair_cost": 2,
+      "crew_cost": 4,
+      "map_x": 40,
+      "map_y": 30
+    },
+    "coral_throne": {
+      "id": "coral_throne",
+      "name": "Coral Throne",
+      "description": "Island kingdom built on coral reefs. The king trades pearls for weapons and demands tribute in silk.",
+      "region": "South Seas",
+      "features": [],
+      "market": [
+        {
+          "good_id": "pearls",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.5,
+          "local_affinity": 1.5,
+          "spread": 0.15,
+          "buy_price": 57,
+          "sell_price": 49,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.4,
+          "spread": 0.15,
+          "buy_price": 19,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 18,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15,
+          "buy_price": 14,
+          "sell_price": 12,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.4,
+          "spread": 0.15,
+          "buy_price": 242,
+          "sell_price": 208,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.4,
+          "spread": 0.15,
+          "buy_price": 376,
+          "sell_price": 324,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15,
+          "buy_price": 143,
+          "sell_price": 123,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15,
+          "buy_price": 35,
+          "sell_price": 30,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15,
+          "buy_price": 20,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.45,
+          "spread": 0.15,
+          "buy_price": 287,
+          "sell_price": 247,
+          "flood_penalty": 0.0
+        }
+      ],
+      "port_fee": 7,
+      "provision_cost": 1,
+      "repair_cost": 4,
+      "crew_cost": 5,
+      "map_x": 44,
+      "map_y": 26
+    }
+  },
+  "routes": [
+    {
+      "port_a": "porto_novo",
+      "port_b": "al_manar",
+      "distance": 24,
+      "danger": 0.12,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "silva_bay",
+      "distance": 16,
+      "danger": 0.08,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "al_manar",
+      "port_b": "silva_bay",
+      "distance": 20,
+      "danger": 0.1,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "corsairs_rest",
+      "distance": 18,
+      "danger": 0.18,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "silva_bay",
+      "port_b": "corsairs_rest",
+      "distance": 14,
+      "danger": 0.15,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "ironhaven",
+      "port_b": "stormwall",
+      "distance": 20,
+      "danger": 0.09,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "ironhaven",
+      "port_b": "thornport",
+      "distance": 22,
+      "danger": 0.08,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "stormwall",
+      "port_b": "thornport",
+      "distance": 18,
+      "danger": 0.1,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "ironhaven",
+      "distance": 36,
+      "danger": 0.12,
+      "min_ship_class": "cutter"
+    },
+    {
+      "port_a": "silva_bay",
+      "port_b": "ironhaven",
+      "distance": 32,
+      "danger": 0.11,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "corsairs_rest",
+      "port_b": "stormwall",
+      "distance": 40,
+      "danger": 0.15,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "sun_harbor",
+      "distance": 40,
+      "danger": 0.12,
+      "min_ship_class": "cutter"
+    },
+    {
+      "port_a": "al_manar",
+      "port_b": "sun_harbor",
+      "distance": 48,
+      "danger": 0.15,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "silva_bay",
+      "port_b": "palm_cove",
+      "distance": 44,
+      "danger": 0.13,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "palm_cove",
+      "distance": 20,
+      "danger": 0.1,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "iron_point",
+      "distance": 18,
+      "danger": 0.09,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "palm_cove",
+      "port_b": "iron_point",
+      "distance": 22,
+      "danger": 0.11,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "pearl_shallows",
+      "distance": 24,
+      "danger": 0.1,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "palm_cove",
+      "port_b": "pearl_shallows",
+      "distance": 20,
+      "danger": 0.09,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "crosswind_isle",
+      "distance": 64,
+      "danger": 0.18,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "iron_point",
+      "port_b": "crosswind_isle",
+      "distance": 60,
+      "danger": 0.16,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "pearl_shallows",
+      "port_b": "crosswind_isle",
+      "distance": 56,
+      "danger": 0.15,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "jade_port",
+      "distance": 28,
+      "danger": 0.1,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "monsoon_reach",
+      "distance": 24,
+      "danger": 0.09,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "silk_haven",
+      "distance": 32,
+      "danger": 0.12,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "dragons_gate",
+      "distance": 30,
+      "danger": 0.11,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "jade_port",
+      "port_b": "monsoon_reach",
+      "distance": 20,
+      "danger": 0.08,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "jade_port",
+      "port_b": "silk_haven",
+      "distance": 18,
+      "danger": 0.07,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "jade_port",
+      "port_b": "dragons_gate",
+      "distance": 22,
+      "danger": 0.09,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "monsoon_reach",
+      "port_b": "silk_haven",
+      "distance": 22,
+      "danger": 0.1,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "monsoon_reach",
+      "port_b": "spice_narrows",
+      "distance": 26,
+      "danger": 0.13,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "silk_haven",
+      "port_b": "spice_narrows",
+      "distance": 20,
+      "danger": 0.11,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "dragons_gate",
+      "port_b": "spice_narrows",
+      "distance": 28,
+      "danger": 0.14,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "monsoon_reach",
+      "port_b": "typhoon_anchorage",
+      "distance": 52,
+      "danger": 0.2,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "spice_narrows",
+      "port_b": "ember_isle",
+      "distance": 48,
+      "danger": 0.18,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "ember_isle",
+      "distance": 56,
+      "danger": 0.19,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "ember_isle",
+      "port_b": "typhoon_anchorage",
+      "distance": 24,
+      "danger": 0.14,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "ember_isle",
+      "port_b": "coral_throne",
+      "distance": 28,
+      "danger": 0.15,
+      "min_ship_class": "sloop"
+    },
+    {
+      "port_a": "typhoon_anchorage",
+      "port_b": "coral_throne",
+      "distance": 22,
+      "danger": 0.13,
+      "min_ship_class": "brigantine"
+    },
+    {
+      "port_a": "al_manar",
+      "port_b": "monsoon_reach",
+      "distance": 72,
+      "danger": 0.22,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "corsairs_rest",
+      "port_b": "spice_narrows",
+      "distance": 80,
+      "danger": 0.25,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "ironhaven",
+      "port_b": "jade_port",
+      "distance": 76,
+      "danger": 0.22,
+      "min_ship_class": "galleon"
+    },
+    {
+      "port_a": "pearl_shallows",
+      "port_b": "coral_throne",
+      "distance": 68,
+      "danger": 0.2,
+      "min_ship_class": "galleon"
+    }
+  ],
+  "voyage": {
+    "origin_id": "porto_novo",
+    "destination_id": "porto_novo",
+    "distance": 0,
+    "progress": 0,
+    "days_elapsed": 0,
+    "status": "in_port",
+    "recent_events": []
+  },
+  "day": 1,
+  "seed": 4,
+  "cultural_state": {
+    "active_festivals": [],
+    "regions_entered": [],
+    "cultural_encounters": 0,
+    "port_visits": {},
+    "festivals_visited": 0
+  },
+  "pirate_state": {
+    "encounters": [],
+    "nemesis_id": null,
+    "duels_won": 0,
+    "duels_lost": 0,
+    "naval_victories": 0,
+    "naval_defeats": 0,
+    "encounter_phase": "",
+    "encounter_state": {},
+    "bounty_board": []
+  },
+  "ledger": null,
+  "contract_board": {
+    "offers": [],
+    "active": [],
+    "completed": [],
+    "last_refresh_day": 0,
+    "max_offers": 5
+  },
+  "infrastructure": {
+    "warehouses": [
+      {
+        "id": "b21e3e594ab0",
+        "port_id": "porto_novo",
+        "tier": "depot",
+        "capacity": 20,
+        "lease_cost": 50,
+        "upkeep_per_day": 1,
+        "inventory": [],
+        "opened_day": 1,
+        "upkeep_paid_through": 1,
+        "active": true
+      }
+    ],
+    "brokers": [
+      {
+        "region": "Mediterranean",
+        "tier": "local",
+        "opened_day": 1,
+        "upkeep_paid_through": 1,
+        "active": true
+      }
+    ],
+    "licenses": [],
+    "policies": [
+      {
+        "id": "ec4d4839a293",
+        "spec_id": "hull_basic",
+        "family": "hull",
+        "scope": "next_voyage",
+        "purchased_day": 1,
+        "coverage_pct": 0.5,
+        "coverage_cap": 150,
+        "premium_paid": 40,
+        "target_id": "",
+        "claims_made": 1,
+        "total_paid_out": 40,
+        "active": true,
+        "voyage_origin": "",
+        "voyage_destination": ""
+      }
+    ],
+    "claims": [
+      {
+        "policy_id": "ec4d4839a293",
+        "day": 1,
+        "incident_type": "storm",
+        "loss_value": 80,
+        "payout": 40,
+        "denied": false,
+        "denial_reason": ""
+      }
+    ],
+    "credit": {
+      "tier": "merchant_line",
+      "credit_limit": 300,
+      "outstanding": 100,
+      "interest_accrued": 0,
+      "last_interest_day": 1,
+      "next_due_day": 11,
+      "defaults": 0,
+      "total_borrowed": 100,
+      "total_repaid": 0,
+      "active": true
+    }
+  },
+  "campaign": {
+    "completed": [],
+    "completed_paths": []
+  }
+}

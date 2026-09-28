@@ -90,6 +90,12 @@ pub enum SimError {
     NoPendingDuel,
     InvalidStance(String),
     TooFewStances,
+    UsageBuyInfrastructure,
+    UsageTakeCredit,
+    UsageBuyInsurance,
+    UsageDeposit,
+    UsageWithdraw,
+    UsageRepayCredit,
     /// Python `SaveVersionError` when the file is newer than this build.
     SaveVersion {
         found: i64,
@@ -278,6 +284,18 @@ impl fmt::Display for SimError {
             Self::UsageRecruit => write!(f, "Usage: recruit <companion_id>"),
             Self::UsageAgency => write!(f, "Usage: agency"),
             Self::UsageRemember => write!(f, "Usage: remember <captain_id> <outcome>"),
+            Self::UsageBuyInfrastructure => write!(
+                f,
+                "Usage: buy_infrastructure warehouse <tier> | broker <region> <tier> | license <id> | dry_dock [ship]"
+            ),
+            Self::UsageTakeCredit => write!(f, "Usage: take_credit <tier> <amount>"),
+            Self::UsageBuyInsurance => write!(
+                f,
+                "Usage: buy_insurance <policy_id> [target_id] [origin] [destination]"
+            ),
+            Self::UsageDeposit => write!(f, "Usage: deposit <good> <qty>"),
+            Self::UsageWithdraw => write!(f, "Usage: withdraw <good> <qty> [source_port]"),
+            Self::UsageRepayCredit => write!(f, "Usage: repay_credit <amount>"),
             Self::Rejected(message) => write!(f, "{message}"),
         }
     }

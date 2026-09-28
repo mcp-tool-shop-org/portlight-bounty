@@ -22,10 +22,11 @@ use crate::economy::TradeReceipt;
 use crate::encounter::{self, EncounterState};
 use crate::error::SimError;
 use crate::model::{
-    ActiveContract, BreachRecord, Captain, CaptainMemory, CaptainRelationship, CargoItem,
-    Companion, Contract, ContractBoard, ContractOutcome, DeferredFee, EncounterMemory, Incident,
-    MarketSlot, Officer, Party, PendingDuel, PirateEncounterRecord, Port, Route, Ship, Skill,
-    Standing, Voyage, VoyageStatus, World,
+    ActiveContract, ActivePolicy, BreachRecord, BrokerOffice, Captain, CaptainMemory,
+    CaptainRelationship, CargoItem, Companion, Contract, ContractBoard, ContractOutcome,
+    CreditState, DeferredFee, EncounterMemory, Incident, InfrastructureRecord, InsuranceClaim,
+    MarketSlot, Officer, OwnedLicense, Party, PendingDuel, PirateEncounterRecord, Port, Route,
+    Ship, Skill, Standing, StoredLot, Voyage, VoyageStatus, WarehouseLease, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -76,6 +77,7 @@ pub(crate) struct LoadedGame {
     pub run_id: String,
     pub books: HouseBooks,
     pub board: ContractBoard,
+    pub infra: crate::model::InfrastructureRecord,
     pub encounter: Option<EncounterState>,
     pub player_combat: Option<CombatantState>,
     pub opponent_combat: Option<CombatantState>,
@@ -110,11 +112,12 @@ pub(crate) fn write_save(
     books: &HouseBooks,
     board: &ContractBoard,
     live: LiveEncounter<'_>,
+    infra: &crate::model::InfrastructureRecord,
 ) -> Result<PathBuf, SimError> {
     let dir = base.join(SAVE_DIR);
     fs::create_dir_all(&dir).map_err(io_err)?;
     let path = dir.join(save_filename(slot));
-    let value = encode(world, receipts, run_id, books, board, live);
+    let value = encode(world, receipts, run_id, books, board, live, infra);
     let text =
         serde_json::to_string_pretty(&value).map_err(|err| SimError::SaveIo(err.to_string()))?;
     fs::write(&path, text).map_err(io_err)?;
@@ -503,6 +506,7 @@ fn encode(
     books: &HouseBooks,
     board: &ContractBoard,
     live: LiveEncounter<'_>,
+    infra: &crate::model::InfrastructureRecord,
 ) -> Value {
     let mut ports = Map::new();
     for port in &world.ports {
@@ -525,7 +529,7 @@ fn encode(
         ),
         ("ledger", ledger_value(receipts, run_id, books)),
         ("contract_board", board_value(board, books)),
-        ("infrastructure", infra_value(books)),
+        ("infrastructure", infra_value(infra)),
         ("campaign", campaign_value(books)),
     ])
 }
@@ -598,9 +602,14 @@ fn decode(data: &Value) -> Option<LoadedGame> {
             summary: outcome.summary.clone(),
         })
         .collect();
-    if let Some(infra) = truthy(data.get("infrastructure")) {
-        apply_infra(&mut books, infra)?;
-    }
+    let infra = match truthy(data.get("infrastructure")) {
+        Some(value) => {
+            let infra = infra_from(value)?;
+            project_infra(&mut books, &infra);
+            infra
+        }
+        None => InfrastructureRecord::default(),
+    };
     if let Some(campaign) = truthy(data.get("campaign")) {
         books.completed_paths = paths_from(campaign)?;
         books.completed_milestones = milestones_from(campaign)?;
@@ -620,6 +629,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         run_id: ledger.run_id,
         books,
         board,
+        infra,
         encounter: pirate.encounter,
         player_combat: pirate.player,
         opponent_combat: pirate.opponent,
@@ -2102,168 +2112,341 @@ fn opt_string_value(value: &Option<String>) -> Value {
     }
 }
 
-fn infra_value(books: &HouseBooks) -> Value {
+fn infra_value(infra: &InfrastructureRecord) -> Value {
     let mut map = Map::new();
     map.insert(
         "warehouses".to_string(),
-        Value::Array(
-            books
-                .warehouses
-                .iter()
-                .enumerate()
-                .map(|(index, site)| {
-                    json_obj(&[
-                        ("id", Value::from(format!("warehouse-{index}"))),
-                        ("port_id", Value::from(site.port_id.as_str())),
-                        ("tier", Value::from("depot")),
-                        ("capacity", Value::from(0)),
-                        ("lease_cost", Value::from(0)),
-                        ("upkeep_per_day", Value::from(1)),
-                        ("inventory", Value::Array(Vec::new())),
-                        ("opened_day", Value::from(0)),
-                        ("upkeep_paid_through", Value::from(0)),
-                        ("active", Value::from(site.active)),
-                    ])
-                })
-                .collect(),
-        ),
+        Value::Array(infra.warehouses.iter().map(warehouse_value).collect()),
     );
     map.insert(
         "brokers".to_string(),
-        Value::Array(
-            books
-                .brokers
-                .iter()
-                .map(|broker| {
-                    json_obj(&[
-                        ("region", Value::from(broker.region.as_str())),
-                        ("tier", Value::from(broker.tier.as_str())),
-                        ("opened_day", Value::from(0)),
-                        ("upkeep_paid_through", Value::from(0)),
-                        ("active", Value::from(broker.active)),
-                    ])
-                })
-                .collect(),
-        ),
+        Value::Array(infra.brokers.iter().map(broker_value).collect()),
     );
     map.insert(
         "licenses".to_string(),
-        Value::Array(
-            books
-                .licenses
-                .iter()
-                .map(|license| {
-                    json_obj(&[
-                        ("license_id", Value::from(license.license_id.as_str())),
-                        ("purchased_day", Value::from(0)),
-                        ("upkeep_paid_through", Value::from(0)),
-                        ("active", Value::from(license.active)),
-                    ])
-                })
-                .collect(),
-        ),
+        Value::Array(infra.licenses.iter().map(license_value).collect()),
     );
-    let policies = (0..books.policies.max(0))
-        .map(|index| {
-            json_obj(&[
-                ("id", Value::from(format!("policy-{index}"))),
-                ("spec_id", Value::from(format!("policy-{index}"))),
-                ("family", Value::from("hull")),
-                ("scope", Value::from("next_voyage")),
-                ("purchased_day", Value::from(0)),
-                ("coverage_pct", f64_value(0.5)),
-                ("coverage_cap", Value::from(100)),
-                ("premium_paid", Value::from(0)),
-                ("target_id", Value::from("")),
-                ("claims_made", Value::from(0)),
-                ("total_paid_out", Value::from(0)),
-                ("active", Value::from(true)),
-                ("voyage_origin", Value::from("")),
-                ("voyage_destination", Value::from("")),
-            ])
-        })
-        .collect();
-    map.insert("policies".to_string(), Value::Array(policies));
-    map.insert("claims".to_string(), Value::Array(Vec::new()));
-    if let Some(credit) = &books.credit {
-        map.insert(
-            "credit".to_string(),
-            json_obj(&[
-                ("tier", Value::from("none")),
-                ("credit_limit", Value::from(0)),
-                ("outstanding", Value::from(0)),
-                ("interest_accrued", Value::from(0)),
-                ("last_interest_day", Value::from(0)),
-                ("next_due_day", Value::from(0)),
-                ("defaults", Value::from(credit.defaults)),
-                ("total_borrowed", Value::from(credit.total_borrowed)),
-                ("total_repaid", Value::from(credit.total_repaid)),
-                ("active", Value::from(credit.active)),
-            ]),
-        );
+    map.insert(
+        "policies".to_string(),
+        Value::Array(infra.policies.iter().map(policy_value).collect()),
+    );
+    map.insert(
+        "claims".to_string(),
+        Value::Array(infra.claims.iter().map(claim_value).collect()),
+    );
+    if let Some(credit) = &infra.credit {
+        map.insert("credit".to_string(), credit_value(credit));
     }
     Value::Object(map)
 }
 
-fn apply_infra(books: &mut HouseBooks, value: &Value) -> Option<()> {
+fn warehouse_value(lease: &WarehouseLease) -> Value {
+    json_obj(&[
+        ("id", Value::from(lease.id.as_str())),
+        ("port_id", Value::from(lease.port_id.as_str())),
+        ("tier", Value::from(lease.tier.as_str())),
+        ("capacity", Value::from(lease.capacity)),
+        ("lease_cost", Value::from(lease.lease_cost)),
+        ("upkeep_per_day", Value::from(lease.upkeep_per_day)),
+        (
+            "inventory",
+            Value::Array(lease.inventory.iter().map(lot_value).collect()),
+        ),
+        ("opened_day", Value::from(lease.opened_day)),
+        (
+            "upkeep_paid_through",
+            Value::from(lease.upkeep_paid_through),
+        ),
+        ("active", Value::from(lease.active)),
+    ])
+}
+
+fn lot_value(lot: &StoredLot) -> Value {
+    json_obj(&[
+        ("good_id", Value::from(lot.good_id.as_str())),
+        ("quantity", Value::from(lot.quantity)),
+        ("acquired_port", Value::from(lot.acquired_port.as_str())),
+        ("acquired_region", Value::from(lot.acquired_region.as_str())),
+        ("acquired_day", Value::from(lot.acquired_day)),
+        ("deposited_day", Value::from(lot.deposited_day)),
+    ])
+}
+
+fn broker_value(broker: &BrokerOffice) -> Value {
+    json_obj(&[
+        ("region", Value::from(broker.region.as_str())),
+        ("tier", Value::from(broker.tier.as_str())),
+        ("opened_day", Value::from(broker.opened_day)),
+        (
+            "upkeep_paid_through",
+            Value::from(broker.upkeep_paid_through),
+        ),
+        ("active", Value::from(broker.active)),
+    ])
+}
+
+fn license_value(license: &OwnedLicense) -> Value {
+    json_obj(&[
+        ("license_id", Value::from(license.license_id.as_str())),
+        ("purchased_day", Value::from(license.purchased_day)),
+        (
+            "upkeep_paid_through",
+            Value::from(license.upkeep_paid_through),
+        ),
+        ("active", Value::from(license.active)),
+    ])
+}
+
+fn policy_value(policy: &ActivePolicy) -> Value {
+    json_obj(&[
+        ("id", Value::from(policy.id.as_str())),
+        ("spec_id", Value::from(policy.spec_id.as_str())),
+        ("family", Value::from(policy.family.as_str())),
+        ("scope", Value::from(policy.scope.as_str())),
+        ("purchased_day", Value::from(policy.purchased_day)),
+        ("coverage_pct", f64_value(policy.coverage_pct)),
+        ("coverage_cap", Value::from(policy.coverage_cap)),
+        ("premium_paid", Value::from(policy.premium_paid)),
+        ("target_id", Value::from(policy.target_id.as_str())),
+        ("claims_made", Value::from(policy.claims_made)),
+        ("total_paid_out", Value::from(policy.total_paid_out)),
+        ("active", Value::from(policy.active)),
+        ("voyage_origin", Value::from(policy.voyage_origin.as_str())),
+        (
+            "voyage_destination",
+            Value::from(policy.voyage_destination.as_str()),
+        ),
+    ])
+}
+
+fn claim_value(claim: &InsuranceClaim) -> Value {
+    json_obj(&[
+        ("policy_id", Value::from(claim.policy_id.as_str())),
+        ("day", Value::from(claim.day)),
+        ("incident_type", Value::from(claim.incident_type.as_str())),
+        ("loss_value", Value::from(claim.loss_value)),
+        ("payout", Value::from(claim.payout)),
+        ("denied", Value::from(claim.denied)),
+        ("denial_reason", Value::from(claim.denial_reason.as_str())),
+    ])
+}
+
+fn credit_value(credit: &CreditState) -> Value {
+    json_obj(&[
+        ("tier", Value::from(credit.tier.as_str())),
+        ("credit_limit", Value::from(credit.credit_limit)),
+        ("outstanding", Value::from(credit.outstanding)),
+        ("interest_accrued", Value::from(credit.interest_accrued)),
+        ("last_interest_day", Value::from(credit.last_interest_day)),
+        ("next_due_day", Value::from(credit.next_due_day)),
+        ("defaults", Value::from(credit.defaults)),
+        ("total_borrowed", Value::from(credit.total_borrowed)),
+        ("total_repaid", Value::from(credit.total_repaid)),
+        ("active", Value::from(credit.active)),
+    ])
+}
+
+fn infra_from(value: &Value) -> Option<InfrastructureRecord> {
     let map = value.as_object()?;
-    if let Some(saved) = map.get("warehouses") {
-        for item in saved.as_array()? {
-            let item = item.as_object()?;
-            books.warehouses.push(WarehouseSite {
-                port_id: req_str(item, "port_id")?,
-                active: opt_bool(item, "active").unwrap_or(true),
-            });
+    Some(InfrastructureRecord {
+        warehouses: map
+            .get("warehouses")
+            .and_then(Value::as_array)
+            .map(|items| items.iter().filter_map(warehouse_from).collect())
+            .unwrap_or_default(),
+        brokers: map
+            .get("brokers")
+            .and_then(Value::as_array)
+            .map(|items| items.iter().filter_map(broker_from).collect())
+            .unwrap_or_default(),
+        licenses: map
+            .get("licenses")
+            .and_then(Value::as_array)
+            .map(|items| items.iter().filter_map(license_from).collect())
+            .unwrap_or_default(),
+        policies: map
+            .get("policies")
+            .and_then(Value::as_array)
+            .map(|items| items.iter().filter_map(policy_from).collect())
+            .unwrap_or_default(),
+        claims: map
+            .get("claims")
+            .and_then(Value::as_array)
+            .map(|items| items.iter().filter_map(claim_from).collect())
+            .unwrap_or_default(),
+        credit: match truthy(map.get("credit")) {
+            Some(credit) => Some(credit_from(credit)?),
+            None => None,
+        },
+    })
+}
+
+fn warehouse_from(value: &Value) -> Option<WarehouseLease> {
+    let item = value.as_object()?;
+    let tier = item.get("tier").and_then(Value::as_str).unwrap_or("depot");
+    Some(WarehouseLease {
+        id: req_str(item, "id")?,
+        port_id: req_str(item, "port_id")?,
+        tier: tier.to_string(),
+        capacity: opt_i64(item, "capacity").unwrap_or(0),
+        lease_cost: opt_i64(item, "lease_cost").unwrap_or(0),
+        upkeep_per_day: opt_i64(item, "upkeep_per_day").unwrap_or(1),
+        inventory: item
+            .get("inventory")
+            .and_then(Value::as_array)
+            .map(|lots| lots.iter().filter_map(lot_from).collect())
+            .unwrap_or_default(),
+        opened_day: opt_i64(item, "opened_day").unwrap_or(0),
+        upkeep_paid_through: opt_i64(item, "upkeep_paid_through").unwrap_or(0),
+        active: opt_bool(item, "active").unwrap_or(true),
+    })
+}
+
+fn lot_from(value: &Value) -> Option<StoredLot> {
+    let item = value.as_object()?;
+    Some(StoredLot {
+        good_id: req_str(item, "good_id")?,
+        quantity: opt_i64(item, "quantity").unwrap_or(0),
+        acquired_port: opt_str(item, "acquired_port").unwrap_or_default(),
+        acquired_region: opt_str(item, "acquired_region").unwrap_or_default(),
+        acquired_day: opt_i64(item, "acquired_day").unwrap_or(0),
+        deposited_day: opt_i64(item, "deposited_day").unwrap_or(0),
+    })
+}
+
+fn broker_from(value: &Value) -> Option<BrokerOffice> {
+    let item = value.as_object()?;
+    let tier = item
+        .get("tier")
+        .and_then(Value::as_str)
+        .filter(|tier| BROKER_TIERS.contains(tier))
+        .unwrap_or("none");
+    Some(BrokerOffice {
+        region: req_str(item, "region")?,
+        tier: tier.to_string(),
+        opened_day: opt_i64(item, "opened_day").unwrap_or(0),
+        upkeep_paid_through: opt_i64(item, "upkeep_paid_through").unwrap_or(0),
+        active: opt_bool(item, "active").unwrap_or(true),
+    })
+}
+
+fn license_from(value: &Value) -> Option<OwnedLicense> {
+    let item = value.as_object()?;
+    Some(OwnedLicense {
+        license_id: req_str(item, "license_id")?,
+        purchased_day: opt_i64(item, "purchased_day").unwrap_or(0),
+        upkeep_paid_through: opt_i64(item, "upkeep_paid_through").unwrap_or(0),
+        active: opt_bool(item, "active").unwrap_or(true),
+    })
+}
+
+fn policy_from(value: &Value) -> Option<ActivePolicy> {
+    let item = value.as_object()?;
+    let family = item.get("family").and_then(Value::as_str)?;
+    let scope = item.get("scope").and_then(Value::as_str)?;
+    if !POLICY_FAMILIES.contains(&family) || !POLICY_SCOPES.contains(&scope) {
+        return None;
+    }
+    Some(ActivePolicy {
+        id: req_str(item, "id")?,
+        spec_id: req_str(item, "spec_id")?,
+        family: family.to_string(),
+        scope: scope.to_string(),
+        purchased_day: opt_i64(item, "purchased_day").unwrap_or(0),
+        coverage_pct: item
+            .get("coverage_pct")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.5),
+        coverage_cap: opt_i64(item, "coverage_cap").unwrap_or(100),
+        premium_paid: opt_i64(item, "premium_paid").unwrap_or(0),
+        target_id: opt_str(item, "target_id").unwrap_or_default(),
+        claims_made: opt_i64(item, "claims_made").unwrap_or(0),
+        total_paid_out: opt_i64(item, "total_paid_out").unwrap_or(0),
+        active: opt_bool(item, "active").unwrap_or(true),
+        voyage_origin: opt_str(item, "voyage_origin").unwrap_or_default(),
+        voyage_destination: opt_str(item, "voyage_destination").unwrap_or_default(),
+    })
+}
+
+fn claim_from(value: &Value) -> Option<InsuranceClaim> {
+    let item = value.as_object()?;
+    Some(InsuranceClaim {
+        policy_id: req_str(item, "policy_id")?,
+        day: opt_i64(item, "day").unwrap_or(0),
+        incident_type: opt_str(item, "incident_type").unwrap_or_default(),
+        loss_value: opt_i64(item, "loss_value").unwrap_or(0),
+        payout: opt_i64(item, "payout").unwrap_or(0),
+        denied: opt_bool(item, "denied").unwrap_or(false),
+        denial_reason: opt_str(item, "denial_reason").unwrap_or_default(),
+    })
+}
+
+fn credit_from(value: &Value) -> Option<CreditState> {
+    let item = value.as_object()?;
+    let tier = item.get("tier").and_then(Value::as_str).unwrap_or("none");
+    Some(CreditState {
+        tier: tier.to_string(),
+        credit_limit: opt_i64(item, "credit_limit").unwrap_or(0),
+        outstanding: opt_i64(item, "outstanding").unwrap_or(0),
+        interest_accrued: opt_i64(item, "interest_accrued").unwrap_or(0),
+        last_interest_day: opt_i64(item, "last_interest_day").unwrap_or(0),
+        next_due_day: opt_i64(item, "next_due_day").unwrap_or(0),
+        defaults: opt_i64(item, "defaults").unwrap_or(0),
+        total_borrowed: opt_i64(item, "total_borrowed").unwrap_or(0),
+        total_repaid: opt_i64(item, "total_repaid").unwrap_or(0),
+        active: opt_bool(item, "active").unwrap_or(false),
+    })
+}
+
+fn project_infra(books: &mut HouseBooks, infra: &InfrastructureRecord) {
+    books.warehouses = infra
+        .warehouses
+        .iter()
+        .map(|lease| WarehouseSite {
+            port_id: lease.port_id.clone(),
+            active: lease.active,
+        })
+        .collect();
+    books.brokers = infra
+        .brokers
+        .iter()
+        .map(|broker| BrokerSite {
+            region: broker.region.clone(),
+            tier: broker.tier.clone(),
+            active: broker.active,
+        })
+        .collect();
+    books.licenses = infra
+        .licenses
+        .iter()
+        .map(|license| ActiveLicense {
+            license_id: license.license_id.clone(),
+            active: license.active,
+        })
+        .collect();
+    books.policies = infra.policies.len() as i64;
+    books.claims_paid = infra
+        .claims
+        .iter()
+        .filter(|claim| !claim.denied && claim.payout > 0)
+        .count() as i64;
+    books.credit = infra.credit.as_ref().and_then(|credit| {
+        let visible = credit.active
+            || credit.outstanding != 0
+            || credit.interest_accrued != 0
+            || credit.defaults != 0
+            || credit.total_borrowed != 0
+            || credit.total_repaid != 0;
+        if !visible {
+            return None;
         }
-    }
-    if let Some(saved) = map.get("brokers") {
-        for item in saved.as_array()? {
-            let item = item.as_object()?;
-            let tier = item
-                .get("tier")
-                .and_then(Value::as_str)
-                .filter(|tier| BROKER_TIERS.contains(tier))
-                .unwrap_or("none");
-            books.brokers.push(BrokerSite {
-                region: req_str(item, "region")?,
-                tier: tier.to_string(),
-                active: opt_bool(item, "active").unwrap_or(true),
-            });
-        }
-    }
-    if let Some(saved) = map.get("licenses") {
-        for item in saved.as_array()? {
-            let item = item.as_object()?;
-            books.licenses.push(ActiveLicense {
-                license_id: req_str(item, "license_id")?,
-                active: opt_bool(item, "active").unwrap_or(true),
-            });
-        }
-    }
-    if let Some(saved) = map.get("policies") {
-        let mut count = 0i64;
-        for item in saved.as_array()? {
-            let item = item.as_object()?;
-            let family = item.get("family").and_then(Value::as_str);
-            let scope = item.get("scope").and_then(Value::as_str);
-            if family.is_some_and(|family| POLICY_FAMILIES.contains(&family))
-                && scope.is_some_and(|scope| POLICY_SCOPES.contains(&scope))
-            {
-                count += 1;
-            }
-        }
-        books.policies = count;
-    }
-    if let Some(credit) = truthy(map.get("credit")) {
-        let credit = credit.as_object()?;
-        books.credit = Some(CreditBook {
-            total_borrowed: opt_i64(credit, "total_borrowed").unwrap_or(0),
-            defaults: opt_i64(credit, "defaults").unwrap_or(0),
-            active: opt_bool(credit, "active").unwrap_or(false),
-            total_repaid: opt_i64(credit, "total_repaid").unwrap_or(0),
-        });
-    }
-    Some(())
+        Some(CreditBook {
+            total_borrowed: credit.total_borrowed,
+            defaults: credit.defaults,
+            active: credit.active,
+            total_repaid: credit.total_repaid,
+        })
+    });
 }
 
 fn campaign_value(books: &HouseBooks) -> Value {

@@ -1,0 +1,3 @@
+# Open a Mediterranean local broker office.
+new merchant Ada 3 porto_novo
+buy_infrastructure broker "Mediterranean" local
