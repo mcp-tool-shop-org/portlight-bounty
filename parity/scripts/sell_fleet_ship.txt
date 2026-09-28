@@ -1,0 +1,7 @@
+# Dock the cutter and sell it at the Porto Novo yard. A full hull pays
+# int(450 * 0.3 * 1). The second sale names a ship that is already gone.
+new merchant Ada 1
+buy_ship swift_cutter
+dock_current_ship
+sell_fleet_ship "Swift Cutter"
+sell_fleet_ship "Swift Cutter"

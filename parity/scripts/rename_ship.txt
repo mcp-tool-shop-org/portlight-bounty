@@ -1,0 +1,8 @@
+# Buy first so the sloop is in the fleet. The flagship rename strips and
+# caps at 30 characters. The fleet hull is renamed by template id.
+# A blank name is refused.
+new merchant Ada 1
+buy_ship swift_cutter
+rename_ship "  The Very Long Name Of This Fine Ship Indeed  "
+rename_ship Holdfast COASTAL_SLOOP
+rename_ship "   "

@@ -52,6 +52,7 @@ from portlight.engine.campaign import (
 )
 from portlight.engine.contracts import (
     ContractBoard,
+    abandon_contract,
     accept_offer,
     check_delivery,
     generate_offers,
@@ -773,6 +774,46 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         if len(tokens) != 1:
             raise ScriptError("Usage: repair_fleet")
         do_repair_fleet(state)
+    elif cmd == "repair":
+        if len(tokens) > 2:
+            raise ScriptError("Usage: repair [points]")
+        amount = None
+        if len(tokens) == 2:
+            try:
+                amount = int(tokens[1])
+            except ValueError as exc:
+                raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        do_repair(state, amount)
+    elif cmd == "rename_ship":
+        if len(tokens) < 2 or len(tokens) > 3:
+            raise ScriptError("Usage: rename_ship <new_name> [ship]")
+        ship_name = tokens[2] if len(tokens) == 3 else None
+        do_rename_ship(state, tokens[1], ship_name)
+    elif cmd == "dock_current_ship":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: dock_current_ship")
+        do_dock_current_ship(state)
+    elif cmd == "board_fleet_ship":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: board_fleet_ship <ship>")
+        do_board_fleet_ship(state, tokens[1])
+    elif cmd == "sell_fleet_ship":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: sell_fleet_ship <ship>")
+        do_sell_fleet_ship(state, tokens[1])
+    elif cmd == "fire":
+        if len(tokens) < 2 or len(tokens) > 3:
+            raise ScriptError("Usage: fire <count> [role]")
+        try:
+            count = int(tokens[1])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        role = tokens[2] if len(tokens) > 2 else "sailor"
+        do_fire(state, count, role)
+    elif cmd == "abandon_contract":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: abandon_contract <offer_id>")
+        do_abandon(state, tokens[1], entry)
     elif cmd == "transfer":
         if len(tokens) != 5:
             raise ScriptError("Usage: transfer <good> <qty> <from> <to>")
@@ -1511,6 +1552,14 @@ def do_repair_fleet(state) -> None:
     fleet.py, dry_dock, and arrival do not patch escort hull. dry_dock restores
     template hull_max and is not this command.
     """
+    do_repair(state, None)
+
+
+def do_repair(state, amount) -> None:
+    """GameSession.repair. `amount` is hull points, or None for every missing point.
+
+    The flagship is the only hull. A named fleet hull is `dry_dock`, not this call.
+    """
     world = state["world"]
     port = current_port(world)
     if port is None:
@@ -1521,8 +1570,12 @@ def do_repair_fleet(state) -> None:
     damage = ship.hull_max - ship.hull
     if damage == 0:
         raise ScriptError("Ship is already in perfect condition")
+    if amount is not None and amount <= 0:
+        raise ScriptError("Quantity must be a positive number.")
+    if amount is None:
+        amount = damage
+    amount = min(amount, damage)
     cost_per = max(1, int(port.repair_cost * get_service_modifier(world.captain.standing, port.id)))
-    amount = damage
     cost = amount * cost_per
     if cost > world.captain.silver:
         affordable = world.captain.silver // cost_per if cost_per > 0 else 0
@@ -1532,6 +1585,119 @@ def do_repair_fleet(state) -> None:
         cost = amount * cost_per
     world.captain.silver -= cost
     ship.hull += amount
+
+
+def do_rename_ship(state, new_name: str, ship_name: str | None) -> None:
+    """GameSession.rename_ship. Strip, then cap at 30 characters."""
+    if not new_name.strip():
+        raise ScriptError("Name cannot be empty")
+    new_name = new_name.strip()[:30]
+    world = state["world"]
+    if ship_name is None:
+        if world.captain.ship is None:
+            raise ScriptError("No ship")
+        world.captain.ship.name = new_name
+        return
+    for owned in world.captain.fleet:
+        if (
+            owned.ship.name.lower() == ship_name.lower()
+            or owned.ship.template_id.lower() == ship_name.lower()
+        ):
+            owned.ship.name = new_name
+            return
+    raise ScriptError(f"No ship named '{ship_name}' in fleet")
+
+
+def do_dock_current_ship(state) -> None:
+    """GameSession.dock_current_ship."""
+    from portlight.engine.fleet import dock_ship
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    err = dock_ship(world.captain, port.id)
+    if err:
+        raise ScriptError(err)
+
+
+def do_board_fleet_ship(state, ship_name: str) -> None:
+    """GameSession.board_fleet_ship."""
+    from portlight.engine.fleet import board_ship
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    err = board_ship(world.captain, ship_name, port.id)
+    if err:
+        raise ScriptError(err)
+
+
+def do_sell_fleet_ship(state, ship_name: str) -> None:
+    """GameSession.sell_fleet_ship. Shipyard check, then sell_docked_ship."""
+    from portlight.engine.fleet import sell_docked_ship
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    if PortFeature.SHIPYARD not in port.features:
+        raise ScriptError(f"{port.name} has no shipyard")
+    result = sell_docked_ship(world.captain, ship_name, port.id)
+    if isinstance(result, str):
+        raise ScriptError(result)
+
+
+def do_fire(state, count: int, role: str) -> None:
+    """GameSession.fire_crew. Specialists drop officers from the end of the list."""
+    from portlight.content.crew_roles import get_role_count, set_role_count
+    from portlight.engine.models import CrewRole
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to fire crew")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    try:
+        crew_role = CrewRole(role.lower())
+    except ValueError as exc:
+        raise ScriptError(f"Unknown role: {role}") from exc
+    current = get_role_count(ship.roster, crew_role)
+    if current <= 0:
+        raise ScriptError(f"No {role}s to fire")
+    fired = min(count, current)
+    set_role_count(ship.roster, crew_role, current - fired)
+    ship.sync_crew()
+    if crew_role != CrewRole.SAILOR and fired > 0:
+        to_remove = fired
+        new_officers = []
+        for officer in reversed(ship.officers):
+            if officer.role == crew_role and to_remove > 0:
+                to_remove -= 1
+            else:
+                new_officers.append(officer)
+        ship.officers = list(reversed(new_officers))
+
+
+def do_abandon(state, offer_id: str, entry: dict) -> None:
+    """GameSession.abandon_contract_cmd. The captain is not passed, so no breach."""
+    board = state["board"]
+    contract = next((c for c in board.active if c.offer_id == offer_id), None)
+    result = abandon_contract(board, offer_id, state["world"].day)
+    if isinstance(result, str):
+        raise ScriptError(result)
+    attach_contracts(entry, [contract_row(
+        contract,
+        result.outcome_type,
+        result.silver_delta,
+        result.trust_delta,
+        result.standing_delta,
+        result.heat_delta,
+        result.summary,
+    )])
 
 
 def do_transfer(state, good_id: str, qty: int, src: str, dst: str) -> None:
