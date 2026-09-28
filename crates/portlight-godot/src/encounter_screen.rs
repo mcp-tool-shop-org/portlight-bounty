@@ -115,17 +115,25 @@ fn side_column() -> Gd<PanelContainer> {
 fn ship_plate() -> Gd<TextureRect> {
     let mut rect = TextureRect::new_alloc();
     rect.set_name("ShipPlate");
-    rect.set_custom_minimum_size(Vector2::new(128.0, 128.0));
-    rect.set_expand_mode(godot::classes::texture_rect::ExpandMode::IGNORE_SIZE);
-    rect.set_stretch_mode(godot::classes::texture_rect::StretchMode::KEEP_ASPECT_CENTERED);
+    // Native pixels. A fitted rect scales the plate even when the filter is nearest.
     rect.set_texture_filter(TextureFilter::NEAREST);
+    rect.set_expand_mode(godot::classes::texture_rect::ExpandMode::KEEP_SIZE);
+    rect.set_stretch_mode(godot::classes::texture_rect::StretchMode::KEEP);
+    rect.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
+    rect.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
     let plate = ship_asset(Facing::F1);
+    let mut native = Vector2::new(plate.canvas_w as f32, plate.canvas_h as f32);
     let path = plate.res_path();
     if let Some(resource) = ResourceLoader::singleton().load(&GString::from(path.as_str())) {
         if let Ok(texture) = resource.try_cast::<Texture2D>() {
+            let size = texture.get_size();
+            if size.x > 0.0 && size.y > 0.0 {
+                native = size;
+            }
             rect.set_texture(&texture);
         }
     }
+    rect.set_custom_minimum_size(native);
     rect
 }
 
