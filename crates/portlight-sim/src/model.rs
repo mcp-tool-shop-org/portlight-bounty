@@ -377,3 +377,108 @@ impl World {
         })
     }
 }
+
+/// A live offer on the contract board. Python `ContractOffer`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Contract {
+    pub id: String,
+    pub template_id: String,
+    pub family: String,
+    pub title: String,
+    pub description: String,
+    pub issuer_port_id: String,
+    pub destination_port_id: String,
+    pub good_id: String,
+    pub quantity: i64,
+    pub created_day: i64,
+    pub deadline_day: i64,
+    pub reward_silver: i64,
+    pub bonus_reward: i64,
+    pub required_trust_tier: String,
+    pub required_standing: i64,
+    pub heat_ceiling: Option<i64>,
+    pub inspection_modifier: f64,
+    pub source_region: Option<String>,
+    pub source_port: Option<String>,
+    pub offer_reason: String,
+    pub tags: Vec<String>,
+    pub acceptance_window: i64,
+}
+
+/// An accepted obligation. Python `ActiveContract`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ActiveContract {
+    pub offer_id: String,
+    pub template_id: String,
+    pub family: String,
+    pub title: String,
+    pub accepted_day: i64,
+    pub deadline_day: i64,
+    pub destination_port_id: String,
+    pub good_id: String,
+    pub required_quantity: i64,
+    pub delivered_quantity: i64,
+    pub reward_silver: i64,
+    pub bonus_reward: i64,
+    pub source_region: Option<String>,
+    pub source_port: Option<String>,
+    pub inspection_modifier: f64,
+    pub status: String,
+}
+
+/// Resolution of a completed, expired, or abandoned contract.
+///
+/// `good_id` through `reward_silver` are copied off the obligation at
+/// resolution so a caller can log the contract after it leaves the board.
+/// Python's `ContractOutcome` does not carry those fields.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ContractOutcome {
+    pub contract_id: String,
+    pub outcome_type: String,
+    pub silver_delta: i64,
+    pub trust_delta: i64,
+    pub standing_delta: i64,
+    pub heat_delta: i64,
+    pub completion_day: i64,
+    pub summary: String,
+    pub family: String,
+    pub good_id: String,
+    pub required_quantity: i64,
+    pub delivered_quantity: i64,
+    pub destination_port_id: String,
+    pub deadline_day: i64,
+    pub reward_silver: i64,
+}
+
+/// One row of `Captain.breach_records`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BreachRecord {
+    pub contract_id: String,
+    pub day: i64,
+    pub port_id: String,
+    pub family: String,
+}
+
+/// Offers, accepted work, and resolved outcomes for one session.
+#[derive(Debug, Clone)]
+pub struct ContractBoard {
+    pub offers: Vec<Contract>,
+    pub active: Vec<ActiveContract>,
+    pub completed: Vec<ContractOutcome>,
+    pub last_refresh_day: i64,
+    pub max_offers: i64,
+    pub breaches: Vec<BreachRecord>,
+}
+
+impl Default for ContractBoard {
+    fn default() -> Self {
+        Self {
+            offers: Vec::new(),
+            active: Vec::new(),
+            completed: Vec::new(),
+            last_refresh_day: 0,
+            max_offers: 5,
+            breaches: Vec::new(),
+        }
+    }
+}

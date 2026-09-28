@@ -8,7 +8,7 @@ use crate::campaign::{self, HouseBooks, VictoryPathStatus};
 use crate::content;
 use crate::duel::{DuelOutcome, DuelRound};
 use crate::economy::TradeReceipt;
-use crate::model::{Captain, Standing, Voyage, World};
+use crate::model::{ActiveContract, Captain, ContractOutcome, Standing, Voyage, World};
 use crate::voyage::VoyageEvent;
 
 #[derive(Debug, Clone, Serialize)]
@@ -186,6 +186,27 @@ pub struct LogEntry {
     /// Silver from `work`, when that command succeeded.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub earned: Option<i64>,
+    /// Contract accept, completion, or expiry produced by this command.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub contracts: Vec<ContractLog>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ContractLog {
+    pub contract_id: String,
+    pub outcome_type: String,
+    pub family: String,
+    pub good_id: String,
+    pub quantity: i64,
+    pub delivered_quantity: i64,
+    pub destination_port_id: String,
+    pub deadline_day: i64,
+    pub reward_silver: i64,
+    pub silver_delta: i64,
+    pub trust_delta: i64,
+    pub standing_delta: i64,
+    pub heat_delta: i64,
+    pub summary: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -218,7 +239,46 @@ impl LogEntry {
             shocks: Vec::new(),
             duel: None,
             earned: None,
+            contracts: Vec::new(),
         }
+    }
+}
+
+pub fn from_contract_outcome(outcome: &ContractOutcome) -> ContractLog {
+    ContractLog {
+        contract_id: outcome.contract_id.clone(),
+        outcome_type: outcome.outcome_type.clone(),
+        family: outcome.family.clone(),
+        good_id: outcome.good_id.clone(),
+        quantity: outcome.required_quantity,
+        delivered_quantity: outcome.delivered_quantity,
+        destination_port_id: outcome.destination_port_id.clone(),
+        deadline_day: outcome.deadline_day,
+        reward_silver: outcome.reward_silver,
+        silver_delta: outcome.silver_delta,
+        trust_delta: outcome.trust_delta,
+        standing_delta: outcome.standing_delta,
+        heat_delta: outcome.heat_delta,
+        summary: outcome.summary.clone(),
+    }
+}
+
+pub fn from_accepted(contract: &ActiveContract) -> ContractLog {
+    ContractLog {
+        contract_id: contract.offer_id.clone(),
+        outcome_type: "accepted".to_string(),
+        family: contract.family.clone(),
+        good_id: contract.good_id.clone(),
+        quantity: contract.required_quantity,
+        delivered_quantity: contract.delivered_quantity,
+        destination_port_id: contract.destination_port_id.clone(),
+        deadline_day: contract.deadline_day,
+        reward_silver: contract.reward_silver,
+        silver_delta: 0,
+        trust_delta: 0,
+        standing_delta: 0,
+        heat_delta: 0,
+        summary: contract.title.clone(),
     }
 }
 

@@ -47,6 +47,8 @@ Script commands:
   sell <good> <qty>
   depart <port_id>
   advance
+  accept_contract <offer_id>
+  complete_contract <offer_id>
 "
     );
 }

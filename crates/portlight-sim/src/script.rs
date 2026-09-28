@@ -86,6 +86,29 @@ fn dispatch(
             let turn = session.advance()?;
             entry.events = turn.events.iter().map(snapshot::from_event).collect();
             entry.shocks = turn.shocks;
+            entry.contracts = turn
+                .contracts
+                .iter()
+                .map(snapshot::from_contract_outcome)
+                .collect();
+            Ok(())
+        }
+        "accept_contract" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageAcceptContract);
+            }
+            let contract = session.accept_contract(&tokens[1])?;
+            entry.contracts = vec![snapshot::from_accepted(&contract)];
+            Ok(())
+        }
+        "complete_contract" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageCompleteContract);
+            }
+            let outcome = session.complete_contract(&tokens[1])?;
+            entry.contracts = vec![snapshot::from_contract_outcome(&outcome)];
             Ok(())
         }
         "hire" => {

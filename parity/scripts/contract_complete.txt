@@ -1,0 +1,9 @@
+new merchant Ada 1
+accept_contract 71773aae754b
+buy grain 23
+depart corsairs_rest
+advance
+advance
+advance
+sell grain 23
+complete_contract 71773aae754b

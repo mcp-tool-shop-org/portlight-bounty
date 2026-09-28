@@ -3,7 +3,8 @@
 
 This is the reference side of the parity harness. It calls the same engine
 functions the Rust script runner calls — not the full GameSession — so
-contracts, sea culture, and insurance stay out of the comparison.
+sea culture and insurance stay out of the comparison. Contract offers are
+drawn from Random(seed + 7919) without advancing the session stream.
 `duel` and `resolve_duel` call `engine/duel.py`. See docs/PORTING-PLAN.md.
 
 Usage:
@@ -43,7 +44,14 @@ from portlight.engine.campaign import (
     compute_victory_progress,
     evaluate_victory_closure,
 )
-from portlight.engine.contracts import ContractBoard
+from portlight.engine.contracts import (
+    ContractBoard,
+    accept_offer,
+    check_delivery,
+    generate_offers,
+    resolve_completed,
+    tick_contracts,
+)
 from portlight.engine.infrastructure import InfrastructureState
 from portlight.engine.duel import resolve_duel
 from portlight.engine.reputation import get_service_modifier
@@ -128,6 +136,76 @@ def event_view(event) -> dict:
     }
 
 
+def family_name(value) -> str:
+    if value is None:
+        return ""
+    return value.value if hasattr(value, "value") else str(value)
+
+
+def contract_row(
+    contract,
+    outcome_type: str,
+    silver_delta: int,
+    trust_delta: int,
+    standing_delta: int,
+    heat_delta: int,
+    summary: str,
+) -> dict:
+    return {
+        "contract_id": contract.offer_id,
+        "outcome_type": outcome_type,
+        "family": family_name(contract.family),
+        "good_id": contract.good_id,
+        "quantity": contract.required_quantity,
+        "delivered_quantity": contract.delivered_quantity,
+        "destination_port_id": contract.destination_port_id,
+        "deadline_day": contract.deadline_day,
+        "reward_silver": contract.reward_silver,
+        "silver_delta": silver_delta,
+        "trust_delta": trust_delta,
+        "standing_delta": standing_delta,
+        "heat_delta": heat_delta,
+        "summary": summary,
+    }
+
+
+def attach_contracts(entry: dict, rows: list[dict]) -> None:
+    if rows:
+        entry["contracts"] = rows
+
+
+def refresh_board(state, port) -> None:
+    """GameSession._refresh_board with empty infrastructure effects."""
+    world = state["world"]
+    board = state["board"]
+    if board.last_refresh_day == world.day:
+        return
+    from portlight.content.contracts import TEMPLATES
+    from portlight.engine.voyage import ship_class_rank
+
+    ship = world.captain.ship
+    rank = ship_class_rank(ship.template_id) if ship else 0
+    board.offers = generate_offers(
+        TEMPLATES,
+        world,
+        port,
+        world.captain.standing,
+        world.captain.captain_type,
+        state["rng"],
+        player_ship_rank=rank,
+        max_offers=board.max_offers,
+    )
+    board.last_refresh_day = world.day
+
+
+def refresh_with_board_rng(state, port) -> None:
+    """Save the session RNG, draw Random(seed + 7919), then restore it."""
+    saved = state["rng"]
+    state["rng"] = random.Random(state["world"].seed + 7919)
+    refresh_board(state, port)
+    state["rng"] = saved
+
+
 def blank_entry(command: str) -> dict:
     return {
         "command": command,
@@ -160,6 +238,9 @@ def do_sell(state, good_id: str, qty: int, entry: dict) -> None:
     slot = next((s for s in port.market if s.good_id == good_id), None)
     flood_before = slot.flood_penalty if slot else 0.0
     stock_target = slot.stock_target if slot else 50
+    cargo_item = next((c for c in world.captain.cargo if c.good_id == good_id), None)
+    source_port = cargo_item.acquired_port if cargo_item else ""
+    source_region = cargo_item.acquired_region if cargo_item else ""
     result = execute_sell(world.captain, port, good_id, qty, state["trade_seq"])
     if isinstance(result, str):
         raise ScriptError(result)
@@ -189,6 +270,9 @@ def do_sell(state, good_id: str, qty: int, entry: dict) -> None:
         flood_before,
         is_sell=True,
     )
+    check_delivery(
+        state["board"], port.id, good_id, result.quantity, source_port, source_region,
+    )
     reprice_port(world, port)
     state["ledger"].append(result)
     entry["receipt"] = receipt_view(result)
@@ -210,6 +294,21 @@ def do_advance(state, entry: dict) -> None:
     world = state["world"]
     rng = state["rng"]
     tick_reputation(world.captain.standing)
+    before = {c.offer_id: c for c in state["board"].active}
+    outcomes = tick_contracts(state["board"], world.day)
+    rows = []
+    for outcome in outcomes:
+        world.captain.silver += outcome.silver_delta
+        rows.append(contract_row(
+            before[outcome.contract_id],
+            outcome.outcome_type,
+            outcome.silver_delta,
+            outcome.trust_delta,
+            outcome.standing_delta,
+            outcome.heat_delta,
+            outcome.summary,
+        ))
+    attach_contracts(entry, rows)
     if world.voyage.status != VoyageStatus.AT_SEA:
         shocks = tick_markets(world.ports, days=1, rng=rng)
         world.day += 1
@@ -247,6 +346,7 @@ def do_advance(state, entry: dict) -> None:
             port = world.ports.get(world.voyage.destination_id)
             if port is not None:
                 record_port_arrival(world.captain.standing, world.day, port.id, port.region)
+                refresh_with_board_rng(state, port)
         entry["events"] = [event_view(event) for event in events]
     reprice_all(world)
     newly = evaluate_victory_closure(session_snapshot(state))
@@ -276,6 +376,9 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         state["board"] = ContractBoard()
         state["infra"] = InfrastructureState()
         state["campaign"] = CampaignState()
+        port = current_port(world)
+        if port is not None:
+            refresh_with_board_rng(state, port)
         return
     if state.get("world") is None:
         raise ScriptError("No active game")
@@ -331,8 +434,52 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         do_duel(state, stances, entry)
     elif cmd == "resolve_duel":
         do_resolve_duel(state, entry)
+    elif cmd == "accept_contract":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: accept_contract <offer_id>")
+        do_accept(state, tokens[1], entry)
+    elif cmd == "complete_contract":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: complete_contract <offer_id>")
+        do_complete(state, tokens[1], entry)
     else:
         raise ScriptError(f"Unknown command: {cmd}")
+
+
+def do_accept(state, offer_id: str, entry: dict) -> None:
+    result = accept_offer(state["board"], offer_id, state["world"].day)
+    if isinstance(result, str):
+        raise ScriptError(result)
+    attach_contracts(entry, [contract_row(
+        result, "accepted", 0, 0, 0, 0, result.title,
+    )])
+
+
+def do_complete(state, offer_id: str, entry: dict) -> None:
+    """Pay one fulfilled contract. Delivery itself is credited by sell."""
+    board = state["board"]
+    contract = next((c for c in board.active if c.offer_id == offer_id), None)
+    if contract is None or contract.status != "accepted":
+        raise ScriptError("No active contract with that ID")
+    if contract.delivered_quantity < contract.required_quantity:
+        raise ScriptError("Contract is not yet fulfilled")
+    others = [c for c in board.active if c.offer_id != offer_id]
+    board.active = [contract]
+    outcomes = resolve_completed(board, state["world"].day)
+    board.active = others + board.active
+    if not outcomes:
+        raise ScriptError("Contract is not yet fulfilled")
+    outcome = outcomes[0]
+    state["world"].captain.silver += outcome.silver_delta
+    attach_contracts(entry, [contract_row(
+        contract,
+        outcome.outcome_type,
+        outcome.silver_delta,
+        outcome.trust_delta,
+        outcome.standing_delta,
+        outcome.heat_delta,
+        outcome.summary,
+    )])
 
 
 def split_stances(tokens: list[str]) -> list[str]:

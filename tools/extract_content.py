@@ -14,6 +14,7 @@ import json
 import os
 import sys
 
+from portlight.content.contracts import TEMPLATES
 from portlight.content.factions import FACTIONS, PIRATE_CAPTAINS
 from portlight.content.goods import GOODS
 from portlight.content.ports import PORTS
@@ -160,6 +161,31 @@ def main() -> None:
                 "strength": c.strength,
             }
             for c in PIRATE_CAPTAINS.values()
+        ],
+        "contracts": [
+            {
+                "id": t.id,
+                "family": t.family.value,
+                "title_pattern": t.title_pattern,
+                "description": t.description,
+                "goods_pool": list(t.goods_pool),
+                "quantity_min": t.quantity_min,
+                "quantity_max": t.quantity_max,
+                "reward_per_unit": t.reward_per_unit,
+                "bonus_reward": t.bonus_reward,
+                "deadline_days": t.deadline_days,
+                "trust_requirement": t.trust_requirement,
+                "standing_requirement": t.standing_requirement,
+                "heat_ceiling": t.heat_ceiling,
+                "inspection_modifier": t.inspection_modifier,
+                "source_region": t.source_region,
+                "source_port": t.source_port,
+                "destination_regions": list(t.destination_regions),
+                "captain_bias": list(t.captain_bias),
+                "tags": list(t.tags),
+                "cultural_flavor": t.cultural_flavor,
+            }
+            for t in TEMPLATES
         ],
     }
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
