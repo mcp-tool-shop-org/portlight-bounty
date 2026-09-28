@@ -262,10 +262,15 @@ pub struct ShipDraw {
 
 pub fn ship_draw(template_id: &str, facing: Facing) -> ShipDraw {
     let Some(template) = content::content().ship(template_id) else {
+        let shown = if template_id.is_empty() {
+            "<none>"
+        } else {
+            template_id
+        };
         log_plate_note_once(&format!(
-            "warning: unknown ship class {template_id} drawn with sloop plates"
+            "warning: unknown ship class {shown} drawn with sloop plates"
         ));
-        return sloop_draw(template_id, facing);
+        return sloop_draw(shown, facing);
     };
     if template.ship_class == "man_of_war" {
         log_plate_note_once(&format!(
@@ -575,6 +580,52 @@ mod tests {
         assert_eq!(by_class.class_name, "man_of_war");
         assert_eq!(by_class.hull.id, "ship_galleon_f4");
         assert_eq!((by_class.hull.anchor_x, by_class.hull.anchor_y), (56, 88));
+    }
+
+    #[test]
+    fn sloop_constants_match_the_landing_manifest() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../godot/assets/landing/MANIFEST.json");
+        let manifest: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(&path).expect("godot/assets/landing/MANIFEST.json"),
+        )
+        .expect("manifest json");
+        let mut plates = 0u32;
+        for entry in manifest["entries"].as_array().expect("entries") {
+            if entry["class"] != "ship_sloop" {
+                continue;
+            }
+            plates += 1;
+            let id = entry["id"].as_str().unwrap_or("ship_sloop");
+            assert_eq!(
+                (
+                    entry["canvas"][0].as_i64().unwrap() as i32,
+                    entry["canvas"][1].as_i64().unwrap() as i32
+                ),
+                SLOOP_CANVAS,
+                "{id} canvas"
+            );
+            assert_eq!(
+                (
+                    entry["anchor"][0].as_i64().unwrap() as i32,
+                    entry["anchor"][1].as_i64().unwrap() as i32
+                ),
+                SLOOP_ANCHOR,
+                "{id} anchor"
+            );
+        }
+        assert_eq!(plates, 9, "sloop f0-f7 and wake");
+    }
+
+    #[test]
+    fn a_missing_ship_names_none_in_the_fallback_warning() {
+        let line = "warning: unknown ship class <none> drawn with sloop plates";
+        let drawn = ship_draw("", Facing::F1);
+        assert_eq!(drawn.class_name, "<none>");
+        assert_eq!(drawn.hull.id, "ship_sloop_f1");
+        assert_eq!(plate_note_emissions(line), 1);
+        let _ = ship_draw("", Facing::F2);
+        assert_eq!(plate_note_emissions(line), 1);
     }
 
     #[test]

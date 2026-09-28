@@ -180,7 +180,7 @@ impl IControl for PortlightGame {
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some("/tmp/portlight-art-cutter.png".to_string());
+                self.shot_path = Some(art_shot_path());
             }
             self.run_art();
             self.capture_frames = 4;
@@ -1475,6 +1475,22 @@ fn victory_line(session: &Session) -> String {
     }
     let names: Vec<&str> = paths.iter().map(|path| path.name.as_str()).collect();
     format!("Victory paths: {}", names.join(", "))
+}
+
+/// Godot changes into the project directory, so a bare relative path misses
+/// `docs/screenshots/`. The file name is `chart-cutter-f7.png`.
+fn art_shot_path() -> String {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let root = if cwd.file_name().and_then(|name| name.to_str()) == Some("godot") {
+        cwd.parent()
+            .map(std::path::Path::to_path_buf)
+            .unwrap_or(cwd)
+    } else {
+        cwd
+    };
+    root.join("docs/screenshots/chart-cutter-f7.png")
+        .to_string_lossy()
+        .into_owned()
 }
 
 fn docked_port_id(session: &Session) -> Option<&str> {
