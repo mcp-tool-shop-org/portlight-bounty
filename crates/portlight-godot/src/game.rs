@@ -1,8 +1,12 @@
 //! First playable: Mediterranean chart, sail Porto Novo to Al-Manar, trade.
 //!
-//! Buttons call [`portlight_sim::Session`] (`new`, `sail_lanes`, `victory`,
-//! `buy`, `sell`, `depart`, `advance`). Labels repeat fields those queries
+//! Buttons call [`portlight_sim::Session`]. Labels repeat fields those queries
 //! already computed. Good names and the season name are catalog strings.
+//!
+//! A pending pirate encounter freezes `advance`. Fight, flee, and encounter
+//! auto-resolve are not on `Session` yet, so the panel names the pirate and
+//! says those actions are waiting. Hire and provisions call `hire_crew` and
+//! `provision`.
 
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
@@ -42,9 +46,19 @@ enum Action {
     NextDay,
     Work,
     ToggleMarket,
+    HireSailor,
+    Provision,
+    Encounter(EncounterChoice),
     Sail(String),
     Buy(String),
     Sell(String),
+}
+
+#[derive(Clone, Copy)]
+enum EncounterChoice {
+    Fight,
+    Flee,
+    AutoResolve,
 }
 
 #[derive(GodotClass)]
@@ -60,6 +74,11 @@ struct PortlightGame {
     log_label: Option<Gd<Label>>,
     market_button: Option<Gd<Button>>,
     work_button: Option<Gd<Button>>,
+    next_button: Option<Gd<Button>>,
+    port_row: Option<Gd<HBoxContainer>>,
+    port_note: Option<Gd<Label>>,
+    encounter_box: Option<Gd<VBoxContainer>>,
+    encounter_label: Option<Gd<Label>>,
     log_lines: Vec<String>,
     market_open: bool,
     armed_sail: Option<String>,
@@ -83,6 +102,11 @@ impl IControl for PortlightGame {
             log_label: None,
             market_button: None,
             work_button: None,
+            next_button: None,
+            port_row: None,
+            port_note: None,
+            encounter_box: None,
+            encounter_label: None,
             log_lines: Vec::new(),
             market_open: false,
             armed_sail: None,
@@ -104,7 +128,11 @@ impl IControl for PortlightGame {
         });
         self.build_ui();
         self.start_game();
-        if self.smoke {
+        if user_arg("--encounter") {
+            self.smoke = true;
+            self.run_encounter();
+            self.capture_frames = 4;
+        } else if self.smoke {
             self.run_smoke();
             self.capture_frames = 4;
         }
@@ -194,7 +222,9 @@ impl PortlightGame {
 
         let mut buttons = HBoxContainer::new_alloc();
         buttons.add_child(&action_button("New game", game_id, Action::NewGame));
-        buttons.add_child(&action_button("Next day", game_id, Action::NextDay));
+        let next = action_button("Next day", game_id, Action::NextDay);
+        buttons.add_child(&next);
+        self.next_button = Some(next);
         let work = action_button("Work", game_id, Action::Work);
         buttons.add_child(&work);
         self.work_button = Some(work);
@@ -203,16 +233,54 @@ impl PortlightGame {
         self.market_button = Some(market);
         column.add_child(&buttons);
 
+        let mut port_row = HBoxContainer::new_alloc();
+        port_row.add_child(&action_button("Hire sailor", game_id, Action::HireSailor));
+        port_row.add_child(&action_button("Provisions +5", game_id, Action::Provision));
+        port_row.set_visible(false);
+        column.add_child(&port_row);
+        self.port_row = Some(port_row);
+        let mut port_note = body_label("", 12, MUTED);
+        port_note.set_autowrap_mode(AutowrapMode::WORD_SMART);
+        port_note.set_visible(false);
+        column.add_child(&port_note);
+        self.port_note = Some(port_note);
+
+        let mut encounter = VBoxContainer::new_alloc();
+        encounter.set_visible(false);
+        let mut encounter_label = body_label("", 14, Color::from_rgb(0.93, 0.55, 0.42));
+        encounter_label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+        encounter.add_child(&encounter_label);
+        let mut encounter_buttons = HBoxContainer::new_alloc();
+        encounter_buttons.add_child(&action_button(
+            "Fight",
+            game_id,
+            Action::Encounter(EncounterChoice::Fight),
+        ));
+        encounter_buttons.add_child(&action_button(
+            "Flee",
+            game_id,
+            Action::Encounter(EncounterChoice::Flee),
+        ));
+        encounter_buttons.add_child(&action_button(
+            "Auto-resolve",
+            game_id,
+            Action::Encounter(EncounterChoice::AutoResolve),
+        ));
+        encounter.add_child(&encounter_buttons);
+        column.add_child(&encounter);
+        self.encounter_box = Some(encounter);
+        self.encounter_label = Some(encounter_label);
+
         column.add_child(&body_label(
             "Lanes from the sail picker. Days use raw ship speed.",
             13,
             MUTED,
         ));
-        let (lane_scroll, lane_box) = scrolling(220.0);
+        let (lane_scroll, lane_box) = scrolling(160.0);
         column.add_child(&lane_scroll);
         self.lane_box = Some(lane_box);
 
-        let (market_scroll, market_box) = scrolling(240.0);
+        let (market_scroll, market_box) = scrolling(180.0);
         market_scroll.clone().set_visible(false);
         column.add_child(&market_scroll);
         self.market_scroll = Some(market_scroll);
@@ -303,11 +371,65 @@ impl PortlightGame {
         self.refresh();
     }
 
+    /// Seed 42, the `duel_block` script: sail until a pirate freezes the day.
+    fn run_encounter(&mut self) {
+        self.log_lines.clear();
+        self.market_open = false;
+        self.armed_sail = None;
+        let session = match Session::new("Ada", "merchant", 42, None) {
+            Ok(session) => session,
+            Err(err) => {
+                self.smoke_ok = false;
+                self.push_log(err.to_string());
+                self.refresh();
+                return;
+            }
+        };
+        let mut session = session;
+        if let Err(err) = session.buy("grain", 8) {
+            self.smoke_ok = false;
+            self.push_log(err.to_string());
+        }
+        if let Err(err) = session.depart("silva_bay") {
+            self.smoke_ok = false;
+            self.push_log(err.to_string());
+        }
+        for _ in 0..6 {
+            if session.world().pending_duel.is_some() {
+                break;
+            }
+            if let Err(err) = session.advance() {
+                self.smoke_ok = false;
+                self.push_log(err.to_string());
+                break;
+            }
+        }
+        let pending = session
+            .world()
+            .pending_duel
+            .as_ref()
+            .map(|duel| duel.captain_name.clone());
+        self.session = Some(session);
+        match pending {
+            Some(name) => self.push_log(format!(
+                "Encounter with {name}. Advance is refused until it can be resolved."
+            )),
+            None => {
+                self.smoke_ok = false;
+                self.push_log("Encounter preview: no pending duel.".to_string());
+            }
+        }
+        self.refresh();
+    }
+
     fn perform(&mut self, action: Action) {
         match action {
             Action::NewGame => self.start_game(),
             Action::NextDay => self.next_day(),
             Action::Work => self.work_docks(),
+            Action::HireSailor => self.hire_sailor(),
+            Action::Provision => self.buy_provisions(),
+            Action::Encounter(choice) => self.encounter_placeholder(choice),
             Action::ToggleMarket => {
                 if self.docked_id().is_some() {
                     self.market_open = !self.market_open;
@@ -480,10 +602,112 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn hire_sailor(&mut self) {
+        let before = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.silver);
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.hire_crew(1, "sailor")
+        };
+        match result {
+            Ok(()) => {
+                let (silver, crew) = self
+                    .session
+                    .as_ref()
+                    .map(|session| {
+                        let world = session.world();
+                        let crew = world
+                            .captain
+                            .ship
+                            .as_ref()
+                            .map(|ship| ship.crew)
+                            .unwrap_or(0);
+                        (world.captain.silver, crew)
+                    })
+                    .unwrap_or((0, 0));
+                self.push_log(format!(
+                    "Hired 1 sailor. Crew {crew}. Silver {} → {silver}.",
+                    before.unwrap_or(silver)
+                ));
+            }
+            Err(err) => {
+                if self.smoke {
+                    self.smoke_ok = false;
+                }
+                self.push_log(err.to_string());
+            }
+        }
+        self.refresh();
+    }
+
+    fn buy_provisions(&mut self) {
+        let before = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.provisions);
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.provision(5)
+        };
+        match result {
+            Ok(()) => {
+                let (silver, days) = self
+                    .session
+                    .as_ref()
+                    .map(|session| {
+                        (
+                            session.world().captain.silver,
+                            session.world().captain.provisions,
+                        )
+                    })
+                    .unwrap_or((0, 0));
+                self.push_log(format!(
+                    "Bought provisions. Days {} → {days}. Silver {silver}.",
+                    before.unwrap_or(days)
+                ));
+            }
+            Err(err) => {
+                if self.smoke {
+                    self.smoke_ok = false;
+                }
+                self.push_log(err.to_string());
+            }
+        }
+        self.refresh();
+    }
+
+    /// Fight, flee, and encounter auto-resolve are not methods on `Session` yet.
+    /// `duel` and `resolve_pending_duel` are the stance fight, so these buttons
+    /// do not call them.
+    fn encounter_placeholder(&mut self, choice: EncounterChoice) {
+        let verb = match choice {
+            EncounterChoice::Fight => "Fight",
+            EncounterChoice::Flee => "Flee",
+            EncounterChoice::AutoResolve => "Auto-resolve",
+        };
+        self.push_log(format!(
+            "{verb} is not on Session yet. Advance stays refused until the encounter can be resolved."
+        ));
+        self.refresh();
+    }
+
     fn refresh(&mut self) {
         let docked = self.docked_id().is_some();
+        let pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().pending_duel.is_some());
         if !docked {
             self.market_open = false;
+        }
+        if let Some(button) = self.next_button.as_mut() {
+            button.set_disabled(pending);
         }
         if let Some(button) = self.work_button.as_mut() {
             button.set_disabled(!docked);
@@ -498,6 +722,21 @@ impl PortlightGame {
         }
         if let Some(scroll) = self.market_scroll.as_mut() {
             scroll.set_visible(self.market_open);
+        }
+        let services = self.port_services_text();
+        let encounter = self.encounter_text();
+        if let Some(row) = self.port_row.as_mut() {
+            row.set_visible(docked);
+        }
+        if let Some(label) = self.port_note.as_mut() {
+            label.set_visible(docked);
+            label.set_text(&services);
+        }
+        if let Some(box_node) = self.encounter_box.as_mut() {
+            box_node.set_visible(pending);
+        }
+        if let Some(label) = self.encounter_label.as_mut() {
+            label.set_text(&encounter);
         }
         let status_text = self.status_text();
         if let Some(label) = self.status.as_mut() {
@@ -739,6 +978,37 @@ fn good_name(id: &str) -> String {
         .good(id)
         .map(|good| good.name.clone())
         .unwrap_or_else(|| id.to_string())
+}
+
+impl PortlightGame {
+    fn encounter_text(&self) -> String {
+        let Some(session) = self.session.as_ref() else {
+            return String::new();
+        };
+        let Some(duel) = session.world().pending_duel.as_ref() else {
+            return String::new();
+        };
+        format!(
+            "Encounter: {}.\nFaction {} · {} · strength {} · {}.\nAdvance will not move the day. Fight, flee, and auto-resolve are not on Session yet.",
+            duel.captain_name, duel.faction_id, duel.personality, duel.strength, duel.region
+        )
+    }
+
+    fn port_services_text(&self) -> String {
+        let Some(session) = self.session.as_ref() else {
+            return String::new();
+        };
+        let Some(id) = docked_port_id(session) else {
+            return String::new();
+        };
+        let Some(port) = session.world().port(id) else {
+            return String::new();
+        };
+        format!(
+            "Sailor listed {} silver. Provisions listed {} silver a day.",
+            port.crew_cost, port.provision_cost
+        )
+    }
 }
 
 fn ledger_line(session: &Session) -> String {
