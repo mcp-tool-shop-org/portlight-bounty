@@ -147,13 +147,12 @@ impl IControl for PortlightGame {
 
     fn ready(&mut self) {
         self.smoke = flag_set("PORTLIGHT_SMOKE") || user_arg("--smoke");
-        self.shot_path = std::env::var("PORTLIGHT_SHOT").ok().or_else(|| {
-            if self.smoke {
-                Some("/tmp/portlight-first-playable.png".to_string())
-            } else {
-                None
-            }
-        });
+        // A shot is opt-in. Headless `--smoke` checks the session and does not
+        // read the viewport: the dummy renderer has no texture, and asking for
+        // one logs `Parameter "t" is null` while still exiting 0.
+        self.shot_path = std::env::var("PORTLIGHT_SHOT")
+            .ok()
+            .filter(|path| !path.is_empty());
         self.build_ui();
         self.start_game();
         if user_arg("--encounter") {
@@ -1192,10 +1191,9 @@ impl PortlightGame {
         }
     }
 
-    /// Saves the window. Returns false when the frame is missing or mostly one
-    /// colour, which is what the collapsed 28 px chart shot looked like.
-    /// Headless Godot's dummy renderer leaves the image empty; that path does
-    /// not fail the session smoke. A GL capture sets `PORTLIGHT_REQUIRE_FRAME`.
+    /// Saves the window. An empty image or a frame that is mostly one colour
+    /// is a failed capture. Headless Godot cannot produce this image; call
+    /// this only from a real GL context (`PORTLIGHT_SHOT` set).
     fn save_shot(&self, path: &str) -> bool {
         let image = self.base().get_viewport().and_then(|viewport| {
             viewport
@@ -1204,11 +1202,11 @@ impl PortlightGame {
         });
         let Some(image) = image else {
             godot_print!("viewport image was empty");
-            return !flag_set("PORTLIGHT_REQUIRE_FRAME");
+            return false;
         };
         if image.is_empty() {
             godot_print!("viewport image was empty");
-            return !flag_set("PORTLIGHT_REQUIRE_FRAME");
+            return false;
         }
         let width = image.get_width();
         let height = image.get_height();

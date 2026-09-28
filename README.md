@@ -47,19 +47,18 @@ That command does not rewrite `godot/assets/landing/`. That directory is the who
 
 `godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files follow Rev 4 R11: lossless, Fix Alpha Border on, premultiplied alpha off, VRAM off. Mipmaps are on for `chart_water_a`–`c` only. The canvas filter is Nearest (`default_texture_filter=0`), so a plate drawn at 1:1 keeps its pixels.
 
-Headless smoke (session only; the dummy renderer does not return a viewport image):
+Headless Godot cannot produce a frame. Its dummy renderer has no viewport texture. Asking for one logs `Parameter "t" is null` and `viewport image was empty`, and that used to exit 0. The headless smoke checks the session only and does not read the viewport:
 
 ```
 godot --headless --path godot --import --quit
 godot --headless --path godot -- --smoke
 ```
 
-A PNG needs a GL context. On Linux, llvmpipe under Xvfb works. That smoke exits non-zero if the 1280×720 frame is missing or mostly one flat colour (the collapsed chart was a 28 px strip over the clear colour):
+Screenshots need a real GL context. On Linux that is llvmpipe under Xvfb. Setting `PORTLIGHT_SHOT` captures the window. The process exits non-zero if that image is empty or mostly one flat colour (the collapsed chart was a 28 px strip over the clear colour). CI greps the Godot log for those renderer errors.
 
 ```
 xvfb-run -a -s "-screen 0 1280x720x24" \
-  env PORTLIGHT_SMOKE=1 PORTLIGHT_REQUIRE_FRAME=1 \
-  PORTLIGHT_SHOT=/tmp/portlight-first-playable.png \
+  env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-first-playable.png \
   godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
 ```
 
