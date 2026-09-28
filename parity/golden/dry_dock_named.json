@@ -1,27 +1,27 @@
 {
   "seed": 6,
-  "day": 86,
+  "day": 9,
   "trade_seq": 2,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 4,
-    "provisions": 0,
-    "day": 86,
+    "silver": 2783,
+    "provisions": 18,
+    "day": 9,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
-      "template_id": "merchant_galleon",
-      "name": "Merchant Galleon",
-      "hull": 104,
-      "hull_max": 157,
-      "cargo_capacity": 150,
-      "speed": 4.0,
-      "crew": 0,
-      "crew_max": 40,
-      "morale": 5,
-      "cannons": 12,
-      "sailors": 0,
+      "template_id": "coastal_sloop",
+      "name": "Coastal Sloop",
+      "hull": 44,
+      "hull_max": 60,
+      "cargo_capacity": 30,
+      "speed": 8.0,
+      "crew": 3,
+      "crew_max": 8,
+      "morale": 68,
+      "cannons": 0,
+      "sailors": 3,
       "gunners": 0,
       "navigators": 0,
       "surgeons": 0,
@@ -30,17 +30,17 @@
     },
     "standing": {
       "regional": {
-        "Mediterranean": 12,
+        "Mediterranean": 10,
         "North Atlantic": 0,
         "West Africa": 0,
-        "East Indies": 1,
+        "East Indies": 0,
         "South Seas": 0
       },
       "heat": {
-        "Mediterranean": 2,
+        "Mediterranean": 4,
         "North Atlantic": 0,
         "West Africa": 0,
-        "East Indies": 3,
+        "East Indies": 0,
         "South Seas": 0
       },
       "commercial_trust": 14,
@@ -52,52 +52,10 @@
         {
           "port_id": "silva_bay",
           "value": 1
-        },
-        {
-          "port_id": "porto_novo",
-          "value": 1
-        },
-        {
-          "port_id": "al_manar",
-          "value": 1
-        },
-        {
-          "port_id": "monsoon_reach",
-          "value": 1
         }
       ],
       "underworld": {},
       "incidents": [
-        {
-          "day": 53,
-          "port_id": "al_manar",
-          "region": "East Indies",
-          "incident_type": "inspection",
-          "description": "Routine inspection (0 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        },
-        {
-          "day": 37,
-          "port_id": "al_manar",
-          "region": "East Indies",
-          "incident_type": "inspection",
-          "description": "Routine inspection (0 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        },
-        {
-          "day": 25,
-          "port_id": "al_manar",
-          "region": "East Indies",
-          "incident_type": "inspection",
-          "description": "Routine inspection (0 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        },
         {
           "day": 6,
           "port_id": "silva_bay",
@@ -107,74 +65,22 @@
           "heat_delta": 6,
           "standing_delta": -2,
           "trust_delta": -1
-        },
-        {
-          "day": 4,
-          "port_id": "porto_novo",
-          "region": "Mediterranean",
-          "incident_type": "inspection",
-          "description": "Routine inspection (3 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
         }
       ]
-    },
-    "encounters": [
-      {
-        "captain_id": "the_butcher",
-        "faction_id": "crimson_tide",
-        "day": 11,
-        "outcome": "duel_loss",
-        "region": "Mediterranean"
-      },
-      {
-        "captain_id": "raj_the_quiet",
-        "faction_id": "monsoon_syndicate",
-        "day": 21,
-        "outcome": "duel_loss",
-        "region": "East Indies"
-      },
-      {
-        "captain_id": "typhoon_mei",
-        "faction_id": "monsoon_syndicate",
-        "day": 41,
-        "outcome": "duel_loss",
-        "region": "East Indies"
-      },
-      {
-        "captain_id": "raj_the_quiet",
-        "faction_id": "monsoon_syndicate",
-        "day": 45,
-        "outcome": "duel_loss",
-        "region": "East Indies"
-      }
-    ],
-    "duels_lost": 4,
-    "fleet": [
-      {
-        "template_id": "coastal_sloop",
-        "name": "Coastal Sloop",
-        "hull": 3,
-        "hull_max": 60,
-        "crew": 3,
-        "docked_port_id": "monsoon_reach"
-      }
-    ]
+    }
   },
   "voyage": {
-    "origin_id": "al_manar",
-    "destination_id": "monsoon_reach",
-    "distance": 72,
-    "progress": 72,
-    "days_elapsed": 60,
-    "status": "in_port",
+    "origin_id": "silva_bay",
+    "destination_id": "porto_novo",
+    "distance": 16,
+    "progress": 14,
+    "days_elapsed": 3,
+    "status": "at_sea",
     "recent_events": [
-      "favorable_wind",
-      "calm_seas",
-      "musician_aboard",
-      "pirates",
-      "merchant_encounter"
+      "storm",
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+      "drifting_offering",
+      "calm_seas"
     ]
   },
   "pending_duel": null,
@@ -1507,54 +1413,9 @@
   ],
   "victory": [
     {
-      "path_id": "oceanic_reach",
-      "name": "Oceanic Reach",
-      "candidate_strength": 33.7,
-      "completion_day": 0,
-      "completion_summary": "",
-      "requirements": [
-        {
-          "description": "East Indies Access Charter",
-          "status": "missing",
-          "detail": "",
-          "action": "Acquire the East Indies Access Charter"
-        },
-        {
-          "description": "East Indies commercial foothold (broker or warehouse)",
-          "status": "missing",
-          "detail": "EI broker: no, EI warehouse: no",
-          "action": "Open a broker office or warehouse in the East Indies"
-        },
-        {
-          "description": "East Indies standing >= 15",
-          "status": "missing",
-          "detail": "EI standing: 1",
-          "action": "Build East Indies standing from 1 to 15"
-        },
-        {
-          "description": "Long-haul ship capability (Brigantine or Galleon)",
-          "status": "met",
-          "detail": "Ship: galleon",
-          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
-        },
-        {
-          "description": "5+ contracts completed",
-          "status": "missing",
-          "detail": "Completed: 0",
-          "action": "Complete 5 more contracts"
-        },
-        {
-          "description": "2000+ silver",
-          "status": "missing",
-          "detail": "Silver: 4",
-          "action": "Earn 1996 more silver"
-        }
-      ]
-    },
-    {
       "path_id": "lawful_house",
       "name": "Lawful Trade House",
-      "candidate_strength": 26.7,
+      "candidate_strength": 33.3,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1585,21 +1446,21 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 3",
-          "action": "Reduce customs heat from 3 to 5 or below"
+          "detail": "Max heat: 4",
+          "action": "Reduce customs heat from 4 to 5 or below"
         },
         {
           "description": "2000+ silver",
-          "status": "missing",
-          "detail": "Silver: 4",
-          "action": "Earn 1996 more silver"
+          "status": "met",
+          "detail": "Silver: 2783",
+          "action": ""
         }
       ]
     },
     {
       "path_id": "shadow_network",
       "name": "Shadow Network",
-      "candidate_strength": 0.0,
+      "candidate_strength": 33.3,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1612,32 +1473,77 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "blocked",
-          "detail": "Max heat: 3",
-          "action": "Shadow commerce requires operating under customs pressure (heat 3, need 10+)"
+          "detail": "Max heat: 4",
+          "action": "Shadow commerce requires operating under customs pressure (heat 4, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 3",
-          "action": "Reduce heat from 3 \u2014 network collapses above 40"
+          "detail": "Max heat: 4",
+          "action": "Reduce heat from 4 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 2266, heat: 3",
+          "detail": "Profit: 2266, heat: 4",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
-          "status": "missing",
-          "detail": "Silver: 4",
-          "action": "Accumulate 1496 more silver"
+          "status": "met",
+          "detail": "Silver: 2783",
+          "action": ""
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 2, max heat: 3",
+          "detail": "Trades: 2, max heat: 4",
           "action": "Complete more trades while operating under customs pressure"
+        }
+      ]
+    },
+    {
+      "path_id": "oceanic_reach",
+      "name": "Oceanic Reach",
+      "candidate_strength": 1.7,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "East Indies Access Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the East Indies Access Charter"
+        },
+        {
+          "description": "East Indies commercial foothold (broker or warehouse)",
+          "status": "missing",
+          "detail": "EI broker: no, EI warehouse: no",
+          "action": "Open a broker office or warehouse in the East Indies"
+        },
+        {
+          "description": "East Indies standing >= 15",
+          "status": "missing",
+          "detail": "EI standing: 0",
+          "action": "Build East Indies standing from 0 to 15"
+        },
+        {
+          "description": "Long-haul ship capability (Brigantine or Galleon)",
+          "status": "missing",
+          "detail": "Ship: sloop",
+          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+        },
+        {
+          "description": "5+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 5 more contracts"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "met",
+          "detail": "Silver: 2783",
+          "action": ""
         }
       ]
     },
@@ -1675,8 +1581,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 4",
-          "action": "Earn 2996 more silver"
+          "detail": "Silver: 2783",
+          "action": "Earn 217 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1699,20 +1605,74 @@
       "completed_day": 2,
       "evidence": "Trust tier: credible",
       "family": "lawful_house"
-    },
-    {
-      "milestone_id": "oceanic_galleon",
-      "completed_day": 10,
-      "evidence": "Operating a galleon",
-      "family": "oceanic_reach"
-    },
-    {
-      "milestone_id": "integrated_brigantine",
-      "completed_day": 10,
-      "evidence": "Operating a galleon",
-      "family": "integrated_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "corsairs_rest",
+        "visits": 1
+      },
+      {
+        "port_id": "silva_bay",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates",
+      "first_trade",
+      "first_profit",
+      "wealth_milestone",
+      "survived_storm"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 6,
+        "port_id": "silva_bay",
+        "region": ""
+      },
+      {
+        "beat_id": "first_trade",
+        "day": 6,
+        "port_id": "silva_bay",
+        "region": "Mediterranean"
+      },
+      {
+        "beat_id": "first_profit",
+        "day": 6,
+        "port_id": "silva_bay",
+        "region": ""
+      },
+      {
+        "beat_id": "wealth_milestone",
+        "day": 6,
+        "port_id": "silva_bay",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 7,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 6",
@@ -1743,6 +1703,28 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The Mediterranean in spring is kind. Gentle swells, clear horizons, and a breeze that fills the sails without testing the rigging. The sea remembers how to be generous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1753,11 +1735,11 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+20 silver)",
+          "event_type": "provisions_spoiled",
+          "message": "Some provisions have spoiled. (-4 days)",
           "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 20,
+          "provision_delta": -4,
+          "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
@@ -1772,15 +1754,26 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 3 silver fee.",
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
           "hull_delta": 0,
           "provision_delta": 0,
-          "silver_delta": -3,
+          "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Corsair's Rest.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nShips anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee \u2014 payable in silver, no questions.\n\n[bold]One-Eye Basso:[/bold] \"...Clear behind you. Come in. Kill your running lights before the bend.\"\n\n[dim]Landmark: The Cliff Tavern \u2014 carved into the rock face, visible only from the sea.[/dim]\n[dim]Custom: No names. Every captain here is 'friend' until proven otherwise.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
@@ -1815,15 +1808,37 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.5,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The Mediterranean in spring is kind. Gentle swells, clear horizons, and a breeze that fills the sails without testing the rigging. The sea remembers how to be generous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1834,15 +1849,48 @@
       "receipt": null,
       "events": [
         {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 2 silver. (-7 hull)",
+          "hull_delta": -7,
+          "provision_delta": 0,
+          "silver_delta": -2,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Silva Bay.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nSawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish.\n\n[bold]Nuno Ferreira:[/bold] \"Berth's over there. Tie up properly \u2014 I don't want you drifting into the slipways. Timber loading happens at dawn, so don't sleep late.\"\n\n[dim]Landmark: The Master Shipyard \u2014 where the finest hulls in the Mediterranean take shape.[/dim]\n[dim]Custom: Touching another captain's ship without permission is grounds for a duel.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
@@ -1886,393 +1934,17 @@
           "speed_modifier": 0.5,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "star_navigation",
-          "message": "The navigator reads the stars and adjusts course. Ancient constellations confirm your heading.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.05,
-          "cargo_lost": [],
-          "flavor": "The sky is the oldest chart."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "buy_ship merchant_galleon",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "provision 5",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "depart al_manar",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-3 hull)",
-          "hull_delta": -3,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "pirates",
-          "message": "The Butcher of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "Strength 8, aggressive fighter."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "resolve_duel",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "the_butcher",
-        "opponent_name": "The Butcher",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -39,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "slash",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Blades cross in a shower of sparks. Matched power."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 4,
-            "damage_to_player": 0,
-            "flavor": "You read the thrust perfectly. Their blade slides past as yours finds the opening."
-          },
-          {
-            "player_stance": "slash",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Blades cross in a shower of sparks. Matched power."
-          },
-          {
-            "player_stance": "slash",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 0,
-            "damage_to_player": 3,
-            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
-          },
-          {
-            "player_stance": "slash",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 0,
-            "damage_to_player": 3,
-            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
-          }
-        ]
-      }
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.6,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "provisions_spoiled",
-          "message": "Some provisions have spoiled. (-6 days)",
-          "hull_delta": 0,
-          "provision_delta": -6,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 35 silver. (-3 hull)",
-          "hull_delta": -3,
-          "provision_delta": 0,
-          "silver_delta": -35,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "musician_aboard",
-          "message": "Drums and singing from the crew \u2014 rhythms of the Gold Coast that make the work feel lighter.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "For a moment, the sea feels smaller."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "depart monsoon_reach",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
         },
         {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -2282,252 +1954,9 @@
       "error": null,
       "receipt": null,
       "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Raj the Quiet of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "Strength 5, defensive fighter."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "resolve_duel",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "raj_the_quiet",
-        "opponent_name": "Raj the Quiet",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -30,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "slash",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 0,
-            "damage_to_player": 2,
-            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
-          },
-          {
-            "player_stance": "slash",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 3,
-            "damage_to_player": 0,
-            "flavor": "A wide arc catches them mid-parry. The cut connects."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 0,
-            "damage_to_player": 3,
-            "flavor": "You brace for a thrust that never comes \u2014 the slash catches your side."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 0,
-            "damage_to_player": 3,
-            "flavor": "You lunge forward, but their parry turns your blade aside."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          }
-        ]
-      }
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+2 provisions)",
-          "hull_delta": 0,
-          "provision_delta": 2,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
-          "hull_delta": -6,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 12 silver fee (only 0 collected).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
         {
           "event_type": "drifting_offering",
-          "message": "A sealed clay jar bobs in the waves, marked with symbols of good fortune.",
+          "message": "Driftwood carved with old prayers. The crew leaves it undisturbed.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
@@ -2545,666 +1974,6 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 0 silver. (-2 hull)",
-          "hull_delta": -2,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+15 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 15,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "star_navigation",
-          "message": "The navigator reads the stars and adjusts course. Ancient constellations confirm your heading.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.05,
-          "cargo_lost": [],
-          "flavor": "The sky is the oldest chart."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 9 silver fee (only 0 collected).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "foreign_vessel",
-          "message": "A heavy iron-hulled freighter steams past, smoke trailing from its stack. Northern build.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "The sea is shared."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-2 hull)",
-          "hull_delta": -2,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Typhoon Mei of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "Strength 7, wild fighter."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "resolve_duel",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "typhoon_mei",
-        "opponent_name": "Typhoon Mei",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -36,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "parry",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 3,
-            "damage_to_player": 0,
-            "flavor": "You read the thrust perfectly. Their blade slides past as yours finds the opening."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 0,
-            "damage_to_player": 3,
-            "flavor": "You lunge forward, but their parry turns your blade aside."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 0,
-            "damage_to_player": 2,
-            "flavor": "You lunge forward, but their parry turns your blade aside."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          }
-        ]
-      }
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+15 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 15,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "star_navigation",
-          "message": "The navigator reads the stars and adjusts course. Ancient constellations confirm your heading.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.05,
-          "cargo_lost": [],
-          "flavor": "The sky is the oldest chart."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "pirates",
-          "message": "Raj the Quiet of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "Strength 5, defensive fighter."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "resolve_duel",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "raj_the_quiet",
-        "opponent_name": "Raj the Quiet",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -30,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "slash",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Blades cross in a shower of sparks. Matched power."
-          },
-          {
-            "player_stance": "slash",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 2,
-            "damage_to_player": 0,
-            "flavor": "A wide arc catches them mid-parry. The cut connects."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          },
-          {
-            "player_stance": "slash",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 3,
-            "damage_to_player": 0,
-            "flavor": "A wide arc catches them mid-parry. The cut connects."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 2,
-            "damage_to_player": 0,
-            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
-          }
-        ]
-      }
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "musician_aboard",
-          "message": "A northern ballad, deep and slow, about iron and ice and the lights in winter skies.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "For a moment, the sea feels smaller."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "provisions_spoiled",
-          "message": "Some provisions have spoiled. (-3 days)",
-          "hull_delta": 0,
-          "provision_delta": -3,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
           "event_type": "calm_seas",
           "message": "Calm seas. Good for rest, bad for progress.",
           "hull_delta": 0,
@@ -3219,1049 +1988,8 @@
       "shocks": []
     },
     {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+8 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 8,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 5 silver. (-5 hull)",
-          "hull_delta": -5,
-          "provision_delta": 0,
-          "silver_delta": -5,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 3 silver fee (only 0 collected).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
-          "hull_delta": -6,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+14 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 14,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.6,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "provisions_spoiled",
-          "message": "Some provisions have spoiled. (-2 days)",
-          "hull_delta": 0,
-          "provision_delta": -2,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
-          "hull_delta": -6,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 2 silver. (-3 hull)",
-          "hull_delta": -3,
-          "provision_delta": 0,
-          "silver_delta": -2,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "lighthouse",
-          "message": "Ember Peak's volcanic glow marks the horizon. The South Seas await.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.1,
-          "cargo_lost": [],
-          "flavor": "Known waters. The charts don't lie."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-3 hull)",
-          "hull_delta": -3,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+2 provisions)",
-          "hull_delta": 0,
-          "provision_delta": 2,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 0 silver. (-5 hull)",
-          "hull_delta": -5,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+7 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 7,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A storm batters the ship. Your hull absorbs the worst of it. (-6 hull)",
-          "hull_delta": -6,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.6,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "musician_aboard",
-          "message": "A sailor plays a reed flute \u2014 an old Mediterranean melody about grain ships and fair winds.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "For a moment, the sea feels smaller."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 1 silver. (-6 hull)",
-          "hull_delta": -6,
-          "provision_delta": 0,
-          "silver_delta": -1,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "Can't pay crew wages! Morale drops.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+6 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 6,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 3
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 4
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 3
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 3
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 4
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 3
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 3
-    },
-    {
-      "command": "work",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "earned": 5
-    },
-    {
-      "command": "buy_infrastructure dry_dock coastal_sloop",
-      "error": null,
+      "command": "buy_ship merchant_galleon",
+      "error": "Must be docked",
       "receipt": null,
       "events": [],
       "shocks": []

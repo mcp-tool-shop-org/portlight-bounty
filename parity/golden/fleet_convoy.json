@@ -67,7 +67,8 @@
     "days_elapsed": 1,
     "status": "at_sea",
     "recent_events": [
-      "nothing"
+      "nothing",
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud."
     ]
   },
   "pending_duel": null,
@@ -1600,6 +1601,26 @@
       "family": "integrated_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "ship_upgrade"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "ship_upgrade",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 1",
@@ -1644,6 +1665,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []

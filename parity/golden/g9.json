@@ -1,13 +1,13 @@
 {
   "seed": 435326599206,
-  "day": 10,
+  "day": 12,
   "trade_seq": 0,
   "captain": {
     "name": "T9",
     "captain_type": "bounty_hunter",
-    "silver": 294,
-    "provisions": 21,
-    "day": 10,
+    "silver": 283,
+    "provisions": 20,
+    "day": 12,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
@@ -19,7 +19,7 @@
       "speed": 9.0,
       "crew": 8,
       "crew_max": 12,
-      "morale": 61,
+      "morale": 68,
       "cannons": 2,
       "sailors": 7,
       "gunners": 0,
@@ -41,7 +41,7 @@
         "Mediterranean": 3,
         "North Atlantic": 8,
         "West Africa": 0,
-        "East Indies": 1,
+        "East Indies": 2,
         "South Seas": 0
       },
       "heat": {
@@ -56,6 +56,10 @@
         {
           "port_id": "dragons_gate",
           "value": 1
+        },
+        {
+          "port_id": "jade_port",
+          "value": 1
         }
       ],
       "underworld": {},
@@ -63,22 +67,23 @@
     }
   },
   "voyage": {
-    "origin_id": "dragons_gate",
-    "destination_id": "jade_port",
+    "origin_id": "jade_port",
+    "destination_id": "dragons_gate",
     "distance": 22,
     "progress": 9,
     "days_elapsed": 1,
     "status": "at_sea",
     "recent_events": [
-      "pirates"
+      "pirates",
+      "A small kiln-boat from Jade Port passes \u2014 Apprentice Lin testing a new glaze in sea air. She holds a tile up to the light, frowns, adjusts something, holds it up again. Obsession at twenty-two."
     ]
   },
   "pending_duel": {
-    "captain_id": "raj_the_quiet",
-    "captain_name": "Raj the Quiet",
+    "captain_id": "typhoon_mei",
+    "captain_name": "Typhoon Mei",
     "faction_id": "monsoon_syndicate",
-    "personality": "defensive",
-    "strength": 5,
+    "personality": "wild",
+    "strength": 7,
     "region": "East Indies"
   },
   "ports": [
@@ -148,9 +153,9 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 26,
-          "buy_price": 40,
-          "sell_price": 32,
+          "stock": 27,
+          "buy_price": 38,
+          "sell_price": 31,
           "flood_penalty": 0.0
         },
         {
@@ -197,9 +202,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 12,
-          "buy_price": 34,
-          "sell_price": 27,
+          "stock": 8,
+          "buy_price": 51,
+          "sell_price": 41,
           "flood_penalty": 0.0
         },
         {
@@ -216,16 +221,16 @@
       "market": [
         {
           "good_id": "timber",
-          "stock": 40,
-          "buy_price": 13,
+          "stock": 42,
+          "buy_price": 12,
           "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 18,
-          "buy_price": 22,
-          "sell_price": 17,
+          "stock": 14,
+          "buy_price": 28,
+          "sell_price": 22,
           "flood_penalty": 0.0
         },
         {
@@ -373,9 +378,9 @@
         },
         {
           "good_id": "grain",
-          "stock": 13,
-          "buy_price": 28,
-          "sell_price": 23,
+          "stock": 11,
+          "buy_price": 34,
+          "sell_price": 27,
           "flood_penalty": 0.0
         },
         {
@@ -394,16 +399,16 @@
         },
         {
           "good_id": "pelts",
-          "stock": 14,
-          "buy_price": 6,
-          "sell_price": 5,
+          "stock": 12,
+          "buy_price": 8,
+          "sell_price": 6,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 1,
-          "buy_price": 878,
-          "sell_price": 705,
+          "stock": 5,
+          "buy_price": 176,
+          "sell_price": 141,
           "flood_penalty": 0.0
         },
         {
@@ -448,9 +453,9 @@
         },
         {
           "good_id": "rum",
-          "stock": 12,
-          "buy_price": 45,
-          "sell_price": 36,
+          "stock": 8,
+          "buy_price": 68,
+          "sell_price": 54,
           "flood_penalty": 0.0
         },
         {
@@ -549,9 +554,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 20,
-          "buy_price": 24,
-          "sell_price": 19,
+          "stock": 22,
+          "buy_price": 22,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
@@ -591,9 +596,9 @@
         },
         {
           "good_id": "porcelain",
-          "stock": 8,
-          "buy_price": 77,
-          "sell_price": 62,
+          "stock": 5,
+          "buy_price": 123,
+          "sell_price": 99,
           "flood_penalty": 0.0
         }
       ]
@@ -617,9 +622,9 @@
         },
         {
           "good_id": "timber",
-          "stock": 6,
-          "buy_price": 56,
-          "sell_price": 45,
+          "stock": 10,
+          "buy_price": 34,
+          "sell_price": 27,
           "flood_penalty": 0.0
         },
         {
@@ -739,23 +744,23 @@
         },
         {
           "good_id": "dyes",
-          "stock": 12,
-          "buy_price": 18,
-          "sell_price": 14,
+          "stock": 11,
+          "buy_price": 19,
+          "sell_price": 16,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 3,
-          "buy_price": 146,
-          "sell_price": 118,
+          "stock": 4,
+          "buy_price": 110,
+          "sell_price": 88,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 12,
-          "buy_price": 19,
-          "sell_price": 16,
+          "stock": 14,
+          "buy_price": 17,
+          "sell_price": 13,
           "flood_penalty": 0.0
         },
         {
@@ -774,9 +779,9 @@
         },
         {
           "good_id": "rum",
-          "stock": 14,
-          "buy_price": 18,
-          "sell_price": 15,
+          "stock": 8,
+          "buy_price": 32,
+          "sell_price": 26,
           "flood_penalty": 0.0
         }
       ]
@@ -828,9 +833,9 @@
         },
         {
           "good_id": "rum",
-          "stock": 12,
-          "buy_price": 25,
-          "sell_price": 20,
+          "stock": 8,
+          "buy_price": 38,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
@@ -842,9 +847,9 @@
         },
         {
           "good_id": "cotton",
-          "stock": 5,
-          "buy_price": 45,
-          "sell_price": 36,
+          "stock": 8,
+          "buy_price": 28,
+          "sell_price": 23,
           "flood_penalty": 0.0
         }
       ]
@@ -854,9 +859,9 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 22,
-          "buy_price": 44,
-          "sell_price": 36,
+          "stock": 21,
+          "buy_price": 46,
+          "sell_price": 37,
           "flood_penalty": 0.0
         },
         {
@@ -903,16 +908,16 @@
         },
         {
           "good_id": "porcelain",
-          "stock": 9,
-          "buy_price": 94,
-          "sell_price": 76,
+          "stock": 10,
+          "buy_price": 85,
+          "sell_price": 68,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 9,
-          "buy_price": 10,
-          "sell_price": 8,
+          "stock": 8,
+          "buy_price": 11,
+          "sell_price": 9,
           "flood_penalty": 0.0
         }
       ]
@@ -950,9 +955,9 @@
         },
         {
           "good_id": "dyes",
-          "stock": 8,
-          "buy_price": 31,
-          "sell_price": 25,
+          "stock": 5,
+          "buy_price": 50,
+          "sell_price": 40,
           "flood_penalty": 0.0
         },
         {
@@ -971,9 +976,9 @@
         },
         {
           "good_id": "grain",
-          "stock": 3,
-          "buy_price": 49,
-          "sell_price": 40,
+          "stock": 6,
+          "buy_price": 25,
+          "sell_price": 20,
           "flood_penalty": 0.0
         },
         {
@@ -1046,9 +1051,9 @@
         },
         {
           "good_id": "tea",
-          "stock": 7,
-          "buy_price": 52,
-          "sell_price": 41,
+          "stock": 8,
+          "buy_price": 45,
+          "sell_price": 36,
           "flood_penalty": 0.0
         },
         {
@@ -1140,9 +1145,9 @@
         },
         {
           "good_id": "pearls",
-          "stock": 6,
-          "buy_price": 82,
-          "sell_price": 66,
+          "stock": 8,
+          "buy_price": 62,
+          "sell_price": 50,
           "flood_penalty": 0.0
         },
         {
@@ -1161,9 +1166,9 @@
         },
         {
           "good_id": "grain",
-          "stock": 8,
-          "buy_price": 27,
-          "sell_price": 22,
+          "stock": 5,
+          "buy_price": 43,
+          "sell_price": 35,
           "flood_penalty": 0.0
         },
         {
@@ -1318,23 +1323,23 @@
         },
         {
           "good_id": "rum",
-          "stock": 8,
-          "buy_price": 38,
-          "sell_price": 30,
+          "stock": 9,
+          "buy_price": 33,
+          "sell_price": 27,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 10,
-          "sell_price": 8,
+          "stock": 11,
+          "buy_price": 7,
+          "sell_price": 6,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 8,
-          "buy_price": 18,
-          "sell_price": 15,
+          "stock": 6,
+          "buy_price": 25,
+          "sell_price": 20,
           "flood_penalty": 0.0
         }
       ]
@@ -1351,9 +1356,9 @@
         },
         {
           "good_id": "tobacco",
-          "stock": 15,
-          "buy_price": 27,
-          "sell_price": 22,
+          "stock": 18,
+          "buy_price": 23,
+          "sell_price": 18,
           "flood_penalty": 0.0
         },
         {
@@ -1449,15 +1454,15 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 294",
-          "action": "Earn 1706 more silver"
+          "detail": "Silver: 283",
+          "action": "Earn 1717 more silver"
         }
       ]
     },
     {
       "path_id": "oceanic_reach",
       "name": "Oceanic Reach",
-      "candidate_strength": 2.0,
+      "candidate_strength": 4.0,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1476,8 +1481,8 @@
         {
           "description": "East Indies standing >= 15",
           "status": "missing",
-          "detail": "EI standing: 1",
-          "action": "Build East Indies standing from 1 to 15"
+          "detail": "EI standing: 2",
+          "action": "Build East Indies standing from 2 to 15"
         },
         {
           "description": "Long-haul ship capability (Brigantine or Galleon)",
@@ -1494,8 +1499,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 294",
-          "action": "Earn 1706 more silver"
+          "detail": "Silver: 283",
+          "action": "Earn 1717 more silver"
         }
       ]
     },
@@ -1533,8 +1538,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 294",
-          "action": "Accumulate 1206 more silver"
+          "detail": "Silver: 283",
+          "action": "Accumulate 1217 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1578,8 +1583,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 294",
-          "action": "Earn 2706 more silver"
+          "detail": "Silver: 283",
+          "action": "Earn 2717 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1598,6 +1603,65 @@
       "family": "integrated_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "dragons_gate",
+        "visits": 1
+      },
+      {
+        "port_id": "jade_port",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "East Indies"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "ship_upgrade",
+      "survived_storm",
+      "east_indies_arrival",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 4,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "ship_upgrade",
+        "day": 4,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 5,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "east_indies_arrival",
+        "day": 8,
+        "port_id": "dragons_gate",
+        "region": "East Indies"
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 12,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new bounty_hunter T9 435326599206",
@@ -1668,17 +1732,119 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "star_navigation",
-          "message": "The navigator reads the stars and adjusts course. Ancient constellations confirm your heading.",
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.05,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "The sky is the oldest chart."
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "merchant_encounter",
+          "message": "A passing merchant offers information and a small gift. (+16 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 16,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Dragon's Gate.[/bold]\n\nThe port is blooming. Literally \u2014 flowers on the docks, garlands on the warehouses, the scent of jasmine mixing with salt air. Spring arrivals in the East Indies feel like being invited to a celebration of survival.\n\nSoldiers in lacquered armor inspect every ship that passes the twin towers. Tea merchants wait patiently on the inner docks, knowing inspection takes time.\n\n[bold]Harbor Captain Li Jun:[/bold] \"Berth assignment pending inspection. Anchor in the holding area. Inspector Sun will board within the hour.\"\n\n[dim]Landmark: The Gate Fortress \u2014 twin stone towers flanking the strait, chains ready to close the passage.[/dim]\n[dim]Custom: Weapons in cargo are declared or confiscated. There is no third option.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "hire 1 sailor",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [
+        "Shortage: rum scarce at Pearl Shallows"
+      ]
+    },
+    {
+      "command": "depart jade_port",
+      "error": null,
+      "receipt": null,
+      "events": [],
       "shocks": []
     },
     {
@@ -1706,25 +1872,6 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-8 hull)",
-          "hull_delta": -8,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
           "event_type": "favorable_wind",
           "message": "Strong tailwinds speed your journey!",
           "hull_delta": 0,
@@ -1734,26 +1881,23 @@
           "speed_modifier": 1.5,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Jade Port.[/bold]\n\nThe port is blooming. Literally \u2014 flowers on the docks, garlands on the warehouses, the scent of jasmine mixing with salt air. Spring arrivals in the East Indies feel like being invited to a celebration of survival.\n\nBamboo cranes lift crates padded with straw from the hold. Each piece of porcelain is inspected by guild markers before it leaves the dock.\n\n[bold]Harbor Director Li Wei:[/bold] \"Welcome to Jade Port. Your vessel will be berthed according to protocol. May I inquire about the nature of your cargo?\"\n\n[dim]Landmark: The Porcelain Quarter \u2014 a district of workshops where master potters fire kilns day and night.[/dim]\n[dim]Custom: Porcelain is presented on silk, never bare-handed. Fingerprints on porcelain void a sale.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
     },
     {
-      "command": "hire 1 sailor",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "depart jade_port",
+      "command": "depart dragons_gate",
       "error": null,
       "receipt": null,
       "events": [],
@@ -1766,14 +1910,25 @@
       "events": [
         {
           "event_type": "pirates",
-          "message": "Raj the Quiet of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "message": "Typhoon Mei of the The Monsoon Syndicate blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "Strength 5, defensive fighter."
+          "flavor": "Strength 7, wild fighter."
+        },
+        {
+          "event_type": "foreign_vessel",
+          "message": "A small kiln-boat from Jade Port passes \u2014 Apprentice Lin testing a new glaze in sea air. She holds a tile up to the light, frowns, adjusts something, holds it up again. Obsession at twenty-two.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[Apprentice Lin Yue from jade_port]"
         }
       ],
       "shocks": []
@@ -1786,7 +1941,14 @@
       "shocks": []
     },
     {
-      "command": "depart dragons_gate",
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "depart crosswind_isle",
       "error": "Already at sea",
       "receipt": null,
       "events": [],

@@ -1,19 +1,19 @@
 {
-  "seed": 42,
-  "day": 3,
-  "trade_seq": 1,
+  "seed": 1,
+  "day": 2,
+  "trade_seq": 2,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 462,
-    "provisions": 28,
-    "day": 3,
+    "silver": 520,
+    "provisions": 29,
+    "day": 2,
     "wanted_level": 0,
     "cargo": [
       {
         "good_id": "grain",
-        "quantity": 8,
-        "cost_basis": 64,
+        "quantity": 3,
+        "cost_basis": 24,
         "acquired_port": "porto_novo",
         "acquired_region": "Mediterranean",
         "acquired_day": 1
@@ -28,7 +28,7 @@
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 52,
+      "morale": 51,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -53,33 +53,26 @@
         "South Seas": 0
       },
       "commercial_trust": 15,
-      "port_standing": [],
+      "port_standing": [
+        {
+          "port_id": "porto_novo",
+          "value": 1
+        }
+      ],
       "underworld": {},
       "incidents": []
-    },
-    "encounters": [
-      {
-        "captain_id": "scarlet_ana",
-        "faction_id": "crimson_tide",
-        "day": 2,
-        "outcome": "duel_loss",
-        "region": "Mediterranean"
-      }
-    ],
-    "duels_lost": 1
+    }
   },
   "voyage": {
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 14,
-    "days_elapsed": 2,
+    "progress": 7,
+    "days_elapsed": 1,
     "status": "at_sea",
     "recent_events": [
-      "pirates",
-      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
-      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
-      "merchant_encounter"
+      "nothing",
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud."
     ]
   },
   "pending_duel": null,
@@ -89,10 +82,10 @@
       "market": [
         {
           "good_id": "grain",
-          "stock": 32,
-          "buy_price": 9,
-          "sell_price": 9,
-          "flood_penalty": 0.0
+          "stock": 37,
+          "buy_price": 8,
+          "sell_price": 8,
+          "flood_penalty": 0.01714285714285714
         },
         {
           "good_id": "timber",
@@ -1451,8 +1444,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Earn 1538 more silver"
+          "detail": "Silver: 520",
+          "action": "Earn 1480 more silver"
         }
       ]
     },
@@ -1484,19 +1477,19 @@
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -64, heat: 0",
+          "detail": "Profit: -24, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Accumulate 1038 more silver"
+          "detail": "Silver: 520",
+          "action": "Accumulate 980 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 1, max heat: 0",
+          "detail": "Trades: 2, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1541,8 +1534,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Earn 1538 more silver"
+          "detail": "Silver: 520",
+          "action": "Earn 1480 more silver"
         }
       ]
     },
@@ -1580,8 +1573,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Earn 2538 more silver"
+          "detail": "Silver: 520",
+          "action": "Earn 2480 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1608,18 +1601,18 @@
   ],
   "narrative": {
     "fired": [
-      "first_voyage",
-      "survived_pirates"
+      "first_trade",
+      "first_voyage"
     ],
     "journal": [
       {
-        "beat_id": "first_voyage",
-        "day": 2,
-        "port_id": "",
-        "region": ""
+        "beat_id": "first_trade",
+        "day": 1,
+        "port_id": "porto_novo",
+        "region": "Mediterranean"
       },
       {
-        "beat_id": "survived_pirates",
+        "beat_id": "first_voyage",
         "day": 2,
         "port_id": "",
         "region": ""
@@ -1628,24 +1621,41 @@
   },
   "log": [
     {
-      "command": "new merchant Ada 42",
+      "command": "new merchant Ada 1",
       "error": null,
       "receipt": null,
       "events": [],
       "shocks": []
     },
     {
-      "command": "buy grain 8",
+      "command": "buy grain 5",
       "error": null,
       "receipt": {
         "receipt_id": "42471bdaf1a4a6ea",
         "action": "buy",
         "good_id": "grain",
-        "quantity": 8,
+        "quantity": 5,
         "unit_price": 8,
-        "total_price": 64,
+        "total_price": 40,
         "stock_before": 40,
-        "stock_after": 32,
+        "stock_after": 35,
+        "day": 1
+      },
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "sell grain 2",
+      "error": null,
+      "receipt": {
+        "receipt_id": "cc2a58e116af0b42",
+        "action": "sell",
+        "good_id": "grain",
+        "quantity": 2,
+        "unit_price": 8,
+        "total_price": 16,
+        "stock_before": 35,
+        "stock_after": 37,
         "day": 1
       },
       "events": [],
@@ -1664,108 +1674,26 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "pirates",
-          "message": "Scarlet Ana of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "Strength 6, balanced fighter."
-        },
-        {
           "event_type": "nothing",
-          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "message": "An uneventful day at sea.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "[sighting]"
-        },
-        {
-          "event_type": "nothing",
-          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": "[crew]"
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "resolve_duel",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "scarlet_ana",
-        "opponent_name": "Scarlet Ana",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -33,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 3,
-            "damage_to_player": 0,
-            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
-          }
-        ]
-      }
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+18 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 18,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []

@@ -40,7 +40,7 @@ def main() -> int:
     if loaded is None:
         print(f"No save in slot {slot}", file=sys.stderr)
         return 1
-    world, ledger, board, infra, campaign, _narrative = loaded
+    world, ledger, board, infra, campaign, narrative = loaded
     pricing = pricing_for(world.captain.captain_type)
     for port in world.ports.values():
         recalculate_prices(port, GOODS, pricing)
@@ -51,6 +51,7 @@ def main() -> int:
         "board": board,
         "infra": infra,
         "campaign": campaign,
+        "narrative": narrative,
     }
     json.dump(snapshot(state, []), sys.stdout, indent=2)
     sys.stdout.write("\n")

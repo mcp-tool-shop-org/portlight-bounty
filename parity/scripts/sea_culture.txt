@@ -1,0 +1,4 @@
+new merchant Ada 4
+depart silva_bay
+advance
+advance

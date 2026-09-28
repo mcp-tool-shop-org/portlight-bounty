@@ -501,6 +501,9 @@ pub struct Captain {
     pub name: String,
     pub captain_type: String,
     pub silver: i64,
+    /// Legacy integer kept on the v12 captain object. Python never writes it
+    /// after construction; saves still round-trip the number.
+    pub reputation: i64,
     pub ship: Option<Ship>,
     pub cargo: Vec<CargoItem>,
     pub provisions: i64,
@@ -602,6 +605,95 @@ pub struct PendingDuel {
     pub region: String,
 }
 
+/// A festival currently in progress (`ActiveFestival`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActiveFestival {
+    pub festival_id: String,
+    pub port_id: String,
+    pub start_day: i64,
+    pub end_day: i64,
+}
+
+/// Cultural engagement persisted as `cultural_state`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CulturalState {
+    pub active_festivals: Vec<ActiveFestival>,
+    pub regions_entered: Vec<String>,
+    pub cultural_encounters: i64,
+    /// Insertion order matches Python `port_visits`.
+    pub port_visits: Vec<(String, i64)>,
+    pub festivals_visited: i64,
+}
+
+impl CulturalState {
+    pub fn visits(&self, port_id: &str) -> i64 {
+        self.port_visits
+            .iter()
+            .find(|(id, _)| id == port_id)
+            .map(|(_, count)| *count)
+            .unwrap_or(0)
+    }
+
+    pub fn add_visit(&mut self, port_id: &str) {
+        if let Some(slot) = self.port_visits.iter_mut().find(|(id, _)| id == port_id) {
+            slot.1 += 1;
+        } else {
+            self.port_visits.push((port_id.to_string(), 1));
+        }
+    }
+}
+
+/// Superstitions the sea-culture engine has already fired.
+///
+/// Python keeps this set with the caller. It is not a v12 save key.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SeaCultureState {
+    pub fired_superstitions: Vec<String>,
+}
+
+/// One story moment. Fired beats are tracked by [`NarrativeState`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NarrativeBeat {
+    pub id: String,
+    pub phase: String,
+    pub title: String,
+    pub text: String,
+    pub flavor: String,
+    pub hint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JournalEntry {
+    pub beat_id: String,
+    pub day: i64,
+    pub port_id: String,
+    pub region: String,
+}
+
+/// Which story beats have fired (`narrative` in a v12 save).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct NarrativeState {
+    pub fired: Vec<String>,
+    pub journal: Vec<JournalEntry>,
+}
+
+/// A history-gated encounter from `engine/consequences.py`.
+///
+/// Python applies these immediately. There is no delayed queue in the v12 file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Consequence {
+    pub id: String,
+    pub category: String,
+    pub trigger: String,
+    pub text: String,
+    pub effect_type: String,
+    pub silver_delta: i64,
+    pub standing_delta: i64,
+    pub heat_delta: i64,
+    pub trust_delta: i64,
+    pub region: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct World {
     pub captain: Captain,
@@ -615,6 +707,10 @@ pub struct World {
     pub pending_duel: Option<PendingDuel>,
     /// Pirate-captain memories. Empty until an encounter is recorded.
     pub captain_memories: Vec<CaptainMemory>,
+    pub culture: CulturalState,
+    pub sea_culture: SeaCultureState,
+    /// `pirate_state.nemesis_id`. Python never assigns it during play.
+    pub nemesis_id: Option<String>,
 }
 
 impl World {

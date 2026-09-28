@@ -16,12 +16,14 @@
 //! ticks markets while in port (without seasonal `current_day`), sails one day
 //! at sea, records inspection and arrival reputation, reprices with the
 //! captain's modifiers, and records a victory path when its requirements are
-//! all met.
+//! all met. A sea day calls `enrich_voyage_day` immediately after `advance_day`.
+//! Arrival writes the port visit, the arrival text, and one port consequence
+//! before the contract board refreshes. Sell and a sea day evaluate narrative
+//! beats. An in-port day does not.
 //!
 //! [`Session::buy_infrastructure`], [`Session::take_credit`], and
 //! [`Session::buy_insurance`] write warehouses, brokers, licenses, policies,
-//! and credit onto the house books. Sea-culture enrichment and narrative are
-//! not on this type. A fulfilled contract is written by [`Session::sell`], which
+//! and credit onto the house books. A fulfilled contract is written by [`Session::sell`], which
 //! also calls [`Session::complete_contract`]'s settlement. A second
 //! `complete_contract` does not pay again. Callers do not use
 //! [`Session::books_mut`] for that. The new-game board is drawn from
@@ -60,8 +62,9 @@ use crate::injuries;
 use crate::loot;
 use crate::memory;
 use crate::model::{
-    ActiveContract, Armor, Contract, ContractBoard, ContractOutcome, InfrastructureRecord,
-    InstalledUpgrade, Officer, PendingDuel, PirateEncounterRecord, VoyageStatus, Weapon, World,
+    ActiveContract, Armor, Consequence, Contract, ContractBoard, ContractOutcome,
+    InfrastructureRecord, InstalledUpgrade, NarrativeState, Officer, PendingDuel,
+    PirateEncounterRecord, VoyageStatus, Weapon, World,
 };
 use crate::naval::{self, NavalRound};
 use crate::pyrand::PyRandom;
@@ -164,6 +167,7 @@ pub struct Session {
     infra: InfrastructureRecord,
     /// Personal-combat win is waiting on spare or take-all.
     pending_victory: bool,
+    narrative: NarrativeState,
 }
 
 impl Session {
@@ -193,6 +197,7 @@ impl Session {
             opponent_combat: None,
             infra: InfrastructureRecord::default(),
             pending_victory: false,
+            narrative: NarrativeState::default(),
         };
         session.refresh_new_game_board();
         Ok(session)
@@ -221,6 +226,7 @@ impl Session {
                 pending_victory: self.pending_victory,
             },
             &self.infra,
+            &self.narrative,
         )
     }
 
@@ -258,6 +264,7 @@ impl Session {
             opponent_combat: loaded.opponent_combat,
             infra: loaded.infra,
             pending_victory: loaded.pending_victory,
+            narrative: loaded.narrative,
         };
         reprice_all(&mut session.world);
         session.project_books();
@@ -266,6 +273,11 @@ impl Session {
 
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    /// Beats that have fired. Save writes this as `narrative`.
+    pub fn narrative(&self) -> &NarrativeState {
+        &self.narrative
     }
 
     /// Warehouses, brokers, licenses, policies, claims, and credit.
@@ -415,6 +427,7 @@ impl Session {
         if let Some(port) = self.world.port_mut(&port_id) {
             recalculate_prices(port, pricing.as_ref());
         }
+        self.evaluate_narrative(&[]);
         Ok(Sale { receipt, contracts })
     }
 
@@ -1665,7 +1678,8 @@ impl Session {
         self.file_contract_claims(&contracts);
         let mut notes = self.tick_upkeep();
         self.heal_injuries();
-        let mut turn = if self.world.voyage.status != VoyageStatus::AtSea {
+        let sailed = self.world.voyage.status == VoyageStatus::AtSea;
+        let mut turn = if !sailed {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
             self.world.day += 1;
             self.world.captain.day += 1;
@@ -1685,7 +1699,15 @@ impl Session {
                 notes,
             }
         } else {
-            let events = voyage::advance_day(&mut self.world, &mut self.rng)?;
+            let mut events = voyage::advance_day(&mut self.world, &mut self.rng)?;
+            events = crate::sea_culture::enrich_voyage_day(
+                &mut self.world,
+                events,
+                &mut self.rng,
+                &self.receipts,
+                self.books.total_sells,
+                &self.board,
+            );
             let destination = self.world.voyage.destination_id.clone();
             record_sea_consequences(&mut self.world, &mut self.infra, &events, &destination);
             if self.world.voyage.status == VoyageStatus::Arrived {
@@ -1699,6 +1721,46 @@ impl Session {
                         &port_id,
                         &region,
                     );
+                    crate::culture::record_port_visit(&port_id, &region, &mut self.world.culture);
+                    if self
+                        .world
+                        .culture
+                        .active_festivals
+                        .iter()
+                        .any(|fest| fest.port_id == port_id)
+                    {
+                        self.world.culture.festivals_visited += 1;
+                    }
+                    let arrival =
+                        crate::port_arrival_engine::generate_arrival(&self.world, &port_id);
+                    let lines = crate::port_arrival_engine::format_arrival_text(&arrival);
+                    if !lines.is_empty() {
+                        events.push(VoyageEvent::annotated(
+                            voyage::EventType::Nothing,
+                            lines.join("\n"),
+                            "[arrival]",
+                        ));
+                    }
+                    let found = crate::consequences::check_port_consequences(
+                        &self.world,
+                        &port_id,
+                        &self.receipts,
+                        self.books.total_sells,
+                        &self.board,
+                        &mut self.rng,
+                    );
+                    for consequence in &found {
+                        crate::consequences::apply_consequence(&mut self.world, consequence);
+                        events.push(VoyageEvent::annotated(
+                            voyage::EventType::Nothing,
+                            format!(
+                                "{}{}",
+                                consequence.text,
+                                crate::consequences::port_effect_note(consequence)
+                            ),
+                            format!("[consequence:{}]", consequence.effect_type),
+                        ));
+                    }
                 }
                 self.refresh_contract_board();
             }
@@ -1716,7 +1778,73 @@ impl Session {
         self.books.completed_milestones.extend(milestones);
         let newly = campaign::evaluate_victory_closure(&self.world, &self.books);
         self.books.completed_paths.extend(newly);
+        if sailed {
+            let events = turn.events.clone();
+            self.evaluate_narrative(&events);
+        }
         Ok(turn)
+    }
+
+    /// Arrival prose for the docked port, or the voyage destination while at sea.
+    ///
+    /// Deterministic. Python builds this inside the arrival branch of `advance`
+    /// and also exposes the same text through `generate_arrival`.
+    pub fn arrival_narrative(&self) -> Vec<String> {
+        let port_id =
+            current_port_id(&self.world).unwrap_or(self.world.voyage.destination_id.as_str());
+        let experience = crate::port_arrival_engine::generate_arrival(&self.world, port_id);
+        crate::port_arrival_engine::format_arrival_text(&experience)
+    }
+
+    /// One history-gated consequence, applied immediately.
+    ///
+    /// At sea this is `check_sea_consequences`. In port it is
+    /// `check_port_consequences`. `advance` already runs those checks at
+    /// Python's call sites, so a second call draws the session RNG again.
+    pub fn evaluate_consequences(&mut self) -> Vec<Consequence> {
+        if self.world.voyage.status == VoyageStatus::AtSea {
+            let found = crate::consequences::check_sea_consequences(
+                &self.world,
+                &self.receipts,
+                self.books.total_sells,
+                &self.board,
+                &mut self.rng,
+            );
+            for consequence in &found {
+                crate::consequences::apply_consequence(&mut self.world, consequence);
+            }
+            found
+        } else {
+            let port_id = current_port_id(&self.world)
+                .unwrap_or(self.world.voyage.destination_id.as_str())
+                .to_string();
+            let found = crate::consequences::check_port_consequences(
+                &self.world,
+                &port_id,
+                &self.receipts,
+                self.books.total_sells,
+                &self.board,
+                &mut self.rng,
+            );
+            for consequence in &found {
+                crate::consequences::apply_consequence(&mut self.world, consequence);
+            }
+            found
+        }
+    }
+
+    fn evaluate_narrative(&mut self, events: &[VoyageEvent]) {
+        let port_id = current_port_id(&self.world).map(str::to_string);
+        crate::narrative::evaluate_narrative(
+            &mut self.narrative,
+            &self.world,
+            &self.board,
+            &self.infra,
+            &self.books,
+            &self.receipts,
+            port_id.as_deref(),
+            events,
+        );
     }
 
     /// Offers on the board at the current port.
@@ -3010,9 +3138,13 @@ mod tests {
         let accepted = session.accept_contract(offer).unwrap();
         assert_eq!(accepted.good_id, "grain");
         assert_eq!(accepted.required_quantity, 23);
-        session.buy("grain", 23).unwrap();
+        // The fourth sea day is when the ship arrives, and the third day damages
+        // 3 grain. Buy the loss up front so 23 still reaches Corsairs Rest.
+        session.buy("grain", 26).unwrap();
         session.depart("corsairs_rest").unwrap();
-        for _ in 0..3 {
+        // Sea-culture draws sit between voyage days, so the third day is a storm
+        // and arrival is the fourth sea day. Python seed 1 matches that.
+        for _ in 0..4 {
             session.advance().unwrap();
         }
         assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
@@ -3232,7 +3364,7 @@ mod tests {
     }
 
     #[test]
-    fn sea_agency_ambush_matches_create_encounter_rng() {
+    fn sea_culture_shifts_the_butcher_duel_onto_the_second_day() {
         let mut session = Session::new("Ada", "merchant", 9, None).unwrap();
         let (encounter, ambush, notices) = session.tick_sea_captain_agency();
         assert!(encounter.is_none());
@@ -3245,29 +3377,23 @@ mod tests {
                 .unwrap();
         }
         session.depart("silva_bay").unwrap();
-        session.advance().unwrap();
+        let first = session.advance().unwrap();
+        assert_eq!(session.world.day, 2);
+        assert_eq!(session.world.captain.silver, 544);
+        assert!(first
+            .events
+            .iter()
+            .any(|event| event.event_type == voyage::EventType::Storm));
         let (encounter, ambush, _) = session.tick_sea_captain_agency();
         assert!(encounter.is_none() && !ambush);
-        session.advance().unwrap();
-        session.tick_sea_captain_agency();
-        session.advance().unwrap();
-        assert_eq!(session.world.day, 4);
-        assert_eq!(session.world.captain.silver, 538);
+        let second = session.advance().unwrap();
+        assert_eq!(session.world.day, 3);
+        assert_eq!(session.world.captain.silver, 541);
+        assert!(second.events.iter().any(|event| {
+            event.event_type == voyage::EventType::Pirates && event.message.contains("The Butcher")
+        }));
         let (encounter, ambush, notices) = session.tick_sea_captain_agency();
-        assert!(ambush);
-        assert_eq!(notices.len(), 1);
-        assert_eq!(notices[0].0, "encounter");
-        assert!(notices[0].1.contains("The Butcher"));
-        let encounter = encounter.expect("ambush");
-        assert_eq!(encounter.phase, "naval");
-        assert_eq!(encounter.enemy_captain_id, "the_butcher");
-        assert_eq!(encounter.enemy_strength, 8);
-        assert_eq!(encounter.enemy_ship_hull, 170);
-        assert_eq!(encounter.enemy_ship_cannons, 12);
-        assert_eq!(encounter.enemy_ship_crew, 28);
-        assert_eq!(encounter.enemy_ship_crew_max, 36);
-        assert!((encounter.enemy_ship_maneuver - 0.4).abs() < 1e-12);
-        assert!((encounter.enemy_ship_speed - 5.251391040026104).abs() < 1e-12);
+        assert!(encounter.is_none() && !ambush && notices.is_empty());
         let pending = session.world.pending_duel.as_ref().unwrap();
         assert_eq!(pending.captain_id, "the_butcher");
         assert_eq!(pending.faction_id, "crimson_tide");
@@ -3275,17 +3401,10 @@ mod tests {
         assert_eq!(pending.strength, 8);
         assert_eq!(pending.region, "Mediterranean");
         let progress = session.world.voyage.progress;
-        let turn = session.advance().unwrap();
-        assert!(turn.events.is_empty());
-        assert_eq!(session.world.day, 4);
+        let _frozen = session.advance().unwrap();
+        assert_eq!(session.world.day, 3);
         assert_eq!(session.world.voyage.progress, progress);
-        assert_eq!(
-            session
-                .encounter
-                .as_ref()
-                .map(|enc| enc.enemy_captain_id.as_str()),
-            Some("the_butcher")
-        );
+        assert!(session.encounter.is_none());
     }
 
     #[test]

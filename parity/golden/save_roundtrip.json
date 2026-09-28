@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 464,
+    "silver": 446,
     "provisions": 26,
     "day": 4,
     "wanted_level": 0,
@@ -22,7 +22,7 @@
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 60,
+      "hull": 49,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
@@ -79,13 +79,15 @@
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 21,
+    "progress": 25,
     "days_elapsed": 3,
     "status": "in_port",
     "recent_events": [
-      "provisions_spoiled",
-      "nothing",
-      "merchant_encounter"
+      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+      "pirates",
+      "The Mediterranean in spring is kind. Gentle swells, clear horizons, and a breeze that fills the sails without testing the rigging. The sea remembers how to be generous.",
+      "favorable_wind"
     ]
   },
   "pending_duel": null,
@@ -1451,8 +1453,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 464",
-          "action": "Earn 2536 more silver"
+          "detail": "Silver: 446",
+          "action": "Earn 2554 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1502,8 +1504,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 464",
-          "action": "Earn 1536 more silver"
+          "detail": "Silver: 446",
+          "action": "Earn 1554 more silver"
         }
       ]
     },
@@ -1547,8 +1549,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 464",
-          "action": "Earn 1536 more silver"
+          "detail": "Silver: 446",
+          "action": "Earn 1554 more silver"
         }
       ]
     },
@@ -1586,8 +1588,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 464",
-          "action": "Accumulate 1036 more silver"
+          "detail": "Silver: 446",
+          "action": "Accumulate 1054 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1676,5 +1678,46 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "silva_bay",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_trade",
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_trade",
+        "day": 1,
+        "port_id": "porto_novo",
+        "region": "Mediterranean"
+      },
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": []
 }

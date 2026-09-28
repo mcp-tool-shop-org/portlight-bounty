@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 441,
+    "silver": 420,
     "provisions": 0,
     "day": 35,
     "wanted_level": 0,
@@ -13,7 +13,7 @@
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 60,
+      "hull": 55,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
@@ -1432,8 +1432,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 441",
-          "action": "Earn 1559 more silver"
+          "detail": "Silver: 420",
+          "action": "Earn 1580 more silver"
         }
       ]
     },
@@ -1471,8 +1471,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 441",
-          "action": "Accumulate 1059 more silver"
+          "detail": "Silver: 420",
+          "action": "Accumulate 1080 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1522,8 +1522,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 441",
-          "action": "Earn 1559 more silver"
+          "detail": "Silver: 420",
+          "action": "Earn 1580 more silver"
         }
       ]
     },
@@ -1561,8 +1561,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 441",
-          "action": "Earn 2559 more silver"
+          "detail": "Silver: 420",
+          "action": "Earn 2580 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1587,6 +1587,40 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "silva_bay",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 32,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 34,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 9",
@@ -1872,25 +1906,6 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
           "event_type": "nothing",
           "message": "An uneventful day at sea.",
           "hull_delta": 0,
@@ -1910,15 +1925,56 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "drifting_offering",
-          "message": "Floating flowers and a small wooden shrine drift past \u2014 an offering for safe passage.",
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 21 silver. (-5 hull)",
+          "hull_delta": -5,
+          "provision_delta": 0,
+          "silver_delta": -21,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "The sea remembers everyone who sails it."
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Silva Bay.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nSawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish.\n\n[bold]Nuno Ferreira:[/bold] \"Berth's over there. Tie up properly \u2014 I don't want you drifting into the slipways. Timber loading happens at dawn, so don't sleep late.\"\n\n[dim]Landmark: The Master Shipyard \u2014 where the finest hulls in the Mediterranean take shape.[/dim]\n[dim]Custom: Touching another captain's ship without permission is grounds for a duel.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []

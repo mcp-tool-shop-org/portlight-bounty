@@ -1,25 +1,34 @@
 {
   "seed": 1,
   "day": 4,
-  "trade_seq": 2,
+  "trade_seq": 1,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 1449,
-    "provisions": 28,
+    "silver": 354,
+    "provisions": 27,
     "day": 4,
     "wanted_level": 0,
-    "cargo": [],
+    "cargo": [
+      {
+        "good_id": "grain",
+        "quantity": 20,
+        "cost_basis": 160,
+        "acquired_port": "porto_novo",
+        "acquired_region": "Mediterranean",
+        "acquired_day": 1
+      }
+    ],
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 60,
+      "hull": 52,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 58,
+      "morale": 53,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -30,52 +39,40 @@
     },
     "standing": {
       "regional": {
-        "Mediterranean": 11,
+        "Mediterranean": 10,
         "North Atlantic": 0,
         "West Africa": 0,
         "East Indies": 0,
         "South Seas": 0
       },
       "heat": {
-        "Mediterranean": 4,
+        "Mediterranean": 0,
         "North Atlantic": 0,
         "West Africa": 0,
         "East Indies": 0,
         "South Seas": 0
       },
       "commercial_trust": 15,
-      "port_standing": [
-        {
-          "port_id": "corsairs_rest",
-          "value": 1
-        }
-      ],
+      "port_standing": [],
       "underworld": {},
-      "incidents": [
-        {
-          "day": 4,
-          "port_id": "corsairs_rest",
-          "region": "Mediterranean",
-          "incident_type": "trade",
-          "description": "Aggressive grain sale drew attention (75% margin)",
-          "heat_delta": 4,
-          "standing_delta": 0,
-          "trust_delta": 0
-        }
-      ]
+      "incidents": []
     }
   },
   "voyage": {
     "origin_id": "porto_novo",
     "destination_id": "corsairs_rest",
     "distance": 18,
-    "progress": 24,
+    "progress": 17,
     "days_elapsed": 3,
-    "status": "in_port",
+    "status": "at_sea",
     "recent_events": [
       "nothing",
-      "flotsam",
-      "favorable_wind"
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+      "storm",
+      "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+      "cargo_damaged",
+      "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+      "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility."
     ]
   },
   "pending_duel": null,
@@ -317,10 +314,10 @@
         },
         {
           "good_id": "grain",
-          "stock": 31,
-          "buy_price": 5,
-          "sell_price": 4,
-          "flood_penalty": 0.69
+          "stock": 8,
+          "buy_price": 21,
+          "sell_price": 21,
+          "flood_penalty": 0.0
         },
         {
           "good_id": "black_powder",
@@ -1410,7 +1407,7 @@
     {
       "path_id": "lawful_house",
       "name": "Lawful Trade House",
-      "candidate_strength": 16.7,
+      "candidate_strength": 26.7,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1435,27 +1432,27 @@
         {
           "description": "8+ contracts completed",
           "status": "missing",
-          "detail": "Completed: 1",
-          "action": "Complete 7 more contracts"
+          "detail": "Completed: 0",
+          "action": "Complete 8 more contracts"
         },
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 4",
-          "action": "Reduce customs heat from 4 to 5 or below"
+          "detail": "Max heat: 0",
+          "action": "Reduce customs heat from 0 to 5 or below"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Earn 551 more silver"
+          "detail": "Silver: 354",
+          "action": "Earn 1646 more silver"
         }
       ]
     },
     {
       "path_id": "shadow_network",
       "name": "Shadow Network",
-      "candidate_strength": 16.7,
+      "candidate_strength": 0.0,
       "completion_day": 0,
       "completion_summary": "",
       "requirements": [
@@ -1468,31 +1465,31 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "missing",
-          "detail": "Max heat: 4",
-          "action": "Shadow commerce requires operating under customs pressure (heat 4, need 10+)"
+          "detail": "Max heat: 0",
+          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 4",
-          "action": "Reduce heat from 4 \u2014 network collapses above 40"
+          "detail": "Max heat: 0",
+          "action": "Reduce heat from 0 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 299, heat: 4",
+          "detail": "Profit: -184, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Accumulate 51 more silver"
+          "detail": "Silver: 354",
+          "action": "Accumulate 1146 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 2, max heat: 4",
+          "detail": "Trades: 1, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1531,14 +1528,14 @@
         {
           "description": "5+ contracts completed",
           "status": "missing",
-          "detail": "Completed: 1",
-          "action": "Complete 4 more contracts"
+          "detail": "Completed: 0",
+          "action": "Complete 5 more contracts"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Earn 551 more silver"
+          "detail": "Silver: 354",
+          "action": "Earn 1646 more silver"
         }
       ]
     },
@@ -1570,14 +1567,14 @@
         {
           "description": "10+ contracts completed",
           "status": "missing",
-          "detail": "Completed: 1",
-          "action": "Complete 9 more contracts"
+          "detail": "Completed: 0",
+          "action": "Complete 10 more contracts"
         },
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Earn 1551 more silver"
+          "detail": "Silver: 354",
+          "action": "Earn 2646 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1602,6 +1599,26 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_storm"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 1",
@@ -1674,107 +1691,103 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+        },
         {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+1 provisions)",
-          "hull_delta": 0,
-          "provision_delta": 1,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.5,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "cargo_damaged",
+          "message": "Rough seas damaged 3 units of grain in the hold.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [
+            {
+              "good_id": "grain",
+              "quantity": 3
+            }
+          ],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
     },
     {
       "command": "sell grain 23",
-      "error": null,
-      "receipt": {
-        "receipt_id": "00470f2da14c847a",
-        "action": "sell",
-        "good_id": "grain",
-        "quantity": 23,
-        "unit_price": 21,
-        "total_price": 483,
-        "stock_before": 8,
-        "stock_after": 31,
-        "day": 4
-      },
-      "events": [],
-      "shocks": [],
-      "contracts": [
-        {
-          "contract_id": "71773aae754b",
-          "outcome_type": "completed_bonus",
-          "family": "shortage",
-          "good_id": "grain",
-          "quantity": 23,
-          "delivered_quantity": 23,
-          "destination_port_id": "corsairs_rest",
-          "deadline_day": 19,
-          "reward_silver": 552,
-          "silver_delta": 612,
-          "trust_delta": 2,
-          "standing_delta": 1,
-          "heat_delta": -1,
-          "summary": "Delivered 23 grain to corsairs_rest (early bonus: +60 silver)"
-        }
-      ]
-    },
-    {
-      "command": "complete_contract 71773aae754b",
-      "error": null,
+      "error": "Not docked at a port",
       "receipt": null,
       "events": [],
-      "shocks": [],
-      "contracts": [
-        {
-          "contract_id": "71773aae754b",
-          "outcome_type": "completed_bonus",
-          "family": "shortage",
-          "good_id": "grain",
-          "quantity": 23,
-          "delivered_quantity": 23,
-          "destination_port_id": "corsairs_rest",
-          "deadline_day": 19,
-          "reward_silver": 552,
-          "silver_delta": 612,
-          "trust_delta": 2,
-          "standing_delta": 1,
-          "heat_delta": -1,
-          "summary": "Delivered 23 grain to corsairs_rest (early bonus: +60 silver)"
-        }
-      ]
+      "shocks": []
     }
   ]
 }

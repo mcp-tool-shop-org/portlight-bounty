@@ -1,25 +1,25 @@
 {
   "seed": 1,
-  "day": 9,
+  "day": 10,
   "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 521,
-    "provisions": 23,
-    "day": 9,
+    "silver": 518,
+    "provisions": 19,
+    "day": 10,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 47,
+      "hull": 52,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 61,
+      "morale": 67,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -30,7 +30,7 @@
     },
     "standing": {
       "regional": {
-        "Mediterranean": 11,
+        "Mediterranean": 12,
         "North Atlantic": 0,
         "West Africa": 0,
         "East Indies": 0,
@@ -48,6 +48,10 @@
         {
           "port_id": "corsairs_rest",
           "value": 1
+        },
+        {
+          "port_id": "porto_novo",
+          "value": 1
         }
       ],
       "underworld": {},
@@ -58,23 +62,18 @@
     "origin_id": "corsairs_rest",
     "destination_id": "porto_novo",
     "distance": 18,
-    "progress": 17,
+    "progress": 18,
     "days_elapsed": 3,
-    "status": "at_sea",
+    "status": "in_port",
     "recent_events": [
-      "nothing",
-      "storm",
-      "pirates"
+      "musician_aboard",
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+      "calm_seas",
+      "The coast here is riddled with coves \u2014 each one a potential anchorage, each one a potential ambush. Your helmsman hugs the deeper water.",
+      "nothing"
     ]
   },
-  "pending_duel": {
-    "captain_id": "the_butcher",
-    "captain_name": "The Butcher",
-    "faction_id": "crimson_tide",
-    "personality": "aggressive",
-    "strength": 8,
-    "region": "Mediterranean"
-  },
+  "pending_duel": null,
   "ports": [
     {
       "id": "porto_novo",
@@ -102,9 +101,9 @@
         },
         {
           "good_id": "cotton",
-          "stock": 14,
-          "buy_price": 21,
-          "sell_price": 21,
+          "stock": 12,
+          "buy_price": 25,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
@@ -130,9 +129,9 @@
         },
         {
           "good_id": "porcelain",
-          "stock": 2,
-          "buy_price": 324,
-          "sell_price": 318,
+          "stock": 6,
+          "buy_price": 108,
+          "sell_price": 106,
           "flood_penalty": 0.0
         }
       ]
@@ -142,9 +141,9 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 28,
-          "buy_price": 32,
-          "sell_price": 32,
+          "stock": 27,
+          "buy_price": 34,
+          "sell_price": 33,
           "flood_penalty": 0.0
         },
         {
@@ -156,9 +155,9 @@
         },
         {
           "good_id": "grain",
-          "stock": 13,
-          "buy_price": 27,
-          "sell_price": 27,
+          "stock": 14,
+          "buy_price": 25,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
@@ -177,9 +176,9 @@
         },
         {
           "good_id": "tea",
-          "stock": 8,
-          "buy_price": 66,
-          "sell_price": 65,
+          "stock": 4,
+          "buy_price": 132,
+          "sell_price": 130,
           "flood_penalty": 0.0
         },
         {
@@ -231,9 +230,9 @@
         },
         {
           "good_id": "cotton",
-          "stock": 10,
-          "buy_price": 25,
-          "sell_price": 24,
+          "stock": 8,
+          "buy_price": 31,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
@@ -285,9 +284,9 @@
         },
         {
           "good_id": "tobacco",
-          "stock": 18,
-          "buy_price": 21,
-          "sell_price": 21,
+          "stock": 21,
+          "buy_price": 18,
+          "sell_price": 18,
           "flood_penalty": 0.0
         },
         {
@@ -313,16 +312,16 @@
         },
         {
           "good_id": "grain",
-          "stock": 11,
-          "buy_price": 15,
-          "sell_price": 15,
+          "stock": 10,
+          "buy_price": 17,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
           "good_id": "black_powder",
-          "stock": 8,
-          "buy_price": 37,
-          "sell_price": 36,
+          "stock": 9,
+          "buy_price": 33,
+          "sell_price": 32,
           "flood_penalty": 0.0
         },
         {
@@ -388,9 +387,9 @@
         },
         {
           "good_id": "pelts",
-          "stock": 12,
+          "stock": 11,
           "buy_price": 7,
-          "sell_price": 6,
+          "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
@@ -402,9 +401,9 @@
         },
         {
           "good_id": "rum",
-          "stock": 7,
-          "buy_price": 38,
-          "sell_price": 37,
+          "stock": 10,
+          "buy_price": 26,
+          "sell_price": 26,
           "flood_penalty": 0.0
         }
       ]
@@ -428,9 +427,9 @@
         },
         {
           "good_id": "timber",
-          "stock": 11,
-          "buy_price": 32,
-          "sell_price": 32,
+          "stock": 20,
+          "buy_price": 18,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
@@ -449,9 +448,9 @@
         },
         {
           "good_id": "tobacco",
-          "stock": 10,
-          "buy_price": 50,
-          "sell_price": 49,
+          "stock": 7,
+          "buy_price": 72,
+          "sell_price": 71,
           "flood_penalty": 0.0
         },
         {
@@ -463,9 +462,9 @@
         },
         {
           "good_id": "silk",
-          "stock": 5,
-          "buy_price": 138,
-          "sell_price": 136,
+          "stock": 3,
+          "buy_price": 231,
+          "sell_price": 227,
           "flood_penalty": 0.0
         }
       ]
@@ -475,9 +474,9 @@
       "market": [
         {
           "good_id": "tea",
-          "stock": 22,
-          "buy_price": 26,
-          "sell_price": 26,
+          "stock": 23,
+          "buy_price": 25,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
@@ -510,9 +509,9 @@
         },
         {
           "good_id": "silk",
-          "stock": 9,
-          "buy_price": 77,
-          "sell_price": 76,
+          "stock": 5,
+          "buy_price": 138,
+          "sell_price": 136,
           "flood_penalty": 0.0
         },
         {
@@ -536,7 +535,7 @@
       "market": [
         {
           "good_id": "cotton",
-          "stock": 29,
+          "stock": 30,
           "buy_price": 10,
           "sell_price": 10,
           "flood_penalty": 0.0
@@ -571,9 +570,9 @@
         },
         {
           "good_id": "spice",
-          "stock": 3,
-          "buy_price": 290,
-          "sell_price": 285,
+          "stock": 7,
+          "buy_price": 124,
+          "sell_price": 122,
           "flood_penalty": 0.0
         },
         {
@@ -604,9 +603,9 @@
         },
         {
           "good_id": "grain",
-          "stock": 12,
-          "buy_price": 21,
-          "sell_price": 21,
+          "stock": 15,
+          "buy_price": 17,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
@@ -625,9 +624,9 @@
         },
         {
           "good_id": "tobacco",
-          "stock": 13,
-          "buy_price": 25,
-          "sell_price": 24,
+          "stock": 15,
+          "buy_price": 21,
+          "sell_price": 21,
           "flood_penalty": 0.0
         },
         {
@@ -768,9 +767,9 @@
         },
         {
           "good_id": "rum",
-          "stock": 8,
-          "buy_price": 28,
-          "sell_price": 28,
+          "stock": 5,
+          "buy_price": 45,
+          "sell_price": 44,
           "flood_penalty": 0.0
         }
       ]
@@ -780,9 +779,9 @@
       "market": [
         {
           "good_id": "porcelain",
-          "stock": 29,
-          "buy_price": 38,
-          "sell_price": 38,
+          "stock": 30,
+          "buy_price": 37,
+          "sell_price": 36,
           "flood_penalty": 0.0
         },
         {
@@ -794,16 +793,16 @@
         },
         {
           "good_id": "tea",
-          "stock": 21,
-          "buy_price": 26,
-          "sell_price": 26,
+          "stock": 18,
+          "buy_price": 30,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 17,
-          "buy_price": 52,
-          "sell_price": 51,
+          "stock": 18,
+          "buy_price": 49,
+          "sell_price": 49,
           "flood_penalty": 0.0
         },
         {
@@ -815,9 +814,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 5,
-          "buy_price": 49,
-          "sell_price": 49,
+          "stock": 1,
+          "buy_price": 247,
+          "sell_price": 243,
           "flood_penalty": 0.0
         },
         {
@@ -855,9 +854,9 @@
         },
         {
           "good_id": "silk",
-          "stock": 20,
-          "buy_price": 52,
-          "sell_price": 51,
+          "stock": 18,
+          "buy_price": 58,
+          "sell_price": 57,
           "flood_penalty": 0.0
         },
         {
@@ -869,16 +868,16 @@
         },
         {
           "good_id": "timber",
-          "stock": 9,
-          "buy_price": 35,
-          "sell_price": 35,
+          "stock": 7,
+          "buy_price": 45,
+          "sell_price": 44,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 10,
-          "buy_price": 33,
-          "sell_price": 32,
+          "stock": 9,
+          "buy_price": 37,
+          "sell_price": 36,
           "flood_penalty": 0.0
         },
         {
@@ -958,16 +957,16 @@
         },
         {
           "good_id": "cotton",
-          "stock": 3,
-          "buy_price": 72,
-          "sell_price": 71,
+          "stock": 7,
+          "buy_price": 31,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 6,
-          "buy_price": 22,
-          "sell_price": 21,
+          "stock": 5,
+          "buy_price": 26,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
@@ -1087,9 +1086,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 7,
-          "buy_price": 57,
-          "sell_price": 56,
+          "stock": 6,
+          "buy_price": 66,
+          "sell_price": 65,
           "flood_penalty": 0.0
         },
         {
@@ -1108,9 +1107,9 @@
         },
         {
           "good_id": "cotton",
-          "stock": 6,
-          "buy_price": 30,
-          "sell_price": 30,
+          "stock": 7,
+          "buy_price": 26,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
@@ -1190,9 +1189,9 @@
         },
         {
           "good_id": "black_powder",
-          "stock": 3,
-          "buy_price": 143,
-          "sell_price": 140,
+          "stock": 0,
+          "buy_price": 429,
+          "sell_price": 421,
           "flood_penalty": 0.0
         }
       ]
@@ -1209,9 +1208,9 @@
         },
         {
           "good_id": "dyes",
-          "stock": 16,
-          "buy_price": 16,
-          "sell_price": 16,
+          "stock": 18,
+          "buy_price": 15,
+          "sell_price": 14,
           "flood_penalty": 0.0
         },
         {
@@ -1244,9 +1243,9 @@
         },
         {
           "good_id": "rum",
-          "stock": 7,
-          "buy_price": 38,
-          "sell_price": 37,
+          "stock": 10,
+          "buy_price": 26,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
@@ -1319,9 +1318,9 @@
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 9,
-          "sell_price": 9,
+          "stock": 7,
+          "buy_price": 10,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
@@ -1443,8 +1442,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 521",
-          "action": "Earn 1479 more silver"
+          "detail": "Silver: 518",
+          "action": "Earn 1482 more silver"
         }
       ]
     },
@@ -1482,8 +1481,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 521",
-          "action": "Accumulate 979 more silver"
+          "detail": "Silver: 518",
+          "action": "Accumulate 982 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1533,8 +1532,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 521",
-          "action": "Earn 1479 more silver"
+          "detail": "Silver: 518",
+          "action": "Earn 1482 more silver"
         }
       ]
     },
@@ -1572,8 +1571,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 521",
-          "action": "Earn 2479 more silver"
+          "detail": "Silver: 518",
+          "action": "Earn 2482 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1598,6 +1597,44 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "corsairs_rest",
+        "visits": 1
+      },
+      {
+        "port_id": "porto_novo",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_storm"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 1",
@@ -1628,6 +1665,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -1638,15 +1686,56 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+1 provisions)",
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
           "hull_delta": 0,
-          "provision_delta": 1,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1657,28 +1746,40 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
+          "event_type": "provisions_spoiled",
+          "message": "Some provisions have spoiled. (-2 days)",
+          "hull_delta": 0,
+          "provision_delta": -2,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.5,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Corsair's Rest.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nShips anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee \u2014 payable in silver, no questions.\n\n[bold]One-Eye Basso:[/bold] \"...Clear behind you. Come in. Kill your running lights before the bend.\"\n\n[dim]Landmark: The Cliff Tavern \u2014 carved into the rock face, visible only from the sea.[/dim]\n[dim]Custom: No names. Every captain here is 'friend' until proven otherwise.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [
-        "Shortage: timber scarce at Stormwall",
-        "Supply glut: silk floods Thornport"
-      ]
     },
     {
       "command": "advance",
@@ -1700,6 +1801,66 @@
       "receipt": null,
       "events": [
         {
+          "event_type": "musician_aboard",
+          "message": "Shell horns and chanting \u2014 songs the crew picked up at Coral Throne. Haunting and beautiful.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "For a moment, the sea feels smaller."
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The coast here is riddled with coves \u2014 each one a potential anchorage, each one a potential ambush. Your helmsman hugs the deeper water.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
           "event_type": "nothing",
           "message": "An uneventful day at sea.",
           "hull_delta": 0,
@@ -1709,44 +1870,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+        },
         {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-13 hull)",
-          "hull_delta": -13,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "pirates",
-          "message": "The Butcher of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Porto Novo.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nGrain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks.\n\n[bold]Vasco da Reira:[/bold] \"Manifest and tonnage, Captain. I'll assign your berth once I've reviewed them.\"\n[bold]Marta Soares:[/bold] \"You're here for the rates? They were posted at dawn. Grain is steady, spice is climbing. What are you buying?\"\n\n[dim]Landmark: The Grain Exchange \u2014 a columned hall where prices are read aloud at dawn.[/dim]\n[dim]Custom: Captains ring the harbor bell on first arrival. It's bad luck not to.[/dim]",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "Strength 8, aggressive fighter."
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []

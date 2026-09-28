@@ -1,13 +1,13 @@
 {
   "seed": 9,
-  "day": 4,
+  "day": 3,
   "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 538,
-    "provisions": 27,
-    "day": 4,
+    "silver": 541,
+    "provisions": 28,
+    "day": 3,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
@@ -19,7 +19,7 @@
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 53,
+      "morale": 52,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -53,13 +53,15 @@
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 14,
-    "days_elapsed": 3,
+    "progress": 10,
+    "days_elapsed": 2,
     "status": "at_sea",
     "recent_events": [
       "storm",
-      "calm_seas",
-      "nothing"
+      "pirates",
+      "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+      "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud."
     ]
   },
   "pending_duel": {
@@ -1438,8 +1440,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 538",
-          "action": "Earn 1462 more silver"
+          "detail": "Silver: 541",
+          "action": "Earn 1459 more silver"
         }
       ]
     },
@@ -1477,8 +1479,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 538",
-          "action": "Accumulate 962 more silver"
+          "detail": "Silver: 541",
+          "action": "Accumulate 959 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1528,8 +1530,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 538",
-          "action": "Earn 1462 more silver"
+          "detail": "Silver: 541",
+          "action": "Earn 1459 more silver"
         }
       ]
     },
@@ -1567,8 +1569,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 538",
-          "action": "Earn 2462 more silver"
+          "detail": "Silver: 541",
+          "action": "Earn 2459 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1593,6 +1595,33 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_storm",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 9",
@@ -1673,15 +1702,37 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
+          "event_type": "pirates",
+          "message": "The Butcher of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 0.6,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "Strength 8, aggressive fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1705,14 +1756,14 @@
       "events": [
         {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -1724,33 +1775,9 @@
       "events": [],
       "shocks": [],
       "agency": {
-        "ambush": true,
-        "encounter": {
-          "enemy_captain_id": "the_butcher",
-          "enemy_captain_name": "The Butcher",
-          "enemy_faction_id": "crimson_tide",
-          "enemy_personality": "aggressive",
-          "enemy_strength": 8,
-          "enemy_region": "Mediterranean",
-          "enemy_ship_hull": 170,
-          "enemy_ship_hull_max": 170,
-          "enemy_ship_cannons": 12,
-          "enemy_ship_maneuver": 0.4,
-          "enemy_ship_speed": 5.251391040026104,
-          "enemy_ship_crew": 28,
-          "enemy_ship_crew_max": 36,
-          "phase": "naval",
-          "boarding_progress": 0,
-          "boarding_threshold": 3,
-          "naval_turns": 0,
-          "duel_turns": 0
-        },
-        "notices": [
-          {
-            "effect_type": "encounter",
-            "message": "Sails on the horizon \u2014 The Butcher has found you. There will be no negotiation this time."
-          }
-        ]
+        "ambush": false,
+        "encounter": null,
+        "notices": []
       }
     },
     {

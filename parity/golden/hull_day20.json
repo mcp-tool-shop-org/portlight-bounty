@@ -1,25 +1,25 @@
 {
   "seed": 9,
-  "day": 52,
+  "day": 38,
   "trade_seq": 0,
   "captain": {
     "name": "C",
     "captain_type": "bounty_hunter",
-    "silver": 215,
+    "silver": 251,
     "provisions": 0,
-    "day": 52,
+    "day": 38,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
       "template_id": "swift_cutter",
       "name": "Swift Cutter",
-      "hull": 21,
-      "hull_max": 69,
+      "hull": 70,
+      "hull_max": 70,
       "cargo_capacity": 50,
       "speed": 9.0,
       "crew": 0,
       "crew_max": 12,
-      "morale": 4,
+      "morale": 38,
       "cannons": 2,
       "sailors": 0,
       "gunners": 0,
@@ -39,43 +39,40 @@
       "heat": {
         "Mediterranean": 0,
         "North Atlantic": 0,
-        "West Africa": 2,
+        "West Africa": 0,
         "East Indies": 0,
         "South Seas": 0
       },
       "commercial_trust": 3,
       "port_standing": [],
       "underworld": {},
-      "incidents": [
-        {
-          "day": 44,
-          "port_id": "crosswind_isle",
-          "region": "West Africa",
-          "incident_type": "inspection",
-          "description": "Routine inspection (7 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        }
-      ]
+      "incidents": []
     }
   },
   "voyage": {
     "origin_id": "crosswind_isle",
     "destination_id": "iron_point",
     "distance": 60,
-    "progress": 58,
-    "days_elapsed": 20,
+    "progress": 25,
+    "days_elapsed": 6,
     "status": "at_sea",
     "recent_events": [
-      "calm_seas",
-      "storm",
-      "storm",
+      "Your crew relaxes. Something about the Gold Coast waters changes the mood. Shoulders drop. Voices soften.",
       "nothing",
-      "storm"
+      "favorable_wind",
+      "Steady wind, steady sun, steady sea. The Gold Coast in dry season is sailing as it should be \u2014 predictable, warm, and kind. Your ship makes good time without drama.",
+      "pirates",
+      "A canoe of Breath-Holder divers glides past, heading for the outer reef. Elder Ama sits at the stern, eyes closed, breathing slowly. The morning dive is sacred. You pass in silence."
     ]
   },
-  "pending_duel": null,
+  "pending_duel": {
+    "captain_id": "old_coral",
+    "captain_name": "Old Coral",
+    "faction_id": "deep_reef",
+    "personality": "defensive",
+    "strength": 6,
+    "region": "West Africa"
+  },
   "ports": [
     {
       "id": "porto_novo",
@@ -1438,14 +1435,14 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 2",
-          "action": "Reduce customs heat from 2 to 5 or below"
+          "detail": "Max heat: 0",
+          "action": "Reduce customs heat from 0 to 5 or below"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 215",
-          "action": "Earn 1785 more silver"
+          "detail": "Silver: 251",
+          "action": "Earn 1749 more silver"
         }
       ]
     },
@@ -1465,31 +1462,31 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "missing",
-          "detail": "Max heat: 2",
-          "action": "Shadow commerce requires operating under customs pressure (heat 2, need 10+)"
+          "detail": "Max heat: 0",
+          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 2",
-          "action": "Reduce heat from 2 \u2014 network collapses above 40"
+          "detail": "Max heat: 0",
+          "action": "Reduce heat from 0 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 0, heat: 2",
+          "detail": "Profit: 0, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 215",
-          "action": "Accumulate 1285 more silver"
+          "detail": "Silver: 251",
+          "action": "Accumulate 1249 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 0, max heat: 2",
+          "detail": "Trades: 0, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1534,8 +1531,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 215",
-          "action": "Earn 1785 more silver"
+          "detail": "Silver: 251",
+          "action": "Earn 1749 more silver"
         }
       ]
     },
@@ -1573,8 +1570,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 215",
-          "action": "Earn 2785 more silver"
+          "detail": "Silver: 251",
+          "action": "Earn 2749 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1593,6 +1590,33 @@
       "family": "integrated_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "ship_upgrade",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 33,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "ship_upgrade",
+        "day": 33,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 38,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new bounty_hunter C 9",
@@ -1905,194 +1929,28 @@
           "speed_modifier": 0.6,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
         },
         {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+5 silver)",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 5,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
+          "event_type": "foreign_vessel",
+          "message": "A canoe of Breath-Holder divers glides past, heading for the outer reef. Elder Ama sits at the stern, eyes closed, breathing slowly. The morning dive is sacred. You pass in silence.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
-          "crew_delta": -1,
+          "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[Elder Ama Diallo from pearl_shallows]"
         },
         {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-4 hull)",
-          "hull_delta": -4,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
           "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+2 provisions)",
-          "hull_delta": 0,
-          "provision_delta": 2,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "The coast is a ribbon of gold sand and green jungle. Fishing boats dot the shallows, their crews waving as you pass. On the Gold Coast, every stranger is a potential friend.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "provisions_spoiled",
-          "message": "Some provisions have spoiled. (-3 days)",
-          "hull_delta": 0,
-          "provision_delta": -3,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-5 hull)",
-          "hull_delta": -5,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.6,
-          "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -2123,55 +1981,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
         },
         {
-          "event_type": "whale_sighting",
-          "message": "A pod of whales surfaces alongside the ship. The crew watches in silence.",
+          "event_type": "nothing",
+          "message": "Your crew relaxes. Something about the Gold Coast waters changes the mood. Shoulders drop. Voices soften.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "Some things are bigger than commerce."
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 7 silver fee.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": -7,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -2198,36 +2018,6 @@
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 34 silver. (-3 hull)",
-          "hull_delta": -3,
-          "provision_delta": 0,
-          "silver_delta": -34,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
@@ -2262,6 +2052,17 @@
           "speed_modifier": 1.5,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Steady wind, steady sun, steady sea. The Gold Coast in dry season is sailing as it should be \u2014 predictable, warm, and kind. Your ship makes good time without drama.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -2283,15 +2084,15 @@
           "flavor": ""
         },
         {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
+          "event_type": "pirates",
+          "message": "Old Coral of the The Deep Reef Brotherhood blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 0.6,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "Strength 6, defensive fighter."
         }
       ],
       "shocks": []
@@ -2300,30 +2101,49 @@
       "command": "advance",
       "error": null,
       "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-13 hull)",
-          "hull_delta": -13,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
       "shocks": []
     },
     {
@@ -2332,26 +2152,15 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
+          "event_type": "foreign_vessel",
+          "message": "A canoe of Breath-Holder divers glides past, heading for the outer reef. Elder Ama sits at the stern, eyes closed, breathing slowly. The morning dive is sacred. You pass in silence.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
-          "crew_delta": -1,
+          "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-12 hull)",
-          "hull_delta": -12,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[Elder Ama Diallo from pearl_shallows]"
         }
       ],
       "shocks": []
@@ -2360,60 +2169,42 @@
       "command": "advance",
       "error": null,
       "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
+      "events": [],
       "shocks": []
     },
     {
       "command": "advance",
       "error": null,
       "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "No provisions! The crew suffers.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": -1,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        },
-        {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-12 hull)",
-          "hull_delta": -12,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
       "shocks": []
     }
   ]

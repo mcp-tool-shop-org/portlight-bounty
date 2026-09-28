@@ -5,15 +5,15 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 467,
-    "provisions": 24,
+    "silver": 465,
+    "provisions": 23,
     "day": 7,
     "wanted_level": 0,
     "cargo": [
       {
         "good_id": "grain",
-        "quantity": 2,
-        "cost_basis": 16,
+        "quantity": 4,
+        "cost_basis": 32,
         "acquired_port": "porto_novo",
         "acquired_region": "Mediterranean",
         "acquired_day": 1
@@ -22,13 +22,13 @@
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 48,
+      "hull": 55,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 56,
+      "morale": 61,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -41,7 +41,7 @@
       "regional": {
         "Mediterranean": 10,
         "North Atlantic": 0,
-        "West Africa": 0,
+        "West Africa": 1,
         "East Indies": 0,
         "South Seas": 0
       },
@@ -53,7 +53,12 @@
         "South Seas": 0
       },
       "commercial_trust": 15,
-      "port_standing": [],
+      "port_standing": [
+        {
+          "port_id": "sun_harbor",
+          "value": 1
+        }
+      ],
       "underworld": {},
       "incidents": []
     }
@@ -62,15 +67,15 @@
     "origin_id": "porto_novo",
     "destination_id": "sun_harbor",
     "distance": 40,
-    "progress": 35,
+    "progress": 41,
     "days_elapsed": 6,
-    "status": "at_sea",
+    "status": "in_port",
     "recent_events": [
+      "whale_sighting",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
       "nothing",
-      "storm",
-      "cargo_damaged",
-      "pirates",
-      "star_navigation"
+      "You pass a merchant vessel flying the Exchange Alliance flag, heading north. 'Cotton north, grain south,' your navigator says. 'Been this way for centuries.'",
+      "sea_ceremony"
     ]
   },
   "pending_duel": null,
@@ -1442,8 +1447,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 467",
-          "action": "Earn 1533 more silver"
+          "detail": "Silver: 465",
+          "action": "Earn 1535 more silver"
         }
       ]
     },
@@ -1481,8 +1486,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 467",
-          "action": "Accumulate 1033 more silver"
+          "detail": "Silver: 465",
+          "action": "Accumulate 1035 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1532,8 +1537,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 467",
-          "action": "Earn 1533 more silver"
+          "detail": "Silver: 465",
+          "action": "Earn 1535 more silver"
         }
       ]
     },
@@ -1571,8 +1576,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 467",
-          "action": "Earn 2533 more silver"
+          "detail": "Silver: 465",
+          "action": "Earn 2535 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1597,6 +1602,40 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "sun_harbor",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "West Africa"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 2",
@@ -1644,6 +1683,85 @@
           "speed_modifier": 1.1,
           "cargo_lost": [],
           "flavor": "Known waters. The charts don't lie."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your crew's mood shifts as the coast changes. The northern rigidity fades. Someone laughs. Someone else starts a story. The Gold Coast does this to people.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 32 silver. (-5 hull)",
+          "hull_delta": -5,
+          "provision_delta": 0,
+          "silver_delta": -32,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "whale_sighting",
+          "message": "A pod of whales surfaces alongside the ship. The crew watches in silence.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "Some things are bigger than commerce."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1663,49 +1781,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+        },
         {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-7 hull)",
-          "hull_delta": -7,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.5,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "cargo_damaged",
-          "message": "Rough seas damaged 2 units of grain in the hold.",
+          "event_type": "nothing",
+          "message": "You pass a merchant vessel flying the Exchange Alliance flag, heading north. 'Cotton north, grain south,' your navigator says. 'Been this way for centuries.'",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
-          "cargo_lost": [
-            {
-              "good_id": "grain",
-              "quantity": 2
-            }
-          ],
-          "flavor": ""
+          "cargo_lost": [],
+          "flavor": "[sighting]"
         }
       ],
       "shocks": []
@@ -1716,34 +1802,26 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "pirates",
-          "message": "Pirates attack! You fight them off but lose 30 silver. (-5 hull)",
-          "hull_delta": -5,
-          "provision_delta": 0,
-          "silver_delta": -30,
+          "event_type": "sea_ceremony",
+          "message": "The crew gathers at dusk. The bosun pours rum into the sea \u2014 an old offering for safe passage.",
+          "hull_delta": 0,
+          "provision_delta": -1,
+          "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+          "flavor": "Some rituals are older than the ships that carry them."
+        },
         {
-          "event_type": "star_navigation",
-          "message": "The navigator reads the stars and adjusts course. Ancient constellations confirm your heading.",
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Sun Harbor.[/bold]\n\nThe port welcomes you with color \u2014 indigo cloth, golden cotton, the red earth that stains everything it touches. Arrivals on the Gold Coast feel like being invited to a celebration you didn't know was happening.\n\nCotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song.\n\n[bold]Adama Keita:[/bold] \"Welcome, Captain! The Gold Coast is glad to see you. Come \u2014 tell me about your voyage while I find you a berth.\"\n\n[dim]Landmark: The Cotton Steps \u2014 wide stone stairs where cotton bales are displayed and auctioned.[/dim]\n[dim]Custom: The first trade of the day is blessed by an elder. Smart captains arrive early.[/dim]",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.05,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "The sky is the oldest chart."
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []

@@ -2,8 +2,12 @@
 """Run a Portlight action script through the Python engine and print state JSON.
 
 This is the reference side of the parity harness. It calls the same engine
-functions the Rust script runner calls — not the full GameSession — so
-sea culture and insurance stay out of the comparison. The new-game
+functions the Rust script runner calls. Sea-day scripts also call
+`enrich_voyage_day`, arrival prose, port consequences, and
+`evaluate_narrative`, in `GameSession.advance` order. Sell calls
+`evaluate_narrative` after the receipt is on the ledger. The harness
+runs this file with `PYTHONHASHSEED=0` so `rng.choice(list(a_set))`
+matches the Rust set order. The new-game
 contract board is drawn from Random(seed + 7919) and the session RNG is
 restored. Arrival refreshes the board from the session stream.
 `duel` and `resolve_duel` call `engine/duel.py`. See docs/PORTING-PLAN.md.
@@ -308,6 +312,7 @@ def do_sell(state, good_id: str, qty: int, entry: dict) -> None:
     reprice_port(world, port)
     state["ledger"].append(result)
     entry["receipt"] = receipt_view(result)
+    run_narrative(state, None)
 
 
 def session_snapshot(state):
@@ -322,9 +327,78 @@ def session_snapshot(state):
     )
 
 
+def run_narrative(state, events) -> None:
+    from portlight.engine.narrative import NarrativeState, evaluate_narrative
+
+    world = state["world"]
+    if "narrative" not in state:
+        state["narrative"] = NarrativeState()
+    port_id = None
+    if world.voyage is not None and world.voyage.status == VoyageStatus.IN_PORT:
+        port_id = world.voyage.destination_id
+    evaluate_narrative(
+        state["narrative"],
+        world.captain,
+        world,
+        state["board"],
+        state["infra"],
+        state["ledger"],
+        current_port_id=port_id,
+        events_this_turn=events,
+    )
+
+
+def culture_view(culture) -> dict | None:
+    if (
+        not culture.port_visits
+        and not culture.regions_entered
+        and not culture.cultural_encounters
+        and not culture.festivals_visited
+        and not culture.active_festivals
+    ):
+        return None
+    return {
+        "port_visits": [
+            {"port_id": port_id, "visits": count}
+            for port_id, count in culture.port_visits.items()
+        ],
+        "regions_entered": list(culture.regions_entered),
+        "cultural_encounters": culture.cultural_encounters,
+        "festivals_visited": culture.festivals_visited,
+        "active_festivals": [
+            {
+                "festival_id": fest.festival_id,
+                "port_id": fest.port_id,
+                "start_day": fest.start_day,
+                "end_day": fest.end_day,
+            }
+            for fest in culture.active_festivals
+        ],
+    }
+
+
+def narrative_view(narrative) -> dict | None:
+    if narrative is None or (not narrative.fired and not narrative.journal):
+        return None
+    return {
+        "fired": list(narrative.fired),
+        "journal": [
+            {
+                "beat_id": entry.beat_id,
+                "day": entry.day,
+                "port_id": entry.port_id,
+                "region": entry.region,
+            }
+            for entry in narrative.journal
+        ],
+    }
+
+
 def do_advance(state, entry: dict) -> None:
     world = state["world"]
     rng = state["rng"]
+    sailed = world.voyage.status == VoyageStatus.AT_SEA
+    events = None
     tick_reputation(world.captain.standing)
     before = {c.offer_id: c for c in state["board"].active}
     outcomes = tick_contracts(state["board"], world.day)
@@ -371,6 +445,13 @@ def do_advance(state, entry: dict) -> None:
         entry["shocks"] = shocks
     else:
         events = advance_day(world, rng)
+        from portlight.engine.sea_culture_engine import enrich_voyage_day
+        from portlight.engine.voyage import find_route as _find_route
+
+        route = _find_route(world, world.voyage.origin_id, world.voyage.destination_id)
+        events = enrich_voyage_day(
+            world, route, events, rng, ledger=state["ledger"], board=state["board"],
+        )
         dest = world.ports.get(world.voyage.destination_id)
         region = dest.region if dest else "Mediterranean"
         for event in events:
@@ -391,6 +472,42 @@ def do_advance(state, entry: dict) -> None:
             port = world.ports.get(world.voyage.destination_id)
             if port is not None:
                 record_port_arrival(world.captain.standing, world.day, port.id, port.region)
+                from portlight.engine.consequences import (
+                    apply_consequence,
+                    check_port_consequences,
+                )
+                from portlight.engine.culture_engine import record_port_visit
+                from portlight.engine.port_arrival_engine import (
+                    format_arrival_text,
+                    generate_arrival,
+                )
+                from portlight.engine.voyage import EventType, VoyageEvent
+
+                record_port_visit(port.id, port.region, world.culture)
+                if any(af.port_id == port.id for af in world.culture.active_festivals):
+                    world.culture.festivals_visited += 1
+                arrival_lines = format_arrival_text(generate_arrival(world, port.id))
+                if arrival_lines:
+                    events.append(VoyageEvent(
+                        event_type=EventType.NOTHING,
+                        message="\n".join(arrival_lines),
+                        flavor="[arrival]",
+                    ))
+                for consequence in check_port_consequences(
+                    world, port.id, state["ledger"], state["board"], rng,
+                ):
+                    apply_consequence(world, consequence)
+                    if consequence.silver_delta > 0:
+                        effect_note = f" (+{consequence.silver_delta} silver)"
+                    elif consequence.silver_delta < 0:
+                        effect_note = f" ({consequence.silver_delta} silver)"
+                    else:
+                        effect_note = ""
+                    events.append(VoyageEvent(
+                        event_type=EventType.NOTHING,
+                        message=f"{consequence.text}{effect_note}",
+                        flavor=f"[consequence:{consequence.effect_type}]",
+                    ))
                 refresh_board(state, port)
         entry["events"] = [event_view(event) for event in events]
     if notes:
@@ -402,6 +519,8 @@ def do_advance(state, entry: dict) -> None:
     newly = evaluate_victory_closure(session_snapshot(state))
     if newly:
         state["campaign"].completed_paths.extend(newly)
+    if sailed:
+        run_narrative(state, events)
 
 
 def dispatch(state, tokens: list[str], entry: dict) -> None:
@@ -431,6 +550,9 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         state["opponent_combat"] = None
         state["pending_victory"] = False
         state["history"] = fresh_history()
+        from portlight.engine.narrative import NarrativeState
+
+        state["narrative"] = NarrativeState()
         port = current_port(world)
         if port is not None:
             refresh_with_board_rng(state, port)
@@ -461,6 +583,41 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
             raise ScriptError(result)
     elif cmd == "advance":
         do_advance(state, entry)
+    elif cmd == "arrival_narrative":
+        from portlight.engine.port_arrival_engine import format_arrival_text, generate_arrival
+
+        world = state["world"]
+        notes = format_arrival_text(
+            generate_arrival(world, world.voyage.destination_id)
+        )
+        if notes:
+            entry["notes"] = notes
+    elif cmd == "evaluate_consequences":
+        from portlight.engine.consequences import (
+            apply_consequence,
+            check_port_consequences,
+            check_sea_consequences,
+        )
+        from portlight.engine.voyage import find_route as _find_route
+
+        world = state["world"]
+        if world.voyage.status == VoyageStatus.AT_SEA:
+            route = _find_route(world, world.voyage.origin_id, world.voyage.destination_id)
+            found = check_sea_consequences(
+                world, route, state["ledger"], state["board"], state["rng"],
+            )
+        else:
+            found = check_port_consequences(
+                world,
+                world.voyage.destination_id,
+                state["ledger"],
+                state["board"],
+                state["rng"],
+            )
+        for consequence in found:
+            apply_consequence(world, consequence)
+        if found:
+            entry["notes"] = [f"{row.id}: {row.text}" for row in found]
     elif cmd == "hire":
         if len(tokens) < 2 or len(tokens) > 3:
             raise ScriptError("Usage: hire <count> [role]")
@@ -1794,6 +1951,14 @@ def _apply_duel(state, stances: list[str], entry: dict) -> None:
     )
     world.captain.silver = max(0, world.captain.silver + result.silver_delta)
     outcome_str = "duel_win" if result.player_won else ("duel_draw" if result.draw else "duel_loss")
+    from portlight.engine.models import PirateEncounterRecord
+    world.pirates.encounters.append(PirateEncounterRecord(
+        captain_id=pending.captain_id,
+        faction_id=pending.faction_id,
+        day=world.day,
+        outcome=outcome_str,
+        region=pending.region,
+    ))
     state["history"]["encounters"].append({
         "captain_id": pending.captain_id,
         "faction_id": pending.faction_id,
@@ -1803,8 +1968,10 @@ def _apply_duel(state, stances: list[str], entry: dict) -> None:
     })
     if result.player_won:
         state["history"]["duels_won"] += 1
+        world.pirates.duels_won += 1
     elif not result.draw:
         state["history"]["duels_lost"] += 1
+        world.pirates.duels_lost += 1
     world.pirates.pending_duel = None
     entry["duel"] = {
         "opponent_id": result.opponent_id,
@@ -2075,6 +2242,17 @@ def snapshot(state: dict, log: list[dict]) -> dict:
         logged = snap.pop("log")
         snap["milestones"] = milestones
         snap["log"] = logged
+    if world is not None:
+        culture = culture_view(world.culture)
+        if culture is not None:
+            logged = snap.pop("log")
+            snap["culture"] = culture
+            snap["log"] = logged
+        narrative = narrative_view(state.get("narrative"))
+        if narrative is not None:
+            logged = snap.pop("log")
+            snap["narrative"] = narrative
+            snap["log"] = logged
     return snap
 
 

@@ -2319,6 +2319,7 @@
       "title": "Licensed Trader",
       "home_region": "Mediterranean",
       "home_port_id": "porto_novo",
+      "mentor_npc_id": "pn_marta",
       "starting_silver": 550,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 30,
@@ -2356,6 +2357,7 @@
       "title": "Shadow Trader",
       "home_region": "West Africa",
       "home_port_id": "palm_cove",
+      "mentor_npc_id": "pc_mama_joy",
       "starting_silver": 500,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 35,
@@ -2393,6 +2395,7 @@
       "title": "Route Specialist",
       "home_region": "Mediterranean",
       "home_port_id": "silva_bay",
+      "mentor_npc_id": "sb_elena",
       "starting_silver": 450,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 30,
@@ -2430,6 +2433,7 @@
       "title": "Licensed Hunter",
       "home_region": "North Atlantic",
       "home_port_id": "stormwall",
+      "mentor_npc_id": "sw_commander_vogt",
       "starting_silver": 475,
       "starting_ship_id": "swift_cutter",
       "starting_provisions": 30,
@@ -2469,6 +2473,7 @@
       "title": "Crimson Tide Captain",
       "home_region": "Mediterranean",
       "home_port_id": "corsairs_rest",
+      "mentor_npc_id": "cr_no_one",
       "starting_silver": 500,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 30,
@@ -2508,6 +2513,7 @@
       "title": "Wind Temple Student",
       "home_region": "East Indies",
       "home_port_id": "monsoon_reach",
+      "mentor_npc_id": "mr_brother_anand",
       "starting_silver": 400,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 35,
@@ -2545,6 +2551,7 @@
       "title": "Khoury Dynasty Scion",
       "home_region": "Mediterranean",
       "home_port_id": "al_manar",
+      "mentor_npc_id": "am_senhora_nadia",
       "starting_silver": 700,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 30,
@@ -2582,6 +2589,7 @@
       "title": "Self-Made Captain",
       "home_region": "East Indies",
       "home_port_id": "crosswind_isle",
+      "mentor_npc_id": "ci_dock_master_tao",
       "starting_silver": 300,
       "starting_ship_id": "coastal_sloop",
       "starting_provisions": 30,
@@ -2619,6 +2627,7 @@
       "title": "Licensed Hunter",
       "home_region": "North Atlantic",
       "home_port_id": "crosswind_isle",
+      "mentor_npc_id": "ci_dock_master_tao",
       "starting_silver": 425,
       "starting_ship_id": "swift_cutter",
       "starting_provisions": 30,
@@ -11710,6 +11719,2198 @@
       "disposition": "respected",
       "description": "The two legends. Salva \u2014 relentless, never bribed, brother killed by smuggled powder. Sun \u2014 zero unauthorized passages in fifteen years, found weapons dissolved in acid. They've never met but each considers the other the standard they measure themselves against. The smuggling world fears both equally.",
       "player_impact": "Captains with clean records at BOTH Porto Novo and Dragon's Gate carry the gold standard of inspection credibility. The two hardest stamps to earn \u2014 and the most valuable."
+    }
+  ],
+  "culture": {
+    "regions": [
+      {
+        "id": "mediterranean",
+        "region_name": "Mediterranean",
+        "cultural_name": "The Middle Sea",
+        "ethos": "Civilization is commerce. The law of contract binds harder than iron, and a merchant's word, once given, is recorded in stone.",
+        "trade_philosophy": "Fair dealing above all. Prices are posted, weights are checked, and the Exchange arbitrates every dispute. Cheats are remembered.",
+        "sacred_goods": [
+          "grain"
+        ],
+        "forbidden_goods": [],
+        "prized_goods": [
+          "spice",
+          "silk"
+        ],
+        "greeting": "Welcome to port, Captain. Your cargo manifest, if you please.",
+        "farewell": "Fair winds and full holds. May your ledger balance.",
+        "proverb": "A contract honored is worth more than gold hoarded.",
+        "weather_flavor": [
+          "The sea is calm and blue. Sunlight dances on ancient waters.",
+          "A warm breeze carries the smell of olive groves from the coast.",
+          "Gulls wheel above the mast. The Mediterranean is kind today.",
+          "Haze on the horizon. The old sea holds its secrets close.",
+          "A gentle swell. These are the waters where trade was born."
+        ],
+        "festivals": [
+          {
+            "id": "harvest_of_plenty",
+            "name": "Harvest of Plenty",
+            "description": "The granaries open and the Exchange rings its great bell. For three days, grain flows freely and merchants feast in the columned halls.",
+            "region": "Mediterranean",
+            "frequency_days": 60,
+            "market_effects": {
+              "grain": 1.8,
+              "rum": 1.4
+            },
+            "duration_days": 3,
+            "standing_bonus": 2
+          },
+          {
+            "id": "night_of_lanterns",
+            "name": "Night of Lanterns",
+            "description": "Paper lanterns drift on the harbor. The spice merchants display their rarest blends and the air thickens with cinnamon and clove.",
+            "region": "Mediterranean",
+            "frequency_days": 90,
+            "market_effects": {
+              "spice": 2.0,
+              "silk": 1.5,
+              "dyes": 1.6
+            },
+            "duration_days": 3,
+            "standing_bonus": 1
+          }
+        ]
+      },
+      {
+        "id": "north_atlantic",
+        "region_name": "North Atlantic",
+        "cultural_name": "The Iron Coast",
+        "ethos": "Strength is built, not born. The forge, the hull, the garrison \u2014 everything here is made to endure. Softness is a southern luxury.",
+        "trade_philosophy": "Trade is provision, not pleasure. The north needs what it needs: grain to eat, timber to build, medicine to survive. Luxuries are welcome but never essential.",
+        "sacred_goods": [
+          "medicines"
+        ],
+        "forbidden_goods": [],
+        "prized_goods": [
+          "tea",
+          "tobacco",
+          "weapons"
+        ],
+        "greeting": "State your business, Captain. These waters have little patience.",
+        "farewell": "Keep your hull tight. The Atlantic forgives nothing.",
+        "proverb": "The storm tests the hull, not the cargo.",
+        "weather_flavor": [
+          "Grey skies press low. The Atlantic rolls in long, heavy swells.",
+          "Wind bites through the rigging. Crew members pull their collars tight.",
+          "Cold spray over the bow. The northern sea earns its reputation.",
+          "Fog banks drift across the water like slow ghosts.",
+          "A break in the clouds. Pale northern light falls on dark water."
+        ],
+        "festivals": [
+          {
+            "id": "iron_days",
+            "name": "The Iron Days",
+            "description": "The foundries run day and night. Sparks light the harbor like fireflies. Ironhaven celebrates its smiths with contests of craft and endurance.",
+            "region": "North Atlantic",
+            "frequency_days": 75,
+            "market_effects": {
+              "iron": 1.6,
+              "weapons": 1.8,
+              "timber": 1.3
+            },
+            "duration_days": 4,
+            "standing_bonus": 2
+          },
+          {
+            "id": "midwinter_market",
+            "name": "Midwinter Market",
+            "description": "The northern ports huddle against the cold. Medicine sellers, tea blenders, and tobacco merchants crowd the covered bazaars.",
+            "region": "North Atlantic",
+            "frequency_days": 90,
+            "market_effects": {
+              "medicines": 2.0,
+              "tea": 1.7,
+              "tobacco": 1.5
+            },
+            "duration_days": 3,
+            "standing_bonus": 1
+          }
+        ]
+      },
+      {
+        "id": "west_africa",
+        "region_name": "West Africa",
+        "cultural_name": "The Gold Coast",
+        "ethos": "The land gives freely to those who give back. Trade is a relationship, not a transaction. The elders remember every ship that entered the harbor.",
+        "trade_philosophy": "Generosity first, then business. The first trade is always small \u2014 a gift, really. Trust is built in rum shared, not contracts signed. Return again and again, and the coast opens its treasure.",
+        "sacred_goods": [
+          "pearls"
+        ],
+        "forbidden_goods": [],
+        "prized_goods": [
+          "dyes",
+          "cotton",
+          "rum"
+        ],
+        "greeting": "You return! The coast remembers you, Captain.",
+        "farewell": "Go well. The sea carries our memory of you.",
+        "proverb": "The market remembers who gave, not who took.",
+        "weather_flavor": [
+          "Warm air, heavy with moisture. The coast shimmers in the heat.",
+          "Tropical rain drums on the deck and passes as quickly as it came.",
+          "The sea is flat and green. Palm-fringed shores line the horizon.",
+          "Hot wind from the interior carries the scent of red earth.",
+          "Sunset turns the water gold. The Gold Coast earns its name tonight."
+        ],
+        "festivals": [
+          {
+            "id": "dyers_moon",
+            "name": "Dyer's Moon",
+            "description": "Under the full moon, the dye vats are blessed and new colors are revealed. Textile merchants from every port crowd the stalls, bidding for the freshest pigments.",
+            "region": "West Africa",
+            "frequency_days": 60,
+            "market_effects": {
+              "dyes": 2.0,
+              "cotton": 1.6
+            },
+            "duration_days": 3,
+            "standing_bonus": 2
+          },
+          {
+            "id": "pearl_tide",
+            "name": "Pearl Tide",
+            "description": "The divers return from the deep shallows with the season's haul. Pearls are weighed, blessed by the elders, and offered first to those who have traded fairly with the coast.",
+            "region": "West Africa",
+            "frequency_days": 90,
+            "market_effects": {
+              "pearls": 2.2,
+              "rum": 1.3
+            },
+            "duration_days": 4,
+            "standing_bonus": 3
+          }
+        ]
+      },
+      {
+        "id": "east_indies",
+        "region_name": "East Indies",
+        "cultural_name": "The Silk Waters",
+        "ethos": "Patience is mastery. The artisan who perfects one bolt of silk in a lifetime is honored above the merchant who trades a thousand. Everything here was old when your civilization was young.",
+        "trade_philosophy": "Hierarchy governs all. Know who you trade with and how to address them. Offer quality, never quantity. A single perfect porcelain bowl is worth more than a crate of adequate ones.",
+        "sacred_goods": [
+          "porcelain",
+          "silk"
+        ],
+        "forbidden_goods": [
+          "weapons"
+        ],
+        "prized_goods": [
+          "spice",
+          "tea"
+        ],
+        "greeting": "You honor us, Captain. Tea will be prepared while we discuss terms.",
+        "farewell": "May your passage be swift and your cargo worthy.",
+        "proverb": "A merchant who rushes drinks salt water.",
+        "weather_flavor": [
+          "Incense drifts from a passing junk. The air is thick with spice.",
+          "Jade-green water and islands like scattered emeralds on the horizon.",
+          "Monsoon clouds build to the south. The wind carries distant rain.",
+          "Sampans and fishing boats crowd the shallows. Commerce never sleeps here.",
+          "Dawn mist on the archipelago. A thousand islands hide in the haze."
+        ],
+        "festivals": [
+          {
+            "id": "silk_weavers_fair",
+            "name": "Silk Weavers' Fair",
+            "description": "The master weavers display their finest work. Bolts of silk in patterns a thousand years old hang from bamboo frames along the waterfront. Buyers come from every port in the East.",
+            "region": "East Indies",
+            "frequency_days": 75,
+            "market_effects": {
+              "silk": 2.0,
+              "porcelain": 1.5,
+              "dyes": 1.4
+            },
+            "duration_days": 4,
+            "standing_bonus": 2
+          },
+          {
+            "id": "monsoon_prayer",
+            "name": "Monsoon Prayer",
+            "description": "Incense burns on every pier. The captains pray for safe passage through the season of storms. Spice cargoes are blessed and the shipwrights inspect every hull.",
+            "region": "East Indies",
+            "frequency_days": 90,
+            "market_effects": {
+              "spice": 1.8,
+              "medicines": 1.6,
+              "tea": 1.4
+            },
+            "duration_days": 3,
+            "standing_bonus": 1
+          }
+        ]
+      },
+      {
+        "id": "south_seas",
+        "region_name": "South Seas",
+        "cultural_name": "The Reef Kingdoms",
+        "ethos": "The sea gives life and the sea takes it back. The island kings answer to no empire. Trade here is tribute \u2014 offered willingly or not at all. Respect the reef, or it will tear your hull apart.",
+        "trade_philosophy": "Bring what we cannot make. Weapons, silk, porcelain \u2014 these are the currencies of respect. In return, we offer what no one else can: pearls from waters only our divers know, and medicines from plants that grow nowhere else on earth.",
+        "sacred_goods": [
+          "pearls"
+        ],
+        "forbidden_goods": [],
+        "prized_goods": [
+          "weapons",
+          "silk",
+          "tea"
+        ],
+        "greeting": "The Coral King permits you to anchor. State your tribute.",
+        "farewell": "The reef remembers your passage. Return only if you mean to trade.",
+        "proverb": "The reef welcomes the patient; it drowns the greedy.",
+        "weather_flavor": [
+          "Turquoise water so clear you can see the reef below. Beautiful and deadly.",
+          "Volcanic haze drifts from Ember Isle. The air tastes of sulfur.",
+          "A sudden squall \u2014 warm rain and lightning, gone in minutes.",
+          "Flying fish skip across the bow. The South Seas teem with life.",
+          "Stars reflected in still water. The reef glows faintly beneath the surface."
+        ],
+        "festivals": [
+          {
+            "id": "coral_coronation",
+            "name": "Coral Coronation",
+            "description": "The Coral King renews his oath to the sea. Tribute is expected \u2014 weapons, silk, and pearls are presented at the reef throne. Those who give generously earn the kingdom's favor.",
+            "region": "South Seas",
+            "frequency_days": 90,
+            "market_effects": {
+              "weapons": 2.5,
+              "silk": 2.0,
+              "pearls": 1.8
+            },
+            "duration_days": 5,
+            "standing_bonus": 4
+          },
+          {
+            "id": "fire_walking",
+            "name": "Fire Walking",
+            "description": "Ember Isle's volcanic heart rumbles and the island celebrates with firewalking ceremonies. Medicine plants are harvested from the hot springs and dye pigments are drawn from volcanic earth.",
+            "region": "South Seas",
+            "frequency_days": 75,
+            "market_effects": {
+              "medicines": 2.0,
+              "dyes": 1.8
+            },
+            "duration_days": 3,
+            "standing_bonus": 2
+          }
+        ]
+      }
+    ],
+    "ports": [
+      {
+        "port_id": "porto_novo",
+        "landmark": "The Grain Exchange \u2014 a columned hall where prices are read aloud at dawn.",
+        "local_custom": "Captains ring the harbor bell on first arrival. It's bad luck not to.",
+        "atmosphere": "Flour dust, sea salt, and the shouts of dockhands loading grain barges.",
+        "dock_scene": "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks.",
+        "tavern_rumor": "They say the Grain Exchange is built on the ruins of an older temple. Some nights the clerks hear chanting from beneath the floor.",
+        "cultural_group": "The Exchange Guild",
+        "cultural_group_description": "Keepers of the price \u2014 they set the dawn rates and arbitrate disputes."
+      },
+      {
+        "port_id": "al_manar",
+        "landmark": "The Spice Bazaar \u2014 a covered market where a hundred aromas compete for your attention.",
+        "local_custom": "Bargaining begins with tea. Refusing the first cup insults the seller.",
+        "atmosphere": "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers.",
+        "dock_scene": "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade.",
+        "tavern_rumor": "A merchant from the east claims to know a spice island no chart has ever shown. He's been buying a lot of rum and saying little else.",
+        "cultural_group": "The Spice Merchants' Circle",
+        "cultural_group_description": "An ancient guild that controls the spice auctions and guards trade secrets."
+      },
+      {
+        "port_id": "silva_bay",
+        "landmark": "The Master Shipyard \u2014 where the finest hulls in the Mediterranean take shape.",
+        "local_custom": "Touching another captain's ship without permission is grounds for a duel.",
+        "atmosphere": "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels.",
+        "dock_scene": "Sawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish.",
+        "tavern_rumor": "The master shipwright refuses to build for anyone who has lost a ship to storms. She says it's bad wood-luck.",
+        "cultural_group": "The Shipwrights' Brotherhood",
+        "cultural_group_description": "Master builders who guard their hull designs like state secrets."
+      },
+      {
+        "port_id": "corsairs_rest",
+        "landmark": "The Cliff Tavern \u2014 carved into the rock face, visible only from the sea.",
+        "local_custom": "No names. Every captain here is 'friend' until proven otherwise.",
+        "atmosphere": "Torch smoke, cheap rum, and the clink of coins changing hands under the table.",
+        "dock_scene": "Ships anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee \u2014 payable in silver, no questions.",
+        "tavern_rumor": "There's a passage through the cliffs that leads to a second harbor. Only the oldest pirates know the way, and they aren't talking.",
+        "cultural_group": "The Brotherhood of the Cove",
+        "cultural_group_description": "Not a guild \u2014 a silence. They protect each other by knowing nothing."
+      },
+      {
+        "port_id": "ironhaven",
+        "landmark": "The Great Foundry \u2014 its chimney visible twenty leagues at sea, glowing red at night.",
+        "local_custom": "Greeting the harbor master with a nod, not words. The north wastes neither.",
+        "atmosphere": "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces.",
+        "dock_scene": "Iron-hulled barges sit low in the water. Cranes swing overhead, loading ingots onto merchant vessels. Sparks drift from the foundry like orange snowflakes.",
+        "tavern_rumor": "The foundry master has been buying every scrap of timber that comes in. Some say he's building something in the deep sheds \u2014 something big.",
+        "cultural_group": "The Iron Guild",
+        "cultural_group_description": "Masters of the forge. They set the iron price and every tool bears their mark."
+      },
+      {
+        "port_id": "stormwall",
+        "landmark": "The Fortress \u2014 grey stone walls rising from the sea, older than anyone remembers.",
+        "local_custom": "All cargo is inspected. Complaining about it marks you as a southerner.",
+        "atmosphere": "Salt wind, military drums from the garrison, and the creak of heavy gates.",
+        "dock_scene": "Navy vessels line the inner harbor. Soldiers in grey coats patrol the docks, checking manifests against sealed orders. Everything is orderly. Everything is watched.",
+        "tavern_rumor": "The garrison commander has doubled the night watch. Nobody says why, but the soldiers look north when they think no one's watching.",
+        "cultural_group": "The Northern Garrison",
+        "cultural_group_description": "Military authority that governs the port. Trade is tolerated, not celebrated."
+      },
+      {
+        "port_id": "thornport",
+        "landmark": "The Whale Arch \u2014 a jawbone arch spanning the harbor entrance, bleached white by decades of salt.",
+        "local_custom": "Tea is offered before any negotiation. Tobacco is shared after a deal closes.",
+        "atmosphere": "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds.",
+        "dock_scene": "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers.",
+        "tavern_rumor": "The whales are swimming further north each year. The old captains say the sea is warming. The young ones say the old ones talk too much.",
+        "cultural_group": "The Whaler-Merchants",
+        "cultural_group_description": "Former whalers turned traders. They measure trust in shared hardship."
+      },
+      {
+        "port_id": "sun_harbor",
+        "landmark": "The Cotton Steps \u2014 wide stone stairs where cotton bales are displayed and auctioned.",
+        "local_custom": "The first trade of the day is blessed by an elder. Smart captains arrive early.",
+        "atmosphere": "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales.",
+        "dock_scene": "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song.",
+        "tavern_rumor": "A ship arrived last month carrying nothing but empty crates \u2014 paid in full. The harbor master looked the other way. Nobody asks about empty crates here.",
+        "cultural_group": "The Weighers",
+        "cultural_group_description": "The women who count and weigh every bale. Their word on quality is final."
+      },
+      {
+        "port_id": "palm_cove",
+        "landmark": "The Distillery Row \u2014 seven rum houses, each with its own secret recipe and fierce pride.",
+        "local_custom": "A cup of rum for every stranger. Refusing is an insult that lasts generations.",
+        "atmosphere": "Sweet molasses, fermenting sugar cane, and the lazy hum of bees.",
+        "dock_scene": "Small boats bob in the sheltered cove. Rum barrels roll down wooden ramps from the hilltop distilleries. Children dive for coins tossed by arriving crews.",
+        "tavern_rumor": "Old Cassius at the third distillery claims his rum can cure fever, heal wounds, and make you invisible to customs inspectors. Two of those are probably true.",
+        "cultural_group": "The Seven Houses",
+        "cultural_group_description": "Seven distillery families who have been rivals for a century and allies for longer."
+      },
+      {
+        "port_id": "iron_point",
+        "landmark": "The River Mouth Mines \u2014 tunnels carved into red cliffs where the river meets the sea.",
+        "local_custom": "Miners spit on their hands before a deal. It means the ore is honest.",
+        "atmosphere": "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts.",
+        "dock_scene": "Ore carts rattle down tracks to the loading docks. The river runs red with mine runoff. Everything here \u2014 the buildings, the clothes, the skin \u2014 is stained rust.",
+        "tavern_rumor": "The miners hit something in the deep shaft last week. Not iron \u2014 something older. The foreman sealed the tunnel and doubled the guard.",
+        "cultural_group": "The Red Hand",
+        "cultural_group_description": "The mining collective. Their hands are permanently stained with iron oxide \u2014 a badge of honor."
+      },
+      {
+        "port_id": "pearl_shallows",
+        "landmark": "The Blessing Pool \u2014 a tidal pool where divers pray before descending.",
+        "local_custom": "Pearls are never haggled over. The diver names the price. You pay or you leave.",
+        "atmosphere": "Warm shallow water, coral sand, and the silence of divers preparing their breath.",
+        "dock_scene": "Canoes glide in from the reef. Divers emerge glistening, pouches of pearls tied to their wrists. An elder sits under a baobab tree, examining each pearl by sunlight.",
+        "tavern_rumor": "The oldest diver says there's a pearl the size of a fist somewhere in the deep reef. Three divers have gone looking. Two came back.",
+        "cultural_group": "The Breath-Holders",
+        "cultural_group_description": "Pearl divers who can hold their breath for impossible minutes. Their craft is sacred."
+      },
+      {
+        "port_id": "jade_port",
+        "landmark": "The Porcelain Quarter \u2014 a district of workshops where master potters fire kilns day and night.",
+        "local_custom": "Porcelain is presented on silk, never bare-handed. Fingerprints on porcelain void a sale.",
+        "atmosphere": "Kiln heat, wet clay, and the delicate tap-tap-tap of artisans painting glaze patterns.",
+        "dock_scene": "Bamboo cranes lift crates padded with straw from the hold. Each piece of porcelain is inspected by guild markers before it leaves the dock.",
+        "tavern_rumor": "A master potter smashed his entire year's work because he found a single flaw. The guild praised him. That kind of standard is why their porcelain costs what it does.",
+        "cultural_group": "The Kiln Masters",
+        "cultural_group_description": "Porcelain artisans whose guild marks are more valued than the clay itself."
+      },
+      {
+        "port_id": "monsoon_reach",
+        "landmark": "The Wind Temple \u2014 a pagoda on the headland where monks track the monsoon.",
+        "local_custom": "Captains consult the monks before sailing. Their wind forecasts are uncannily accurate.",
+        "atmosphere": "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging.",
+        "dock_scene": "The harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts \u2014 the monsoon demands it.",
+        "tavern_rumor": "The monks say this monsoon season will be the worst in a generation. The shipwrights are quietly raising their prices.",
+        "cultural_group": "The Monsoon Brotherhood",
+        "cultural_group_description": "Monks and sailors who read the wind. Their forecasts guide every departure."
+      },
+      {
+        "port_id": "silk_haven",
+        "landmark": "The Loom Quarter \u2014 where silk is woven in patterns a thousand years old.",
+        "local_custom": "Silk is presented folded, never rolled. Rolling insults the weaver's art.",
+        "atmosphere": "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam.",
+        "dock_scene": "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch.",
+        "tavern_rumor": "The eldest weaver has created a pattern that changes color in different light. Three merchants have bid their entire fortunes for a single bolt.",
+        "cultural_group": "The Silk Weavers' Guild",
+        "cultural_group_description": "Master artisans whose patterns are family secrets passed down for centuries."
+      },
+      {
+        "port_id": "crosswind_isle",
+        "landmark": "The Free Port Bell \u2014 rung once for every ship that enters, never for one that leaves.",
+        "local_custom": "All flags fly here. No nation claims the isle and all are welcome. That's the law.",
+        "atmosphere": "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade.",
+        "dock_scene": "Ships from every region jostle for berth. The Free Port Bell tolls as you enter. Money-changers set up tables on the dock before your anchor hits bottom.",
+        "tavern_rumor": "Someone tried to claim the isle for an eastern dynasty last year. By morning, every captain in harbor had their guns trained on his ship. He left.",
+        "cultural_group": "The Free Port Council",
+        "cultural_group_description": "An elected body of captains who enforce the one rule: no one rules."
+      },
+      {
+        "port_id": "dragons_gate",
+        "landmark": "The Gate Fortress \u2014 twin stone towers flanking the strait, chains ready to close the passage.",
+        "local_custom": "Weapons in cargo are declared or confiscated. There is no third option.",
+        "atmosphere": "Military precision, jasmine tea, and the distant clank of the harbor chains.",
+        "dock_scene": "Soldiers in lacquered armor inspect every ship that passes the twin towers. Tea merchants wait patiently on the inner docks, knowing inspection takes time.",
+        "tavern_rumor": "The fortress commander has not lowered the chains in fifteen years. The last captain who tried to run them is still chained to the seabed as a warning.",
+        "cultural_group": "The Gate Wardens",
+        "cultural_group_description": "Military governors who control the strait. They are the law east of the gate."
+      },
+      {
+        "port_id": "spice_narrows",
+        "landmark": "The Hanging Market \u2014 stalls suspended on ropes between cliff faces above the water.",
+        "local_custom": "Prices are whispered, never spoken aloud. The walls have ears and the water carries sound.",
+        "atmosphere": "Concentrated spice \u2014 overwhelming, intoxicating. The air itself burns your eyes.",
+        "dock_scene": "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical \u2014 everything climbs.",
+        "tavern_rumor": "The Narrows have a second market, deeper in the cliffs, where things other than spice change hands. Finding the entrance is the first test of membership.",
+        "cultural_group": "The Spice Lords",
+        "cultural_group_description": "They control access to the richest spice grounds in the world. Cross them once."
+      },
+      {
+        "port_id": "ember_isle",
+        "landmark": "Ember Peak \u2014 the smoldering volcano visible from fifty leagues, its glow a navigator's beacon.",
+        "local_custom": "Visitors place a stone at the volcano's base. It's said to appease the mountain.",
+        "atmosphere": "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps.",
+        "dock_scene": "Black sand beaches and obsidian-sharp rocks frame the harbor. Steam rises from hot springs near the dock. Herbalists sort medicinal plants in the warm volcanic soil.",
+        "tavern_rumor": "The volcano speaks more often now. The islanders aren't worried \u2014 they say it always grumbles before a good harvest of medicine plants.",
+        "cultural_group": "The Ember Keepers",
+        "cultural_group_description": "Herbalists and healers who know the volcanic plants. Their medicines are unmatched."
+      },
+      {
+        "port_id": "typhoon_anchorage",
+        "landmark": "The Storm Wall \u2014 a massive breakwater built from the hulls of ships that didn't make it.",
+        "local_custom": "Captains who survive a typhoon carve their ship's name into the Storm Wall. It's an honor.",
+        "atmosphere": "Wind that never fully dies, salt-crusted everything, and the pride of survival.",
+        "dock_scene": "The harbor is carved into the leeward cliff. Ships are chained, not anchored \u2014 anchors aren't enough here. Pearl divers work the outer reef between storms.",
+        "tavern_rumor": "A captain carved her name into the Storm Wall seven times \u2014 one for each typhoon survived. They call her the Unkillable. She drinks alone.",
+        "cultural_group": "The Storm Riders",
+        "cultural_group_description": "Captains who have weathered the typhoons. Their stories are the price of entry."
+      },
+      {
+        "port_id": "coral_throne",
+        "landmark": "The Coral Palace \u2014 grown over centuries from living reef, rising from the lagoon like a crown.",
+        "local_custom": "All trade begins with tribute to the Coral King. Silk or weapons preferred. Refusal is exile.",
+        "atmosphere": "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums.",
+        "dock_scene": "The lagoon entrance is narrow and treacherous \u2014 local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock.",
+        "tavern_rumor": "The Coral King has no heir. Three princes compete for the throne, each courting foreign captains for weapons and alliances. Smart traders play all three.",
+        "cultural_group": "The Coral Court",
+        "cultural_group_description": "The island kingdom's royal court. Tribute buys access. Generosity buys favor."
+      }
+    ]
+  },
+  "sea_culture": {
+    "route_encounters": [
+      {
+        "route_key": "The Grain Road",
+        "encounters": [
+          {
+            "text": "A grain convoy from Porto Novo passes \u2014 six barges in formation, hulls riding low. The Exchange Guild flag snaps in the breeze.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A felucca from Al-Manar crosses your wake, its deck stacked with brass-bound spice chests. The crew waves.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "You pass the marker buoy where the old coast road meets the sea. Grain ships have used this lane since before the Exchange was built.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your bosun points at the coastline. 'See that cliff? They say the first Grain Exchange was carved into it \u2014 before Porto Novo even had a harbor.'",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "An old sailor on deck murmurs a prayer as you pass a rocky outcrop. 'Every grain ship salutes the Stone. It's bad luck not to.' You can't see why the rock matters. He won't explain.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The Mediterranean breeze carries the smell of baking bread from the coastal villages. The crew breathes deep.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Calm water, clear sky. The Grain Road earns its reputation as the gentlest route in the Known World.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The crew is relaxed \u2014 they know this route. Someone starts humming a Porto Novo dock song. Others join.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your navigator corrects course by a fraction. 'The current shifts here every spring,' he says. 'Old knowledge.'",
+            "category": "crew",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Timber Run",
+        "encounters": [
+          {
+            "text": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Sawdust floats on the surface \u2014 you're near Silva Bay. The entire harbor sheds wood dust like a forest sheds leaves.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your ship's carpenter examines the hull planking and nods. 'Silva Bay timber. Best in the Mediterranean. This wood will outlast all of us.'",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
+            "category": "sighting",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Shadow Lane",
+        "encounters": [
+          {
+            "text": "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your lookout spots a rowboat tucked into the cliff shadow. Empty. Or is it? On the Shadow Lane, the difference matters.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The coast here is riddled with coves \u2014 each one a potential anchorage, each one a potential ambush. Your helmsman hugs the deeper water.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A crewman mutters: 'My cousin sailed this lane for years. Made a fortune. Then one day he didn't come back. Nobody asked questions. You don't, on the Shadow Lane.'",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "You catch a whiff of torch smoke from a cliff face. Corsair's Rest is close \u2014 you can't see it, but you can smell it.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Iron Strait",
+        "encounters": [
+          {
+            "text": "A Stormwall patrol ship passes \u2014 grey hull, no flag of welcome. The crew watches you with professional interest. They're always watching.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Iron barges from the foundry ride low in the water, sparks still drifting from the cargo. The Great Foundry's chimney glows on the horizon.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The water here is dark \u2014 iron runoff from the foundries. Your navigator says it's deeper than it looks. The iron goes all the way down.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "An old hand on deck says: 'I served at Stormwall once. The strait's the only thing between the north and... whatever's out there.' He doesn't finish.",
+            "category": "lore",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Tea and Tobacco Road",
+        "encounters": [
+          {
+            "text": "A Thornport whaler \u2014 converted to trading \u2014 passes with tea crates stacked on deck. The crew smokes pipes and waves cheerfully.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The Whale Arch is visible from here \u2014 a bleached jawbone spanning the harbor entrance. Even at this distance, you can see the names carved in it.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your cook brews tea with leaves bought at Thornport. The crew gathers. For a moment, the northern sea feels almost warm.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Fog rolls in. A horn sounds from somewhere ahead \u2014 Thornport's harbor signal. The old whalers' way of saying 'you're close.'",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Cotton Crossing",
+        "encounters": [
+          {
+            "text": "The water changes color as you leave the Mediterranean \u2014 warmer, greener. The Gold Coast is ahead. The air carries the faintest scent of earth.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A cotton trader's vessel passes, bales stacked so high the deck is barely visible. Women in indigo cloth stand at the rail, singing the count.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew's mood shifts as the coast changes. The northern rigidity fades. Someone laughs. Someone else starts a story. The Gold Coast does this to people.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A pod of dolphins escorts you for an hour. Your bosun says it's a sign of welcome from the coast. The crew believes him.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "You pass a merchant vessel flying the Exchange Alliance flag, heading north. 'Cotton north, grain south,' your navigator says. 'Been this way for centuries.'",
+            "category": "sighting",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Long Crossing",
+        "encounters": [
+          {
+            "text": "Open water. No land in any direction. The sky meets the sea in a circle that hasn't changed in three days. The crew goes quiet.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Day twelve of the crossing. Your navigator takes star readings twice a night. The slightest error here means weeks of drift.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A piece of driftwood with carved symbols floats past \u2014 a prayer marker from an island nobody's charted. Someone was here before you.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The crew's conversation turns to home. Where they came from. Where they'll go when they're done. The Long Crossing forces these thoughts.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your water casks are half-empty. The navigator says two more days. The cook starts rationing without being asked. Everyone knows what's at stake.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A flying fish lands on deck. The crew takes it as a sign \u2014 land is close. Your navigator confirms: the current has shifted. The East Indies are near.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "You spot another ship on the same heading \u2014 impossibly far away, a speck of sail. Someone else is making the crossing. You'll never know who.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Porcelain Lane",
+        "encounters": [
+          {
+            "text": "A junk with the Kiln Masters' guild mark on its sail passes \u2014 its hold padded with straw. Every piece of porcelain in the west passed through this lane.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew handles the cargo more carefully here. In the East Indies, they've learned that porcelain commands respect \u2014 and that broken porcelain means broken trust.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The water turns jade-green. Islands appear like scattered emeralds. You're in the Porcelain Lane \u2014 where the oldest trade in the East flows.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A fishing sampan pulls alongside. The fisherman offers you a fresh catch in exchange for news. In the East Indies, information is currency.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Silk Road by Sea",
+        "encounters": [
+          {
+            "text": "A silk convoy glides past \u2014 three junks in formation, their sails painted with the Weavers' Guild pattern. The silk inside is worth more than your ship.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Incense drifts from a passing vessel. In the Silk Waters, even the cargo smells beautiful.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew folds their clothes more carefully after a few days in these waters. The East Indies changes how people treat fabric.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A sampan merchant offers a bolt of silk through your porthole while you're anchored for the night. The price is suspiciously good. Your bosun advises caution.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "Typhoon Alley",
+        "encounters": [
+          {
+            "text": "The pressure drops. Your ears pop. The sky turns a color you've never seen \u2014 yellow-grey-green. Typhoon Alley earns its name.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A wrecked hull drifts past \u2014 no mast, no crew, barnacles already growing. Someone's journey ended here. Your crew says nothing.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A storm rider's outrigger appears from nowhere, surfs the leading wave, and vanishes behind a squall. You're in their territory.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your ship groans. The hull flexes in ways the shipwright intended \u2014 if she's from Monsoon Reach or Typhoon Anchorage. If she's Mediterranean... you pray.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Lightning illuminates something on the horizon \u2014 an island not on your charts. When dawn comes, it's gone. The crew doesn't discuss it.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Rain so heavy it stings the skin. The crew works by touch. The compass spins. Your navigator switches to dead reckoning and doesn't sleep for two days.",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Volcanic Passage",
+        "encounters": [
+          {
+            "text": "The water warms. Not from the sun \u2014 from below. Volcanic vents heat the current here. The hull temperature rises. Your crew shifts nervously.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Sulfur. The air thickens with it. Your eyes water. Welcome to the Volcanic Passage \u2014 the sea itself is on fire underneath.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A column of steam rises from the water ahead \u2014 an underwater vent. Your navigator routes around it. The crew watches the thermometer climb.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "An Ember Isle medicine boat crosses your path, obsidian-hulled and silent. The herbalists wave. Their cargo smells of eucalyptus and volcanic earth.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your cook heats water for tea using the sea itself \u2014 he drops a bucket into the volcanic current and it comes up warm. 'Free fuel,' he says.",
+            "category": "crew",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Monsoon Shortcut",
+        "encounters": [
+          {
+            "text": "You catch the monsoon wind and FLY. The ship heels over, sails taut, crew bracing. This is why they call it the Shortcut \u2014 if you time it right, nothing's faster.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The wind dies. Completely. You're becalmed in open water between the Mediterranean and the East Indies. The crew stares at limp sails.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A merchant vessel that attempted the Shortcut last season drifts past. Abandoned. The log is gone. Whatever happened, nobody recorded it.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your navigator pulls out the monsoon charts \u2014 handwritten, passed down from Farouk in Al-Manar's tea house. 'He sailed this seven times,' your navigator says. 'Trust the charts.'",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Wind shifts. The monsoon is changing direction \u2014 a day early. Your navigator adjusts instantly. The margin between 'Shortcut' and 'death sentence' is measured in hours.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Smuggler's Run",
+        "encounters": [
+          {
+            "text": "Darkness. You run without lights because on the Smuggler's Run, visibility is the enemy. Your crew communicates in whispers.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A Crimson Tide ship appears on the horizon \u2014 then another. Then a third. They're not pursuing you. They're watching. The Run belongs to them.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your lookout spots a trail of floating debris \u2014 crates, barrels, a torn sail. Someone dumped cargo in a hurry. Navy patrol, probably. Your crew moves your contraband deeper into the hold.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Eighty leagues of open water between two black market ports. The longest, most dangerous route in the Known World. Your crew knows the stakes. Nobody complains. Nobody jokes.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "An old pirate shanty drifts from below deck \u2014 someone's singing about the Run. The lyrics are about a captain who made the crossing so many times, the navy thought he was a ghost. He stopped correcting them.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The Syndicate's signal \u2014 a lantern flash from an unseen ship \u2014 briefly illuminates the darkness. Three short, one long. It means 'patrol ahead, alter course.' Your navigator adjusts without being told.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Northern Passage",
+        "encounters": [
+          {
+            "text": "The longest profitable route in the world. Iron west, porcelain east. Your hold tells the story of two civilizations that need each other.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Ice. Not dangerous \u2014 floating crystals from the northern edge of the passage. Beautiful and foreign. Your crew collects pieces as souvenirs.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A whale surfaces alongside \u2014 massive, slow, unconcerned. It travels the same passage, following the same currents, and has done so longer than any ship.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Week three. The provisions are holding, the crew is tired, and the passage stretches on. Your navigator says halfway. He's been saying halfway for two days.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "You spot Ironhaven's foundry glow on the western horizon \u2014 or is it Jade Port's kilns on the eastern? On the Northern Passage, both ends look the same from the middle.",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "The Deep South Run",
+        "encounters": [
+          {
+            "text": "Pearl to pearl. The divers of the shallows and the divers of the reef \u2014 same craft, different kingdoms. Your cargo carries the weight of both traditions.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Turquoise water so clear you can see the reef twenty feet below. Beautiful and deadly. One wrong turn and the coral claims your hull.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A war canoe from Coral Throne appears. Warriors in painted armor watch you pass. One raises a spear \u2014 not in threat but in salute. You've been recognized.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew spots something glinting in the shallows \u2014 a pearl, dropped or thrown. Nobody dives for it. On the Deep South Run, taking what the reef didn't offer is bad luck.",
+            "category": "lore",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Ceremonial drums carry across the water from an island you can't see. The Coral Kingdom is celebrating something. Your crew listens. The rhythm is infectious.",
+            "category": "encounter",
+            "mechanical_effect": ""
+          }
+        ]
+      }
+    ],
+    "region_encounters": [
+      {
+        "route_key": "Mediterranean",
+        "encounters": [
+          {
+            "text": "A merchant galley passes flying the Exchange Alliance flag. Orderly, clean, professional. The Mediterranean way.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Fishing boats dot the horizon \u2014 small, colorful, and everywhere. The Mediterranean feeds itself.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "The coast is never far. Villages, harbors, lighthouses \u2014 civilization lines every shore.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew discusses grain prices \u2014 the universal conversation on Mediterranean routes.",
+            "category": "crew",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "North Atlantic",
+        "encounters": [
+          {
+            "text": "Grey seas, grey sky. The North Atlantic doesn't waste energy on color.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A Stormwall patrol passes without greeting. In the north, silence IS the greeting.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew pulls collars tight. The Atlantic cold gets into your bones and stays.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Fog banks drift like walls. Your lookout strains forward. In the North Atlantic, what you can't see is what kills you.",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "West Africa",
+        "encounters": [
+          {
+            "text": "Warm air carries the scent of earth \u2014 red earth, growing things. The Gold Coast is alive.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A fishing fleet returns singing. The rhythm is centuries old and utterly joyful.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew relaxes. Something about the Gold Coast waters changes the mood. Shoulders drop. Voices soften.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Rain falls warm and brief. The crew stands on deck, faces upturned, laughing. The Gold Coast rains are gifts, not threats.",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "East Indies",
+        "encounters": [
+          {
+            "text": "Incense drifts from a passing junk. In the East Indies, even the air is cultivated.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "A fleet of sampans crosses your path \u2014 fishermen, traders, and families living on the water. The East Indies floats.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew becomes more formal in Eastern waters. They bow instead of waving. The culture seeps in.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Islands appear and vanish in the morning mist. A thousand islands hide in the haze. Your charts show a fraction of them.",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      },
+      {
+        "route_key": "South Seas",
+        "encounters": [
+          {
+            "text": "The reef glows beneath the surface \u2014 alive, colorful, dangerous. The South Seas are beautiful the way a blade is beautiful.",
+            "category": "weather",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "An outrigger canoe appears, its crew watching you with calm interest. They've been watching ships pass for generations.",
+            "category": "sighting",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Your crew falls silent. The South Seas demand a different kind of attention \u2014 not the bustle of the Mediterranean but the focus of a diver reading the reef.",
+            "category": "crew",
+            "mechanical_effect": ""
+          },
+          {
+            "text": "Flying fish skip across the bow. Stars reflected in still water. The South Seas overwhelm through beauty, not force.",
+            "category": "weather",
+            "mechanical_effect": ""
+          }
+        ]
+      }
+    ],
+    "npc_sightings": [
+      {
+        "npc_name": "Dimitri Andros",
+        "port_id": "silva_bay",
+        "region": "Mediterranean",
+        "text": "A Silva Bay hull \u2014 unmistakable lines \u2014 cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does."
+      },
+      {
+        "npc_name": "Marta Soares",
+        "port_id": "porto_novo",
+        "region": "Mediterranean",
+        "text": "A Porto Novo grain barge passes with the Exchange Guild flag. On the quarterdeck, Marta Soares scans the horizon with a spyglass \u2014 checking the competition's cargo, no doubt."
+      },
+      {
+        "npc_name": "Scarlet Ana",
+        "port_id": "corsairs_rest",
+        "region": "Mediterranean",
+        "text": "Crimson pennants on the horizon. Scarlet Ana's flagship passes at distance \u2014 she sees you, tips her hat, and sails on. Business elsewhere today."
+      },
+      {
+        "npc_name": "Inspector Salva",
+        "port_id": "porto_novo",
+        "region": "Mediterranean",
+        "text": "A Porto Novo customs cutter crosses your wake. Inspector Salva stands at the rail with a manifest in hand, heading to intercept someone else. You're glad it's not you."
+      },
+      {
+        "npc_name": "Ghost",
+        "port_id": "corsairs_rest",
+        "region": "Mediterranean",
+        "text": "A ship passes in the early hours \u2014 no lights, no flag, loaded heavy. Ghost's crew, running cargo. By the time you blink, they've vanished into the dark."
+      },
+      {
+        "npc_name": "The Smith",
+        "port_id": "ironhaven",
+        "region": "North Atlantic",
+        "text": "An Ironhaven supply boat passes carrying a crate marked with the Smith's personal seal. Whatever's inside, it was built by the best hands in the north. Someone ordered something special."
+      },
+      {
+        "npc_name": "Sergeant Kruze",
+        "port_id": "ironhaven",
+        "region": "North Atlantic",
+        "text": "A grey-hulled ship cuts through the fog \u2014 Iron Wolves. Sergeant Kruze stands at the helm, scanning methodically. He spots you, holds your gaze for three seconds, then turns away. Assessment complete."
+      },
+      {
+        "npc_name": "Siv Lindgren",
+        "port_id": "stormwall",
+        "region": "North Atlantic",
+        "text": "A small trade vessel flying Stormwall colors passes. Siv Lindgren waves energetically from the deck \u2014 she's heading to recruit merchants for the garrison's supply contracts. Her enthusiasm is visible from a league away."
+      },
+      {
+        "npc_name": "Bones Thorsen",
+        "port_id": "thornport",
+        "region": "North Atlantic",
+        "text": "A converted whaler \u2014 Bones Thorsen's fishing fleet \u2014 trawls the northern waters. The whale skeleton mounted on the bow catches the light. Bones raises a hand in silent greeting."
+      },
+      {
+        "npc_name": "Ama Mensah",
+        "port_id": "sun_harbor",
+        "region": "West Africa",
+        "text": "A Gold Coast trading vessel passes with the Compact flag. On deck, Chief Weigher Ama stands with her counting staff, supervising a cotton shipment. Even at sea, her standards travel with her."
+      },
+      {
+        "npc_name": "Old Cassius",
+        "port_id": "palm_cove",
+        "region": "West Africa",
+        "text": "A Palm Cove rum boat passes close enough that you can smell the cargo. Old Cassius himself sits on a barrel, waving a bottle. 'BEST RUM ON THE COAST!' he shouts. Some things don't need a harbor."
+      },
+      {
+        "npc_name": "Yaa Acheampong",
+        "port_id": "iron_point",
+        "region": "West Africa",
+        "text": "An Iron Point ore barge passes, Yaa Acheampong standing on a crate of raw iron, negotiating by signal flag with a ship heading east. She's cutting deals even in transit."
+      },
+      {
+        "npc_name": "Elder Ama Diallo",
+        "port_id": "pearl_shallows",
+        "region": "West Africa",
+        "text": "A canoe of Breath-Holder divers glides past, heading for the outer reef. Elder Ama sits at the stern, eyes closed, breathing slowly. The morning dive is sacred. You pass in silence."
+      },
+      {
+        "npc_name": "Factor Wu Jian",
+        "port_id": "jade_port",
+        "region": "East Indies",
+        "text": "A Jade Port silk-and-porcelain convoy passes \u2014 three junks in formation. Factor Wu stands on the lead ship, silk robes immaculate even at sea. He bows precisely as you pass. Fifteen degrees."
+      },
+      {
+        "npc_name": "Brother Anand",
+        "port_id": "monsoon_reach",
+        "region": "East Indies",
+        "text": "A small boat with a saffron sail drifts past the Wind Temple headland. Brother Anand sits cross-legged on the deck, eyes closed, reading the wind by feel. His forecast will be posted at dawn."
+      },
+      {
+        "npc_name": "Typhoon Mei",
+        "port_id": "spice_narrows",
+        "region": "East Indies",
+        "text": "A ship erupts from behind an island at impossible speed. Typhoon Mei stands on the bowsprit, laughing into the wind. She sees you, waves wildly, and vanishes around the next headland. Chaos in human form."
+      },
+      {
+        "npc_name": "Master Ink",
+        "port_id": "silk_haven",
+        "region": "East Indies",
+        "text": "A sampan drifts past Silk Haven's harbor. Master Ink sits cross-legged, painting the sea. He doesn't look up. A perfect brushstroke captures a wave that no longer exists. The painting will outlast the ocean."
+      },
+      {
+        "npc_name": "Apprentice Lin Yue",
+        "port_id": "jade_port",
+        "region": "East Indies",
+        "text": "A small kiln-boat from Jade Port passes \u2014 Apprentice Lin testing a new glaze in sea air. She holds a tile up to the light, frowns, adjusts something, holds it up again. Obsession at twenty-two."
+      },
+      {
+        "npc_name": "Storm Chief Rangi",
+        "port_id": "typhoon_anchorage",
+        "region": "South Seas",
+        "text": "An outrigger war canoe slices through the swell \u2014 Storm Chief Rangi at the helm, reading the weather through the spray. Seven typhoons survived. She's watching the horizon for the eighth."
+      },
+      {
+        "npc_name": "Dive Boss Moana",
+        "port_id": "typhoon_anchorage",
+        "region": "South Seas",
+        "text": "A diving boat surfaces nearby \u2014 Moana's crew returning from the deep reef. Moana herself emerges glistening, a pouch of pearls tied to her wrist. She dives where others won't."
+      },
+      {
+        "npc_name": "Reef Pilot Iti",
+        "port_id": "coral_throne",
+        "region": "South Seas",
+        "text": "A pilot canoe approaches from the reef. Iti stands at the bow, reading the coral by water color. Twelve generations of reef knowledge in one pair of eyes."
+      },
+      {
+        "npc_name": "War Chief Tane",
+        "port_id": "coral_throne",
+        "region": "South Seas",
+        "text": "War canoes appear \u2014 painted to match the coral, nearly invisible until they're alongside. War Chief Tane's escort. They watch you pass. The spears stay lowered. Today."
+      },
+      {
+        "npc_name": "Healer Sera",
+        "port_id": "ember_isle",
+        "region": "South Seas",
+        "text": "An Ember Isle medicine boat passes, volcanic-stone hull and eucalyptus smoke trailing behind. Head Herbalist Sera waves from the deck, surrounded by crates of freshly harvested remedies."
+      }
+    ],
+    "weather": [
+      {
+        "region": "Mediterranean",
+        "season": "spring",
+        "departure_text": "Spring morning on the Middle Sea. The harbor water is glass-still at dawn, and the first breeze arrives with the sun \u2014 gentle, warm, carrying the scent of wildflowers from the coastal hills. Perfect sailing weather.",
+        "mid_voyage_texts": [
+          "The Mediterranean in spring is kind. Gentle swells, clear horizons, and a breeze that fills the sails without testing the rigging. The sea remembers how to be generous.",
+          "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore.",
+          "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+          "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud."
+        ],
+        "arrival_text": "The port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.",
+        "night_text": "Stars so close they feel like lanterns. The sea reflects them, doubling the light. Mediterranean spring nights are warm enough to sleep on deck, and half the crew does \u2014 faces upturned, breathing salt air that smells faintly of flowers.",
+        "crew_weather_reaction": "The crew is at ease. Spring in the Mediterranean is the reward for winter's hardship. Voices are relaxed, movements unhurried. This is the season they signed on for."
+      },
+      {
+        "region": "Mediterranean",
+        "season": "summer",
+        "departure_text": "Heat. The harbor shimmers before the sun is fully up. Tar softens on the deck. The sails hang limp until the afternoon breeze \u2014 and even then, it barely fills them. Summer in the Mediterranean is beautiful and motionless.",
+        "mid_voyage_texts": [
+          "Becalmed. The sails droop. The sea is a mirror that reflects the sky back at itself. The crew strips to the waist and waits. In the Mediterranean summer, patience is the only wind.",
+          "The afternoon breeze arrives like a gift \u2014 sudden, warm, and gone too soon. Your ship moves in bursts between long stretches of glassy calm. Every mile is earned.",
+          "Heat haze on the horizon makes the coast dance. Distances are deceiving \u2014 that port that looks an hour away might be three. The summer Mediterranean plays tricks with light.",
+          "The water is so warm your crew swims alongside the ship during calms. Someone dives to check the hull and comes up grinning. 'Clean as a whistle,' he says, dripping gold in the sunlight."
+        ],
+        "arrival_text": "The port materializes through the heat shimmer \u2014 wavering, dreamlike, slowly solidifying as you approach. Summer arrivals feel like waking from a nap \u2014 slow, warm, slightly disoriented.",
+        "night_text": "The heat doesn't release at sundown \u2014 it radiates from the deck, the sails, the water itself. The crew sleeps in shifts because the watches are short and nobody wants to be below deck. Fireflies on the coast look like fallen stars.",
+        "crew_weather_reaction": "Sluggish but content. Nobody works fast in Mediterranean summer. The crew has adapted: slow mornings, brief intense work when the breeze arrives, long evenings. It's not laziness \u2014 it's survival."
+      },
+      {
+        "region": "Mediterranean",
+        "season": "autumn",
+        "departure_text": "The light changes in autumn \u2014 gold where it was white, long shadows by mid-afternoon. The breeze has an edge it didn't have last month. The harbor is busy with harvest traffic, every ship racing to fill holds before the season turns.",
+        "mid_voyage_texts": [
+          "Autumn swells \u2014 longer, deeper than summer's calm. The ship finds a rhythm, rising and falling with a cadence that the old hands find comforting and the new ones find unsettling.",
+          "Clouds build on the western horizon. Not threatening \u2014 not yet \u2014 but the crew watches them the way you watch a dog you don't know. Autumn storms announce themselves before they arrive.",
+          "The smell of grain on the wind. Somewhere on the coast, the harvest is in. Grain barges cross your path, riding low and heavy. The Mediterranean is feeding itself for winter.",
+          "Rain \u2014 brief, warm, autumnal. It passes in twenty minutes and leaves the air clean. The crew catches rainwater in barrels. 'Free provisions,' the bosun says, and everyone agrees."
+        ],
+        "arrival_text": "The port is alive with harvest energy \u2014 grain stacking on the docks, merchants shouting prices, the annual rush to store, sell, and ship before winter closes the best routes. Autumn arrivals feel urgent, purposeful.",
+        "night_text": "Cool enough for a coat now. The stars are sharper than summer's haze allowed. Your navigator takes cleaner readings, works faster. Autumn nights are for navigation. The sky cooperates.",
+        "crew_weather_reaction": "Energized. Autumn is harvest \u2014 for the coast and for the crew. The margins are best now, the cargo abundant, and the season's end adds urgency. Everyone works faster."
+      },
+      {
+        "region": "Mediterranean",
+        "season": "winter",
+        "departure_text": "Grey. The harbor is grey, the sky is grey, the water is grey. The Mediterranean's winter palette is monochrome and honest \u2014 no pretending the world is kind. The crew wraps up and says little. Departure in winter is an act of will.",
+        "mid_voyage_texts": [
+          "Rain that doesn't stop. Not a storm \u2014 just persistent, cold, coastal rain that seeps through every seam and soaks every surface. The Mediterranean in winter is not dangerous. It's miserable.",
+          "The coast disappears in fog. Your navigator works from dead reckoning and doesn't like it. The Mediterranean is supposed to be visible \u2014 coast in sight, landmarks familiar. Winter takes that away.",
+          "Cold wind from the north \u2014 the tramontana. It cuts through wool, through timber, through the belief that the Mediterranean is a warm sea. In winter, it's not. It's a cold sea that remembers being warm.",
+          "A winter swell catches the ship beam-on. Not dangerous \u2014 just uncomfortable. Everything shifts, slides, rattles. The cook's pots clang. Someone's hammock dumps them on the deck. Winter at sea is unglamorous."
+        ],
+        "arrival_text": "The port appears through drizzle \u2014 wet stone, shuttered market stalls, smoke from chimneys. Winter arrivals in the Mediterranean are quiet, functional, and appreciated more for the docking than the destination.",
+        "night_text": "Long nights. The crew retreats below deck, huddled around the galley fire. Stories get longer in winter \u2014 there's nothing else to do. The watch is cold, the stars are hidden, and the sea sounds different when you can't see it.",
+        "crew_weather_reaction": "Stoic. Nobody complains because complaining doesn't change winter. The crew does the work, eats the stew, and waits for spring. Mediterranean winter is character-building, which is another word for unpleasant."
+      },
+      {
+        "region": "North Atlantic",
+        "season": "spring",
+        "departure_text": "Ice breaks in the harbor with sounds like gunshots. The first ships of spring push out through grey water and grey sky, testing whether winter has truly released its grip. The air smells of thaw \u2014 iron, mud, and the first faint promise of warmth.",
+        "mid_voyage_texts": [
+          "The Atlantic in spring is uncertain \u2014 moments of clarity broken by squalls that arrive from nowhere and vanish just as fast. Your ship is a cork between moods.",
+          "An iceberg \u2014 small, already half-melted \u2014 drifts past on the current. Beautiful and wrong, like a wedding dress in a gutter. The crew watches it pass. Spring in the north still has winter's teeth.",
+          "A berg the size of a chapel drifts silently to starboard. Beneath the waterline, its shadow stretches impossibly far. The helmsman gives it a wide berth without being told.",
+          "Ice fragments crackle against the hull like broken glass. The water here is colder than it should be \u2014 somewhere north, a glacier is calving its children into the current.",
+          "Fog banks drift like walls. Your lookout strains forward. In the North Atlantic, what you can't see is what kills you.",
+          "The first real warmth of the year arrives in a patch of sunlight that hits the deck at noon. The crew stands in it like cats. Twenty minutes later, it's gone. They remember it for hours.",
+          "A whale surfaces to port, blows once, and dives. The crew marks it as good luck. The bosun marks it as a navigational hazard. Both are right.",
+          "The wind carries the smell of land \u2014 peat smoke and pine \u2014 though the charts say the coast is still two days east. The crew trusts their noses more than your charts."
+        ],
+        "arrival_text": "The northern port emerges from persistent haze \u2014 stone walls, smoke, the sound of industry resuming after winter's pause. Spring arrivals feel like relief \u2014 you made it through another season.",
+        "night_text": "Northern spring nights: cold but not killing. Stars appear in the gaps between racing clouds. The aurora occasionally shimmers on the horizon \u2014 green fire in a dark sky. The crew watches in silence. Some things are too large for words.",
+        "crew_weather_reaction": "Cautious optimism. The worst is over. Probably. The crew is thawing along with the sea \u2014 muscles loosening, voices warming, the first jokes since autumn."
+      },
+      {
+        "region": "North Atlantic",
+        "season": "summer",
+        "departure_text": "The golden window opens. Clear sky, moderate wind, and the Atlantic transformed \u2014 blue instead of grey, welcoming instead of threatening. The crew can barely believe it. Northern summer is brief and must be seized.",
+        "mid_voyage_texts": [
+          "Long days \u2014 the sun barely sets this far north. The crew works extended watches because the light allows it and the calm demands it. More can be done in a northern summer day than two Mediterranean ones.",
+          "The sea sparkles. The wind is steady. The ship makes time. After months of fighting the Atlantic, suddenly it's helping. The crew sails with grins. Summer will be over too soon.",
+          "Whales surface alongside \u2014 great grey shapes that blow and roll and vanish. The crew hangs over the rail like children. In summer, even the Atlantic's giants seem friendly.",
+          "A fog bank drifts past \u2014 cool, momentary, and gone. Summer fog in the north is gentle, not the blinding winter kind. It passes like a thought and leaves the air clean."
+        ],
+        "arrival_text": "The port in summer is unrecognizable \u2014 people outside, markets open, the fortress walls looking less like fortification and more like architecture. Northern ports in summer almost look happy.",
+        "night_text": "Twilight that lasts for hours. The sky goes from blue to gold to rose to a deep violet that never quite reaches black. The crew plays cards on deck by the lingering light. Someone says, 'This is why we sail north.' Nobody disagrees.",
+        "crew_weather_reaction": "Joy. Genuine, uncomplicated joy. The northern summer is the crew's reward for surviving everything else. They're louder, more physical, more alive. They know it won't last. They savor it."
+      },
+      {
+        "region": "North Atlantic",
+        "season": "autumn",
+        "departure_text": "The wind shifts. You feel it before you see it \u2014 a cold edge that wasn't there yesterday, a grey line on the horizon that means the Atlantic is remembering what it is. The crew stows extra provisions without being told. Autumn in the north is a warning.",
+        "mid_voyage_texts": [
+          "Autumn gales strip the warmth from the air in hours. The sails strain. The rigging sings a note that experienced sailors recognize as 'get ready.' The Atlantic is warming up for winter.",
+          "Rain and wind in rotation \u2014 a squall, then calm, then another squall. The crew can't find a rhythm because the sea won't give them one. Autumn in the Atlantic is the sea being indecisive about how much it wants to hurt you.",
+          "The light fails earlier each day. By mid-afternoon, the helmsman squints. By evening, the watch starts early. Autumn is a countdown to the dark months.",
+          "A big swell rolls in from the northwest \u2014 the first winter storm passing far to the north, sending its echoes south. The ship rides it like a horse clearing a fence. The crew holds on and says nothing."
+        ],
+        "arrival_text": "The port is battening down. Shutters close, mooring ropes double, and the harbor master's face says everything: winter is coming, and anyone still at sea in six weeks is either brave or foolish.",
+        "night_text": "Cold and dark and close. The stars are sharp but the crew doesn't look up \u2014 they look down, at the deck, checking the lashings, tightening what the day's wind loosened. Autumn nights are for preparation.",
+        "crew_weather_reaction": "Focused. No more summer ease. The crew is calculating: how many more voyages before winter? How much silver is enough to wait it out? Every autumn decision has winter's weight behind it."
+      },
+      {
+        "region": "North Atlantic",
+        "season": "winter",
+        "departure_text": "You should not be here. The harbor master said so. The crew's faces said so. The ice on the rigging says so. Winter in the North Atlantic is not a season \u2014 it's a dare. You're sailing anyway, because the medicine prices at Stormwall are worth the risk. Probably.",
+        "mid_voyage_texts": [
+          "Walls of grey water. That's the Atlantic winter. Not waves \u2014 walls. They build, and build, and when they break, the sound is a cannon shot that the whole hull feels. Your ship is a splinter on an angry ocean.",
+          "Ice forms on the rigging. The crew goes aloft with hammers \u2014 break it before the weight capsizes you. Their hands bleed. They don't mention it. Winter Atlantic sailing is not for the soft.",
+          "Wind that cuts through oak. The crew can't feel their faces. The helmsman steers by body weight because his hands are too numb to grip the wheel. Navigation is instinct now, not science.",
+          "A moment of calm \u2014 the eye of a passing system. The clouds open. Weak sunlight hits the deck for thirty seconds. The crew stares at it like a vision. Then the wind returns, harder than before.",
+          "The ship groans. Not the casual complaint of rough seas \u2014 a deep, structural protest. Your ship is telling you it was not built for this. You listen. You adjust course. You pray the next port is close."
+        ],
+        "arrival_text": "The port materializes through driving snow. It's the most beautiful thing you've ever seen \u2014 not because it's beautiful, but because it's THERE. Winter arrivals in the North Atlantic are measured in gratitude, not silver.",
+        "night_text": "Darkness from mid-afternoon to mid-morning. The crew works by lantern and by memory. The watch is miserable, cold, and essential \u2014 because in winter, the thing that kills you arrives in the dark. Every sound is examined. Every shadow is questioned.",
+        "crew_weather_reaction": "Grim. Not afraid \u2014 grim. The crew who sails the winter Atlantic has made a choice, and they know the price. They don't joke. They don't complain. They work, they eat, they watch. Survival is the only conversation."
+      },
+      {
+        "region": "West Africa",
+        "season": "spring",
+        "departure_text": "Dry season holds. The harbor bakes under a high white sky, and the offshore breeze carries the scent of red earth from the interior. The sails fill with steady trade winds \u2014 the Gold Coast in spring is the most reliable sailing in the Known World.",
+        "mid_voyage_texts": [
+          "Steady wind, steady sun, steady sea. The Gold Coast in dry season is sailing as it should be \u2014 predictable, warm, and kind. Your ship makes good time without drama.",
+          "The coast is a ribbon of gold sand and green jungle. Fishing boats dot the shallows, their crews waving as you pass. On the Gold Coast, every stranger is a potential friend.",
+          "Heat haze makes the horizon shimmer, but the wind is constant. The crew works in easy rhythm \u2014 they've found the Gold Coast's tempo, and it's gentle."
+        ],
+        "arrival_text": "The port welcomes you with color \u2014 indigo cloth, golden cotton, the red earth that stains everything it touches. Arrivals on the Gold Coast feel like being invited to a celebration you didn't know was happening.",
+        "night_text": "Stars blazing in a clear sky. The Southern Cross visible on the horizon. Drums carry from the coast \u2014 distant, rhythmic, old. The crew listens. The music carries stories they don't understand but somehow feel.",
+        "crew_weather_reaction": "Content. The Gold Coast's spring weather asks nothing of them \u2014 no storms to fight, no cold to endure. The crew relaxes into the warmth and the rhythm. Some of them don't want to leave."
+      },
+      {
+        "region": "West Africa",
+        "season": "summer",
+        "departure_text": "The rains come. Not gently \u2014 the sky opens like a faucet and the harbor turns into a river. Then, twenty minutes later, blazing sun. Then rain again. The Gold Coast's wet season is the sky changing its mind every hour.",
+        "mid_voyage_texts": [
+          "Tropical rain \u2014 warm, heavy, and so dense you can't see the bow from the helm. The crew works blind for ten minutes, then the cloud passes and the sun returns, hotter than before. Everything steams.",
+          "The coast turns green \u2014 impossibly green, every shade at once. The rivers flood, carrying red earth into the sea. The water near shore is brown and warm. The pearl divers are thriving.",
+          "Humidity thick enough to drink. The crew strips to waist and pours seawater over their heads. Nothing dries. Cloth, rope, wood \u2014 everything is damp. The ship smells of wet timber and tropical growth."
+        ],
+        "arrival_text": "The port is a puddle. Red mud everywhere, rivulets running between market stalls, and the Weighers working under canvas shelters. Nobody minds. The rains are life here \u2014 the cotton grows, the rivers flow, the earth gives.",
+        "night_text": "Lightning on the horizon \u2014 constant, silent, illuminating clouds from within like lanterns. The crew watches nature's light show from the deck. Thunder rolls across the water an hour later. The Gold Coast night sky in summer is its own spectacle.",
+        "crew_weather_reaction": "Wet but happy. There's something infectious about the Gold Coast's summer \u2014 the sheer vitality of it. Rain and sun and rain again. The crew can't stay dry but they can't stop smiling."
+      },
+      {
+        "region": "West Africa",
+        "season": "autumn",
+        "departure_text": "The rains ease. The air clears. The second cotton harvest fills the warehouses, and the coast buzzes with the energy of abundance. The sailing is good \u2014 warm, moderate wind, and the visibility that the wet season denied.",
+        "mid_voyage_texts": [
+          "Post-rain clarity. The horizon is sharp, the colors saturated, the air clean. The Gold Coast after the rains is the world freshly washed.",
+          "Market day energy on the water \u2014 canoes loaded with cotton, dyes, provisions, all heading between ports. The coast is trading with itself, and you're invited to join.",
+          "Cool evenings and warm days. The crew discovers that autumn on the Gold Coast is the perfect temperature \u2014 the one all other seasons are trying and failing to reach."
+        ],
+        "arrival_text": "The port is abundant. Cotton stacked high, dye vats full, pearl divers returning with the season's best haul. Autumn arrivals on the Gold Coast feel like arriving at a feast.",
+        "night_text": "Clear skies, warm air, and the smell of harvest fires from the interior. The coast celebrates the second harvest with drums and song that carry to sea. Your crew drifts to sleep listening to music from a place they'll never fully understand but deeply respect.",
+        "crew_weather_reaction": "Grateful. The Gold Coast's autumn is generous, and the crew feels it. They eat well, sleep well, and trade well. Some of them start talking about retirement here. They're only half joking."
+      },
+      {
+        "region": "West Africa",
+        "season": "winter",
+        "departure_text": "The harmattan arrives \u2014 a dry wind from the Saharan interior that carries red dust, reduces visibility, and turns the sky the color of old brass. The harbor is dusty and warm. Your sails fill with wind that tastes like desert.",
+        "mid_voyage_texts": [
+          "Red dust coats everything \u2014 deck, sails, skin. The crew coughs and squints. The harmattan is the Gold Coast's only difficult weather, and it's more annoying than dangerous.",
+          "The sea is calm \u2014 the harmattan suppresses waves. Your ship glides through flat water under a hazy sky. Visibility is poor but the wind is steady. Trade-offs.",
+          "Stars are invisible through the dust haze. Your navigator grumbles and uses dead reckoning. The Gold Coast in winter is the only season where the sky fails you."
+        ],
+        "arrival_text": "The port materializes through dust haze \u2014 a ghostly outline that solidifies as you approach. The dockworkers are wrapped against the dust, voices muffled. Winter on the Gold Coast is quiet, dusty, and productive \u2014 the mines work double shifts in dry weather.",
+        "night_text": "The harmattan wind doesn't stop at night. It whispers through the rigging, carrying fine red dust that infiltrates everything. The crew sleeps with cloth over their faces. The stars, when they occasionally appear through the haze, are the color of copper.",
+        "crew_weather_reaction": "Patient. The harmattan is annoying but not threatening. The crew adapts \u2014 cloth masks, eye protection, more water. It's a sailor's inconvenience, not a sailor's enemy."
+      },
+      {
+        "region": "East Indies",
+        "season": "spring",
+        "departure_text": "The monsoon retreats. You can feel it \u2014 the pressure lifts, the wind shifts, and the archipelago takes its first deep breath in months. Spring in the East Indies is resurrection. The kilns relight. The looms restart. The ports open like flowers.",
+        "mid_voyage_texts": [
+          "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "Incense drifts from a temple on a passing island. In the East Indies, even the air worships. The crew breathes deep and something in them quiets.",
+          "Sampans and junks crowd the channels \u2014 trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
+          "The light in the East Indies is different from anywhere else \u2014 softer, greener, filtered through atmospheric moisture that hasn't quite dried. It makes everything look like a painting of itself."
+        ],
+        "arrival_text": "The port is blooming. Literally \u2014 flowers on the docks, garlands on the warehouses, the scent of jasmine mixing with salt air. Spring arrivals in the East Indies feel like being invited to a celebration of survival.",
+        "night_text": "Warm, humid, alive. The sound of insects and tree frogs from the nearby islands creates a wall of noise that the crew finds either maddening or hypnotic, depending on how long they've been in the East. Fireflies over the water look like fallen stars that decided to come back.",
+        "crew_weather_reaction": "Enchanted. The East Indies in spring seduces every crew that sails it. The beauty, the calm, the sense that the world is more ancient and more alive here than anywhere they've been."
+      },
+      {
+        "region": "East Indies",
+        "season": "summer",
+        "departure_text": "The monsoon. You felt it building for days \u2014 pressure dropping, wind shifting, clouds massing on the horizon like an army. Now it arrives. The harbor master's face says what his words won't: you should not sail today. You sail anyway, because the spice prices demand it.",
+        "mid_voyage_texts": [
+          "Rain so heavy it becomes a physical force \u2014 pushing down on the deck, pressing the crew to their knees, turning the sea into a churning brown soup. The monsoon doesn't rain. It ASSAULTS.",
+          "The wind switches direction in seconds \u2014 from driving force to wall. Your ship heels, staggers, rights itself. The crew scrambles to reef sails that were full moments ago. The monsoon teaches humility in real time.",
+          "Thunder so deep it vibrates in your chest. Lightning illuminates the sea in white snapshots \u2014 each one showing a world of chaos, waves, and spray. Between flashes, darkness so complete you forget you have eyes.",
+          "A break in the monsoon \u2014 sudden, surreal calm. The clouds open for ten minutes. Sunlight hits the sea like a spotlight. The crew stares upward, blinking. Then the clouds close and the storm resumes. The mercy was temporary.",
+          "The ship rides a wave that feels like a building falling. The hull flexes. The mast bends. Everything that isn't lashed down flies. And then the wave passes, and you're still floating. The monsoon decides whether you survive. You don't get a vote."
+        ],
+        "arrival_text": "The port appears between squalls \u2014 there one moment, hidden the next. You dock in driving rain, the crew soaked, the ship groaning, and the harbor master nodding because he expected you wouldn't listen. But you're here. That's what matters.",
+        "night_text": "Monsoon nights are the sea's darkest theatre. Rain, wind, the ship pitching in black water, and the navigational instruments spinning. Your crew trusts the ship, trusts each other, and doesn't trust anything else. Nobody sleeps. Sleep is for seasons that aren't trying to kill you.",
+        "crew_weather_reaction": "Fear and pride, inseparably tangled. The crew who sails the monsoon is terrified and knows it. They sail anyway. That's not bravery \u2014 it's something deeper. It's the decision to be present for the worst the world can offer and keep working."
+      },
+      {
+        "region": "East Indies",
+        "season": "autumn",
+        "departure_text": "Post-monsoon. The air is clean \u2014 cleaner than it's been in months, washed by weeks of rain. The harbor smells of wet wood and fresh spice. The monsoon left destruction and renewal in equal measure. Autumn in the East Indies is harvest time.",
+        "mid_voyage_texts": [
+          "The spice harvest is in. You can smell it from the sea \u2014 clove, cinnamon, cardamom, carried by the post-monsoon breeze. The East Indies announces its wealth through your nose before your eyes confirm it.",
+          "The sea is littered with debris from the monsoon \u2014 driftwood, broken boats, vegetation from flooded coasts. The crew picks through it for salvage. One man's storm is another man's flotsam.",
+          "Post-monsoon swells \u2014 long, slow, rolling waves that carry the memory of the storm. Your ship rides them like breathing. In and out. In and out. The monsoon's ghost."
+        ],
+        "arrival_text": "The port is frantic with harvest energy \u2014 spice being graded, weighed, packaged, shipped. Every captain in the East Indies is here for the same reason: post-monsoon spice at peak freshness. The competition is fierce. The margins are worth it.",
+        "night_text": "Clear skies after the monsoon. The stars feel closer than they have in months \u2014 the atmosphere scrubbed clean by weeks of rain. Your navigator takes the most accurate readings of the year. The East Indies under autumn stars is navigational paradise.",
+        "crew_weather_reaction": "Energized. The monsoon is over, the sailing is excellent, and the holds are filling with the most profitable cargo of the year. The crew works with the intensity of a team that survived something and now wants the reward."
+      },
+      {
+        "region": "East Indies",
+        "season": "winter",
+        "departure_text": "Dry season. The kilns burn bright, the looms run at full speed, and the East Indies settles into the quiet productivity that follows the monsoon's chaos. The harbor is orderly. The wind is gentle. Winter in the East Indies is not winter \u2014 it's the world exhaling.",
+        "mid_voyage_texts": [
+          "Cool air from the mountains \u2014 the only time the East Indies feels anything less than tropical. The crew discovers that 'cool' in the East Indies is still warmer than summer in the North Atlantic. Perspective.",
+          "Clear skies, gentle wind, jade-green water. The East Indies in dry season is the most pleasant sailing in the world. The crew debates this opinion loudly and at length. Nobody has a counterargument.",
+          "The silk convoys are at peak volume \u2014 three, four at a time crossing the channels, their painted sails turning the sea into a parade. Winter in the East Indies is commerce as art."
+        ],
+        "arrival_text": "The port is at its most beautiful \u2014 clean, productive, the markets stocked, the craftsmen at work. Winter arrivals feel privileged \u2014 you're seeing the East Indies at its best, doing what it does better than anywhere else in the world.",
+        "night_text": "Cool, clear, still. The East Indies winter night is so quiet you can hear the looms working in Silk Haven from the water. The sound carries \u2014 click-clack-click-clack \u2014 a rhythm as old as the islands themselves. The crew sleeps well. The sea is gentle. The night belongs to the craftsmen.",
+        "crew_weather_reaction": "Peaceful. The East Indies in winter is the least dramatic sailing any of them have experienced. After the monsoon, it feels unreal \u2014 as if the sea is apologizing. The crew accepts the apology. They'll forgive, but they won't forget."
+      },
+      {
+        "region": "South Seas",
+        "season": "spring",
+        "departure_text": "Warm water, clear sky, and the reef glowing beneath the surface. Spring in the South Seas is an invitation \u2014 the diving season begins, the lagoons calm, and the islands reveal themselves as the most beautiful places on earth. Your crew falls silent at the beauty. Then somebody whistles.",
+        "mid_voyage_texts": [
+          "Turquoise water so clear you can see the reef twenty feet below. Fish in colors that shouldn't exist \u2014 electric blue, neon yellow, impossible pink. The South Seas is nature's art gallery, and the entry fee is getting here alive.",
+          "Flying fish skip across the bow in silver arcs. The crew counts them \u2014 an old sailor's game. More than twenty means good luck. More than fifty means the reef is thriving. Today there are seventy.",
+          "A sea turtle surfaces beside the ship, ancient and unhurried. It looks at you with an eye that has seen more of the ocean than any captain. Then it submerges, returning to a world you can visit but never inhabit."
+        ],
+        "arrival_text": "The island appears like a dream \u2014 palm trees, white sand, volcanic peaks wreathed in cloud. The harbor is a lagoon so perfectly sheltered it feels like sailing into a room. The water changes from blue to turquoise to glass. You've arrived at the edge of the world.",
+        "night_text": "The Milky Way. You've seen it before, but not like this \u2014 not from the South Seas, where there are no cities, no foundries, no lanterns to compete. The sky is milk and fire and the crew lies on deck staring upward, humbled by the sheer scale of what's above them.",
+        "crew_weather_reaction": "Awe. The South Seas in spring is the most beautiful thing most of them have ever seen. Even the veterans \u2014 even the ones who've sailed every water on the charts \u2014 go quiet. Some things earn silence."
+      },
+      {
+        "region": "South Seas",
+        "season": "summer",
+        "departure_text": "The sky darkens without warning. One moment, paradise. The next, a wall of black cloud on the horizon, moving faster than anything that size should move. Typhoon season in the South Seas. The harbor chains are out. The Storm Wall waits.",
+        "mid_voyage_texts": [
+          "A typhoon \u2014 not nearby, but close enough that its outer bands rake your ship with rain and wind that change direction every twenty minutes. The crew is exhausted from adjusting sails that won't stay adjusted.",
+          "The pressure drops so fast your ears pop. The sea rises. The sky descends. Between them, your ship \u2014 a splinter of wood and canvas in a space that's closing like a fist.",
+          "Rain so heavy it stings the skin. Horizontal rain that the crew leans into like walking uphill. The ship is a submarine \u2014 water everywhere, above, below, in every hold and hatch. Dry is a memory.",
+          "Calm. Sudden, terrifying calm. The eye. The crew looks up at a circle of blue sky surrounded by a wall of black cloud. Beautiful and wrong. 'Work fast,' the bosun says. 'The other side is coming.' It does."
+        ],
+        "arrival_text": "The harbor is damaged. Roofs missing, boats beached, the Storm Wall rearranged by the typhoon's hand. But the port is alive \u2014 rebuilding already, because in the South Seas, typhoons are not disasters. They're seasons. You survive them and you rebuild.",
+        "night_text": "Typhoon nights are absolute darkness punctuated by lightning that reveals, for one instant, the full horror and beauty of what the storm has done to the sea. Mountains of water. Valleys between them. Your ship, somehow, on top. Lightning fades. Darkness returns. You wait for the next flash.",
+        "crew_weather_reaction": "Primal. The typhoon strips everything to essentials \u2014 hold on, work hard, trust the ship. The crew doesn't think about silver, cargo, or ports. They think about the next wave. Then the one after that. Then the one after that."
+      },
+      {
+        "region": "South Seas",
+        "season": "autumn",
+        "departure_text": "The typhoons pass. The sea calms. The reef reveals its post-storm treasures \u2014 new formations, shifted channels, and the pearls that the violent water shook loose from the deep beds. Autumn in the South Seas is nature's apology after summer's violence.",
+        "mid_voyage_texts": [
+          "Post-typhoon clarity. The air is washed clean, the water crystal, and the reef below seems closer than before \u2014 as if the storm lowered the sea level just for you. The divers are already working.",
+          "Warm rain and warm sun in alternation. The South Seas' autumn is tropical \u2014 not the cold decline of northern autumns but a gentle softening. The light turns gold. The reef glows amber.",
+          "Volcanic smoke drifts from Ember Isle \u2014 visible from leagues away, a thin grey line on the horizon. The mountain is always talking. In autumn, after the storms, people listen more carefully."
+        ],
+        "arrival_text": "The island port is rebuilding and harvesting simultaneously \u2014 storm damage repaired with one hand, pearl and medicine hauls processed with the other. The South Seas doesn't pause between seasons. It overlaps them.",
+        "night_text": "Clear skies, warm air, and the bioluminescent glow of the reef visible from the surface. The water itself shines \u2014 blue-green light pulsing with the current. The crew leans over the rail, watching the sea breathe light. Nobody speaks. Nobody needs to.",
+        "crew_weather_reaction": "Renewed. After the typhoon, autumn feels like being born again. The crew moves differently \u2014 looser, more grateful, more aware that they're alive and the sea permitted it. Pearl diving season adds excitement. The hold will fill with treasures the storm revealed."
+      },
+      {
+        "region": "South Seas",
+        "season": "winter",
+        "departure_text": "The gentlest season. The harbor is calm, the wind soft, the sky that particular shade of blue that the South Seas does better than anywhere else. Winter here isn't cold \u2014 it's the sea taking a breath between typhoons. The Coral King holds court. Tribute flows. The world is at peace.",
+        "mid_voyage_texts": [
+          "Still lagoons and soft winds. The South Seas in winter is the ocean's version of sleep \u2014 not unconscious but resting, dreaming, preparing for the next season's violence.",
+          "The reef is at its most beautiful in winter \u2014 every color visible through still water, no storms to cloud it, no currents to disturb it. Your crew can't stop staring down. The world beneath the hull is more beautiful than the one above it.",
+          "Ceremonial drums carry from Coral Throne \u2014 the Coral King's winter court is in session. The rhythm reaches you from leagues away, steady and ancient. The sea itself seems to pulse in time."
+        ],
+        "arrival_text": "The lagoon is glass. The Coral Palace glitters in the low winter sun. War canoes escort you in with a rhythm that matches the drums from shore. Winter arrivals at the South Seas feel like arriving at the end of the world \u2014 and discovering it's beautiful.",
+        "night_text": "Stars reflected in still water so perfectly that you can't tell up from down. The reef glows faintly beneath the surface. The crew lies on deck, suspended between two skies. Somewhere, the Drum Keeper plays the midnight rhythm. The sound carries over still water for miles. The crew doesn't understand it. They feel it.",
+        "crew_weather_reaction": "At peace. For many of the crew, this is the first genuine peace they've felt since they left home \u2014 wherever home was. The South Seas in winter isn't exciting. It's something better. It's the world telling you it's okay to rest."
+      }
+    ],
+    "superstitions": [
+      {
+        "id": "first_east_indies",
+        "trigger": "first_region_East Indies",
+        "text": "The old hands gather the new crew at the bow. 'The East Indies,' the bosun says. 'Everything here is older than us. Older than our ships. Older than our countries. Show respect and the waters will let you pass.'",
+        "crew_reaction": "The crew moves more quietly. Voices lower. Something has shifted."
+      },
+      {
+        "id": "first_south_seas",
+        "trigger": "first_region_South Seas",
+        "text": "The lookout calls 'Reef!' and the crew rushes to the rail. Below the hull, the coral glows in colors nobody has words for. Your navigator whispers: 'The charts are wrong here. The reef moves. Trust your eyes, not the paper.'",
+        "crew_reaction": "Wonder. Genuine, wide-eyed wonder. Even the veterans stare."
+      },
+      {
+        "id": "first_north_atlantic",
+        "trigger": "first_region_North Atlantic",
+        "text": "The temperature drops. The Mediterranean warmth fades like a memory. An old sailor wraps himself in a wool coat and says: 'The Atlantic doesn't warn you. It just hits. Keep your head down and your hull tight.'",
+        "crew_reaction": "The crew gets serious. Joking stops. Preparation begins."
+      },
+      {
+        "id": "first_west_africa",
+        "trigger": "first_region_West Africa",
+        "text": "Warm rain \u2014 the first the crew has felt. It tastes of earth and growing things. A sailor who's been here before says: 'The Gold Coast gives freely. But it remembers what you give back. Trade honestly here.'",
+        "crew_reaction": "Relaxation. Shoulders drop. Someone laughs. The coast has a way."
+      },
+      {
+        "id": "first_storm_survived",
+        "trigger": "survived_storm",
+        "text": "After the storm passes, the crew is silent for a long time. Then someone starts bailing, and everyone follows. The bosun says: 'She held. The ship held.' It sounds like a prayer.",
+        "crew_reaction": "Bond. The crew who survives a storm together is a different crew afterward."
+      },
+      {
+        "id": "first_pirate_encounter",
+        "trigger": "survived_pirates",
+        "text": "The pirate ship fades behind you. Hands are shaking. Someone laughs \u2014 the high, thin laugh of relief. 'That was close,' the helmsman says. Nobody disagrees.",
+        "crew_reaction": "Alertness. Every sail on the horizon gets a long look from now on."
+      },
+      {
+        "id": "passing_wreck",
+        "trigger": "wreck_sighted",
+        "text": "A wrecked hull drifts past \u2014 no mast, no crew, barnacles thick on the waterline. The crew watches in silence. Someone removes their hat. 'Could've been us,' the bosun says. Nobody argues.",
+        "crew_reaction": "Mortality. The sea reminds you what happens when luck runs out."
+      },
+      {
+        "id": "becalmed_first",
+        "trigger": "first_calm",
+        "text": "No wind. The sails hang like wet laundry. The sea is a mirror. Time stops. After two hours, the crew starts making up games. After six, they start telling truths they'd never say on land.",
+        "crew_reaction": "Honesty. There's nothing to do but wait and talk. The truths come out."
+      },
+      {
+        "id": "sacred_cargo",
+        "trigger": "carrying_sacred_good",
+        "text": "The old hands treat the cargo differently \u2014 more carefully, more quietly. 'This is what they revere,' the bosun explains. 'Handle it with respect and the port will remember. Handle it badly and so will the sea.'",
+        "crew_reaction": "Reverence. The cargo becomes more than weight. It becomes responsibility."
+      },
+      {
+        "id": "contraband_nerves",
+        "trigger": "carrying_contraband",
+        "text": "Nobody says the word. They call it 'the special cargo' or 'the extra provisions' or just nod toward the hold. The crew avoids the inspector's eye even when there isn't one. Contraband changes how people breathe.",
+        "crew_reaction": "Tension. Jokes become quieter. Laughter becomes shorter. Everyone watches the horizon."
+      },
+      {
+        "id": "hundredth_day",
+        "trigger": "day_100",
+        "text": "Day one hundred. The navigator marks it in the log with a small ceremony \u2014 a tradition older than anyone aboard can explain. A cup of the best drink is poured into the sea. 'For the water that carried us,' the navigator says.",
+        "crew_reaction": "Pride. A hundred days of voyaging. Not everyone can say that."
+      },
+      {
+        "id": "fifth_region",
+        "trigger": "visited_all_regions",
+        "text": "The crew realizes, quietly, that they've sailed every water the charts show. Mediterranean, Atlantic, Gold Coast, East Indies, South Seas. The Known World, all of it, beneath their keel. A sailor says: 'What's left?' Nobody answers. Nobody needs to.",
+        "crew_reaction": "Completion. And the strange emptiness that follows. What do you seek when you've seen everything?"
+      }
+    ],
+    "crew_moods": [
+      {
+        "id": "prosperous",
+        "condition": "silver > 2000",
+        "flavor_texts": [
+          "The crew walks taller. When the hold is full and the silver heavy, even the sea looks friendly.",
+          "Someone's whistling at the helm. The cook made extra tonight. Prosperity makes generous sailors.",
+          "The crew discusses what they'll spend their shares on. Houses, farms, a boat of their own. Silver breeds dreams."
+        ]
+      },
+      {
+        "id": "struggling",
+        "condition": "silver < 100",
+        "flavor_texts": [
+          "The crew eats quietly. Nobody complains \u2014 but nobody laughs either. Thin times make thin smiles.",
+          "Whispered conversations below deck. 'How long can we keep sailing?' your bosun hears. He doesn't repeat it.",
+          "The cook stretches the provisions. Watered rum, thinner stew. The crew notices but says nothing. Loyalty has limits."
+        ]
+      },
+      {
+        "id": "first_voyage",
+        "condition": "day < 10",
+        "flavor_texts": [
+          "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "Your navigator explains the stars to a young sailor. The old hands pretend not to listen. They listen anyway.",
+          "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility."
+        ]
+      },
+      {
+        "id": "veteran",
+        "condition": "day > 200",
+        "flavor_texts": [
+          "The crew moves like a machine \u2014 sails adjusted before you call for it, rigging checked without orders. Two hundred days builds instinct.",
+          "Your bosun can read your expression from the helm. You don't need to give orders anymore. A glance at the sails is enough.",
+          "The crew has its own language now \u2014 gestures, looks, half-sentences that carry complete meanings. They're not a crew. They're a crew."
+        ]
+      },
+      {
+        "id": "after_big_trade",
+        "condition": "recent_profit > 500",
+        "flavor_texts": [
+          "The hold is lighter and the silver heavier. The crew celebrates with an extra ration. Your bosun says: 'That's a trade they'll talk about at port.'",
+          "Word travels fast on a ship. Everyone knows the margin you made. Respect comes in the form of sharper salutes and louder songs."
+        ]
+      },
+      {
+        "id": "after_loss",
+        "condition": "recent_loss",
+        "flavor_texts": [
+          "Silence on deck. The cargo is gone \u2014 seized, sunk, or sold at a loss. The crew doesn't blame you. Not out loud. The sea takes what it takes.",
+          "Your bosun finds you at the helm after dark. 'It happens to every captain,' he says. 'The ones who quit are the ones who deserved to.' Then he leaves."
+        ]
+      },
+      {
+        "id": "new_ship",
+        "condition": "just_upgraded",
+        "flavor_texts": [
+          "The crew explores the new ship like children in a new house \u2014 opening every hatch, testing every line, arguing about which berth is best.",
+          "The new ship creaks differently. The old hands listen, learning her voice. Every ship has one. This one hasn't told them yet."
+        ]
+      },
+      {
+        "id": "carrying_contraband",
+        "condition": "has_contraband",
+        "flavor_texts": [
+          "Nobody talks about it. The hold is rearranged so the 'special cargo' is behind the legitimate goods. The crew avoids eye contact when inspectors are mentioned.",
+          "Your lookout watches the horizon with unusual intensity. Every sail could be a patrol. Every sail probably isn't. But every sail gets watched.",
+          "A nervous joke from the galley: 'What's the difference between a merchant and a smuggler? The smuggler knows when to shut up.' Nobody laughs. Then everyone laughs."
+        ]
+      },
+      {
+        "id": "in_storm",
+        "condition": "during_storm",
+        "flavor_texts": [
+          "Rain. Wind. The deck tilts at angles that make standing an act of faith. The crew works in silence because the storm takes every word.",
+          "The ship groans. The crew listens. You learn to read a hull's voice \u2014 complaint vs. warning vs. surrender. This groan is complaint. You hope.",
+          "Someone prays. Someone else checks the bilge pump. Both are acts of faith."
+        ]
+      },
+      {
+        "id": "calm_seas",
+        "condition": "extended_calm",
+        "flavor_texts": [
+          "The sea is glass. The sky is empty. The wind is a memory. Your crew invents entertainment: card games, fishing, arguments about whose home port has better food.",
+          "Day three of calm. The cook runs a fishing line. The catch is better than anything in the provisions. 'I should do this for a living,' he says. Nobody points out that he does.",
+          "Becalmed. The old hands say it's the sea's way of making you think. What you think about depends on what you carry \u2014 in the hold and in the heart."
+        ]
+      }
+    ]
+  },
+  "port_politics": {
+    "blocs": [
+      {
+        "id": "exchange_alliance",
+        "name": "The Exchange Alliance",
+        "port_ids": [
+          "porto_novo",
+          "al_manar",
+          "silva_bay"
+        ],
+        "description": "The Mediterranean old guard. Three ports bound by centuries of contract law, shared weights and measures, and a mutual commitment to fair dealing. They despise smugglers and distrust the East.",
+        "trade_philosophy": "Contracts are sacred. Prices are posted. Cheats are remembered.",
+        "preferred_partners": [
+          "iron_pact"
+        ],
+        "rivals": [
+          "silk_circle"
+        ],
+        "hostile_to": [
+          "shadow_ports"
+        ],
+        "loyalty_bonus": 0.08,
+        "disloyalty_penalty": 0.1
+      },
+      {
+        "id": "iron_pact",
+        "name": "The Iron Pact",
+        "port_ids": [
+          "ironhaven",
+          "stormwall"
+        ],
+        "description": "Military-industrial alliance. Ironhaven's foundries supply Stormwall's garrison. They control the North Atlantic's weapons trade and view anyone selling weapons to pirates as a traitor.",
+        "trade_philosophy": "Strength through industry. Trade serves the fortress.",
+        "preferred_partners": [
+          "exchange_alliance"
+        ],
+        "rivals": [
+          "gold_coast"
+        ],
+        "hostile_to": [
+          "shadow_ports"
+        ],
+        "loyalty_bonus": 0.06,
+        "disloyalty_penalty": 0.12
+      },
+      {
+        "id": "gold_coast",
+        "name": "The Gold Coast Compact",
+        "port_ids": [
+          "sun_harbor",
+          "palm_cove",
+          "iron_point",
+          "pearl_shallows"
+        ],
+        "description": "West Africa's communal trading network. Four ports bound by kinship, shared harvests, and the principle that trade is relationship, not transaction. They distrust industrial powers and welcome all who trade honestly.",
+        "trade_philosophy": "Generosity first, then business. The coast remembers.",
+        "preferred_partners": [
+          "free_ports",
+          "coral_crown"
+        ],
+        "rivals": [
+          "iron_pact"
+        ],
+        "hostile_to": [],
+        "loyalty_bonus": 0.06,
+        "disloyalty_penalty": 0.05
+      },
+      {
+        "id": "silk_circle",
+        "name": "The Silk Circle",
+        "port_ids": [
+          "jade_port",
+          "silk_haven",
+          "dragons_gate"
+        ],
+        "description": "The Eastern dynasties. Ancient, hierarchical, and fiercely protective of their luxury goods. They control porcelain, silk, and the finest tea. They view Western merchants as barbarians \u2014 useful barbarians, but barbarians.",
+        "trade_philosophy": "Quality over quantity. Hierarchy governs all.",
+        "preferred_partners": [
+          "coral_crown"
+        ],
+        "rivals": [
+          "exchange_alliance"
+        ],
+        "hostile_to": [
+          "iron_pact"
+        ],
+        "loyalty_bonus": 0.1,
+        "disloyalty_penalty": 0.08
+      },
+      {
+        "id": "free_ports",
+        "name": "The Free Ports",
+        "port_ids": [
+          "crosswind_isle",
+          "monsoon_reach",
+          "thornport"
+        ],
+        "description": "The neutrals. Three ports that refuse to join any bloc, trade with everyone, and profit from every conflict. They anger the blocs by refusing to take sides \u2014 but everyone needs a neutral ground.",
+        "trade_philosophy": "All flags fly here. No nation claims us.",
+        "preferred_partners": [
+          "gold_coast"
+        ],
+        "rivals": [],
+        "hostile_to": [],
+        "loyalty_bonus": 0.03,
+        "disloyalty_penalty": 0.0
+      },
+      {
+        "id": "shadow_ports",
+        "name": "The Shadow Ports",
+        "port_ids": [
+          "corsairs_rest",
+          "spice_narrows"
+        ],
+        "description": "The black market. Two ports outside all legitimate trade agreements. They answer to pirate factions, not merchant guilds. The legitimate blocs despise them; the smart captains use them.",
+        "trade_philosophy": "No names, no questions, no manifests.",
+        "preferred_partners": [],
+        "rivals": [],
+        "hostile_to": [
+          "exchange_alliance",
+          "iron_pact"
+        ],
+        "loyalty_bonus": 0.12,
+        "disloyalty_penalty": 0.0
+      },
+      {
+        "id": "coral_crown",
+        "name": "The Coral Crown",
+        "port_ids": [
+          "ember_isle",
+          "typhoon_anchorage",
+          "coral_throne"
+        ],
+        "description": "The South Seas kingdom. Three island ports under the Coral King's authority. Trade here is tribute \u2014 you give what the king demands and receive what he allows. Disrespect means exile.",
+        "trade_philosophy": "Tribute earns trade. The reef remembers.",
+        "preferred_partners": [
+          "gold_coast",
+          "silk_circle"
+        ],
+        "rivals": [],
+        "hostile_to": [],
+        "loyalty_bonus": 0.08,
+        "disloyalty_penalty": 0.06
+      }
+    ],
+    "ports": [
+      {
+        "port_id": "porto_novo",
+        "bloc_id": "exchange_alliance",
+        "local_rival_port": "al_manar",
+        "rivalry_reason": "Both claim to be the Mediterranean's premier trading port. The grain exchange vs. the spice bazaar \u2014 centuries of competition.",
+        "trade_embargo": [],
+        "political_flavor": "Porto Novo is the Alliance's heart. The Exchange Guild sets policy here.",
+        "port_grudge": "Al-Manar once tried to impose a spice tariff on Porto Novo grain ships. Porto Novo responded by raising port fees for Al-Manar flagged vessels. The tariff lasted three days."
+      },
+      {
+        "port_id": "al_manar",
+        "bloc_id": "exchange_alliance",
+        "local_rival_port": "porto_novo",
+        "rivalry_reason": "The Spice Merchants' Circle wants Al-Manar to lead the Alliance, not Porto Novo. The rivalry is genteel but real.",
+        "trade_embargo": [],
+        "political_flavor": "Al-Manar is the Alliance's soul \u2014 older, prouder, and convinced it should be in charge.",
+        "port_grudge": "Porto Novo got the Alliance headquarters. Al-Manar got the better harbor. Neither has forgiven the other."
+      },
+      {
+        "port_id": "silva_bay",
+        "bloc_id": "exchange_alliance",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Silva Bay stays out of politics and builds ships. The Alliance needs them too much to push.",
+        "port_grudge": "The Shipwrights' Brotherhood refused to build warships for the Iron Pact. Stormwall hasn't forgotten."
+      },
+      {
+        "port_id": "ironhaven",
+        "bloc_id": "iron_pact",
+        "local_rival_port": "iron_point",
+        "rivalry_reason": "Both export iron. Ironhaven's is refined; Iron Point's is raw and cheaper. The foundry masters resent the undercutting.",
+        "trade_embargo": [
+          "weapons"
+        ],
+        "political_flavor": "Ironhaven IS the Pact. The Iron Guild's word is law north of the strait.",
+        "port_grudge": "A shipment of Ironhaven weapons was found at Corsair's Rest. The merchant who sold them was never seen again."
+      },
+      {
+        "port_id": "stormwall",
+        "bloc_id": "iron_pact",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Stormwall enforces the Pact's will. The garrison answers to the Pact, not the crown.",
+        "port_grudge": "The garrison commander's daughter married a trader from Corsair's Rest. He hasn't spoken to her since."
+      },
+      {
+        "port_id": "sun_harbor",
+        "bloc_id": "gold_coast",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Sun Harbor is the Compact's voice. The Weighers speak for all four ports at trade councils.",
+        "port_grudge": "An Iron Pact mining consortium tried to buy Iron Point. The Compact blocked it. Relations have been cool since."
+      },
+      {
+        "port_id": "palm_cove",
+        "bloc_id": "gold_coast",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Palm Cove doesn't do politics. They make rum and share it. That's their entire foreign policy.",
+        "port_grudge": "None. Palm Cove is incapable of holding a grudge. It's a cultural impossibility."
+      },
+      {
+        "port_id": "iron_point",
+        "bloc_id": "gold_coast",
+        "local_rival_port": "ironhaven",
+        "rivalry_reason": "Same ore, different prices. Iron Point sells raw; Ironhaven sells refined at triple the markup. The miners feel cheated by industrial middlemen.",
+        "trade_embargo": [],
+        "political_flavor": "Iron Point's miners vote with the Compact but dream of selling direct to the East.",
+        "port_grudge": "Ironhaven called Iron Point ore 'unrefined swamp metal' at a trade fair. The Red Hand has a long memory."
+      },
+      {
+        "port_id": "pearl_shallows",
+        "bloc_id": "gold_coast",
+        "local_rival_port": "typhoon_anchorage",
+        "rivalry_reason": "Both export pearls. The Breath-Holders consider Typhoon Anchorage divers reckless and their pearls inferior. The feeling is mutual.",
+        "trade_embargo": [],
+        "political_flavor": "Pearl Shallows guards its diving traditions fiercely. They share nothing with outsiders.",
+        "port_grudge": "Typhoon Anchorage divers poached Pearl Shallows' reef three seasons ago. The Breath-Holders haven't spoken to the Storm Riders since."
+      },
+      {
+        "port_id": "jade_port",
+        "bloc_id": "silk_circle",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Jade Port is the Circle's elder. The Kiln Masters have shaped Eastern trade policy for a thousand years.",
+        "port_grudge": "A Western merchant once dropped a porcelain bowl. The Kiln Masters banned his entire family from trade for three generations."
+      },
+      {
+        "port_id": "silk_haven",
+        "bloc_id": "silk_circle",
+        "local_rival_port": "jade_port",
+        "rivalry_reason": "Silk vs. porcelain \u2014 which is the supreme art? The weavers and the potters have argued for centuries. Both are convinced they're right.",
+        "trade_embargo": [],
+        "political_flavor": "Silk Haven believes art matters more than politics. They're wrong, but their silk is too good to argue with.",
+        "port_grudge": "Jade Port once called silk 'decorated thread.' The Silk Weavers' Guild responded by weaving a tapestry depicting the Kiln Masters' ancestors as monkeys. It hangs in the Loom Quarter to this day."
+      },
+      {
+        "port_id": "dragons_gate",
+        "bloc_id": "silk_circle",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [
+          "weapons"
+        ],
+        "political_flavor": "Dragon's Gate enforces the Circle's weapons ban. The Gate Wardens are the Circle's iron fist.",
+        "port_grudge": "The Iron Wolves tried to smuggle weapons through the Gate. Fifteen Wolf sailors are still chained to the seabed."
+      },
+      {
+        "port_id": "crosswind_isle",
+        "bloc_id": "free_ports",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Crosswind Isle is neutral or dead. The Free Port Council enforces exactly one rule: no one rules.",
+        "port_grudge": "Someone tried to claim the isle for an eastern dynasty. Every captain in harbor trained their guns on his ship. He left."
+      },
+      {
+        "port_id": "monsoon_reach",
+        "bloc_id": "free_ports",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Monsoon Reach trades with everyone and judges no one. The Wind Temple monks believe commerce is prayer.",
+        "port_grudge": "The Monsoon Brotherhood predicted a typhoon that saved a Silk Circle fleet. The Circle offered alliance. The monks declined. 'We read the wind, not politics.'"
+      },
+      {
+        "port_id": "thornport",
+        "bloc_id": "free_ports",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Thornport is too practical for politics. They sell tea and tobacco to anyone with silver.",
+        "port_grudge": "Stormwall once tried to tax Thornport's tea trade. Thornport stopped selling tea to soldiers. The tax lasted two weeks."
+      },
+      {
+        "port_id": "corsairs_rest",
+        "bloc_id": "shadow_ports",
+        "local_rival_port": "porto_novo",
+        "rivalry_reason": "Corsair's Rest exists because Porto Novo's laws are too strict. Every smuggler at the Rest is a trader Porto Novo drove away.",
+        "trade_embargo": [],
+        "political_flavor": "Corsair's Rest has no politics. It has silence, silver, and the understanding that names are optional.",
+        "port_grudge": "Porto Novo's harbor master publicly burned a cargo manifest from Corsair's Rest. The Brotherhood of the Cove took his favorite ship. He got it back \u2014 without the cargo."
+      },
+      {
+        "port_id": "spice_narrows",
+        "bloc_id": "shadow_ports",
+        "local_rival_port": "jade_port",
+        "rivalry_reason": "The Spice Lords undercut Jade Port's legitimate spice trade with smuggled goods at lower prices. The Kiln Masters are furious.",
+        "trade_embargo": [],
+        "political_flavor": "Spice Narrows is where the rules end and the real prices begin.",
+        "port_grudge": "A Jade Port customs agent infiltrated the Narrows. The Spice Lords sent him back \u2014 alive, but with every piece of intelligence he'd gathered tattooed on his forehead."
+      },
+      {
+        "port_id": "ember_isle",
+        "bloc_id": "coral_crown",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "Ember Isle serves the Crown but keeps its own counsel. The volcano doesn't care about politics.",
+        "port_grudge": "The Ember Keepers refused to share their medicine recipes with the Iron Pact. 'The mountain teaches us. It didn't teach you.'"
+      },
+      {
+        "port_id": "typhoon_anchorage",
+        "bloc_id": "coral_crown",
+        "local_rival_port": "pearl_shallows",
+        "rivalry_reason": "Pearl rivalries run deep. The Storm Riders dive deeper and in worse conditions. The Breath-Holders say they lack the sacred technique.",
+        "trade_embargo": [],
+        "political_flavor": "Typhoon Anchorage obeys the Coral King but takes pride in surviving what kills everyone else.",
+        "port_grudge": "Pearl Shallows accused Typhoon Anchorage of reef poaching. The Storm Riders responded by diving the deepest reef in the South Seas and bringing up a pearl the size of a fist. Case closed."
+      },
+      {
+        "port_id": "coral_throne",
+        "bloc_id": "coral_crown",
+        "local_rival_port": null,
+        "rivalry_reason": "",
+        "trade_embargo": [],
+        "political_flavor": "The Coral Throne IS the Crown. The king's word shapes trade from Ember Isle to Typhoon Anchorage.",
+        "port_grudge": "A Western merchant refused to pay tribute. The Coral King displayed his ship's nameplate in the palace as a decoration. The merchant swam home."
+      }
+    ],
+    "relationships": [
+      {
+        "bloc_a": "exchange_alliance",
+        "bloc_b": "iron_pact",
+        "disposition": "allied",
+        "description": "United by shared commitment to order, law, and recorded trade. The Alliance supplies grain; the Pact supplies iron.",
+        "spillover": 0.3
+      },
+      {
+        "bloc_a": "exchange_alliance",
+        "bloc_b": "gold_coast",
+        "disposition": "neutral",
+        "description": "Distant but respectful. Cotton and dyes flow north; manufactured goods flow south.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "exchange_alliance",
+        "bloc_b": "silk_circle",
+        "disposition": "rival",
+        "description": "The old rivalry. Both claim to be the cradle of civilization. Both want to set the terms of East-West trade.",
+        "spillover": -0.15
+      },
+      {
+        "bloc_a": "exchange_alliance",
+        "bloc_b": "free_ports",
+        "disposition": "neutral",
+        "description": "The Alliance resents their neutrality but needs their trade routes.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "exchange_alliance",
+        "bloc_b": "shadow_ports",
+        "disposition": "hostile",
+        "description": "Smugglers undermine everything the Alliance stands for. Captains who trade at Corsair's Rest lose standing fast.",
+        "spillover": -0.3
+      },
+      {
+        "bloc_a": "exchange_alliance",
+        "bloc_b": "coral_crown",
+        "disposition": "neutral",
+        "description": "Too distant to care much. The Crown's pearls are welcome; their politics aren't.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "iron_pact",
+        "bloc_b": "gold_coast",
+        "disposition": "rival",
+        "description": "The Pact wants West Africa's iron ore. The Compact wants fair prices, not industrial exploitation.",
+        "spillover": -0.1
+      },
+      {
+        "bloc_a": "iron_pact",
+        "bloc_b": "silk_circle",
+        "disposition": "hostile",
+        "description": "The Silk Circle bans weapons imports. The Pact's entire economy is weapons. Fundamental conflict.",
+        "spillover": -0.25
+      },
+      {
+        "bloc_a": "iron_pact",
+        "bloc_b": "free_ports",
+        "disposition": "neutral",
+        "description": "Thornport trades tea and tobacco with Ironhaven. Practical, not political.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "iron_pact",
+        "bloc_b": "shadow_ports",
+        "disposition": "hostile",
+        "description": "Pirates arm themselves with stolen Pact weapons. The garrison takes this personally.",
+        "spillover": -0.3
+      },
+      {
+        "bloc_a": "iron_pact",
+        "bloc_b": "coral_crown",
+        "disposition": "neutral",
+        "description": "The Crown wants weapons. The Pact wants pearls. A transaction, not an alliance.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "gold_coast",
+        "bloc_b": "silk_circle",
+        "disposition": "neutral",
+        "description": "Cotton for silk, dyes for porcelain. Distant but mutually profitable.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "gold_coast",
+        "bloc_b": "free_ports",
+        "disposition": "allied",
+        "description": "Shared philosophy: trade is relationship, not domination. The Compact and the Free Ports understand each other.",
+        "spillover": 0.2
+      },
+      {
+        "bloc_a": "gold_coast",
+        "bloc_b": "shadow_ports",
+        "disposition": "neutral",
+        "description": "The coast doesn't judge. They trade with everyone who trades honestly \u2014 even pirates, sometimes.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "gold_coast",
+        "bloc_b": "coral_crown",
+        "disposition": "allied",
+        "description": "Kinship across the water. Pearl divers from both shores share techniques and ceremonies.",
+        "spillover": 0.25
+      },
+      {
+        "bloc_a": "silk_circle",
+        "bloc_b": "free_ports",
+        "disposition": "neutral",
+        "description": "The Circle tolerates neutrals. Crosswind Isle is useful as a buffer zone.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "silk_circle",
+        "bloc_b": "shadow_ports",
+        "disposition": "rival",
+        "description": "The Spice Lords at Spice Narrows are a thorn. They undercut Silk Circle prices with stolen goods.",
+        "spillover": -0.15
+      },
+      {
+        "bloc_a": "silk_circle",
+        "bloc_b": "coral_crown",
+        "disposition": "allied",
+        "description": "Ancient cultural ties. The Crown's pearls and medicines complement the Circle's silk and porcelain.",
+        "spillover": 0.2
+      },
+      {
+        "bloc_a": "free_ports",
+        "bloc_b": "shadow_ports",
+        "disposition": "neutral",
+        "description": "The Free Ports don't judge \u2014 but they don't protect smugglers either.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "free_ports",
+        "bloc_b": "coral_crown",
+        "disposition": "neutral",
+        "description": "Distant. Monsoon Reach trades with the Crown occasionally, but no formal ties.",
+        "spillover": 0.0
+      },
+      {
+        "bloc_a": "shadow_ports",
+        "bloc_b": "coral_crown",
+        "disposition": "neutral",
+        "description": "The Crown doesn't care about your morals, only your tribute. Shadow Ports are welcome if they pay.",
+        "spillover": 0.0
+      }
+    ]
+  },
+  "faction_relationships": [
+    {
+      "faction_a": "crimson_tide",
+      "faction_b": "monsoon_syndicate",
+      "disposition": "rival",
+      "description": "Business rivals who respect each other's territory \u2014 barely. The Tide wants to control the Mediterranean-to-East route. The Syndicate wants to control all Eastern trade. They cooperate when it suits them and undercut when it doesn't.",
+      "spillover": -0.15,
+      "vendetta_trigger": "Running opium for the Syndicate through Tide waters."
+    },
+    {
+      "faction_a": "crimson_tide",
+      "faction_b": "deep_reef",
+      "disposition": "hostile",
+      "description": "Fundamental incompatibility. The Tide runs a protection racket \u2014 pay or suffer. The Brotherhood answers to no one and attacks anyone who claims authority over the sea. They've been killing each other's captains for decades.",
+      "spillover": -0.4,
+      "vendetta_trigger": "Supplying weapons to the Tide that get used against Brotherhood ships."
+    },
+    {
+      "faction_a": "crimson_tide",
+      "faction_b": "iron_wolves",
+      "disposition": "rival",
+      "description": "Former allies who split over territory. Both are organized and militaristic, but the Wolves left when the Tide's leader demanded tribute from their operations. Now they compete for the same weapons trade in overlapping waters.",
+      "spillover": -0.2,
+      "vendetta_trigger": "Selling black powder to the Tide that was meant for the Wolves."
+    },
+    {
+      "faction_a": "monsoon_syndicate",
+      "faction_b": "deep_reef",
+      "disposition": "neutral",
+      "description": "Different worlds, different rules. The Syndicate operates through information and politics in the East. The Brotherhood sails the Southern reefs on honor and courage. They rarely cross paths, and when they do, they nod and move on.",
+      "spillover": 0.0,
+      "vendetta_trigger": "None \u2014 they don't care about each other."
+    },
+    {
+      "faction_a": "monsoon_syndicate",
+      "faction_b": "iron_wolves",
+      "disposition": "hostile",
+      "description": "The Wolves tried to muscle into the Eastern weapons trade. Raj the Quiet fed their fleet positions to a navy patrol. Three Wolf ships burned. The Wolves have never forgiven \u2014 or forgotten. Syndicate informants are killed on sight.",
+      "spillover": -0.35,
+      "vendetta_trigger": "Sharing intelligence with the Syndicate about Wolf positions."
+    },
+    {
+      "faction_a": "deep_reef",
+      "faction_b": "iron_wolves",
+      "disposition": "hostile",
+      "description": "Mutual contempt. The Brotherhood sees the Wolves as soulless mercenaries who fight without honor. The Wolves see the Brotherhood as romantic fools who'll die for principles instead of profit. They attack each other whenever their paths cross.",
+      "spillover": -0.3,
+      "vendetta_trigger": "Fencing stolen cargo from Brotherhood raids through Wolf contacts."
     }
   ]
 }

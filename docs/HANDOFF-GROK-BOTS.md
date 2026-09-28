@@ -332,14 +332,14 @@ Inside your own area, do the work in this order:
 - [x] `Session::form_convoy()`, `Session::repair_fleet()`
 
 ### Area 6: Narrative, Culture & Consequences
-- `CultureDef`, `SeaCultureDef`, `PortPoliticsDef` in `content.rs`
-- `NarrativeBeat`, `Consequence`, `SeaCultureState` in `model.rs`
-- `narrative.rs` — beat generation from state triggers
-- `consequences.rs` — delayed effect evaluation (e.g., "in 3 days, heat +10")
-- `culture.rs` — port cultural affinity effects on prices/reputation
-- `sea_culture.rs` — `enrich_voyage_day`. Python calls it after `advance_day` and it draws the session RNG. Putting that call into `Session::advance` is this area's job, in that position, with the existing sea-day goldens regenerated from the oracle in the same PR.
-- `port_arrival_engine.rs` — arrival prose, port welcome logic
-- `Session::arrival_narrative()`, `Session::evaluate_consequences()`
+- [x] `CultureDef`, `SeaCultureDef`, `PortPoliticsDef` in `content.rs`
+- [x] `NarrativeBeat`, `Consequence`, `SeaCultureState` in `model.rs`
+- [x] `narrative.rs` — beat generation from state triggers
+- [x] `consequences.rs` — history-gated effects applied on the day they fire. Python does not keep a delayed queue, and v12 has no queue key.
+- [x] `culture.rs` — port cultural affinity effects on prices/reputation
+- [x] `sea_culture.rs` — `enrich_voyage_day`. Python calls it after `advance_day` and it draws the session RNG. Putting that call into `Session::advance` is this area's job, in that position, with the existing sea-day goldens regenerated from the oracle in the same PR.
+- [x] `port_arrival_engine.rs` — arrival prose, port welcome logic
+- [x] `Session::arrival_narrative()`, `Session::evaluate_consequences()`
 
 ### Area 7: Save/Load & Persistence
 - [x] Port `engine/save.py`. The file is JSON, current version 12, with the v1–v12 migration chain. Do not design a new format.
@@ -366,9 +366,9 @@ As you add catalogs, tick them off:
 - [x] `merchants`
 - [x] `officer_names`
 - [x] `companions`
-- [ ] `culture`
-- [ ] `sea_culture`
-- [ ] `port_politics`
+- [x] `culture`
+- [x] `sea_culture`
+- [x] `port_politics`
 - [x] `port_institutions`
 - [x] `port_institutions_east`
 - [x] `cross_port_networks`

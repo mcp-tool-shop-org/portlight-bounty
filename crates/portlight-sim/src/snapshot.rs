@@ -9,8 +9,9 @@ use crate::content;
 use crate::duel::{DuelOutcome, DuelRound};
 use crate::economy::TradeReceipt;
 use crate::model::{
-    ActiveContract, ActivePolicy, BrokerOffice, Captain, ContractOutcome, CreditState,
-    InfrastructureRecord, InsuranceClaim, OwnedLicense, Standing, Voyage, WarehouseLease, World,
+    ActiveContract, ActiveFestival, ActivePolicy, BrokerOffice, Captain, ContractOutcome,
+    CreditState, CulturalState, InfrastructureRecord, InsuranceClaim, JournalEntry, NarrativeState,
+    OwnedLicense, Standing, Voyage, WarehouseLease, World,
 };
 use crate::session::EncounterStep;
 use crate::voyage::VoyageEvent;
@@ -29,7 +30,48 @@ pub struct Snapshot {
     pub infrastructure: Option<InfraSnap>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub milestones: Vec<MilestoneSnap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub culture: Option<CultureSnap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub narrative: Option<NarrativeSnap>,
     pub log: Vec<LogEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct CultureSnap {
+    pub port_visits: Vec<VisitSnap>,
+    pub regions_entered: Vec<String>,
+    pub cultural_encounters: i64,
+    pub festivals_visited: i64,
+    pub active_festivals: Vec<FestivalSnap>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct VisitSnap {
+    pub port_id: String,
+    pub visits: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FestivalSnap {
+    pub festival_id: String,
+    pub port_id: String,
+    pub start_day: i64,
+    pub end_day: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct NarrativeSnap {
+    pub fired: Vec<String>,
+    pub journal: Vec<JournalSnap>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct JournalSnap {
+    pub beat_id: String,
+    pub day: i64,
+    pub port_id: String,
+    pub region: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -948,6 +990,7 @@ pub fn capture(
     trade_seq: u64,
     books: &HouseBooks,
     infra: &InfrastructureRecord,
+    narrative: &NarrativeState,
     log: Vec<LogEntry>,
 ) -> Snapshot {
     Snapshot {
@@ -984,6 +1027,8 @@ pub fn capture(
             .collect(),
         victory: campaign::compute_victory_progress(world, books),
         infrastructure: infra.is_visible().then(|| infra_snap(infra)),
+        culture: culture_snap(&world.culture),
+        narrative: narrative_snap(narrative),
         milestones: books
             .completed_milestones
             .iter()
@@ -998,6 +1043,59 @@ pub fn capture(
             })
             .collect(),
         log,
+    }
+}
+
+fn culture_snap(state: &CulturalState) -> Option<CultureSnap> {
+    let visible = !state.port_visits.is_empty()
+        || !state.regions_entered.is_empty()
+        || state.cultural_encounters != 0
+        || state.festivals_visited != 0
+        || !state.active_festivals.is_empty();
+    if !visible {
+        return None;
+    }
+    Some(CultureSnap {
+        port_visits: state
+            .port_visits
+            .iter()
+            .map(|(port_id, visits)| VisitSnap {
+                port_id: port_id.clone(),
+                visits: *visits,
+            })
+            .collect(),
+        regions_entered: state.regions_entered.clone(),
+        cultural_encounters: state.cultural_encounters,
+        festivals_visited: state.festivals_visited,
+        active_festivals: state.active_festivals.iter().map(festival_snap).collect(),
+    })
+}
+
+fn festival_snap(fest: &ActiveFestival) -> FestivalSnap {
+    FestivalSnap {
+        festival_id: fest.festival_id.clone(),
+        port_id: fest.port_id.clone(),
+        start_day: fest.start_day,
+        end_day: fest.end_day,
+    }
+}
+
+fn narrative_snap(state: &NarrativeState) -> Option<NarrativeSnap> {
+    if state.fired.is_empty() && state.journal.is_empty() {
+        return None;
+    }
+    Some(NarrativeSnap {
+        fired: state.fired.clone(),
+        journal: state.journal.iter().map(journal_snap).collect(),
+    })
+}
+
+fn journal_snap(entry: &JournalEntry) -> JournalSnap {
+    JournalSnap {
+        beat_id: entry.beat_id.clone(),
+        day: entry.day,
+        port_id: entry.port_id.clone(),
+        region: entry.region.clone(),
     }
 }
 
@@ -1169,6 +1267,8 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
         victory: Vec::new(),
         infrastructure: None,
         milestones: Vec::new(),
+        culture: None,
+        narrative: None,
         log,
     }
 }

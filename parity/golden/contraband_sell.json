@@ -5,8 +5,8 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 346,
-    "provisions": 15,
+    "silver": 337,
+    "provisions": 12,
     "day": 17,
     "wanted_level": 0,
     "cargo": [
@@ -22,13 +22,13 @@
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 60,
+      "hull": 40,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 66,
+      "morale": 68,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -71,13 +71,17 @@
     "origin_id": "corsairs_rest",
     "destination_id": "porto_novo",
     "distance": 18,
-    "progress": 21,
-    "days_elapsed": 3,
+    "progress": 24,
+    "days_elapsed": 4,
     "status": "in_port",
     "recent_events": [
-      "nothing",
+      "calm_seas",
+      "A crewman mutters: 'My cousin sailed this lane for years. Made a fortune. Then one day he didn't come back. Nobody asked questions. You don't, on the Shadow Lane.'",
       "whale_sighting",
-      "merchant_encounter"
+      "storm",
+      "favorable_wind",
+      "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore.",
+      "Your lookout watches the horizon with unusual intensity. Every sail could be a patrol. Every sail probably isn't. But every sail gets watched."
     ]
   },
   "pending_duel": null,
@@ -115,16 +119,16 @@
         },
         {
           "good_id": "rum",
-          "stock": 20,
-          "buy_price": 18,
-          "sell_price": 18,
+          "stock": 21,
+          "buy_price": 17,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
           "good_id": "dyes",
-          "stock": 11,
-          "buy_price": 33,
-          "sell_price": 32,
+          "stock": 10,
+          "buy_price": 36,
+          "sell_price": 36,
           "flood_penalty": 0.0
         },
         {
@@ -136,9 +140,9 @@
         },
         {
           "good_id": "porcelain",
-          "stock": 8,
-          "buy_price": 81,
-          "sell_price": 79,
+          "stock": 6,
+          "buy_price": 108,
+          "sell_price": 106,
           "flood_penalty": 0.0
         }
       ]
@@ -155,16 +159,16 @@
         },
         {
           "good_id": "silk",
-          "stock": 9,
-          "buy_price": 85,
-          "sell_price": 84,
+          "stock": 10,
+          "buy_price": 77,
+          "sell_price": 76,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 16,
-          "buy_price": 22,
-          "sell_price": 22,
+          "stock": 15,
+          "buy_price": 24,
+          "sell_price": 23,
           "flood_penalty": 0.0
         },
         {
@@ -183,9 +187,9 @@
         },
         {
           "good_id": "tea",
-          "stock": 8,
-          "buy_price": 66,
-          "sell_price": 65,
+          "stock": 9,
+          "buy_price": 59,
+          "sell_price": 58,
           "flood_penalty": 0.0
         },
         {
@@ -204,9 +208,9 @@
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 11,
-          "sell_price": 11,
+          "stock": 7,
+          "buy_price": 13,
+          "sell_price": 13,
           "flood_penalty": 0.0
         }
       ]
@@ -223,9 +227,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 18,
-          "buy_price": 19,
-          "sell_price": 19,
+          "stock": 14,
+          "buy_price": 24,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
@@ -265,9 +269,9 @@
         },
         {
           "good_id": "silk",
-          "stock": 5,
-          "buy_price": 138,
-          "sell_price": 136,
+          "stock": 6,
+          "buy_price": 115,
+          "sell_price": 113,
           "flood_penalty": 0.0
         }
       ]
@@ -298,37 +302,37 @@
         },
         {
           "good_id": "silk",
-          "stock": 5,
-          "buy_price": 138,
-          "sell_price": 136,
+          "stock": 2,
+          "buy_price": 346,
+          "sell_price": 340,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 7,
-          "buy_price": 59,
-          "sell_price": 58,
+          "stock": 6,
+          "buy_price": 69,
+          "sell_price": 68,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 6,
-          "buy_price": 10,
-          "sell_price": 9,
+          "stock": 8,
+          "buy_price": 7,
+          "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 10,
-          "buy_price": 17,
-          "sell_price": 17,
+          "stock": 14,
+          "buy_price": 12,
+          "sell_price": 12,
           "flood_penalty": 0.0
         },
         {
           "good_id": "black_powder",
-          "stock": 8,
-          "buy_price": 37,
-          "sell_price": 36,
+          "stock": 9,
+          "buy_price": 33,
+          "sell_price": 32,
           "flood_penalty": 0.0
         },
         {
@@ -340,9 +344,9 @@
         },
         {
           "good_id": "opium",
-          "stock": 2,
-          "buy_price": 240,
-          "sell_price": 236,
+          "stock": 1,
+          "buy_price": 480,
+          "sell_price": 472,
           "flood_penalty": 0.0
         }
       ]
@@ -366,9 +370,9 @@
         },
         {
           "good_id": "timber",
-          "stock": 18,
-          "buy_price": 22,
-          "sell_price": 22,
+          "stock": 15,
+          "buy_price": 27,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
@@ -441,9 +445,9 @@
         },
         {
           "good_id": "medicines",
-          "stock": 12,
-          "buy_price": 25,
-          "sell_price": 24,
+          "stock": 10,
+          "buy_price": 30,
+          "sell_price": 29,
           "flood_penalty": 0.0
         },
         {
@@ -469,9 +473,9 @@
         },
         {
           "good_id": "silk",
-          "stock": 4,
-          "buy_price": 173,
-          "sell_price": 170,
+          "stock": 5,
+          "buy_price": 138,
+          "sell_price": 136,
           "flood_penalty": 0.0
         }
       ]
@@ -481,9 +485,9 @@
       "market": [
         {
           "good_id": "tea",
-          "stock": 13,
-          "buy_price": 45,
-          "sell_price": 44,
+          "stock": 25,
+          "buy_price": 23,
+          "sell_price": 23,
           "flood_penalty": 0.0
         },
         {
@@ -502,9 +506,9 @@
         },
         {
           "good_id": "pelts",
-          "stock": 15,
-          "buy_price": 5,
-          "sell_price": 5,
+          "stock": 14,
+          "buy_price": 6,
+          "sell_price": 6,
           "flood_penalty": 0.0
         },
         {
@@ -516,23 +520,23 @@
         },
         {
           "good_id": "silk",
-          "stock": 9,
-          "buy_price": 77,
-          "sell_price": 76,
+          "stock": 5,
+          "buy_price": 138,
+          "sell_price": 136,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 4,
-          "buy_price": 163,
-          "sell_price": 160,
+          "stock": 5,
+          "buy_price": 131,
+          "sell_price": 128,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 0,
-          "buy_price": 475,
-          "sell_price": 466,
+          "stock": 2,
+          "buy_price": 237,
+          "sell_price": 233,
           "flood_penalty": 0.0
         }
       ]
@@ -549,9 +553,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 22,
-          "buy_price": 19,
-          "sell_price": 19,
+          "stock": 18,
+          "buy_price": 23,
+          "sell_price": 23,
           "flood_penalty": 0.0
         },
         {
@@ -645,16 +649,16 @@
         },
         {
           "good_id": "silk",
-          "stock": 4,
-          "buy_price": 173,
-          "sell_price": 170,
+          "stock": 2,
+          "buy_price": 346,
+          "sell_price": 340,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 8,
-          "buy_price": 41,
-          "sell_price": 40,
+          "stock": 11,
+          "buy_price": 30,
+          "sell_price": 29,
           "flood_penalty": 0.0
         }
       ]
@@ -671,9 +675,9 @@
         },
         {
           "good_id": "grain",
-          "stock": 11,
-          "buy_price": 26,
-          "sell_price": 25,
+          "stock": 12,
+          "buy_price": 24,
+          "sell_price": 23,
           "flood_penalty": 0.0
         },
         {
@@ -713,9 +717,9 @@
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 9,
-          "sell_price": 9,
+          "stock": 10,
+          "buy_price": 7,
+          "sell_price": 7,
           "flood_penalty": 0.0
         }
       ]
@@ -746,9 +750,9 @@
         },
         {
           "good_id": "medicines",
-          "stock": 5,
-          "buy_price": 77,
-          "sell_price": 76,
+          "stock": 2,
+          "buy_price": 192,
+          "sell_price": 189,
           "flood_penalty": 0.0
         },
         {
@@ -760,23 +764,23 @@
         },
         {
           "good_id": "silk",
-          "stock": 5,
-          "buy_price": 138,
-          "sell_price": 136,
+          "stock": 9,
+          "buy_price": 77,
+          "sell_price": 76,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 11,
-          "buy_price": 7,
-          "sell_price": 7,
+          "stock": 10,
+          "buy_price": 8,
+          "sell_price": 8,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 10,
-          "buy_price": 23,
-          "sell_price": 22,
+          "stock": 8,
+          "buy_price": 28,
+          "sell_price": 28,
           "flood_penalty": 0.0
         }
       ]
@@ -786,9 +790,9 @@
       "market": [
         {
           "good_id": "porcelain",
-          "stock": 30,
-          "buy_price": 37,
-          "sell_price": 36,
+          "stock": 27,
+          "buy_price": 41,
+          "sell_price": 40,
           "flood_penalty": 0.0
         },
         {
@@ -800,9 +804,9 @@
         },
         {
           "good_id": "tea",
-          "stock": 20,
-          "buy_price": 27,
-          "sell_price": 27,
+          "stock": 18,
+          "buy_price": 30,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
@@ -814,30 +818,30 @@
         },
         {
           "good_id": "grain",
-          "stock": 9,
-          "buy_price": 21,
-          "sell_price": 21,
+          "stock": 8,
+          "buy_price": 24,
+          "sell_price": 23,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 15,
-          "buy_price": 16,
-          "sell_price": 16,
+          "stock": 1,
+          "buy_price": 247,
+          "sell_price": 243,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 8,
-          "buy_price": 33,
-          "sell_price": 32,
+          "stock": 12,
+          "buy_price": 22,
+          "sell_price": 22,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 7,
-          "buy_price": 10,
-          "sell_price": 10,
+          "stock": 6,
+          "buy_price": 11,
+          "sell_price": 11,
           "flood_penalty": 0.0
         },
         {
@@ -875,9 +879,9 @@
         },
         {
           "good_id": "timber",
-          "stock": 9,
-          "buy_price": 35,
-          "sell_price": 35,
+          "stock": 8,
+          "buy_price": 40,
+          "sell_price": 39,
           "flood_penalty": 0.0
         },
         {
@@ -910,9 +914,9 @@
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 10,
-          "sell_price": 10,
+          "stock": 14,
+          "buy_price": 6,
+          "sell_price": 6,
           "flood_penalty": 0.0
         }
       ]
@@ -922,9 +926,9 @@
       "market": [
         {
           "good_id": "silk",
-          "stock": 35,
-          "buy_price": 41,
-          "sell_price": 40,
+          "stock": 36,
+          "buy_price": 40,
+          "sell_price": 39,
           "flood_penalty": 0.0
         },
         {
@@ -936,9 +940,9 @@
         },
         {
           "good_id": "spice",
-          "stock": 12,
-          "buy_price": 60,
-          "sell_price": 59,
+          "stock": 10,
+          "buy_price": 73,
+          "sell_price": 71,
           "flood_penalty": 0.0
         },
         {
@@ -964,9 +968,9 @@
         },
         {
           "good_id": "cotton",
-          "stock": 9,
-          "buy_price": 24,
-          "sell_price": 24,
+          "stock": 12,
+          "buy_price": 18,
+          "sell_price": 18,
           "flood_penalty": 0.0
         },
         {
@@ -1004,9 +1008,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 10,
-          "buy_price": 25,
-          "sell_price": 24,
+          "stock": 13,
+          "buy_price": 19,
+          "sell_price": 19,
           "flood_penalty": 0.0
         },
         {
@@ -1025,23 +1029,23 @@
         },
         {
           "good_id": "silk",
-          "stock": 8,
-          "buy_price": 69,
-          "sell_price": 68,
+          "stock": 9,
+          "buy_price": 62,
+          "sell_price": 60,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 10,
-          "buy_price": 20,
-          "sell_price": 19,
+          "stock": 7,
+          "buy_price": 28,
+          "sell_price": 28,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 6,
-          "buy_price": 59,
-          "sell_price": 58,
+          "stock": 7,
+          "buy_price": 51,
+          "sell_price": 50,
           "flood_penalty": 0.0
         },
         {
@@ -1093,37 +1097,37 @@
         },
         {
           "good_id": "iron",
-          "stock": 8,
-          "buy_price": 49,
-          "sell_price": 49,
+          "stock": 11,
+          "buy_price": 36,
+          "sell_price": 35,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
-          "stock": 5,
-          "buy_price": 66,
-          "sell_price": 65,
+          "stock": 6,
+          "buy_price": 55,
+          "sell_price": 54,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 7,
-          "buy_price": 38,
-          "sell_price": 37,
+          "stock": 8,
+          "buy_price": 33,
+          "sell_price": 32,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 8,
-          "buy_price": 23,
-          "sell_price": 22,
+          "stock": 13,
+          "buy_price": 14,
+          "sell_price": 14,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 8,
-          "sell_price": 8,
+          "stock": 6,
+          "buy_price": 11,
+          "sell_price": 11,
           "flood_penalty": 0.0
         }
       ]
@@ -1133,16 +1137,16 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 41,
-          "buy_price": 29,
-          "sell_price": 29,
+          "stock": 40,
+          "buy_price": 30,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pearls",
-          "stock": 8,
-          "buy_price": 54,
-          "sell_price": 53,
+          "stock": 6,
+          "buy_price": 72,
+          "sell_price": 71,
           "flood_penalty": 0.0
         },
         {
@@ -1175,23 +1179,23 @@
         },
         {
           "good_id": "pelts",
-          "stock": 6,
-          "buy_price": 10,
-          "sell_price": 10,
+          "stock": 8,
+          "buy_price": 7,
+          "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
           "good_id": "opium",
-          "stock": 10,
-          "buy_price": 48,
-          "sell_price": 47,
+          "stock": 4,
+          "buy_price": 120,
+          "sell_price": 118,
           "flood_penalty": 0.0
         },
         {
           "good_id": "stolen_cargo",
-          "stock": 8,
-          "buy_price": 30,
-          "sell_price": 29,
+          "stock": 9,
+          "buy_price": 26,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
@@ -1222,9 +1226,9 @@
         },
         {
           "good_id": "iron",
-          "stock": 14,
-          "buy_price": 18,
-          "sell_price": 17,
+          "stock": 11,
+          "buy_price": 22,
+          "sell_price": 22,
           "flood_penalty": 0.0
         },
         {
@@ -1236,23 +1240,23 @@
         },
         {
           "good_id": "timber",
-          "stock": 9,
-          "buy_price": 32,
-          "sell_price": 31,
+          "stock": 8,
+          "buy_price": 36,
+          "sell_price": 35,
           "flood_penalty": 0.0
         },
         {
           "good_id": "weapons",
-          "stock": 5,
-          "buy_price": 89,
-          "sell_price": 87,
+          "stock": 8,
+          "buy_price": 56,
+          "sell_price": 55,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 12,
-          "buy_price": 22,
-          "sell_price": 22,
+          "stock": 10,
+          "buy_price": 26,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
@@ -1264,9 +1268,9 @@
         },
         {
           "good_id": "cotton",
-          "stock": 4,
-          "buy_price": 40,
-          "sell_price": 40,
+          "stock": 6,
+          "buy_price": 27,
+          "sell_price": 26,
           "flood_penalty": 0.0
         }
       ]
@@ -1297,9 +1301,9 @@
         },
         {
           "good_id": "silk",
-          "stock": 6,
-          "buy_price": 128,
-          "sell_price": 126,
+          "stock": 5,
+          "buy_price": 154,
+          "sell_price": 151,
           "flood_penalty": 0.0
         },
         {
@@ -1318,16 +1322,16 @@
         },
         {
           "good_id": "rum",
-          "stock": 8,
-          "buy_price": 33,
-          "sell_price": 32,
+          "stock": 7,
+          "buy_price": 38,
+          "sell_price": 37,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 11,
-          "buy_price": 6,
-          "sell_price": 6,
+          "stock": 8,
+          "buy_price": 9,
+          "sell_price": 9,
           "flood_penalty": 0.0
         },
         {
@@ -1365,9 +1369,9 @@
         },
         {
           "good_id": "weapons",
-          "stock": 5,
-          "buy_price": 89,
-          "sell_price": 87,
+          "stock": 2,
+          "buy_price": 223,
+          "sell_price": 219,
           "flood_penalty": 0.0
         },
         {
@@ -1379,9 +1383,9 @@
         },
         {
           "good_id": "tea",
-          "stock": 9,
-          "buy_price": 44,
-          "sell_price": 43,
+          "stock": 5,
+          "buy_price": 79,
+          "sell_price": 78,
           "flood_penalty": 0.0
         },
         {
@@ -1400,9 +1404,9 @@
         },
         {
           "good_id": "porcelain",
-          "stock": 3,
-          "buy_price": 176,
-          "sell_price": 173,
+          "stock": 0,
+          "buy_price": 527,
+          "sell_price": 518,
           "flood_penalty": 0.0
         }
       ]
@@ -1449,8 +1453,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 346",
-          "action": "Earn 1654 more silver"
+          "detail": "Silver: 337",
+          "action": "Earn 1663 more silver"
         }
       ]
     },
@@ -1488,8 +1492,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 346",
-          "action": "Accumulate 1154 more silver"
+          "detail": "Silver: 337",
+          "action": "Accumulate 1163 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1539,8 +1543,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 346",
-          "action": "Earn 1654 more silver"
+          "detail": "Silver: 337",
+          "action": "Earn 1663 more silver"
         }
       ]
     },
@@ -1578,8 +1582,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 346",
-          "action": "Earn 2654 more silver"
+          "detail": "Silver: 337",
+          "action": "Earn 2663 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1604,6 +1608,51 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "corsairs_rest",
+        "visits": 1
+      },
+      {
+        "port_id": "porto_novo",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_storm",
+      "first_contraband"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "first_contraband",
+        "day": 10,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 1",
@@ -1634,6 +1683,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -1644,15 +1704,56 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+1 provisions)",
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
           "hull_delta": 0,
-          "provision_delta": 1,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "nothing",
+          "message": "An uneventful day at sea.",
+          "hull_delta": 0,
+          "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1663,15 +1764,37 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
+          "event_type": "provisions_spoiled",
+          "message": "Some provisions have spoiled. (-2 days)",
+          "hull_delta": 0,
+          "provision_delta": -2,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.5,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Corsair's Rest.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nShips anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee \u2014 payable in silver, no questions.\n\n[bold]One-Eye Basso:[/bold] \"...Clear behind you. Come in. Kill your running lights before the bend.\"\n\n[dim]Landmark: The Cliff Tavern \u2014 carved into the rock face, visible only from the sea.[/dim]\n[dim]Custom: No names. Every captain here is 'friend' until proven otherwise.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
@@ -1681,16 +1804,6 @@
       "error": null,
       "receipt": null,
       "events": [],
-      "shocks": [
-        "Shortage: timber scarce at Stormwall",
-        "Supply glut: silk floods Thornport"
-      ]
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
       "shocks": []
     },
     {
@@ -1712,9 +1825,7 @@
       "error": null,
       "receipt": null,
       "events": [],
-      "shocks": [
-        "Supply glut: iron floods Jade Port"
-      ]
+      "shocks": []
     },
     {
       "command": "buy opium 1",
@@ -1746,15 +1857,26 @@
       "receipt": null,
       "events": [
         {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "A crewman mutters: 'My cousin sailed this lane for years. Made a fortune. Then one day he didn't come back. Nobody asked questions. You don't, on the Shadow Lane.'",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[lore]"
         }
       ],
       "shocks": []
@@ -1784,15 +1906,67 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+9 silver)",
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-12 hull)",
+          "hull_delta": -12,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
+          "cargo_lost": [],
+          "flavor": ""
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "favorable_wind",
+          "message": "Strong tailwinds speed your journey!",
           "hull_delta": 0,
           "provision_delta": 0,
-          "silver_delta": 9,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.5,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your lookout watches the horizon with unusual intensity. Every sail could be a patrol. Every sail probably isn't. But every sail gets watched.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Porto Novo.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nGrain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks.\n\n[bold]Vasco da Reira:[/bold] \"Manifest and tonnage, Captain. I'll assign your berth once I've reviewed them.\"\n[bold]Marta Soares:[/bold] \"You're here for the rates? They were posted at dawn. Grain is steady, spice is climbing. What are you buying?\"\n\n[dim]Landmark: The Grain Exchange \u2014 a columned hall where prices are read aloud at dawn.[/dim]\n[dim]Custom: Captains ring the harbor bell on first arrival. It's bad luck not to.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
@@ -1809,21 +1983,10 @@
       "error": null,
       "receipt": null,
       "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
+      "shocks": [
+        "Shortage: iron scarce at Sun Harbor",
+        "Shortage: silk scarce at Palm Cove"
+      ]
     },
     {
       "command": "advance",
@@ -1831,8 +1994,15 @@
       "receipt": null,
       "events": [],
       "shocks": [
-        "Shortage: tea scarce at Thornport"
+        "Shortage: opium scarce at Spice Narrows"
       ]
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
     },
     {
       "command": "sell opium 1",

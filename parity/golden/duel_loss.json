@@ -77,7 +77,10 @@
     "status": "at_sea",
     "recent_events": [
       "pirates",
-      "nothing"
+      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+      "nothing",
+      "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore."
     ]
   },
   "pending_duel": null,
@@ -1604,6 +1607,26 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 42",
@@ -1651,6 +1674,28 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "Strength 6, balanced fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1678,16 +1723,16 @@
           },
           {
             "player_stance": "thrust",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 0,
-            "damage_to_player": 2,
-            "flavor": "You lunge forward, but their parry turns your blade aside."
+            "opponent_stance": "slash",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
           },
           {
             "player_stance": "thrust",
             "opponent_stance": "parry",
             "damage_to_opponent": 0,
-            "damage_to_player": 2,
+            "damage_to_player": 3,
             "flavor": "You lunge forward, but their parry turns your blade aside."
           }
         ]
@@ -1708,6 +1753,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible \u2014 civilization lining every shore.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
