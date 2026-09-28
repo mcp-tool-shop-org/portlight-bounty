@@ -250,8 +250,10 @@ pub fn chart_bounds() -> ScreenRect {
     rect
 }
 
-/// Camera frame: center of [`ScreenRect`] and a uniform zoom that fits it
-/// in a viewport. Zoom is clamped so a single port does not fill the window.
+/// Camera frame: center of [`ScreenRect`] and a gated zoom.
+///
+/// Zoom is exactly [`CHART_ZOOM_FULL`] when `rect` fits in the viewport, and
+/// exactly [`CHART_ZOOM_STEP`] otherwise. It is not a continuous fit.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Frame {
     pub center_x: f32,
@@ -259,13 +261,22 @@ pub struct Frame {
     pub zoom: f32,
 }
 
+/// Preferred chart zoom. Plates are 1:1 with the viewport at this step.
+pub const CHART_ZOOM_FULL: f32 = 1.0;
+/// The only other chart zoom. Used when the framed content does not fit at 1.0.
+pub const CHART_ZOOM_STEP: f32 = 0.72;
+
 pub fn frame_to_view(rect: ScreenRect, view_w: f32, view_h: f32) -> Frame {
     let span_w = (rect.width().max(1)) as f32;
     let span_h = (rect.height().max(1)) as f32;
-    let zoom = (view_w / span_w).min(view_h / span_h).clamp(0.2, 2.0);
+    let zoom = if span_w <= view_w && span_h <= view_h {
+        CHART_ZOOM_FULL
+    } else {
+        CHART_ZOOM_STEP
+    };
     Frame {
-        center_x: (rect.min_x + rect.max_x) as f32 / 2.0,
-        center_y: (rect.min_y + rect.max_y) as f32 / 2.0,
+        center_x: ((rect.min_x + rect.max_x) as f32 / 2.0).round(),
+        center_y: ((rect.min_y + rect.max_y) as f32 / 2.0).round(),
         zoom,
     }
 }
@@ -407,7 +418,7 @@ mod tests {
             max_y: 300,
         };
         let frame = frame_to_view(rect, 900.0, 720.0);
-        assert!((frame.zoom - 1.0).abs() < 1e-4);
+        assert_eq!(frame.zoom, CHART_ZOOM_FULL);
         assert!((frame.center_x - 450.0).abs() < 1e-4);
         assert!((frame.center_y - 150.0).abs() < 1e-4);
     }
@@ -424,5 +435,20 @@ mod tests {
         assert!(frame.center_x < bounds.max_x as f32);
         assert!(frame.center_y < bounds.max_y as f32);
         assert!((frame.zoom - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn zoom_is_one_or_point_seven_two() {
+        let wide = ScreenRect {
+            min_x: 0,
+            min_y: 0,
+            max_x: 1345,
+            max_y: 676,
+        };
+        let frame = frame_to_view(wide, 900.0, 720.0);
+        assert_eq!(frame.zoom, CHART_ZOOM_STEP);
+        let fitted = (900.0_f32 / 1345.0).min(720.0 / 676.0);
+        assert!((fitted - 0.669).abs() < 0.01);
+        assert_ne!(frame.zoom, fitted);
     }
 }

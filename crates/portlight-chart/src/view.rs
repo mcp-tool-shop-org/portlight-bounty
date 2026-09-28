@@ -7,8 +7,8 @@ use crate::assets::{self, chart_water_id, ship_draw, Asset, PORT_MARKER};
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{
     chart_to_screen_f, facing_from_chart_delta, follow_ship, frame_to_view, sprite_origin,
-    water_cell_bottom, Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, DOCKED_OFFSET_X,
-    DOCKED_OFFSET_Y,
+    water_cell_bottom, Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, CHART_ZOOM_FULL,
+    CHART_ZOOM_STEP, DOCKED_OFFSET_X, DOCKED_OFFSET_Y,
 };
 
 /// First-playable waters. Ports outside this region are drawn only when the
@@ -514,6 +514,87 @@ fn chart_diamond_center(u: i32, v: i32, anchor: (i32, i32)) -> (f32, f32) {
     )
 }
 
+/// Art-director frame. Zoom is 1.0 when the docked gallery ship and the
+/// sailing ship, including its wake, fit in the chart viewport. Otherwise
+/// the zoom is 0.72. The center stays on the chart focus when that still
+/// holds the plates.
+pub fn art_frame(chart: &ChartModel, view_w: f32, view_h: f32) -> Frame {
+    let mut bounds = plate_bounds(chart.ship.sprite_origin, chart.ship.asset_id);
+    if !chart.ship.docked {
+        bounds.union(plate_bounds(chart.ship.wake_origin, chart.ship.wake_id));
+    }
+    for extra in &chart.gallery {
+        bounds.union(plate_bounds(extra.sprite_origin, extra.asset_id));
+        if !extra.docked {
+            bounds.union(plate_bounds(extra.wake_origin, extra.wake_id));
+        }
+    }
+    let focus_center = (
+        (chart.focus.min_x + chart.focus.max_x) as f32 / 2.0,
+        (chart.focus.min_y + chart.focus.max_y) as f32 / 2.0,
+    );
+    let ship_center = bounds.center();
+    let zoom = if bounds.fits(focus_center, CHART_ZOOM_FULL, view_w, view_h)
+        || bounds.fits(ship_center, CHART_ZOOM_FULL, view_w, view_h)
+    {
+        CHART_ZOOM_FULL
+    } else {
+        CHART_ZOOM_STEP
+    };
+    let center = if bounds.fits(focus_center, zoom, view_w, view_h) {
+        focus_center
+    } else {
+        ship_center
+    };
+    Frame {
+        center_x: center.0.round(),
+        center_y: center.1.round(),
+        zoom,
+    }
+}
+
+fn plate_bounds(origin: (f32, f32), id: &str) -> PlateBounds {
+    let plate = assets::asset(id).unwrap_or_else(|| panic!("missing plate {id}"));
+    PlateBounds {
+        min_x: origin.0,
+        min_y: origin.1,
+        max_x: origin.0 + plate.canvas_w as f32,
+        max_y: origin.1 + plate.canvas_h as f32,
+    }
+}
+
+struct PlateBounds {
+    min_x: f32,
+    min_y: f32,
+    max_x: f32,
+    max_y: f32,
+}
+
+impl PlateBounds {
+    fn union(&mut self, other: PlateBounds) {
+        self.min_x = self.min_x.min(other.min_x);
+        self.min_y = self.min_y.min(other.min_y);
+        self.max_x = self.max_x.max(other.max_x);
+        self.max_y = self.max_y.max(other.max_y);
+    }
+
+    fn center(&self) -> (f32, f32) {
+        (
+            (self.min_x + self.max_x) / 2.0,
+            (self.min_y + self.max_y) / 2.0,
+        )
+    }
+
+    fn fits(&self, center: (f32, f32), zoom: f32, view_w: f32, view_h: f32) -> bool {
+        let half_w = view_w / zoom / 2.0;
+        let half_h = view_h / zoom / 2.0;
+        self.min_x >= center.0 - half_w
+            && self.max_x <= center.0 + half_w
+            && self.min_y >= center.1 - half_h
+            && self.max_y <= center.1 + half_h
+    }
+}
+
 fn chart_cell_f(x: f32, y: f32, anchor: (i32, i32)) -> (f32, f32) {
     let (cx, cy) = chart_diamond_center(0, 0, anchor);
     let d = (x - cx) / (CELL_WIDTH as f32 / 2.0);
@@ -929,5 +1010,39 @@ mod tests {
         assert_eq!(sailing.ship.asset_id, "ship_cutter_f7");
         assert_eq!(sailing.ship.wake_id, "ship_cutter_wake");
         assert_eq!(sailing.ship.class_name, "cutter");
+    }
+
+    #[test]
+    fn grain_road_f7_frame_is_zoom_one() {
+        let mut session = Session::new("Ada", "merchant", FIRST_PLAYABLE_SEED, None).unwrap();
+        session.buy_ship("swift_cutter").unwrap();
+        session.depart("al_manar").unwrap();
+        session.advance().unwrap();
+        let mut chart = project_chart(&session);
+        let port = session.world().port("porto_novo").unwrap();
+        chart
+            .gallery
+            .push(docked_sloop_marker(port.map_x, port.map_y));
+        // Chart area inside the 1280×720 window, beside the 420 px panel.
+        for (view_w, view_h) in [(856.0, 720.0), (CHART_VIEW_W, CHART_VIEW_H)] {
+            let frame = art_frame(&chart, view_w, view_h);
+            assert_eq!(frame.zoom, CHART_ZOOM_FULL, "{view_w}x{view_h}");
+            let half_w = view_w / frame.zoom / 2.0;
+            let half_h = view_h / frame.zoom / 2.0;
+            for (origin, id) in [
+                (chart.gallery[0].sprite_origin, chart.gallery[0].asset_id),
+                (chart.ship.sprite_origin, chart.ship.asset_id),
+                (chart.ship.wake_origin, chart.ship.wake_id),
+            ] {
+                let plate = crate::assets::asset(id).unwrap();
+                assert!(
+                    origin.0 >= frame.center_x - half_w
+                        && origin.0 + plate.canvas_w as f32 <= frame.center_x + half_w
+                        && origin.1 >= frame.center_y - half_h
+                        && origin.1 + plate.canvas_h as f32 <= frame.center_y + half_h,
+                    "{id} outside the {view_w}x{view_h} frame"
+                );
+            }
+        }
     }
 }

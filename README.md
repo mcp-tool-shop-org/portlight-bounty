@@ -62,7 +62,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
   godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
 ```
 
-The art-director frame (docked sloop at Porto Novo, Swift Cutter under sail at f7, `ship_cutter_wake`) writes `docs/screenshots/chart-cutter-f7.png`. The harbour seam plate:
+The art-director frame (docked sloop at Porto Novo, Swift Cutter under sail at f7, `ship_cutter_wake`) writes `/tmp/chart-cutter-f7.png`. `PORTLIGHT_ART_DOCS=1` writes `docs/screenshots/chart-cutter-f7.png`. The harbour seam plate:
 
 ```
 xvfb-run -a -s "-screen 0 1280x720x24" \

@@ -15,9 +15,11 @@
 //! and provisions call `hire_crew` and `provision`; a `SimError` is shown
 //! with its `Display`.
 
+use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
+use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
     Button, Control, HBoxContainer, IControl, Label, Node, Os, PanelContainer, ScrollContainer,
     StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
@@ -26,9 +28,8 @@ use godot::global::Error;
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
-    docked_sloop_marker, frame_to_view, lane_inspect, press_port, project_chart, ChartModel,
-    Facing, PortPress, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME,
-    FIRST_PLAYABLE_SEED,
+    art_frame, docked_sloop_marker, lane_inspect, press_port, project_chart, ChartModel, Facing,
+    PortPress, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::economy::TradeReceipt;
 use portlight_sim::model::VoyageStatus;
@@ -243,15 +244,18 @@ impl PortlightGame {
         row.set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
 
         let mut view_host = SubViewportContainer::new_alloc();
-        // The viewport stays CHART_VIEW_* and stretches into the space left
-        // beside the panel, so 1280 does not clip the Sail column.
+        // Stretch resizes this viewport to the control, so the chart is 1:1
+        // with the pixels beside the panel. The project Nearest setting does
+        // not apply inside a SubViewport; Linear is the viewport default.
         view_host.set_custom_minimum_size(Vector2::new(chart_host_width(), WINDOW_H));
         view_host.set_h_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_v_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_stretch(true);
+        view_host.set_texture_filter(TextureFilter::NEAREST);
         let mut viewport = SubViewport::new_alloc();
-        viewport.set_size(Vector2i::new(CHART_VIEW_W as i32, CHART_VIEW_H as i32));
+        viewport.set_size(Vector2i::new(chart_host_width() as i32, WINDOW_H as i32));
         viewport.set_disable_3d(true);
+        viewport.set_default_canvas_item_texture_filter(DefaultCanvasItemTextureFilter::NEAREST);
         let mut canvas = ChartCanvas::new_alloc();
         let game_for_chart = self.instance_id();
         connect_port_pressed(&mut canvas, move |port_id: GString| {
@@ -1201,9 +1205,9 @@ impl PortlightGame {
                     .gallery
                     .push(docked_sloop_marker(port.map_x, port.map_y));
             }
-            // Keep the Mediterranean in frame so the docked ship and the
-            // sailing ship are both on screen. Play still follows the ship.
-            chart.frame = frame_to_view(chart.focus, CHART_VIEW_W, CHART_VIEW_H);
+            // 1.0 when both plates fit in the chart area of the 1280×720
+            // window, otherwise 0.72. Play still follows the ship.
+            chart.frame = art_frame(&chart, chart_host_width(), WINDOW_H);
         }
         Some(chart)
     }
@@ -1477,9 +1481,13 @@ fn victory_line(session: &Session) -> String {
     format!("Victory paths: {}", names.join(", "))
 }
 
-/// Godot changes into the project directory, so a bare relative path misses
-/// `docs/screenshots/`. The file name is `chart-cutter-f7.png`.
+/// `--art` writes `/tmp/chart-cutter-f7.png`. `PORTLIGHT_ART_DOCS` or
+/// `--art-docs` writes `docs/screenshots/chart-cutter-f7.png`. Godot changes
+/// into the project directory, so that docs path is taken from the repo root.
 fn art_shot_path() -> String {
+    if !(flag_set("PORTLIGHT_ART_DOCS") || user_arg("--art-docs")) {
+        return "/tmp/chart-cutter-f7.png".to_string();
+    }
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     let root = if cwd.file_name().and_then(|name| name.to_str()) == Some("godot") {
         cwd.parent()
