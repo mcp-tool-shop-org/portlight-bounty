@@ -1,0 +1,2958 @@
+{
+  "source_commit": "9b02494cca9cd8f58c4531c41f75be02c9720e43",
+  "goods": [
+    {
+      "id": "grain",
+      "name": "Grain",
+      "category": "commodity",
+      "base_price": 12,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "timber",
+      "name": "Timber",
+      "category": "commodity",
+      "base_price": 18,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "iron",
+      "name": "Iron Ore",
+      "category": "commodity",
+      "base_price": 25,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "cotton",
+      "name": "Cotton",
+      "category": "commodity",
+      "base_price": 15,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "dyes",
+      "name": "Dyes",
+      "category": "commodity",
+      "base_price": 22,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "spice",
+      "name": "Spice",
+      "category": "luxury",
+      "base_price": 55,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "silk",
+      "name": "Silk",
+      "category": "luxury",
+      "base_price": 70,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "porcelain",
+      "name": "Porcelain",
+      "category": "luxury",
+      "base_price": 60,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "tea",
+      "name": "Tea",
+      "category": "luxury",
+      "base_price": 40,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "pearls",
+      "name": "Pearls",
+      "category": "luxury",
+      "base_price": 95,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "rum",
+      "name": "Rum",
+      "category": "provision",
+      "base_price": 20,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "tobacco",
+      "name": "Tobacco",
+      "category": "provision",
+      "base_price": 28,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "weapons",
+      "name": "Weapons",
+      "category": "military",
+      "base_price": 45,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "medicines",
+      "name": "Medicines",
+      "category": "medicine",
+      "base_price": 35,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "opium",
+      "name": "Opium",
+      "category": "contraband",
+      "base_price": 85,
+      "weight_per_unit": 0.5
+    },
+    {
+      "id": "black_powder",
+      "name": "Black Powder",
+      "category": "contraband",
+      "base_price": 65,
+      "weight_per_unit": 1.5
+    },
+    {
+      "id": "stolen_cargo",
+      "name": "Stolen Cargo",
+      "category": "contraband",
+      "base_price": 40,
+      "weight_per_unit": 1.0
+    },
+    {
+      "id": "pelts",
+      "name": "Pelts",
+      "category": "commodity",
+      "base_price": 8,
+      "weight_per_unit": 0.5
+    }
+  ],
+  "ships": [
+    {
+      "id": "coastal_sloop",
+      "name": "Coastal Sloop",
+      "ship_class": "sloop",
+      "cargo_capacity": 30,
+      "speed": 8,
+      "hull_max": 60,
+      "crew_min": 3,
+      "crew_max": 8,
+      "price": 0,
+      "daily_wage": 1,
+      "storm_resist": 0.0,
+      "cannons": 0,
+      "maneuver": 0.9
+    },
+    {
+      "id": "swift_cutter",
+      "name": "Swift Cutter",
+      "ship_class": "cutter",
+      "cargo_capacity": 50,
+      "speed": 9,
+      "hull_max": 70,
+      "crew_min": 5,
+      "crew_max": 12,
+      "price": 450,
+      "daily_wage": 1,
+      "storm_resist": 0.15,
+      "cannons": 2,
+      "maneuver": 0.8
+    },
+    {
+      "id": "trade_brigantine",
+      "name": "Trade Brigantine",
+      "ship_class": "brigantine",
+      "cargo_capacity": 80,
+      "speed": 6,
+      "hull_max": 100,
+      "crew_min": 8,
+      "crew_max": 20,
+      "price": 800,
+      "daily_wage": 2,
+      "storm_resist": 0.3,
+      "cannons": 6,
+      "maneuver": 0.5
+    },
+    {
+      "id": "merchant_galleon",
+      "name": "Merchant Galleon",
+      "ship_class": "galleon",
+      "cargo_capacity": 150,
+      "speed": 4,
+      "hull_max": 160,
+      "crew_min": 15,
+      "crew_max": 40,
+      "price": 2200,
+      "daily_wage": 3,
+      "storm_resist": 0.6,
+      "cannons": 12,
+      "maneuver": 0.3
+    },
+    {
+      "id": "royal_man_of_war",
+      "name": "Royal Man-of-War",
+      "ship_class": "man_of_war",
+      "cargo_capacity": 200,
+      "speed": 3,
+      "hull_max": 220,
+      "crew_min": 25,
+      "crew_max": 60,
+      "price": 5000,
+      "daily_wage": 4,
+      "storm_resist": 0.8,
+      "cannons": 20,
+      "maneuver": 0.2
+    }
+  ],
+  "ports": [
+    {
+      "id": "porto_novo",
+      "name": "Porto Novo",
+      "description": "A bustling harbor city, gateway to inland trade. Grain ships fill the docks.",
+      "region": "Mediterranean",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "grain",
+          "stock_current": 40,
+          "stock_target": 35,
+          "restock_rate": 3.0,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 20,
+          "stock_target": 25,
+          "restock_rate": 2.0,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 15,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 18,
+          "stock_target": 20,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 1,
+      "repair_cost": 2,
+      "crew_cost": 4,
+      "map_x": 18,
+      "map_y": 8
+    },
+    {
+      "id": "al_manar",
+      "name": "Al-Manar",
+      "description": "Ancient port famed for its spice markets. Merchants bid fiercely for grain and iron.",
+      "region": "Mediterranean",
+      "features": [],
+      "market": [
+        {
+          "good_id": "spice",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 2.5,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 10,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 8,
+      "provision_cost": 3,
+      "repair_cost": 4,
+      "crew_cost": 6,
+      "map_x": 24,
+      "map_y": 6
+    },
+    {
+      "id": "silva_bay",
+      "name": "Silva Bay",
+      "description": "Timber-rich bay surrounded by dense forests. The shipwrights here are the best in the region.",
+      "region": "Mediterranean",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "timber",
+          "stock_current": 45,
+          "stock_target": 40,
+          "restock_rate": 3.5,
+          "local_affinity": 1.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.5,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 2,
+      "repair_cost": 1,
+      "crew_cost": 5,
+      "map_x": 14,
+      "map_y": 10
+    },
+    {
+      "id": "corsairs_rest",
+      "name": "Corsair's Rest",
+      "description": "A lawless harbor tucked between cliffs. Smugglers, pirates, and those who trade with them.",
+      "region": "Mediterranean",
+      "features": [
+        "black_market"
+      ],
+      "market": [
+        {
+          "good_id": "weapons",
+          "stock_current": 25,
+          "stock_target": 20,
+          "restock_rate": 2.5,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 3.0,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 10,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "black_powder",
+          "stock_current": 8,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "stolen_cargo",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "opium",
+          "stock_current": 3,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 3,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 2,
+      "map_x": 21,
+      "map_y": 13
+    },
+    {
+      "id": "ironhaven",
+      "name": "Ironhaven",
+      "description": "Industrial port city wreathed in forge smoke. Weapons and iron flow out, everything else flows in.",
+      "region": "North Atlantic",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "iron",
+          "stock_current": 50,
+          "stock_target": 45,
+          "restock_rate": 4.0,
+          "local_affinity": 1.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 35,
+          "stock_target": 30,
+          "restock_rate": 3.0,
+          "local_affinity": 1.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 10,
+          "stock_target": 15,
+          "restock_rate": 1.0,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 8,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 1,
+      "crew_cost": 4,
+      "map_x": 8,
+      "map_y": 4
+    },
+    {
+      "id": "stormwall",
+      "name": "Stormwall",
+      "description": "Fortress port guarding the northern straits. Military outpost with strict inspections.",
+      "region": "North Atlantic",
+      "features": [],
+      "market": [
+        {
+          "good_id": "weapons",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 20,
+          "stock_target": 22,
+          "restock_rate": 2.0,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 18,
+          "stock_target": 20,
+          "restock_rate": 1.5,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 10,
+      "provision_cost": 2,
+      "repair_cost": 2,
+      "crew_cost": 3,
+      "map_x": 4,
+      "map_y": 8
+    },
+    {
+      "id": "thornport",
+      "name": "Thornport",
+      "description": "Whaling town turned trading post. Tea and tobacco are the local currency. Medicines fetch gold.",
+      "region": "North Atlantic",
+      "features": [],
+      "market": [
+        {
+          "good_id": "tea",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 3.0,
+          "local_affinity": 1.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 18,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.6,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 1,
+      "repair_cost": 3,
+      "crew_cost": 3,
+      "map_x": 11,
+      "map_y": 10
+    },
+    {
+      "id": "sun_harbor",
+      "name": "Sun Harbor",
+      "description": "Golden coast port where cotton bales stack higher than the warehouses.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "cotton",
+          "stock_current": 35,
+          "stock_target": 30,
+          "restock_rate": 3.0,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 2.0,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 2,
+      "repair_cost": 4,
+      "crew_cost": 3,
+      "map_x": 14,
+      "map_y": 22
+    },
+    {
+      "id": "palm_cove",
+      "name": "Palm Cove",
+      "description": "A sheltered cove where rum barrels outnumber the inhabitants. Cheapest provisions on the coast.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "rum",
+          "stock_current": 40,
+          "stock_target": 35,
+          "restock_rate": 3.0,
+          "local_affinity": 1.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 18,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 3,
+      "provision_cost": 1,
+      "repair_cost": 5,
+      "crew_cost": 3,
+      "map_x": 10,
+      "map_y": 26
+    },
+    {
+      "id": "iron_point",
+      "name": "Iron Point",
+      "description": "Mining settlement at the river mouth. Iron flows out, everything else flows in at a premium.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "iron",
+          "stock_current": 50,
+          "stock_target": 45,
+          "restock_rate": 4.0,
+          "local_affinity": 1.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 8,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 12,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 3,
+      "repair_cost": 3,
+      "crew_cost": 4,
+      "map_x": 18,
+      "map_y": 24
+    },
+    {
+      "id": "pearl_shallows",
+      "name": "Pearl Shallows",
+      "description": "Divers bring up pearls from the warm shallows. A quiet port where fortunes are made by the patient.",
+      "region": "West Africa",
+      "features": [],
+      "market": [
+        {
+          "good_id": "pearls",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 2,
+      "repair_cost": 4,
+      "crew_cost": 4,
+      "map_x": 12,
+      "map_y": 30
+    },
+    {
+      "id": "jade_port",
+      "name": "Jade Port",
+      "description": "Porcelain workshops line the waterfront. Iron and grain are worth their weight in gold here.",
+      "region": "East Indies",
+      "features": [],
+      "market": [
+        {
+          "good_id": "porcelain",
+          "stock_current": 35,
+          "stock_target": 30,
+          "restock_rate": 3.0,
+          "local_affinity": 1.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 15,
+          "stock_target": 18,
+          "restock_rate": 1.5,
+          "local_affinity": 1.1,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 10,
+      "provision_cost": 3,
+      "repair_cost": 3,
+      "crew_cost": 7,
+      "map_x": 34,
+      "map_y": 10
+    },
+    {
+      "id": "monsoon_reach",
+      "name": "Monsoon Reach",
+      "description": "Seasonal winds funnel the spice trade through this crossroads. The shipyard builds for endurance.",
+      "region": "East Indies",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "spice",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 6,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 8,
+      "provision_cost": 2,
+      "repair_cost": 2,
+      "crew_cost": 6,
+      "map_x": 38,
+      "map_y": 14
+    },
+    {
+      "id": "silk_haven",
+      "name": "Silk Haven",
+      "description": "Premier silk market of the eastern waters. Rum and iron are scarce luxuries here.",
+      "region": "East Indies",
+      "features": [],
+      "market": [
+        {
+          "good_id": "silk",
+          "stock_current": 40,
+          "stock_target": 35,
+          "restock_rate": 3.5,
+          "local_affinity": 1.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 7,
+      "provision_cost": 3,
+      "repair_cost": 5,
+      "crew_cost": 8,
+      "map_x": 42,
+      "map_y": 8
+    },
+    {
+      "id": "crosswind_isle",
+      "name": "Crosswind Isle",
+      "description": "Free port at the junction of all trade winds. Everything passes through, nothing stays cheap.",
+      "region": "East Indies",
+      "features": [
+        "safe_harbor"
+      ],
+      "market": [
+        {
+          "good_id": "grain",
+          "stock_current": 15,
+          "stock_target": 15,
+          "restock_rate": 1.5,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 12,
+          "stock_target": 12,
+          "restock_rate": 1.2,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 8,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 10,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 6,
+          "stock_target": 6,
+          "restock_rate": 0.6,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 8,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 8,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 5,
+      "map_x": 32,
+      "map_y": 16
+    },
+    {
+      "id": "dragons_gate",
+      "name": "Dragon's Gate",
+      "description": "Fortress harbor controlling the eastern straits. Weapons are contraband here, but medicines are gold.",
+      "region": "East Indies",
+      "features": [],
+      "market": [
+        {
+          "good_id": "tea",
+          "stock_current": 30,
+          "stock_target": 25,
+          "restock_rate": 3.0,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.65,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 9,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 7,
+      "map_x": 44,
+      "map_y": 12
+    },
+    {
+      "id": "spice_narrows",
+      "name": "Spice Narrows",
+      "description": "Hidden anchorage in the spice archipelago. The most concentrated spice market in the world.",
+      "region": "East Indies",
+      "features": [
+        "black_market"
+      ],
+      "market": [
+        {
+          "good_id": "spice",
+          "stock_current": 45,
+          "stock_target": 40,
+          "restock_rate": 4.0,
+          "local_affinity": 1.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pearls",
+          "stock_current": 8,
+          "stock_target": 6,
+          "restock_rate": 1.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 10,
+          "stock_target": 12,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 6,
+          "restock_rate": 0.8,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "opium",
+          "stock_current": 10,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "stolen_cargo",
+          "stock_current": 8,
+          "stock_target": 6,
+          "restock_rate": 0.8,
+          "local_affinity": 1.0,
+          "spread": 0.15
+        },
+        {
+          "good_id": "black_powder",
+          "stock_current": 3,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 5,
+      "provision_cost": 3,
+      "repair_cost": 5,
+      "crew_cost": 6,
+      "map_x": 38,
+      "map_y": 20
+    },
+    {
+      "id": "ember_isle",
+      "name": "Ember Isle",
+      "description": "Volcanic island with obsidian beaches. Rich in rare minerals and medicinal plants.",
+      "region": "South Seas",
+      "features": [],
+      "market": [
+        {
+          "good_id": "medicines",
+          "stock_current": 25,
+          "stock_target": 20,
+          "restock_rate": 2.5,
+          "local_affinity": 1.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "dyes",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "iron",
+          "stock_current": 15,
+          "stock_target": 12,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "cotton",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 4,
+      "crew_cost": 5,
+      "map_x": 34,
+      "map_y": 28
+    },
+    {
+      "id": "typhoon_anchorage",
+      "name": "Typhoon Anchorage",
+      "description": "Storm-battered harbor that only the boldest captains visit. Pearls and rare goods reward the brave.",
+      "region": "South Seas",
+      "features": [
+        "shipyard"
+      ],
+      "market": [
+        {
+          "good_id": "pearls",
+          "stock_current": 20,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "timber",
+          "stock_current": 25,
+          "stock_target": 22,
+          "restock_rate": 2.5,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "spice",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.5,
+          "local_affinity": 1.2,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.5,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        },
+        {
+          "good_id": "medicines",
+          "stock_current": 8,
+          "stock_target": 10,
+          "restock_rate": 1.0,
+          "local_affinity": 0.8,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.6,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 6,
+          "stock_target": 8,
+          "restock_rate": 1.0,
+          "local_affinity": 0.9,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 4,
+      "provision_cost": 1,
+      "repair_cost": 2,
+      "crew_cost": 4,
+      "map_x": 40,
+      "map_y": 30
+    },
+    {
+      "id": "coral_throne",
+      "name": "Coral Throne",
+      "description": "Island kingdom built on coral reefs. The king trades pearls for weapons and demands tribute in silk.",
+      "region": "South Seas",
+      "features": [],
+      "market": [
+        {
+          "good_id": "pearls",
+          "stock_current": 12,
+          "stock_target": 10,
+          "restock_rate": 1.5,
+          "local_affinity": 1.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tobacco",
+          "stock_current": 20,
+          "stock_target": 18,
+          "restock_rate": 2.0,
+          "local_affinity": 1.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "rum",
+          "stock_current": 18,
+          "stock_target": 15,
+          "restock_rate": 2.0,
+          "local_affinity": 1.3,
+          "spread": 0.15
+        },
+        {
+          "good_id": "weapons",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "silk",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.4,
+          "spread": 0.15
+        },
+        {
+          "good_id": "tea",
+          "stock_current": 3,
+          "stock_target": 5,
+          "restock_rate": 0.5,
+          "local_affinity": 0.5,
+          "spread": 0.15
+        },
+        {
+          "good_id": "grain",
+          "stock_current": 4,
+          "stock_target": 6,
+          "restock_rate": 0.5,
+          "local_affinity": 0.55,
+          "spread": 0.15
+        },
+        {
+          "good_id": "pelts",
+          "stock_current": 5,
+          "stock_target": 8,
+          "restock_rate": 0.8,
+          "local_affinity": 0.7,
+          "spread": 0.15
+        },
+        {
+          "good_id": "porcelain",
+          "stock_current": 2,
+          "stock_target": 4,
+          "restock_rate": 0.3,
+          "local_affinity": 0.45,
+          "spread": 0.15
+        }
+      ],
+      "port_fee": 7,
+      "provision_cost": 1,
+      "repair_cost": 4,
+      "crew_cost": 5,
+      "map_x": 44,
+      "map_y": 26
+    }
+  ],
+  "routes": [
+    {
+      "port_a": "porto_novo",
+      "port_b": "al_manar",
+      "distance": 24,
+      "danger": 0.12,
+      "min_ship_class": "sloop",
+      "lore_name": "The Grain Road",
+      "lore": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory."
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "silva_bay",
+      "distance": 16,
+      "danger": 0.08,
+      "min_ship_class": "sloop",
+      "lore_name": "The Timber Run",
+      "lore": "Short and safe \u2014 the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet."
+    },
+    {
+      "port_a": "al_manar",
+      "port_b": "silva_bay",
+      "distance": 20,
+      "danger": 0.1,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "corsairs_rest",
+      "distance": 18,
+      "danger": 0.18,
+      "min_ship_class": "sloop",
+      "lore_name": "The Shadow Lane",
+      "lore": "Every merchant denies using it. Every merchant uses it. The line between trade and smuggling runs through these waters."
+    },
+    {
+      "port_a": "silva_bay",
+      "port_b": "corsairs_rest",
+      "distance": 14,
+      "danger": 0.15,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "ironhaven",
+      "port_b": "stormwall",
+      "distance": 20,
+      "danger": 0.09,
+      "min_ship_class": "sloop",
+      "lore_name": "The Iron Strait",
+      "lore": "Iron from the foundries, soldiers from the fortress. This lane never sleeps."
+    },
+    {
+      "port_a": "ironhaven",
+      "port_b": "thornport",
+      "distance": 22,
+      "danger": 0.08,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "stormwall",
+      "port_b": "thornport",
+      "distance": 18,
+      "danger": 0.1,
+      "min_ship_class": "sloop",
+      "lore_name": "The Tea and Tobacco Road",
+      "lore": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade."
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "ironhaven",
+      "distance": 36,
+      "danger": 0.12,
+      "min_ship_class": "cutter",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "silva_bay",
+      "port_b": "ironhaven",
+      "distance": 32,
+      "danger": 0.11,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "corsairs_rest",
+      "port_b": "stormwall",
+      "distance": 40,
+      "danger": 0.15,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "porto_novo",
+      "port_b": "sun_harbor",
+      "distance": 40,
+      "danger": 0.12,
+      "min_ship_class": "cutter",
+      "lore_name": "The Cotton Crossing",
+      "lore": "Mediterranean grain south, Gold Coast cotton north. The route that clothed an empire."
+    },
+    {
+      "port_a": "al_manar",
+      "port_b": "sun_harbor",
+      "distance": 48,
+      "danger": 0.15,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "silva_bay",
+      "port_b": "palm_cove",
+      "distance": 44,
+      "danger": 0.13,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "palm_cove",
+      "distance": 20,
+      "danger": 0.1,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "iron_point",
+      "distance": 18,
+      "danger": 0.09,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "palm_cove",
+      "port_b": "iron_point",
+      "distance": 22,
+      "danger": 0.11,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "pearl_shallows",
+      "distance": 24,
+      "danger": 0.1,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "palm_cove",
+      "port_b": "pearl_shallows",
+      "distance": 20,
+      "danger": 0.09,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "sun_harbor",
+      "port_b": "crosswind_isle",
+      "distance": 64,
+      "danger": 0.18,
+      "min_ship_class": "galleon",
+      "lore_name": "The Long Crossing",
+      "lore": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive."
+    },
+    {
+      "port_a": "iron_point",
+      "port_b": "crosswind_isle",
+      "distance": 60,
+      "danger": 0.16,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "pearl_shallows",
+      "port_b": "crosswind_isle",
+      "distance": 56,
+      "danger": 0.15,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "jade_port",
+      "distance": 28,
+      "danger": 0.1,
+      "min_ship_class": "sloop",
+      "lore_name": "The Porcelain Lane",
+      "lore": "From the free port to the kiln masters. Every piece of porcelain in the west passed through here."
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "monsoon_reach",
+      "distance": 24,
+      "danger": 0.09,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "silk_haven",
+      "distance": 32,
+      "danger": 0.12,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "dragons_gate",
+      "distance": 30,
+      "danger": 0.11,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "jade_port",
+      "port_b": "monsoon_reach",
+      "distance": 20,
+      "danger": 0.08,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "jade_port",
+      "port_b": "silk_haven",
+      "distance": 18,
+      "danger": 0.07,
+      "min_ship_class": "sloop",
+      "lore_name": "The Silk Road by Sea",
+      "lore": "Where porcelain meets silk. The two oldest trades in the East, connected by the shortest route."
+    },
+    {
+      "port_a": "jade_port",
+      "port_b": "dragons_gate",
+      "distance": 22,
+      "danger": 0.09,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "monsoon_reach",
+      "port_b": "silk_haven",
+      "distance": 22,
+      "danger": 0.1,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "monsoon_reach",
+      "port_b": "spice_narrows",
+      "distance": 26,
+      "danger": 0.13,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "silk_haven",
+      "port_b": "spice_narrows",
+      "distance": 20,
+      "danger": 0.11,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "dragons_gate",
+      "port_b": "spice_narrows",
+      "distance": 28,
+      "danger": 0.14,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "monsoon_reach",
+      "port_b": "typhoon_anchorage",
+      "distance": 52,
+      "danger": 0.2,
+      "min_ship_class": "galleon",
+      "lore_name": "Typhoon Alley",
+      "lore": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival."
+    },
+    {
+      "port_a": "spice_narrows",
+      "port_b": "ember_isle",
+      "distance": 48,
+      "danger": 0.18,
+      "min_ship_class": "galleon",
+      "lore_name": "The Volcanic Passage",
+      "lore": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days."
+    },
+    {
+      "port_a": "crosswind_isle",
+      "port_b": "ember_isle",
+      "distance": 56,
+      "danger": 0.19,
+      "min_ship_class": "galleon",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "ember_isle",
+      "port_b": "typhoon_anchorage",
+      "distance": 24,
+      "danger": 0.14,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "ember_isle",
+      "port_b": "coral_throne",
+      "distance": 28,
+      "danger": 0.15,
+      "min_ship_class": "sloop",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "typhoon_anchorage",
+      "port_b": "coral_throne",
+      "distance": 22,
+      "danger": 0.13,
+      "min_ship_class": "brigantine",
+      "lore_name": "",
+      "lore": ""
+    },
+    {
+      "port_a": "al_manar",
+      "port_b": "monsoon_reach",
+      "distance": 72,
+      "danger": 0.22,
+      "min_ship_class": "galleon",
+      "lore_name": "The Monsoon Shortcut",
+      "lore": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown."
+    },
+    {
+      "port_a": "corsairs_rest",
+      "port_b": "spice_narrows",
+      "distance": 80,
+      "danger": 0.25,
+      "min_ship_class": "galleon",
+      "lore_name": "The Smuggler's Run",
+      "lore": "Only the desperate or the bold sail this direct. Pirate kings once controlled both ends."
+    },
+    {
+      "port_a": "ironhaven",
+      "port_b": "jade_port",
+      "distance": 76,
+      "danger": 0.22,
+      "min_ship_class": "galleon",
+      "lore_name": "The Northern Passage",
+      "lore": "Iron west, porcelain east. The longest profitable route in the world."
+    },
+    {
+      "port_a": "pearl_shallows",
+      "port_b": "coral_throne",
+      "distance": 68,
+      "danger": 0.2,
+      "min_ship_class": "galleon",
+      "lore_name": "The Deep South Run",
+      "lore": "Pearl to pearl. The divers of the shallows and the divers of the reef \u2014 same craft, different kingdoms."
+    }
+  ],
+  "captains": [
+    {
+      "id": "merchant",
+      "name": "The Merchant",
+      "title": "Licensed Trader",
+      "home_region": "Mediterranean",
+      "home_port_id": "porto_novo",
+      "starting_silver": 550,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 0.92,
+        "sell_price_mult": 1.05,
+        "luxury_sell_bonus": 0.0,
+        "port_fee_mult": 0.7
+      },
+      "voyage": {
+        "provision_burn": 1.0,
+        "speed_bonus": 0.0,
+        "storm_resist_bonus": 0.0,
+        "cargo_damage_mult": 1.0
+      },
+      "inspection": {
+        "inspection_chance_mult": 0.5,
+        "seizure_risk": 0.0,
+        "fine_mult": 0.6
+      },
+      "reputation": {
+        "commercial_trust": 15,
+        "customs_heat": 0,
+        "mediterranean": 10,
+        "north_atlantic": 0,
+        "west_africa": 0,
+        "east_indies": 0,
+        "south_seas": 0,
+        "underworld": {}
+      }
+    },
+    {
+      "id": "smuggler",
+      "name": "The Smuggler",
+      "title": "Shadow Trader",
+      "home_region": "West Africa",
+      "home_port_id": "palm_cove",
+      "starting_silver": 500,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 35,
+      "pricing": {
+        "buy_price_mult": 1.0,
+        "sell_price_mult": 0.98,
+        "luxury_sell_bonus": 0.28,
+        "port_fee_mult": 0.9
+      },
+      "voyage": {
+        "provision_burn": 0.85,
+        "speed_bonus": 0.0,
+        "storm_resist_bonus": 0.0,
+        "cargo_damage_mult": 0.8
+      },
+      "inspection": {
+        "inspection_chance_mult": 1.3,
+        "seizure_risk": 0.05,
+        "fine_mult": 1.2
+      },
+      "reputation": {
+        "commercial_trust": 0,
+        "customs_heat": 8,
+        "mediterranean": 0,
+        "north_atlantic": 0,
+        "west_africa": 5,
+        "east_indies": 0,
+        "south_seas": 0,
+        "underworld": {}
+      }
+    },
+    {
+      "id": "navigator",
+      "name": "The Navigator",
+      "title": "Route Specialist",
+      "home_region": "Mediterranean",
+      "home_port_id": "silva_bay",
+      "starting_silver": 450,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 1.05,
+        "sell_price_mult": 1.0,
+        "luxury_sell_bonus": 0.0,
+        "port_fee_mult": 1.0
+      },
+      "voyage": {
+        "provision_burn": 0.7,
+        "speed_bonus": 1.5,
+        "storm_resist_bonus": 0.15,
+        "cargo_damage_mult": 0.7
+      },
+      "inspection": {
+        "inspection_chance_mult": 1.0,
+        "seizure_risk": 0.0,
+        "fine_mult": 1.0
+      },
+      "reputation": {
+        "commercial_trust": 5,
+        "customs_heat": 0,
+        "mediterranean": 5,
+        "north_atlantic": 0,
+        "west_africa": 0,
+        "east_indies": 5,
+        "south_seas": 0,
+        "underworld": {}
+      }
+    },
+    {
+      "id": "privateer",
+      "name": "The Privateer",
+      "title": "Licensed Hunter",
+      "home_region": "North Atlantic",
+      "home_port_id": "stormwall",
+      "starting_silver": 475,
+      "starting_ship_id": "swift_cutter",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 0.95,
+        "sell_price_mult": 1.02,
+        "luxury_sell_bonus": 0.1,
+        "port_fee_mult": 0.6
+      },
+      "voyage": {
+        "provision_burn": 0.9,
+        "speed_bonus": 0.5,
+        "storm_resist_bonus": 0.05,
+        "cargo_damage_mult": 0.9
+      },
+      "inspection": {
+        "inspection_chance_mult": 0.3,
+        "seizure_risk": 0.0,
+        "fine_mult": 0.5
+      },
+      "reputation": {
+        "commercial_trust": 8,
+        "customs_heat": 0,
+        "mediterranean": 3,
+        "north_atlantic": 8,
+        "west_africa": 0,
+        "east_indies": 0,
+        "south_seas": 0,
+        "underworld": {
+          "iron_wolves": -5
+        }
+      }
+    },
+    {
+      "id": "corsair",
+      "name": "The Corsair",
+      "title": "Crimson Tide Captain",
+      "home_region": "Mediterranean",
+      "home_port_id": "corsairs_rest",
+      "starting_silver": 500,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 1.05,
+        "sell_price_mult": 0.95,
+        "luxury_sell_bonus": 0.15,
+        "port_fee_mult": 0.5
+      },
+      "voyage": {
+        "provision_burn": 0.9,
+        "speed_bonus": 0.3,
+        "storm_resist_bonus": 0.0,
+        "cargo_damage_mult": 0.85
+      },
+      "inspection": {
+        "inspection_chance_mult": 1.5,
+        "seizure_risk": 0.08,
+        "fine_mult": 1.5
+      },
+      "reputation": {
+        "commercial_trust": 0,
+        "customs_heat": 12,
+        "mediterranean": -5,
+        "north_atlantic": 0,
+        "west_africa": 0,
+        "east_indies": 0,
+        "south_seas": 0,
+        "underworld": {
+          "crimson_tide": 25
+        }
+      }
+    },
+    {
+      "id": "scholar",
+      "name": "The Scholar",
+      "title": "Wind Temple Student",
+      "home_region": "East Indies",
+      "home_port_id": "monsoon_reach",
+      "starting_silver": 400,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 35,
+      "pricing": {
+        "buy_price_mult": 1.0,
+        "sell_price_mult": 1.0,
+        "luxury_sell_bonus": 0.0,
+        "port_fee_mult": 0.85
+      },
+      "voyage": {
+        "provision_burn": 0.75,
+        "speed_bonus": 1.0,
+        "storm_resist_bonus": 0.1,
+        "cargo_damage_mult": 0.8
+      },
+      "inspection": {
+        "inspection_chance_mult": 0.7,
+        "seizure_risk": 0.0,
+        "fine_mult": 0.8
+      },
+      "reputation": {
+        "commercial_trust": 5,
+        "customs_heat": 0,
+        "mediterranean": 2,
+        "north_atlantic": 2,
+        "west_africa": 2,
+        "east_indies": 8,
+        "south_seas": 2,
+        "underworld": {}
+      }
+    },
+    {
+      "id": "merchant_prince",
+      "name": "The Merchant Prince",
+      "title": "Khoury Dynasty Scion",
+      "home_region": "Mediterranean",
+      "home_port_id": "al_manar",
+      "starting_silver": 700,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 0.9,
+        "sell_price_mult": 1.08,
+        "luxury_sell_bonus": 0.12,
+        "port_fee_mult": 0.65
+      },
+      "voyage": {
+        "provision_burn": 1.0,
+        "speed_bonus": 0.0,
+        "storm_resist_bonus": 0.0,
+        "cargo_damage_mult": 1.0
+      },
+      "inspection": {
+        "inspection_chance_mult": 0.4,
+        "seizure_risk": 0.0,
+        "fine_mult": 0.4
+      },
+      "reputation": {
+        "commercial_trust": 18,
+        "customs_heat": 0,
+        "mediterranean": 12,
+        "north_atlantic": 0,
+        "west_africa": 0,
+        "east_indies": 5,
+        "south_seas": 0,
+        "underworld": {}
+      }
+    },
+    {
+      "id": "dockhand",
+      "name": "The Dockhand",
+      "title": "Self-Made Captain",
+      "home_region": "East Indies",
+      "home_port_id": "crosswind_isle",
+      "starting_silver": 300,
+      "starting_ship_id": "coastal_sloop",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 1.0,
+        "sell_price_mult": 1.0,
+        "luxury_sell_bonus": 0.0,
+        "port_fee_mult": 1.0
+      },
+      "voyage": {
+        "provision_burn": 0.85,
+        "speed_bonus": 0.0,
+        "storm_resist_bonus": 0.0,
+        "cargo_damage_mult": 0.9
+      },
+      "inspection": {
+        "inspection_chance_mult": 1.0,
+        "seizure_risk": 0.0,
+        "fine_mult": 1.0
+      },
+      "reputation": {
+        "commercial_trust": 0,
+        "customs_heat": 0,
+        "mediterranean": 0,
+        "north_atlantic": 0,
+        "west_africa": 0,
+        "east_indies": 0,
+        "south_seas": 0,
+        "underworld": {}
+      }
+    },
+    {
+      "id": "bounty_hunter",
+      "name": "The Bounty Hunter",
+      "title": "Licensed Hunter",
+      "home_region": "North Atlantic",
+      "home_port_id": "crosswind_isle",
+      "starting_silver": 425,
+      "starting_ship_id": "swift_cutter",
+      "starting_provisions": 30,
+      "pricing": {
+        "buy_price_mult": 1.05,
+        "sell_price_mult": 0.98,
+        "luxury_sell_bonus": 0.0,
+        "port_fee_mult": 0.7
+      },
+      "voyage": {
+        "provision_burn": 0.9,
+        "speed_bonus": 0.5,
+        "storm_resist_bonus": 0.05,
+        "cargo_damage_mult": 1.0
+      },
+      "inspection": {
+        "inspection_chance_mult": 0.6,
+        "seizure_risk": 0.0,
+        "fine_mult": 0.5
+      },
+      "reputation": {
+        "commercial_trust": 3,
+        "customs_heat": 0,
+        "mediterranean": 3,
+        "north_atlantic": 8,
+        "west_africa": 0,
+        "east_indies": 0,
+        "south_seas": 0,
+        "underworld": {}
+      }
+    }
+  ],
+  "seasons": [
+    {
+      "season": "spring",
+      "region": "Mediterranean",
+      "danger_mult": 0.8,
+      "speed_mult": 1.1,
+      "market_effects": {
+        "grain": 0.8,
+        "timber": 0.9
+      }
+    },
+    {
+      "season": "summer",
+      "region": "Mediterranean",
+      "danger_mult": 0.9,
+      "speed_mult": 1.0,
+      "market_effects": {
+        "spice": 1.3,
+        "silk": 1.2
+      }
+    },
+    {
+      "season": "autumn",
+      "region": "Mediterranean",
+      "danger_mult": 1.1,
+      "speed_mult": 1.0,
+      "market_effects": {
+        "grain": 1.5,
+        "rum": 1.3,
+        "dyes": 1.2
+      }
+    },
+    {
+      "season": "winter",
+      "region": "Mediterranean",
+      "danger_mult": 1.3,
+      "speed_mult": 0.9,
+      "market_effects": {
+        "grain": 0.7,
+        "medicines": 1.4,
+        "tea": 1.3
+      }
+    },
+    {
+      "season": "spring",
+      "region": "North Atlantic",
+      "danger_mult": 1.0,
+      "speed_mult": 1.0,
+      "market_effects": {
+        "timber": 1.3,
+        "iron": 1.2
+      }
+    },
+    {
+      "season": "summer",
+      "region": "North Atlantic",
+      "danger_mult": 0.7,
+      "speed_mult": 1.15,
+      "market_effects": {
+        "weapons": 1.3,
+        "tobacco": 1.2
+      }
+    },
+    {
+      "season": "autumn",
+      "region": "North Atlantic",
+      "danger_mult": 1.3,
+      "speed_mult": 0.9,
+      "market_effects": {
+        "medicines": 1.5,
+        "grain": 1.3,
+        "tea": 1.4
+      }
+    },
+    {
+      "season": "winter",
+      "region": "North Atlantic",
+      "danger_mult": 1.8,
+      "speed_mult": 0.7,
+      "market_effects": {
+        "medicines": 2.0,
+        "tea": 1.8,
+        "grain": 1.5,
+        "tobacco": 1.5
+      }
+    },
+    {
+      "season": "spring",
+      "region": "West Africa",
+      "danger_mult": 0.9,
+      "speed_mult": 1.05,
+      "market_effects": {
+        "cotton": 1.3,
+        "dyes": 1.2
+      }
+    },
+    {
+      "season": "summer",
+      "region": "West Africa",
+      "danger_mult": 1.2,
+      "speed_mult": 0.9,
+      "market_effects": {
+        "rum": 1.4,
+        "pearls": 1.3
+      }
+    },
+    {
+      "season": "autumn",
+      "region": "West Africa",
+      "danger_mult": 1.0,
+      "speed_mult": 1.0,
+      "market_effects": {
+        "cotton": 1.4,
+        "dyes": 1.5,
+        "pearls": 1.2
+      }
+    },
+    {
+      "season": "winter",
+      "region": "West Africa",
+      "danger_mult": 0.85,
+      "speed_mult": 1.1,
+      "market_effects": {
+        "iron": 1.3,
+        "weapons": 1.2
+      }
+    },
+    {
+      "season": "spring",
+      "region": "East Indies",
+      "danger_mult": 0.9,
+      "speed_mult": 1.1,
+      "market_effects": {
+        "silk": 1.2,
+        "porcelain": 1.2,
+        "tea": 1.3
+      }
+    },
+    {
+      "season": "summer",
+      "region": "East Indies",
+      "danger_mult": 1.7,
+      "speed_mult": 0.75,
+      "market_effects": {
+        "spice": 1.8,
+        "medicines": 1.5,
+        "silk": 0.7
+      }
+    },
+    {
+      "season": "autumn",
+      "region": "East Indies",
+      "danger_mult": 1.1,
+      "speed_mult": 1.0,
+      "market_effects": {
+        "spice": 1.5,
+        "tea": 1.4,
+        "porcelain": 1.3
+      }
+    },
+    {
+      "season": "winter",
+      "region": "East Indies",
+      "danger_mult": 0.8,
+      "speed_mult": 1.1,
+      "market_effects": {
+        "silk": 1.4,
+        "porcelain": 1.3,
+        "tea": 1.2
+      }
+    },
+    {
+      "season": "spring",
+      "region": "South Seas",
+      "danger_mult": 0.9,
+      "speed_mult": 1.05,
+      "market_effects": {
+        "pearls": 1.3,
+        "medicines": 1.2
+      }
+    },
+    {
+      "season": "summer",
+      "region": "South Seas",
+      "danger_mult": 1.5,
+      "speed_mult": 0.85,
+      "market_effects": {
+        "weapons": 1.5,
+        "timber": 1.3
+      }
+    },
+    {
+      "season": "autumn",
+      "region": "South Seas",
+      "danger_mult": 1.1,
+      "speed_mult": 1.0,
+      "market_effects": {
+        "pearls": 1.5,
+        "medicines": 1.4,
+        "dyes": 1.3
+      }
+    },
+    {
+      "season": "winter",
+      "region": "South Seas",
+      "danger_mult": 0.85,
+      "speed_mult": 1.1,
+      "market_effects": {
+        "pearls": 1.2,
+        "tobacco": 1.3,
+        "rum": 1.2
+      }
+    }
+  ],
+  "factions": [
+    {
+      "id": "crimson_tide",
+      "name": "The Crimson Tide",
+      "territory_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ]
+    },
+    {
+      "id": "monsoon_syndicate",
+      "name": "The Monsoon Syndicate",
+      "territory_regions": [
+        "East Indies"
+      ]
+    },
+    {
+      "id": "deep_reef",
+      "name": "The Deep Reef Brotherhood",
+      "territory_regions": [
+        "South Seas",
+        "West Africa"
+      ]
+    },
+    {
+      "id": "iron_wolves",
+      "name": "The Iron Wolves",
+      "territory_regions": [
+        "North Atlantic"
+      ]
+    }
+  ],
+  "pirate_captains": [
+    {
+      "id": "scarlet_ana",
+      "name": "Scarlet Ana",
+      "faction_id": "crimson_tide",
+      "personality": "balanced",
+      "strength": 6
+    },
+    {
+      "id": "the_butcher",
+      "name": "The Butcher",
+      "faction_id": "crimson_tide",
+      "personality": "aggressive",
+      "strength": 8
+    },
+    {
+      "id": "raj_the_quiet",
+      "name": "Raj the Quiet",
+      "faction_id": "monsoon_syndicate",
+      "personality": "defensive",
+      "strength": 5
+    },
+    {
+      "id": "typhoon_mei",
+      "name": "Typhoon Mei",
+      "faction_id": "monsoon_syndicate",
+      "personality": "wild",
+      "strength": 7
+    },
+    {
+      "id": "old_coral",
+      "name": "Old Coral",
+      "faction_id": "deep_reef",
+      "personality": "defensive",
+      "strength": 6
+    },
+    {
+      "id": "the_diver",
+      "name": "The Diver",
+      "faction_id": "deep_reef",
+      "personality": "aggressive",
+      "strength": 7
+    },
+    {
+      "id": "sergeant_kruze",
+      "name": "Sergeant Kruze",
+      "faction_id": "iron_wolves",
+      "personality": "balanced",
+      "strength": 7
+    },
+    {
+      "id": "gnaw",
+      "name": "Gnaw",
+      "faction_id": "iron_wolves",
+      "personality": "aggressive",
+      "strength": 9
+    }
+  ]
+}
