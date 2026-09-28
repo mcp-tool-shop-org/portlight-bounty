@@ -89,6 +89,7 @@ fn goldens_guard_the_checklist_paths() {
     let mut saw_duel_loss = false;
     let mut saw_hire = false;
     let mut saw_provision = false;
+    let mut saw_dock_work = false;
     for entry in fs::read_dir(&root).expect("golden dir") {
         let entry = entry.expect("entry");
         if entry.path().extension().and_then(|ext| ext.to_str()) != Some("json") {
@@ -143,6 +144,10 @@ fn goldens_guard_the_checklist_paths() {
             }
             if log.get("command").and_then(|item| item.as_str()) == Some("provision 4") {
                 saw_provision = true;
+            }
+            if let Some(earned) = log.get("earned").and_then(|item| item.as_i64()) {
+                assert!((3..=5).contains(&earned), "dock work earned {earned}");
+                saw_dock_work = true;
             }
             if let Some(duel) = log.get("duel").filter(|item| !item.is_null()) {
                 if duel.get("player_won").and_then(|item| item.as_bool()) == Some(true) {
@@ -228,4 +233,5 @@ fn goldens_guard_the_checklist_paths() {
     assert!(saw_duel_loss, "a lost duel is not in a golden");
     assert!(saw_hire, "hiring crew is not in a golden");
     assert!(saw_provision, "buying provisions is not in a golden");
+    assert!(saw_dock_work, "dock work is not in a golden");
 }

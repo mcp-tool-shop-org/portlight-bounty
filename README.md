@@ -19,7 +19,7 @@ cargo run -p portlight-cli -- script parity/scripts/voyage.txt
 cargo test --locked --workspace
 ```
 
-Script commands: `new`, `buy`, `sell`, `depart`, `advance`, `hire`, `provision`, `duel`, `resolve_duel`.
+Script commands: `new`, `buy`, `sell`, `depart`, `advance`, `hire`, `provision`, `work`, `duel`, `resolve_duel`.
 
 ## Parity
 

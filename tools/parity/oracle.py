@@ -27,6 +27,7 @@ from portlight.engine.economy import (
     execute_sell,
     recalculate_prices,
     tick_markets,
+    work_docks,
 )
 from portlight.engine.models import VoyageStatus
 from portlight.engine.reputation import (
@@ -319,6 +320,10 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         except ValueError as exc:
             raise ScriptError(f"Invalid number: {tokens[1]}") from exc
         do_provision(state, days)
+    elif cmd == "work":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: work")
+        do_work(state, entry)
     elif cmd == "duel":
         if len(tokens) < 2:
             raise ScriptError("Usage: duel <stance>[,<stance>...]")
@@ -392,6 +397,16 @@ def do_hire(state, count: int, role: str) -> None:
                 origin_port=port.id,
                 trait=generate_officer_trait(state["rng"]),
             ))
+
+
+def do_work(state, entry: dict) -> None:
+    """GameSession.work: work_docks, then copy captain.day onto world.day."""
+    world = state["world"]
+    if current_port(world) is None:
+        raise ScriptError("Must be docked to work the docks.")
+    earned = work_docks(world.captain, state["rng"])
+    world.day = world.captain.day
+    entry["earned"] = earned
 
 
 def do_provision(state, days: int) -> None:

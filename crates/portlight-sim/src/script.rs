@@ -105,6 +105,15 @@ fn dispatch(
             let days = parse_qty(&tokens[1])?;
             session.provision(days)
         }
+        "work" => {
+            let session = active(session)?;
+            if tokens.len() != 1 {
+                return Err(SimError::UsageWork);
+            }
+            let earned = session.work()?;
+            entry.earned = Some(earned);
+            Ok(())
+        }
         "duel" => {
             let session = active(session)?;
             if tokens.len() < 2 {

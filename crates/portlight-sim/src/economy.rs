@@ -189,6 +189,17 @@ pub fn consume_cargo_fifo(items: &mut Vec<CargoItem>, good_id: &str, qty: i64) -
     consumed
 }
 
+/// `work_docks`. One `randint(3, 5)`, then silver and `captain.day`.
+///
+/// The session copies `captain.day` onto `world.day` afterwards. This draw
+/// does not tick markets, provisions, wages, or reputation.
+pub fn work_docks(captain: &mut Captain, rng: &mut PyRandom) -> i64 {
+    let earned = rng.randint(3, 5);
+    captain.silver += earned;
+    captain.day += 1;
+    earned
+}
+
 fn receipt_id(captain_name: &str, port_id: &str, good_id: &str, day: i64, seq: u64) -> String {
     let raw = format!("{captain_name}:{port_id}:{good_id}:{day}:{seq}");
     let hash = Sha256::digest(raw.as_bytes());

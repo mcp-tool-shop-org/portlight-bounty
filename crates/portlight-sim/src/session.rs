@@ -11,8 +11,8 @@
 //! in the UI crate.
 //!
 //! This is the slice of `GameSession` the port compares with Python: new game,
-//! buy, sell (including trade reputation and the receipt ledger), depart, and
-//! advance. Advance ticks reputation, ticks markets while in port (without
+//! buy, sell (including trade reputation and the receipt ledger), depart,
+//! advance, and dock work. Advance ticks reputation, ticks markets while in port (without
 //! seasonal `current_day`), sails one day at sea, records inspection and
 //! arrival reputation, reprices with the captain's modifiers, and records a
 //! victory path when its requirements are all met.
@@ -289,6 +289,20 @@ impl Session {
         self.world.captain.silver -= cost;
         self.world.captain.provisions += days;
         Ok(())
+    }
+
+    /// Work the docks for a day. Returns silver earned (3 to 5).
+    ///
+    /// This is `GameSession.work`: one `randint(3, 5)` on the session RNG,
+    /// then `captain.day` is copied onto `world.day`. Markets, provisions,
+    /// wages, and reputation do not tick.
+    pub fn work(&mut self) -> Result<i64, SimError> {
+        if current_port_id(&self.world).is_none() {
+            return Err(SimError::MustBeDockedToWork);
+        }
+        let earned = economy::work_docks(&mut self.world.captain, &mut self.rng);
+        self.world.day = self.world.captain.day;
+        Ok(earned)
     }
 
     /// Fight the pending pirate with the given stances (`portlight duel`).

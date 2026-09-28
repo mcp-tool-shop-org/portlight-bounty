@@ -1,0 +1,67 @@
+new bounty_hunter T9 435326599206
+advance
+hire 1 sailor
+hire 1 navigator
+advance
+depart dragons_gate
+advance
+advance
+advance
+advance
+advance
+hire 1 sailor
+advance
+depart jade_port
+advance
+advance
+depart dragons_gate
+advance
+advance
+advance
+depart crosswind_isle
+advance
+advance
+hire 3 marine
+buy timber 5
+sell timber 5
+buy pelts 1
+buy cotton 1
+advance
+sell cotton 1
+advance
+advance
+advance
+advance
+sell pelts 1
+advance
+advance
+depart iron_point
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+depart crosswind_isle
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+
+work
+work
+work
+hire 3

@@ -183,6 +183,9 @@ pub struct LogEntry {
     pub shocks: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub duel: Option<DuelLog>,
+    /// Silver from `work`, when that command succeeded.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub earned: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -214,6 +217,7 @@ impl LogEntry {
             events: Vec::new(),
             shocks: Vec::new(),
             duel: None,
+            earned: None,
         }
     }
 }

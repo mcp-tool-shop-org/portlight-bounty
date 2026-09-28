@@ -61,6 +61,7 @@ pub enum SimError {
     UsageDepart,
     UsageHire,
     UsageProvision,
+    UsageWork,
     UsageDuel,
     InvalidNumber(String),
     UnknownCommand(String),
@@ -79,6 +80,7 @@ pub enum SimError {
         have: i64,
     },
     MustBeDockedToProvision,
+    MustBeDockedToWork,
     NeedProvisions {
         cost: i64,
         days: i64,
@@ -143,6 +145,7 @@ impl fmt::Display for SimError {
             Self::UsageDepart => write!(f, "Usage: depart <port_id>"),
             Self::UsageHire => write!(f, "Usage: hire <count> [role]"),
             Self::UsageProvision => write!(f, "Usage: provision <days>"),
+            Self::UsageWork => write!(f, "Usage: work"),
             Self::UsageDuel => write!(f, "Usage: duel <stance>[,<stance>...]"),
             Self::InvalidNumber(token) => write!(f, "Invalid number: {token}"),
             Self::UnknownCommand(cmd) => write!(f, "Unknown command: {cmd}"),
@@ -166,6 +169,7 @@ impl fmt::Display for SimError {
                 "Need {cost} silver for {count} {name}(s) ({each}/each), have {have}"
             ),
             Self::MustBeDockedToProvision => write!(f, "Must be docked to provision"),
+            Self::MustBeDockedToWork => write!(f, "Must be docked to work the docks."),
             Self::NeedProvisions {
                 cost,
                 days,
