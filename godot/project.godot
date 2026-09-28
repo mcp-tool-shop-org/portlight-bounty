@@ -21,4 +21,7 @@ window/stretch/mode="canvas_items"
 
 renderer/rendering_method="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.05, 0.1, 0.16, 1)
+; Explicit default. HDR 2D renders in linear space and drops the sRGB art gate.
+viewport/hdr_2d=false
+; Nearest. Linear filtering and mipmaps change plate edges.
 textures/canvas_textures/default_texture_filter=0

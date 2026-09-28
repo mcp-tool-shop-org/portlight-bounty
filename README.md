@@ -45,6 +45,8 @@ cargo run -p portlight-chart --bin gen_placeholders -- godot/assets
 
 Replace a chart file later by keeping its id (`chart_water_a`, `chart_port_marker`, `ship_sloop_f0`..`f7`, `ship_sloop_wake`). Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene.
 
+`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files are lossless, with mipmaps off, Fix Alpha Border off, and premultiplied alpha off. The canvas filter is Nearest, so a plate drawn at 1:1 keeps its pixels.
+
 Headless smoke (session only; the dummy renderer does not return a viewport image):
 
 ```
