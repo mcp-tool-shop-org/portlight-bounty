@@ -617,6 +617,25 @@ mod tests {
         assert_eq!(plates, 9, "sloop f0-f7 and wake");
     }
 
+    /// Row-major `water_variant` bytes for `col` in `-6..10` and `row` in
+    /// `-6..10`. Changing the mix constants changes this digest.
+    #[test]
+    fn water_hash_grid_digest_is_pinned() {
+        use sha2::{Digest, Sha256};
+
+        let mut grid = Vec::with_capacity(16 * 16);
+        for row in -6..10 {
+            for col in -6..10 {
+                grid.push(water_variant(col, row));
+            }
+        }
+        let digest = format!("{:x}", Sha256::digest(&grid));
+        assert_eq!(
+            digest,
+            "b9f6c0b8bbbb638636d51c10aa9410dc34b5f2a1822a488be1ca6436d336cab7"
+        );
+    }
+
     #[test]
     fn a_missing_ship_names_none_in_the_fallback_warning() {
         let line = "warning: unknown ship class <none> drawn with sloop plates";
