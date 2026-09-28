@@ -159,7 +159,8 @@ impl IControl for PortlightGame {
         // one logs `Parameter "t" is null` while still exiting 0.
         self.shot_path = std::env::var("PORTLIGHT_SHOT")
             .ok()
-            .filter(|path| !path.is_empty());
+            .filter(|path| !path.is_empty())
+            .map(|path| resolve_repo_path(&path));
         self.build_ui();
         self.start_game();
         if user_arg("--encounter") {
@@ -1153,7 +1154,7 @@ impl PortlightGame {
         let ship = world.captain.ship.as_ref();
         let place = match world.voyage.status {
             VoyageStatus::AtSea => format!(
-                "At sea  {} → {}  {}/{}",
+                "At sea  {} -> {}  {}/{}",
                 port_name(world, &world.voyage.origin_id),
                 port_name(world, &world.voyage.destination_id),
                 world.voyage.progress,
@@ -1483,10 +1484,20 @@ fn victory_line(session: &Session) -> String {
 
 /// `--art` writes `/tmp/chart-cutter-f7.png`. `PORTLIGHT_ART_DOCS` or
 /// `--art-docs` writes `docs/screenshots/chart-cutter-f7.png`. Godot changes
-/// into the project directory, so that docs path is taken from the repo root.
+/// into the project directory, so a relative path is taken from the repo root.
 fn art_shot_path() -> String {
     if !(flag_set("PORTLIGHT_ART_DOCS") || user_arg("--art-docs")) {
         return "/tmp/chart-cutter-f7.png".to_string();
+    }
+    resolve_repo_path("docs/screenshots/chart-cutter-f7.png")
+}
+
+/// Absolute paths stay as given. A relative `PORTLIGHT_SHOT` is from the repo
+/// root, not Godot's project directory.
+fn resolve_repo_path(path: &str) -> String {
+    let path_buf = std::path::Path::new(path);
+    if path_buf.is_absolute() {
+        return path.to_string();
     }
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     let root = if cwd.file_name().and_then(|name| name.to_str()) == Some("godot") {
@@ -1496,9 +1507,7 @@ fn art_shot_path() -> String {
     } else {
         cwd
     };
-    root.join("docs/screenshots/chart-cutter-f7.png")
-        .to_string_lossy()
-        .into_owned()
+    root.join(path_buf).to_string_lossy().into_owned()
 }
 
 fn docked_port_id(session: &Session) -> Option<&str> {
