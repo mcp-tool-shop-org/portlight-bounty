@@ -360,6 +360,95 @@ pub struct OwnedShip {
     pub docked_port_id: String,
 }
 
+/// A learned captain skill. `level` is 1–3; untrained skills are absent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Skill {
+    pub id: String,
+    pub level: i64,
+}
+
+/// One companion traveling with the captain. Morale starts at 70.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Companion {
+    pub companion_id: String,
+    pub role_id: String,
+    pub morale: i64,
+    pub joined_day: i64,
+    pub personality: String,
+}
+
+/// The captain's companion party. Python stores this as `captain.party`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Party {
+    pub companions: Vec<Companion>,
+    pub max_size: i64,
+    pub departed: Vec<String>,
+}
+
+impl Default for Party {
+    fn default() -> Self {
+        Self {
+            companions: Vec::new(),
+            max_size: 2,
+            departed: Vec::new(),
+        }
+    }
+}
+
+/// Four-axis opinion a pirate captain holds toward the player.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CaptainRelationship {
+    pub respect: i64,
+    pub fear: i64,
+    pub grudge: i64,
+    pub familiarity: i64,
+}
+
+/// One remembered meeting with a pirate captain.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EncounterMemory {
+    pub day: i64,
+    pub region: String,
+    pub outcome: String,
+    pub player_spared: bool,
+    pub player_used_firearm: bool,
+    pub crew_killed: i64,
+    pub respect_delta: i64,
+    pub fear_delta: i64,
+    pub grudge_delta: i64,
+    pub familiarity_delta: i64,
+}
+
+/// Persistent memory for one pirate captain (`engine/captain_memory.py`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CaptainMemory {
+    pub captain_id: String,
+    pub encounters: Vec<EncounterMemory>,
+    pub relationship: CaptainRelationship,
+    pub last_seen_day: i64,
+    pub last_seen_region: String,
+    pub times_spared: i64,
+    pub times_defeated_by_player: i64,
+    pub times_defeated_player: i64,
+    pub player_sank_their_ship: bool,
+}
+
+impl CaptainMemory {
+    pub fn new(captain_id: impl Into<String>) -> Self {
+        Self {
+            captain_id: captain_id.into(),
+            encounters: Vec::new(),
+            relationship: CaptainRelationship::default(),
+            last_seen_day: 0,
+            last_seen_region: String::new(),
+            times_spared: 0,
+            times_defeated_by_player: 0,
+            times_defeated_player: 0,
+            player_sank_their_ship: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Captain {
     pub name: String,
@@ -386,6 +475,11 @@ pub struct Captain {
     pub fleet: Vec<OwnedShip>,
     pub naval_victories: i64,
     pub naval_defeats: i64,
+    /// Fighting styles learned from regional masters, in learn order.
+    pub learned_styles: Vec<String>,
+    /// Captain skills, in the order they were first learned.
+    pub skills: Vec<Skill>,
+    pub party: Party,
 }
 
 #[derive(Debug, Clone)]
@@ -420,6 +514,8 @@ pub struct World {
     /// seeding for that range. See [`crate::pyrand::PyRandom::from_seed`].
     pub seed: i128,
     pub pending_duel: Option<PendingDuel>,
+    /// Pirate-captain memories. Empty until an encounter is recorded.
+    pub captain_memories: Vec<CaptainMemory>,
 }
 
 impl World {

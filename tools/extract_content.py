@@ -28,6 +28,171 @@ from portlight.content.ships import SHIPS
 from portlight.engine.captain_identity import CAPTAIN_TEMPLATES
 
 
+def skills_payload() -> dict:
+    from portlight.content.skills import BLACKSMITH_EFFECTS, SKILLS, SKILL_TRAINERS
+
+    return {
+        "skills": [
+            {
+                "id": skill.id,
+                "name": skill.name,
+                "description": skill.description,
+                "training_port_feature": skill.training_port_feature,
+                "max_level": skill.max_level,
+                "levels": [
+                    {
+                        "level": level.level,
+                        "name": level.name,
+                        "silver_cost": level.silver_cost,
+                        "training_days": level.training_days,
+                        "description": level.description,
+                    }
+                    for level in skill.levels
+                ],
+            }
+            for skill in SKILLS.values()
+        ],
+        "trainers": [
+            {
+                "id": trainer.id,
+                "name": trainer.name,
+                "skill_id": trainer.skill_id,
+                "port_id": trainer.port_id,
+                "max_teach_level": trainer.max_teach_level,
+                "description": trainer.description,
+                "dialog": trainer.dialog,
+            }
+            for trainer in SKILL_TRAINERS.values()
+        ],
+        "blacksmith_effects": [
+            {"level": level, **effects}
+            for level, effects in BLACKSMITH_EFFECTS.items()
+        ],
+    }
+
+
+def companions_payload() -> dict:
+    from portlight.content.companions import (
+        COMPANIONS,
+        MORALE_REACTIONS,
+        PERSONALITY_MODIFIERS,
+        ROLES,
+    )
+
+    return {
+        "roles": [
+            {
+                "id": role.id,
+                "name": role.name,
+                "description": role.description,
+                "combat_damage_bonus": role.combat_damage_bonus,
+                "combat_interception_chance": role.combat_interception_chance,
+                "speed_bonus": role.speed_bonus,
+                "danger_reduction": role.danger_reduction,
+                "heal_rate_bonus": role.heal_rate_bonus,
+                "inspection_evasion": role.inspection_evasion,
+                "trade_bonus": role.trade_bonus,
+            }
+            for role in ROLES.values()
+        ],
+        "companions": [
+            {
+                "id": comp.id,
+                "name": comp.name,
+                "role_id": comp.role_id,
+                "home_port_id": comp.home_port_id,
+                "region": comp.region,
+                "description": comp.description,
+                "personality": comp.personality,
+                "hire_cost": comp.hire_cost,
+                "required_standing": comp.required_standing,
+                "greeting": comp.greeting,
+                "hire_dialog": comp.hire_dialog,
+                "loyalty_line": comp.loyalty_line,
+                "warning_line": comp.warning_line,
+                "departure_line": comp.departure_line,
+            }
+            for comp in COMPANIONS.values()
+        ],
+        "morale_reactions": [
+            {"trigger": trigger, "deltas": dict(deltas)}
+            for trigger, deltas in MORALE_REACTIONS.items()
+        ],
+        "personality_modifiers": [
+            {"personality": personality, "deltas": dict(deltas)}
+            for personality, deltas in PERSONALITY_MODIFIERS.items()
+        ],
+    }
+
+
+def merchants_payload() -> list:
+    from portlight.content.merchants import MERCHANTS
+
+    return [
+        {
+            "id": merchant.id,
+            "name": merchant.name,
+            "port_id": merchant.port_id,
+            "title": merchant.title,
+            "personality": merchant.personality,
+            "description": merchant.description,
+            "greeting": merchant.greeting,
+            "inventory_types": list(merchant.inventory_types),
+            "price_markup": merchant.price_markup,
+        }
+        for merchant in MERCHANTS.values()
+    ]
+
+
+def officer_names_payload() -> dict:
+    from portlight.content import officer_names
+
+    return {
+        "regions": [
+            {"region": region, "names": list(pool)}
+            for region, pool in officer_names._NAMES.items()
+        ],
+        "traits": list(officer_names._TRAITS),
+    }
+
+
+def style_masters_payload() -> list:
+    from portlight.content.fighting_styles import STYLE_MASTERS
+
+    return [
+        {
+            "id": master.id,
+            "name": master.name,
+            "style_id": master.style_id,
+            "port_id": master.port_id,
+            "description": master.description,
+            "dialog": master.dialog,
+        }
+        for master in STYLE_MASTERS.values()
+    ]
+
+
+def campaign_payload() -> dict:
+    from portlight.content.campaign import MILESTONE_SPECS, PROFILE_MILESTONE_FAMILIES
+
+    return {
+        "milestones": [
+            {
+                "id": spec.id,
+                "name": spec.name,
+                "family": spec.family.value,
+                "description": spec.description,
+                "evaluator": spec.evaluator,
+            }
+            for spec in MILESTONE_SPECS
+        ],
+        "profile_milestone_families": [
+            {"tag": tag, "families": list(families)}
+            for tag, families in PROFILE_MILESTONE_FAMILIES.items()
+        ],
+    }
+
+
 def main() -> None:
     data = {
         "source_commit": "9b02494cca9cd8f58c4531c41f75be02c9720e43",
@@ -275,6 +440,12 @@ def main() -> None:
             }
             for s in FIGHTING_STYLES.values()
         ],
+        "skills": skills_payload(),
+        "companions": companions_payload(),
+        "merchants": merchants_payload(),
+        "officer_names": officer_names_payload(),
+        "style_masters": style_masters_payload(),
+        "campaign": campaign_payload(),
     }
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "crates", "portlight-sim", "data", "content.json")

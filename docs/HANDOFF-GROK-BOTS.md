@@ -359,20 +359,20 @@ As you add catalogs, tick them off:
 - [x] `melee_weapons`
 - [x] `ranged_weapons`
 - [x] `fighting_styles`
-- [ ] `skills`
+- [x] `skills`
 - [ ] `injuries`
 - [ ] `loot_tables`
 - [ ] `upgrades`
-- [ ] `merchants`
-- [ ] `officer_names`
-- [ ] `companions`
+- [x] `merchants`
+- [x] `officer_names`
+- [x] `companions`
 - [ ] `culture`
 - [ ] `sea_culture`
 - [ ] `port_politics`
 - [ ] `port_institutions`
 - [ ] `port_institutions_east`
 - [ ] `cross_port_networks`
-- [ ] `campaign`
+- [x] `campaign`
 
 ---
 

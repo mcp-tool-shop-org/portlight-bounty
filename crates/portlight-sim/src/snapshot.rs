@@ -22,7 +22,17 @@ pub struct Snapshot {
     pub pending_duel: Option<DuelSnap>,
     pub ports: Vec<PortSnap>,
     pub victory: Vec<VictoryPathStatus>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub milestones: Vec<MilestoneSnap>,
     pub log: Vec<LogEntry>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MilestoneSnap {
+    pub milestone_id: String,
+    pub completed_day: i64,
+    pub evidence: String,
+    pub family: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -48,6 +58,12 @@ pub struct CaptainSnap {
     pub naval_defeats: i64,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub fleet: Vec<FleetSnap>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub skills: Vec<SkillSnap>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub learned_styles: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub companions: Vec<CompanionSnap>,
 }
 
 fn is_zero(value: &i64) -> bool {
@@ -71,6 +87,21 @@ pub struct FleetSnap {
     pub hull_max: i64,
     pub crew: i64,
     pub docked_port_id: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SkillSnap {
+    pub id: String,
+    pub level: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CompanionSnap {
+    pub companion_id: String,
+    pub role_id: String,
+    pub morale: i64,
+    pub joined_day: i64,
+    pub personality: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -274,6 +305,9 @@ pub struct LogEntry {
     pub contracts: Vec<ContractLog>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encounter: Option<EncounterLog>,
+    /// `tick_sea_captain_agency` result, when that command ran.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agency: Option<AgencyLog>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -326,6 +360,7 @@ impl LogEntry {
             earned: None,
             contracts: Vec::new(),
             encounter: None,
+            agency: None,
         }
     }
 }
@@ -413,6 +448,78 @@ pub fn from_encounter(step: &EncounterStep) -> EncounterLog {
         style_effect: step.style_effect.clone(),
         prize_ok: step.prize_ok,
         prize_reason: step.prize_reason.clone(),
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AgencyLog {
+    pub ambush: bool,
+    pub encounter: Option<AgencyEncounterSnap>,
+    pub notices: Vec<AgencyNoticeSnap>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AgencyNoticeSnap {
+    pub effect_type: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AgencyEncounterSnap {
+    pub enemy_captain_id: String,
+    pub enemy_captain_name: String,
+    pub enemy_faction_id: String,
+    pub enemy_personality: String,
+    pub enemy_strength: i64,
+    pub enemy_region: String,
+    pub enemy_ship_hull: i64,
+    pub enemy_ship_hull_max: i64,
+    pub enemy_ship_cannons: i64,
+    pub enemy_ship_maneuver: f64,
+    pub enemy_ship_speed: f64,
+    pub enemy_ship_crew: i64,
+    pub enemy_ship_crew_max: i64,
+    pub phase: String,
+    pub boarding_progress: i64,
+    pub boarding_threshold: i64,
+    pub naval_turns: i64,
+    pub duel_turns: i64,
+}
+
+pub fn agency_log(
+    ambush: bool,
+    encounter: Option<&crate::encounter::EncounterState>,
+    notices: &[(String, String)],
+) -> AgencyLog {
+    AgencyLog {
+        ambush,
+        encounter: encounter.map(|encounter| AgencyEncounterSnap {
+            enemy_captain_id: encounter.enemy_captain_id.clone(),
+            enemy_captain_name: encounter.enemy_captain_name.clone(),
+            enemy_faction_id: encounter.enemy_faction_id.clone(),
+            enemy_personality: encounter.enemy_personality.clone(),
+            enemy_strength: encounter.enemy_strength,
+            enemy_region: encounter.enemy_region.clone(),
+            enemy_ship_hull: encounter.enemy_ship_hull,
+            enemy_ship_hull_max: encounter.enemy_ship_hull_max,
+            enemy_ship_cannons: encounter.enemy_ship_cannons,
+            enemy_ship_maneuver: encounter.enemy_ship_maneuver,
+            enemy_ship_speed: encounter.enemy_ship_speed,
+            enemy_ship_crew: encounter.enemy_ship_crew,
+            enemy_ship_crew_max: encounter.enemy_ship_crew_max,
+            phase: encounter.phase.clone(),
+            boarding_progress: encounter.boarding_progress,
+            boarding_threshold: encounter.boarding_threshold,
+            naval_turns: encounter.naval_turns,
+            duel_turns: encounter.duel_turns,
+        }),
+        notices: notices
+            .iter()
+            .map(|(effect_type, message)| AgencyNoticeSnap {
+                effect_type: effect_type.clone(),
+                message: message.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -590,6 +697,27 @@ fn captain_snap(captain: &Captain) -> CaptainSnap {
                 docked_port_id: owned.docked_port_id.clone(),
             })
             .collect(),
+        skills: captain
+            .skills
+            .iter()
+            .map(|skill| SkillSnap {
+                id: skill.id.clone(),
+                level: skill.level,
+            })
+            .collect(),
+        learned_styles: captain.learned_styles.clone(),
+        companions: captain
+            .party
+            .companions
+            .iter()
+            .map(|member| CompanionSnap {
+                companion_id: member.companion_id.clone(),
+                role_id: member.role_id.clone(),
+                morale: member.morale,
+                joined_day: member.joined_day,
+                personality: member.personality.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -639,6 +767,19 @@ pub fn capture(world: &World, trade_seq: u64, books: &HouseBooks, log: Vec<LogEn
             })
             .collect(),
         victory: campaign::compute_victory_progress(world, books),
+        milestones: books
+            .completed_milestones
+            .iter()
+            .map(|completion| MilestoneSnap {
+                milestone_id: completion.milestone_id.clone(),
+                completed_day: completion.completed_day,
+                evidence: completion.evidence.clone(),
+                family: content::content()
+                    .milestone(&completion.milestone_id)
+                    .map(|spec| spec.family.clone())
+                    .unwrap_or_default(),
+            })
+            .collect(),
         log,
     }
 }
@@ -671,6 +812,9 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
             naval_victories: 0,
             naval_defeats: 0,
             fleet: Vec::new(),
+            skills: Vec::new(),
+            learned_styles: Vec::new(),
+            companions: Vec::new(),
         },
         voyage: VoyageSnap {
             origin_id: String::new(),
@@ -684,6 +828,7 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
         pending_duel: None,
         ports: Vec::new(),
         victory: Vec::new(),
+        milestones: Vec::new(),
         log,
     }
 }

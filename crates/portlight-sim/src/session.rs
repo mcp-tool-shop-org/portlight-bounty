@@ -19,13 +19,15 @@
 //! all met.
 //!
 //! Not included: infrastructure purchases, credit draws, insurance policies,
-//! sea-culture enrichment, narrative, and milestone evaluation. Those books
-//! stay empty until those systems run. A fulfilled contract is written by
-//! [`Session::sell`], which also calls [`Session::complete_contract`]'s
-//! settlement. A second `complete_contract` does not pay again. Callers do
-//! not use [`Session::books_mut`] for that. The new-game board is drawn from
+//! sea-culture enrichment, and narrative. Those books stay empty until those
+//! systems run. A fulfilled contract is written by [`Session::sell`], which
+//! also calls [`Session::complete_contract`]'s settlement. A second
+//! `complete_contract` does not pay again. Callers do not use
+//! [`Session::books_mut`] for that. The new-game board is drawn from
 //! `Random(seed + 7919)` and then the session RNG is restored. Arrival and
-//! later in-port refreshes draw the session stream.
+//! later in-port refreshes draw the session stream. Milestone evaluation runs
+//! at the end of [`Session::advance`], in the same place as
+//! `GameSession._evaluate_campaign`, before victory closure.
 //!
 //! A pending pirate duel still freezes [`Session::advance`] until
 //! [`Session::duel`] or [`Session::resolve_pending_duel`] clears it. That is
@@ -41,20 +43,25 @@ use std::path::{Path, PathBuf};
 
 use crate::campaign::{self, CompletedContract, HouseBooks, VictoryPathStatus};
 use crate::combat::{self, CombatRound, CombatantState};
+use crate::companion;
 use crate::content::{self, PricingDef};
 use crate::contracts;
 use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::encounter::{self, BoardingOutcome, EncounterState};
 use crate::error::SimError;
+use crate::memory;
 use crate::model::{
-    ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, VoyageStatus, World,
+    ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, PendingDuel, VoyageStatus,
+    World,
 };
 use crate::naval::{self, NavalRound};
 use crate::pyrand::PyRandom;
 use crate::reputation::{self, record_trade_outcome};
 use crate::save::{self, LoadedGame};
 use crate::ship::wage_bill;
+use crate::skills;
+use crate::training;
 use crate::util::py_trunc;
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
 use crate::world::new_game;
@@ -126,6 +133,7 @@ pub struct EncounterStep {
     pub prize_reason: String,
 }
 
+/// Encounter returned by [`Session::tick_sea_captain_agency`].
 /// One playable game.
 #[derive(Debug, Clone)]
 pub struct Session {
@@ -1239,6 +1247,8 @@ impl Session {
         };
         turn.contracts = contracts;
         reprice_all(&mut self.world);
+        let milestones = campaign::evaluate_milestones(&self.world, &self.books);
+        self.books.completed_milestones.extend(milestones);
         let newly = campaign::evaluate_victory_closure(&self.world, &self.books);
         self.books.completed_paths.extend(newly);
         Ok(turn)
@@ -1350,6 +1360,166 @@ impl Session {
         let saved = std::mem::replace(&mut self.rng, PyRandom::from_seed(seed + 7919));
         self.refresh_contract_board();
         self.rng = saved;
+    }
+
+    /// Learn a fighting style at the current port (`portlight train`).
+    ///
+    /// On success the style's silver is spent, then the clock advances
+    /// `training_days` times through [`Session::advance`].
+    pub fn train_crew(&mut self, style_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToTrain)?;
+        if let Some(error) = training::can_learn_style(
+            &self.world.captain.learned_styles,
+            &[],
+            self.world.captain.silver,
+            &port_id,
+            style_id,
+        ) {
+            return Err(SimError::Rejected(error));
+        }
+        let days = training::learn_style(
+            &mut self.world.captain.learned_styles,
+            &mut self.world.captain.silver,
+            style_id,
+        );
+        for _ in 0..days {
+            self.advance()?;
+        }
+        Ok(())
+    }
+
+    /// Recruit a companion at the current port (`portlight recruit`).
+    ///
+    /// Hire cost is subtracted here, then [`companion::recruit`] records the
+    /// companion. That is the CLI order.
+    pub fn recruit_companion(&mut self, companion_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToRecruit)?;
+        if let Some(error) = companion::can_recruit(&self.world.captain, companion_id, &port_id) {
+            return Err(SimError::Rejected(error));
+        }
+        let cost = content::content()
+            .companion(companion_id)
+            .expect("can_recruit accepted this companion")
+            .hire_cost;
+        self.world.captain.silver -= cost;
+        companion::recruit(&mut self.world.captain, companion_id, self.world.day);
+        Ok(())
+    }
+
+    /// Learn the next level of a skill (`portlight learn-skill`).
+    ///
+    /// Python spends silver and training days, not a separate point currency.
+    /// This method is that spend: pay the level cost, then advance one session
+    /// day per training day.
+    pub fn spend_skill_point(&mut self, skill_id: &str) -> Result<(), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToLearnSkill)?;
+        let skill_id = skills::resolve_skill_id(skill_id);
+        if let Some(error) = skills::can_learn_skill(
+            &self.world.captain.skills,
+            self.world.captain.silver,
+            &port_id,
+            &skill_id,
+        ) {
+            return Err(SimError::Rejected(error));
+        }
+        let (silver, days) = skills::learn_skill(
+            &mut self.world.captain.skills,
+            self.world.captain.silver,
+            &skill_id,
+        );
+        self.world.captain.silver = silver;
+        for _ in 0..days {
+            self.advance()?;
+        }
+        Ok(())
+    }
+
+    /// `GameSession.tick_sea_captain_agency`.
+    ///
+    /// The CLI and the TUI call this after each sea day. It is not part of
+    /// [`Session::advance`]. In port, or with no world at sea, the result is
+    /// `(None, false, [])`.
+    ///
+    /// Silver gifts are applied immediately. An ambush or challenge consumes
+    /// the same RNG draws as `create_encounter` (faction, captain, then one
+    /// `random()` for ship speed), writes [`PendingDuel`], and returns the
+    /// encounter. `ambush` is true only when the verb is `ambush`; that
+    /// encounter's phase is `naval`.
+    pub fn tick_sea_captain_agency(
+        &mut self,
+    ) -> (Option<EncounterState>, bool, Vec<(String, String)>) {
+        if self.world.voyage.status != VoyageStatus::AtSea {
+            return (None, false, Vec::new());
+        }
+        let region = encounter::voyage_region(&self.world);
+        let actions = memory::tick_captain_agency(
+            &self.world.captain_memories,
+            &region,
+            self.world.captain.silver,
+            self.world.day,
+            &mut self.rng,
+        );
+        let mut notices = Vec::new();
+        let mut encounter = None;
+        let mut ambush = false;
+        for action in actions {
+            notices.push((action.effect_type.clone(), action.message));
+            if action.effect_type == "silver" {
+                self.world.captain.silver += action.effect_value;
+            } else if action.effect_type == "encounter" && encounter.is_none() {
+                let Some(mut rolled) =
+                    encounter::create_encounter(&self.world, &mut self.rng, None)
+                else {
+                    continue;
+                };
+                rolled.enemy_captain_id = action.captain_id.clone();
+                rolled.enemy_captain_name = action.captain_name.clone();
+                if let Some(captain) = content::content().pirate(&action.captain_id) {
+                    rolled.enemy_faction_id = captain.faction_id.clone();
+                    rolled.enemy_personality = captain.personality.clone();
+                    rolled.enemy_strength = captain.strength;
+                }
+                rolled.enemy_region = region.clone();
+                if action.verb == "ambush" {
+                    rolled.phase = "naval".to_string();
+                    ambush = true;
+                }
+                self.world.pending_duel = Some(PendingDuel {
+                    captain_id: rolled.enemy_captain_id.clone(),
+                    captain_name: rolled.enemy_captain_name.clone(),
+                    faction_id: rolled.enemy_faction_id.clone(),
+                    personality: rolled.enemy_personality.clone(),
+                    strength: rolled.enemy_strength,
+                    region: rolled.enemy_region.clone(),
+                });
+                self.player_combat = None;
+                self.opponent_combat = None;
+                self.encounter = Some(rolled.clone());
+                encounter = Some(rolled);
+                break;
+            }
+        }
+        (encounter, ambush, notices)
+    }
+
+    /// Seed one captain memory. Encounter resolution will call the same
+    /// record; the `remember` script command uses this so a sea-day golden
+    /// can fire agency without the encounter machine.
+    pub fn remember_captain(&mut self, captain_id: &str, outcome: &str) -> Result<(), SimError> {
+        if content::content().pirate(captain_id).is_none() {
+            return Err(SimError::UnknownPirate(captain_id.to_string()));
+        }
+        let region = encounter::voyage_region(&self.world);
+        let day = self.world.day;
+        let memory = memory::get_or_create_memory(&mut self.world.captain_memories, captain_id);
+        memory::record_encounter(memory, day, &region, outcome, false, false, 0);
+        Ok(())
     }
 }
 
@@ -1478,88 +1648,14 @@ fn set_role_count(ship: &mut crate::model::Ship, role: &str, count: i64) {
     }
 }
 
-const OFFICER_NAMES: &[(&str, &[&str])] = &[
-    (
-        "Mediterranean",
-        &[
-            "Marco",
-            "Sophia",
-            "Nikolaos",
-            "Fatima",
-            "Lorenzo",
-            "Valentina",
-            "Dimitri",
-            "Leila",
-            "Antonio",
-            "Isadora",
-        ],
-    ),
-    (
-        "North Atlantic",
-        &[
-            "William",
-            "Margaret",
-            "Henrik",
-            "Brigitte",
-            "Duncan",
-            "Eleanor",
-            "Gunnar",
-            "Astrid",
-            "Thomas",
-            "Catherine",
-        ],
-    ),
-    (
-        "West Africa",
-        &[
-            "Kwame", "Aminata", "Kofi", "Adaeze", "Sekou", "Mariam", "Ousmane", "Aisha", "Yusuf",
-            "Zara",
-        ],
-    ),
-    (
-        "East Indies",
-        &[
-            "Rajan", "Mei Lin", "Arjun", "Suki", "Bao", "Padma", "Kenji", "Lien", "Haruki",
-            "Kamala",
-        ],
-    ),
-    (
-        "South Seas",
-        &[
-            "Tane", "Moana", "Rangi", "Leilani", "Makoa", "Aroha", "Koa", "Nalani", "Ioane", "Mele",
-        ],
-    ),
-];
-
-const OFFICER_TRAITS: &[&str] = &[
-    "loyal",
-    "cautious",
-    "bold",
-    "superstitious",
-    "sharp-eyed",
-    "steady",
-    "hot-tempered",
-    "quiet",
-    "gregarious",
-    "shrewd",
-    "resourceful",
-    "fearless",
-    "meticulous",
-    "jovial",
-    "stoic",
-];
-
 fn officer_name(region: &str, rng: &mut PyRandom) -> String {
-    let pool = OFFICER_NAMES
-        .iter()
-        .find(|(name, _)| *name == region)
-        .map(|(_, pool)| *pool)
-        .unwrap_or(OFFICER_NAMES[0].1);
-    pool[rng.choice_index(pool.len())].to_string()
+    let pool = content::content().officer_pool(region);
+    pool[rng.choice_index(pool.len())].clone()
 }
 
 fn officer_trait(rng: &mut PyRandom) -> String {
-    OFFICER_TRAITS[rng.choice_index(OFFICER_TRAITS.len())].to_string()
+    let traits = &content::content().officer_names.traits;
+    traits[rng.choice_index(traits.len())].clone()
 }
 
 #[cfg(test)]
@@ -1871,5 +1967,62 @@ mod tests {
         .unwrap();
         assert_eq!(rust["pirate_state"], python["pirate_state"]);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn sea_agency_ambush_matches_create_encounter_rng() {
+        let mut session = Session::new("Ada", "merchant", 9, None).unwrap();
+        let (encounter, ambush, notices) = session.tick_sea_captain_agency();
+        assert!(encounter.is_none());
+        assert!(!ambush);
+        assert!(notices.is_empty());
+
+        for _ in 0..4 {
+            session
+                .remember_captain("the_butcher", "ship_sunk")
+                .unwrap();
+        }
+        session.depart("silva_bay").unwrap();
+        session.advance().unwrap();
+        let (encounter, ambush, _) = session.tick_sea_captain_agency();
+        assert!(encounter.is_none() && !ambush);
+        session.advance().unwrap();
+        session.tick_sea_captain_agency();
+        session.advance().unwrap();
+        assert_eq!(session.world.day, 4);
+        assert_eq!(session.world.captain.silver, 538);
+        let (encounter, ambush, notices) = session.tick_sea_captain_agency();
+        assert!(ambush);
+        assert_eq!(notices.len(), 1);
+        assert_eq!(notices[0].0, "encounter");
+        assert!(notices[0].1.contains("The Butcher"));
+        let encounter = encounter.expect("ambush");
+        assert_eq!(encounter.phase, "naval");
+        assert_eq!(encounter.enemy_captain_id, "the_butcher");
+        assert_eq!(encounter.enemy_strength, 8);
+        assert_eq!(encounter.enemy_ship_hull, 170);
+        assert_eq!(encounter.enemy_ship_cannons, 12);
+        assert_eq!(encounter.enemy_ship_crew, 28);
+        assert_eq!(encounter.enemy_ship_crew_max, 36);
+        assert!((encounter.enemy_ship_maneuver - 0.4).abs() < 1e-12);
+        assert!((encounter.enemy_ship_speed - 5.251391040026104).abs() < 1e-12);
+        let pending = session.world.pending_duel.as_ref().unwrap();
+        assert_eq!(pending.captain_id, "the_butcher");
+        assert_eq!(pending.faction_id, "crimson_tide");
+        assert_eq!(pending.personality, "aggressive");
+        assert_eq!(pending.strength, 8);
+        assert_eq!(pending.region, "Mediterranean");
+        let progress = session.world.voyage.progress;
+        let turn = session.advance().unwrap();
+        assert!(turn.events.is_empty());
+        assert_eq!(session.world.day, 4);
+        assert_eq!(session.world.voyage.progress, progress);
+        assert_eq!(
+            session
+                .encounter
+                .as_ref()
+                .map(|enc| enc.enemy_captain_id.as_str()),
+            Some("the_butcher")
+        );
     }
 }

@@ -111,6 +111,8 @@ fn played() -> Session {
         books.credit = Some(CreditBook {
             total_borrowed: 500,
             defaults: 0,
+            active: true,
+            total_repaid: 0,
         });
         books.completed_paths.push(VictoryRecord {
             path_id: "lawful_house".to_string(),
@@ -199,6 +201,107 @@ fn played_slot_matches_the_python_loader() {
     });
     let golden: Value = serde_json::from_str(&golden_text).unwrap();
     close(&golden, &snap(&loaded), "save_roundtrip");
+}
+
+#[test]
+fn python_v12_career_keys_round_trip() {
+    let root = parity_root();
+    let python: Value =
+        serde_json::from_str(&fs::read_to_string(root.join("saves/career_v12.json")).unwrap())
+            .unwrap();
+    let loaded = Session::load(&root, "career_v12").unwrap().unwrap();
+    assert_eq!(
+        loaded.world().captain.learned_styles,
+        vec!["la_destreza".to_string()]
+    );
+    assert_eq!(loaded.world().captain.skills.len(), 1);
+    assert_eq!(loaded.world().captain.skills[0].id, "blacksmith");
+    assert_eq!(loaded.world().captain.skills[0].level, 1);
+    assert_eq!(loaded.world().captain.party.max_size, 2);
+    assert!(loaded.world().captain.party.departed.is_empty());
+    assert_eq!(
+        loaded.world().captain.party.companions[0].companion_id,
+        "red_tomas"
+    );
+    assert_eq!(loaded.world().captain.party.companions[0].role_id, "marine");
+    assert_eq!(loaded.world().captain.party.companions[0].morale, 70);
+    assert_eq!(loaded.world().captain.party.companions[0].joined_day, 1);
+    assert_eq!(
+        loaded.world().captain.party.companions[0].personality,
+        "pragmatic"
+    );
+    assert_eq!(
+        loaded
+            .books()
+            .completed_milestones
+            .iter()
+            .map(|item| (
+                item.milestone_id.as_str(),
+                item.completed_day,
+                item.evidence.as_str()
+            ))
+            .collect::<Vec<_>>(),
+        vec![
+            (
+                "foothold_standing_established",
+                2,
+                "Standing 10+ in Mediterranean",
+            ),
+            ("lawful_credible_trust", 2, "Trust tier: credible"),
+        ]
+    );
+    assert_eq!(loaded.world().captain_memories.len(), 1);
+    let memory = &loaded.world().captain_memories[0];
+    assert_eq!(memory.captain_id, "the_butcher");
+    assert_eq!(memory.relationship.respect, 5);
+    assert_eq!(memory.relationship.fear, 20);
+    assert_eq!(memory.relationship.grudge, 15);
+    assert_eq!(memory.relationship.familiarity, 10);
+    assert_eq!(memory.last_seen_day, 1);
+    assert_eq!(memory.last_seen_region, "Mediterranean");
+    assert_eq!(memory.times_defeated_by_player, 1);
+    assert!(memory.player_sank_their_ship);
+    assert_eq!(memory.encounters[0].outcome, "ship_sunk");
+    assert_eq!(memory.encounters[0].respect_delta, 5);
+    assert_eq!(memory.encounters[0].fear_delta, 20);
+
+    let dir = scratch("career-v12");
+    let mut loaded = loaded;
+    loaded.save(&dir, "career_v12").unwrap();
+    let rust: Value = serde_json::from_str(
+        &fs::read_to_string(dir.join("saves").join("career_v12.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        rust["captain"]["learned_styles"],
+        python["captain"]["learned_styles"]
+    );
+    assert_eq!(rust["captain"]["skills"], python["captain"]["skills"]);
+    assert_eq!(rust["captain"]["party"], python["captain"]["party"]);
+    assert_eq!(
+        rust["campaign"]["completed"],
+        python["campaign"]["completed"]
+    );
+    assert_eq!(
+        rust["pirate_state"]["captain_memories"],
+        python["pirate_state"]["captain_memories"]
+    );
+    let again = Session::load(&dir, "career_v12").unwrap().unwrap();
+    assert_eq!(
+        again.world().captain.learned_styles,
+        loaded.world().captain.learned_styles
+    );
+    assert_eq!(again.world().captain.skills, loaded.world().captain.skills);
+    assert_eq!(again.world().captain.party, loaded.world().captain.party);
+    assert_eq!(
+        again.books().completed_milestones,
+        loaded.books().completed_milestones
+    );
+    assert_eq!(
+        again.world().captain_memories,
+        loaded.world().captain_memories
+    );
+    let _ = fs::remove_dir_all(&dir);
 }
 
 #[test]

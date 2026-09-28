@@ -4321,5 +4321,1134 @@
         "arm"
       ]
     }
-  ]
+  ],
+  "skills": {
+    "skills": [
+      {
+        "id": "blacksmith",
+        "name": "Blacksmithing",
+        "description": "The art of metalwork \u2014 maintaining, repairing, and improving weapons and armor.",
+        "training_port_feature": "shipyard",
+        "max_level": 3,
+        "levels": [
+          {
+            "level": 1,
+            "name": "Apprentice",
+            "silver_cost": 50,
+            "training_days": 3,
+            "description": "Basic maintenance. Reduce maintenance costs by 25%. Degradation slowed by 20%."
+          },
+          {
+            "level": 2,
+            "name": "Journeyman",
+            "silver_cost": 150,
+            "training_days": 5,
+            "description": "Field repairs at sea. Reduce maintenance costs by 50%. Degradation slowed by 40%. Can restore worn weapons to standard at sea."
+          },
+          {
+            "level": 3,
+            "name": "Master",
+            "silver_cost": 400,
+            "training_days": 8,
+            "description": "Master craftsman. Maintenance costs halved. Degradation slowed by 60%. Smith upgrades cost 25% less. Field repairs restore to standard."
+          }
+        ]
+      }
+    ],
+    "trainers": [
+      {
+        "id": "forge_master_erik",
+        "name": "Forge Master Erik",
+        "skill_id": "blacksmith",
+        "port_id": "ironhaven",
+        "max_teach_level": 3,
+        "description": "The best smith in the North Atlantic. His blades hold an edge for years.",
+        "dialog": "\"Steel remembers every hammer blow. I'll teach your hands to speak its language.\""
+      },
+      {
+        "id": "old_vasquez",
+        "name": "Old Vasquez",
+        "skill_id": "blacksmith",
+        "port_id": "porto_novo",
+        "max_teach_level": 2,
+        "description": "A retired armorer who sharpens blades in the harbor market. Fast and cheap, but not a master.",
+        "dialog": "\"I can teach you to keep a blade sharp and a pistol clean. That's worth more than fancy swordplay.\""
+      },
+      {
+        "id": "silva_bay_smiths",
+        "name": "The Silva Bay Smithy",
+        "skill_id": "blacksmith",
+        "port_id": "silva_bay",
+        "max_teach_level": 3,
+        "description": "A family of shipwrights who also forge the finest blades in the Mediterranean.",
+        "dialog": "\"We build ships and swords from the same iron. Both need to survive the sea.\""
+      },
+      {
+        "id": "monsoon_tinker",
+        "name": "Rajan the Tinker",
+        "skill_id": "blacksmith",
+        "port_id": "monsoon_reach",
+        "max_teach_level": 2,
+        "description": "An East Indies metalworker who repairs anything from kris daggers to Portuguese cannons.",
+        "dialog": "\"Every weapon that passes through this port, I have fixed. Bring me yours.\""
+      },
+      {
+        "id": "typhoon_smith",
+        "name": "Kai the Shaper",
+        "skill_id": "blacksmith",
+        "port_id": "typhoon_anchorage",
+        "max_teach_level": 1,
+        "description": "A young smith who learned from sailors. Basic work, but honest.",
+        "dialog": "\"I'm no master, but I can keep your steel from rusting in the salt air. That's something.\""
+      }
+    ],
+    "blacksmith_effects": [
+      {
+        "level": 0,
+        "maintenance_discount": 0.0,
+        "degrade_slow": 0.0,
+        "upgrade_discount": 0.0,
+        "field_repair": false,
+        "field_max_quality": "rusted"
+      },
+      {
+        "level": 1,
+        "maintenance_discount": 0.25,
+        "degrade_slow": 0.2,
+        "upgrade_discount": 0.0,
+        "field_repair": false,
+        "field_max_quality": "rusted"
+      },
+      {
+        "level": 2,
+        "maintenance_discount": 0.5,
+        "degrade_slow": 0.4,
+        "upgrade_discount": 0.0,
+        "field_repair": true,
+        "field_max_quality": "standard"
+      },
+      {
+        "level": 3,
+        "maintenance_discount": 0.5,
+        "degrade_slow": 0.6,
+        "upgrade_discount": 0.25,
+        "field_repair": true,
+        "field_max_quality": "standard"
+      }
+    ]
+  },
+  "companions": {
+    "roles": [
+      {
+        "id": "marine",
+        "name": "Marine",
+        "description": "A trained fighter who stands at your side in combat.",
+        "combat_damage_bonus": 1,
+        "combat_interception_chance": 0.25,
+        "speed_bonus": 0.0,
+        "danger_reduction": 0.0,
+        "heal_rate_bonus": 0.0,
+        "inspection_evasion": 0.0,
+        "trade_bonus": 0.0
+      },
+      {
+        "id": "navigator",
+        "name": "Navigator",
+        "description": "Reads the stars and currents. Gets you there faster and safer.",
+        "combat_damage_bonus": 0,
+        "combat_interception_chance": 0.0,
+        "speed_bonus": 0.5,
+        "danger_reduction": 0.03,
+        "heal_rate_bonus": 0.0,
+        "inspection_evasion": 0.0,
+        "trade_bonus": 0.0
+      },
+      {
+        "id": "surgeon",
+        "name": "Surgeon",
+        "description": "Keeps crew alive and your wounds clean.",
+        "combat_damage_bonus": 0,
+        "combat_interception_chance": 0.0,
+        "speed_bonus": 0.0,
+        "danger_reduction": 0.0,
+        "heal_rate_bonus": 1.0,
+        "inspection_evasion": 0.0,
+        "trade_bonus": 0.0
+      },
+      {
+        "id": "smuggler",
+        "name": "Smuggler",
+        "description": "Knows every hidden compartment and customs loophole.",
+        "combat_damage_bonus": 0,
+        "combat_interception_chance": 0.0,
+        "speed_bonus": 0.0,
+        "danger_reduction": 0.0,
+        "heal_rate_bonus": 0.0,
+        "inspection_evasion": 0.3,
+        "trade_bonus": 0.0
+      },
+      {
+        "id": "quartermaster",
+        "name": "Quartermaster",
+        "description": "Manages cargo, negotiates prices, and counts every coin.",
+        "combat_damage_bonus": 0,
+        "combat_interception_chance": 0.0,
+        "speed_bonus": 0.0,
+        "danger_reduction": 0.0,
+        "heal_rate_bonus": 0.0,
+        "inspection_evasion": 0.0,
+        "trade_bonus": 0.05
+      }
+    ],
+    "companions": [
+      {
+        "id": "iron_marta",
+        "name": "Iron Marta",
+        "role_id": "marine",
+        "home_port_id": "ironhaven",
+        "region": "North Atlantic",
+        "description": "A former garrison soldier who deserted for the sea. Fights like she has nothing to lose.",
+        "personality": "reckless",
+        "hire_cost": 80,
+        "required_standing": 5,
+        "greeting": "A woman in a soldier's coat sits alone at the bar, sharpening a boarding axe.",
+        "hire_dialog": "\"I've been looking for a captain worth fighting for. Pay's secondary. Show me you're not a coward.\"",
+        "loyalty_line": "\"Best decision I ever made, signing on with you.\"",
+        "warning_line": "\"Captain... I'm starting to wonder if this ship is heading anywhere worth going.\"",
+        "departure_line": "\"I didn't leave the garrison to follow another fool. I'm done.\""
+      },
+      {
+        "id": "red_tomas",
+        "name": "Red Tomas",
+        "role_id": "marine",
+        "home_port_id": "corsairs_rest",
+        "region": "Mediterranean",
+        "description": "A pirate-turned-bodyguard with a face full of scars and a code of honor.",
+        "personality": "pragmatic",
+        "hire_cost": 60,
+        "required_standing": 0,
+        "greeting": "A scarred man watches you from the corner. His hand never leaves the cutlass at his belt.",
+        "hire_dialog": "\"I protect. You pay. Simple arrangement. Betray me and you'll wish the pirates found you first.\"",
+        "loyalty_line": "\"You're straight with me, Captain. That's rare on these waters.\"",
+        "warning_line": "\"This isn't what I signed up for. We need to talk.\"",
+        "departure_line": "\"The deal's off. Don't look for me.\""
+      },
+      {
+        "id": "star_lila",
+        "name": "Star Lila",
+        "role_id": "navigator",
+        "home_port_id": "crosswind_isle",
+        "region": "East Indies",
+        "description": "A Javanese navigator who reads the stars like others read books. She's never been lost.",
+        "personality": "gentle",
+        "hire_cost": 100,
+        "required_standing": 10,
+        "greeting": "A young woman sits on the dock, sketching star charts on palm bark with quiet concentration.",
+        "hire_dialog": "\"The stars brought me here. Perhaps they brought you too. I'll navigate \u2014 you decide where.\"",
+        "loyalty_line": "\"The stars say we're on the right path. I believe them.\"",
+        "warning_line": "\"The currents are wrong, Captain. Not the sea \u2014 this ship's course.\"",
+        "departure_line": "\"The stars say it's time to part. I wish you fair winds.\""
+      },
+      {
+        "id": "old_henry",
+        "name": "Old Henry",
+        "role_id": "navigator",
+        "home_port_id": "thornport",
+        "region": "North Atlantic",
+        "description": "Fifty years at sea. He's sailed every route twice and remembers every reef.",
+        "personality": "pragmatic",
+        "hire_cost": 70,
+        "required_standing": 5,
+        "greeting": "An old man mends nets by the harbor, humming a tune you don't recognize. His eyes are sharp.",
+        "hire_dialog": "\"I'm too old to captain my own ship, but I'm not too old to keep yours off the rocks. Deal?\"",
+        "loyalty_line": "\"Reminds me of the old days. Good captain, good ship, good sea.\"",
+        "warning_line": "\"I've seen captains make these mistakes before. It doesn't end well.\"",
+        "departure_line": "\"I'm retiring. For real this time. Good luck, Captain.\""
+      },
+      {
+        "id": "dr_amara",
+        "name": "Dr. Amara",
+        "role_id": "surgeon",
+        "home_port_id": "sun_harbor",
+        "region": "West Africa",
+        "description": "A healer trained in both Western and African medicine. She's saved more lives than most doctors dream of.",
+        "personality": "gentle",
+        "hire_cost": 120,
+        "required_standing": 10,
+        "greeting": "A woman in a clean apron tends to a sailor's wound at the dockside clinic. Efficient, gentle hands.",
+        "hire_dialog": "\"I go where people need healing. Your crew looks like they could use it. I have conditions \u2014 no unnecessary cruelty.\"",
+        "loyalty_line": "\"Your crew trusts you. That's the best medicine there is.\"",
+        "warning_line": "\"I became a healer to save lives, Captain. Not to watch them wasted.\"",
+        "departure_line": "\"I cannot stay on a ship that causes more harm than it heals. Goodbye, Captain.\""
+      },
+      {
+        "id": "patches",
+        "name": "Patches",
+        "role_id": "surgeon",
+        "home_port_id": "typhoon_anchorage",
+        "region": "South Seas",
+        "description": "A ship's surgeon who earned his nickname from the number of wounds he's stitched. Drinks too much, but his hands are steady.",
+        "personality": "reckless",
+        "hire_cost": 50,
+        "required_standing": 0,
+        "greeting": "A man with rum-stained fingers and a surgeon's kit sits at the bar. He's stitching his own thumb.",
+        "hire_dialog": "\"I can keep your crew alive. Mostly. I charge cheap because I drink the medicine budget. Fair warning.\"",
+        "loyalty_line": "\"Best gig I've had in years. The rum's flowing and nobody's dying.\"",
+        "warning_line": "\"I'm a doctor, not a miracle worker. This ship needs better luck \u2014 or a better captain.\"",
+        "departure_line": "\"I'm finding a quieter ship. One where I can drink in peace.\""
+      },
+      {
+        "id": "shadow_kai",
+        "name": "Shadow Kai",
+        "role_id": "smuggler",
+        "home_port_id": "spice_narrows",
+        "region": "East Indies",
+        "description": "Nobody knows his real name. He makes contraband disappear and reappear wherever it needs to be.",
+        "personality": "pragmatic",
+        "hire_cost": 90,
+        "required_standing": 5,
+        "greeting": "A man you didn't notice before is suddenly standing beside you. \"Looking for someone discreet?\"",
+        "hire_dialog": "\"I have skills. You have cargo holds. Let's make each other rich. Just don't ask where things go.\"",
+        "loyalty_line": "\"Good captain. Doesn't ask stupid questions. My kind of arrangement.\"",
+        "warning_line": "\"You're drawing too much heat. That's bad for business \u2014 and for my neck.\"",
+        "departure_line": "\"The arrangement is over. You'll never see me again. That's the point.\""
+      },
+      {
+        "id": "rosa_the_fence",
+        "name": "Rosa the Fence",
+        "role_id": "smuggler",
+        "home_port_id": "corsairs_rest",
+        "region": "Mediterranean",
+        "description": "A woman who knows the price of everything and the customs schedule of every port.",
+        "personality": "pragmatic",
+        "hire_cost": 70,
+        "required_standing": 0,
+        "greeting": "A woman with too many rings counts coins at a corner table. She's been watching you since you walked in.",
+        "hire_dialog": "\"Every captain needs someone who knows where the inspectors aren't. That's me. Fifty-fifty on the extras.\"",
+        "loyalty_line": "\"We're making good silver together. Long may it last.\"",
+        "warning_line": "\"The margins are getting thin and the heat's getting thick. Watch yourself.\"",
+        "departure_line": "\"Bad for business, Captain. I'm moving on before your luck runs out on both of us.\""
+      },
+      {
+        "id": "coin_mariam",
+        "name": "Coin Mariam",
+        "role_id": "quartermaster",
+        "home_port_id": "al_manar",
+        "region": "Mediterranean",
+        "description": "A merchant's daughter who can appraise cargo by smell and negotiate prices in seven languages.",
+        "personality": "lawful",
+        "hire_cost": 100,
+        "required_standing": 10,
+        "greeting": "A well-dressed woman inspects cargo manifests at the harbormaster's office. She spots errors in seconds.",
+        "hire_dialog": "\"Your books are a mess. Your cargo holds are inefficient. Your pricing is amateur. Hire me and I'll fix all three.\"",
+        "loyalty_line": "\"The ledgers are clean, the holds are full, and the silver is flowing. My kind of ship.\"",
+        "warning_line": "\"The numbers don't lie, Captain. We're heading for a loss if you keep this up.\"",
+        "departure_line": "\"I don't serve captains who ignore the ledger. Find another quartermaster.\""
+      },
+      {
+        "id": "dockhand_pete",
+        "name": "Dockhand Pete",
+        "role_id": "quartermaster",
+        "home_port_id": "palm_cove",
+        "region": "West Africa",
+        "description": "Knows every dock, every scale, and every harbormaster's weakness on the West African coast.",
+        "personality": "reckless",
+        "hire_cost": 40,
+        "required_standing": 0,
+        "greeting": "A wiry man balances on a cargo crate, juggling oranges. He catches all three without looking.",
+        "hire_dialog": "\"I know cargo. I know ports. I know who's cheating on the scales. Hire me and you'll never overpay for grain again.\"",
+        "loyalty_line": "\"Good ship, good captain, good cargo. Life's good!\"",
+        "warning_line": "\"Captain, I'm starting to feel like ballast. Use me or lose me.\"",
+        "departure_line": "\"I need a ship that's actually going somewhere. No hard feelings.\""
+      }
+    ],
+    "morale_reactions": [
+      {
+        "trigger": "combat_won",
+        "deltas": {
+          "marine": 5,
+          "navigator": 1,
+          "surgeon": -1,
+          "smuggler": 0,
+          "quartermaster": 0
+        }
+      },
+      {
+        "trigger": "combat_lost",
+        "deltas": {
+          "marine": -3,
+          "navigator": -2,
+          "surgeon": -2,
+          "smuggler": -1,
+          "quartermaster": -2
+        }
+      },
+      {
+        "trigger": "crew_killed",
+        "deltas": {
+          "marine": -2,
+          "navigator": -1,
+          "surgeon": -5,
+          "smuggler": 0,
+          "quartermaster": -1
+        }
+      },
+      {
+        "trigger": "profitable_trade",
+        "deltas": {
+          "marine": 0,
+          "navigator": 0,
+          "surgeon": 0,
+          "smuggler": 2,
+          "quartermaster": 5
+        }
+      },
+      {
+        "trigger": "losing_trade",
+        "deltas": {
+          "marine": 0,
+          "navigator": 0,
+          "surgeon": 0,
+          "smuggler": -1,
+          "quartermaster": -3
+        }
+      },
+      {
+        "trigger": "contraband_trade",
+        "deltas": {
+          "marine": -2,
+          "navigator": -1,
+          "surgeon": -3,
+          "smuggler": 5,
+          "quartermaster": -1
+        }
+      },
+      {
+        "trigger": "spared_enemy",
+        "deltas": {
+          "marine": 2,
+          "navigator": 1,
+          "surgeon": 5,
+          "smuggler": 0,
+          "quartermaster": 0
+        }
+      },
+      {
+        "trigger": "took_all",
+        "deltas": {
+          "marine": 1,
+          "navigator": -1,
+          "surgeon": -3,
+          "smuggler": 3,
+          "quartermaster": 2
+        }
+      },
+      {
+        "trigger": "fled_combat",
+        "deltas": {
+          "marine": -5,
+          "navigator": 2,
+          "surgeon": 2,
+          "smuggler": 1,
+          "quartermaster": 0
+        }
+      },
+      {
+        "trigger": "injury_sustained",
+        "deltas": {
+          "marine": -1,
+          "navigator": -2,
+          "surgeon": -1,
+          "smuggler": -2,
+          "quartermaster": -2
+        }
+      },
+      {
+        "trigger": "long_voyage",
+        "deltas": {
+          "marine": -1,
+          "navigator": 2,
+          "surgeon": -1,
+          "smuggler": -1,
+          "quartermaster": -1
+        }
+      },
+      {
+        "trigger": "port_arrival",
+        "deltas": {
+          "marine": 1,
+          "navigator": 1,
+          "surgeon": 1,
+          "smuggler": 1,
+          "quartermaster": 2
+        }
+      },
+      {
+        "trigger": "nemesis_defeated",
+        "deltas": {
+          "marine": 8,
+          "navigator": 3,
+          "surgeon": 2,
+          "smuggler": 3,
+          "quartermaster": 3
+        }
+      }
+    ],
+    "personality_modifiers": [
+      {
+        "personality": "lawful",
+        "deltas": {
+          "contraband_trade": -3,
+          "spared_enemy": 2,
+          "took_all": -2
+        }
+      },
+      {
+        "personality": "pragmatic",
+        "deltas": {}
+      },
+      {
+        "personality": "reckless",
+        "deltas": {
+          "combat_won": 2,
+          "fled_combat": -3,
+          "long_voyage": -2
+        }
+      },
+      {
+        "personality": "gentle",
+        "deltas": {
+          "crew_killed": -3,
+          "spared_enemy": 3,
+          "took_all": -3,
+          "combat_won": -1
+        }
+      }
+    ]
+  },
+  "merchants": [
+    {
+      "id": "marco_the_blade",
+      "name": "Marco",
+      "port_id": "porto_novo",
+      "title": "Master Weaponsmith",
+      "personality": "charming",
+      "description": "A stocky Genoese smith with oil-stained hands and a shop full of blades hanging from the ceiling.",
+      "greeting": "Ah, a captain with taste! Come, see what Marco has forged this week.",
+      "inventory_types": [
+        "melee",
+        "ranged",
+        "ammo"
+      ],
+      "price_markup": 1.1
+    },
+    {
+      "id": "fatima_armorworks",
+      "name": "Fatima",
+      "port_id": "al_manar",
+      "title": "Armorer",
+      "personality": "shrewd",
+      "description": "She runs the finest armor workshop south of the strait. Her chain is tight and her prices tighter.",
+      "greeting": "You want protection? Protection costs. But so does a funeral.",
+      "inventory_types": [
+        "armor",
+        "melee"
+      ],
+      "price_markup": 1.15
+    },
+    {
+      "id": "old_silva",
+      "name": "Old Silva",
+      "port_id": "silva_bay",
+      "title": "Ship Outfitter",
+      "personality": "quiet",
+      "description": "A retired shipwright who sells what sailors need. His shop smells of tar and salt.",
+      "greeting": "What do you need. I have it or I don't.",
+      "inventory_types": [
+        "melee",
+        "ranged",
+        "ammo",
+        "armor"
+      ],
+      "price_markup": 1.05
+    },
+    {
+      "id": "sergeant_gruber",
+      "name": "Sgt. Gruber",
+      "port_id": "ironhaven",
+      "title": "Arsenal Master",
+      "personality": "gruff",
+      "description": "A retired dragoon who sells military-grade equipment from a fortress-turned-shop.",
+      "greeting": "State your business. I don't sell to tourists.",
+      "inventory_types": [
+        "melee",
+        "armor",
+        "ranged",
+        "ammo"
+      ],
+      "price_markup": 1.12
+    },
+    {
+      "id": "widow_kael",
+      "name": "Widow Kael",
+      "port_id": "stormwall",
+      "title": "Outfitter",
+      "personality": "quiet",
+      "description": "She inherited her husband's shop when he didn't come back from the ice. She knows every item by touch.",
+      "greeting": "The wind's picking up. Buy what you need before it gets worse.",
+      "inventory_types": [
+        "armor",
+        "melee",
+        "ammo"
+      ],
+      "price_markup": 1.08
+    },
+    {
+      "id": "hamish_iron",
+      "name": "Hamish",
+      "port_id": "thornport",
+      "title": "Bladesmith",
+      "personality": "gruff",
+      "description": "A Highland smith who forges axes and broadswords in a workshop built into the cliff face.",
+      "greeting": "If it's sharp and it swings, I made it. If it's dull, someone else made it.",
+      "inventory_types": [
+        "melee",
+        "ranged"
+      ],
+      "price_markup": 1.1
+    },
+    {
+      "id": "adaeze_arms",
+      "name": "Adaeze",
+      "port_id": "sun_harbor",
+      "title": "Arms Dealer",
+      "personality": "charming",
+      "description": "A trader's daughter who turned her father's cloth stall into a weapons bazaar. She haggles like she breathes.",
+      "greeting": "Welcome, captain! Everything you see is the best in the harbor. I should know \u2014 I tested it myself.",
+      "inventory_types": [
+        "melee",
+        "armor",
+        "ranged",
+        "ammo"
+      ],
+      "price_markup": 1.08
+    },
+    {
+      "id": "kofi_leather",
+      "name": "Kofi",
+      "port_id": "palm_cove",
+      "title": "Leatherworker",
+      "personality": "quiet",
+      "description": "He works crocodile hide into armor that turns blades. His fingers are scarred from the stitching awl.",
+      "greeting": "Good leather takes time. I have what's ready.",
+      "inventory_types": [
+        "armor"
+      ],
+      "price_markup": 1.05
+    },
+    {
+      "id": "yaa_sharpedge",
+      "name": "Yaa",
+      "port_id": "pearl_shallows",
+      "title": "Blade Merchant",
+      "personality": "shrewd",
+      "description": "She sources knives and slings from inland villages and sells them to sailors at the dock.",
+      "greeting": "Pearl Shallows has the best steel on the coast. Don't let anyone tell you otherwise.",
+      "inventory_types": [
+        "melee",
+        "ranged"
+      ],
+      "price_markup": 1.12
+    },
+    {
+      "id": "chen_forge",
+      "name": "Master Chen",
+      "port_id": "jade_port",
+      "title": "Master Smith",
+      "personality": "quiet",
+      "description": "Third generation bladesmith. His kris daggers are considered sacred objects in three kingdoms.",
+      "greeting": "A captain who values craftsmanship. Please, examine my work.",
+      "inventory_types": [
+        "melee",
+        "armor"
+      ],
+      "price_markup": 1.15
+    },
+    {
+      "id": "devi_arms",
+      "name": "Devi",
+      "port_id": "monsoon_reach",
+      "title": "Armorer",
+      "personality": "charming",
+      "description": "She imports brigandine plates from the mainland and fits them in her harbor-side workshop.",
+      "greeting": "Monsoon season is coming. You'll want something between you and the sea.",
+      "inventory_types": [
+        "armor",
+        "ammo"
+      ],
+      "price_markup": 1.1
+    },
+    {
+      "id": "li_crossbow",
+      "name": "Li Wei",
+      "port_id": "silk_haven",
+      "title": "Mechanist",
+      "personality": "shrewd",
+      "description": "A craftsman who builds hand crossbows from bamboo and horn. Quiet weapons for quiet work.",
+      "greeting": "Silk Haven values discretion. So do my weapons.",
+      "inventory_types": [
+        "ranged",
+        "ammo",
+        "melee"
+      ],
+      "price_markup": 1.12
+    },
+    {
+      "id": "tane_warrior",
+      "name": "Tane",
+      "port_id": "coral_throne",
+      "title": "Warrior Outfitter",
+      "personality": "gruff",
+      "description": "A former reef warrior who now outfits captains with the weapons of his people.",
+      "greeting": "The reef teaches you to fight or it teaches you to drown. Which are you?",
+      "inventory_types": [
+        "melee",
+        "ranged"
+      ],
+      "price_markup": 1.08
+    },
+    {
+      "id": "malia_provisions",
+      "name": "Malia",
+      "port_id": "typhoon_anchorage",
+      "title": "Outfitter",
+      "personality": "charming",
+      "description": "She runs the only proper shop between the reefs. If she doesn't have it, you don't need it.",
+      "greeting": "Typhoon Anchorage! Where the brave come to buy and the foolish come to sell.",
+      "inventory_types": [
+        "melee",
+        "armor",
+        "ammo"
+      ],
+      "price_markup": 1.1
+    }
+  ],
+  "officer_names": {
+    "regions": [
+      {
+        "region": "Mediterranean",
+        "names": [
+          "Marco",
+          "Sophia",
+          "Nikolaos",
+          "Fatima",
+          "Lorenzo",
+          "Valentina",
+          "Dimitri",
+          "Leila",
+          "Antonio",
+          "Isadora"
+        ]
+      },
+      {
+        "region": "North Atlantic",
+        "names": [
+          "William",
+          "Margaret",
+          "Henrik",
+          "Brigitte",
+          "Duncan",
+          "Eleanor",
+          "Gunnar",
+          "Astrid",
+          "Thomas",
+          "Catherine"
+        ]
+      },
+      {
+        "region": "West Africa",
+        "names": [
+          "Kwame",
+          "Aminata",
+          "Kofi",
+          "Adaeze",
+          "Sekou",
+          "Mariam",
+          "Ousmane",
+          "Aisha",
+          "Yusuf",
+          "Zara"
+        ]
+      },
+      {
+        "region": "East Indies",
+        "names": [
+          "Rajan",
+          "Mei Lin",
+          "Arjun",
+          "Suki",
+          "Bao",
+          "Padma",
+          "Kenji",
+          "Lien",
+          "Haruki",
+          "Kamala"
+        ]
+      },
+      {
+        "region": "South Seas",
+        "names": [
+          "Tane",
+          "Moana",
+          "Rangi",
+          "Leilani",
+          "Makoa",
+          "Aroha",
+          "Koa",
+          "Nalani",
+          "Ioane",
+          "Mele"
+        ]
+      }
+    ],
+    "traits": [
+      "loyal",
+      "cautious",
+      "bold",
+      "superstitious",
+      "sharp-eyed",
+      "steady",
+      "hot-tempered",
+      "quiet",
+      "gregarious",
+      "shrewd",
+      "resourceful",
+      "fearless",
+      "meticulous",
+      "jovial",
+      "stoic"
+    ]
+  },
+  "style_masters": [
+    {
+      "id": "maestro_luciano",
+      "name": "Maestro Luciano",
+      "style_id": "la_destreza",
+      "port_id": "porto_novo",
+      "description": "A retired fencing master who teaches the Spanish school from a warehouse overlooking the harbor.",
+      "dialog": "\"The sword is a compass. Your body is the circle. Step correctly and no blade can touch you.\""
+    },
+    {
+      "id": "senora_vega",
+      "name": "Se\u00f1ora Vega",
+      "style_id": "la_destreza",
+      "port_id": "al_manar",
+      "description": "A Castilian expatriate who runs the only fencing school east of Gibraltar.",
+      "dialog": "\"You fight like a dockhand. I will teach you to fight like a mathematician.\""
+    },
+    {
+      "id": "red_hamish",
+      "name": "Red Hamish",
+      "style_id": "highland_broadsword",
+      "port_id": "ironhaven",
+      "description": "A massive Scotsman with arms like anchor chains. He teaches broadsword in the foundry yard, sparking steel against iron.",
+      "dialog": "\"Ye dinnae need fancy footwork when ye can split a man's shield in two. Hit harder. Again.\""
+    },
+    {
+      "id": "jarl_solveig",
+      "name": "Jarl Solveig",
+      "style_id": "highland_broadsword",
+      "port_id": "thornport",
+      "description": "A Norse shieldmaiden who settled in Thornport after twenty years of raiding. She teaches the old ways.",
+      "dialog": "\"The broadsword is not a weapon. It is a statement. When you swing, mean it.\""
+    },
+    {
+      "id": "kolo_the_fist",
+      "name": "Kolo the Fist",
+      "style_id": "dambe",
+      "port_id": "sun_harbor",
+      "description": "A retired champion whose wrapped fists have broken more guards than any siege engine. He teaches on the beach at dawn.",
+      "dialog": "\"The spear fist strikes. The shield hand protects. The leg decides. Simple. Now do it a thousand times.\""
+    },
+    {
+      "id": "nneka_ironfist",
+      "name": "Nneka Ironfist",
+      "style_id": "dambe",
+      "port_id": "pearl_shallows",
+      "description": "A woman who earned her name in the fighting circles of the Gold Coast. She teaches with bruises, not words.",
+      "dialog": "\"You think fighting is about your arms? Your legs carry the fight. Everything begins from the ground.\""
+    },
+    {
+      "id": "pak_reza",
+      "name": "Pak Reza",
+      "style_id": "silat",
+      "port_id": "jade_port",
+      "description": "An elderly silat master who moves like smoke. His school is hidden behind a porcelain shop.",
+      "dialog": "\"The kris is not a sword. It does not cut \u2014 it finds. Every body has openings. I will teach you to see them.\""
+    },
+    {
+      "id": "dewi_ayu",
+      "name": "Dewi Ayu",
+      "style_id": "silat",
+      "port_id": "monsoon_reach",
+      "description": "A trader's daughter who learned silat from her grandmother. She teaches in the monsoon rain because 'the deck is always wet.'",
+      "dialog": "\"Western fencing stands tall and proud. Silat crouches low and survives. Which do you think lasts longer at sea?\""
+    },
+    {
+      "id": "kahoku_the_elder",
+      "name": "Kahoku the Elder",
+      "style_id": "lua",
+      "port_id": "coral_throne",
+      "description": "An ancient warrior-priest whose hands have set more bones than any doctor \u2014 because he broke them first.",
+      "dialog": "\"Lua was never meant for sport. Every hold is designed to end a fight permanently. Are you certain you want this knowledge?\""
+    },
+    {
+      "id": "leilani_bonecatcher",
+      "name": "Leilani Bonecatcher",
+      "style_id": "lua",
+      "port_id": "typhoon_anchorage",
+      "description": "A young woman with an old name. She learned Lua from her grandfather and teaches it to those the sea has tested.",
+      "dialog": "\"The bones tell you everything. How strong they are, where they bend, where they break. Listen to the bones.\""
+    }
+  ],
+  "campaign": {
+    "milestones": [
+      {
+        "id": "foothold_first_warehouse",
+        "name": "First Warehouse",
+        "family": "regional_foothold",
+        "description": "Leased your first warehouse \u2014 cargo can now be staged for timing plays.",
+        "evaluator": "first_warehouse"
+      },
+      {
+        "id": "foothold_first_broker",
+        "name": "First Broker Office",
+        "family": "regional_foothold",
+        "description": "Opened your first broker office \u2014 intelligence shapes the contract board.",
+        "evaluator": "first_broker"
+      },
+      {
+        "id": "foothold_standing_established",
+        "name": "Regional Standing",
+        "family": "regional_foothold",
+        "description": "Reached meaningful standing in one region through consistent commerce.",
+        "evaluator": "standing_one_region"
+      },
+      {
+        "id": "foothold_strong_standing",
+        "name": "Strong Regional Presence",
+        "family": "regional_foothold",
+        "description": "Achieved strong standing in one region \u2014 a known and respected operator.",
+        "evaluator": "strong_standing_one_region"
+      },
+      {
+        "id": "foothold_two_regions",
+        "name": "Two-Region Presence",
+        "family": "regional_foothold",
+        "description": "Established operations in two different regions.",
+        "evaluator": "presence_two_regions"
+      },
+      {
+        "id": "lawful_credible_trust",
+        "name": "Credible Operator",
+        "family": "lawful_house",
+        "description": "The market recognizes you as credible \u2014 new opportunities open.",
+        "evaluator": "credible_trust"
+      },
+      {
+        "id": "lawful_reliable_trust",
+        "name": "Reliable Operator",
+        "family": "lawful_house",
+        "description": "Reliable commercial trust \u2014 premium contracts and better credit terms.",
+        "evaluator": "reliable_trust"
+      },
+      {
+        "id": "lawful_first_charter",
+        "name": "First Regional Charter",
+        "family": "lawful_house",
+        "description": "Acquired your first regional trade charter \u2014 formal commercial standing.",
+        "evaluator": "regional_charter"
+      },
+      {
+        "id": "lawful_high_rep_charter",
+        "name": "High Reputation Charter",
+        "family": "lawful_house",
+        "description": "Earned the highest commercial charter \u2014 recognized across all regions.",
+        "evaluator": "high_rep_charter"
+      },
+      {
+        "id": "lawful_contract_record",
+        "name": "Proven Contract Record",
+        "family": "lawful_house",
+        "description": "Completed 5+ contracts \u2014 a track record of reliable delivery.",
+        "evaluator": "lawful_contracts_completed"
+      },
+      {
+        "id": "lawful_low_heat_scaling",
+        "name": "Clean Growth",
+        "family": "lawful_house",
+        "description": "Reached reliable trust while keeping heat low \u2014 growth without suspicion.",
+        "evaluator": "low_heat_scaling"
+      },
+      {
+        "id": "shadow_first_discreet",
+        "name": "First Discreet Delivery",
+        "family": "shadow_network",
+        "description": "Completed your first discreet luxury delivery \u2014 the shadow lane is open.",
+        "evaluator": "first_discreet_success"
+      },
+      {
+        "id": "shadow_elevated_heat",
+        "name": "Operating Under Scrutiny",
+        "family": "shadow_network",
+        "description": "Sustained high heat while remaining profitable \u2014 the authorities watch, but you persist.",
+        "evaluator": "elevated_heat_sustained"
+      },
+      {
+        "id": "shadow_profitability",
+        "name": "Shadow Profitability",
+        "family": "shadow_network",
+        "description": "Strong net profit despite elevated customs scrutiny.",
+        "evaluator": "shadow_profitability"
+      },
+      {
+        "id": "shadow_seizure_recovery",
+        "name": "Seizure Recovery",
+        "family": "shadow_network",
+        "description": "Survived a cargo seizure and rebuilt \u2014 the business endures.",
+        "evaluator": "seizure_recovery"
+      },
+      {
+        "id": "oceanic_ei_access",
+        "name": "East Indies Access",
+        "family": "oceanic_reach",
+        "description": "Acquired the East Indies Access Charter \u2014 the far trade routes are open.",
+        "evaluator": "ei_access"
+      },
+      {
+        "id": "oceanic_ei_broker",
+        "name": "East Indies Presence",
+        "family": "oceanic_reach",
+        "description": "Opened a broker office in the East Indies \u2014 local intelligence secured.",
+        "evaluator": "ei_broker"
+      },
+      {
+        "id": "oceanic_galleon",
+        "name": "Galleon Operator",
+        "family": "oceanic_reach",
+        "description": "Operating a Merchant Galleon \u2014 the long-haul workhorse.",
+        "evaluator": "galleon_deployed"
+      },
+      {
+        "id": "oceanic_ei_standing",
+        "name": "East Indies Reputation",
+        "family": "oceanic_reach",
+        "description": "Strong standing in the East Indies \u2014 a known operator in the spice quarter.",
+        "evaluator": "ei_standing"
+      },
+      {
+        "id": "finance_first_insurance",
+        "name": "First Insurance Payout",
+        "family": "commercial_finance",
+        "description": "An insurance claim was paid \u2014 risk pricing proves its worth.",
+        "evaluator": "first_insurance_success"
+      },
+      {
+        "id": "finance_credit_opened",
+        "name": "First Credit Draw",
+        "family": "commercial_finance",
+        "description": "Drew on a credit line \u2014 leverage is now part of the business.",
+        "evaluator": "credit_opened"
+      },
+      {
+        "id": "finance_credit_clean",
+        "name": "Clean Credit Record",
+        "family": "commercial_finance",
+        "description": "Significant borrowing with no defaults \u2014 the market trusts your debt service.",
+        "evaluator": "credit_clean"
+      },
+      {
+        "id": "finance_leveraged_expansion",
+        "name": "Leveraged Expansion",
+        "family": "commercial_finance",
+        "description": "Used credit to fund infrastructure growth \u2014 capital working for capital.",
+        "evaluator": "leveraged_expansion"
+      },
+      {
+        "id": "integrated_multi_region",
+        "name": "Multi-Region Infrastructure",
+        "family": "integrated_house",
+        "description": "Infrastructure assets across multiple regions \u2014 a commercial network.",
+        "evaluator": "multi_region_infra"
+      },
+      {
+        "id": "integrated_major_contracts",
+        "name": "Cross-Region Contract House",
+        "family": "integrated_house",
+        "description": "5+ contracts completed with standing in 2+ regions.",
+        "evaluator": "major_contracts_multi_region"
+      },
+      {
+        "id": "integrated_full_spectrum",
+        "name": "Full-Spectrum Operation",
+        "family": "integrated_house",
+        "description": "Using warehouses, brokers, licenses, insurance, and credit \u2014 a complete commercial toolkit.",
+        "evaluator": "full_spectrum"
+      },
+      {
+        "id": "integrated_brigantine",
+        "name": "Ship Upgrade",
+        "family": "integrated_house",
+        "description": "Upgraded beyond the starting sloop \u2014 the business justified the investment.",
+        "evaluator": "brigantine_acquired"
+      }
+    ],
+    "profile_milestone_families": [
+      {
+        "tag": "Lawful House",
+        "families": [
+          "lawful_house",
+          "regional_foothold"
+        ]
+      },
+      {
+        "tag": "Shadow Operator",
+        "families": [
+          "shadow_network"
+        ]
+      },
+      {
+        "tag": "Oceanic Carrier",
+        "families": [
+          "oceanic_reach"
+        ]
+      },
+      {
+        "tag": "Contract Specialist",
+        "families": [
+          "regional_foothold",
+          "integrated_house"
+        ]
+      },
+      {
+        "tag": "Infrastructure Builder",
+        "families": [
+          "integrated_house",
+          "commercial_finance"
+        ]
+      },
+      {
+        "tag": "Leveraged Trader",
+        "families": [
+          "commercial_finance"
+        ]
+      },
+      {
+        "tag": "Risk-Managed Merchant",
+        "families": [
+          "commercial_finance"
+        ]
+      }
+    ]
+  }
 }

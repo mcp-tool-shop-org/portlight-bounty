@@ -1589,6 +1589,14 @@
       ]
     }
   ],
+  "milestones": [
+    {
+      "milestone_id": "integrated_brigantine",
+      "completed_day": 2,
+      "evidence": "Operating a cutter",
+      "family": "integrated_house"
+    }
+  ],
   "log": [
     {
       "command": "new bounty_hunter C 13",

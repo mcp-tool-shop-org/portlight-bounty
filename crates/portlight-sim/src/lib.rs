@@ -12,12 +12,15 @@
 
 pub mod campaign;
 pub mod combat;
+pub mod companion;
 pub mod content;
 pub mod contracts;
 pub mod duel;
 pub mod economy;
 pub mod encounter;
 pub mod error;
+pub mod memory;
+pub mod merchant;
 pub mod model;
 pub mod naval;
 pub mod pyrand;
@@ -26,7 +29,9 @@ pub mod save;
 pub mod script;
 pub mod session;
 pub mod ship;
+pub mod skills;
 pub mod snapshot;
+pub mod training;
 pub mod util;
 pub mod voyage;
 pub mod world;

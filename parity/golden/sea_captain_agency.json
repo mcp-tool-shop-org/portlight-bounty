@@ -1,34 +1,25 @@
 {
-  "seed": 4,
-  "day": 7,
-  "trade_seq": 1,
+  "seed": 9,
+  "day": 4,
+  "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 505,
-    "provisions": 24,
-    "day": 7,
+    "silver": 538,
+    "provisions": 27,
+    "day": 4,
     "wanted_level": 0,
-    "cargo": [
-      {
-        "good_id": "grain",
-        "quantity": 2,
-        "cost_basis": 16,
-        "acquired_port": "porto_novo",
-        "acquired_region": "Mediterranean",
-        "acquired_day": 1
-      }
-    ],
+    "cargo": [],
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 53,
+      "hull": 50,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 56,
+      "morale": 53,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -48,52 +39,46 @@
       "heat": {
         "Mediterranean": 0,
         "North Atlantic": 0,
-        "West Africa": 2,
+        "West Africa": 0,
         "East Indies": 0,
         "South Seas": 0
       },
       "commercial_trust": 15,
       "port_standing": [],
       "underworld": {},
-      "incidents": [
-        {
-          "day": 7,
-          "port_id": "porto_novo",
-          "region": "West Africa",
-          "incident_type": "inspection",
-          "description": "Routine inspection (8 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        }
-      ]
+      "incidents": []
     }
   },
   "voyage": {
     "origin_id": "porto_novo",
-    "destination_id": "sun_harbor",
-    "distance": 40,
-    "progress": 29,
-    "days_elapsed": 6,
+    "destination_id": "silva_bay",
+    "distance": 16,
+    "progress": 14,
+    "days_elapsed": 3,
     "status": "at_sea",
     "recent_events": [
-      "nothing",
       "storm",
       "calm_seas",
-      "nothing",
-      "inspection"
+      "nothing"
     ]
   },
-  "pending_duel": null,
+  "pending_duel": {
+    "captain_id": "the_butcher",
+    "captain_name": "The Butcher",
+    "faction_id": "crimson_tide",
+    "personality": "aggressive",
+    "strength": 8,
+    "region": "Mediterranean"
+  },
   "ports": [
     {
       "id": "porto_novo",
       "market": [
         {
           "good_id": "grain",
-          "stock": 38,
-          "buy_price": 8,
-          "sell_price": 8,
+          "stock": 40,
+          "buy_price": 7,
+          "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
@@ -1447,14 +1432,14 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 2",
-          "action": "Reduce customs heat from 2 to 5 or below"
+          "detail": "Max heat: 0",
+          "action": "Reduce customs heat from 0 to 5 or below"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Earn 1495 more silver"
+          "detail": "Silver: 538",
+          "action": "Earn 1462 more silver"
         }
       ]
     },
@@ -1474,31 +1459,31 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "missing",
-          "detail": "Max heat: 2",
-          "action": "Shadow commerce requires operating under customs pressure (heat 2, need 10+)"
+          "detail": "Max heat: 0",
+          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 2",
-          "action": "Reduce heat from 2 \u2014 network collapses above 40"
+          "detail": "Max heat: 0",
+          "action": "Reduce heat from 0 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -16, heat: 2",
+          "detail": "Profit: 0, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Accumulate 995 more silver"
+          "detail": "Silver: 538",
+          "action": "Accumulate 962 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 1, max heat: 2",
+          "detail": "Trades: 0, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1543,8 +1528,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Earn 1495 more silver"
+          "detail": "Silver: 538",
+          "action": "Earn 1462 more silver"
         }
       ]
     },
@@ -1582,8 +1567,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Earn 2495 more silver"
+          "detail": "Silver: 538",
+          "action": "Earn 2462 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1610,72 +1595,45 @@
   ],
   "log": [
     {
-      "command": "new merchant Ada 4",
+      "command": "new merchant Ada 9",
       "error": null,
       "receipt": null,
       "events": [],
       "shocks": []
     },
     {
-      "command": "buy grain 2",
-      "error": null,
-      "receipt": {
-        "receipt_id": "42471bdaf1a4a6ea",
-        "action": "buy",
-        "good_id": "grain",
-        "quantity": 2,
-        "unit_price": 8,
-        "total_price": 16,
-        "stock_before": 40,
-        "stock_after": 38,
-        "day": 1
-      },
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "depart sun_harbor",
+      "command": "remember the_butcher ship_sunk",
       "error": null,
       "receipt": null,
       "events": [],
       "shocks": []
     },
     {
-      "command": "advance",
+      "command": "remember the_butcher ship_sunk",
       "error": null,
       "receipt": null,
-      "events": [
-        {
-          "event_type": "calm_seas",
-          "message": "Calm seas. Good for rest, bad for progress.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 0.6,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
+      "events": [],
       "shocks": []
     },
     {
-      "command": "advance",
+      "command": "remember the_butcher ship_sunk",
       "error": null,
       "receipt": null,
-      "events": [
-        {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "remember the_butcher ship_sunk",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "depart silva_bay",
+      "error": null,
+      "receipt": null,
+      "events": [],
       "shocks": []
     },
     {
@@ -1685,8 +1643,8 @@
       "events": [
         {
           "event_type": "storm",
-          "message": "A violent storm batters the ship! (-7 hull)",
-          "hull_delta": -7,
+          "message": "A violent storm batters the ship! (-10 hull)",
+          "hull_delta": -10,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
@@ -1698,6 +1656,18 @@
       "shocks": []
     },
     {
+      "command": "agency",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "agency": {
+        "ambush": false,
+        "encounter": null,
+        "notices": []
+      }
+    },
+    {
       "command": "advance",
       "error": null,
       "receipt": null,
@@ -1715,6 +1685,18 @@
         }
       ],
       "shocks": []
+    },
+    {
+      "command": "agency",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "agency": {
+        "ambush": false,
+        "encounter": null,
+        "notices": []
+      }
     },
     {
       "command": "advance",
@@ -1736,22 +1718,46 @@
       "shocks": []
     },
     {
+      "command": "agency",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "agency": {
+        "ambush": true,
+        "encounter": {
+          "enemy_captain_id": "the_butcher",
+          "enemy_captain_name": "The Butcher",
+          "enemy_faction_id": "crimson_tide",
+          "enemy_personality": "aggressive",
+          "enemy_strength": 8,
+          "enemy_region": "Mediterranean",
+          "enemy_ship_hull": 170,
+          "enemy_ship_hull_max": 170,
+          "enemy_ship_cannons": 12,
+          "enemy_ship_maneuver": 0.4,
+          "enemy_ship_speed": 5.251391040026104,
+          "enemy_ship_crew": 28,
+          "enemy_ship_crew_max": 36,
+          "phase": "naval",
+          "boarding_progress": 0,
+          "boarding_threshold": 3,
+          "naval_turns": 0,
+          "duel_turns": 0
+        },
+        "notices": [
+          {
+            "effect_type": "encounter",
+            "message": "Sails on the horizon \u2014 The Butcher has found you. There will be no negotiation this time."
+          }
+        ]
+      }
+    },
+    {
       "command": "advance",
       "error": null,
       "receipt": null,
-      "events": [
-        {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 8 silver fee.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": -8,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
+      "events": [],
       "shocks": []
     }
   ]

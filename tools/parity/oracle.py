@@ -39,10 +39,12 @@ from portlight.engine.reputation import (
     tick_reputation,
 )
 from portlight.engine.ship_stats import compute_daily_wages
+from portlight.content.campaign import MILESTONE_BY_ID, MILESTONE_SPECS
 from portlight.engine.campaign import (
     CampaignState,
     SessionSnapshot,
     compute_victory_progress,
+    evaluate_milestones,
     evaluate_victory_closure,
 )
 from portlight.engine.contracts import (
@@ -348,6 +350,9 @@ def do_advance(state, entry: dict) -> None:
                 refresh_board(state, port)
         entry["events"] = [event_view(event) for event in events]
     reprice_all(world)
+    milestone_newly = evaluate_milestones(MILESTONE_SPECS, session_snapshot(state))
+    if milestone_newly:
+        state["campaign"].completed.extend(milestone_newly)
     newly = evaluate_victory_closure(session_snapshot(state))
     if newly:
         state["campaign"].completed_paths.extend(newly)
@@ -470,6 +475,26 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         except ValueError as exc:
             raise ScriptError(f"Invalid number: {tokens[1]}") from exc
         do_capture(state, crew, entry)
+    elif cmd == "train":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: train <style_id>")
+        do_train(state, tokens[1])
+    elif cmd == "recruit":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: recruit <companion_id>")
+        do_recruit(state, tokens[1])
+    elif cmd == "skill":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: skill <skill_id>")
+        do_skill(state, tokens[1])
+    elif cmd == "remember":
+        if len(tokens) != 3:
+            raise ScriptError("Usage: remember <captain_id> <outcome>")
+        do_remember(state, tokens[1], tokens[2])
+    elif cmd == "agency":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: agency")
+        do_agency(state, entry)
     else:
         raise ScriptError(f"Unknown command: {cmd}")
 
@@ -969,6 +994,212 @@ def split_stances(tokens: list[str]) -> list[str]:
     return stances
 
 
+def do_train(state, style_id: str) -> None:
+    """`portlight train`: learn a style, then advance training_days."""
+    from portlight.content.fighting_styles import FIGHTING_STYLES
+    from portlight.engine.training import can_learn_style, learn_style
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked at a port to train.")
+    error = can_learn_style(
+        world.captain.learned_styles, set(), world.captain.silver, port.id, style_id,
+    )
+    if error:
+        raise ScriptError(error)
+    world.captain.learned_styles, world.captain.silver = learn_style(
+        world.captain.learned_styles, world.captain.silver, style_id,
+    )
+    for _ in range(FIGHTING_STYLES[style_id].training_days):
+        do_advance(state, {})
+
+
+def do_skill(state, skill_id: str) -> None:
+    """`portlight learn-skill`: pay the next level, then advance training days."""
+    from portlight.content.skills import SKILLS
+    from portlight.engine.skill_engine import can_learn_skill, learn_skill
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to learn skills.")
+    if skill_id not in SKILLS:
+        lowered = skill_id.lower()
+        for sid, spec in SKILLS.items():
+            if spec.name.lower() == lowered:
+                skill_id = sid
+                break
+    error = can_learn_skill(world.captain.skills, world.captain.silver, port.id, skill_id)
+    if error:
+        raise ScriptError(error)
+    world.captain.skills, world.captain.silver, days = learn_skill(
+        world.captain.skills, world.captain.silver, skill_id,
+    )
+    for _ in range(days):
+        do_advance(state, {})
+
+
+def _party_from(raw):
+    from portlight.engine.companion_engine import CompanionState, PartyState
+
+    if isinstance(raw, PartyState):
+        return raw
+    companions = [
+        CompanionState(
+            companion_id=item["companion_id"],
+            role_id=item["role_id"],
+            morale=item.get("morale", 70),
+            joined_day=item.get("joined_day", 0),
+            personality=item.get("personality", "pragmatic"),
+        )
+        for item in raw.get("companions", [])
+    ]
+    return PartyState(
+        companions=companions,
+        max_size=raw.get("max_size", 2),
+        departed=list(raw.get("departed", [])),
+    )
+
+
+def _party_dict(party) -> dict:
+    return {
+        "companions": [
+            {
+                "companion_id": member.companion_id,
+                "role_id": member.role_id,
+                "morale": member.morale,
+                "joined_day": member.joined_day,
+                "personality": member.personality,
+            }
+            for member in party.companions
+        ],
+        "max_size": party.max_size,
+        "departed": list(party.departed),
+    }
+
+
+def do_remember(state, captain_id: str, outcome: str) -> None:
+    """Seed one captain memory. Encounter resolution does this in the real game."""
+    from portlight.content.factions import PIRATE_CAPTAINS
+    from portlight.engine.captain_memory import get_or_create_memory, record_encounter
+
+    if captain_id not in PIRATE_CAPTAINS:
+        raise ScriptError(f"Unknown pirate captain: {captain_id}")
+    world = state["world"]
+    port = current_port(world)
+    region = port.region if port is not None else "Mediterranean"
+    if world.voyage is not None and port is None:
+        dest = world.ports.get(world.voyage.destination_id)
+        region = dest.region if dest is not None else "Mediterranean"
+    memory = get_or_create_memory(world.pirates.captain_memories, captain_id)
+    record_encounter(memory, world.day, region, outcome, False, False, 0)
+
+
+def do_agency(state, entry: dict) -> None:
+    """`GameSession.tick_sea_captain_agency`.
+
+    Calls `create_encounter` with no target, then overwrites identity. The
+    snapshot records `pending_duel` and the encounter fields. Rust also stores
+    that encounter on the session so the v12 `pirate_state` blob can persist it.
+    """
+    from portlight.content.factions import PIRATE_CAPTAINS
+    from portlight.engine.captain_memory import tick_captain_agency
+    from portlight.engine.encounter import create_encounter
+    from portlight.engine.models import PendingDuel
+
+    world = state["world"]
+    if world.voyage is None or world.voyage.status != VoyageStatus.AT_SEA:
+        entry["agency"] = {"ambush": False, "encounter": None, "notices": []}
+        return
+    dest = world.ports.get(world.voyage.destination_id)
+    region = dest.region if dest is not None else "Mediterranean"
+    actions = tick_captain_agency(
+        world.pirates.captain_memories,
+        region,
+        world.captain.silver,
+        world.day,
+        state["rng"],
+    )
+    notices = []
+    encounter = None
+    ambush = False
+    for action in actions:
+        notices.append({"effect_type": action.effect_type, "message": action.message})
+        if action.effect_type == "silver":
+            world.captain.silver += action.effect_value
+        elif action.effect_type == "encounter" and encounter is None:
+            dest_id = world.voyage.destination_id or "porto_novo"
+            enc = create_encounter(world.ports, dest_id, state["rng"])
+            if not enc:
+                continue
+            cap = PIRATE_CAPTAINS.get(action.captain_id)
+            enc.enemy_captain_id = action.captain_id
+            enc.enemy_captain_name = action.captain_name
+            if cap is not None:
+                enc.enemy_faction_id = cap.faction_id
+                enc.enemy_personality = cap.personality
+                enc.enemy_strength = cap.strength
+            enc.enemy_region = region
+            if action.verb == "ambush":
+                enc.phase = "naval"
+                ambush = True
+            world.pirates.pending_duel = PendingDuel(
+                captain_id=enc.enemy_captain_id,
+                captain_name=enc.enemy_captain_name,
+                faction_id=enc.enemy_faction_id,
+                personality=enc.enemy_personality,
+                strength=enc.enemy_strength,
+                region=enc.enemy_region,
+            )
+            encounter = {
+                "enemy_captain_id": enc.enemy_captain_id,
+                "enemy_captain_name": enc.enemy_captain_name,
+                "enemy_faction_id": enc.enemy_faction_id,
+                "enemy_personality": enc.enemy_personality,
+                "enemy_strength": enc.enemy_strength,
+                "enemy_region": enc.enemy_region,
+                "enemy_ship_hull": enc.enemy_ship_hull,
+                "enemy_ship_hull_max": enc.enemy_ship_hull_max,
+                "enemy_ship_cannons": enc.enemy_ship_cannons,
+                "enemy_ship_maneuver": enc.enemy_ship_maneuver,
+                "enemy_ship_speed": enc.enemy_ship_speed,
+                "enemy_ship_crew": enc.enemy_ship_crew,
+                "enemy_ship_crew_max": enc.enemy_ship_crew_max,
+                "phase": enc.phase,
+                "boarding_progress": enc.boarding_progress,
+                "boarding_threshold": enc.boarding_threshold,
+                "naval_turns": enc.naval_turns,
+                "duel_turns": enc.duel_turns,
+            }
+            break
+    entry["agency"] = {"ambush": ambush, "encounter": encounter, "notices": notices}
+
+
+def do_recruit(state, companion_id: str) -> None:
+    """`portlight recruit`: charge hire cost, then add the companion."""
+    from portlight.content.companions import COMPANIONS
+    from portlight.engine.companion_engine import can_recruit, recruit
+
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to recruit companions.")
+    party = _party_from(world.captain.party)
+    error = can_recruit(
+        party,
+        companion_id,
+        world.captain.silver,
+        world.captain.standing.regional_standing,
+        port.id,
+    )
+    if error:
+        raise ScriptError(error)
+    world.captain.silver -= COMPANIONS[companion_id].hire_cost
+    recruit(party, companion_id, world.day)
+    world.captain.party = _party_dict(party)
+
+
 def do_hire(state, count: int, role: str) -> None:
     """GameSession.hire_crew, without the save side effect."""
     from portlight.content.crew_roles import ROLE_SPECS, get_role_count, set_role_count
@@ -1252,7 +1483,7 @@ def snapshot(state: dict, log: list[dict]) -> dict:
         captain_view["naval_defeats"] = history["naval_defeats"]
     if history["fleet"]:
         captain_view["fleet"] = history["fleet"]
-    return {
+    snap = {
         "seed": world.seed,
         "day": world.day,
         "trade_seq": state["trade_seq"],
@@ -1286,6 +1517,31 @@ def snapshot(state: dict, log: list[dict]) -> dict:
         "victory": victory_view(compute_victory_progress(session_snapshot(state))),
         "log": log,
     }
+    captain = snap["captain"]
+    if world.captain.skills:
+        captain["skills"] = [
+            {"id": skill_id, "level": level}
+            for skill_id, level in world.captain.skills.items()
+        ]
+    if world.captain.learned_styles:
+        captain["learned_styles"] = list(world.captain.learned_styles)
+    party = world.captain.party if isinstance(world.captain.party, dict) else _party_dict(world.captain.party)
+    if party.get("companions"):
+        captain["companions"] = list(party["companions"])
+    milestones = []
+    for completion in state["campaign"].completed:
+        spec = MILESTONE_BY_ID.get(completion.milestone_id)
+        milestones.append({
+            "milestone_id": completion.milestone_id,
+            "completed_day": completion.completed_day,
+            "evidence": completion.evidence,
+            "family": spec.family.value if spec else "",
+        })
+    if milestones:
+        logged = snap.pop("log")
+        snap["milestones"] = milestones
+        snap["log"] = logged
+    return snap
 
 
 def victory_view(paths) -> list:

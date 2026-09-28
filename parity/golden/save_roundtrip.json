@@ -1598,5 +1598,19 @@
       ]
     }
   ],
+  "milestones": [
+    {
+      "milestone_id": "foothold_standing_established",
+      "completed_day": 2,
+      "evidence": "Standing 10+ in Mediterranean",
+      "family": "regional_foothold"
+    },
+    {
+      "milestone_id": "lawful_credible_trust",
+      "completed_day": 2,
+      "evidence": "Trust tier: credible",
+      "family": "lawful_house"
+    }
+  ],
   "log": []
 }

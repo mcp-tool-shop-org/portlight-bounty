@@ -205,6 +205,43 @@ fn dispatch(
             entry.encounter = Some(snapshot::from_encounter(&step));
             Ok(())
         }
+        "train" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageTrain);
+            }
+            session.train_crew(&tokens[1])
+        }
+        "recruit" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageRecruit);
+            }
+            session.recruit_companion(&tokens[1])
+        }
+        "skill" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageSkill);
+            }
+            session.spend_skill_point(&tokens[1])
+        }
+        "remember" => {
+            let session = active(session)?;
+            if tokens.len() != 3 {
+                return Err(SimError::UsageRemember);
+            }
+            session.remember_captain(&tokens[1], &tokens[2])
+        }
+        "agency" => {
+            let session = active(session)?;
+            if tokens.len() != 1 {
+                return Err(SimError::UsageAgency);
+            }
+            let (encounter, ambush, notices) = session.tick_sea_captain_agency();
+            entry.agency = Some(snapshot::agency_log(ambush, encounter.as_ref(), &notices));
+            Ok(())
+        }
         other => Err(SimError::UnknownCommand(other.to_string())),
     }
 }

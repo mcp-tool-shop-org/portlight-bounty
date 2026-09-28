@@ -122,6 +122,16 @@ pub enum SimError {
     UsageFight,
     UsageCapture,
     CannotCapture(String),
+    MustBeDockedToTrain,
+    MustBeDockedToLearnSkill,
+    MustBeDockedToRecruit,
+    UsageTrain,
+    UsageSkill,
+    UsageRecruit,
+    UsageAgency,
+    UsageRemember,
+    /// A sentence copied from the Python rules engine.
+    Rejected(String),
 }
 
 impl fmt::Display for SimError {
@@ -260,6 +270,15 @@ impl fmt::Display for SimError {
             Self::UsageFight => write!(f, "Usage: fight <action>"),
             Self::UsageCapture => write!(f, "Usage: capture <crew>"),
             Self::CannotCapture(reason) => write!(f, "Cannot capture: {reason}"),
+            Self::MustBeDockedToTrain => write!(f, "Must be docked at a port to train."),
+            Self::MustBeDockedToLearnSkill => write!(f, "Must be docked to learn skills."),
+            Self::MustBeDockedToRecruit => write!(f, "Must be docked to recruit companions."),
+            Self::UsageTrain => write!(f, "Usage: train <style_id>"),
+            Self::UsageSkill => write!(f, "Usage: skill <skill_id>"),
+            Self::UsageRecruit => write!(f, "Usage: recruit <companion_id>"),
+            Self::UsageAgency => write!(f, "Usage: agency"),
+            Self::UsageRemember => write!(f, "Usage: remember <captain_id> <outcome>"),
+            Self::Rejected(message) => write!(f, "{message}"),
         }
     }
 }
