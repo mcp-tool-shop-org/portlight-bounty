@@ -938,10 +938,16 @@ def remember(state, enc, outcome: str) -> None:
 
 
 def clear_encounter(state) -> None:
+    """`cli._clear_encounter`: drop the encounter blob and the pending stance duel."""
     state["encounter"] = None
     state["player_combat"] = None
     state["opponent_combat"] = None
     state["pending_victory"] = False
+    world = state.get("world")
+    if world is not None:
+        world.pirates.pending_duel = None
+        world.pirates.encounter_phase = ""
+        world.pirates.encounter_state = {}
 
 
 def ensure_encounter(state, captain_id, band) -> None:

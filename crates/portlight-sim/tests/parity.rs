@@ -433,6 +433,15 @@ fn hunting_and_bounty_goldens_cover_yields_refusals_and_the_hunter() {
         "bounty hunter event missing: {flavors:?}"
     );
     assert_eq!(hunter["pending_duel"]["captain_id"], "iron_hound");
+
+    let sailed = load_golden("bounty_claim_sail");
+    assert!(sailed["pending_duel"].is_null());
+    assert_eq!(sailed["voyage"]["status"], "at_sea");
+    assert!(sailed["log"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|entry| entry.get("duel").is_none() || entry["duel"].is_null()));
 }
 
 fn load_golden(stem: &str) -> Value {

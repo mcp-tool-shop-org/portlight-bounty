@@ -34,7 +34,8 @@
 //!
 //! A pending pirate duel still freezes [`Session::advance`] until
 //! [`Session::duel`] or [`Session::resolve_pending_duel`] clears it. That is
-//! `portlight duel` and `GameSession._resolve_pending_duel`. The voyage event
+//! `portlight duel` and `GameSession._resolve_pending_duel`. Ending an
+//! encounter also clears it, matching `cli._clear_encounter`. The voyage event
 //! still goes straight to that duel. [`Session::encounter_choice`],
 //! [`Session::naval_round`], and [`Session::resolve_boarding`] are the separate
 //! approach machine: negotiate, flee, or fight, then naval combat and boarding.
@@ -1424,11 +1425,17 @@ impl Session {
         self.opponent_combat = Some(opponent);
     }
 
+    /// `cli._clear_encounter` (`cli.py` 1903).
+    ///
+    /// `self.encounter` is the persisted `encounter_phase` and `encounter_state`
+    /// blob. Dropping it leaves phase `""` and state `{}`. `pending_duel` goes
+    /// with them, so a finished hunt does not leave a stance duel behind.
     fn clear_encounter(&mut self) {
         self.encounter = None;
         self.player_combat = None;
         self.opponent_combat = None;
         self.pending_victory = false;
+        self.world.pending_duel = None;
     }
 
     fn combat_ship(&self) -> Result<crate::model::Ship, SimError> {
@@ -3992,5 +3999,102 @@ mod tests {
             session.repair(Some(1)).unwrap_err().to_string(),
             "Must be docked to repair"
         );
+    }
+
+    #[test]
+    fn finished_bounty_fight_clears_pending_duel_without_a_stance_duel() {
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        let start_silver = session.world.captain.silver;
+        session.accept_bounty("raj_the_quiet").unwrap();
+        session.hunt_bounty("raj_the_quiet").unwrap();
+        assert_eq!(
+            session.world.pending_duel.as_ref().unwrap().captain_id,
+            "raj_the_quiet"
+        );
+        assert_eq!(session.world.captain.silver, start_silver);
+
+        session.encounter_choice("fight").unwrap();
+        for action in ["broadside", "broadside", "rake", "evade", "close", "close"] {
+            session.naval_round(action).unwrap();
+        }
+        session.resolve_boarding().unwrap();
+        let mut won = false;
+        for action in [
+            "thrust", "slash", "parry", "dodge", "thrust", "thrust", "thrust", "thrust",
+        ] {
+            won = session.fight(action).unwrap().player_won;
+        }
+        assert!(won);
+        assert!(session.pending_victory);
+        assert!(session.world.pending_duel.is_some());
+        let before_outcome = session.world.captain.silver;
+        assert_eq!(before_outcome, start_silver);
+
+        session.take_all().unwrap();
+        assert!(session.world.pending_duel.is_none());
+        assert!(session.encounter.is_none());
+        assert!(!session.pending_victory);
+        assert_eq!(session.world.captain.duels_won, 1);
+        assert_eq!(session.world.captain.duels_lost, 0);
+        assert!(session
+            .world
+            .captain
+            .encounters
+            .iter()
+            .all(|record| !record.outcome.starts_with("duel")));
+        let victory = 20 + 5 * 7;
+        let after_take = session.world.captain.silver;
+        assert!(after_take >= before_outcome + victory);
+        assert_eq!(session.claim_bounty("raj_the_quiet").unwrap(), 120);
+        assert_eq!(session.world.captain.silver, after_take + 120);
+
+        let dir =
+            std::env::temp_dir().join(format!("portlight-bounty-clear-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "bounty").unwrap();
+        let saved: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(dir.join("saves").join("bounty.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(saved["pirate_state"]["encounter_phase"], "");
+        assert_eq!(
+            saved["pirate_state"]["encounter_state"],
+            serde_json::json!({})
+        );
+        assert!(saved["pirate_state"].get("pending_duel").is_none());
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let claimed = session.world.captain.silver;
+        let crew_cost = session.world.port("stormwall").unwrap().crew_cost;
+        session.hire_crew(4, "sailor").unwrap();
+        assert_eq!(session.world.captain.silver, claimed - crew_cost * 4);
+        let port_fee = session.world.port("stormwall").unwrap().port_fee;
+        let fee_mult = content::content()
+            .captain("privateer")
+            .unwrap()
+            .pricing
+            .port_fee_mult;
+        let fee = 1.max(py_trunc(port_fee as f64 * fee_mult));
+        session.depart("thornport").unwrap();
+        assert_eq!(session.world.voyage.status, VoyageStatus::AtSea);
+        assert_eq!(session.world.captain.silver, claimed - crew_cost * 4 - fee);
+        assert!(session.world.pending_duel.is_none());
+        assert!(session.encounter.is_none());
+        let sailed = session.world.captain.silver;
+        let err = session
+            .resolve_pending_duel()
+            .err()
+            .expect("no stance duel remains")
+            .to_string();
+        assert!(err.contains("No pirate has challenged"));
+        assert_eq!(session.world.captain.silver, sailed);
+        assert_eq!(session.world.captain.duels_won, 1);
+        assert!(session
+            .world
+            .captain
+            .encounters
+            .iter()
+            .all(|record| !record.outcome.starts_with("duel")));
     }
 }

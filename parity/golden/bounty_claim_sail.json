@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "privateer",
-    "silver": 733,
+    "silver": 715,
     "provisions": 30,
     "day": 1,
     "wanted_level": 0,
@@ -17,11 +17,11 @@
       "hull_max": 70,
       "cargo_capacity": 50,
       "speed": 9.0,
-      "crew": 1,
+      "crew": 5,
       "crew_max": 12,
       "morale": 50,
       "cannons": 2,
-      "sailors": 1,
+      "sailors": 5,
       "gunners": 0,
       "navigators": 0,
       "surgeons": 0,
@@ -64,11 +64,11 @@
   },
   "voyage": {
     "origin_id": "stormwall",
-    "destination_id": "stormwall",
-    "distance": 0,
+    "destination_id": "thornport",
+    "distance": 18,
     "progress": 0,
     "days_elapsed": 0,
-    "status": "in_port",
+    "status": "at_sea",
     "recent_events": []
   },
   "pending_duel": null,
@@ -1440,8 +1440,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 733",
-          "action": "Earn 1267 more silver"
+          "detail": "Silver: 715",
+          "action": "Earn 1285 more silver"
         }
       ]
     },
@@ -1479,8 +1479,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 733",
-          "action": "Accumulate 767 more silver"
+          "detail": "Silver: 715",
+          "action": "Accumulate 785 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1530,8 +1530,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 733",
-          "action": "Earn 1267 more silver"
+          "detail": "Silver: 715",
+          "action": "Earn 1285 more silver"
         }
       ]
     },
@@ -1569,8 +1569,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 733",
-          "action": "Earn 2267 more silver"
+          "detail": "Silver: 715",
+          "action": "Earn 2285 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -2481,8 +2481,15 @@
       }
     },
     {
-      "command": "bounty accept raj_the_quiet",
-      "error": "Bounty already claimed",
+      "command": "hire 4",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
+    },
+    {
+      "command": "depart thornport",
+      "error": null,
       "receipt": null,
       "events": [],
       "shocks": []
