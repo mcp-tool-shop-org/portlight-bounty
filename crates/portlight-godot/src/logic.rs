@@ -8,7 +8,7 @@ use godot::classes::Image;
 use godot::prelude::*;
 use portlight_sim::encounter::EncounterState;
 use portlight_sim::session::{EncounterStep, Session};
-use portlight_sim::SimError;
+use portlight_sim::{DuelOutcome, SimError};
 
 /// Playable window in `godot/project.godot`.
 pub(crate) const WINDOW_W: f32 = 1280.0;
@@ -107,6 +107,23 @@ pub(crate) const SCRIPTED_FIGHT: &[&str] = &[
 /// An open encounter covers it. Closing the encounter hands that duel back.
 pub(crate) fn stance_duel_visible(screen_open: bool, pending_duel: bool) -> bool {
     pending_duel && !screen_open
+}
+
+/// `Session::hunt_bounty` writes `pending_duel` and leaves it set.
+/// [`Session::resolve_pending_duel`] is the public path that clears it, the
+/// same call the chart's auto-resolve uses. It also resolves that stance
+/// duel. There is no Session call that clears the field alone.
+///
+/// Returns `Ok(None)` while a victory choice is still pending, or when no
+/// duel is pending. The caller must wait until the bounty encounter itself
+/// has finished (`pending_victory` clear).
+pub(crate) fn release_bounty_pending(
+    session: &mut Session,
+) -> Result<Option<DuelOutcome>, SimError> {
+    if session.pending_victory() || session.world().pending_duel.is_none() {
+        return Ok(None);
+    }
+    session.resolve_pending_duel().map(Some)
 }
 
 /// Hull and crew the screen can read off [`Session::world`].
@@ -569,9 +586,9 @@ mod tests {
 
     use super::{
         action_list_from_error, at_sea, facts_for_catalog_captain, facts_from_step, player_ship,
-        present, stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput,
-        PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
-        SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED,
+        present, release_bounty_pending, stance_duel_visible, EncounterFacts, ScreenAction,
+        ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+        SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED,
     };
 
     fn scripted_session() -> Session {
@@ -838,6 +855,64 @@ mod tests {
             format!("{:?}", with_agency.world()),
             format!("{:?}", bare.world())
         );
+    }
+
+    #[test]
+    fn bounty_hunt_keeps_pending_duel_until_the_screen_releases_it() {
+        // `parity/scripts/bounty_claim.txt` through the fight, then the clear
+        // the Python CLI does after that fight. The screen uses
+        // `resolve_pending_duel` because that is the public clear.
+        let mut session =
+            Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None).unwrap();
+        session.accept_bounty(SCRIPTED_CAPTAIN).unwrap();
+        let state = session.hunt_bounty(SCRIPTED_CAPTAIN).unwrap();
+        assert_eq!(state.phase, "approach");
+        assert!(session.world().pending_duel.is_some());
+
+        let step = session.encounter_choice("fight").unwrap();
+        let naval_actions = probe_naval(&mut session);
+        let mut facts = adopt(&session, &step, None, &naval_actions, &[]);
+        assert_eq!(present(&facts).unwrap().phase, ScreenPhase::Naval);
+
+        let mut boarding = false;
+        for action in SCRIPTED_NAVAL {
+            let step = session.naval_round(action).unwrap();
+            let actions = if step.phase == "naval" {
+                probe_naval(&mut session)
+            } else {
+                Vec::new()
+            };
+            facts = adopt(&session, &step, Some(&facts), &actions, &[]);
+            if step.phase == "boarding" {
+                boarding = true;
+                break;
+            }
+        }
+        assert!(boarding, "bounty hunt did not reach boarding");
+        let step = session.resolve_boarding().unwrap();
+        let combat_actions = probe_fight(&mut session);
+        facts = adopt(&session, &step, Some(&facts), &[], &combat_actions);
+        for action in SCRIPTED_FIGHT {
+            let step = session.fight(action).unwrap();
+            let actions = if step.phase == "duel" {
+                probe_fight(&mut session)
+            } else {
+                Vec::new()
+            };
+            facts = adopt(&session, &step, Some(&facts), &[], &actions);
+        }
+        assert!(session.pending_victory());
+        assert_eq!(present(&facts).unwrap().phase, ScreenPhase::Outcome);
+        assert!(session.world().pending_duel.is_some());
+        assert!(release_bounty_pending(&mut session).unwrap().is_none());
+
+        session.take_all().unwrap();
+        assert!(!session.pending_victory());
+        assert!(session.world().pending_duel.is_some());
+        let outcome = release_bounty_pending(&mut session).unwrap();
+        assert!(outcome.is_some());
+        assert!(session.world().pending_duel.is_none());
+        assert!(release_bounty_pending(&mut session).unwrap().is_none());
     }
 
     #[test]

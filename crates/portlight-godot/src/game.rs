@@ -20,6 +20,10 @@
 //! `Session::duel` and `Session::resolve_pending_duel` on the chart panel.
 //! That panel is hidden while the encounter screen is open and shown again
 //! when the screen closes if a duel is still pending.
+//!
+//! `Session::hunt_bounty` also sets `pending_duel` and leaves it set. When
+//! that encounter has finished, the screen clears it with
+//! `Session::resolve_pending_duel`.
 
 use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, SizeFlags};
@@ -48,10 +52,11 @@ use crate::encounter_screen::{self, EncounterNodes};
 use crate::logic::{
     action_caption, action_list_from_error, at_sea, capture_frame_rejected, chart_host_width,
     duel_button_enabled, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present, session_text,
-    stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput, PANEL_MIN_W,
-    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
-    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present,
+    release_bounty_pending, session_text, stance_duel_visible, EncounterFacts, ScreenAction,
+    ScreenPhase, StepInput, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+    SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H,
+    WINDOW_W,
 };
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -177,6 +182,8 @@ struct PortlightGame {
     capture_crew: i64,
     encounter_shot_dir: Option<String>,
     encounter_shot: Option<ShotPhase>,
+    /// This encounter was opened by `Session::hunt_bounty`.
+    bounty_origin: bool,
 }
 
 #[godot_api]
@@ -214,6 +221,7 @@ impl IControl for PortlightGame {
             capture_crew: 0,
             encounter_shot_dir: None,
             encounter_shot: None,
+            bounty_origin: false,
         }
     }
 
@@ -901,6 +909,7 @@ impl PortlightGame {
             if !log.is_empty() {
                 self.push_log(log.clone());
             }
+            self.bounty_origin = false;
             self.open_agency(state, log);
         }
         self.refresh();
@@ -1528,6 +1537,7 @@ impl PortlightGame {
             .unwrap_or((None, true));
         match facts_for_catalog_captain(SCRIPTED_CAPTAIN, ship, sailing) {
             Some(facts) => {
+                self.bounty_origin = false;
                 self.scripted_captain = Some(SCRIPTED_CAPTAIN.to_string());
                 self.encounter = Some(facts);
             }
@@ -1620,6 +1630,7 @@ impl PortlightGame {
             }
             Err(err) => self.note_session_error(err),
         }
+        self.release_bounty_pending();
         self.refresh();
     }
 
@@ -1637,7 +1648,57 @@ impl PortlightGame {
     fn leave_encounter(&mut self) {
         self.encounter = None;
         self.scripted_captain = None;
+        self.bounty_origin = false;
         self.refresh();
+    }
+
+    /// `Session::hunt_bounty` opens the encounter and leaves `pending_duel` set.
+    fn open_bounty_hunt(&mut self, target_id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.hunt_bounty(target_id)
+        };
+        match result {
+            Ok(state) => {
+                self.bounty_origin = true;
+                self.open_agency(state, String::new());
+            }
+            Err(err) => self.note_session_error(err),
+        }
+    }
+
+    /// After the bounty encounter has finished, clear `pending_duel` the way
+    /// the chart clears a stance duel: `Session::resolve_pending_duel`.
+    fn release_bounty_pending(&mut self) {
+        if !self.bounty_origin {
+            return;
+        }
+        let ready = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| facts.phase == "resolved")
+            && self.session.as_ref().is_some_and(|session| {
+                !session.pending_victory() && session.world().pending_duel.is_some()
+            });
+        if !ready {
+            return;
+        }
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            release_bounty_pending(session)
+        };
+        match result {
+            Ok(Some(outcome)) => {
+                self.bounty_origin = false;
+                self.push_log(duel_outcome_line(&outcome));
+            }
+            Ok(None) => {}
+            Err(err) => self.note_session_error(err),
+        }
     }
 
     fn ingest(&mut self, result: Result<EncounterStep, SimError>) {
@@ -1710,6 +1771,7 @@ impl PortlightGame {
             naval_actions: &naval_actions,
             combat_actions: &combat_actions,
         }));
+        self.release_bounty_pending();
     }
 
     fn probe_naval(&mut self) -> Vec<String> {
@@ -1980,10 +2042,94 @@ impl PortlightGame {
     }
 
     fn report_encounter_smoke(&mut self) {
+        self.run_bounty_release();
         if self.smoke_ok {
             godot_print!("portlight encounter smoke ok");
         } else {
             godot_print!("portlight encounter smoke FAILED");
+        }
+    }
+
+    /// `parity/scripts/bounty_claim.txt` through the fight. `hunt_bounty` leaves
+    /// `pending_duel` set. Taking the prize finishes the encounter, and the
+    /// screen then clears that duel.
+    fn run_bounty_release(&mut self) {
+        let prior_ok = self.smoke_ok;
+        self.smoke_ok = true;
+        self.log_lines.clear();
+        self.encounter = None;
+        self.scripted_captain = None;
+        self.bounty_origin = false;
+        match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
+            Ok(session) => self.session = Some(session),
+            Err(err) => {
+                self.smoke_ok = false;
+                self.session = None;
+                self.push_log(err.to_string());
+                self.smoke_ok = prior_ok && self.smoke_ok;
+                return;
+            }
+        }
+        let accepted = {
+            let Some(session) = self.session.as_mut() else {
+                self.smoke_ok = prior_ok && false;
+                return;
+            };
+            session.accept_bounty(SCRIPTED_CAPTAIN)
+        };
+        if let Err(err) = accepted {
+            self.note_session_error(err);
+            self.smoke_ok = prior_ok && self.smoke_ok;
+            return;
+        }
+        self.open_bounty_hunt(SCRIPTED_CAPTAIN);
+        self.expect_phase(ScreenPhase::Approach, "bounty approach");
+        let pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().pending_duel.is_some());
+        if !pending {
+            self.smoke_ok = false;
+            self.push_log("Bounty smoke: hunt_bounty did not set pending_duel.".to_string());
+        }
+        self.choose_encounter("fight");
+        self.expect_phase(ScreenPhase::Naval, "bounty naval");
+        self.play_scripted_naval();
+        self.expect_phase(ScreenPhase::Boarding, "bounty boarding");
+        self.resolve_board();
+        self.expect_phase(ScreenPhase::Personal, "bounty personal fight");
+        self.play_scripted_fight();
+        self.expect_phase(ScreenPhase::Outcome, "bounty outcome");
+        let still_pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().pending_duel.is_some());
+        if !still_pending {
+            self.smoke_ok = false;
+            self.push_log(
+                "Bounty smoke: pending_duel cleared before the encounter ended.".to_string(),
+            );
+        }
+        self.take_prize();
+        let cleared = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().pending_duel.is_none());
+        if !cleared {
+            self.smoke_ok = false;
+            self.push_log(
+                "Bounty smoke: pending_duel was still set after the encounter.".to_string(),
+            );
+        }
+        if self.bounty_origin {
+            self.smoke_ok = false;
+            self.push_log("Bounty smoke: the screen did not release the bounty duel.".to_string());
+        }
+        self.leave_encounter();
+        let bounty_ok = self.smoke_ok;
+        self.smoke_ok = prior_ok && bounty_ok;
+        if bounty_ok {
+            godot_print!("bounty pending duel cleared");
         }
     }
 }
