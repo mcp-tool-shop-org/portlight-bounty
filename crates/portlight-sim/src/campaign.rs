@@ -112,6 +112,7 @@ pub struct VictoryRecord {
 /// Buy and sell update the ledger. `Session::buy_infrastructure`,
 /// `Session::take_credit`, and `Session::buy_insurance` write the warehouse,
 /// broker, license, policy, and credit records. Victory reads those fields.
+/// `claims_paid` is the count of non-denied claims with `payout > 0`.
 #[derive(Debug, Clone, Default)]
 pub struct HouseBooks {
     pub total_buys: i64,
