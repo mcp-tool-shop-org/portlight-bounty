@@ -153,11 +153,25 @@ jobs:
             env PORTLIGHT_SEAM_ILLEGAL=1 PORTLIGHT_SEAM_DIR=/tmp/seam-illegal \
             godot --display-driver x11 --rendering-driver opengl3 --path godot \
             res://scenes/harbour_seam.tscn
-          if ! grep -q 'illegal layout' /tmp/godot-seam-illegal.log; then
-            echo "illegal harbour seam did not report the layout"
+          if ! grep -q 'pilings on a pier cell' /tmp/godot-seam-illegal.log; then
+            echo "illegal harbour seam did not report pilings on a pier cell"
             exit 1
           fi
           if find /tmp/seam-illegal -name '*.png' | grep -q .; then
             echo "illegal harbour seam wrote a PNG"
+            exit 1
+          fi
+          mkdir -p /tmp/seam-illegal-quay
+          expect_illegal_seam /tmp/godot-seam-illegal-quay.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SEAM_ILLEGAL=2 PORTLIGHT_SEAM_DIR=/tmp/seam-illegal-quay \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot \
+            res://scenes/harbour_seam.tscn
+          if ! grep -q 'pier on a quay cell' /tmp/godot-seam-illegal-quay.log; then
+            echo "illegal harbour seam did not report a pier on a quay cell"
+            exit 1
+          fi
+          if find /tmp/seam-illegal-quay -name '*.png' | grep -q .; then
+            echo "pier-on-quay harbour seam wrote a PNG"
             exit 1
           fi

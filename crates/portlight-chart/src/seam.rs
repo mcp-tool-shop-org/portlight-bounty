@@ -130,15 +130,39 @@ fn illegal_seam_plate() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
     )
 }
 
+/// A pier on the quay cell. [`build_harbour`] rejects this; nothing is drawn.
+fn illegal_pier_on_quay_plate() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
+    build_harbour(
+        Vec::new(),
+        vec![
+            harbour_work_tile(
+                0,
+                1,
+                WorkKind::Pier,
+                "res://assets/landing/structures/pier_UR/beauty.png",
+            ),
+            harbour_work_tile(
+                0,
+                1,
+                WorkKind::Quay,
+                "res://assets/landing/structures/quay_1111/beauty.png",
+            ),
+        ],
+    )
+}
+
 /// Water past both capture zooms, then the three works in draw order.
 ///
 /// An illegal work layout is [`Err`], not a panic. The seam capture checks
 /// this before it writes a PNG and exits non-zero when it fails.
-/// `PORTLIGHT_SEAM_ILLEGAL=1` returns the known-bad plate through that same
-/// [`Err`] path. The legal plate is unchanged when the flag is unset.
+/// `PORTLIGHT_SEAM_ILLEGAL=1` is pilings on a pier cell.
+/// `PORTLIGHT_SEAM_ILLEGAL=2` is a pier on a quay cell. Both return through
+/// the same [`Err`] path. The legal plate is unchanged when the flag is unset.
 pub fn harbour_seam() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
-    if std::env::var("PORTLIGHT_SEAM_ILLEGAL").ok().as_deref() == Some("1") {
-        return illegal_seam_plate();
+    match std::env::var("PORTLIGHT_SEAM_ILLEGAL").ok().as_deref() {
+        Some("1") => return illegal_seam_plate(),
+        Some("2") => return illegal_pier_on_quay_plate(),
+        _ => {}
     }
     let center = seam_camera_center();
     // 0.72 shows more world than 1.0, so covering it covers the tighter frame.
@@ -368,6 +392,10 @@ mod tests {
         assert_eq!(
             illegal_seam_plate().expect_err("pilings on a pier"),
             vec![HarbourFault::PilingsOnPier { col: 0, row: 2 }]
+        );
+        assert_eq!(
+            illegal_pier_on_quay_plate().expect_err("pier on a quay"),
+            vec![HarbourFault::PierOnQuay { col: 0, row: 1 }]
         );
     }
 }
