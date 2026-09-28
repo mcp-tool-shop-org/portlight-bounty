@@ -1,7 +1,7 @@
 //! Chart view model. Every gameplay fact here is copied from the sim.
 
 use portlight_sim::model::{PendingDuel, VoyageStatus, World};
-use portlight_sim::{LaneSuitability, SailLane};
+use portlight_sim::{LaneSuitability, SailLane, Session};
 
 use crate::assets::{self, chart_water_id, ship_asset, Asset, PORT_MARKER, SLOOP_WAKE};
 use crate::project::{
@@ -134,8 +134,9 @@ pub enum PortPress {
     AtSea,
 }
 
-pub fn project_chart(world: &World) -> ChartModel {
-    let lanes_src = portlight_sim::sail_lanes(world);
+pub fn project_chart(session: &Session) -> ChartModel {
+    let world = session.world();
+    let lanes_src = session.sail_lanes();
     let ports = visible_ports(world);
     let port_ids: Vec<&str> = ports.iter().map(|port| port.id.as_str()).collect();
     let lanes = lanes_src
@@ -160,14 +161,16 @@ pub fn project_chart(world: &World) -> ChartModel {
     }
 }
 
-pub fn press_port(world: &World, port_id: &str) -> PortPress {
+pub fn press_port(session: &Session, port_id: &str) -> PortPress {
+    let world = session.world();
     if world.voyage.status == VoyageStatus::AtSea {
         return PortPress::AtSea;
     }
     if world.voyage.destination_id == port_id {
         return PortPress::OpenHere;
     }
-    if portlight_sim::sail_lanes(world)
+    if session
+        .sail_lanes()
         .iter()
         .any(|lane| lane.destination_id == port_id)
     {
@@ -513,10 +516,10 @@ fn segment_distance(from: (f32, f32), to: (f32, f32), p: (f32, f32)) -> f32 {
 mod tests {
     use super::*;
     use crate::project::{chart_to_screen, chart_to_uv, uv_to_screen};
-    use portlight_sim::{new_game, LaneSuitability, Session};
+    use portlight_sim::LaneSuitability;
 
-    fn merchant_at(port: Option<&str>) -> World {
-        new_game("Ada", "merchant", 42, port).expect("game")
+    fn merchant_at(port: Option<&str>) -> Session {
+        Session::new("Ada", "merchant", 42, port).expect("game")
     }
 
     fn docked_port(world: &World) -> Option<&str> {
@@ -529,9 +532,9 @@ mod tests {
 
     #[test]
     fn starting_chart_is_four_mediterranean_ports_and_picker_lanes() {
-        let world = merchant_at(None);
-        assert_eq!(world.voyage.destination_id, "porto_novo");
-        let chart = project_chart(&world);
+        let session = merchant_at(None);
+        assert_eq!(session.world().voyage.destination_id, "porto_novo");
+        let chart = project_chart(&session);
         let ids: Vec<_> = chart.ports.iter().map(|port| port.id.as_str()).collect();
         assert_eq!(ids.len(), 4);
         for id in ["porto_novo", "al_manar", "silva_bay", "corsairs_rest"] {
@@ -548,7 +551,7 @@ mod tests {
         assert!((here.sprite_origin.0 - (here.at.0 - 64.0)).abs() < 0.01);
         assert!((here.sprite_origin.1 - (here.at.1 - 95.0)).abs() < 0.01);
 
-        let sim = portlight_sim::sail_lanes(&world);
+        let sim = session.sail_lanes();
         let drawn: Vec<_> = chart
             .lanes
             .iter()
@@ -601,7 +604,8 @@ mod tests {
 
     #[test]
     fn anchors_round_trip_for_every_port() {
-        let world = merchant_at(None);
+        let session = merchant_at(None);
+        let world = session.world();
         assert_eq!(world.ports.len(), 20);
         for port in &world.ports {
             let (u, v) = chart_to_uv(port.map_x as f64, port.map_y as f64);
@@ -617,7 +621,8 @@ mod tests {
 
     #[test]
     fn five_mediterranean_sloop_lanes_exist_in_the_sim() {
-        let world = merchant_at(None);
+        let session = merchant_at(None);
+        let world = session.world();
         let med: Vec<_> = world
             .routes
             .iter()
@@ -640,8 +645,8 @@ mod tests {
 
     #[test]
     fn blocked_lanes_stay_on_the_chart() {
-        let world = merchant_at(Some("corsairs_rest"));
-        let chart = project_chart(&world);
+        let session = merchant_at(Some("corsairs_rest"));
+        let chart = project_chart(&session);
         let stormwall = chart
             .lanes
             .iter()
@@ -658,25 +663,25 @@ mod tests {
 
     #[test]
     fn a_port_with_no_lane_does_not_offer_depart() {
-        let world = merchant_at(Some("corsairs_rest"));
-        assert_eq!(press_port(&world, "al_manar"), PortPress::NoLane);
+        let session = merchant_at(Some("corsairs_rest"));
+        assert_eq!(press_port(&session, "al_manar"), PortPress::NoLane);
         assert_eq!(
-            press_port(&world, "porto_novo"),
+            press_port(&session, "porto_novo"),
             PortPress::Depart("porto_novo".into())
         );
-        assert_eq!(press_port(&world, "corsairs_rest"), PortPress::OpenHere);
+        assert_eq!(press_port(&session, "corsairs_rest"), PortPress::OpenHere);
     }
 
     #[test]
     fn focus_keeps_the_mediterranean_and_lets_distant_lanes_run_off() {
-        let world = merchant_at(None);
-        let chart = project_chart(&world);
+        let session = merchant_at(None);
+        let chart = project_chart(&session);
         for port in &chart.ports {
             assert!(chart
                 .focus
                 .contains(port.at.0.round() as i32, port.at.1.round() as i32));
         }
-        let ironhaven = world.port("ironhaven").unwrap();
+        let ironhaven = session.world().port("ironhaven").unwrap();
         let (x, y) = chart_to_screen(ironhaven.map_x, ironhaven.map_y);
         assert!(!chart.focus.contains(x, y));
     }
@@ -689,7 +694,7 @@ mod tests {
         assert_eq!(session.world().captain.silver, 547);
         assert_eq!(session.world().voyage.status, VoyageStatus::AtSea);
         assert_eq!(session.world().voyage.distance, 24);
-        let chart = project_chart(session.world());
+        let chart = project_chart(&session);
         assert!(chart.lanes.is_empty());
         let leg = chart.leg.expect("underway");
         assert_eq!(leg.origin_id, "porto_novo");
@@ -702,7 +707,7 @@ mod tests {
         assert!((chart.ship.chart_y - 8.0).abs() < 1e-6);
 
         session.advance().unwrap();
-        let chart = project_chart(session.world());
+        let chart = project_chart(&session);
         assert!(chart.ship.chart_x > 18.0);
         assert!(chart.ship.chart_x <= 24.0);
         assert_eq!(chart.ship.facing, Facing::F7);
@@ -722,7 +727,7 @@ mod tests {
         with_view.depart("silva_bay").unwrap();
         bare.depart("silva_bay").unwrap();
         for _ in 0..6 {
-            let _ = project_chart(with_view.world());
+            let _ = project_chart(&with_view);
             with_view.advance().unwrap();
             bare.advance().unwrap();
         }
@@ -731,11 +736,12 @@ mod tests {
             format!("{:?}", bare.world())
         );
         assert_eq!(with_view.trade_seq(), bare.trade_seq());
+        assert_eq!(with_view.victory(), bare.victory());
     }
 
     #[test]
     fn pending_duel_refuses_advance_without_a_sim_call() {
-        let mut world = merchant_at(None);
+        let mut world = merchant_at(None).world().clone();
         assert!(advance_refusal(world.pending_duel.as_ref()).is_none());
         world.pending_duel = Some(PendingDuel {
             captain_id: "scarlet_ana".into(),
@@ -776,7 +782,7 @@ mod tests {
             }
         }
         assert!(docked, "did not arrive");
-        let chart = project_chart(session.world());
+        let chart = project_chart(&session);
         let here = chart
             .ports
             .iter()
@@ -786,13 +792,20 @@ mod tests {
         assert!(chart.ship.docked);
         assert!((chart.ship.at.0 - (here.at.0 + 32.0)).abs() < 0.05);
         assert!((chart.ship.at.1 - (here.at.1 + 16.0)).abs() < 0.05);
-        let held = portlight_sim::economy::cargo_quantity(&session.world().captain.cargo, "grain");
+        let held: i64 = session
+            .world()
+            .captain
+            .cargo
+            .iter()
+            .filter(|item| item.good_id == "grain")
+            .map(|item| item.quantity)
+            .sum();
         if held > 0 {
             session.sell("grain", held.min(5)).unwrap();
         }
         session.buy("spice", 1).unwrap();
         session.sell("spice", 1).unwrap();
-        let chart = project_chart(session.world());
+        let chart = project_chart(&session);
         assert!(chart
             .lanes
             .iter()

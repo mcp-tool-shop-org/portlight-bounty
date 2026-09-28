@@ -1,9 +1,9 @@
 //! Dimetric chart for the Portlight simulation.
 //!
 //! Chart coordinates stay in the sim (`Port.map_x` / `map_y` on the 50×36
-//! grid). This crate only rotates them into display space. It reads
-//! [`portlight_sim::sail_lanes`] for the overlay and does not decide which
-//! lanes are legal.
+//! grid). This crate only rotates them into display space. Lanes come from
+//! [`portlight_sim::Session::sail_lanes`]. The chart does not decide which
+//! lanes are legal and does not call the voyage helper underneath that method.
 
 mod assets;
 mod placeholder;

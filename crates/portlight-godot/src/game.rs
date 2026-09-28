@@ -1,7 +1,8 @@
 //! First playable: Mediterranean chart, sail Porto Novo to Al-Manar, trade.
 //!
-//! Buttons call [`portlight_sim::Session`]. Labels repeat fields the sim
-//! already computed (`sail_lanes` days, suitability, prices).
+//! Buttons call [`portlight_sim::Session`] (`new`, `sail_lanes`, `victory`,
+//! `buy`, `sell`, `depart`, `advance`). Labels repeat fields those queries
+//! already computed. Good names and the season name are catalog strings.
 
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
@@ -17,7 +18,6 @@ use portlight_chart::{
     advance_refusal, lane_inspect, press_port, project_chart, ChartModel, PortPress, CHART_VIEW_H,
     CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
-use portlight_sim::economy::cargo_quantity;
 use portlight_sim::model::VoyageStatus;
 use portlight_sim::{content, LaneSuitability, Session};
 
@@ -338,7 +338,7 @@ impl PortlightGame {
             let Some(session) = self.session.as_ref() else {
                 return;
             };
-            press_port(session.world(), port_id)
+            press_port(session, port_id)
         };
         match decision {
             PortPress::AtSea => {
@@ -584,11 +584,8 @@ impl PortlightGame {
         let rows = slots
             .into_iter()
             .map(|(id, stock, buy, sell)| {
-                let name = content::content()
-                    .good(&id)
-                    .map(|good| good.name.clone())
-                    .unwrap_or_else(|| id.clone());
-                let held = cargo_quantity(&world.captain.cargo, &id);
+                let name = good_name(&id);
+                let held = cargo_held(&world.captain.cargo, &id);
                 MarketRow {
                     id,
                     name,
@@ -638,19 +635,18 @@ impl PortlightGame {
             })
             .unwrap_or_default();
         format!(
-            "Day {}   {}   {}   {} silver   {} provisions\n{place}\n{ship_line}",
+            "Day {}   {}   {}   {} silver   {} provisions\n{place}\n{ship_line}\n{}",
             world.day,
             content::season_name(world.day),
             world.captain.name,
             world.captain.silver,
-            world.captain.provisions
+            world.captain.provisions,
+            victory_line(session)
         )
     }
 
     fn chart_now(&self) -> Option<ChartModel> {
-        self.session
-            .as_ref()
-            .map(|session| project_chart(session.world()))
+        self.session.as_ref().map(project_chart)
     }
 
     fn docked_id(&self) -> Option<&str> {
@@ -660,7 +656,7 @@ impl PortlightGame {
     fn held(&self, good: &str) -> i64 {
         self.session
             .as_ref()
-            .map(|session| cargo_quantity(&session.world().captain.cargo, good))
+            .map(|session| cargo_held(&session.world().captain.cargo, good))
             .unwrap_or(0)
     }
 
@@ -698,6 +694,30 @@ impl PortlightGame {
             godot_print!("screenshot save failed");
         }
     }
+}
+
+fn cargo_held(cargo: &[portlight_sim::model::CargoItem], good: &str) -> i64 {
+    cargo
+        .iter()
+        .filter(|item| item.good_id == good)
+        .map(|item| item.quantity)
+        .sum()
+}
+
+fn good_name(id: &str) -> String {
+    content::content()
+        .good(id)
+        .map(|good| good.name.clone())
+        .unwrap_or_else(|| id.to_string())
+}
+
+fn victory_line(session: &Session) -> String {
+    let paths = session.victory();
+    if paths.is_empty() {
+        return String::new();
+    }
+    let names: Vec<&str> = paths.iter().map(|path| path.name.as_str()).collect();
+    format!("Victory paths: {}", names.join(", "))
 }
 
 fn docked_port_id(session: &Session) -> Option<&str> {
