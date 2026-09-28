@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 510,
+    "silver": 507,
     "provisions": 30,
     "day": 1,
     "wanted_level": 0,
@@ -49,24 +49,8 @@
       "incidents": []
     },
     "melee_weapon": "cutlass",
-    "weapon_quality": {
-      "cutlass": "standard"
-    },
     "weapon_usage": {
       "cutlass": 0
-    },
-    "weapon_provenance": {
-      "cutlass": {
-        "weapon_id": "cutlass",
-        "acquired_port": "porto_novo",
-        "acquired_day": 1,
-        "acquired_region": "Mediterranean",
-        "kills": 0,
-        "named_kills": [],
-        "epithet": null,
-        "custom_name": null,
-        "times_recognized": 0
-      }
     }
   },
   "voyage": {
@@ -1447,8 +1431,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 510",
-          "action": "Earn 1490 more silver"
+          "detail": "Silver: 507",
+          "action": "Earn 1493 more silver"
         }
       ]
     },
@@ -1486,8 +1470,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 510",
-          "action": "Accumulate 990 more silver"
+          "detail": "Silver: 507",
+          "action": "Accumulate 993 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1537,8 +1521,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 510",
-          "action": "Earn 1490 more silver"
+          "detail": "Silver: 507",
+          "action": "Earn 1493 more silver"
         }
       ]
     },
@@ -1576,8 +1560,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 510",
-          "action": "Earn 2490 more silver"
+          "detail": "Silver: 507",
+          "action": "Earn 2493 more silver"
         },
         {
           "description": "3+ active licenses",

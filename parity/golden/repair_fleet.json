@@ -13,7 +13,7 @@
     "ship": {
       "template_id": "swift_cutter",
       "name": "Swift Cutter",
-      "hull": 62,
+      "hull": 70,
       "hull_max": 70,
       "cargo_capacity": 50,
       "speed": 9.0,
@@ -57,7 +57,7 @@
       {
         "template_id": "coastal_sloop",
         "name": "Coastal Sloop",
-        "hull": 60,
+        "hull": 52,
         "hull_max": 60,
         "crew": 3,
         "docked_port_id": "silva_bay"

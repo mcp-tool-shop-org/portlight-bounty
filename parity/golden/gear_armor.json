@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "privateer",
-    "silver": 395,
+    "silver": 389,
     "provisions": 30,
     "day": 1,
     "wanted_level": 0,
@@ -59,9 +59,6 @@
       }
     ],
     "armor": "chain_shirt",
-    "weapon_quality": {
-      "chain_shirt": "standard"
-    },
     "weapon_usage": {
       "chain_shirt": 1
     }
@@ -1444,8 +1441,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 395",
-          "action": "Earn 1605 more silver"
+          "detail": "Silver: 389",
+          "action": "Earn 1611 more silver"
         }
       ]
     },
@@ -1483,8 +1480,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 395",
-          "action": "Accumulate 1105 more silver"
+          "detail": "Silver: 389",
+          "action": "Accumulate 1111 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1534,8 +1531,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 395",
-          "action": "Earn 1605 more silver"
+          "detail": "Silver: 389",
+          "action": "Earn 1611 more silver"
         }
       ]
     },
@@ -1573,8 +1570,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 395",
-          "action": "Earn 2605 more silver"
+          "detail": "Silver: 389",
+          "action": "Earn 2611 more silver"
         },
         {
           "description": "3+ active licenses",

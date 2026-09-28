@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "privateer",
-    "silver": 485,
+    "silver": 483,
     "provisions": 30,
     "day": 1,
     "wanted_level": 0,
@@ -53,18 +53,15 @@
     },
     "duels_won": 1,
     "melee_weapon": "cutlass",
-    "weapon_quality": {
-      "cutlass": "standard"
-    },
     "weapon_usage": {
       "cutlass": 1
     },
     "weapon_provenance": {
       "cutlass": {
         "weapon_id": "cutlass",
-        "acquired_port": "stormwall",
-        "acquired_day": 1,
-        "acquired_region": "North Atlantic",
+        "acquired_port": "",
+        "acquired_day": 0,
+        "acquired_region": "",
         "kills": 1,
         "named_kills": [
           "raj_the_quiet"
@@ -1453,8 +1450,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 485",
-          "action": "Earn 1515 more silver"
+          "detail": "Silver: 483",
+          "action": "Earn 1517 more silver"
         }
       ]
     },
@@ -1492,8 +1489,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 485",
-          "action": "Accumulate 1015 more silver"
+          "detail": "Silver: 483",
+          "action": "Accumulate 1017 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1543,8 +1540,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 485",
-          "action": "Earn 1515 more silver"
+          "detail": "Silver: 483",
+          "action": "Earn 1517 more silver"
         }
       ]
     },
@@ -1582,8 +1579,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 485",
-          "action": "Earn 2515 more silver"
+          "detail": "Silver: 483",
+          "action": "Earn 2517 more silver"
         },
         {
           "description": "3+ active licenses",

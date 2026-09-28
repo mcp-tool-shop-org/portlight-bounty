@@ -1334,39 +1334,32 @@ def do_form_convoy(state) -> None:
 
 
 def do_repair_fleet(state) -> None:
+    """GameSession.repair with no amount: the flagship only.
+
+    fleet.py, dry_dock, and arrival do not patch escort hull. dry_dock restores
+    template hull_max and is not this command.
+    """
     world = state["world"]
     port = current_port(world)
     if port is None:
         raise ScriptError("Must be docked to repair")
-    cost_per = max(1, int(port.repair_cost * get_service_modifier(world.captain.standing, port.id)))
-    total_points = 0
-    any_damage = False
-    for owned in world.captain.fleet:
-        if owned.docked_port_id != port.id:
-            continue
-        damage = owned.ship.hull_max - owned.ship.hull
-        if damage <= 0:
-            continue
-        any_damage = True
-        amount = damage
-        cost = amount * cost_per
-        if cost > world.captain.silver:
-            affordable = world.captain.silver // cost_per if cost_per > 0 else 0
-            if affordable == 0:
-                if total_points == 0:
-                    raise ScriptError("Can't afford any repairs")
-                break
-            amount = affordable
-            cost = amount * cost_per
-        world.captain.silver -= cost
-        owned.ship.hull += amount
-        total_points += amount
-        if amount < damage:
-            break
-    if not any_damage:
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    damage = ship.hull_max - ship.hull
+    if damage == 0:
         raise ScriptError("Ship is already in perfect condition")
-    if total_points == 0:
-        raise ScriptError("Can't afford any repairs")
+    cost_per = max(1, int(port.repair_cost * get_service_modifier(world.captain.standing, port.id)))
+    amount = damage
+    cost = amount * cost_per
+    if cost > world.captain.silver:
+        affordable = world.captain.silver // cost_per if cost_per > 0 else 0
+        if affordable == 0:
+            raise ScriptError("Can't afford any repairs")
+        amount = affordable
+        cost = amount * cost_per
+    world.captain.silver -= cost
+    ship.hull += amount
 
 
 def do_transfer(state, good_id: str, qty: int, src: str, dst: str) -> None:
@@ -1381,39 +1374,27 @@ def do_transfer(state, good_id: str, qty: int, src: str, dst: str) -> None:
 
 
 def do_gear(state, gear_id: str) -> None:
-    from portlight.content.armor import ARMOR
-    from portlight.content.melee_weapons import MELEE_WEAPONS
-    from portlight.engine.weapon_provenance import create_provenance
+    """Buy one item from the port's merchant via `buy_from_merchant`."""
+    from portlight.content.merchants import get_merchants_at_port
+    from portlight.engine.merchant import buy_from_merchant, get_merchant_inventory
     world = state["world"]
     port = current_port(world)
     if port is None:
         raise ScriptError("Must be docked")
-    gear = world.captain.combat_gear
-    armor = ARMOR.get(gear_id)
-    if armor is not None:
-        if port.region not in armor.available_regions:
-            raise ScriptError(f"{armor.name} is not sold in {port.region}")
-        if armor.silver_cost > world.captain.silver:
-            raise ScriptError(f"Need {armor.silver_cost} silver, have {world.captain.silver}")
-        world.captain.silver -= armor.silver_cost
-        gear.armor = armor.id
-        gear.weapon_quality[armor.id] = "standard"
-        return
-    weapon = MELEE_WEAPONS.get(gear_id)
-    if weapon is not None:
-        if port.region not in weapon.available_regions:
-            raise ScriptError(f"{weapon.name} is not sold in {port.region}")
-        if weapon.silver_cost > world.captain.silver:
-            raise ScriptError(f"Need {weapon.silver_cost} silver, have {world.captain.silver}")
-        world.captain.silver -= weapon.silver_cost
-        gear.melee_weapon = weapon.id
-        gear.weapon_quality[weapon.id] = "standard"
-        if gear.weapon_provenance.get(weapon.id) is None:
-            gear.weapon_provenance[weapon.id] = create_provenance(
-                weapon.id, port.id, port.region, world.day,
-            )
-        return
-    raise ScriptError(f"Unknown gear: {gear_id}")
+    merchants = get_merchants_at_port(port.id)
+    if not merchants:
+        raise ScriptError("Unknown merchant")
+    chosen = None
+    for merchant in merchants:
+        inventory = get_merchant_inventory(merchant, port.region)
+        if any(item["item_id"] == gear_id for item in inventory):
+            chosen = merchant
+            break
+    if chosen is None:
+        chosen = merchants[0]
+    result = buy_from_merchant(world.captain, chosen.id, gear_id, 1, port.region)
+    if isinstance(result, str):
+        raise ScriptError(result)
 
 
 def do_maintain(state, weapon_id: str) -> None:

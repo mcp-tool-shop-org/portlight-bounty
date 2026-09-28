@@ -70,7 +70,7 @@ use crate::save::{self, LoadedGame};
 use crate::ship::{self, wage_bill};
 use crate::skills;
 use crate::training;
-use crate::util::py_trunc;
+use crate::util::{py_round, py_trunc};
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
 use crate::weapon_provenance;
 use crate::weapon_quality;
@@ -834,67 +834,46 @@ impl Session {
         Ok(())
     }
 
-    /// Repair fleet hulls docked at the current port. The flagship uses
-    /// `GameSession.repair`; this is the same per-point price for escorts.
+    /// `GameSession.repair` with no amount: restore the flagship's missing hull.
+    ///
+    /// Python has no escort hull repair. `dry_dock` restores template `hull_max`
+    /// and is a different call. Arrival only docks the convoy.
     pub fn repair_fleet(&mut self) -> Result<(i64, i64), SimError> {
         let port_id = current_port_id(&self.world)
             .map(str::to_string)
             .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?;
-        let (repair_cost, _) = {
-            let port = self
-                .world
-                .port(&port_id)
-                .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?;
-            (port.repair_cost, port.name.clone())
-        };
-        let mult = reputation::service_modifier(&self.world.captain.standing, &port_id);
-        let cost_per = 1.max(py_trunc(repair_cost as f64 * mult));
-        let mut total_points = 0;
-        let mut total_cost = 0;
-        let mut any_damage = false;
-        for owned in &mut self.world.captain.fleet {
-            if owned.docked_port_id != port_id {
-                continue;
-            }
-            let damage = owned.ship.hull_max - owned.ship.hull;
-            if damage <= 0 {
-                continue;
-            }
-            any_damage = true;
-            let mut amount = damage;
-            let mut cost = amount * cost_per;
-            if cost > self.world.captain.silver {
-                let affordable = if cost_per > 0 {
-                    self.world.captain.silver / cost_per
-                } else {
-                    0
-                };
-                if affordable == 0 {
-                    if total_points == 0 {
-                        return Err(SimError::Sentence("Can't afford any repairs".into()));
-                    }
-                    break;
-                }
-                amount = affordable;
-                cost = amount * cost_per;
-            }
-            self.world.captain.silver -= cost;
-            owned.ship.hull += amount;
-            total_points += amount;
-            total_cost += cost;
-            if amount < damage {
-                break;
-            }
-        }
-        if !any_damage {
+        let repair_cost = self
+            .world
+            .port(&port_id)
+            .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?
+            .repair_cost;
+        let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+        let damage = ship.hull_max - ship.hull;
+        if damage == 0 {
             return Err(SimError::Sentence(
                 "Ship is already in perfect condition".into(),
             ));
         }
-        if total_points == 0 {
-            return Err(SimError::Sentence("Can't afford any repairs".into()));
+        let mult = reputation::service_modifier(&self.world.captain.standing, &port_id);
+        let cost_per = 1.max(py_trunc(repair_cost as f64 * mult));
+        let mut amount = damage;
+        let mut cost = amount * cost_per;
+        if cost > self.world.captain.silver {
+            let affordable = if cost_per > 0 {
+                self.world.captain.silver / cost_per
+            } else {
+                0
+            };
+            if affordable == 0 {
+                return Err(SimError::Sentence("Can't afford any repairs".into()));
+            }
+            amount = affordable;
+            cost = amount * cost_per;
         }
-        Ok((total_points, total_cost))
+        self.world.captain.silver -= cost;
+        let ship = self.world.captain.ship.as_mut().ok_or(SimError::NoShip)?;
+        ship.hull += amount;
+        Ok((amount, cost))
     }
 
     /// Take the sunk enemy as a prize, or pass `0` to let it go under.
@@ -2194,10 +2173,11 @@ impl Session {
         .map_err(SimError::Sentence)
     }
 
-    /// Buy armor or a melee weapon at catalog price and equip it.
+    /// Buy one item from a merchant at the current port (`buy_from_merchant`).
     ///
-    /// Python sells these through merchants with a markup. This command is the
-    /// catalog price so a golden can equip gear without that area.
+    /// The price is catalog cost times that merchant's markup. Purchase does
+    /// not write provenance or a quality tier. Python creates provenance on a
+    /// named kill, and combat treats a missing tier as standard.
     pub fn buy_gear(&mut self, gear_id: &str) -> Result<(), SimError> {
         let port_id = current_port_id(&self.world)
             .map(str::to_string)
@@ -2207,68 +2187,33 @@ impl Session {
             .port(&port_id)
             .map(|port| port.region.clone())
             .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
-        let catalog = content::content();
-        if let Some(armor) = catalog.armor(gear_id) {
-            if !armor.available_regions.iter().any(|item| item == &region) {
-                return Err(SimError::Sentence(format!(
-                    "{} is not sold in {region}",
-                    armor.name
-                )));
-            }
-            if armor.silver_cost > self.world.captain.silver {
-                return Err(SimError::NeedSilver {
-                    need: armor.silver_cost,
-                    have: self.world.captain.silver,
-                });
-            }
-            self.world.captain.silver -= armor.silver_cost;
-            let id = armor.id.clone();
-            self.world.captain.armor = Some(Armor {
-                id: id.clone(),
-                name: armor.name.clone(),
-                armor_type: armor.armor_type.clone(),
-                damage_reduction: armor.damage_reduction,
-                dodge_penalty: armor.dodge_penalty,
-                stamina_penalty: armor.stamina_penalty,
-                quality: "standard".into(),
-            });
-            self.world.captain.set_quality(&id, "standard");
-            return Ok(());
+        let merchants = content::content().merchants_at(&port_id);
+        if merchants.is_empty() {
+            return Err(SimError::Sentence("Unknown merchant".into()));
         }
-        if let Some(weapon) = catalog.melee_weapon(gear_id) {
-            if !weapon.available_regions.iter().any(|item| item == &region) {
-                return Err(SimError::Sentence(format!(
-                    "{} is not sold in {region}",
-                    weapon.name
-                )));
-            }
-            if weapon.silver_cost > self.world.captain.silver {
-                return Err(SimError::NeedSilver {
-                    need: weapon.silver_cost,
-                    have: self.world.captain.silver,
-                });
-            }
-            self.world.captain.silver -= weapon.silver_cost;
-            let id = weapon.id.clone();
-            let name = weapon.name.clone();
-            self.world.captain.melee = Some(Weapon {
-                id: id.clone(),
-                name,
-                kind: "melee".into(),
-                quality: "standard".into(),
-                ammo: 0,
+        let stocked = merchants.iter().find(|merchant| {
+            merchant_inventory(merchant, &region)
+                .iter()
+                .any(|item| item.item_id == gear_id)
+        });
+        let merchant = stocked.copied().unwrap_or(merchants[0]);
+        let inventory = merchant_inventory(merchant, &region);
+        let Some(entry) = inventory.into_iter().find(|item| item.item_id == gear_id) else {
+            return Err(SimError::Sentence(format!(
+                "{} doesn't sell {gear_id}",
+                merchant.name
+            )));
+        };
+        let total = entry.silver_cost;
+        if total > self.world.captain.silver {
+            return Err(SimError::NeedSilver {
+                need: total,
+                have: self.world.captain.silver,
             });
-            self.world.captain.set_quality(&id, "standard");
-            let day = self.world.day;
-            if self.world.captain.provenance_mut(&id).is_none() {
-                self.world.captain.weapon_provenance.push((
-                    id.clone(),
-                    weapon_provenance::create_provenance(&id, &port_id, &region, day),
-                ));
-            }
-            return Ok(());
         }
-        Err(SimError::Sentence(format!("Unknown gear: {gear_id}")))
+        self.world.captain.silver -= total;
+        apply_purchased_item(&mut self.world.captain, &entry.item_type, gear_id, 1);
+        Ok(())
     }
 
     pub fn maintain_weapon(&mut self, weapon_id: &str) -> Result<(), SimError> {
@@ -2488,6 +2433,170 @@ impl Session {
         let memory = memory::get_or_create_memory(&mut self.world.captain_memories, captain_id);
         memory::record_encounter(memory, day, &region, outcome, false, false, 0);
         Ok(())
+    }
+}
+
+struct ShopEntry {
+    item_type: String,
+    item_id: String,
+    silver_cost: i64,
+}
+
+/// `merchant._markup`: `max(1, round(base * markup))`.
+fn merchant_price(base: i64, markup: f64) -> i64 {
+    1.max(py_round(base as f64 * markup))
+}
+
+fn merchant_sells(types: &[String], kind: &str) -> bool {
+    types.iter().any(|item| item == kind)
+}
+
+fn in_region(regions: &[String], region: &str) -> bool {
+    regions.iter().any(|item| item == region)
+}
+
+/// `get_merchant_inventory` for the port's region.
+fn merchant_inventory(merchant: &content::MerchantDef, region: &str) -> Vec<ShopEntry> {
+    let catalog = content::content();
+    let mut items = Vec::new();
+    if merchant_sells(&merchant.inventory_types, "melee") {
+        for weapon in catalog
+            .melee_weapons
+            .iter()
+            .filter(|weapon| in_region(&weapon.available_regions, region))
+        {
+            items.push(ShopEntry {
+                item_type: "melee".into(),
+                item_id: weapon.id.clone(),
+                silver_cost: merchant_price(weapon.silver_cost, merchant.price_markup),
+            });
+        }
+    }
+    if merchant_sells(&merchant.inventory_types, "armor") {
+        for armor in catalog
+            .armor
+            .iter()
+            .filter(|armor| in_region(&armor.available_regions, region))
+        {
+            items.push(ShopEntry {
+                item_type: "armor".into(),
+                item_id: armor.id.clone(),
+                silver_cost: merchant_price(armor.silver_cost, merchant.price_markup),
+            });
+        }
+    }
+    if merchant_sells(&merchant.inventory_types, "ranged") {
+        for weapon in catalog
+            .ranged_weapons
+            .iter()
+            .filter(|weapon| in_region(&weapon.available_regions, region))
+        {
+            items.push(ShopEntry {
+                item_type: "ranged".into(),
+                item_id: weapon.id.clone(),
+                silver_cost: merchant_price(weapon.silver_cost, merchant.price_markup),
+            });
+        }
+    }
+    if merchant_sells(&merchant.inventory_types, "ammo") {
+        for ammo in catalog
+            .ammo
+            .iter()
+            .filter(|ammo| in_region(&ammo.available_regions, region))
+        {
+            items.push(ShopEntry {
+                item_type: "ammo".into(),
+                item_id: ammo.id.clone(),
+                silver_cost: merchant_price(ammo.silver_cost, merchant.price_markup),
+            });
+        }
+    }
+    items
+}
+
+/// `merchant._apply_item`. Does not stamp quality or provenance.
+fn apply_purchased_item(
+    captain: &mut crate::model::Captain,
+    item_type: &str,
+    item_id: &str,
+    qty: i64,
+) {
+    let catalog = content::content();
+    match item_type {
+        "melee" => {
+            let Some(weapon) = catalog.melee_weapon(item_id) else {
+                return;
+            };
+            captain.melee = Some(Weapon {
+                id: weapon.id.clone(),
+                name: weapon.name.clone(),
+                kind: "melee".into(),
+                quality: "standard".into(),
+                ammo: 0,
+            });
+        }
+        "armor" => {
+            let Some(armor) = catalog.armor(item_id) else {
+                return;
+            };
+            captain.armor = Some(Armor {
+                id: armor.id.clone(),
+                name: armor.name.clone(),
+                armor_type: armor.armor_type.clone(),
+                damage_reduction: armor.damage_reduction,
+                dodge_penalty: armor.dodge_penalty,
+                stamina_penalty: armor.stamina_penalty,
+                quality: "standard".into(),
+            });
+        }
+        "ranged" => {
+            let Some(weapon) = catalog.ranged_weapon(item_id) else {
+                return;
+            };
+            let carried = Weapon {
+                id: weapon.id.clone(),
+                name: weapon.name.clone(),
+                kind: weapon.weapon_type.clone(),
+                quality: "standard".into(),
+                ammo: 0,
+            };
+            match weapon.weapon_type.as_str() {
+                "firearm" => captain.firearm = Some(carried),
+                "mechanical" => captain.mechanical = Some(carried),
+                "thrown" => {
+                    if let Some(existing) =
+                        captain.throwing.iter_mut().find(|item| item.id == item_id)
+                    {
+                        existing.ammo += qty;
+                    } else {
+                        let mut carried = carried;
+                        carried.ammo = qty;
+                        captain.throwing.push(carried);
+                    }
+                }
+                _ => {}
+            }
+        }
+        "ammo" => {
+            let Some(ammo) = catalog.ammo(item_id) else {
+                return;
+            };
+            let gained = ammo.quantity * qty;
+            match ammo.weapon_type.as_str() {
+                "firearm" => {
+                    if let Some(weapon) = captain.firearm.as_mut() {
+                        weapon.ammo += gained;
+                    }
+                }
+                "mechanical" => {
+                    if let Some(weapon) = captain.mechanical.as_mut() {
+                        weapon.ammo += gained;
+                    }
+                }
+                _ => {}
+            }
+        }
+        _ => {}
     }
 }
 
