@@ -3,8 +3,9 @@
 //! Buttons call [`portlight_sim::Session`]. Labels repeat fields those queries
 //! already computed. Good names and the season name are catalog strings.
 //!
-//! A pending duel is named on the panel. Next day still calls `Session::advance`
-//! and shows `SimError` if the sim refuses. The stance fight is `Session::duel`
+//! A pending duel is named on the panel. Next day still calls `Session::advance`,
+//! which ticks reputation and does not move the day. A `SimError` is shown if
+//! advance fails for another reason. The stance fight is `Session::duel`
 //! (the sim requires at least three of thrust, slash, and parry) or
 //! `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown and
 //! not written onto reputation. Negotiate, flee, naval rounds, and boarding
@@ -13,9 +14,9 @@
 
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
-use godot::classes::text_server::AutowrapMode;
+use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::{
-    Button, Control, HBoxContainer, IControl, Label, Os, PanelContainer, ScrollContainer,
+    Button, Control, HBoxContainer, IControl, Label, Node, Os, PanelContainer, ScrollContainer,
     StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
 };
 use godot::global::Error;
@@ -191,6 +192,11 @@ impl IControl for PortlightGame {
         self.capture_frames -= 1;
         if self.capture_frames > 0 {
             return;
+        }
+        // Measure after layout. Headless `--smoke` has no shot and skips this:
+        // the Xvfb capture is the run that has to see real label sizes.
+        if self.smoke && self.shot_path.is_some() && self.market_open {
+            self.assert_panel_labels();
         }
         if let Some(path) = self.shot_path.clone() {
             if !self.save_shot(&path) {
@@ -480,7 +486,7 @@ impl PortlightGame {
     fn run_encounter(&mut self) {
         if let Some(name) = self.sail_until_duel() {
             self.push_log(format!(
-                "Duel with {name}. Next day calls Session::advance; the sim refuses while this duel is pending. Pick at least 3 stances, or auto-resolve."
+                "Duel with {name}. Next day calls Session::advance, which ticks reputation and does not move the day while this duel is pending. Pick at least 3 stances, or auto-resolve."
             ));
         }
         self.refresh();
@@ -1008,8 +1014,8 @@ impl PortlightGame {
             let mut row = HBoxContainer::new_alloc();
             let mut label = body_label(
                 &format!(
-                    "{}   {}   {}d   {}",
-                    lane.destination_name, lane.distance, lane.estimated_days, lane.min_ship_class
+                    "{}   {}d   {}   {}",
+                    lane.destination_name, lane.estimated_days, lane.distance, lane.min_ship_class
                 ),
                 14,
                 Color::from_rgba8(lane.color.r, lane.color.g, lane.color.b, 255),
@@ -1054,7 +1060,7 @@ impl PortlightGame {
             } = row;
             let mut row = HBoxContainer::new_alloc();
             let mut label = body_label(
-                &format!("{name}  stock {stock}  buy {buy}  sell {sell}  held {held}"),
+                &format!("{name}  buy {buy}  sell {sell}  stock {stock}  held {held}"),
                 13,
                 CREAM,
             );
@@ -1180,6 +1186,109 @@ impl PortlightGame {
             .unwrap_or(0)
     }
 
+    /// The Xvfb chart capture opens the market. Every lane and market label
+    /// must have text and a real line height. Autowrap plus clip-text used to
+    /// collapse these to 1×1, which the flat-frame check does not see.
+    fn assert_panel_labels(&mut self) {
+        let lanes = self
+            .lane_box
+            .as_ref()
+            .map(labels_under_box)
+            .unwrap_or_default();
+        let market = self
+            .market_box
+            .as_ref()
+            .map(labels_under_box)
+            .unwrap_or_default();
+        let lanes_ok = self.labels_have_a_line("lane", &lanes);
+        let market_ok = self.labels_have_a_line("market", &market);
+        let text_ok = self.labels_name_the_rows(&lanes, &market);
+        if !lanes_ok || !market_ok || !text_ok {
+            self.smoke_ok = false;
+        }
+    }
+
+    fn labels_have_a_line(&mut self, kind: &str, labels: &[Gd<Label>]) -> bool {
+        if labels.is_empty() {
+            let line = format!("Smoke: no {kind} labels.");
+            godot_print!("{line}");
+            self.push_log(line);
+            return false;
+        }
+        let mut ok = true;
+        for label in labels {
+            let text = label.get_text().to_string();
+            let lines = label.get_line_count();
+            let height = label.get_size().y;
+            let line_h = label.get_line_height();
+            if text.trim().is_empty() || lines < 1 || line_h <= 0 || height < line_h as f32 {
+                ok = false;
+                let line = format!(
+                    "Smoke: {kind} label {text:?} lines={lines} height={height} line_h={line_h}"
+                );
+                godot_print!("{line}");
+                self.push_log(line);
+            }
+        }
+        godot_print!("panel {kind} labels {} ok={ok}", labels.len());
+        ok
+    }
+
+    fn labels_name_the_rows(&mut self, lanes: &[Gd<Label>], market: &[Gd<Label>]) -> bool {
+        let mut ok = true;
+        if let Some(chart) = self.chart_now() {
+            for lane in &chart.lanes {
+                let days = format!("{}d", lane.estimated_days);
+                let shown = lanes.iter().any(|label| {
+                    let text = label.get_text().to_string();
+                    text.contains(&lane.destination_name) && text.contains(&days)
+                });
+                if !shown {
+                    ok = false;
+                    let line = format!(
+                        "Smoke: lane {} missing destination or days.",
+                        lane.destination_name
+                    );
+                    godot_print!("{line}");
+                    self.push_log(line);
+                }
+                if let Some(note) = &lane.suitability_note {
+                    let shown = lanes
+                        .iter()
+                        .any(|label| label.get_text().to_string().contains(note.as_str()));
+                    if !shown {
+                        ok = false;
+                        let line =
+                            format!("Smoke: lane {} missing lock reason.", lane.destination_name);
+                        godot_print!("{line}");
+                        self.push_log(line);
+                    }
+                }
+            }
+        }
+        if let Some((_, rows)) = self.market_rows() {
+            for row in rows {
+                let price = format!("buy {}", row.buy);
+                let stock = format!("stock {}", row.stock);
+                let shown = market.iter().any(|label| {
+                    let text = label.get_text().to_string();
+                    text.contains(&row.name) && text.contains(&price) && text.contains(&stock)
+                });
+                if !shown {
+                    ok = false;
+                    let line = format!("Smoke: market {} missing good, price, or stock.", row.name);
+                    godot_print!("{line}");
+                    self.push_log(line);
+                }
+            }
+        } else {
+            ok = false;
+            godot_print!("Smoke: market rows missing.");
+            self.push_log("Smoke: market rows missing.".to_string());
+        }
+        ok
+    }
+
     fn push_log(&mut self, line: impl Into<String>) {
         self.log_lines.push(line.into());
         if self.log_lines.len() > 8 {
@@ -1255,7 +1364,7 @@ impl PortlightGame {
             return String::new();
         };
         format!(
-            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nNext day calls the sim. Pick stances, or auto-resolve.",
+            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
             duel.captain_name, duel.faction_id, duel.personality, duel.strength, duel.region
         )
     }
@@ -1364,10 +1473,35 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     button
 }
 
+fn labels_under_box(node: &Gd<VBoxContainer>) -> Vec<Gd<Label>> {
+    let mut found = Vec::new();
+    for child in node.get_children().iter_shared() {
+        found.extend(labels_from_node(&child));
+    }
+    found
+}
+
+fn labels_from_node(node: &Gd<Node>) -> Vec<Gd<Label>> {
+    let mut found = Vec::new();
+    if let Ok(label) = node.clone().try_cast::<Label>() {
+        found.push(label);
+    }
+    for child in node.get_children().iter_shared() {
+        found.extend(labels_from_node(&child));
+    }
+    found
+}
+
+/// Fit a row label beside its button.
+///
+/// Autowrap and clip-text together make Godot 4.7.2 report a 1×1 minimum
+/// size (`label.cpp` around the autowrap clip branch), so the text never
+/// draws. Ellipsis trimming keeps one line and does not collapse it.
 fn shrink_label(label: &mut Gd<Label>) {
     label.set_h_size_flags(SizeFlags::EXPAND_FILL);
-    label.set_autowrap_mode(AutowrapMode::WORD_SMART);
-    label.set_clip_text(true);
+    label.set_autowrap_mode(AutowrapMode::OFF);
+    label.set_clip_text(false);
+    label.set_text_overrun_behavior(OverrunBehavior::TRIM_ELLIPSIS);
 }
 
 fn scrolling(height: f32) -> (Gd<ScrollContainer>, Gd<VBoxContainer>) {
