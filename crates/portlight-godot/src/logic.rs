@@ -6,6 +6,7 @@
 
 use godot::classes::Image;
 use godot::prelude::*;
+use portlight_chart::{ship_asset, ship_class_plate, Asset, Facing};
 use portlight_sim::encounter::EncounterState;
 use portlight_sim::session::{EncounterStep, Session};
 use portlight_sim::SimError;
@@ -51,6 +52,39 @@ pub(crate) fn capture_frame_rejected(
     samples: &[[u8; 3]],
 ) -> bool {
     samples.is_empty() || width != expect_w || height != expect_h || frame_mostly_flat(samples)
+}
+
+/// Plate-panel fill, `Color::from_rgb(0.72, 0.58, 0.36)`.
+const ENCOUNTER_PLATE_RGB: [u8; 3] = [184, 148, 92];
+/// Action-button fill, `Color::from_rgb(0.55, 0.42, 0.24)`.
+const ENCOUNTER_BUTTON_RGB: [u8; 3] = [140, 107, 61];
+
+/// Encounter captures do not use [`capture_frame_rejected`].
+///
+/// Addendum M.1 shrink-wraps the plate, so the ink ground `(20, 28, 41)`
+/// covers most of a 1280×720 frame (measured at about 93%). That is the
+/// signed-off layout, not a blank shot. A frame still fails when it is empty,
+/// the wrong size, or missing the plate panel and a filled button.
+pub(crate) fn encounter_frame_rejected(
+    width: i32,
+    height: i32,
+    expect_w: i32,
+    expect_h: i32,
+    samples: &[[u8; 3]],
+) -> bool {
+    if samples.is_empty() || width != expect_w || height != expect_h {
+        return true;
+    }
+    let plate = sample_fraction(samples, ENCOUNTER_PLATE_RGB);
+    let button = sample_fraction(samples, ENCOUNTER_BUTTON_RGB);
+    // A 64×64 plate at 2× plus padding is ~3% of the frame. One stray pixel
+    // must not pass a blank ink overlay.
+    plate < 0.01 || button < 0.002
+}
+
+fn sample_fraction(samples: &[[u8; 3]], color: [u8; 3]) -> f32 {
+    let hits = samples.iter().filter(|sample| **sample == color).count();
+    hits as f32 / samples.len() as f32
 }
 
 /// Process status for `harbour_seam.tscn`.
@@ -107,6 +141,24 @@ pub(crate) const SCRIPTED_FIGHT: &[&str] = &[
 /// An open encounter covers it. Closing the encounter hands that duel back.
 pub(crate) fn stance_duel_visible(screen_open: bool, pending_duel: bool) -> bool {
     pending_duel && !screen_open
+}
+
+/// Exact integer scale for a plate in a UI panel. Addendum M.1.
+pub(crate) const UI_PLATE_SCALE: i32 = 2;
+/// Padding on each side of that plate. A 64×64 sloop is a 168×168 panel.
+pub(crate) const UI_PLATE_PAD: i32 = 20;
+
+pub(crate) fn ui_plate_panel(canvas_w: i32, canvas_h: i32) -> (i32, i32) {
+    (
+        canvas_w * UI_PLATE_SCALE + UI_PLATE_PAD * 2,
+        canvas_h * UI_PLATE_SCALE + UI_PLATE_PAD * 2,
+    )
+}
+
+/// Side-on plate for the ship's content class. `ship_draw` replaces this
+/// lookup when that helper is available. Missing classes use the sloop.
+pub(crate) fn encounter_plate(class: &str) -> &'static Asset {
+    ship_class_plate(class, Facing::F3).unwrap_or_else(|| ship_asset(Facing::F3))
 }
 
 /// Hull and crew the screen can read off [`Session::world`].
@@ -406,12 +458,16 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
             facts.player_hull, facts.player_crew
         ),
     });
-    if let Some(hull) = facts.enemy_hull {
-        let crew = facts.enemy_crew.unwrap_or(0);
-        lines.push(match facts.enemy_hull_max {
-            Some(max) => format!("Enemy hull {hull}/{max} · crew {crew}"),
-            None => format!("Enemy hull {hull} · crew {crew}"),
-        });
+    // A win's outcome card keeps the last fight step's hull, which is not a
+    // post-fight reading. Session does not expose one, so the line is omitted.
+    if phase != ScreenPhase::Outcome {
+        if let Some(hull) = facts.enemy_hull {
+            let crew = facts.enemy_crew.unwrap_or(0);
+            lines.push(match facts.enemy_hull_max {
+                Some(max) => format!("Enemy hull {hull}/{max} · crew {crew}"),
+                None => format!("Enemy hull {hull} · crew {crew}"),
+            });
+        }
     }
     if phase == ScreenPhase::Personal && facts.kind == "fight" {
         lines.push(format!(
@@ -564,14 +620,36 @@ mod tests {
         assert!(!capture_frame_rejected(192, 128, 192, 128, &chart));
     }
 
+    #[test]
+    fn an_ink_encounter_frame_passes_only_with_the_plate_and_a_button() {
+        let ink = [20, 28, 41];
+        let plate = [184, 148, 92];
+        let button = [140, 107, 61];
+        // The signed-off layout is mostly ink. The chart's 80% rule rejects it.
+        let mut signed = vec![ink; 930];
+        signed.extend([plate; 40]);
+        signed.extend([button; 10]);
+        signed.extend([[240, 232, 214]; 20]);
+        assert!(frame_mostly_flat(&signed));
+        assert!(capture_frame_rejected(1280, 720, 1280, 720, &signed));
+        assert!(!encounter_frame_rejected(1280, 720, 1280, 720, &signed));
+        assert!(encounter_frame_rejected(1280, 720, 1280, 720, &[ink; 100]));
+        assert!(encounter_frame_rejected(0, 0, 1280, 720, &[]));
+        // A few plate pixels and no button is still a failed capture.
+        let mut plate_only = vec![ink; 100];
+        plate_only.extend([plate; 5]);
+        assert!(encounter_frame_rejected(1280, 720, 1280, 720, &plate_only));
+    }
+
     use portlight_sim::session::Session;
     use portlight_sim::SimError;
 
     use super::{
-        action_list_from_error, at_sea, facts_for_catalog_captain, facts_from_step, player_ship,
-        present, stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput,
-        PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
-        SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED,
+        action_list_from_error, at_sea, encounter_plate, facts_for_catalog_captain,
+        facts_from_step, player_ship, present, stance_duel_visible, ui_plate_panel, EncounterFacts,
+        ScreenAction, ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN,
+        SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
+        SCRIPTED_SEED,
     };
 
     fn scripted_session() -> Session {
@@ -615,6 +693,18 @@ mod tests {
             naval_actions,
             combat_actions,
         })
+    }
+
+    #[test]
+    fn a_sloop_plate_is_168_and_a_cutter_uses_its_own_canvas() {
+        assert_eq!(ui_plate_panel(64, 64), (168, 168));
+        let sloop = encounter_plate("sloop");
+        assert_eq!(sloop.id, "ship_sloop_f3");
+        assert_eq!(ui_plate_panel(sloop.canvas_w, sloop.canvas_h), (168, 168));
+        let cutter = encounter_plate("cutter");
+        assert_eq!(cutter.id, "ship_cutter_f3");
+        assert_eq!(ui_plate_panel(cutter.canvas_w, cutter.canvas_h), (184, 200));
+        assert_eq!(encounter_plate("man_of_war").id, "ship_sloop_f3");
     }
 
     #[test]
@@ -709,9 +799,12 @@ mod tests {
         facts.phase = "resolved".to_string();
         facts.pending_victory = true;
         facts.log = "Blade to blade.".to_string();
+        facts.enemy_hull = Some(40);
+        facts.enemy_crew = Some(8);
         let view = present(&facts).unwrap();
         assert_eq!(view.phase, ScreenPhase::Outcome);
         assert_eq!(view.log, "Blade to blade.");
+        assert!(!view.card.contains("Enemy hull"));
         assert_eq!(
             view.actions,
             vec![

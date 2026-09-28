@@ -45,14 +45,14 @@ use portlight_sim::session::{EncounterStep, Sale};
 use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
-use crate::encounter_screen::{self, EncounterNodes};
+use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::logic::{
     action_caption, action_list_from_error, at_sea, capture_frame_rejected, chart_host_width,
-    duel_button_enabled, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present, session_text,
-    stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput, PANEL_MIN_W,
-    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
-    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
+    facts_from_step, frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present,
+    session_text, stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput,
+    PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
+    SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -1488,8 +1488,13 @@ impl PortlightGame {
         let err = image.save_png(path);
         let samples = frame_samples(&image);
         let flat = frame_mostly_flat(&samples);
-        let rejected =
-            capture_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples);
+        // The encounter ground is ink. Chart and harbour shots keep the 80% rule.
+        let encounter = path.contains("encounter-");
+        let rejected = if encounter {
+            encounter_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples)
+        } else {
+            capture_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples)
+        };
         godot_print!(
             "screenshot {path} {width}x{height} samples={} flat={flat} error={err:?}",
             samples.len()
@@ -1740,10 +1745,18 @@ impl PortlightGame {
     fn sync_encounter_screen(&mut self) {
         let game_id = self.instance_id();
         let crew_count = self.capture_crew;
+        let ship_class = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .and_then(|ship| content::content().ship(&ship.template_id))
+            .map(|ship| ship.ship_class.clone())
+            .unwrap_or_default();
         let view = self.encounter.as_ref().and_then(present);
         let Some(nodes) = self.encounter_nodes.as_mut() else {
             return;
         };
+        set_ship_plate(&mut nodes.plate, &mut nodes.plate_panel, &ship_class);
         let open = view.is_some();
         nodes.root.set_visible(open);
         nodes.root.set_mouse_filter(if open {
@@ -2261,8 +2274,19 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = Button::new_alloc();
     button.set_text(text);
+    // Tan fill and a gold border. The default (23, 26, 31) sits on the ink
+    // background (20, 28, 41) and reads as bare text.
+    let normal = button_style(Color::from_rgb(0.55, 0.42, 0.24));
+    let hover = button_style(Color::from_rgb(0.68, 0.52, 0.30));
+    let pressed = button_style(Color::from_rgb(0.40, 0.30, 0.16));
+    button.add_theme_stylebox_override("normal", &normal);
+    button.add_theme_stylebox_override("hover", &hover);
+    button.add_theme_stylebox_override("pressed", &pressed);
+    button.add_theme_stylebox_override("focus", &hover);
     button.add_theme_color_override("font_color", CREAM);
     button.add_theme_color_override("font_hover_color", GOLD);
+    button.add_theme_color_override("font_pressed_color", GOLD);
+    button.add_theme_color_override("font_focus_color", GOLD);
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
@@ -2271,6 +2295,16 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
         gd.bind_mut().perform(action_for_click.clone());
     });
     button
+}
+
+fn button_style(fill: Color) -> Gd<StyleBoxFlat> {
+    let mut style = StyleBoxFlat::new_gd();
+    style.set_bg_color(fill);
+    style.set_border_color(GOLD);
+    style.set_border_width_all(2);
+    style.set_content_margin_all(8.0);
+    style.set_corner_radius_all(2);
+    style
 }
 
 fn labels_under_box(node: &Gd<VBoxContainer>) -> Vec<Gd<Label>> {
