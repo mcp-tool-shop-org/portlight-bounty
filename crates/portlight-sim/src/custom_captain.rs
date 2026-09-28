@@ -5,7 +5,9 @@
 //! at line 76. The CLI registers the template on `CAPTAIN_TEMPLATES` and then
 //! calls `GameSession.new` (`app/cli.py` line 292). [`crate::session::Session::new_custom`]
 //! does that for one world: the template is what [`crate::world::new_game_with_def`]
-//! consumes, and the world keeps it so later pricing and voyage lookups find it.
+//! consumes, and the world keeps it so later voyage, inspection, and arrival
+//! lookups find it. Pricing uses [`captain_template`], which falls back to the
+//! merchant archetype when the custom template is missing.
 
 use std::collections::BTreeMap;
 
@@ -332,12 +334,31 @@ pub fn build_custom_template(spec: &CustomCaptainSpec) -> CustomCaptainTemplate 
 ///
 /// Python `voyage._get_captain_mods` returns `None` when `custom` was never
 /// registered. A missing template does the same. It does not fall back to
-/// the merchant archetype.
+/// the merchant archetype. Buy, sell, and reprice use [`captain_template`].
 pub fn active_captain(world: &World) -> Option<&CaptainDef> {
     if world.captain.captain_type == "custom" {
         return world.custom_captain.as_ref();
     }
     content::content().captain(&world.captain.captain_type)
+}
+
+/// `GameSession.captain_template` (`app/session.py` lines 488–496).
+///
+/// The registered custom template when `world.custom_captain` is set. A
+/// `custom` captain whose template was not restored (a fresh load: saves do
+/// not store it, so `CAPTAIN_TEMPLATES` raises `KeyError`) and any unknown
+/// type both return the merchant archetype.
+pub fn captain_template(world: &World) -> &CaptainDef {
+    if world.captain.captain_type == "custom" {
+        if let Some(custom) = world.custom_captain.as_ref() {
+            return custom;
+        }
+    } else if let Some(catalogued) = content::content().captain(&world.captain.captain_type) {
+        return catalogued;
+    }
+    content::content()
+        .captain("merchant")
+        .expect("merchant archetype")
 }
 
 /// Parse a `custom` script line. `tokens[0]` is the command word.
