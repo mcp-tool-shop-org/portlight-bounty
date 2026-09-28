@@ -43,7 +43,7 @@ Placeholder tiles are generated, not drawn by hand:
 cargo run -p portlight-chart --bin gen_placeholders -- godot/assets
 ```
 
-Replace a file later by keeping its asset id in `godot/assets/catalog/asset-list.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. Sea, water, quay, and pier sit at the −48 px datum.
+Replace a chart file later by keeping its id (`chart_water_a`, `chart_port_marker`, `ship_sloop_f0`..`f7`, `ship_sloop_wake`). Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene.
 
 Headless smoke (session only; the dummy renderer does not return a viewport image):
 

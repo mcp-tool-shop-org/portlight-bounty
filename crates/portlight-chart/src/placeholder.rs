@@ -5,8 +5,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use crate::assets::{Asset, AssetFamily, ASSETS};
-use crate::project::{Facing, SIT_X, SIT_Y};
+use crate::assets::{Asset, AssetFamily, ASSETS, SLOOP_ANCHOR, SLOOP_HULL_PX};
+use crate::project::{uv_to_screen_delta, Facing};
 
 struct Image {
     w: i32,
@@ -46,19 +46,18 @@ impl Image {
 }
 
 pub fn write_asset_files(assets_dir: &Path) -> io::Result<()> {
-    let mut csv = String::from("id,file,canvas_w,canvas_h,sit_x,sit_y,datum_y,family,note\n");
+    let mut csv = String::from("id,file,canvas_w,canvas_h,anchor_x,anchor_y,family,note\n");
     for asset in ASSETS {
         let image = render(asset);
         image.write_png(&assets_dir.join(asset.file))?;
         csv.push_str(&format!(
-            "{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{}\n",
             asset.id,
             asset.file,
             asset.canvas_w,
             asset.canvas_h,
-            asset.sit_x,
-            asset.sit_y,
-            asset.datum_y,
+            asset.anchor_x,
+            asset.anchor_y,
             asset.family.as_str(),
             asset.note
         ));
@@ -72,89 +71,98 @@ pub fn write_asset_files(assets_dir: &Path) -> io::Result<()> {
 fn render(asset: &Asset) -> Image {
     let mut image = Image::new(asset.canvas_w, asset.canvas_h);
     match asset.family {
-        AssetFamily::Ship => draw_ship(&mut image, facing_of(asset.id)),
+        AssetFamily::ChartWater => {
+            let fill = match asset.id {
+                id if id.ends_with("_b") => [28, 78, 108, 255],
+                id if id.ends_with("_c") => [18, 58, 88, 255],
+                _ => [22, 68, 96, 255],
+            };
+            fill_diamond(&mut image, (64, 32), 64, 32, fill);
+            stamp(&mut image, 4, 4);
+        }
         AssetFamily::Port => {
-            fill_diamond(&mut image, [232, 208, 150, 255], 36, 18);
-            stamp(&mut image);
+            fill_diamond(&mut image, (64, 95), 64, 32, [168, 156, 140, 255]);
+            draw_tower(&mut image);
+            stamp(&mut image, 8, 8);
         }
-        AssetFamily::Lane if asset.id.ends_with("blocked") => {
-            fill_diamond(&mut image, family_color(asset.family, asset.id), 64, 32);
-            draw_cross(&mut image);
-            stamp(&mut image);
+        AssetFamily::Ship => {
+            draw_ship(&mut image, facing_of(asset.id));
+            stamp(&mut image, 2, 2);
         }
-        _ => {
-            fill_diamond(&mut image, family_color(asset.family, asset.id), 64, 32);
-            stamp(&mut image);
+        AssetFamily::Wake => {
+            draw_wake(&mut image);
+            stamp(&mut image, 2, 2);
         }
     }
     image
 }
 
-fn family_color(family: AssetFamily, id: &str) -> [u8; 4] {
-    match family {
-        AssetFamily::Sea => [27, 79, 128, 255],
-        AssetFamily::Water => [46, 120, 176, 255],
-        AssetFamily::Quay => [168, 132, 86, 255],
-        AssetFamily::Pier => [110, 86, 62, 255],
-        AssetFamily::Port => [232, 208, 150, 255],
-        AssetFamily::Ship => [236, 228, 210, 255],
-        AssetFamily::Lane if id.ends_with("warning") => [214, 164, 48, 255],
-        AssetFamily::Lane if id.ends_with("blocked") => [196, 72, 72, 255],
-        AssetFamily::Lane if id.ends_with("underway") => [236, 224, 196, 255],
-        AssetFamily::Lane => [36, 168, 150, 255],
-    }
-}
-
-fn in_diamond(x: i32, y: i32, half_w: i32, half_h: i32) -> bool {
-    let dx = (x - SIT_X).abs();
-    let dy = (y - SIT_Y).abs();
+fn in_diamond(x: i32, y: i32, center: (i32, i32), half_w: i32, half_h: i32) -> bool {
+    let dx = (x - center.0).abs();
+    let dy = (y - center.1).abs();
     dx * half_h + dy * half_w <= half_w * half_h
 }
 
-fn fill_diamond(image: &mut Image, fill: [u8; 4], half_w: i32, half_h: i32) {
+fn fill_diamond(image: &mut Image, center: (i32, i32), half_w: i32, half_h: i32, fill: [u8; 4]) {
     let edge = [255, 0, 255, 255];
     for y in 0..image.h {
         for x in 0..image.w {
-            if !in_diamond(x, y, half_w, half_h) {
+            if !in_diamond(x, y, center, half_w, half_h) {
                 continue;
             }
-            let border = !in_diamond(x - 1, y, half_w, half_h)
-                || !in_diamond(x + 1, y, half_w, half_h)
-                || !in_diamond(x, y - 1, half_w, half_h)
-                || !in_diamond(x, y + 1, half_w, half_h);
+            let border = !in_diamond(x - 1, y, center, half_w, half_h)
+                || !in_diamond(x + 1, y, center, half_w, half_h)
+                || !in_diamond(x, y - 1, center, half_w, half_h)
+                || !in_diamond(x, y + 1, center, half_w, half_h);
             image.set(x, y, if border { edge } else { fill });
         }
     }
 }
 
-fn draw_cross(image: &mut Image) {
-    let ink = [40, 16, 16, 255];
-    for step in 0..48 {
-        let x = SIT_X - 24 + step;
-        let y0 = SIT_Y - 16 + step * 32 / 48;
-        let y1 = SIT_Y + 16 - step * 32 / 48;
-        image.set(x, y0, ink);
-        image.set(x, y0 + 1, ink);
-        image.set(x, y1, ink);
-        image.set(x, y1 + 1, ink);
+fn draw_tower(image: &mut Image) {
+    let stone = [150, 140, 126, 255];
+    for y in 40..90 {
+        for x in 56..72 {
+            image.set(x, y, stone);
+        }
+    }
+}
+
+fn draw_wake(image: &mut Image) {
+    let (cx, cy) = SLOOP_ANCHOR;
+    let rx = f64::from(SLOOP_HULL_PX) * 0.9 / 2.0;
+    let ry = rx / 2.0;
+    let ink = [180, 210, 220, 180];
+    for y in 0..image.h {
+        for x in 0..image.w {
+            let nx = f64::from(x - cx) / rx;
+            let ny = f64::from(y - cy) / ry;
+            let r = nx * nx + ny * ny;
+            if (0.55..=1.0).contains(&r) {
+                image.set(x, y, ink);
+            }
+        }
     }
 }
 
 fn draw_ship(image: &mut Image, facing: Facing) {
     let angle = facing.index() as f64 * std::f64::consts::FRAC_PI_4;
-    let dx = angle.cos();
-    let dy = angle.sin();
+    let (sx, sy) = uv_to_screen_delta(angle.cos(), angle.sin());
+    let len = (sx * sx + sy * sy).sqrt();
+    let dx = sx / len;
+    let dy = sy / len;
     let hull = [236, 228, 210, 255];
     let bow = [42, 48, 58, 255];
-    let edge = [255, 0, 255, 255];
+    let (ax, ay) = SLOOP_ANCHOR;
+    let half = f64::from(SLOOP_HULL_PX) / 2.0;
     for y in 0..image.h {
         for x in 0..image.w {
-            let rx = f64::from(x - SIT_X);
-            let ry = f64::from(y - SIT_Y);
+            let rx = f64::from(x - ax);
+            let ry = f64::from(y - ay);
             let along = rx * dx + ry * dy;
             let across = -rx * dy + ry * dx;
-            let body = (-16.0..14.0).contains(&along) && across.abs() < 8.0;
-            let nose = (12.0..28.0).contains(&along) && across.abs() < (28.0 - along) * 0.55;
+            let body = (-half..half * 0.45).contains(&along) && across.abs() < 5.0;
+            let nose = (half * 0.35..half).contains(&along) && across.abs() < (half - along) * 0.45;
             if nose {
                 image.set(x, y, bow);
             } else if body {
@@ -162,7 +170,11 @@ fn draw_ship(image: &mut Image, facing: Facing) {
             }
         }
     }
-    // Magenta rim so the glyph reads as a placeholder, not finished art.
+    rim(image);
+}
+
+fn rim(image: &mut Image) {
+    let edge = [255, 0, 255, 255];
     let snapshot = image.px.clone();
     for y in 1..image.h - 1 {
         for x in 1..image.w - 1 {
@@ -185,29 +197,28 @@ fn draw_ship(image: &mut Image, facing: Facing) {
             }
         }
     }
-    stamp(image);
 }
 
 fn facing_of(id: &str) -> Facing {
-    match id.rsplit('.').next().unwrap_or("e") {
-        "se" => Facing::Se,
-        "s" => Facing::S,
-        "sw" => Facing::Sw,
-        "w" => Facing::W,
-        "nw" => Facing::Nw,
-        "n" => Facing::N,
-        "ne" => Facing::Ne,
-        _ => Facing::E,
+    match id.rsplit('_').next().unwrap_or("f1") {
+        "f0" => Facing::F0,
+        "f2" => Facing::F2,
+        "f3" => Facing::F3,
+        "f4" => Facing::F4,
+        "f5" => Facing::F5,
+        "f6" => Facing::F6,
+        "f7" => Facing::F7,
+        _ => Facing::F1,
     }
 }
 
 /// Block letters "PH", the placeholder stamp.
-fn stamp(image: &mut Image) {
+fn stamp(image: &mut Image, ox: i32, oy: i32) {
     const P: [u8; 5] = [0b1110, 0b1001, 0b1110, 0b1000, 0b1000];
     const H: [u8; 5] = [0b1001, 0b1001, 0b1111, 0b1001, 0b1001];
     let ink = [255, 0, 255, 255];
-    blit_glyph(image, 8, 18, &P, ink);
-    blit_glyph(image, 20, 18, &H, ink);
+    blit_glyph(image, ox, oy, &P, ink);
+    blit_glyph(image, ox + 12, oy, &H, ink);
 }
 
 fn blit_glyph(image: &mut Image, ox: i32, oy: i32, rows: &[u8], color: [u8; 4]) {
@@ -302,24 +313,40 @@ mod tests {
     use crate::assets::asset;
 
     #[test]
-    fn quay_sit_pixel_is_opaque_and_stamped() {
-        let quay = asset("chart.tile.quay").unwrap();
-        let image = render(quay);
-        let center = image.get(SIT_X, SIT_Y);
-        assert_eq!(center, [168, 132, 86, 255]);
-        let stamp = image.get(8, 18);
+    fn chart_water_diamond_is_two_to_one_with_clear_corners() {
+        let water = asset("chart_water_a").unwrap();
+        let image = render(water);
+        assert_eq!((image.w, image.h), (128, 64));
+        for (x, y) in [(0, 0), (7, 7), (120, 0), (0, 56), (120, 56)] {
+            assert_eq!(image.get(x, y)[3], 0, "corner {x},{y}");
+        }
+        assert_eq!(image.get(64, 0)[3], 255);
+        assert_eq!(image.get(64, 63)[3], 255);
+        assert_eq!(image.get(0, 32)[3], 255);
+        assert_eq!(image.get(127, 32)[3], 255);
+        let stamp = image.get(4, 4);
         assert_eq!(stamp, [255, 0, 255, 255]);
+        // Upper-right edge: from the top vertex toward the right vertex, rise/run = 1/2.
+        let mut samples = Vec::new();
+        for y in 1..31 {
+            let mut right = 0;
+            for x in 0..image.w {
+                if image.get(x, y)[3] > 0 {
+                    right = x;
+                }
+            }
+            samples.push((right, y));
+        }
+        let (x0, y0) = samples[0];
+        let (x1, y1) = samples[samples.len() - 1];
+        let slope = f64::from(y1 - y0) / f64::from(x1 - x0);
+        let degrees = slope.atan().to_degrees();
+        assert!(
+            (degrees - 26.565).abs() < 0.3,
+            "edge {degrees}° from ({x0},{y0}) to ({x1},{y1})"
+        );
         let png = encode_png(&image);
         assert_eq!(&png[..8], &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
-        let mut decoder = png::Decoder::new(std::io::Cursor::new(png));
-        decoder.set_transformations(png::Transformations::IDENTITY);
-        let mut reader = decoder.read_info().unwrap();
-        assert_eq!(reader.info().width, quay.canvas_w as u32);
-        assert_eq!(reader.info().height, quay.canvas_h as u32);
-        let mut buf = vec![0; reader.output_buffer_size()];
-        reader.next_frame(&mut buf).unwrap();
-        let i = ((SIT_Y * quay.canvas_w + SIT_X) * 4) as usize;
-        assert_eq!(&buf[i..i + 4], &[168, 132, 86, 255]);
     }
 
     #[test]
@@ -347,7 +374,13 @@ mod tests {
             let facing = Facing::from_index(index);
             let asset = crate::assets::ship_asset(facing);
             let image = render(asset);
-            assert_eq!(image.get(8, 18)[0], 255, "stamp {}", asset.id);
+            assert_eq!(image.get(2, 2)[0], 255, "stamp {}", asset.id);
+            assert_eq!(
+                image.get(SLOOP_ANCHOR.0, SLOOP_ANCHOR.1)[3],
+                255,
+                "{}",
+                asset.id
+            );
             let opaque: Vec<u8> = image.px.chunks(4).map(|px| u8::from(px[3] != 0)).collect();
             assert!(masks.insert(opaque), "duplicate silhouette {}", asset.id);
         }

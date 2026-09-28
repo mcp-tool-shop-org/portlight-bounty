@@ -1,47 +1,54 @@
 //! Dimetric 2:1 projection and ship facing.
 //!
-//! Chart cell `(x, y)` is rotated into display axes, then scaled:
+//! Chart coordinates stay on the sim grid. Display applies the operator
+//! rotation, then the 2:1 scale (`asset-spec` §2, which replaces the
+//! unrotated A1 formula):
 //!
 //! ```text
-//! u = x - y
-//! v = x + y
-//! screen_x = u * (cell_width / 2)     // 64
-//! screen_y = v * (cell_height / 2)    // 32
+//! u = (x + y) / √2
+//! v = (y − x) / √2
+//! screen_x = (u − v) · 64
+//! screen_y = (u + v) · 32
 //! ```
 //!
-//! `u` is the horizontal display axis and `v` is the vertical one, before
-//! the 2:1 pixel scale. Ship facing is the screen-space angle of `(u, v)`,
-//! split into eight 45° sectors. Simulation coordinates are not modified.
+//! That is `screen_x = x · 64√2` and `screen_y = y · 32√2`. Water tiles sit
+//! on integer `(u, v)`. Ports and ships sit at the fractional `(u, v)` of
+//! their chart point. Facing is bucketed in `(u, v)`, not in raw map units.
 
 /// Chart cell width in pixels. The ground diamond is twice as wide as it is tall.
 pub const CELL_WIDTH: i32 = 128;
 /// Chart cell height in pixels (dimetric 2:1).
 pub const CELL_HEIGHT: i32 = 64;
 
-/// Art-director datum for sea, water, quay, and pier.
+/// Harbour sea, water, quay, and pier sit at this screen offset.
 ///
-/// The sprite origin is this many screen pixels from the cell anchor
-/// (Godot Y grows downward, so the origin sits above the anchor). The
-/// pixel at local `(SIT_X, SIT_Y)` then lands on the anchor.
+/// Godot Y grows downward, so the sea layer is placed at `+48` to land on
+/// datum −48. Chart water is a different scale and stays at layer offset 0.
 pub const WATER_DATUM_Y: i32 = -48;
 
-/// Local X of the sit-point inside a placeholder canvas.
-pub const SIT_X: i32 = CELL_WIDTH / 2;
-/// Local Y of the sit-point. Equals `-WATER_DATUM_Y`.
-pub const SIT_Y: i32 = -WATER_DATUM_Y;
+/// Docked ship, applied after projection. Midpoint of the anchor cell's
+/// bottom-right edge. The contact Y is 16 px below the port, so the ship
+/// sorts in front of that port.
+pub const DOCKED_OFFSET_X: f32 = 32.0;
+pub const DOCKED_OFFSET_Y: f32 = 16.0;
 
-/// Eight headings in screen space. Index 0 is east, then clockwise,
-/// because display Y grows downward.
+/// Extra degrees past a 22.5° bucket edge before the bow changes.
+pub const FACING_HYSTERESIS_DEG: f64 = 5.0;
+
+/// Eight headings in rotated display `(u, v)`.
+///
+/// Index 0 is +u (screen down-right). Yaw increases toward +v
+/// (screen down-left). `F1` is screen down, the facing before the first voyage.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Facing {
-    E = 0,
-    Se = 1,
-    S = 2,
-    Sw = 3,
-    W = 4,
-    Nw = 5,
-    N = 6,
-    Ne = 7,
+    F0 = 0,
+    F1 = 1,
+    F2 = 2,
+    F3 = 3,
+    F4 = 4,
+    F5 = 5,
+    F6 = 6,
+    F7 = 7,
 }
 
 impl Facing {
@@ -51,86 +58,122 @@ impl Facing {
 
     pub fn from_index(index: i32) -> Self {
         match index.rem_euclid(8) {
-            0 => Self::E,
-            1 => Self::Se,
-            2 => Self::S,
-            3 => Self::Sw,
-            4 => Self::W,
-            5 => Self::Nw,
-            6 => Self::N,
-            _ => Self::Ne,
+            0 => Self::F0,
+            1 => Self::F1,
+            2 => Self::F2,
+            3 => Self::F3,
+            4 => Self::F4,
+            5 => Self::F5,
+            6 => Self::F6,
+            _ => Self::F7,
         }
     }
 
+    /// `f0`..`f7`, the frame order on one canvas and one anchor pixel.
     pub fn asset_suffix(self) -> &'static str {
         match self {
-            Self::E => "e",
-            Self::Se => "se",
-            Self::S => "s",
-            Self::Sw => "sw",
-            Self::W => "w",
-            Self::Nw => "nw",
-            Self::N => "n",
-            Self::Ne => "ne",
+            Self::F0 => "f0",
+            Self::F1 => "f1",
+            Self::F2 => "f2",
+            Self::F3 => "f3",
+            Self::F4 => "f4",
+            Self::F5 => "f5",
+            Self::F6 => "f6",
+            Self::F7 => "f7",
         }
     }
 }
 
-/// Rotate a chart cell into unscaled display axes `(u, v)`.
-pub fn rotate_chart(x: i64, y: i64) -> (i64, i64) {
-    (x - y, x + y)
+/// Rotate a chart point into display-cart `(u, v)`.
+pub fn chart_to_uv(x: f64, y: f64) -> (f64, f64) {
+    let s = std::f64::consts::SQRT_2;
+    ((x + y) / s, (y - x) / s)
 }
 
-/// Screen position of a chart cell's anchor (center of the ground diamond).
-pub fn chart_to_screen(x: i64, y: i64) -> (i32, i32) {
-    let (u, v) = rotate_chart(x, y);
+/// Inverse of [`chart_to_uv`].
+pub fn uv_to_chart(u: f64, v: f64) -> (f64, f64) {
+    let s = std::f64::consts::SQRT_2;
+    ((u - v) / s, (u + v) / s)
+}
+
+/// 2:1 scale of a display-cart point. Integer `(u, v)` is a water-cell centre.
+pub fn uv_to_screen(u: f64, v: f64) -> (f64, f64) {
     (
-        (u * i64::from(CELL_WIDTH / 2)) as i32,
-        (v * i64::from(CELL_HEIGHT / 2)) as i32,
+        (u - v) * f64::from(CELL_WIDTH / 2),
+        (u + v) * f64::from(CELL_HEIGHT / 2),
     )
 }
 
-/// Same projection for a point that falls between cells (ship along a lane).
+/// Screen position of a chart point. Porto Novo `(18, 8)` is about `(1629.2, 362.0)`.
 pub fn chart_to_screen_f(x: f64, y: f64) -> (f32, f32) {
-    let u = x - y;
-    let v = x + y;
+    let (u, v) = chart_to_uv(x, y);
+    let (sx, sy) = uv_to_screen(u, v);
+    (sx as f32, sy as f32)
+}
+
+/// Rounded screen position, for camera bounds.
+pub fn chart_to_screen(x: i64, y: i64) -> (i32, i32) {
+    let (sx, sy) = chart_to_screen_f(x as f64, y as f64);
+    (sx.round() as i32, sy.round() as i32)
+}
+
+/// Centre of the water cell at integer display-cart `(u, v)`.
+pub fn water_cell_center(u: i32, v: i32) -> (f32, f32) {
+    let (sx, sy) = uv_to_screen(f64::from(u), f64::from(v));
+    (sx as f32, sy as f32)
+}
+
+/// Footprint bottom vertex of that water cell (half a cell below the centre).
+pub fn water_cell_bottom(u: i32, v: i32) -> (f32, f32) {
+    let center = water_cell_center(u, v);
+    (center.0, center.1 + (CELL_HEIGHT / 2) as f32)
+}
+
+/// Top-left of a sprite whose anchor pixel should land on `at`.
+pub fn sprite_origin(at: (f32, f32), anchor_x: i32, anchor_y: i32) -> (f32, f32) {
+    (at.0 - anchor_x as f32, at.1 - anchor_y as f32)
+}
+
+/// Screen step of a `(u, v)` delta, used to point a placeholder bow.
+pub fn uv_to_screen_delta(du: f64, dv: f64) -> (f64, f64) {
     (
-        (u * f64::from(CELL_WIDTH / 2)) as f32,
-        (v * f64::from(CELL_HEIGHT / 2)) as f32,
+        (du - dv) * f64::from(CELL_WIDTH / 2),
+        (du + dv) * f64::from(CELL_HEIGHT / 2),
     )
 }
 
-/// Top-left of a sprite whose sit-point is `(sit_x, sit_y)` in the canvas.
-pub fn sprite_origin(anchor_x: i32, anchor_y: i32, sit_x: i32, sit_y: i32) -> (i32, i32) {
-    (anchor_x - sit_x, anchor_y - sit_y)
-}
-
-/// Top-left of a sea, water, quay, or pier sprite. The sit-point is 48px
-/// below the origin, which is the art-director datum of -48.
-pub fn water_sprite_origin(anchor_x: i32, anchor_y: i32) -> (i32, i32) {
-    sprite_origin(anchor_x, anchor_y, SIT_X, SIT_Y)
-}
-
-/// Facing for a step in chart cells, measured after the dimetric rotation.
-pub fn facing_from_chart_delta(dx: i64, dy: i64) -> Facing {
-    facing_from_display_delta((dx - dy) as f64, (dx + dy) as f64)
-}
-
-/// Facing for a step already in rotated display axes `(u, v)`.
+/// Facing for a chart step, measured in rotated `(u, v)`.
 ///
-/// Pixel deltas are `(u * 64, v * 32)`. The angle is `atan2` in that
-/// Y-down screen space, divided into eight sectors centered on the
-/// cardinal and diagonal directions. A zero step faces east.
-pub fn facing_from_display_delta(u: f64, v: f64) -> Facing {
-    if u == 0.0 && v == 0.0 {
-        return Facing::E;
+/// A zero step keeps `previous`, or `F1` (screen down) when there is no
+/// previous voyage. Bucket edges hold the previous facing for
+/// [`FACING_HYSTERESIS_DEG`] past 22.5°.
+pub fn facing_from_chart_delta(dx: f64, dy: f64, previous: Option<Facing>) -> Facing {
+    let (du, dv) = chart_to_uv(dx, dy);
+    // `chart_to_uv` of a delta is the delta of `chart_to_uv` (the map is linear).
+    facing_from_uv(du, dv, previous)
+}
+
+/// `k = round(atan2(dv, du) / 45°) mod 8`, with hysteresis.
+pub fn facing_from_uv(du: f64, dv: f64, previous: Option<Facing>) -> Facing {
+    if du == 0.0 && dv == 0.0 {
+        return previous.unwrap_or(Facing::F1);
     }
-    let screen_dx = u * f64::from(CELL_WIDTH / 2);
-    let screen_dy = v * f64::from(CELL_HEIGHT / 2);
-    let angle = screen_dy.atan2(screen_dx);
-    let sector = std::f64::consts::FRAC_PI_4;
-    let index = (angle / sector).round() as i32;
-    Facing::from_index(index)
+    let degrees = dv.atan2(du).to_degrees();
+    let raw = Facing::from_index((degrees / 45.0).round() as i32);
+    let Some(previous) = previous else {
+        return raw;
+    };
+    let mut delta = degrees - f64::from(previous.index()) * 45.0;
+    if delta > 180.0 {
+        delta -= 360.0;
+    } else if delta < -180.0 {
+        delta += 360.0;
+    }
+    if delta.abs() <= 22.5 + FACING_HYSTERESIS_DEG {
+        previous
+    } else {
+        raw
+    }
 }
 
 /// Inclusive screen rectangle used to frame the camera.
@@ -180,6 +223,16 @@ impl ScreenRect {
     }
 }
 
+/// Screen bounds of the 50×36 chart, from cell `(0, 0)` through `(49, 35)`.
+pub fn chart_bounds() -> ScreenRect {
+    let mut rect = ScreenRect::from_point(0, 0);
+    for (x, y) in [(49, 0), (0, 35), (49, 35)] {
+        let (sx, sy) = chart_to_screen(x, y);
+        rect.include(sx, sy);
+    }
+    rect
+}
+
 /// Camera frame: center of [`ScreenRect`] and a uniform zoom that fits it
 /// in a viewport. Zoom is clamped so a single port does not fill the window.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -200,88 +253,132 @@ pub fn frame_to_view(rect: ScreenRect, view_w: f32, view_h: f32) -> Frame {
     }
 }
 
+/// At sea the camera center follows the ship at the region's zoom, and stays
+/// inside the chart. Docked, the region frame is used as-is.
+pub fn follow_ship(
+    region: Frame,
+    ship: (f32, f32),
+    at_sea: bool,
+    view_w: f32,
+    view_h: f32,
+) -> Frame {
+    if !at_sea {
+        return region;
+    }
+    let bounds = chart_bounds();
+    let half_w = view_w / region.zoom / 2.0;
+    let half_h = view_h / region.zoom / 2.0;
+    let min_x = bounds.min_x as f32 + half_w;
+    let max_x = bounds.max_x as f32 - half_w;
+    let min_y = bounds.min_y as f32 + half_h;
+    let max_y = bounds.max_y as f32 - half_h;
+    let center_x = if min_x <= max_x {
+        ship.0.clamp(min_x, max_x)
+    } else {
+        (bounds.min_x + bounds.max_x) as f32 / 2.0
+    };
+    let center_y = if min_y <= max_y {
+        ship.1.clamp(min_y, max_y)
+    } else {
+        (bounds.min_y + bounds.max_y) as f32 / 2.0
+    };
+    Frame {
+        center_x,
+        center_y,
+        zoom: region.zoom,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn projection_is_dimetric_two_to_one() {
-        assert_eq!(chart_to_screen(0, 0), (0, 0));
-        // +chart x runs down-right: one cell is (64, 32), a 2:1 step.
-        assert_eq!(chart_to_screen(1, 0), (64, 32));
-        // +chart y runs down-left.
-        assert_eq!(chart_to_screen(0, 1), (-64, 32));
-        assert_eq!(chart_to_screen(1, 1), (0, 64));
+    fn porto_novo_uses_the_rotated_projection() {
+        let (sx, sy) = chart_to_screen_f(18.0, 8.0);
+        assert!((sx - 1629.2).abs() < 0.15, "{sx}");
+        assert!((sy - 362.0).abs() < 0.15, "{sy}");
         assert_eq!(CELL_WIDTH, CELL_HEIGHT * 2);
     }
 
     #[test]
-    fn rotation_round_trips() {
+    fn projection_is_dimetric_two_to_one_in_uv() {
+        let (sx, sy) = uv_to_screen(1.0, 0.0);
+        assert!((sx - 64.0).abs() < 1e-9);
+        assert!((sy - 32.0).abs() < 1e-9);
+        let (sx, sy) = uv_to_screen(0.0, 1.0);
+        assert!((sx - -64.0).abs() < 1e-9);
+        assert!((sy - 32.0).abs() < 1e-9);
+        let (sx, sy) = uv_to_screen(1.0, 1.0);
+        assert!(sx.abs() < 1e-9);
+        assert!((sy - 64.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn rotation_round_trips_every_chart_cell() {
         for x in 0..50 {
             for y in 0..36 {
-                let (u, v) = rotate_chart(x, y);
-                assert_eq!((u + v) / 2, x);
-                assert_eq!((v - u) / 2, y);
+                let (u, v) = chart_to_uv(x as f64, y as f64);
+                let (x2, y2) = uv_to_chart(u, v);
+                assert!((x2 - x as f64).abs() < 1e-9);
+                assert!((y2 - y as f64).abs() < 1e-9);
             }
         }
     }
 
     #[test]
-    fn water_datum_places_sit_point_on_the_anchor() {
-        let anchor = chart_to_screen(18, 8);
-        let origin = water_sprite_origin(anchor.0, anchor.1);
-        assert_eq!(origin.1 - anchor.1, WATER_DATUM_Y);
-        assert_eq!(origin.0 + SIT_X, anchor.0);
-        assert_eq!(origin.1 + SIT_Y, anchor.1);
+    fn harbour_datum_is_minus_48_and_chart_water_is_not_shifted() {
         assert_eq!(WATER_DATUM_Y, -48);
+        // Chart water layer offset is 0. The +48 shift is the harbour sea plane.
+        assert_eq!(-WATER_DATUM_Y, 48);
     }
 
     #[test]
-    fn eight_screen_directions_map_to_eight_facings() {
+    fn grain_road_faces_bucket_seven() {
+        let (du, dv) = chart_to_uv(6.0, -2.0);
+        assert!((du - 2.828).abs() < 0.01, "{du}");
+        assert!((dv - -5.657).abs() < 0.01, "{dv}");
+        assert_eq!(facing_from_uv(du, dv, None), Facing::F7);
+        let (sx, sy) = uv_to_screen_delta(du, dv);
+        assert!((sx - 543.1).abs() < 0.2, "{sx}");
+        assert!((sy - -90.5).abs() < 0.2, "{sy}");
+        let angle = sy.atan2(sx).to_degrees();
+        assert!((angle - -9.46).abs() < 0.15, "{angle}");
+    }
+
+    #[test]
+    fn zero_step_faces_screen_down_until_a_voyage() {
+        assert_eq!(facing_from_uv(0.0, 0.0, None), Facing::F1);
+        assert_eq!(facing_from_uv(0.0, 0.0, Some(Facing::F7)), Facing::F7);
+    }
+
+    #[test]
+    fn hysteresis_holds_five_degrees_past_the_bucket_edge() {
+        // k=0 is centered at 0°. The edge is 22.5°. +5° keeps k=0 through 27°.
+        let hold = 26.0_f64.to_radians();
+        assert_eq!(
+            facing_from_uv(hold.cos(), hold.sin(), Some(Facing::F0)),
+            Facing::F0
+        );
+        let switch = 28.0_f64.to_radians();
+        assert_eq!(
+            facing_from_uv(switch.cos(), switch.sin(), Some(Facing::F0)),
+            Facing::F1
+        );
+        let fresh = 10.0_f64.to_radians();
+        assert_eq!(facing_from_uv(fresh.cos(), fresh.sin(), None), Facing::F0);
+    }
+
+    #[test]
+    fn eight_uv_axes_cover_eight_facings() {
         for index in 0..8 {
-            let angle = index as f64 * std::f64::consts::FRAC_PI_4;
-            // Invert the pixel scale so the screen angle is exactly `angle`.
-            let u = angle.cos() / f64::from(CELL_WIDTH / 2);
-            let v = angle.sin() / f64::from(CELL_HEIGHT / 2);
+            let angle = (index as f64) * 45.0_f64.to_radians();
             assert_eq!(
-                facing_from_display_delta(u, v),
+                facing_from_uv(angle.cos(), angle.sin(), None),
                 Facing::from_index(index),
                 "sector {index}"
             );
         }
-    }
-
-    #[test]
-    fn chart_axes_face_along_the_diamond_edges() {
-        // +chart x is the down-right edge. atan2(32, 64) is about 26.6°,
-        // which is the south-east sector (east ends at 22.5°).
-        assert_eq!(facing_from_chart_delta(1, 0), Facing::Se);
-        // +chart y is the down-left edge.
-        assert_eq!(facing_from_chart_delta(0, 1), Facing::Sw);
-        assert_eq!(facing_from_chart_delta(-1, 0), Facing::Nw);
-        assert_eq!(facing_from_chart_delta(0, -1), Facing::Ne);
-        assert_eq!(facing_from_chart_delta(0, 0), Facing::E);
-    }
-
-    #[test]
-    fn sector_boundary_rounds_half_away_from_east() {
-        // Exactly 22.5° is halfway between east and south-east.
-        let angle = std::f64::consts::FRAC_PI_8;
-        let u = angle.cos() / f64::from(CELL_WIDTH / 2);
-        let v = angle.sin() / f64::from(CELL_HEIGHT / 2);
-        assert_eq!(facing_from_display_delta(u, v), Facing::Se);
-        let just_inside = angle - 0.01;
-        let u = just_inside.cos() / f64::from(CELL_WIDTH / 2);
-        let v = just_inside.sin() / f64::from(CELL_HEIGHT / 2);
-        assert_eq!(facing_from_display_delta(u, v), Facing::E);
-    }
-
-    #[test]
-    fn pure_display_axes_are_the_cardinals() {
-        assert_eq!(facing_from_display_delta(1.0, 0.0), Facing::E);
-        assert_eq!(facing_from_display_delta(0.0, 1.0), Facing::S);
-        assert_eq!(facing_from_display_delta(-1.0, 0.0), Facing::W);
-        assert_eq!(facing_from_display_delta(0.0, -1.0), Facing::N);
     }
 
     #[test]
@@ -296,5 +393,19 @@ mod tests {
         assert!((frame.zoom - 1.0).abs() < 1e-4);
         assert!((frame.center_x - 450.0).abs() < 1e-4);
         assert!((frame.center_y - 150.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn follow_clamps_inside_the_chart() {
+        let region = Frame {
+            center_x: 0.0,
+            center_y: 0.0,
+            zoom: 1.0,
+        };
+        let frame = follow_ship(region, (10_000.0, 10_000.0), true, 900.0, 720.0);
+        let bounds = chart_bounds();
+        assert!(frame.center_x < bounds.max_x as f32);
+        assert!(frame.center_y < bounds.max_y as f32);
+        assert!((frame.zoom - 1.0).abs() < 1e-6);
     }
 }

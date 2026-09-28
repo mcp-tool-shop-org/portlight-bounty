@@ -13,12 +13,13 @@ mod view;
 pub use assets::{asset, ship_asset, Asset, AssetFamily, ASSETS};
 pub use placeholder::write_asset_files;
 pub use project::{
-    chart_to_screen, chart_to_screen_f, facing_from_chart_delta, facing_from_display_delta,
-    frame_to_view, sprite_origin, water_sprite_origin, Facing, Frame, ScreenRect, CELL_HEIGHT,
-    CELL_WIDTH, SIT_X, SIT_Y, WATER_DATUM_Y,
+    chart_to_screen, chart_to_screen_f, chart_to_uv, facing_from_chart_delta, facing_from_uv,
+    frame_to_view, sprite_origin, uv_to_chart, uv_to_screen, Facing, Frame, ScreenRect,
+    CELL_HEIGHT, CELL_WIDTH, DOCKED_OFFSET_X, DOCKED_OFFSET_Y, WATER_DATUM_Y,
 };
 pub use view::{
-    project_chart, ActiveLeg, ChartLane, ChartModel, ChartPort, Rgba, ShipMarker, CHART_VIEW_H,
-    CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED, MEDITERRANEAN,
-    SHIP_FOOTPRINT_CELLS,
+    advance_refusal, hover_at, lane_inspect, press_port, project_chart, ActiveLeg, ChartLane,
+    ChartModel, ChartPort, PortPress, Rgba, ShipMarker, WaterTile, CHART_VIEW_H, CHART_VIEW_W,
+    DAY_TWEEN_SECS, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
+    MEDITERRANEAN, SHIP_FOOTPRINT_CELLS,
 };

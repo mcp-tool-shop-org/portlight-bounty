@@ -1,18 +1,14 @@
-id,file,canvas_w,canvas_h,sit_x,sit_y,datum_y,family,note
-chart.tile.sea,placeholders/tile_sea.png,128,96,64,48,-48,sea,PLACEHOLDER flat colour; replace this file by id
-chart.tile.water,placeholders/tile_water.png,128,96,64,48,-48,water,PLACEHOLDER flat colour; replace this file by id
-chart.tile.quay,placeholders/tile_quay.png,128,96,64,48,-48,quay,PLACEHOLDER flat colour; replace this file by id
-chart.tile.pier,placeholders/tile_pier.png,128,96,64,48,-48,pier,PLACEHOLDER flat colour; replace this file by id
-chart.lane.open,placeholders/lane_open.png,128,96,64,48,-48,lane,PLACEHOLDER flat colour; replace this file by id
-chart.lane.warning,placeholders/lane_warning.png,128,96,64,48,-48,lane,PLACEHOLDER flat colour; replace this file by id
-chart.lane.blocked,placeholders/lane_blocked.png,128,96,64,48,-48,lane,PLACEHOLDER flat colour; replace this file by id
-chart.lane.underway,placeholders/lane_underway.png,128,96,64,48,-48,lane,PLACEHOLDER flat colour; replace this file by id
-chart.port.marker,placeholders/port_marker.png,128,96,64,48,-48,port,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.e,placeholders/ship_sloop_e.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.se,placeholders/ship_sloop_se.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.s,placeholders/ship_sloop_s.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.sw,placeholders/ship_sloop_sw.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.w,placeholders/ship_sloop_w.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.nw,placeholders/ship_sloop_nw.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.n,placeholders/ship_sloop_n.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
-chart.ship.sloop.ne,placeholders/ship_sloop_ne.png,128,96,64,48,-48,ship,PLACEHOLDER flat colour; replace this file by id
+id,file,canvas_w,canvas_h,anchor_x,anchor_y,family,note
+chart_water_a,placeholders/chart_water_a.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
+chart_water_b,placeholders/chart_water_b.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
+chart_water_c,placeholders/chart_water_c.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
+chart_port_marker,placeholders/chart_port_marker.png,128,128,64,95,port,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f0,placeholders/ship_sloop_f0.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f1,placeholders/ship_sloop_f1.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f2,placeholders/ship_sloop_f2.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f3,placeholders/ship_sloop_f3.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f4,placeholders/ship_sloop_f4.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f5,placeholders/ship_sloop_f5.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f6,placeholders/ship_sloop_f6.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f7,placeholders/ship_sloop_f7.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_wake,placeholders/ship_sloop_wake.png,64,64,32,50,wake,PLACEHOLDER flat colour; replace this file by id

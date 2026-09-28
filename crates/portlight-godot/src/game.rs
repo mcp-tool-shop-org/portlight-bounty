@@ -14,14 +14,14 @@ use godot::global::Error;
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
-    project_chart, ChartModel, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN,
-    FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
+    advance_refusal, lane_inspect, press_port, project_chart, ChartModel, PortPress, CHART_VIEW_H,
+    CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::economy::cargo_quantity;
 use portlight_sim::model::VoyageStatus;
 use portlight_sim::{content, LaneSuitability, Session};
 
-use crate::chart_canvas::ChartCanvas;
+use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
@@ -60,6 +60,7 @@ struct PortlightGame {
     market_button: Option<Gd<Button>>,
     log_lines: Vec<String>,
     market_open: bool,
+    armed_sail: Option<String>,
     smoke: bool,
     smoke_ok: bool,
     shot_path: Option<String>,
@@ -81,6 +82,7 @@ impl IControl for PortlightGame {
             market_button: None,
             log_lines: Vec::new(),
             market_open: false,
+            armed_sail: None,
             smoke: false,
             smoke_ok: true,
             shot_path: None,
@@ -147,7 +149,14 @@ impl PortlightGame {
         let mut viewport = SubViewport::new_alloc();
         viewport.set_size(Vector2i::new(CHART_VIEW_W as i32, CHART_VIEW_H as i32));
         viewport.set_disable_3d(true);
-        let canvas = ChartCanvas::new_alloc();
+        let mut canvas = ChartCanvas::new_alloc();
+        let game_for_chart = self.instance_id();
+        connect_port_pressed(&mut canvas, move |port_id: GString| {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game_for_chart) else {
+                return;
+            };
+            gd.bind_mut().on_port_pressed(&port_id.to_string());
+        });
         viewport.add_child(&canvas);
         view_host.add_child(&viewport);
         row.add_child(&view_host);
@@ -217,6 +226,7 @@ impl PortlightGame {
     fn start_game(&mut self) {
         self.log_lines.clear();
         self.market_open = false;
+        self.armed_sail = None;
         match Session::new_game(
             FIRST_PLAYABLE_NAME,
             FIRST_PLAYABLE_CAPTAIN,
@@ -323,7 +333,58 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn on_port_pressed(&mut self, port_id: &str) {
+        let decision = {
+            let Some(session) = self.session.as_ref() else {
+                return;
+            };
+            press_port(session.world(), port_id)
+        };
+        match decision {
+            PortPress::AtSea => {
+                self.push_log("At sea. The chart does not change course.".to_string());
+            }
+            PortPress::NoLane => {
+                self.armed_sail = None;
+                self.push_log("No lane from this port. Nothing was sent to the sim.".to_string());
+            }
+            PortPress::OpenHere => {
+                self.armed_sail = None;
+                self.market_open = true;
+            }
+            PortPress::Depart(id) => {
+                if self.armed_sail.as_deref() == Some(id.as_str()) {
+                    self.armed_sail = None;
+                    self.sail(&id);
+                    return;
+                }
+                self.armed_sail = Some(id.clone());
+                let text = self
+                    .chart_now()
+                    .and_then(|chart| {
+                        chart
+                            .lanes
+                            .iter()
+                            .find(|lane| lane.destination_id == id)
+                            .map(lane_inspect)
+                    })
+                    .unwrap_or(id);
+                self.push_log(format!("Selected {text}. Click the port again to sail."));
+            }
+        }
+        self.refresh();
+    }
+
     fn next_day(&mut self) {
+        if let Some(message) = self
+            .session
+            .as_ref()
+            .and_then(|session| advance_refusal(session.world().pending_duel.as_ref()))
+        {
+            self.push_log(message.to_string());
+            self.refresh();
+            return;
+        }
         let notes = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -409,7 +470,7 @@ impl PortlightGame {
         self.rebuild_market();
         if let Some(chart) = self.chart_now() {
             if let Some(mut canvas) = self.canvas.clone() {
-                canvas.bind_mut().show(chart);
+                canvas.bind_mut().show(chart, self.smoke);
             }
         }
     }
@@ -566,8 +627,12 @@ impl PortlightGame {
             })
             .unwrap_or_default();
         format!(
-            "Day {}   {}   {} silver   {} provisions\n{place}\n{ship_line}",
-            world.day, world.captain.name, world.captain.silver, world.captain.provisions
+            "Day {}   {}   {}   {} silver   {} provisions\n{place}\n{ship_line}",
+            world.day,
+            content::season_name(world.day),
+            world.captain.name,
+            world.captain.silver,
+            world.captain.provisions
         )
     }
 
