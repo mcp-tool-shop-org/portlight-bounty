@@ -15,9 +15,10 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy
-        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+        # gdext 0.5.5 does not build on the 1.83 pin. The godot job uses stable.
+        run: cargo clippy --locked --workspace --exclude portlight-godot --all-targets --all-features -- -D warnings
       - name: Test
-        run: cargo test --locked --workspace
+        run: cargo test --locked --workspace --exclude portlight-godot
 
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.
@@ -42,3 +43,135 @@ jobs:
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
       - name: Victory fixtures
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check
+
+  godot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the GDExtension
+        # rust-toolchain.toml pins 1.83.0 for the sim. Inside this checkout that
+        # file overrides the stable toolchain installed above, and Cargo 1.83
+        # cannot parse godot-bindings 0.5.5 (it needs edition 2024).
+        # RUSTUP_TOOLCHAIN wins over the toolchain file. Do not drop it.
+        # This job stays required: Godot 4.7.2 runs headless here. Do not skip it.
+        env:
+          RUSTUP_TOOLCHAIN: stable
+        run: |
+          rustc --version
+          cargo test --locked -p portlight-godot
+          cargo build --locked -p portlight-godot
+      - name: Install Godot 4.7.2
+        # The official Linux binary dlopens X11, GL, and fontconfig even for
+        # --headless. ubuntu-latest usually has them; install them so a thinner
+        # image does not fail the smoke after the extension builds.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libx11-6 libxcursor1 libxinerama1 libxrandr2 libxi6 libxext6 \
+            libgl1 libfontconfig1
+          curl -fsSL -o /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          sudo install -m 755 /tmp/godot-bin/Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
+          godot --version
+      - name: Import and smoke-test the chart
+        # Headless Godot's dummy renderer cannot draw. It must not be asked for
+        # a viewport image: that logs `Parameter "t" is null` and
+        # `viewport image was empty` and used to exit 0. The session smoke
+        # stays headless and does not capture. The frame is Xvfb + OpenGL.
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+          reject_renderer_errors() {
+            local log="$1"
+            if grep -nE 'Parameter "t" is null|viewport image was empty|servers/rendering/' "$log"; then
+              echo "Godot log ${log} contains a renderer error or an empty viewport image."
+              exit 1
+            fi
+          }
+          run_godot() {
+            local log="$1"
+            shift
+            set +e
+            "$@" >"$log" 2>&1
+            local code=$?
+            cat "$log"
+            set -e
+            reject_renderer_errors "$log"
+            if [ "$code" -ne 0 ]; then
+              echo "Godot exited ${code}"
+              exit "$code"
+            fi
+          }
+          run_godot /tmp/godot-import.log \
+            godot --headless --path godot --import --quit
+          run_godot /tmp/godot-headless-smoke.log \
+            godot --headless --path godot -- --smoke
+          run_godot /tmp/godot-gl-smoke.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
+          # The seam capture validates the layout before it writes. An illegal
+          # layout, a blank image, or a flat frame exits non-zero. This run is
+          # the legal plate, so it must print ok and must not report a fault.
+          mkdir -p /tmp/seam-shots
+          run_godot /tmp/godot-seam.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SEAM_DIR=/tmp/seam-shots \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot \
+            res://scenes/harbour_seam.tscn
+          if ! grep -q 'harbour seam ok' /tmp/godot-seam.log; then
+            echo "harbour seam capture did not report ok"
+            exit 1
+          fi
+          if grep -q 'illegal layout' /tmp/godot-seam.log; then
+            echo "harbour seam reported an illegal layout"
+            exit 1
+          fi
+          # Expected failure. run_godot treats any non-zero exit as a job
+          # failure, so this wrapper records the code itself. The scene must
+          # take harbour_seam()'s Err path: name the fault, exit 1, write no PNG.
+          expect_illegal_seam() {
+            local log="$1"
+            shift
+            set +e
+            "$@" >"$log" 2>&1
+            local code=$?
+            set -e
+            cat "$log"
+            reject_renderer_errors "$log"
+            if [ "$code" -ne 1 ]; then
+              echo "illegal harbour seam exited ${code}, expected 1"
+              exit 1
+            fi
+          }
+          mkdir -p /tmp/seam-illegal
+          expect_illegal_seam /tmp/godot-seam-illegal.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SEAM_ILLEGAL=1 PORTLIGHT_SEAM_DIR=/tmp/seam-illegal \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot \
+            res://scenes/harbour_seam.tscn
+          if ! grep -q 'pilings on a pier cell' /tmp/godot-seam-illegal.log; then
+            echo "illegal harbour seam did not report pilings on a pier cell"
+            exit 1
+          fi
+          if find /tmp/seam-illegal -name '*.png' | grep -q .; then
+            echo "illegal harbour seam wrote a PNG"
+            exit 1
+          fi
+          mkdir -p /tmp/seam-illegal-quay
+          expect_illegal_seam /tmp/godot-seam-illegal-quay.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SEAM_ILLEGAL=2 PORTLIGHT_SEAM_DIR=/tmp/seam-illegal-quay \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot \
+            res://scenes/harbour_seam.tscn
+          if ! grep -q 'pier on a quay cell' /tmp/godot-seam-illegal-quay.log; then
+            echo "illegal harbour seam did not report a pier on a quay cell"
+            exit 1
+          fi
+          if find /tmp/seam-illegal-quay -name '*.png' | grep -q .; then
+            echo "pier-on-quay harbour seam wrote a PNG"
+            exit 1
+          fi
