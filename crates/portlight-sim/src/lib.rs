@@ -12,6 +12,7 @@
 
 pub mod campaign;
 pub mod content;
+pub mod contracts;
 pub mod duel;
 pub mod economy;
 pub mod error;

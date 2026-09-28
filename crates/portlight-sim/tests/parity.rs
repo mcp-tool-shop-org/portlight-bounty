@@ -234,4 +234,15 @@ fn goldens_guard_the_checklist_paths() {
     assert!(saw_hire, "hiring crew is not in a golden");
     assert!(saw_provision, "buying provisions is not in a golden");
     assert!(saw_dock_work, "dock work is not in a golden");
+    for name in [
+        "contract_accept.json",
+        "contract_arrival_rng.json",
+        "contract_complete.json",
+        "contract_expire.json",
+    ] {
+        assert!(
+            root.join(name).is_file(),
+            "missing golden {name}; run tools/parity/check.py --write-golden"
+        );
+    }
 }

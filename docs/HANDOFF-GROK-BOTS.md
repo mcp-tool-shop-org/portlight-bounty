@@ -353,7 +353,7 @@ Inside your own area, do the work in this order:
 ## Content JSON Expansion Checklist
 
 As you add catalogs, tick them off:
-- [ ] `contracts`
+- [x] `contracts`
 - [ ] `infrastructure`
 - [ ] `armor`
 - [ ] `melee_weapons`

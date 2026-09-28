@@ -147,6 +147,31 @@ pub struct PirateCaptainDef {
     pub strength: i64,
 }
 
+/// One row of `content/contracts.py` `TEMPLATES`. Runtime offers are [`crate::model::Contract`].
+#[derive(Debug, Clone, Deserialize)]
+pub struct ContractDef {
+    pub id: String,
+    pub family: String,
+    pub title_pattern: String,
+    pub description: String,
+    pub goods_pool: Vec<String>,
+    pub quantity_min: i64,
+    pub quantity_max: i64,
+    pub reward_per_unit: i64,
+    pub bonus_reward: i64,
+    pub deadline_days: i64,
+    pub trust_requirement: String,
+    pub standing_requirement: i64,
+    pub heat_ceiling: Option<i64>,
+    pub inspection_modifier: f64,
+    pub source_region: Option<String>,
+    pub source_port: Option<String>,
+    pub destination_regions: Vec<String>,
+    pub captain_bias: Vec<String>,
+    pub tags: Vec<String>,
+    pub cultural_flavor: String,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Content {
     pub source_commit: String,
@@ -158,6 +183,7 @@ pub struct Content {
     pub seasons: Vec<SeasonDef>,
     pub factions: Vec<FactionDef>,
     pub pirate_captains: Vec<PirateCaptainDef>,
+    pub contracts: Vec<ContractDef>,
 }
 
 pub const REGIONS: [&str; 5] = [

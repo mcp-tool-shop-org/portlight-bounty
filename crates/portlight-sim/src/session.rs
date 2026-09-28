@@ -12,17 +12,20 @@
 //!
 //! This is the slice of `GameSession` the port compares with Python: new game,
 //! buy, sell (including trade reputation and the receipt ledger), depart,
-//! advance, and dock work. Advance ticks reputation, ticks markets while in port (without
-//! seasonal `current_day`), sails one day at sea, records inspection and
-//! arrival reputation, reprices with the captain's modifiers, and records a
-//! victory path when its requirements are all met.
+//! advance, and dock work. Advance ticks reputation, ticks contract deadlines,
+//! ticks markets while in port (without seasonal `current_day`), sails one day
+//! at sea, records inspection and arrival reputation, reprices with the
+//! captain's modifiers, and records a victory path when its requirements are
+//! all met.
 //!
-//! Not included: contract offers, infrastructure purchases, credit draws,
-//! insurance policies, sea-culture enrichment, narrative, and milestone
-//! evaluation. Those books stay empty, which is what a new Python game has
-//! until those systems run. Contracts are not ported, so no victory path can
-//! complete during play: [`Session::victory`] is display-only unless something
-//! writes completed contracts through [`Session::books_mut`].
+//! Not included: infrastructure purchases, credit draws, insurance policies,
+//! sea-culture enrichment, narrative, and milestone evaluation. Those books
+//! stay empty until those systems run. A fulfilled contract is written by
+//! [`Session::sell`], which also calls [`Session::complete_contract`]'s
+//! settlement. A second `complete_contract` does not pay again. Callers do
+//! not use [`Session::books_mut`] for that. The new-game board is drawn from
+//! `Random(seed + 7919)` and then the session RNG is restored. Arrival and
+//! later in-port refreshes draw the session stream.
 //!
 //! A pending pirate duel still freezes [`Session::advance`] until
 //! [`Session::duel`] or [`Session::resolve_pending_duel`] clears it. That is
@@ -32,12 +35,15 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::campaign::{self, HouseBooks, VictoryPathStatus};
+use crate::campaign::{self, CompletedContract, HouseBooks, VictoryPathStatus};
 use crate::content::{self, PricingDef};
+use crate::contracts;
 use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
 use crate::error::SimError;
-use crate::model::{Officer, VoyageStatus, World};
+use crate::model::{
+    ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, VoyageStatus, World,
+};
 use crate::pyrand::PyRandom;
 use crate::reputation::{self, record_trade_outcome};
 use crate::save::{self, LoadedGame};
@@ -51,6 +57,18 @@ use crate::world::new_game;
 pub struct Turn {
     pub events: Vec<VoyageEvent>,
     pub shocks: Vec<String>,
+    /// Contracts that expired on this day. Empty when nothing lapsed.
+    pub contracts: Vec<ContractOutcome>,
+}
+
+/// A sale, plus any contracts that sale completed.
+///
+/// Python `GameSession.sell` credits delivery and resolves fulfilled
+/// contracts in the same call. The silver is already on the captain.
+#[derive(Debug, Clone)]
+pub struct Sale {
+    pub receipt: TradeReceipt,
+    pub contracts: Vec<ContractOutcome>,
 }
 
 /// One playable game.
@@ -62,6 +80,7 @@ pub struct Session {
     books: HouseBooks,
     receipts: Vec<TradeReceipt>,
     run_id: String,
+    board: ContractBoard,
 }
 
 impl Session {
@@ -78,14 +97,17 @@ impl Session {
         let world = new_game(captain_name, captain_type, seed, starting_port)?;
         let rng = PyRandom::from_seed(world.seed);
         let run_id = format!("run-{}", world.seed);
-        Ok(Self {
+        let mut session = Self {
             world,
             rng,
             trade_seq: 0,
             books: HouseBooks::default(),
             receipts: Vec::new(),
             run_id,
-        })
+            board: ContractBoard::default(),
+        };
+        session.refresh_new_game_board();
+        Ok(session)
     }
 
     /// Write this game to a Python version-12 JSON slot under `base_path/saves`.
@@ -103,6 +125,7 @@ impl Session {
             &self.receipts,
             &self.run_id,
             &self.books,
+            &self.board,
         )
     }
 
@@ -134,6 +157,7 @@ impl Session {
             books: loaded.books,
             receipts: loaded.receipts,
             run_id: loaded.run_id,
+            board: loaded.board,
         };
         reprice_all(&mut session.world);
         Ok(session)
@@ -141,6 +165,12 @@ impl Session {
 
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    /// Offers, accepted work, and resolved outcomes. Save writes this board.
+    /// Breaches are stored here and serialized as `captain.breach_records`.
+    pub fn board(&self) -> &ContractBoard {
+        &self.board
     }
 
     pub fn trade_seq(&self) -> u64 {
@@ -152,8 +182,10 @@ impl Session {
         &self.books
     }
 
-    /// Mutable books for systems that grant contracts, licenses, warehouses,
-    /// brokers, policies, or credit. Trade receipts already update the ledger.
+    /// Mutable books for systems that grant licenses, warehouses, brokers,
+    /// policies, or credit. Trade receipts update the ledger. A fulfilled
+    /// contract is written by the settlement shared by [`Session::sell`] and
+    /// [`Session::complete_contract`].
     pub fn books_mut(&mut self) -> &mut HouseBooks {
         &mut self.books
     }
@@ -189,7 +221,7 @@ impl Session {
         Ok(receipt)
     }
 
-    pub fn sell(&mut self, good_id: &str, qty: i64) -> Result<TradeReceipt, SimError> {
+    pub fn sell(&mut self, good_id: &str, qty: i64) -> Result<Sale, SimError> {
         let Some(port_id) = current_port_id(&self.world).map(str::to_string) else {
             return Err(SimError::NotDocked);
         };
@@ -202,6 +234,14 @@ impl Session {
                 port.region.clone(),
             )
         };
+        let (source_port, source_region) = self
+            .world
+            .captain
+            .cargo
+            .iter()
+            .find(|item| item.good_id == good_id)
+            .map(|item| (item.acquired_port.clone(), item.acquired_region.clone()))
+            .unwrap_or_default();
         let seq = self.trade_seq;
         let receipt = {
             let world = &mut self.world;
@@ -237,11 +277,24 @@ impl Session {
             stock_target,
             flood_before,
         );
+        let credited = contracts::check_delivery(
+            &mut self.board,
+            &port_id,
+            good_id,
+            receipt.quantity,
+            &source_port,
+            &source_region,
+        );
+        let contracts = if credited.is_empty() {
+            Vec::new()
+        } else {
+            self.settle_fulfilled()
+        };
         let pricing = pricing(&self.world).cloned();
         if let Some(port) = self.world.port_mut(&port_id) {
             recalculate_prices(port, pricing.as_ref());
         }
-        Ok(receipt)
+        Ok(Sale { receipt, contracts })
     }
 
     pub fn depart(&mut self, destination_id: &str) -> Result<(), SimError> {
@@ -427,7 +480,11 @@ impl Session {
     /// [`Session::duel`] or [`Session::resolve_pending_duel`] first.
     pub fn advance(&mut self) -> Result<Turn, SimError> {
         reputation::tick_reputation(&mut self.world.captain.standing);
-        let turn = if self.world.voyage.status != VoyageStatus::AtSea {
+        // Same position as GameSession.advance: after the reputation tick,
+        // before the in-port day or the sea day. The captain is omitted, so a
+        // default does not record a breach.
+        let contracts = self.expire_contracts();
+        let mut turn = if self.world.voyage.status != VoyageStatus::AtSea {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
             self.world.day += 1;
             self.world.captain.day += 1;
@@ -443,6 +500,7 @@ impl Session {
             Turn {
                 events: Vec::new(),
                 shocks,
+                contracts: Vec::new(),
             }
         } else {
             let events = voyage::advance_day(&mut self.world, &mut self.rng)?;
@@ -458,16 +516,127 @@ impl Session {
                         &region,
                     );
                 }
+                self.refresh_contract_board();
             }
             Turn {
                 events,
                 shocks: Vec::new(),
+                contracts: Vec::new(),
             }
         };
+        turn.contracts = contracts;
         reprice_all(&mut self.world);
         let newly = campaign::evaluate_victory_closure(&self.world, &self.books);
         self.books.completed_paths.extend(newly);
         Ok(turn)
+    }
+
+    /// Offers on the board at the current port.
+    ///
+    /// A later day redraws through [`Session::refresh_contract_board`], which
+    /// consumes the session RNG. The isolated `Random(seed + 7919)` draw is
+    /// only the new-game refresh.
+    pub fn available_contracts(&mut self) -> Vec<Contract> {
+        self.refresh_contract_board();
+        self.board.offers.clone()
+    }
+
+    /// Accept an offer. The offer leaves the board.
+    pub fn accept_contract(&mut self, offer_id: &str) -> Result<ActiveContract, SimError> {
+        contracts::accept_offer(&mut self.board, offer_id, self.world.day)
+    }
+
+    /// Resolve a fulfilled contract and write it onto the house books.
+    ///
+    /// This is the same settlement [`Session::sell`] runs after `check_delivery`.
+    /// A second call returns the recorded outcome and does not pay again.
+    pub fn complete_contract(&mut self, offer_id: &str) -> Result<ContractOutcome, SimError> {
+        if let Some(contract) = self
+            .board
+            .active
+            .iter()
+            .find(|contract| contract.offer_id == offer_id)
+        {
+            if contract.status != "accepted" {
+                return Err(SimError::NoActiveContract);
+            }
+            if contract.delivered_quantity < contract.required_quantity {
+                return Err(SimError::ContractNotFulfilled);
+            }
+            return self
+                .settle_fulfilled()
+                .into_iter()
+                .find(|outcome| outcome.contract_id == offer_id)
+                .ok_or(SimError::ContractNotFulfilled);
+        }
+        self.board
+            .completed
+            .iter()
+            .find(|outcome| outcome.contract_id == offer_id)
+            .cloned()
+            .ok_or(SimError::NoActiveContract)
+    }
+
+    /// `resolve_completed`: pay every fulfilled obligation and record it.
+    fn settle_fulfilled(&mut self) -> Vec<ContractOutcome> {
+        let outcomes = contracts::resolve_completed(&mut self.board, self.world.day);
+        for outcome in &outcomes {
+            self.note_contract_on_books(outcome);
+        }
+        outcomes
+    }
+
+    fn expire_contracts(&mut self) -> Vec<ContractOutcome> {
+        let outcomes = contracts::tick_contracts(&mut self.board, self.world.day, None);
+        for outcome in &outcomes {
+            self.note_contract_on_books(outcome);
+        }
+        outcomes
+    }
+
+    fn note_contract_on_books(&mut self, outcome: &ContractOutcome) {
+        self.world.captain.silver += outcome.silver_delta;
+        self.books.completed_contracts.push(CompletedContract {
+            outcome_type: outcome.outcome_type.clone(),
+            family: Some(outcome.family.clone()),
+            summary: outcome.summary.clone(),
+        });
+    }
+
+    /// `GameSession._refresh_board`. Draws `self.rng`, the session stream.
+    ///
+    /// Arrival and a later in-port view both use this. Only
+    /// [`Session::refresh_new_game_board`] substitutes `Random(seed + 7919)`.
+    fn refresh_contract_board(&mut self) {
+        let Some(port_id) = current_port_id(&self.world).map(str::to_string) else {
+            return;
+        };
+        if self.board.last_refresh_day == self.world.day {
+            return;
+        }
+        let captain_type = self.world.captain.captain_type.clone();
+        let rank = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| content::ship_class_rank(&ship.template_id))
+            .unwrap_or(0);
+        let max_offers = self.board.max_offers;
+        let offers = {
+            let Session { world, rng, .. } = self;
+            contracts::generate_offers(world, &port_id, &captain_type, Some(rank), max_offers, rng)
+        };
+        self.board.offers = offers;
+        self.board.last_refresh_day = self.world.day;
+    }
+
+    /// New-game board only: save the session RNG, draw `Random(seed + 7919)`, restore.
+    fn refresh_new_game_board(&mut self) {
+        let seed = self.world.seed;
+        let saved = std::mem::replace(&mut self.rng, PyRandom::from_seed(seed + 7919));
+        self.refresh_contract_board();
+        self.rng = saved;
     }
 }
 
@@ -732,6 +901,216 @@ mod tests {
         assert_eq!(session.world().captain.silver, 0);
         let loaded = Session::load(&dir, "default").unwrap().unwrap();
         assert_eq!(loaded.world().captain.silver, 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn new_game_board_restores_the_session_rng_and_a_later_refresh_draws_it() {
+        let mut session = Session::new("Ada", "merchant", 42, None).unwrap();
+        let mut expected = PyRandom::from_seed(42);
+        assert_eq!(session.rng.random(), expected.random());
+        session.available_contracts();
+        assert_eq!(session.rng.random(), expected.random());
+
+        session.world.day += 1;
+        session.board.last_refresh_day = 0;
+        let mut replay = session.rng.clone();
+        let port_id = session.world.voyage.destination_id.clone();
+        let captain_type = session.world.captain.captain_type.clone();
+        let rank =
+            content::ship_class_rank(&session.world.captain.ship.as_ref().unwrap().template_id);
+        session.available_contracts();
+        let _ = contracts::generate_offers(
+            &session.world,
+            &port_id,
+            &captain_type,
+            Some(rank),
+            session.board.max_offers,
+            &mut replay,
+        );
+        assert_eq!(session.board.offers.len(), 5);
+        assert_eq!(session.rng.random(), replay.random());
+    }
+
+    #[test]
+    fn completing_the_grain_famine_writes_the_books() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let offer = "71773aae754b";
+        let accepted = session.accept_contract(offer).unwrap();
+        assert_eq!(accepted.good_id, "grain");
+        assert_eq!(accepted.required_quantity, 23);
+        session.buy("grain", 23).unwrap();
+        session.depart("corsairs_rest").unwrap();
+        for _ in 0..3 {
+            session.advance().unwrap();
+        }
+        assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+        assert_eq!(session.world.voyage.destination_id, "corsairs_rest");
+        let before_sell = session.world.captain.silver;
+        let sale = session.sell("grain", 23).unwrap();
+        assert_eq!(sale.contracts.len(), 1);
+        assert_eq!(sale.contracts[0].outcome_type, "completed_bonus");
+        assert_eq!(sale.contracts[0].silver_delta, 612);
+        assert_eq!(
+            sale.contracts[0].summary,
+            "Delivered 23 grain to corsairs_rest (early bonus: +60 silver)"
+        );
+        assert_eq!(
+            session.world.captain.silver,
+            before_sell + sale.receipt.total_price + 612
+        );
+        assert_eq!(session.books.completed_contracts.len(), 1);
+        let after_sell = session.world.captain.silver;
+        let outcome = session.complete_contract(offer).unwrap();
+        assert_eq!(outcome.silver_delta, 612);
+        assert_eq!(session.world.captain.silver, after_sell);
+        assert_eq!(session.books.completed_contracts.len(), 1);
+        assert_eq!(
+            session.books.completed_contracts[0].family.as_deref(),
+            Some("shortage")
+        );
+        let detail = session
+            .victory()
+            .into_iter()
+            .find(|path| path.path_id == "commercial_empire")
+            .unwrap()
+            .requirements
+            .into_iter()
+            .find(|req| req.description.contains("contracts"))
+            .unwrap();
+        assert_eq!(detail.detail, "Completed: 1");
+    }
+
+    #[test]
+    fn an_accepted_contract_defaults_on_the_deadline() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.accept_contract("71773aae754b").unwrap();
+        let mut expired = None;
+        for _ in 0..20 {
+            let turn = session.advance().unwrap();
+            if !turn.contracts.is_empty() {
+                expired = Some(turn.contracts);
+                break;
+            }
+        }
+        let outcomes = expired.expect("deadline");
+        assert_eq!(outcomes[0].outcome_type, "expired");
+        assert_eq!(outcomes[0].silver_delta, 0);
+        assert_eq!(session.world.captain.wanted_level, 0);
+        assert_eq!(session.books.completed_contracts[0].outcome_type, "expired");
+        assert!(session.board.active.is_empty());
+    }
+
+    #[test]
+    fn save_load_restores_active_contracts_and_breaches() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let offer_id = session.board.offers[0].id.clone();
+        session.accept_contract(&offer_id).unwrap();
+        session.board.breaches.push(crate::model::BreachRecord {
+            contract_id: offer_id.clone(),
+            day: 2,
+            port_id: "porto_novo".to_string(),
+            family: session.board.active[0].family.clone(),
+        });
+        session.world.captain.wanted_level = 1;
+        session.board.completed.push(ContractOutcome {
+            contract_id: "done-1".to_string(),
+            outcome_type: "completed".to_string(),
+            silver_delta: 40,
+            trust_delta: 1,
+            standing_delta: 1,
+            heat_delta: -1,
+            completion_day: 3,
+            summary: "Delivered 2 silk to porto_novo".to_string(),
+            family: "luxury_discreet".to_string(),
+            good_id: "silk".to_string(),
+            required_quantity: 2,
+            delivered_quantity: 2,
+            destination_port_id: "porto_novo".to_string(),
+            deadline_day: 20,
+            reward_silver: 40,
+        });
+        let before = session.board.clone();
+        let dir = std::env::temp_dir().join(format!("portlight-board-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "contracts").unwrap();
+        let text = std::fs::read_to_string(dir.join("saves").join("contracts.json")).unwrap();
+        let saved: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert!(saved["contract_board"].get("breaches").is_none());
+        assert_eq!(
+            saved["captain"]["breach_records"][0]["contract_id"],
+            offer_id
+        );
+        assert_eq!(saved["captain"]["wanted_level"], 1);
+        assert_eq!(saved["contract_board"]["active"][0]["offer_id"], offer_id);
+        assert_eq!(saved["contract_board"]["active"][0]["status"], "accepted");
+        assert!(saved["contract_board"]["completed"][0]
+            .get("good_id")
+            .is_none());
+        assert_eq!(
+            saved["contract_board"]["completed"][0]["family"],
+            "luxury_discreet"
+        );
+
+        let loaded = Session::load(&dir, "contracts").unwrap().unwrap();
+        assert_eq!(loaded.board.offers, before.offers);
+        assert_eq!(loaded.board.active, before.active);
+        assert_eq!(loaded.board.last_refresh_day, before.last_refresh_day);
+        assert_eq!(loaded.board.max_offers, before.max_offers);
+        assert_eq!(loaded.board.breaches, before.breaches);
+        assert_eq!(loaded.world().captain.wanted_level, 1);
+        let completed = &loaded.board.completed[0];
+        assert_eq!(completed.contract_id, "done-1");
+        assert_eq!(completed.outcome_type, "completed");
+        assert_eq!(completed.silver_delta, 40);
+        assert_eq!(completed.trust_delta, 1);
+        assert_eq!(completed.standing_delta, 1);
+        assert_eq!(completed.heat_delta, -1);
+        assert_eq!(completed.completion_day, 3);
+        assert_eq!(completed.summary, "Delivered 2 silk to porto_novo");
+        assert_eq!(completed.family, "luxury_discreet");
+        assert!(completed.good_id.is_empty());
+        assert_eq!(completed.required_quantity, 0);
+        assert_eq!(
+            loaded.books().completed_contracts[0].family.as_deref(),
+            Some("luxury_discreet")
+        );
+        assert_eq!(
+            loaded.world().captain.silver,
+            session.world().captain.silver
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn saved_board_matches_the_python_v12_shape() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.accept_contract("63fc3f8be22a").unwrap();
+        session.board.breaches.push(crate::model::BreachRecord {
+            contract_id: "63fc3f8be22a".to_string(),
+            day: 2,
+            port_id: "porto_novo".to_string(),
+            family: "smuggling".to_string(),
+        });
+        session.world.captain.wanted_level = 1;
+        let dir = std::env::temp_dir().join(format!("portlight-shape-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "contracts").unwrap();
+        let rust: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(dir.join("saves").join("contracts.json")).unwrap(),
+        )
+        .unwrap();
+        let fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../parity/saves/contract_v12.json");
+        let python: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(fixture).unwrap()).unwrap();
+        assert_eq!(rust["contract_board"], python["contract_board"]);
+        assert_eq!(
+            rust["captain"]["breach_records"],
+            python["captain"]["breach_records"]
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -2954,5 +2954,789 @@
       "personality": "aggressive",
       "strength": 9
     }
+  ],
+  "contracts": [
+    {
+      "id": "proc_grain_feed",
+      "family": "procurement",
+      "title_pattern": "Grain for {destination}",
+      "description": "A port needs grain shipments to feed its population.",
+      "goods_pool": [
+        "grain"
+      ],
+      "quantity_min": 8,
+      "quantity_max": 20,
+      "reward_per_unit": 16,
+      "bonus_reward": 30,
+      "deadline_days": 25,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "East Indies",
+        "West Africa",
+        "South Seas"
+      ],
+      "captain_bias": [
+        "merchant"
+      ],
+      "tags": [
+        "staple",
+        "feed"
+      ],
+      "cultural_flavor": "The granaries are nearly empty. Without this shipment, the city faces a hungry winter."
+    },
+    {
+      "id": "proc_timber_shipyard",
+      "family": "procurement",
+      "title_pattern": "Timber for {destination} shipyard",
+      "description": "A shipyard needs timber to fill construction orders.",
+      "goods_pool": [
+        "timber"
+      ],
+      "quantity_min": 10,
+      "quantity_max": 25,
+      "reward_per_unit": 22,
+      "bonus_reward": 40,
+      "deadline_days": 30,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "East Indies",
+        "South Seas"
+      ],
+      "captain_bias": [
+        "merchant",
+        "navigator"
+      ],
+      "tags": [
+        "construction",
+        "shipyard"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "proc_iron_forge",
+      "family": "procurement",
+      "title_pattern": "Iron for {destination}",
+      "description": "Forges and workshops need iron ore delivered.",
+      "goods_pool": [
+        "iron"
+      ],
+      "quantity_min": 6,
+      "quantity_max": 15,
+      "reward_per_unit": 30,
+      "bonus_reward": 35,
+      "deadline_days": 28,
+      "trust_requirement": "new",
+      "standing_requirement": 2,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "Mediterranean",
+        "East Indies"
+      ],
+      "captain_bias": [
+        "merchant"
+      ],
+      "tags": [
+        "industrial"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "proc_medicines_relief",
+      "family": "procurement",
+      "title_pattern": "Medicines for {destination}",
+      "description": "A port urgently needs medical supplies.",
+      "goods_pool": [
+        "medicines"
+      ],
+      "quantity_min": 5,
+      "quantity_max": 12,
+      "reward_per_unit": 42,
+      "bonus_reward": 50,
+      "deadline_days": 22,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "West Africa",
+        "South Seas",
+        "East Indies"
+      ],
+      "captain_bias": [
+        "merchant",
+        "navigator"
+      ],
+      "tags": [
+        "medical",
+        "humanitarian"
+      ],
+      "cultural_flavor": "The fever wards are full. Healers work without rest. Every crate of medicine is a life saved."
+    },
+    {
+      "id": "proc_weapons_garrison",
+      "family": "procurement",
+      "title_pattern": "Weapons for {destination} garrison",
+      "description": "A military outpost needs arms delivered. Discretion optional.",
+      "goods_pool": [
+        "weapons"
+      ],
+      "quantity_min": 4,
+      "quantity_max": 10,
+      "reward_per_unit": 55,
+      "bonus_reward": 60,
+      "deadline_days": 25,
+      "trust_requirement": "new",
+      "standing_requirement": 3,
+      "heat_ceiling": 25,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "North Atlantic",
+        "South Seas"
+      ],
+      "captain_bias": [
+        "smuggler",
+        "navigator"
+      ],
+      "tags": [
+        "military",
+        "restricted"
+      ],
+      "cultural_flavor": "The fortress needs arms. Don't ask what they're for. The garrison pays well and asks no questions."
+    },
+    {
+      "id": "short_grain_famine",
+      "family": "shortage",
+      "title_pattern": "Famine relief: grain to {destination}",
+      "description": "Stocks are critically low. Urgent grain delivery needed.",
+      "goods_pool": [
+        "grain"
+      ],
+      "quantity_min": 12,
+      "quantity_max": 30,
+      "reward_per_unit": 24,
+      "bonus_reward": 60,
+      "deadline_days": 18,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "merchant"
+      ],
+      "tags": [
+        "urgent",
+        "famine"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "short_rum_drought",
+      "family": "shortage",
+      "title_pattern": "Rum drought at {destination}",
+      "description": "The port's rum stocks are dangerously low. Sailors are restless.",
+      "goods_pool": [
+        "rum"
+      ],
+      "quantity_min": 8,
+      "quantity_max": 18,
+      "reward_per_unit": 28,
+      "bonus_reward": 45,
+      "deadline_days": 20,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler"
+      ],
+      "tags": [
+        "urgent",
+        "morale"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "short_tea_crisis",
+      "family": "shortage",
+      "title_pattern": "Tea shortage at {destination}",
+      "description": "Tea supplies have dried up. The population demands resupply.",
+      "goods_pool": [
+        "tea"
+      ],
+      "quantity_min": 6,
+      "quantity_max": 15,
+      "reward_per_unit": 50,
+      "bonus_reward": 55,
+      "deadline_days": 20,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "North Atlantic",
+        "Mediterranean"
+      ],
+      "captain_bias": [
+        "merchant",
+        "navigator"
+      ],
+      "tags": [
+        "urgent",
+        "commodity"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "lux_silk_collector",
+      "family": "luxury_discreet",
+      "title_pattern": "Silk for a private buyer at {destination}",
+      "description": "A wealthy collector wants silk delivered quietly.",
+      "goods_pool": [
+        "silk"
+      ],
+      "quantity_min": 4,
+      "quantity_max": 10,
+      "reward_per_unit": 90,
+      "bonus_reward": 80,
+      "deadline_days": 22,
+      "trust_requirement": "credible",
+      "standing_requirement": 0,
+      "heat_ceiling": 15,
+      "inspection_modifier": 0.15,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler"
+      ],
+      "tags": [
+        "discreet",
+        "luxury",
+        "high_value"
+      ],
+      "cultural_flavor": "The governor's daughter is to be married. Only the finest silk will do. Speak of this to no one."
+    },
+    {
+      "id": "lux_porcelain_estate",
+      "family": "luxury_discreet",
+      "title_pattern": "Porcelain for {destination} estate",
+      "description": "A noble estate requires fine porcelain. Discretion expected.",
+      "goods_pool": [
+        "porcelain"
+      ],
+      "quantity_min": 3,
+      "quantity_max": 8,
+      "reward_per_unit": 80,
+      "bonus_reward": 70,
+      "deadline_days": 25,
+      "trust_requirement": "credible",
+      "standing_requirement": 3,
+      "heat_ceiling": 20,
+      "inspection_modifier": 0.1,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler",
+        "merchant"
+      ],
+      "tags": [
+        "discreet",
+        "luxury"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "lux_spice_monopolist",
+      "family": "luxury_discreet",
+      "title_pattern": "Spice consignment for {destination}",
+      "description": "A spice monopolist needs off-the-books supply. High scrutiny.",
+      "goods_pool": [
+        "spice"
+      ],
+      "quantity_min": 5,
+      "quantity_max": 12,
+      "reward_per_unit": 75,
+      "bonus_reward": 90,
+      "deadline_days": 20,
+      "trust_requirement": "reliable",
+      "standing_requirement": 0,
+      "heat_ceiling": 10,
+      "inspection_modifier": 0.2,
+      "source_region": "East Indies",
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler"
+      ],
+      "tags": [
+        "discreet",
+        "luxury",
+        "high_scrutiny"
+      ],
+      "cultural_flavor": "The Spice Lords control every legal channel. This shipment goes around them. They will not be pleased."
+    },
+    {
+      "id": "lux_pearls_crown",
+      "family": "luxury_discreet",
+      "title_pattern": "Pearls for a royal court at {destination}",
+      "description": "A crowned head seeks the finest pearls. The reward is as magnificent as the risk.",
+      "goods_pool": [
+        "pearls"
+      ],
+      "quantity_min": 3,
+      "quantity_max": 6,
+      "reward_per_unit": 120,
+      "bonus_reward": 100,
+      "deadline_days": 25,
+      "trust_requirement": "reliable",
+      "standing_requirement": 5,
+      "heat_ceiling": 12,
+      "inspection_modifier": 0.15,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler",
+        "merchant"
+      ],
+      "tags": [
+        "discreet",
+        "luxury",
+        "ultra_value"
+      ],
+      "cultural_flavor": "These pearls will adorn a crown. The divers who found them will never know. That is the way of kings."
+    },
+    {
+      "id": "ret_cotton_return",
+      "family": "return_freight",
+      "title_pattern": "Return freight: cotton to {destination}",
+      "description": "Cotton surplus needs to move. Pays for the backhaul.",
+      "goods_pool": [
+        "cotton"
+      ],
+      "quantity_min": 10,
+      "quantity_max": 22,
+      "reward_per_unit": 18,
+      "bonus_reward": 0,
+      "deadline_days": 20,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": "West Africa",
+      "source_port": null,
+      "destination_regions": [
+        "Mediterranean",
+        "East Indies",
+        "North Atlantic"
+      ],
+      "captain_bias": [
+        "navigator"
+      ],
+      "tags": [
+        "backhaul",
+        "bulk"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "ret_spice_restock",
+      "family": "return_freight",
+      "title_pattern": "Spice restock run to {destination}",
+      "description": "A merchant house needs spice moved from origin stockpile.",
+      "goods_pool": [
+        "spice"
+      ],
+      "quantity_min": 5,
+      "quantity_max": 12,
+      "reward_per_unit": 60,
+      "bonus_reward": 50,
+      "deadline_days": 25,
+      "trust_requirement": "new",
+      "standing_requirement": 3,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": "East Indies",
+      "source_port": null,
+      "destination_regions": [
+        "Mediterranean",
+        "West Africa",
+        "North Atlantic"
+      ],
+      "captain_bias": [
+        "merchant",
+        "navigator"
+      ],
+      "tags": [
+        "restock",
+        "cross_region"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "ret_dyes_textile",
+      "family": "return_freight",
+      "title_pattern": "Dyes for {destination} textile mills",
+      "description": "Textile manufacturers need dyes from the African coast.",
+      "goods_pool": [
+        "dyes"
+      ],
+      "quantity_min": 8,
+      "quantity_max": 18,
+      "reward_per_unit": 28,
+      "bonus_reward": 35,
+      "deadline_days": 22,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": "West Africa",
+      "source_port": null,
+      "destination_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ],
+      "captain_bias": [
+        "merchant"
+      ],
+      "tags": [
+        "backhaul",
+        "textile"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "circ_med_africa",
+      "family": "circuit",
+      "title_pattern": "Trade circuit: {good} to {destination}",
+      "description": "Complete a Mediterranean-West Africa trade loop. Deliver goods to prove the route.",
+      "goods_pool": [
+        "grain",
+        "timber",
+        "iron"
+      ],
+      "quantity_min": 10,
+      "quantity_max": 20,
+      "reward_per_unit": 25,
+      "bonus_reward": 80,
+      "deadline_days": 35,
+      "trust_requirement": "new",
+      "standing_requirement": 2,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": "Mediterranean",
+      "source_port": null,
+      "destination_regions": [
+        "West Africa"
+      ],
+      "captain_bias": [
+        "navigator"
+      ],
+      "tags": [
+        "circuit",
+        "cross_region"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "circ_indies_loop",
+      "family": "circuit",
+      "title_pattern": "Eastern circuit: {good} to {destination}",
+      "description": "Prove the East Indies trade route with a delivery run.",
+      "goods_pool": [
+        "silk",
+        "porcelain",
+        "spice"
+      ],
+      "quantity_min": 5,
+      "quantity_max": 12,
+      "reward_per_unit": 70,
+      "bonus_reward": 100,
+      "deadline_days": 40,
+      "trust_requirement": "credible",
+      "standing_requirement": 4,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": "East Indies",
+      "source_port": null,
+      "destination_regions": [
+        "Mediterranean",
+        "West Africa"
+      ],
+      "captain_bias": [
+        "navigator"
+      ],
+      "tags": [
+        "circuit",
+        "cross_region",
+        "high_value"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "circ_south_seas",
+      "family": "circuit",
+      "title_pattern": "South Seas expedition: {good} to {destination}",
+      "description": "Blaze a trade route to the South Seas. Few have returned with profit.",
+      "goods_pool": [
+        "pearls",
+        "medicines",
+        "tobacco"
+      ],
+      "quantity_min": 4,
+      "quantity_max": 10,
+      "reward_per_unit": 85,
+      "bonus_reward": 120,
+      "deadline_days": 45,
+      "trust_requirement": "reliable",
+      "standing_requirement": 5,
+      "heat_ceiling": null,
+      "inspection_modifier": 0.0,
+      "source_region": "South Seas",
+      "source_port": null,
+      "destination_regions": [
+        "Mediterranean",
+        "North Atlantic"
+      ],
+      "captain_bias": [
+        "navigator"
+      ],
+      "tags": [
+        "circuit",
+        "cross_region",
+        "endgame",
+        "explorer"
+      ],
+      "cultural_flavor": "The South Seas are uncharted profit. Bring back their treasures and your name will be legend."
+    },
+    {
+      "id": "rep_charter_luxury",
+      "family": "reputation_charter",
+      "title_pattern": "Charter: {good} to {destination}",
+      "description": "A premium charter for an established captain. Trust and standing required.",
+      "goods_pool": [
+        "silk",
+        "porcelain",
+        "spice",
+        "pearls"
+      ],
+      "quantity_min": 8,
+      "quantity_max": 15,
+      "reward_per_unit": 85,
+      "bonus_reward": 120,
+      "deadline_days": 30,
+      "trust_requirement": "trusted",
+      "standing_requirement": 8,
+      "heat_ceiling": 8,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "merchant"
+      ],
+      "tags": [
+        "charter",
+        "premium",
+        "trust_gated"
+      ],
+      "cultural_flavor": "The Exchange Guild only charters captains they trust absolutely. This contract is a mark of honor."
+    },
+    {
+      "id": "rep_charter_atlantic",
+      "family": "reputation_charter",
+      "title_pattern": "Atlantic charter: {good} to {destination}",
+      "description": "A prestigious North Atlantic trade charter. Only for captains of proven reputation.",
+      "goods_pool": [
+        "weapons",
+        "tea",
+        "iron"
+      ],
+      "quantity_min": 6,
+      "quantity_max": 12,
+      "reward_per_unit": 65,
+      "bonus_reward": 80,
+      "deadline_days": 28,
+      "trust_requirement": "reliable",
+      "standing_requirement": 6,
+      "heat_ceiling": 12,
+      "inspection_modifier": 0.0,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "North Atlantic",
+        "Mediterranean"
+      ],
+      "captain_bias": [
+        "merchant",
+        "navigator"
+      ],
+      "tags": [
+        "charter",
+        "atlantic",
+        "trust_gated"
+      ],
+      "cultural_flavor": ""
+    },
+    {
+      "id": "smug_opium_run",
+      "family": "smuggling",
+      "title_pattern": "Opium run to {destination}",
+      "description": "The Syndicate needs opium moved from Spice Narrows. Inspection means prison. Success means fortune.",
+      "goods_pool": [
+        "opium"
+      ],
+      "quantity_min": 3,
+      "quantity_max": 8,
+      "reward_per_unit": 150,
+      "bonus_reward": 120,
+      "deadline_days": 35,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": 30,
+      "inspection_modifier": 0.25,
+      "source_region": null,
+      "source_port": "spice_narrows",
+      "destination_regions": [
+        "Mediterranean",
+        "North Atlantic",
+        "East Indies"
+      ],
+      "captain_bias": [
+        "smuggler",
+        "corsair"
+      ],
+      "tags": [
+        "contraband",
+        "high_risk",
+        "high_reward"
+      ],
+      "cultural_flavor": "The Monsoon Syndicate controls every pipe of opium east of Crosswind Isle. This shipment goes west. Don't get caught."
+    },
+    {
+      "id": "smug_powder_delivery",
+      "family": "smuggling",
+      "title_pattern": "Black powder for {destination}",
+      "description": "Military-grade powder, no questions asked. Deliver to the specified port before the garrison gets suspicious.",
+      "goods_pool": [
+        "black_powder"
+      ],
+      "quantity_min": 4,
+      "quantity_max": 10,
+      "reward_per_unit": 100,
+      "bonus_reward": 80,
+      "deadline_days": 25,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": 25,
+      "inspection_modifier": 0.2,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [
+        "South Seas",
+        "West Africa",
+        "East Indies",
+        "Mediterranean"
+      ],
+      "captain_bias": [
+        "smuggler",
+        "corsair"
+      ],
+      "tags": [
+        "contraband",
+        "military"
+      ],
+      "cultural_flavor": "Someone needs powder and they need it quiet. The fewer questions you ask, the higher you get paid."
+    },
+    {
+      "id": "smug_fence_the_take",
+      "family": "smuggling",
+      "title_pattern": "Fence stolen goods at {destination}",
+      "description": "Liberated cargo needs a buyer. Move it to a black market port and make it disappear.",
+      "goods_pool": [
+        "stolen_cargo"
+      ],
+      "quantity_min": 5,
+      "quantity_max": 15,
+      "reward_per_unit": 60,
+      "bonus_reward": 40,
+      "deadline_days": 20,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": 35,
+      "inspection_modifier": 0.1,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler",
+        "corsair",
+        "merchant"
+      ],
+      "tags": [
+        "contraband",
+        "fence",
+        "entry_level"
+      ],
+      "cultural_flavor": "The Brotherhood took a merchant's cargo last week. Now it needs to vanish. That's where you come in."
+    },
+    {
+      "id": "smug_faction_supply",
+      "family": "smuggling",
+      "title_pattern": "Faction supply: {good} to {destination}",
+      "description": "A pirate faction needs weapons and rum delivered to their territory. Official channels won't touch this.",
+      "goods_pool": [
+        "weapons",
+        "rum"
+      ],
+      "quantity_min": 6,
+      "quantity_max": 12,
+      "reward_per_unit": 80,
+      "bonus_reward": 60,
+      "deadline_days": 30,
+      "trust_requirement": "unproven",
+      "standing_requirement": 0,
+      "heat_ceiling": 20,
+      "inspection_modifier": 0.15,
+      "source_region": null,
+      "source_port": null,
+      "destination_regions": [],
+      "captain_bias": [
+        "smuggler",
+        "corsair"
+      ],
+      "tags": [
+        "faction",
+        "supply",
+        "contraband"
+      ],
+      "cultural_flavor": "The faction that controls these waters needs resupply. Help them, and you'll have friends where others have enemies."
+    }
   ]
 }

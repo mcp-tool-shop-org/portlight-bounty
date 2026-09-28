@@ -102,6 +102,12 @@ pub enum SimError {
     },
     SaveIo(String),
     SaveCorrupt,
+    OfferNotFound,
+    TooManyContracts,
+    NoActiveContract,
+    ContractNotFulfilled,
+    UsageAcceptContract,
+    UsageCompleteContract,
 }
 
 impl fmt::Display for SimError {
@@ -212,6 +218,12 @@ impl fmt::Display for SimError {
             ),
             Self::SaveIo(message) => write!(f, "{message}"),
             Self::SaveCorrupt => write!(f, "Save file is corrupt"),
+            Self::OfferNotFound => write!(f, "Offer not found"),
+            Self::TooManyContracts => write!(f, "Too many active contracts (max 3)"),
+            Self::NoActiveContract => write!(f, "No active contract with that ID"),
+            Self::ContractNotFulfilled => write!(f, "Contract is not yet fulfilled"),
+            Self::UsageAcceptContract => write!(f, "Usage: accept_contract <offer_id>"),
+            Self::UsageCompleteContract => write!(f, "Usage: complete_contract <offer_id>"),
         }
     }
 }

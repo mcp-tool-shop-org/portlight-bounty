@@ -1,0 +1,13 @@
+# Arrive, refresh the board from the session RNG, then keep drawing it.
+new merchant Ada 1
+depart corsairs_rest
+advance
+advance
+advance
+advance
+advance
+depart porto_novo
+advance
+advance
+advance
+advance
