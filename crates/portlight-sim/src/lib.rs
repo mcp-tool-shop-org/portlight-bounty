@@ -18,6 +18,7 @@ pub mod error;
 pub mod model;
 pub mod pyrand;
 pub mod reputation;
+pub mod save;
 pub mod script;
 pub mod session;
 pub mod ship;

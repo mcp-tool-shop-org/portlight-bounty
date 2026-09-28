@@ -90,6 +90,18 @@ pub enum SimError {
     NoPendingDuel,
     InvalidStance(String),
     TooFewStances,
+    /// Python `SaveVersionError` when the file is newer than this build.
+    SaveVersion {
+        found: i64,
+        supported: i64,
+    },
+    /// Python `SaveVersionError` when the migration chain cannot reach v12.
+    SaveMigration {
+        found: i64,
+        supported: i64,
+    },
+    SaveIo(String),
+    SaveCorrupt,
 }
 
 impl fmt::Display for SimError {
@@ -190,6 +202,16 @@ impl fmt::Display for SimError {
                 f,
                 "Provide at least 3 stances (e.g. thrust,parry,slash,thrust,parry)"
             ),
+            Self::SaveVersion { found, supported } => write!(
+                f,
+                "Save file version {found} is newer than supported version {supported}. Update Portlight to load this save."
+            ),
+            Self::SaveMigration { found, supported } => write!(
+                f,
+                "Migration chain broken: reached version {found}, expected {supported}"
+            ),
+            Self::SaveIo(message) => write!(f, "{message}"),
+            Self::SaveCorrupt => write!(f, "Save file is corrupt"),
         }
     }
 }

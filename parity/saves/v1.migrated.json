@@ -1,0 +1,192 @@
+{
+  "captain": {
+    "name": "Ada",
+    "silver": 80,
+    "provisions": 12,
+    "day": 4,
+    "wanted_level": 2,
+    "active_bounties": [
+      "red_hand"
+    ],
+    "deferred_fees": [
+      {
+        "type": "port_fee",
+        "amount": 12,
+        "day": 3
+      }
+    ],
+    "ship": {
+      "template_id": "coastal_sloop",
+      "name": "Tern",
+      "hull": 40,
+      "hull_max": 60,
+      "cargo_capacity": 30,
+      "speed": 7.5,
+      "crew": 4,
+      "crew_max": 8,
+      "upgrades": [
+        {
+          "upgrade_id": "lateen",
+          "installed_day": 0
+        }
+      ],
+      "officers": [
+        {
+          "name": "Ned",
+          "role": "admiral",
+          "experience": 9,
+          "origin_port": "porto_novo",
+          "trait": "loyal"
+        }
+      ],
+      "upgrade_slots": 2,
+      "roster": {
+        "sailors": 4,
+        "gunners": 0,
+        "navigators": 0,
+        "surgeons": 0,
+        "marines": 0,
+        "quartermasters": 0
+      },
+      "morale": 50
+    },
+    "cargo": [
+      {
+        "good_id": "grain",
+        "quantity": 2,
+        "cost_basis": 10,
+        "acquired_port": "porto_novo",
+        "acquired_region": "Mediterranean",
+        "acquired_day": 1
+      }
+    ],
+    "standing": {
+      "regional_standing": {
+        "Mediterranean": 4,
+        "North Atlantic": 0,
+        "South Seas": 0
+      },
+      "customs_heat": {
+        "Mediterranean": 2,
+        "North Atlantic": 0,
+        "South Seas": 0
+      },
+      "commercial_trust": 3,
+      "port_standing": {
+        "porto_novo": 1
+      },
+      "recent_incidents": [
+        {
+          "day": 2,
+          "port_id": "porto_novo",
+          "region": "Mediterranean",
+          "incident_type": "trade",
+          "description": "Sold grain",
+          "heat_delta": 0,
+          "standing_delta": 1,
+          "trust_delta": 0
+        }
+      ],
+      "underworld_standing": {},
+      "underworld_heat": 0
+    },
+    "combat_gear": {
+      "armor": null,
+      "melee_weapon": null,
+      "weapon_upgrades": {}
+    },
+    "fleet": [],
+    "breach_records": [],
+    "claimed_bounties": []
+  },
+  "ports": {
+    "porto_novo": {
+      "id": "porto_novo",
+      "name": "Porto Novo",
+      "description": "home",
+      "region": "Mediterranean",
+      "features": [
+        "shipyard",
+        "not_a_feature"
+      ],
+      "market": [
+        {
+          "good_id": "grain",
+          "stock_current": 40,
+          "stock_target": 50,
+          "restock_rate": 2.5,
+          "local_affinity": 1.2,
+          "spread": 0.15,
+          "buy_price": 0,
+          "sell_price": 0,
+          "flood_penalty": 0.1
+        }
+      ],
+      "port_fee": 6,
+      "provision_cost": 2,
+      "repair_cost": 3,
+      "crew_cost": 5,
+      "map_x": 18,
+      "map_y": 8
+    }
+  },
+  "routes": [
+    {
+      "port_a": "porto_novo",
+      "port_b": "silva_bay",
+      "distance": 4,
+      "danger": 0.2,
+      "min_ship_class": "sloop"
+    }
+  ],
+  "voyage": {
+    "origin_id": "porto_novo",
+    "destination_id": "porto_novo",
+    "distance": 0,
+    "progress": 0,
+    "days_elapsed": 0,
+    "status": "in_port",
+    "recent_events": []
+  },
+  "day": 4,
+  "seed": 42,
+  "campaign": {
+    "completed": [],
+    "completed_paths": []
+  },
+  "infrastructure": {
+    "warehouses": [],
+    "brokers": [],
+    "licenses": [],
+    "policies": [],
+    "claims": []
+  },
+  "contract_board": {
+    "offers": [],
+    "active": [],
+    "completed": [],
+    "last_refresh_day": 0,
+    "max_offers": 5
+  },
+  "ledger": {
+    "run_id": "",
+    "receipts": [],
+    "total_buys": 0,
+    "total_sells": 0,
+    "net_profit": 0
+  },
+  "version": 12,
+  "cultural_state": {
+    "active_festivals": [],
+    "regions_entered": [],
+    "cultural_encounters": 0,
+    "port_visits": {}
+  },
+  "pirate_state": {
+    "encounters": [],
+    "nemesis_id": null,
+    "duels_won": 0,
+    "duels_lost": 0,
+    "bounty_board": []
+  }
+}

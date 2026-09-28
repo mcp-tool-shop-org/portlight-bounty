@@ -342,11 +342,11 @@ Inside your own area, do the work in this order:
 - `Session::arrival_narrative()`, `Session::evaluate_consequences()`
 
 ### Area 7: Save/Load & Persistence
-- Port `engine/save.py`. The file is JSON, current version 12, with the v1–v12 migration chain. Do not design a new format.
-- Serialize the state that exists on `main`: `World`, ledger, `trade_seq`, and books. Do not serialize the MT19937 state. `Session::load` reseeds with `Random(seed + day)`, matching Python.
-- Later areas add their own structs to this format in their own PRs.
-- Round-trip test: save, load, same snapshot the Python loader would rebuild for that slot.
-- `Session::save()` and `Session::load()` live on the sim. The CLI does not grow a second format.
+- [x] Port `engine/save.py`. The file is JSON, current version 12, with the v1–v12 migration chain. Do not design a new format.
+- [x] Serialize the state that exists on `main`: `World`, ledger, `trade_seq`, and books. Do not serialize the MT19937 state. `Session::load` reseeds with `Random(seed + day)`, matching Python.
+- [x] Later areas add their own structs to this format in their own PRs.
+- [x] Round-trip test: save, load, same snapshot the Python loader would rebuild for that slot.
+- [x] `Session::save()` and `Session::load()` live on the sim. The CLI does not grow a second format.
 
 ---
 
