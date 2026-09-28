@@ -10,10 +10,16 @@
 //! `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown and
 //! not written onto reputation. `Session::sell` returns `Sale`: the log shows
 //! the receipt and any contract summaries. `Session::board` is the contract
-//! board. Deck melee is `Session::resolve_boarding`. The view does not call
-//! `board`, `encounter_choice`, `naval_round`, or `resolve_boarding`. Hire
-//! and provisions call `hire_crew` and `provision`; a `SimError` is shown
-//! with its `Display`.
+//! board. Deck melee is `Session::resolve_boarding`. Hire and provisions
+//! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
+//!
+//! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
+//! scripted approach uses the encounter screen: `encounter_choice` /
+//! `encounter_choice_with`, `naval_round`, `resolve_boarding`, `fight`,
+//! `spare`, `capture`, and `take_all`. The voyage stance duel stays
+//! `Session::duel` and `Session::resolve_pending_duel` on the chart panel.
+//! That panel is hidden while the encounter screen is open and shown again
+//! when the screen closes if a duel is still pending.
 
 use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, SizeFlags};
@@ -32,14 +38,20 @@ use portlight_chart::{
     PortPress, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::economy::TradeReceipt;
+use portlight_sim::encounter::EncounterState;
 use portlight_sim::model::VoyageStatus;
-use portlight_sim::session::Sale;
-use portlight_sim::{content, DuelOutcome, LaneSuitability, Session};
+use portlight_sim::session::{EncounterStep, Sale};
+use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
+use crate::encounter_screen::{self, EncounterNodes};
 use crate::logic::{
-    capture_frame_rejected, chart_host_width, duel_button_enabled, frame_mostly_flat,
-    frame_samples, layout_fits_window, PANEL_MIN_W, ROW_SEPARATION, WINDOW_H, WINDOW_W,
+    action_caption, action_list_from_error, at_sea, capture_frame_rejected, chart_host_width,
+    duel_button_enabled, facts_for_catalog_captain, facts_from_agency, facts_from_step,
+    frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present, session_text,
+    stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput, PANEL_MIN_W,
+    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
+    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -70,6 +82,46 @@ enum Action {
     Sail(String),
     Buy(String),
     Sell(String),
+    EncounterChoice(String),
+    Naval(String),
+    Board,
+    Combat(String),
+    Spare,
+    Capture,
+    TakeAll,
+    CaptureCrew(i64),
+    LeaveEncounter,
+}
+
+#[derive(Clone, Copy)]
+enum ShotPhase {
+    Approach,
+    Naval,
+    Boarding,
+    Personal,
+    Outcome,
+}
+
+impl ShotPhase {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Approach => "encounter-approach.png",
+            Self::Naval => "encounter-naval.png",
+            Self::Boarding => "encounter-boarding.png",
+            Self::Personal => "encounter-fight.png",
+            Self::Outcome => "encounter-outcome.png",
+        }
+    }
+
+    fn screen(self) -> ScreenPhase {
+        match self {
+            Self::Approach => ScreenPhase::Approach,
+            Self::Naval => ScreenPhase::Naval,
+            Self::Boarding => ScreenPhase::Boarding,
+            Self::Personal => ScreenPhase::Personal,
+            Self::Outcome => ScreenPhase::Outcome,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -118,6 +170,13 @@ struct PortlightGame {
     smoke_ok: bool,
     shot_path: Option<String>,
     capture_frames: i32,
+    encounter_nodes: Option<EncounterNodes>,
+    encounter: Option<EncounterFacts>,
+    /// Catalog captain locked into the next `encounter_choice_with`.
+    scripted_captain: Option<String>,
+    capture_crew: i64,
+    encounter_shot_dir: Option<String>,
+    encounter_shot: Option<ShotPhase>,
 }
 
 #[godot_api]
@@ -149,6 +208,12 @@ impl IControl for PortlightGame {
             smoke_ok: true,
             shot_path: None,
             capture_frames: 0,
+            encounter_nodes: None,
+            encounter: None,
+            scripted_captain: None,
+            capture_crew: 0,
+            encounter_shot_dir: None,
+            encounter_shot: None,
         }
     }
 
@@ -163,7 +228,19 @@ impl IControl for PortlightGame {
             .map(|path| resolve_repo_path(&path));
         self.build_ui();
         self.start_game();
-        if user_arg("--encounter") {
+        if user_arg("--encounter-screen") {
+            self.smoke = true;
+            self.encounter_shot_dir = std::env::var("PORTLIGHT_ENCOUNTER_DIR")
+                .ok()
+                .filter(|path| !path.is_empty());
+            if self.encounter_shot_dir.is_some() {
+                self.begin_encounter_shots();
+                self.capture_frames = 4;
+            } else {
+                self.run_encounter_screen();
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--encounter") {
             self.smoke = true;
             self.run_encounter();
             self.capture_frames = 4;
@@ -198,6 +275,9 @@ impl IControl for PortlightGame {
         }
         self.capture_frames -= 1;
         if self.capture_frames > 0 {
+            return;
+        }
+        if self.advance_encounter_shot() {
             return;
         }
         // Measure after layout. Headless `--smoke` has no shot and skips this:
@@ -384,6 +464,11 @@ impl PortlightGame {
         log.set_autowrap_mode(AutowrapMode::WORD_SMART);
         column.add_child(&log);
         self.log_label = Some(log);
+
+        let mut encounter_screen = encounter_screen::build_encounter_screen();
+        self.base_mut().add_child(&encounter_screen.root);
+        encounter_screen::fill_parent(&mut encounter_screen.root);
+        self.encounter_nodes = Some(encounter_screen);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -678,6 +763,18 @@ impl PortlightGame {
             Action::Sail(dest) => self.sail(&dest),
             Action::Buy(good) => self.trade(true, &good),
             Action::Sell(good) => self.trade(false, &good),
+            Action::EncounterChoice(choice) => self.choose_encounter(&choice),
+            Action::Naval(action) => self.play_naval(&action),
+            Action::Board => self.resolve_board(),
+            Action::Combat(action) => self.play_fight(&action),
+            Action::Spare => self.spare_enemy(),
+            Action::Capture => self.capture_prize(),
+            Action::TakeAll => self.take_prize(),
+            Action::CaptureCrew(delta) => {
+                self.capture_crew = 0.max(self.capture_crew + delta);
+                self.refresh();
+            }
+            Action::LeaveEncounter => self.leave_encounter(),
         }
     }
 
@@ -745,6 +842,12 @@ impl PortlightGame {
 
     fn next_day(&mut self) {
         let mut failed = false;
+        let screen_open = self.encounter.is_some();
+        let (day_before, sailed) = self
+            .session
+            .as_ref()
+            .map(|session| (session.world().day, at_sea(session)))
+            .unwrap_or((0, false));
         let notes = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -776,11 +879,29 @@ impl PortlightGame {
                 }
             }
         };
+        // The CLI and the TUI call this after a sea day. It is not part of
+        // `advance`. A frozen pending duel does not move the day, so it is
+        // not asked again. An encounter screen that is already up is left
+        // alone.
+        let mut opened = None;
+        if !failed && !screen_open && sailed {
+            if let Some(session) = self.session.as_mut() {
+                if session.world().day != day_before {
+                    opened = sea_agency(session);
+                }
+            }
+        }
         if failed && self.smoke {
             self.smoke_ok = false;
         }
         for note in notes {
             self.push_log(note);
+        }
+        if let Some((state, log)) = opened {
+            if !log.is_empty() {
+                self.push_log(log.clone());
+            }
+            self.open_agency(state, log);
         }
         self.refresh();
     }
@@ -994,7 +1115,12 @@ impl PortlightGame {
         let services = self.port_services_text();
         let encounter = self.encounter_text();
         let stance_line = self.stance_line();
+        let screen_open = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| present(facts).is_some());
         let can_duel = duel_button_enabled(pending);
+        let show_stance = stance_duel_visible(screen_open, pending);
         if let Some(row) = self.port_row.as_mut() {
             row.set_visible(docked);
         }
@@ -1003,7 +1129,7 @@ impl PortlightGame {
             label.set_text(&services);
         }
         if let Some(box_node) = self.encounter_box.as_mut() {
-            box_node.set_visible(pending);
+            box_node.set_visible(show_stance);
         }
         if let Some(label) = self.encounter_label.as_mut() {
             label.set_text(&encounter);
@@ -1028,6 +1154,7 @@ impl PortlightGame {
                 canvas.bind_mut().show(chart, self.smoke);
             }
         }
+        self.sync_encounter_screen();
     }
 
     fn rebuild_lanes(&mut self) {
@@ -1378,6 +1505,501 @@ impl PortlightGame {
         }
         true
     }
+
+    fn open_agency(&mut self, state: EncounterState, log: String) {
+        let (ship, sailing) = self
+            .session
+            .as_ref()
+            .map(|session| (player_ship(session), at_sea(session)))
+            .unwrap_or((None, false));
+        let mut facts = facts_from_agency(&state, ship, &log, sailing);
+        if facts.phase == "naval" {
+            facts.naval_actions = self.probe_naval();
+        }
+        self.scripted_captain = None;
+        self.encounter = Some(facts);
+    }
+
+    fn open_scripted_approach(&mut self) {
+        let (ship, sailing) = self
+            .session
+            .as_ref()
+            .map(|session| (player_ship(session), at_sea(session)))
+            .unwrap_or((None, true));
+        match facts_for_catalog_captain(SCRIPTED_CAPTAIN, ship, sailing) {
+            Some(facts) => {
+                self.scripted_captain = Some(SCRIPTED_CAPTAIN.to_string());
+                self.encounter = Some(facts);
+            }
+            None => {
+                self.smoke_ok = false;
+                self.push_log(format!("Encounter: unknown captain {SCRIPTED_CAPTAIN}."));
+            }
+        }
+    }
+
+    fn choose_encounter(&mut self, choice: &str) {
+        let locked = self.scripted_captain.clone();
+        let on_session = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| facts.on_session);
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            if on_session {
+                session.encounter_choice(choice)
+            } else {
+                session.encounter_choice_with(choice, locked.as_deref(), None)
+            }
+        };
+        if result.is_ok() {
+            self.scripted_captain = None;
+        }
+        self.ingest(result);
+    }
+
+    fn play_naval(&mut self, action: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.naval_round(action)
+        };
+        self.ingest(result);
+    }
+
+    fn resolve_board(&mut self) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.resolve_boarding()
+        };
+        self.ingest(result);
+    }
+
+    fn play_fight(&mut self, action: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.fight(action)
+        };
+        self.ingest(result);
+    }
+
+    fn spare_enemy(&mut self) {
+        self.finish_victory(true);
+    }
+
+    fn take_prize(&mut self) {
+        self.finish_victory(false);
+    }
+
+    fn finish_victory(&mut self, spare: bool) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            if spare {
+                session.spare()
+            } else {
+                session.take_all()
+            }
+        };
+        match result {
+            Ok(()) => {
+                if let Some(facts) = self.encounter.as_mut() {
+                    facts.pending_victory = false;
+                    facts.phase = "resolved".to_string();
+                    facts.on_session = false;
+                    facts.kind = "resolved".to_string();
+                }
+            }
+            Err(err) => self.note_session_error(err),
+        }
+        self.refresh();
+    }
+
+    fn capture_prize(&mut self) {
+        let crew = self.capture_crew;
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.capture(crew)
+        };
+        self.ingest(result);
+    }
+
+    fn leave_encounter(&mut self) {
+        self.encounter = None;
+        self.scripted_captain = None;
+        self.refresh();
+    }
+
+    fn ingest(&mut self, result: Result<EncounterStep, SimError>) {
+        match result {
+            Ok(step) => {
+                let text = session_text(&step.message, &step.flavor);
+                if !text.is_empty() {
+                    self.push_log(text);
+                }
+                self.adopt_step(step);
+            }
+            Err(err) => self.note_session_error(err),
+        }
+        self.refresh();
+    }
+
+    fn note_session_error(&mut self, err: SimError) {
+        if self.smoke {
+            self.smoke_ok = false;
+        }
+        let text = err.to_string();
+        self.push_log(text.clone());
+        if let Some(facts) = self.encounter.as_mut() {
+            facts.log = text;
+        }
+    }
+
+    fn adopt_step(&mut self, step: EncounterStep) {
+        let previous_faction = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.faction_id.clone())
+            .unwrap_or_default();
+        let previous_max = self
+            .encounter
+            .as_ref()
+            .and_then(|facts| facts.enemy_hull_max);
+        let (pending, ship, sailing, naval_actions, combat_actions) = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            let pending = session.pending_victory();
+            let ship = player_ship(session);
+            let sailing = at_sea(session);
+            let naval_actions = if step.phase == "naval" {
+                match session.naval_round("") {
+                    Err(err) => action_list_from_error(&err).unwrap_or_default(),
+                    Ok(_) => Vec::new(),
+                }
+            } else {
+                Vec::new()
+            };
+            let combat_actions = if step.phase == "duel" {
+                match session.fight("") {
+                    Err(err) => action_list_from_error(&err).unwrap_or_default(),
+                    Ok(_) => Vec::new(),
+                }
+            } else {
+                Vec::new()
+            };
+            (pending, ship, sailing, naval_actions, combat_actions)
+        };
+        self.encounter = Some(facts_from_step(StepInput {
+            step: &step,
+            previous_faction_id: &previous_faction,
+            previous_enemy_hull_max: previous_max,
+            pending_victory: pending,
+            ship,
+            at_sea: sailing,
+            naval_actions: &naval_actions,
+            combat_actions: &combat_actions,
+        }));
+    }
+
+    fn probe_naval(&mut self) -> Vec<String> {
+        let Some(session) = self.session.as_mut() else {
+            return Vec::new();
+        };
+        match session.naval_round("") {
+            Err(err) => action_list_from_error(&err).unwrap_or_default(),
+            Ok(_) => Vec::new(),
+        }
+    }
+
+    fn sync_encounter_screen(&mut self) {
+        let game_id = self.instance_id();
+        let crew_count = self.capture_crew;
+        let view = self.encounter.as_ref().and_then(present);
+        let Some(nodes) = self.encounter_nodes.as_mut() else {
+            return;
+        };
+        let open = view.is_some();
+        nodes.root.set_visible(open);
+        nodes.root.set_mouse_filter(if open {
+            godot::classes::control::MouseFilter::STOP
+        } else {
+            godot::classes::control::MouseFilter::IGNORE
+        });
+        let Some(view) = view else {
+            return;
+        };
+        nodes.title.set_text(view.title);
+        nodes.card.set_text(&view.card);
+        nodes.log.set_text(&view.log);
+        let show_crew = view
+            .actions
+            .iter()
+            .any(|action| matches!(action, ScreenAction::Capture));
+        nodes.crew.set_visible(show_crew);
+        nodes
+            .crew
+            .set_text(&format!("Crew to the prize  {crew_count}"));
+        let actions = view.actions.clone();
+        let mut box_node = nodes.actions.clone();
+        clear_children(&mut box_node);
+        let mut row = HBoxContainer::new_alloc();
+        row.add_theme_constant_override("separation", 8);
+        let mut count = 0;
+        for action in actions {
+            if count == 4 {
+                box_node.add_child(&row);
+                row = HBoxContainer::new_alloc();
+                row.add_theme_constant_override("separation", 8);
+                count = 0;
+            }
+            let caption = action_caption(&action);
+            let command = match action {
+                ScreenAction::Choice(choice) => Action::EncounterChoice(choice.to_string()),
+                ScreenAction::Naval(action) => Action::Naval(action),
+                ScreenAction::Board => Action::Board,
+                ScreenAction::Combat(action) => Action::Combat(action),
+                ScreenAction::Spare => Action::Spare,
+                ScreenAction::Capture => Action::Capture,
+                ScreenAction::TakeAll => Action::TakeAll,
+                ScreenAction::Return { .. } => Action::LeaveEncounter,
+            };
+            row.add_child(&action_button(&caption, game_id, command));
+            count += 1;
+        }
+        if count > 0 {
+            box_node.add_child(&row);
+        }
+        if show_crew {
+            let mut crew_row = HBoxContainer::new_alloc();
+            crew_row.add_child(&action_button("Crew −", game_id, Action::CaptureCrew(-1)));
+            crew_row.add_child(&action_button("Crew +", game_id, Action::CaptureCrew(1)));
+            box_node.add_child(&crew_row);
+        }
+    }
+
+    fn run_encounter_screen(&mut self) {
+        self.prepare_scripted_voyage();
+        self.open_scripted_approach();
+        self.expect_phase(ScreenPhase::Approach, "approach");
+        self.choose_encounter("fight");
+        self.expect_phase(ScreenPhase::Naval, "naval");
+        self.play_scripted_naval();
+        self.expect_phase(ScreenPhase::Boarding, "boarding");
+        self.resolve_board();
+        self.expect_phase(ScreenPhase::Personal, "personal fight");
+        self.play_scripted_fight();
+        self.expect_phase(ScreenPhase::Outcome, "outcome");
+        self.expect_outcome_actions();
+        self.spare_enemy();
+        self.expect_returned();
+        self.leave_encounter();
+        self.report_encounter_smoke();
+    }
+
+    fn begin_encounter_shots(&mut self) {
+        self.prepare_scripted_voyage();
+        self.open_scripted_approach();
+        self.encounter_shot = Some(ShotPhase::Approach);
+        self.refresh();
+    }
+
+    /// Saves the phase that is on screen, then advances the script.
+    /// Returns true when another frame is needed before the process quits.
+    fn advance_encounter_shot(&mut self) -> bool {
+        let Some(phase) = self.encounter_shot else {
+            return false;
+        };
+        let Some(dir) = self.encounter_shot_dir.clone() else {
+            return false;
+        };
+        self.expect_phase(phase.screen(), phase.file_name());
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path) {
+            self.smoke_ok = false;
+        }
+        match phase {
+            ShotPhase::Approach => {
+                self.choose_encounter("fight");
+                self.encounter_shot = Some(ShotPhase::Naval);
+            }
+            ShotPhase::Naval => {
+                self.play_scripted_naval();
+                self.encounter_shot = Some(ShotPhase::Boarding);
+            }
+            ShotPhase::Boarding => {
+                self.resolve_board();
+                self.encounter_shot = Some(ShotPhase::Personal);
+            }
+            ShotPhase::Personal => {
+                self.play_scripted_fight();
+                self.encounter_shot = Some(ShotPhase::Outcome);
+            }
+            ShotPhase::Outcome => {
+                self.expect_outcome_actions();
+                self.spare_enemy();
+                self.expect_returned();
+                self.leave_encounter();
+                self.report_encounter_smoke();
+                self.encounter_shot = None;
+                return false;
+            }
+        }
+        self.capture_frames = 4;
+        true
+    }
+
+    fn prepare_scripted_voyage(&mut self) {
+        self.log_lines.clear();
+        self.market_open = false;
+        self.armed_sail = None;
+        self.stances.clear();
+        self.encounter = None;
+        self.scripted_captain = None;
+        match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
+            Ok(mut session) => match session.depart(SCRIPTED_DEPART) {
+                Ok(()) => {
+                    let place = session
+                        .world()
+                        .port(SCRIPTED_DEPART)
+                        .map(|port| port.name.clone())
+                        .unwrap_or_else(|| SCRIPTED_DEPART.to_string());
+                    self.session = Some(session);
+                    self.push_log(format!("Departed for {place}."));
+                }
+                Err(err) => {
+                    self.smoke_ok = false;
+                    self.session = Some(session);
+                    self.push_log(err.to_string());
+                }
+            },
+            Err(err) => {
+                self.smoke_ok = false;
+                self.session = None;
+                self.push_log(err.to_string());
+            }
+        }
+    }
+
+    fn play_scripted_naval(&mut self) {
+        for action in SCRIPTED_NAVAL {
+            if !self.smoke_ok {
+                return;
+            }
+            if self.phase_is(ScreenPhase::Boarding) {
+                return;
+            }
+            self.play_naval(action);
+        }
+    }
+
+    fn play_scripted_fight(&mut self) {
+        for action in SCRIPTED_FIGHT {
+            if !self.smoke_ok {
+                return;
+            }
+            if self.phase_is(ScreenPhase::Outcome) {
+                return;
+            }
+            self.play_fight(action);
+        }
+    }
+
+    fn phase_is(&self, phase: ScreenPhase) -> bool {
+        self.encounter
+            .as_ref()
+            .and_then(present)
+            .is_some_and(|view| view.phase == phase)
+    }
+
+    fn expect_phase(&mut self, phase: ScreenPhase, label: &str) {
+        if self.phase_is(phase) {
+            godot_print!("encounter phase {label}");
+            return;
+        }
+        self.smoke_ok = false;
+        let found = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.phase.clone())
+            .unwrap_or_else(|| "none".to_string());
+        let line = format!("Encounter smoke: expected {label}, phase was {found}.");
+        godot_print!("{line}");
+        self.push_log(line);
+    }
+
+    fn expect_outcome_actions(&mut self) {
+        let actions = self
+            .encounter
+            .as_ref()
+            .and_then(present)
+            .map(|view| view.actions)
+            .unwrap_or_default();
+        let ok = actions.contains(&ScreenAction::Spare)
+            && actions.contains(&ScreenAction::Capture)
+            && actions.contains(&ScreenAction::TakeAll);
+        if !ok {
+            self.smoke_ok = false;
+            self.push_log(
+                "Encounter smoke: outcome did not offer spare, capture, and take all.".to_string(),
+            );
+        }
+        let pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.pending_victory());
+        if !pending {
+            self.smoke_ok = false;
+            self.push_log("Encounter smoke: pending_victory was not set.".to_string());
+        }
+    }
+
+    fn expect_returned(&mut self) {
+        let pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.pending_victory());
+        if pending {
+            self.smoke_ok = false;
+            self.push_log("Encounter smoke: spare left pending_victory set.".to_string());
+        }
+        if !self.phase_is(ScreenPhase::Outcome) {
+            self.smoke_ok = false;
+            self.push_log("Encounter smoke: spare did not leave the outcome card.".to_string());
+        }
+    }
+
+    fn report_encounter_smoke(&mut self) {
+        if self.smoke_ok {
+            godot_print!("portlight encounter smoke ok");
+        } else {
+            godot_print!("portlight encounter smoke FAILED");
+        }
+    }
+}
+
+/// `tick_sea_captain_agency` after a sea day that moved.
+/// Notices are Session text. `None` when no encounter opened.
+fn sea_agency(session: &mut Session) -> Option<(EncounterState, String)> {
+    let (encounter, _ambush, notices) = session.tick_sea_captain_agency();
+    let state = encounter?;
+    let log = notices
+        .into_iter()
+        .map(|(_, message)| message)
+        .filter(|message| !message.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+    Some((state, log))
 }
 
 fn cargo_held(cargo: &[portlight_sim::model::CargoItem], good: &str) -> i64 {

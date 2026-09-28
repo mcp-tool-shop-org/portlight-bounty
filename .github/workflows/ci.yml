@@ -108,6 +108,12 @@ jobs:
             godot --headless --path godot --import --quit
           run_godot /tmp/godot-headless-smoke.log \
             godot --headless --path godot -- --smoke
+          run_godot /tmp/godot-encounter-smoke.log \
+            godot --headless --path godot -- --encounter-screen
+          if ! grep -q 'portlight encounter smoke ok' /tmp/godot-encounter-smoke.log; then
+            echo "encounter smoke did not report ok"
+            exit 1
+          fi
           run_godot /tmp/godot-gl-smoke.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
