@@ -3,10 +3,12 @@
 //! Buttons call [`portlight_sim::Session`]. Labels repeat fields those queries
 //! already computed. Good names and the season name are catalog strings.
 //!
-//! A pending pirate encounter freezes `advance`. Fight, flee, and encounter
-//! auto-resolve are not on `Session` yet, so the panel names the pirate and
-//! says those actions are waiting. Hire and provisions call `hire_crew` and
-//! `provision`.
+//! A pending duel freezes the day. The panel names the pirate and offers the
+//! stance fight (`Session::duel`, at least three of thrust, slash, and parry)
+//! or `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown
+//! and not written onto reputation. Negotiate, flee, naval rounds, and
+//! boarding are not on `Session` and are not offered. Hire and provisions
+//! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
 
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
@@ -24,7 +26,7 @@ use portlight_chart::{
     FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::model::VoyageStatus;
-use portlight_sim::{content, LaneSuitability, Session};
+use portlight_sim::{content, DuelOutcome, LaneSuitability, Session};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 
@@ -49,17 +51,30 @@ enum Action {
     ToggleMarket,
     HireSailor,
     Provision,
-    Encounter(EncounterChoice),
+    Stance(Stance),
+    ClearStances,
+    Duel,
+    AutoResolve,
     Sail(String),
     Buy(String),
     Sell(String),
 }
 
 #[derive(Clone, Copy)]
-enum EncounterChoice {
-    Fight,
-    Flee,
-    AutoResolve,
+enum Stance {
+    Thrust,
+    Slash,
+    Parry,
+}
+
+impl Stance {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Thrust => "thrust",
+            Self::Slash => "slash",
+            Self::Parry => "parry",
+        }
+    }
 }
 
 #[derive(GodotClass)]
@@ -80,6 +95,9 @@ struct PortlightGame {
     port_note: Option<Gd<Label>>,
     encounter_box: Option<Gd<VBoxContainer>>,
     encounter_label: Option<Gd<Label>>,
+    stance_label: Option<Gd<Label>>,
+    duel_button: Option<Gd<Button>>,
+    stances: Vec<String>,
     log_lines: Vec<String>,
     market_open: bool,
     armed_sail: Option<String>,
@@ -110,6 +128,9 @@ impl IControl for PortlightGame {
             port_note: None,
             encounter_box: None,
             encounter_label: None,
+            stance_label: None,
+            duel_button: None,
+            stances: Vec::new(),
             log_lines: Vec::new(),
             market_open: false,
             armed_sail: None,
@@ -136,6 +157,14 @@ impl IControl for PortlightGame {
             self.smoke = true;
             self.run_encounter();
             self.capture_frames = 4;
+        } else if user_arg("--duel") {
+            self.smoke = true;
+            self.run_duel_resolution(false);
+            self.capture_frames = 2;
+        } else if user_arg("--resolve") {
+            self.smoke = true;
+            self.run_duel_resolution(true);
+            self.capture_frames = 2;
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
@@ -261,26 +290,37 @@ impl PortlightGame {
         let mut encounter_label = body_label("", 14, Color::from_rgb(0.93, 0.55, 0.42));
         encounter_label.set_autowrap_mode(AutowrapMode::WORD_SMART);
         encounter.add_child(&encounter_label);
-        let mut encounter_buttons = HBoxContainer::new_alloc();
-        encounter_buttons.add_child(&action_button(
-            "Fight",
+        let mut stance_label = body_label("Stances: none yet. Pick at least 3.", 13, CREAM);
+        stance_label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+        encounter.add_child(&stance_label);
+        let mut stance_buttons = HBoxContainer::new_alloc();
+        stance_buttons.add_child(&action_button(
+            "Thrust",
             game_id,
-            Action::Encounter(EncounterChoice::Fight),
+            Action::Stance(Stance::Thrust),
         ));
-        encounter_buttons.add_child(&action_button(
-            "Flee",
+        stance_buttons.add_child(&action_button(
+            "Slash",
             game_id,
-            Action::Encounter(EncounterChoice::Flee),
+            Action::Stance(Stance::Slash),
         ));
-        encounter_buttons.add_child(&action_button(
-            "Auto-resolve",
+        stance_buttons.add_child(&action_button(
+            "Parry",
             game_id,
-            Action::Encounter(EncounterChoice::AutoResolve),
+            Action::Stance(Stance::Parry),
         ));
-        encounter.add_child(&encounter_buttons);
+        stance_buttons.add_child(&action_button("Clear", game_id, Action::ClearStances));
+        encounter.add_child(&stance_buttons);
+        let mut resolve_buttons = HBoxContainer::new_alloc();
+        let duel = action_button("Duel", game_id, Action::Duel);
+        resolve_buttons.add_child(&duel);
+        resolve_buttons.add_child(&action_button("Auto-resolve", game_id, Action::AutoResolve));
+        encounter.add_child(&resolve_buttons);
         column.add_child(&encounter);
         self.encounter_box = Some(encounter);
         self.encounter_label = Some(encounter_label);
+        self.stance_label = Some(stance_label);
+        self.duel_button = Some(duel);
 
         column.add_child(&body_label(
             "Lanes from the sail picker. Days use raw ship speed.",
@@ -312,6 +352,7 @@ impl PortlightGame {
         self.log_lines.clear();
         self.market_open = false;
         self.armed_sail = None;
+        self.stances.clear();
         match Session::new(
             FIRST_PLAYABLE_NAME,
             FIRST_PLAYABLE_CAPTAIN,
@@ -411,16 +452,74 @@ impl PortlightGame {
 
     /// Seed 42, the `duel_block` script: sail until a pirate freezes the day.
     fn run_encounter(&mut self) {
+        if let Some(name) = self.sail_until_duel() {
+            self.push_log(format!(
+                "Duel with {name}. Advance stays refused. Pick at least 3 stances, or auto-resolve."
+            ));
+        }
+        self.refresh();
+    }
+
+    /// Same voyage as `--encounter`, then `Session::duel` or `resolve_pending_duel`.
+    fn run_duel_resolution(&mut self, auto: bool) {
+        if self.sail_until_duel().is_none() {
+            self.refresh();
+            return;
+        }
+        let day_before = self.session.as_ref().map(|session| session.world().day);
+        let standing_before = self
+            .session
+            .as_ref()
+            .map(|session| format!("{:?}", session.world().captain.standing));
+        if auto {
+            self.auto_resolve();
+        } else {
+            self.stances = vec!["thrust".into(), "slash".into(), "parry".into()];
+            self.fight_duel();
+        }
+        let pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().pending_duel.is_some());
+        if pending {
+            self.smoke_ok = false;
+            self.push_log("Duel: the challenge is still pending.".to_string());
+            self.refresh();
+            return;
+        }
+        let standing_after = self
+            .session
+            .as_ref()
+            .map(|session| format!("{:?}", session.world().captain.standing));
+        if standing_before != standing_after {
+            self.smoke_ok = false;
+            self.push_log(
+                "Duel: standing changed. standing_delta is information only.".to_string(),
+            );
+        }
+        self.next_day();
+        let day_after = self.session.as_ref().map(|session| session.world().day);
+        if day_after <= day_before {
+            self.smoke_ok = false;
+            self.push_log(
+                "Duel: the day did not move after the challenge was cleared.".to_string(),
+            );
+        }
+        self.refresh();
+    }
+
+    /// Buy grain, sail Silva Bay, advance until `pending_duel` is set.
+    fn sail_until_duel(&mut self) -> Option<String> {
         self.log_lines.clear();
         self.market_open = false;
         self.armed_sail = None;
+        self.stances.clear();
         let session = match Session::new("Ada", "merchant", 42, None) {
             Ok(session) => session,
             Err(err) => {
                 self.smoke_ok = false;
                 self.push_log(err.to_string());
-                self.refresh();
-                return;
+                return None;
             }
         };
         let mut session = session;
@@ -448,16 +547,11 @@ impl PortlightGame {
             .as_ref()
             .map(|duel| duel.captain_name.clone());
         self.session = Some(session);
-        match pending {
-            Some(name) => self.push_log(format!(
-                "Encounter with {name}. Advance is refused until it can be resolved."
-            )),
-            None => {
-                self.smoke_ok = false;
-                self.push_log("Encounter preview: no pending duel.".to_string());
-            }
+        if pending.is_none() {
+            self.smoke_ok = false;
+            self.push_log("Encounter preview: no pending duel.".to_string());
         }
-        self.refresh();
+        pending
     }
 
     fn perform(&mut self, action: Action) {
@@ -467,7 +561,13 @@ impl PortlightGame {
             Action::Work => self.work_docks(),
             Action::HireSailor => self.hire_sailor(),
             Action::Provision => self.buy_provisions(),
-            Action::Encounter(choice) => self.encounter_placeholder(choice),
+            Action::Stance(stance) => self.push_stance(stance),
+            Action::ClearStances => {
+                self.stances.clear();
+                self.refresh();
+            }
+            Action::Duel => self.fight_duel(),
+            Action::AutoResolve => self.auto_resolve(),
             Action::ToggleMarket => {
                 if self.docked_id().is_some() {
                     self.market_open = !self.market_open;
@@ -720,18 +820,54 @@ impl PortlightGame {
         self.refresh();
     }
 
-    /// Fight, flee, and encounter auto-resolve are not methods on `Session` yet.
-    /// `duel` and `resolve_pending_duel` are the stance fight, so these buttons
-    /// do not call them.
-    fn encounter_placeholder(&mut self, choice: EncounterChoice) {
-        let verb = match choice {
-            EncounterChoice::Fight => "Fight",
-            EncounterChoice::Flee => "Flee",
-            EncounterChoice::AutoResolve => "Auto-resolve",
+    fn push_stance(&mut self, stance: Stance) {
+        if self
+            .session
+            .as_ref()
+            .is_none_or(|session| session.world().pending_duel.is_none())
+        {
+            return;
+        }
+        self.stances.push(stance.as_str().to_string());
+        self.refresh();
+    }
+
+    fn fight_duel(&mut self) {
+        let stances = self.stances.clone();
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.duel(&stances)
         };
-        self.push_log(format!(
-            "{verb} is not on Session yet. Advance stays refused until the encounter can be resolved."
-        ));
+        self.finish_duel_result(result);
+    }
+
+    fn auto_resolve(&mut self) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.resolve_pending_duel()
+        };
+        self.finish_duel_result(result);
+    }
+
+    /// `standing_delta` is reported and not applied. `Session` already leaves
+    /// reputation alone; the view does not write it either.
+    fn finish_duel_result(&mut self, result: Result<DuelOutcome, portlight_sim::SimError>) {
+        match result {
+            Ok(outcome) => {
+                self.stances.clear();
+                self.push_log(duel_outcome_line(&outcome));
+            }
+            Err(err) => {
+                if self.smoke {
+                    self.smoke_ok = false;
+                }
+                self.push_log(err.to_string());
+            }
+        }
         self.refresh();
     }
 
@@ -763,6 +899,8 @@ impl PortlightGame {
         }
         let services = self.port_services_text();
         let encounter = self.encounter_text();
+        let stance_line = self.stance_line();
+        let can_duel = pending && self.stances.len() >= 3;
         if let Some(row) = self.port_row.as_mut() {
             row.set_visible(docked);
         }
@@ -775,6 +913,12 @@ impl PortlightGame {
         }
         if let Some(label) = self.encounter_label.as_mut() {
             label.set_text(&encounter);
+        }
+        if let Some(label) = self.stance_label.as_mut() {
+            label.set_text(&stance_line);
+        }
+        if let Some(button) = self.duel_button.as_mut() {
+            button.set_disabled(!can_duel);
         }
         let status_text = self.status_text();
         if let Some(label) = self.status.as_mut() {
@@ -1039,9 +1183,17 @@ impl PortlightGame {
             return String::new();
         };
         format!(
-            "Encounter: {}.\nFaction {} · {} · strength {} · {}.\nAdvance will not move the day. Fight, flee, and auto-resolve are not on Session yet.",
+            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nAdvance will not move the day. Pick at least 3 stances, or auto-resolve.",
             duel.captain_name, duel.faction_id, duel.personality, duel.strength, duel.region
         )
+    }
+
+    fn stance_line(&self) -> String {
+        if self.stances.is_empty() {
+            "Stances: none yet. Pick at least 3.".to_string()
+        } else {
+            format!("Stances: {}.", self.stances.join(", "))
+        }
     }
 
     fn port_services_text(&self) -> String {
@@ -1059,6 +1211,20 @@ impl PortlightGame {
             port.crew_cost, port.provision_cost
         )
     }
+}
+
+fn duel_outcome_line(outcome: &DuelOutcome) -> String {
+    let result = if outcome.player_won {
+        "Won"
+    } else if outcome.draw {
+        "Draw"
+    } else {
+        "Lost"
+    };
+    format!(
+        "{result} the duel with {}. Silver {:+}. Standing {:+}, shown only.",
+        outcome.opponent_name, outcome.silver_delta, outcome.standing_delta
+    )
 }
 
 fn ledger_line(session: &Session) -> String {
