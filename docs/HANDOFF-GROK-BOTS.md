@@ -67,7 +67,7 @@ Python and the stage-1 goldens agree. A later UI calls `sail_lanes` and `Session
 ### Not started
 - Godot encounter screen (in progress). Negotiate, flee, naval combat, and boarding are merged in the sim and are not yet offered by the Godot view. The chart still shows the voyage-event stance duel.
 - Godot screens for new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Those systems are merged in the sim and are not yet offered by the Godot view.
-- Chart ship-class plates and the water-variant fix (in progress). `ship_asset` draws a plate for each ship class. Cutter, brigantine, and galleon plates are in the landing bundle and are not drawn. `water_tiles` already calls `chart_water_id`.
+- Chart ship-class plates and the water-variant fix (in progress). `ship_asset` draws a plate for each ship class. Cutter, brigantine, and galleon plates are drawn for those classes, and `man_of_war` uses the galleon placeholder. `water_tiles` already calls `chart_water_id`.
 - `engine/custom_captain.py` and the invariant tests from `stress/`
 
 ### Deprioritized
