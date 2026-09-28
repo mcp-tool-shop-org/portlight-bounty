@@ -8,7 +8,7 @@ use godot::classes::Image;
 use godot::prelude::*;
 use portlight_sim::encounter::EncounterState;
 use portlight_sim::session::{EncounterStep, Session};
-use portlight_sim::{DuelOutcome, SimError};
+use portlight_sim::SimError;
 
 /// Playable window in `godot/project.godot`.
 pub(crate) const WINDOW_W: f32 = 1280.0;
@@ -107,23 +107,6 @@ pub(crate) const SCRIPTED_FIGHT: &[&str] = &[
 /// An open encounter covers it. Closing the encounter hands that duel back.
 pub(crate) fn stance_duel_visible(screen_open: bool, pending_duel: bool) -> bool {
     pending_duel && !screen_open
-}
-
-/// `Session::hunt_bounty` writes `pending_duel` and leaves it set.
-/// [`Session::resolve_pending_duel`] is the public path that clears it, the
-/// same call the chart's auto-resolve uses. It also resolves that stance
-/// duel. There is no Session call that clears the field alone.
-///
-/// Returns `Ok(None)` while a victory choice is still pending, or when no
-/// duel is pending. The caller must wait until the bounty encounter itself
-/// has finished (`pending_victory` clear).
-pub(crate) fn release_bounty_pending(
-    session: &mut Session,
-) -> Result<Option<DuelOutcome>, SimError> {
-    if session.pending_victory() || session.world().pending_duel.is_none() {
-        return Ok(None);
-    }
-    session.resolve_pending_duel().map(Some)
 }
 
 /// Hull and crew the screen can read off [`Session::world`].
@@ -586,9 +569,9 @@ mod tests {
 
     use super::{
         action_list_from_error, at_sea, facts_for_catalog_captain, facts_from_step, player_ship,
-        present, release_bounty_pending, stance_duel_visible, EncounterFacts, ScreenAction,
-        ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
-        SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED,
+        present, stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput,
+        PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
+        SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED,
     };
 
     fn scripted_session() -> Session {
@@ -858,10 +841,10 @@ mod tests {
     }
 
     #[test]
-    fn bounty_hunt_keeps_pending_duel_until_the_screen_releases_it() {
-        // `parity/scripts/bounty_claim.txt` through the fight, then the clear
-        // the Python CLI does after that fight. The screen uses
-        // `resolve_pending_duel` because that is the public clear.
+    fn bounty_hunt_clears_pending_duel_when_the_encounter_ends() {
+        // `parity/scripts/bounty_claim.txt` through the fight. The screen does
+        // not clear `pending_duel`. `Session::clear_encounter` does, when the
+        // encounter ends.
         let mut session =
             Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None).unwrap();
         session.accept_bounty(SCRIPTED_CAPTAIN).unwrap();
@@ -904,15 +887,13 @@ mod tests {
         assert!(session.pending_victory());
         assert_eq!(present(&facts).unwrap().phase, ScreenPhase::Outcome);
         assert!(session.world().pending_duel.is_some());
-        assert!(release_bounty_pending(&mut session).unwrap().is_none());
 
         session.take_all().unwrap();
         assert!(!session.pending_victory());
-        assert!(session.world().pending_duel.is_some());
-        let outcome = release_bounty_pending(&mut session).unwrap();
-        assert!(outcome.is_some());
-        assert!(session.world().pending_duel.is_none());
-        assert!(release_bounty_pending(&mut session).unwrap().is_none());
+        assert!(
+            session.world().pending_duel.is_none(),
+            "pending_duel still set after the encounter ended"
+        );
     }
 
     #[test]
