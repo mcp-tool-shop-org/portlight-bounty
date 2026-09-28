@@ -6,8 +6,8 @@ use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
 use godot::classes::text_server::AutowrapMode;
 use godot::classes::{
-    HBoxContainer, Label, PanelContainer, ResourceLoader, StyleBoxFlat, Texture2D, TextureRect,
-    VBoxContainer,
+    Control, HBoxContainer, Label, PanelContainer, ResourceLoader, StyleBoxFlat, Texture2D,
+    TextureRect, VBoxContainer,
 };
 use godot::prelude::*;
 use portlight_chart::Asset;
@@ -105,7 +105,10 @@ fn side_column() -> (Gd<VBoxContainer>, Gd<TextureRect>, Gd<PanelContainer>) {
     column.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
     column.add_theme_constant_override("separation", 8);
 
-    let (panel, plate) = plate_panel();
+    let (mut panel, plate) = plate_panel();
+    // Share the column width with the placeholder so the right edges meet.
+    // The plate itself stays at exact 2×; only the parchment grows.
+    panel.set_h_size_flags(SizeFlags::FILL);
     column.add_child(&panel);
     column.add_child(&text_label("Ship plate", 13, CREAM));
     column.add_child(&placeholder_panel());
@@ -116,12 +119,20 @@ fn side_column() -> (Gd<VBoxContainer>, Gd<TextureRect>, Gd<PanelContainer>) {
 fn plate_panel() -> (Gd<PanelContainer>, Gd<TextureRect>) {
     let mut panel = PanelContainer::new_alloc();
     panel.set_name("ShipPlatePanel");
-    panel.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
+    panel.set_h_size_flags(SizeFlags::FILL);
     panel.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
     let mut style = StyleBoxFlat::new_gd();
     style.set_bg_color(PARCHMENT);
     style.set_content_margin_all(UI_PLATE_PAD as f32);
     panel.add_theme_stylebox_override("panel", &style);
+
+    // PanelContainer stretches its direct child. This host is not a container,
+    // so the plate keeps the exact 2× size when the panel is widened to match
+    // the placeholder's right edge.
+    let mut host = Control::new_alloc();
+    host.set_name("ShipPlateHost");
+    host.set_mouse_filter(MouseFilter::IGNORE);
+    panel.add_child(&host);
 
     let mut rect = TextureRect::new_alloc();
     rect.set_name("ShipPlate");
@@ -131,7 +142,7 @@ fn plate_panel() -> (Gd<PanelContainer>, Gd<TextureRect>) {
     rect.set_stretch_mode(godot::classes::texture_rect::StretchMode::SCALE);
     rect.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
     rect.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
-    panel.add_child(&rect);
+    host.add_child(&rect);
     set_ship_plate(&mut rect, &mut panel, "");
     (panel, rect)
 }
@@ -151,6 +162,8 @@ pub(crate) fn set_ship_plate(
         (plate.canvas_h * UI_PLATE_SCALE) as f32,
     );
     rect.set_custom_minimum_size(draw);
+    rect.set_size(draw);
+    rect.set_position(Vector2::ZERO);
     rect.set_texture_filter(TextureFilter::NEAREST);
     rect.set_modulate(PLATE_WHITE);
     load_plate(rect, plate);
@@ -170,7 +183,7 @@ fn load_plate(rect: &mut Gd<TextureRect>, plate: &Asset) {
 fn placeholder_panel() -> Gd<PanelContainer> {
     let mut panel = PanelContainer::new_alloc();
     panel.set_name(PORTRAIT_PLACEHOLDER);
-    panel.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
+    panel.set_h_size_flags(SizeFlags::FILL);
     panel.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
     // Width follows the two lines (about 202). The held-portrait slot in the
     // sign-off mock is about 120 tall, so the panel does not collapse to a strip.

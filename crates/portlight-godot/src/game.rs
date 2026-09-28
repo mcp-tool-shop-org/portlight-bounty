@@ -1810,6 +1810,7 @@ impl PortlightGame {
         }
         if show_crew {
             let mut crew_row = HBoxContainer::new_alloc();
+            crew_row.add_theme_constant_override("separation", 8);
             crew_row.add_child(&action_button("Crew −", game_id, Action::CaptureCrew(-1)));
             crew_row.add_child(&action_button("Crew +", game_id, Action::CaptureCrew(1)));
             box_node.add_child(&crew_row);
@@ -2284,9 +2285,10 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     button.add_theme_stylebox_override("pressed", &pressed);
     button.add_theme_stylebox_override("focus", &hover);
     button.add_theme_color_override("font_color", CREAM);
-    button.add_theme_color_override("font_hover_color", GOLD);
+    // Cream on the hover and focus fills. Gold on those fills is 2.37:1.
+    button.add_theme_color_override("font_hover_color", CREAM);
     button.add_theme_color_override("font_pressed_color", GOLD);
-    button.add_theme_color_override("font_focus_color", GOLD);
+    button.add_theme_color_override("font_focus_color", CREAM);
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {

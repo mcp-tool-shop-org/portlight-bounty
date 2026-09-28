@@ -4,6 +4,9 @@
 //! use of that math, plus the button rules that sit beside `Session`.
 //! Sampling a captured image only reads pixels; it does not draw.
 
+use std::collections::BTreeSet;
+use std::sync::Mutex;
+
 use godot::classes::Image;
 use godot::prelude::*;
 use portlight_chart::{ship_asset, ship_class_plate, Asset, Facing};
@@ -155,10 +158,46 @@ pub(crate) fn ui_plate_panel(canvas_w: i32, canvas_h: i32) -> (i32, i32) {
     )
 }
 
-/// Side-on plate for the ship's content class. `ship_draw` replaces this
-/// lookup when that helper is available. Missing classes use the sloop.
+/// Classes that have already logged the unknown-plate warning.
+static UNKNOWN_PLATE_WARNINGS: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
+
+/// Side-on plate for the ship's content class.
+///
+/// `man_of_war` has no locked plate. It draws `ship_galleon_f3`. The catalog
+/// class stays `man_of_war` in every label; this function does not rename it.
+/// An unknown class logs one warning, then uses the sloop. `ship_draw` can
+/// replace the lookup when that helper is on main; the warned-once log stays.
 pub(crate) fn encounter_plate(class: &str) -> &'static Asset {
-    ship_class_plate(class, Facing::F3).unwrap_or_else(|| ship_asset(Facing::F3))
+    if class == "man_of_war" {
+        return ship_class_plate("galleon", Facing::F3).expect("galleon f3 plate");
+    }
+    if let Some(plate) = ship_class_plate(class, Facing::F3) {
+        return plate;
+    }
+    // The plate widget is built before a ship is known. That empty class is
+    // not a catalog miss.
+    if !class.is_empty() {
+        warn_unknown_ship_class_once(class);
+    }
+    ship_asset(Facing::F3)
+}
+
+/// One stderr line per unknown class, matching the chart's warned-once set.
+fn warn_unknown_ship_class_once(class: &str) {
+    let mut warned = UNKNOWN_PLATE_WARNINGS.lock().expect("unknown ship classes");
+    if warned.insert(class.to_string()) {
+        eprintln!("warning: unknown ship class {class} drawn with sloop plates");
+    }
+}
+
+#[cfg(test)]
+fn unknown_plate_warning_count(class: &str) -> usize {
+    usize::from(
+        UNKNOWN_PLATE_WARNINGS
+            .lock()
+            .expect("unknown ship classes")
+            .contains(class),
+    )
 }
 
 /// Hull and crew the screen can read off [`Session::world`].
@@ -539,7 +578,9 @@ fn dominant_color_fraction(samples: &[[u8; 3]]) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
+    use portlight_chart::{
+        chart_to_screen_f, chart_to_uv, facing_from_uv, ship_class_plate, Facing,
+    };
 
     use super::*;
 
@@ -704,7 +745,32 @@ mod tests {
         let cutter = encounter_plate("cutter");
         assert_eq!(cutter.id, "ship_cutter_f3");
         assert_eq!(ui_plate_panel(cutter.canvas_w, cutter.canvas_h), (184, 200));
-        assert_eq!(encounter_plate("man_of_war").id, "ship_sloop_f3");
+    }
+
+    #[test]
+    fn man_of_war_maps_to_the_galleon_plate_and_keeps_its_class_name() {
+        let class = "man_of_war";
+        let plate = encounter_plate(class);
+        let galleon = ship_class_plate("galleon", Facing::F3).unwrap();
+        assert_eq!(plate.id, "ship_galleon_f3");
+        assert_eq!(plate.id, galleon.id);
+        assert_eq!((plate.canvas_w, plate.canvas_h), (112, 112));
+        // Labels keep the catalog class. The galleon plate does not rename it.
+        assert_eq!(class, "man_of_war");
+        assert!(!class.contains("galleon"));
+        assert_eq!(unknown_plate_warning_count(class), 0);
+        assert_eq!(encounter_plate(class).id, plate.id);
+        assert_eq!(unknown_plate_warning_count(class), 0);
+    }
+
+    #[test]
+    fn an_unknown_class_warns_once_and_uses_the_sloop() {
+        let class = "skiff";
+        assert_eq!(encounter_plate(class).id, "ship_sloop_f3");
+        assert_eq!(encounter_plate(class).id, "ship_sloop_f3");
+        assert_eq!(unknown_plate_warning_count(class), 1);
+        assert_eq!(encounter_plate("").id, "ship_sloop_f3");
+        assert_eq!(unknown_plate_warning_count(""), 0);
     }
 
     #[test]
