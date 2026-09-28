@@ -40,6 +40,7 @@ struct MarketRow {
 enum Action {
     NewGame,
     NextDay,
+    Work,
     ToggleMarket,
     Sail(String),
     Buy(String),
@@ -58,6 +59,7 @@ struct PortlightGame {
     market_scroll: Option<Gd<ScrollContainer>>,
     log_label: Option<Gd<Label>>,
     market_button: Option<Gd<Button>>,
+    work_button: Option<Gd<Button>>,
     log_lines: Vec<String>,
     market_open: bool,
     armed_sail: Option<String>,
@@ -80,6 +82,7 @@ impl IControl for PortlightGame {
             market_scroll: None,
             log_label: None,
             market_button: None,
+            work_button: None,
             log_lines: Vec::new(),
             market_open: false,
             armed_sail: None,
@@ -192,6 +195,9 @@ impl PortlightGame {
         let mut buttons = HBoxContainer::new_alloc();
         buttons.add_child(&action_button("New game", game_id, Action::NewGame));
         buttons.add_child(&action_button("Next day", game_id, Action::NextDay));
+        let work = action_button("Work", game_id, Action::Work);
+        buttons.add_child(&work);
+        self.work_button = Some(work);
         let market = action_button("Market", game_id, Action::ToggleMarket);
         buttons.add_child(&market);
         self.market_button = Some(market);
@@ -301,6 +307,7 @@ impl PortlightGame {
         match action {
             Action::NewGame => self.start_game(),
             Action::NextDay => self.next_day(),
+            Action::Work => self.work_docks(),
             Action::ToggleMarket => {
                 if self.docked_id().is_some() {
                     self.market_open = !self.market_open;
@@ -454,10 +461,32 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn work_docks(&mut self) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.work()
+        };
+        match result {
+            Ok(earned) => self.push_log(format!("Worked the docks for {earned} silver.")),
+            Err(err) => {
+                if self.smoke {
+                    self.smoke_ok = false;
+                }
+                self.push_log(err.to_string());
+            }
+        }
+        self.refresh();
+    }
+
     fn refresh(&mut self) {
         let docked = self.docked_id().is_some();
         if !docked {
             self.market_open = false;
+        }
+        if let Some(button) = self.work_button.as_mut() {
+            button.set_disabled(!docked);
         }
         if let Some(button) = self.market_button.as_mut() {
             button.set_disabled(!docked);
@@ -634,14 +663,15 @@ impl PortlightGame {
                 )
             })
             .unwrap_or_default();
+        let ledger = ledger_line(session);
+        let paths = victory_line(session);
         format!(
-            "Day {}   {}   {}   {} silver   {} provisions\n{place}\n{ship_line}\n{}",
+            "Day {}   {}   {}   {} silver   {} provisions\n{place}\n{ship_line}\n{ledger}\n{paths}",
             world.day,
             content::season_name(world.day),
             world.captain.name,
             world.captain.silver,
-            world.captain.provisions,
-            victory_line(session)
+            world.captain.provisions
         )
     }
 
@@ -709,6 +739,14 @@ fn good_name(id: &str) -> String {
         .good(id)
         .map(|good| good.name.clone())
         .unwrap_or_else(|| id.to_string())
+}
+
+fn ledger_line(session: &Session) -> String {
+    let books = session.books();
+    format!(
+        "Ledger: {} trades, net {} silver",
+        books.trade_count, books.net_profit
+    )
 }
 
 fn victory_line(session: &Session) -> String {
