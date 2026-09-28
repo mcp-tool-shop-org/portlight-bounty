@@ -48,8 +48,12 @@ impl Image {
 pub fn write_asset_files(assets_dir: &Path) -> io::Result<()> {
     let mut csv = String::from("id,file,canvas_w,canvas_h,anchor_x,anchor_y,family,note\n");
     for asset in ASSETS {
-        let image = render(asset);
-        image.write_png(&assets_dir.join(asset.file))?;
+        // Approved landing plates are committed byte-identical. The generator
+        // must not rewrite them.
+        if asset.note == crate::assets::PLACEHOLDER {
+            let image = render(asset);
+            image.write_png(&assets_dir.join(asset.file))?;
+        }
         csv.push_str(&format!(
             "{},{},{},{},{},{},{},{}\n",
             asset.id,
@@ -360,6 +364,14 @@ mod tests {
         let fresh_csv = std::fs::read(fresh.join("catalog/asset-list.csv")).unwrap();
         assert_eq!(committed_csv, fresh_csv);
         for asset in ASSETS {
+            if asset.note != crate::assets::PLACEHOLDER {
+                assert!(
+                    !fresh.join(asset.file).exists(),
+                    "generator wrote approved plate {}",
+                    asset.id
+                );
+                continue;
+            }
             let on_disk = std::fs::read(committed.join(asset.file)).unwrap();
             let generated = std::fs::read(fresh.join(asset.file)).unwrap();
             assert_eq!(on_disk, generated, "{}", asset.id);

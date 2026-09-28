@@ -116,6 +116,8 @@ pub struct ChartModel {
     pub lanes: Vec<ChartLane>,
     pub leg: Option<ActiveLeg>,
     pub ship: ShipMarker,
+    /// Extra ships for the art-director frame. Empty in play.
+    pub gallery: Vec<ShipMarker>,
     pub focus: ScreenRect,
     pub frame: Frame,
 }
@@ -156,6 +158,7 @@ pub fn project_chart(session: &Session) -> ChartModel {
         lanes,
         leg,
         ship,
+        gallery: Vec::new(),
         focus,
         frame,
     }
@@ -432,6 +435,31 @@ fn ship_marker(world: &World) -> ShipMarker {
         asset_id: hull.id,
         wake_id: wake.id,
         docked,
+    }
+}
+
+/// Docked sloop at a port's chart point. The +(32, 16) offset and the
+/// MANIFEST anchor match a docked player ship. Facing is f1, the bow before
+/// a voyage. This is a drawing marker, not a second ship in the sim.
+pub fn docked_sloop_marker(map_x: i64, map_y: i64) -> ShipMarker {
+    let chart_x = map_x as f64;
+    let chart_y = map_y as f64;
+    let mut at = chart_to_screen_f(chart_x, chart_y);
+    at.0 += DOCKED_OFFSET_X;
+    at.1 += DOCKED_OFFSET_Y;
+    let hull = ship_asset(Facing::F1);
+    let wake = assets::asset(SLOOP_WAKE).expect("wake");
+    ShipMarker {
+        chart_x,
+        chart_y,
+        footprint: SHIP_FOOTPRINT_CELLS,
+        facing: Facing::F1,
+        at,
+        sprite_origin: placed(at, hull),
+        wake_origin: placed(at, wake),
+        asset_id: hull.id,
+        wake_id: wake.id,
+        docked: true,
     }
 }
 
@@ -718,6 +746,25 @@ mod tests {
         let expect_y = 8.0 + (6.0 - 8.0) * t;
         assert!((chart.ship.chart_x - expect_x).abs() < 1e-6);
         assert!((chart.ship.chart_y - expect_y).abs() < 1e-6);
+        assert!(chart.gallery.is_empty());
+        let hull = ship_asset(Facing::F7);
+        assert_eq!(
+            chart.ship.sprite_origin,
+            sprite_origin(chart.ship.at, hull.anchor_x, hull.anchor_y)
+        );
+        let port = session.world().port("porto_novo").unwrap();
+        let docked = docked_sloop_marker(port.map_x, port.map_y);
+        assert!(docked.docked);
+        assert_eq!(docked.facing, Facing::F1);
+        assert_eq!(docked.asset_id, "ship_sloop_f1");
+        let bare = chart_to_screen_f(port.map_x as f64, port.map_y as f64);
+        assert!((docked.at.0 - (bare.0 + DOCKED_OFFSET_X)).abs() < 1e-4);
+        assert!((docked.at.1 - (bare.1 + DOCKED_OFFSET_Y)).abs() < 1e-4);
+        let parked = ship_asset(Facing::F1);
+        assert_eq!(
+            docked.sprite_origin,
+            sprite_origin(docked.at, parked.anchor_x, parked.anchor_y)
+        );
     }
 
     #[test]

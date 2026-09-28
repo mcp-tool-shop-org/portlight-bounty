@@ -10,7 +10,7 @@ The simulation crate does not depend on a UI. The Godot project is a view over `
 - `crates/portlight-cli` — `portlight` binary
 - `crates/portlight-chart` — dimetric projection, ship facing, and the chart view-model (no Godot)
 - `crates/portlight-godot` — Godot 4.7 gdext extension
-- `godot/` — Godot 4.7.2 project and placeholder tiles
+- `godot/` — Godot 4.7.2 project, placeholder chart water, and the approved landing bundle
 - `parity/` — action scripts and golden snapshots from the Python engine
 - `tools/parity/` — oracle and diff harness
 
@@ -37,15 +37,15 @@ godot --path godot
 
 New game starts merchant Ada at Porto Novo, seed 1. The chart draws that port's `sail_lanes`, including warning and blocked lanes. Sail, Next day, and the market buttons call `Session`. They do not compute prices, days, or whether a lane is legal.
 
-Placeholder tiles are generated, not drawn by hand:
+Chart water and the port marker are generated placeholders, stamped PH:
 
 ```
 cargo run -p portlight-chart --bin gen_placeholders -- godot/assets
 ```
 
-Replace a chart file later by keeping its id (`chart_water_a`, `chart_port_marker`, `ship_sloop_f0`..`f7`, `ship_sloop_wake`). Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene.
+That command does not rewrite `godot/assets/landing/`. The sloop frames and wake there are the approved plates (MANIFEST v0.2.0). `cargo test -p portlight-chart` checks every manifest sha256 against the committed file. Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
 
-`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files are lossless, with mipmaps off, Fix Alpha Border off, and premultiplied alpha off. The canvas filter is Nearest, so a plate drawn at 1:1 keeps its pixels.
+`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files are lossless, with mipmaps off, Fix Alpha Border off, and premultiplied alpha off. The canvas filter is Nearest, so a plate drawn at 1:1 keeps its pixels. No import setting was changed away from that.
 
 Headless smoke (session only; the dummy renderer does not return a viewport image):
 
@@ -60,6 +60,19 @@ A PNG needs a GL context. On Linux, llvmpipe under Xvfb works:
 xvfb-run -a -s "-screen 0 1280x720x24" \
   env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-first-playable.png \
   godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
+```
+
+The art-director frame (docked sloop, sailing sloop at f7, wake) and the harbour seam plate:
+
+```
+xvfb-run -a -s "-screen 0 1280x720x24" \
+  env PORTLIGHT_SHOT=/tmp/portlight-art-sloop.png \
+  godot --display-driver x11 --rendering-driver opengl3 --path godot -- --art
+
+xvfb-run -a -s "-screen 0 1280x720x24" \
+  env PORTLIGHT_SHOT=/tmp/portlight-harbour-seam.png \
+  godot --display-driver x11 --rendering-driver opengl3 --path godot \
+  res://scenes/harbour_seam.tscn
 ```
 
 ## Parity

@@ -130,11 +130,15 @@ impl INode2D for ChartCanvas {
             .map(|port| Sortable::Port(port.clone()))
             .collect();
         drawables.push(Sortable::Ship(model.ship.clone()));
+        for extra in &model.gallery {
+            drawables.push(Sortable::Gallery(extra.clone()));
+        }
         drawables.sort_by(|a, b| {
             let y = |item: &Sortable| match item {
                 Sortable::Port(port) => port.at.1,
                 // Sort by the drawn contact, which moves during the day tween.
                 Sortable::Ship(_) => ship_at.y,
+                Sortable::Gallery(ship) => ship.at.1,
             };
             y(a).partial_cmp(&y(b)).unwrap_or(std::cmp::Ordering::Equal)
         });
@@ -143,6 +147,14 @@ impl INode2D for ChartCanvas {
                 Sortable::Port(port) => draw_port(&mut canvas, &textures, port, &hover),
                 Sortable::Ship(ship) => {
                     draw_ship(&mut canvas, &textures, ship, ship_at);
+                }
+                Sortable::Gallery(ship) => {
+                    draw_ship(
+                        &mut canvas,
+                        &textures,
+                        ship,
+                        Vector2::new(ship.at.0, ship.at.1),
+                    );
                 }
             }
         }
@@ -236,6 +248,7 @@ pub fn connect_port_pressed(
 enum Sortable {
     Port(ChartPort),
     Ship(ShipMarker),
+    Gallery(ShipMarker),
 }
 
 impl ChartCanvas {
@@ -306,6 +319,10 @@ impl ChartCanvas {
         }
         ids.push(model.ship.asset_id);
         ids.push(model.ship.wake_id);
+        for extra in &model.gallery {
+            ids.push(extra.asset_id);
+            ids.push(extra.wake_id);
+        }
         for id in ids {
             if self.textures.contains_key(id) {
                 continue;
@@ -316,7 +333,7 @@ impl ChartCanvas {
             let path = asset.res_path();
             let Some(resource) = ResourceLoader::singleton().load(&GString::from(path.as_str()))
             else {
-                godot_print!("missing placeholder {}", asset.res_path());
+                godot_print!("missing texture {}", asset.res_path());
                 continue;
             };
             if let Ok(texture) = resource.try_cast::<Texture2D>() {
@@ -353,12 +370,14 @@ fn draw_ship(
     at: Vector2,
 ) {
     let delta = at - Vector2::new(ship.at.0, ship.at.1);
-    draw_sprite(
-        canvas,
-        textures,
-        ship.wake_id,
-        Vector2::new(ship.wake_origin.0, ship.wake_origin.1) + delta,
-    );
+    if !ship.docked {
+        draw_sprite(
+            canvas,
+            textures,
+            ship.wake_id,
+            Vector2::new(ship.wake_origin.0, ship.wake_origin.1) + delta,
+        );
+    }
     draw_sprite(
         canvas,
         textures,

@@ -3,12 +3,12 @@ chart_water_a,placeholders/chart_water_a.png,128,64,64,63,chart_water,PLACEHOLDE
 chart_water_b,placeholders/chart_water_b.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
 chart_water_c,placeholders/chart_water_c.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
 chart_port_marker,placeholders/chart_port_marker.png,128,128,64,95,port,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f0,placeholders/ship_sloop_f0.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f1,placeholders/ship_sloop_f1.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f2,placeholders/ship_sloop_f2.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f3,placeholders/ship_sloop_f3.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f4,placeholders/ship_sloop_f4.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f5,placeholders/ship_sloop_f5.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f6,placeholders/ship_sloop_f6.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_f7,placeholders/ship_sloop_f7.png,64,64,32,50,ship,PLACEHOLDER flat colour; replace this file by id
-ship_sloop_wake,placeholders/ship_sloop_wake.png,64,64,32,50,wake,PLACEHOLDER flat colour; replace this file by id
+ship_sloop_f0,landing/chart/ships/ship_sloop/ship_sloop_f0.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f1,landing/chart/ships/ship_sloop/ship_sloop_f1.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f2,landing/chart/ships/ship_sloop/ship_sloop_f2.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f3,landing/chart/ships/ship_sloop/ship_sloop_f3.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f4,landing/chart/ships/ship_sloop/ship_sloop_f4.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f5,landing/chart/ships/ship_sloop/ship_sloop_f5.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f6,landing/chart/ships/ship_sloop/ship_sloop_f6.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_f7,landing/chart/ships/ship_sloop/ship_sloop_f7.png,64,64,32,50,ship,approved landing plate; do not regenerate
+ship_sloop_wake,landing/chart/ships/ship_sloop/ship_sloop_wake.png,64,64,32,50,wake,approved landing plate; do not regenerate

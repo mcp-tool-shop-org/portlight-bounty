@@ -6,6 +6,8 @@
 //! lanes are legal and does not call the voyage helper underneath that method.
 
 mod assets;
+#[cfg(test)]
+mod landing;
 mod placeholder;
 mod project;
 mod view;
@@ -18,8 +20,8 @@ pub use project::{
     CELL_HEIGHT, CELL_WIDTH, DOCKED_OFFSET_X, DOCKED_OFFSET_Y, WATER_DATUM_Y,
 };
 pub use view::{
-    advance_refusal, hover_at, lane_inspect, press_port, project_chart, ActiveLeg, ChartLane,
-    ChartModel, ChartPort, PortPress, Rgba, ShipMarker, WaterTile, CHART_VIEW_H, CHART_VIEW_W,
-    DAY_TWEEN_SECS, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
-    MEDITERRANEAN, SHIP_FOOTPRINT_CELLS,
+    advance_refusal, docked_sloop_marker, hover_at, lane_inspect, press_port, project_chart,
+    ActiveLeg, ChartLane, ChartModel, ChartPort, PortPress, Rgba, ShipMarker, WaterTile,
+    CHART_VIEW_H, CHART_VIEW_W, DAY_TWEEN_SECS, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME,
+    FIRST_PLAYABLE_SEED, MEDITERRANEAN, SHIP_FOOTPRINT_CELLS,
 };

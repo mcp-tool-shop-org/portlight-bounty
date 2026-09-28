@@ -19,8 +19,9 @@ use godot::global::Error;
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
-    advance_refusal, lane_inspect, press_port, project_chart, ChartModel, PortPress, CHART_VIEW_H,
-    CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
+    advance_refusal, docked_sloop_marker, frame_to_view, lane_inspect, press_port, project_chart,
+    ChartModel, Facing, PortPress, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN,
+    FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::model::VoyageStatus;
 use portlight_sim::{content, LaneSuitability, Session};
@@ -83,6 +84,8 @@ struct PortlightGame {
     market_open: bool,
     armed_sail: Option<String>,
     smoke: bool,
+    /// Art-director frame: a docked sloop plus the sailing sloop. Not play.
+    art: bool,
     smoke_ok: bool,
     shot_path: Option<String>,
     capture_frames: i32,
@@ -111,6 +114,7 @@ impl IControl for PortlightGame {
             market_open: false,
             armed_sail: None,
             smoke: false,
+            art: false,
             smoke_ok: true,
             shot_path: None,
             capture_frames: 0,
@@ -131,6 +135,13 @@ impl IControl for PortlightGame {
         if user_arg("--encounter") {
             self.smoke = true;
             self.run_encounter();
+            self.capture_frames = 4;
+        } else if user_arg("--art") {
+            self.smoke = true;
+            if self.shot_path.is_none() {
+                self.shot_path = Some("/tmp/portlight-art-sloop.png".to_string());
+            }
+            self.run_art();
             self.capture_frames = 4;
         } else if self.smoke {
             self.run_smoke();
@@ -210,7 +221,7 @@ impl PortlightGame {
         let game_id = self.instance_id();
         column.add_child(&title_label("Portlight", 22, GOLD));
         column.add_child(&body_label(
-            "Mediterranean chart. Placeholder tiles, marked PH.",
+            "Chart water is a PH placeholder. Sloop plates are approved.",
             13,
             MUTED,
         ));
@@ -367,6 +378,33 @@ impl PortlightGame {
         }) {
             self.smoke_ok = false;
             self.push_log("Smoke: Al-Manar did not list a blocked lane.".to_string());
+        }
+        self.refresh();
+    }
+
+    /// One chart frame for the art gate: docked sloop at Porto Novo, and the
+    /// seed-1 ship one day along the Grain Road at facing f7 with its wake.
+    fn run_art(&mut self) {
+        self.art = true;
+        self.perform(Action::Sail("al_manar".into()));
+        self.perform(Action::NextDay);
+        let chart = self.chart_now();
+        let ok = chart.as_ref().is_some_and(|chart| {
+            chart.ship.facing == Facing::F7
+                && !chart.ship.docked
+                && chart.ship.asset_id == "ship_sloop_f7"
+                && chart.gallery.len() == 1
+                && chart.gallery[0].docked
+                && chart.gallery[0].asset_id == "ship_sloop_f1"
+        });
+        if ok {
+            self.push_log(
+                "Art check: docked sloop at Porto Novo, sailing sloop at f7 with wake. Chart water is still the PH placeholder."
+                    .to_string(),
+            );
+        } else {
+            self.smoke_ok = false;
+            self.push_log("Art: expected a docked f1 sloop and a sailing f7 sloop.".to_string());
         }
         self.refresh();
     }
@@ -915,7 +953,19 @@ impl PortlightGame {
     }
 
     fn chart_now(&self) -> Option<ChartModel> {
-        self.session.as_ref().map(project_chart)
+        let session = self.session.as_ref()?;
+        let mut chart = project_chart(session);
+        if self.art {
+            if let Some(port) = session.world().port("porto_novo") {
+                chart
+                    .gallery
+                    .push(docked_sloop_marker(port.map_x, port.map_y));
+            }
+            // Keep the Mediterranean in frame so the docked ship and the
+            // sailing ship are both on screen. Play still follows the ship.
+            chart.frame = frame_to_view(chart.focus, CHART_VIEW_W, CHART_VIEW_H);
+        }
+        Some(chart)
     }
 
     fn docked_id(&self) -> Option<&str> {

@@ -1,0 +1,3778 @@
+{
+  "manifest": "portlight-bounty PB-002 landing bundle",
+  "consumer": "portlight-bounty",
+  "task": "PB-002",
+  "version": "0.2.0",
+  "generator": "pb-002-plates/tools/build_manifest_pb002.py",
+  "sources": {
+    "asset_list": "outbox-PB-002/asset-list.csv",
+    "asset_spec": "outbox-PB-002/asset-spec.md (Rev 3)",
+    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1",
+    "verifier": [
+      "outbox-PB-002/retrieval-ships.md",
+      "outbox-PB-002/retrieval-harbour.md"
+    ]
+  },
+  "layout": {
+    "ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec \u00a77g)",
+    "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec \u00a74 Output)"
+  },
+  "px_per_bu": {
+    "chart": 90.51,
+    "harbour": 181.019
+  },
+  "counts": {
+    "ships": 36,
+    "harbour": 30
+  },
+  "count": 66,
+  "entries": [
+    {
+      "id": "ship_sloop_f0",
+      "class": "ship_sloop",
+      "frame": "f0",
+      "path": "chart/ships/ship_sloop/ship_sloop_f0.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "22461987cfc1538833552b527b3a3ecf8e895ac53b174c36001df26c8c482bbf",
+      "bytes": 3695,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f0.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f1",
+      "class": "ship_sloop",
+      "frame": "f1",
+      "path": "chart/ships/ship_sloop/ship_sloop_f1.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "11998e8247fe6be241df9fa02e4505703591736c182611ef5fcbbe7a3f282b16",
+      "bytes": 3024,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f1.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f2",
+      "class": "ship_sloop",
+      "frame": "f2",
+      "path": "chart/ships/ship_sloop/ship_sloop_f2.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 0,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "1861618db52e41d119586f318a4898e762bda74c1aca110b6ad380ea86a6ff23",
+      "bytes": 3617,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f2.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f3",
+      "class": "ship_sloop",
+      "frame": "f3",
+      "path": "chart/ships/ship_sloop/ship_sloop_f3.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "f46f2adc24c878cf93a5c089ec8c9dac5955f03c16d694855a13c97ca01ff578",
+      "bytes": 3854,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f3.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f4",
+      "class": "ship_sloop",
+      "frame": "f4",
+      "path": "chart/ships/ship_sloop/ship_sloop_f4.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "2abb7e8fa7450598cc3f2cdb0e220365e0f2e00cd83934d6bef8d29dc1b86b04",
+      "bytes": 3693,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f4.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f5",
+      "class": "ship_sloop",
+      "frame": "f5",
+      "path": "chart/ships/ship_sloop/ship_sloop_f5.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "a92add949bd7f4bff4c091af1ac6df9f76a451d103639306e3201bd1541f9845",
+      "bytes": 3180,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f5.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f6",
+      "class": "ship_sloop",
+      "frame": "f6",
+      "path": "chart/ships/ship_sloop/ship_sloop_f6.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 180,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "1e71f79da13cd12f081c0aa42f52f946dd217514f3535e08f7d82d5ba890a469",
+      "bytes": 3614,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f6.png"
+      }
+    },
+    {
+      "id": "ship_sloop_f7",
+      "class": "ship_sloop",
+      "frame": "f7",
+      "path": "chart/ships/ship_sloop/ship_sloop_f7.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "1b8a44ff6537d40994a1605eb74b5d08e9f5a521a130d0885400381f3f4b7ae4",
+      "bytes": 3820,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f7.png"
+      }
+    },
+    {
+      "id": "ship_sloop_wake",
+      "class": "ship_sloop",
+      "frame": "wake",
+      "path": "chart/ships/ship_sloop/ship_sloop_wake.png",
+      "canvas": [
+        64,
+        64
+      ],
+      "canvas_str": "64x64",
+      "anchor": [
+        32,
+        50
+      ],
+      "LOA": {
+        "px": 40,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": null,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "3d24aefee2df146bad0a716ea5d95483c152f0a786b0c1461e7c76109c3b4876",
+      "bytes": 2767,
+      "provenance": {
+        "mesh": {
+          "hull": "sloop",
+          "file": "/workspace/studio/pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
+          "note": "wake: rig only, disc (no mesh in frame)"
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_wake.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f0",
+      "class": "ship_cutter",
+      "frame": "f0",
+      "path": "chart/ships/ship_cutter/ship_cutter_f0.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "383a9dcab3caef35ba335802068e8072759bcc7bc44ce9293d668629a0b31212",
+      "bytes": 4969,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f0.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f1",
+      "class": "ship_cutter",
+      "frame": "f1",
+      "path": "chart/ships/ship_cutter/ship_cutter_f1.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "4e73f0b93cf2bd8b35ce82dd2fd90c354e4c7ffb5d845f2bb789ffa422265a8a",
+      "bytes": 3845,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f1.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f2",
+      "class": "ship_cutter",
+      "frame": "f2",
+      "path": "chart/ships/ship_cutter/ship_cutter_f2.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 0,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "11dec0d267d42b426a396264f667993a54be9a13cb2f4b6d9e0cb406023a9a64",
+      "bytes": 4914,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f2.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f3",
+      "class": "ship_cutter",
+      "frame": "f3",
+      "path": "chart/ships/ship_cutter/ship_cutter_f3.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "b79450ff71cede55ac411a8ed6d65801de2bc24d277c0914c9fc4e134dedcde5",
+      "bytes": 5151,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f3.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f4",
+      "class": "ship_cutter",
+      "frame": "f4",
+      "path": "chart/ships/ship_cutter/ship_cutter_f4.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "5aff91b804a6339be29dd2c908b292cb915e89d6753a967982ea6ed9f3805210",
+      "bytes": 4985,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f4.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f5",
+      "class": "ship_cutter",
+      "frame": "f5",
+      "path": "chart/ships/ship_cutter/ship_cutter_f5.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "485ba47317da6d9e0edfd0ffe57d2b32bd0498e25ba4947f42591e52e527e979",
+      "bytes": 3916,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f5.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f6",
+      "class": "ship_cutter",
+      "frame": "f6",
+      "path": "chart/ships/ship_cutter/ship_cutter_f6.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 180,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "c26b81f4a559338e169ab81fdd13cbe1ca72525366398df47f17bcd0fdbcef52",
+      "bytes": 4873,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f6.png"
+      }
+    },
+    {
+      "id": "ship_cutter_f7",
+      "class": "ship_cutter",
+      "frame": "f7",
+      "path": "chart/ships/ship_cutter/ship_cutter_f7.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "e576a399647d99994810d4890f43631653780eb13750582f1b1c925f06c7389c",
+      "bytes": 5117,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f7.png"
+      }
+    },
+    {
+      "id": "ship_cutter_wake",
+      "class": "ship_cutter",
+      "frame": "wake",
+      "path": "chart/ships/ship_cutter/ship_cutter_wake.png",
+      "canvas": [
+        72,
+        80
+      ],
+      "canvas_str": "72x80",
+      "anchor": [
+        36,
+        64
+      ],
+      "LOA": {
+        "px": 48,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": null,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "0fe255fa6e74700d148c4a8506b4eb1e8a2494d20657f674ce8765c44516627c",
+      "bytes": 3706,
+      "provenance": {
+        "mesh": {
+          "hull": "schooner",
+          "file": "/workspace/studio/pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
+          "note": "wake: rig only, disc (no mesh in frame)"
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_wake.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f0",
+      "class": "ship_brigantine",
+      "frame": "f0",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f0.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "fdca0b03bc026b5f5f76c346c65c4eb3dd3a13c140eb4ffa2371e6ff4f07786a",
+      "bytes": 7326,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f0.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f1",
+      "class": "ship_brigantine",
+      "frame": "f1",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f1.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "9252faee802fc1bdb167c3b150ef7e5fa878886b2814fe9b2240550e7964d0b9",
+      "bytes": 5914,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f1.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f2",
+      "class": "ship_brigantine",
+      "frame": "f2",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f2.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 0,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "a58b8df67fe98a2734bd7289af8675e45c1c7268f56d730efdd10acfd6156901",
+      "bytes": 7258,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f2.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f3",
+      "class": "ship_brigantine",
+      "frame": "f3",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f3.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "801718853a184efe5aefe0bab4fea3eb42853960ccc57f68628d4cca3f819aba",
+      "bytes": 7861,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f3.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f4",
+      "class": "ship_brigantine",
+      "frame": "f4",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f4.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "7748f99434b38164ea63297d3f4a922484a196cdd13d3f16b3993635827e66d1",
+      "bytes": 7375,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f4.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f5",
+      "class": "ship_brigantine",
+      "frame": "f5",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f5.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "68c0059871003a0292e5434723d943073e48e034dc2eeea21f2df43a99a83d71",
+      "bytes": 5903,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f5.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f6",
+      "class": "ship_brigantine",
+      "frame": "f6",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f6.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 180,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "d66e8f3645a99c445418c18f099745d1007214eea0511b296374d7d688f92e79",
+      "bytes": 7258,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f6.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_f7",
+      "class": "ship_brigantine",
+      "frame": "f7",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_f7.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "63a101a0902a6ad3a1fc88477cd56550949c01f2b3f0d6651c282174bb1d9c0c",
+      "bytes": 7829,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f7.png"
+      }
+    },
+    {
+      "id": "ship_brigantine_wake",
+      "class": "ship_brigantine",
+      "frame": "wake",
+      "path": "chart/ships/ship_brigantine/ship_brigantine_wake.png",
+      "canvas": [
+        96,
+        96
+      ],
+      "canvas_str": "96x96",
+      "anchor": [
+        48,
+        76
+      ],
+      "LOA": {
+        "px": 64,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": null,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "026519c200073ad48677dfbb9150b1e1f9926648a7dce0976faae8521599be41",
+      "bytes": 5449,
+      "provenance": {
+        "mesh": {
+          "hull": "brigantine",
+          "file": "/workspace/studio/pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
+          "note": "wake: rig only, disc (no mesh in frame)"
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_wake.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f0",
+      "class": "ship_galleon",
+      "frame": "f0",
+      "path": "chart/ships/ship_galleon/ship_galleon_f0.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "68dd8ac088e2f6aeb065e3473b10915acea0996e75a41bfa4dee0c17f5f9acaa",
+      "bytes": 10956,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f0.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f1",
+      "class": "ship_galleon",
+      "frame": "f1",
+      "path": "chart/ships/ship_galleon/ship_galleon_f1.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "12eee95bfe4eeb9f8cf783e39bdef26457a8e304bb4c606f7da4c8d02dee7668",
+      "bytes": 8177,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f1.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f2",
+      "class": "ship_galleon",
+      "frame": "f2",
+      "path": "chart/ships/ship_galleon/ship_galleon_f2.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 0,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "8de74418100134f3ce6643293cb583ed92cc9c031ad8562a44dd09d1724653ee",
+      "bytes": 10945,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f2.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f3",
+      "class": "ship_galleon",
+      "frame": "f3",
+      "path": "chart/ships/ship_galleon/ship_galleon_f3.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -45,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "98a8529fad297ba47d220cb9debf2e585d5b84ea90ab0ca2ad30058d8f4ce107",
+      "bytes": 11707,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f3.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f4",
+      "class": "ship_galleon",
+      "frame": "f4",
+      "path": "chart/ships/ship_galleon/ship_galleon_f4.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -90,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "c9a1a4ce5eebf6b089d09a96d0b03b14d10d1e0cfd1fb372fab03b0ff8924645",
+      "bytes": 11259,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f4.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f5",
+      "class": "ship_galleon",
+      "frame": "f5",
+      "path": "chart/ships/ship_galleon/ship_galleon_f5.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": -135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "0387bcbeae274c75890374b24e542af5658ff7acca649a1e00a28b03f8715326",
+      "bytes": 9047,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f5.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f6",
+      "class": "ship_galleon",
+      "frame": "f6",
+      "path": "chart/ships/ship_galleon/ship_galleon_f6.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 180,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "8c60662b594123f47b89db6bd3c16d5d9d7e83d76ebe638f3b4fdf69bc883a32",
+      "bytes": 11262,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f6.png"
+      }
+    },
+    {
+      "id": "ship_galleon_f7",
+      "class": "ship_galleon",
+      "frame": "f7",
+      "path": "chart/ships/ship_galleon/ship_galleon_f7.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": 135,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "09a398f66c4407ab1c743247d2a1f5b7708c060dd2bb0e42e1a88114b7ad5ca1",
+      "bytes": 11668,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": null
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f7.png"
+      }
+    },
+    {
+      "id": "ship_galleon_wake",
+      "class": "ship_galleon",
+      "frame": "wake",
+      "path": "chart/ships/ship_galleon/ship_galleon_wake.png",
+      "canvas": [
+        112,
+        112
+      ],
+      "canvas_str": "112x112",
+      "anchor": [
+        56,
+        88
+      ],
+      "LOA": {
+        "px": 80,
+        "definition": "hull length = length overall incl. bowsprit and boom, at f3/f7 (asset-spec \u00a77c; ship-footprints Rev 2)"
+      },
+      "rot_z": null,
+      "view": "chart",
+      "phase": "P1",
+      "status": "LOCKED (Addendum B pt2)",
+      "sha256": "ff30ce7887ab56aa96a320a967c5b1515ab3e54cc68581affe612a31e7d21710",
+      "bytes": 7361,
+      "provenance": {
+        "mesh": {
+          "hull": "galleon",
+          "file": "/workspace/studio/pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
+          "note": "wake: rig only, disc (no mesh in frame)"
+        },
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum D (05:15 ET): PASS, 36 will-use",
+          "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
+          "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
+        },
+        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_wake.png"
+      }
+    },
+    {
+      "id": "water_a",
+      "group": "water",
+      "path": "ground/water_a.png",
+      "canvas": [
+        256,
+        128
+      ],
+      "canvas_str": "256x128",
+      "anchor": [
+        128,
+        127
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaFloor",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": null,
+      "y_sort_origin_csv": "- (y_sort off)",
+      "andon_kind": "ground",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "249b0e88bf8f26a866586cff863262509f6d4d4124c414f35842e7ccd819d9e9",
+      "bytes": 23955,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "water",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "ground",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/ground/water_a.png"
+      }
+    },
+    {
+      "id": "water_b",
+      "group": "water",
+      "path": "ground/water_b.png",
+      "canvas": [
+        256,
+        128
+      ],
+      "canvas_str": "256x128",
+      "anchor": [
+        128,
+        127
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaFloor",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": null,
+      "y_sort_origin_csv": "- (y_sort off)",
+      "andon_kind": "ground",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "0e13a4f7d7da96af1f61af015fb01b92bd80e48173a0ae080cdf06fbdfc3c3b5",
+      "bytes": 24354,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "water",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "ground",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/ground/water_b.png"
+      }
+    },
+    {
+      "id": "water_c",
+      "group": "water",
+      "path": "ground/water_c.png",
+      "canvas": [
+        256,
+        128
+      ],
+      "canvas_str": "256x128",
+      "anchor": [
+        128,
+        127
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaFloor",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": null,
+      "y_sort_origin_csv": "- (y_sort off)",
+      "andon_kind": "ground",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "ba8bb83aed7ea01eab803265f9a4ff4d32aeef625ba1d3fb7b89f510c70eccdc",
+      "bytes": 24148,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "water",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "ground",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/ground/water_c.png"
+      }
+    },
+    {
+      "id": "quay_0001",
+      "group": "quay",
+      "path": "structures/quay_0001/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "7bcea7018b81943a3cfb06e884dca40fb1821cb57ee2189c66c61d02cb57566e",
+      "bytes": 36884,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0001.png"
+      }
+    },
+    {
+      "id": "quay_0010",
+      "group": "quay",
+      "path": "structures/quay_0010/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "f9f80c90cece0570d914dd81d4231b25ee017fbef7cfb43da5ca96bca61ec55f",
+      "bytes": 34662,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0010.png"
+      }
+    },
+    {
+      "id": "quay_0011",
+      "group": "quay",
+      "path": "structures/quay_0011/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "bfd0a1797d2010731989ef5926e2009dfb732712a541d8df825ed454b6851d16",
+      "bytes": 40755,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0011.png"
+      }
+    },
+    {
+      "id": "quay_0100",
+      "group": "quay",
+      "path": "structures/quay_0100/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "c1c05298a48766237e823bfc7db2d3fe7b0ad09bf201c8f5cd5eb23eaf420674",
+      "bytes": 37080,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0100.png"
+      }
+    },
+    {
+      "id": "quay_0101",
+      "group": "quay",
+      "path": "structures/quay_0101/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "e03cbc2dd4dc63c2471d0f8dd9c3e983dda26ad32b37a5ef64ee98992f2c1c68",
+      "bytes": 42325,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0101.png"
+      }
+    },
+    {
+      "id": "quay_0110",
+      "group": "quay",
+      "path": "structures/quay_0110/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "4761c91049d6f78b1a8e01abfdcb404647a9e91ffbf1796e049d7007c8b4c2f3",
+      "bytes": 39030,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0110.png"
+      }
+    },
+    {
+      "id": "quay_0111",
+      "group": "quay",
+      "path": "structures/quay_0111/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "1319abda0f4768c0d1c77d9cb71a9345601ac48161b9ef84811a6bd5a22a2333",
+      "bytes": 43167,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_0111.png"
+      }
+    },
+    {
+      "id": "quay_1000",
+      "group": "quay",
+      "path": "structures/quay_1000/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "b8aa6f3ad3e4492653502178c9d1ff32d9c9b35c947e4ef72d773bff56204cce",
+      "bytes": 41118,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1000.png"
+      }
+    },
+    {
+      "id": "quay_1001",
+      "group": "quay",
+      "path": "structures/quay_1001/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "04053d631ba61782e58556ae0fcc1c73dbc6709dc6f46d4a60dacd9d9f7ea859",
+      "bytes": 44486,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1001.png"
+      }
+    },
+    {
+      "id": "quay_1010",
+      "group": "quay",
+      "path": "structures/quay_1010/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "0236dff9ceaf61fd16ea132294ee3e5470765853efe784b17dfa49bb0c477911",
+      "bytes": 44549,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1010.png"
+      }
+    },
+    {
+      "id": "quay_1011",
+      "group": "quay",
+      "path": "structures/quay_1011/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "f20e266df196ba2ebc38b0337423ddaceec24fbda2d7bb1296e9eeb45114a9f3",
+      "bytes": 47956,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1011.png"
+      }
+    },
+    {
+      "id": "quay_1100",
+      "group": "quay",
+      "path": "structures/quay_1100/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "bfeebac13bf2c6dfd7a008bbc21c7bc22a6384b79f4013c1a593e29789b73fb3",
+      "bytes": 45779,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1100.png"
+      }
+    },
+    {
+      "id": "quay_1101",
+      "group": "quay",
+      "path": "structures/quay_1101/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "299ed23aa73f5e3dd8e520cdfa3eb5db1fa4b88324a60035df3a0183c1b7bb12",
+      "bytes": 46205,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1101.png"
+      }
+    },
+    {
+      "id": "quay_1110",
+      "group": "quay",
+      "path": "structures/quay_1110/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "1ad600dd75dca1250a4d962b6a16f81767fe5e2dc15feca3e1e60ee4b11357ae",
+      "bytes": 47086,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1110.png"
+      }
+    },
+    {
+      "id": "quay_1111",
+      "group": "quay",
+      "path": "structures/quay_1111/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "042779b4a11dc01ed85f11bfa1606adad38d3d8981107dd1dea8af64918de9c6",
+      "bytes": 46800,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "quay",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/quay/quay_1111.png"
+      }
+    },
+    {
+      "id": "pier_UL_DR",
+      "group": "pier",
+      "path": "structures/pier_UL_DR/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "76779815113874ea45ef60d3f64adbc7f5fb66be891de4ba59e686699126a11f",
+      "bytes": 39562,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UL_DR.png"
+      }
+    },
+    {
+      "id": "pier_UR_DL",
+      "group": "pier",
+      "path": "structures/pier_UR_DL/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "67e171a6b6f63133217b9ba4910ec891fc01c10c9959f22a6a224d4377ae5901",
+      "bytes": 41060,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UR_DL.png"
+      }
+    },
+    {
+      "id": "pier_UL",
+      "group": "pier",
+      "path": "structures/pier_UL/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "ed887bbe14e10da8b2f45a13660a41fb106e5570e981178e3ef4a97a22739feb",
+      "bytes": 39048,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UL.png"
+      }
+    },
+    {
+      "id": "pier_UR",
+      "group": "pier",
+      "path": "structures/pier_UR/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "5609a651d65866b38f19db096c8f3649c2b9286db0865ca11168c1c5db7c992a",
+      "bytes": 40397,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UR.png"
+      }
+    },
+    {
+      "id": "pier_DR",
+      "group": "pier",
+      "path": "structures/pier_DR/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "03c3794bcfa53ea52ea0a33838bb8b0f9c2a9264bf4735c79a678a4cb9acc32b",
+      "bytes": 38286,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_DR.png"
+      }
+    },
+    {
+      "id": "pier_DL",
+      "group": "pier",
+      "path": "structures/pier_DL/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "ccf00951acdc6662043503cf5ee1454f8ab90042ba2b19f9734d2261d0db676b",
+      "bytes": 39663,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_DL.png"
+      }
+    },
+    {
+      "id": "pier_UL_UR_DR",
+      "group": "pier",
+      "path": "structures/pier_UL_UR_DR/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "6d05c0b8f98c3b8fae680da50c50bd2981d4675e478f620e041b7bd012ea2fd5",
+      "bytes": 42195,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UL_UR_DR.png"
+      }
+    },
+    {
+      "id": "pier_UR_DR_DL",
+      "group": "pier",
+      "path": "structures/pier_UR_DR_DL/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "4764ae2d9a4a3022d6c703f31243d614baee36ae8d9ed8e9b303d1d5d36e6d01",
+      "bytes": 40224,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UR_DR_DL.png"
+      }
+    },
+    {
+      "id": "pier_DR_DL_UL",
+      "group": "pier",
+      "path": "structures/pier_DR_DL_UL/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "8cff7843a755d1c7deecea6a7355d006706c6603efa12b4a76df89edb8dfa13a",
+      "bytes": 40053,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_DR_DL_UL.png"
+      }
+    },
+    {
+      "id": "pier_DL_UL_UR",
+      "group": "pier",
+      "path": "structures/pier_DL_UL_UR/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "c8fcb214cc573640daab123cd73b62d1b37b7203b1501ea48095da2d0527df13",
+      "bytes": 42381,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_DL_UL_UR.png"
+      }
+    },
+    {
+      "id": "pier_UL_UR_DR_DL",
+      "group": "pier",
+      "path": "structures/pier_UL_UR_DR_DL/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": -48,
+      "y_sort_origin_csv": null,
+      "andon_kind": "structure 1,1",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "4bdb3afd6a72c0efa3c2d96823cd8936ca75c1ee0f3447df2f8021d0d7e24151",
+      "bytes": 42668,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pier",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "structure",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/pier/pier_UL_UR_DR_DL.png"
+      }
+    },
+    {
+      "id": "pier_pilings_1x1",
+      "group": "pilings",
+      "path": "props/pier_pilings_1x1/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "SeaWorks",
+      "layer_offset_px": [
+        0,
+        48
+      ],
+      "texture_origin": [
+        0,
+        64
+      ],
+      "texture_origin_csv": null,
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "prop",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "68054e395a9e4863507280ebaf1206de3a3e967abbe1945c89e3af4f842343c8",
+      "bytes": 16006,
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.2 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": 64,
+          "scene_kind": "pilings",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender 5.2 EEVEE"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "prop",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
+          "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
+        },
+        "source_path": "pb-002-plates/props/pier_pilings_1x1.png"
+      }
+    }
+  ]
+}

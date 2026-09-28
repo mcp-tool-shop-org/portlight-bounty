@@ -1,10 +1,10 @@
-//! Chart placeholder ids. Real plates replace the file; the id stays.
+//! Chart plate ids. Real art replaces the file; the id stays.
 //!
-//! First-playable art is chart water, a code-drawn port marker, and the sloop
-//! frames plus wake. Harbour water, quay, and pier are not drawn here. Their
-//! datum (−48) is recorded in `godot/assets/catalog/locked-ids.csv` so those
-//! tiles can drop in later. Ship silhouettes are placeholders: the spec holds
-//! the real frames.
+//! The sloop frames and wake are the approved landing plates
+//! (`godot/assets/landing/`, MANIFEST v0.2.0). Chart water and the port
+//! marker are still placeholders, stamped PH. Harbour water, quay, pier,
+//! and pilings are in that same bundle and are not drawn on the chart.
+//! Their datum (−48) is recorded in `godot/assets/catalog/locked-ids.csv`.
 
 use crate::project::Facing;
 
@@ -46,7 +46,8 @@ impl Asset {
     }
 }
 
-const PLACEHOLDER: &str = "PLACEHOLDER flat colour; replace this file by id";
+pub const PLACEHOLDER: &str = "PLACEHOLDER flat colour; replace this file by id";
+const APPROVED: &str = "approved landing plate; do not regenerate";
 
 pub const CHART_WATER_A: &str = "chart_water_a";
 pub const CHART_WATER_B: &str = "chart_water_b";
@@ -83,6 +84,13 @@ const fn plate(
         anchor_y,
         family,
         note: PLACEHOLDER,
+    }
+}
+
+const fn approved(asset: Asset) -> Asset {
+    Asset {
+        note: APPROVED,
+        ..asset
     }
 }
 
@@ -123,87 +131,87 @@ pub static ASSETS: &[Asset] = &[
         PORT_ANCHOR.1,
         AssetFamily::Port,
     ),
-    plate(
+    approved(plate(
         "ship_sloop_f0",
-        "placeholders/ship_sloop_f0.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f0.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f1",
-        "placeholders/ship_sloop_f1.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f1.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f2",
-        "placeholders/ship_sloop_f2.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f2.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f3",
-        "placeholders/ship_sloop_f3.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f3.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f4",
-        "placeholders/ship_sloop_f4.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f4.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f5",
-        "placeholders/ship_sloop_f5.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f5.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f6",
-        "placeholders/ship_sloop_f6.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f6.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         "ship_sloop_f7",
-        "placeholders/ship_sloop_f7.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_f7.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Ship,
-    ),
-    plate(
+    )),
+    approved(plate(
         SLOOP_WAKE,
-        "placeholders/ship_sloop_wake.png",
+        "landing/chart/ships/ship_sloop/ship_sloop_wake.png",
         SLOOP_CANVAS.0,
         SLOOP_CANVAS.1,
         SLOOP_ANCHOR.0,
         SLOOP_ANCHOR.1,
         AssetFamily::Wake,
-    ),
+    )),
 ];
 
 pub fn asset(id: &str) -> Option<&'static Asset> {
@@ -247,8 +255,12 @@ mod tests {
         let ship = ship_asset(Facing::F0);
         assert_eq!((ship.canvas_w, ship.canvas_h), SLOOP_CANVAS);
         assert_eq!((ship.anchor_x, ship.anchor_y), SLOOP_ANCHOR);
+        assert!(ship.file.starts_with("landing/"));
+        assert_ne!(ship.note, PLACEHOLDER);
+        assert_eq!(water.note, PLACEHOLDER);
         let wake = asset(SLOOP_WAKE).unwrap();
         assert_eq!((wake.anchor_x, wake.anchor_y), SLOOP_ANCHOR);
+        assert!(wake.file.ends_with("ship_sloop_wake.png"));
     }
 
     #[test]
