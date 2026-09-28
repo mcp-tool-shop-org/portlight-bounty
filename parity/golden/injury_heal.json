@@ -1,13 +1,13 @@
 {
   "seed": 4,
-  "day": 1,
+  "day": 2,
   "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "privateer",
-    "silver": 475,
-    "provisions": 30,
-    "day": 1,
+    "silver": 474,
+    "provisions": 29,
+    "day": 2,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
@@ -54,7 +54,7 @@
       {
         "injury_id": "gunshot_wound",
         "acquired_day": 1,
-        "heal_remaining": 30,
+        "heal_remaining": 29,
         "treated": false
       }
     ]
@@ -75,58 +75,58 @@
       "market": [
         {
           "good_id": "grain",
-          "stock": 40,
+          "stock": 38,
           "buy_price": 8,
           "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 20,
-          "buy_price": 30,
-          "sell_price": 26,
+          "stock": 22,
+          "buy_price": 26,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
           "stock": 15,
-          "buy_price": 27,
-          "sell_price": 23,
+          "buy_price": 26,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 10,
-          "buy_price": 32,
-          "sell_price": 28,
+          "stock": 11,
+          "buy_price": 28,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 18,
-          "buy_price": 22,
-          "sell_price": 19,
+          "stock": 20,
+          "buy_price": 19,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
           "good_id": "dyes",
-          "stock": 8,
-          "buy_price": 49,
-          "sell_price": 42,
+          "stock": 9,
+          "buy_price": 42,
+          "sell_price": 38,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 13,
-          "sell_price": 12,
+          "stock": 9,
+          "buy_price": 11,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 4,
-          "buy_price": 176,
-          "sell_price": 151,
+          "stock": 5,
+          "buy_price": 134,
+          "sell_price": 136,
           "flood_penalty": 0.0
         }
       ]
@@ -136,65 +136,65 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 30,
-          "buy_price": 33,
-          "sell_price": 28,
+          "stock": 29,
+          "buy_price": 32,
+          "sell_price": 33,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 8,
-          "buy_price": 105,
+          "stock": 9,
+          "buy_price": 88,
           "sell_price": 90,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 10,
-          "buy_price": 39,
-          "sell_price": 33,
+          "stock": 12,
+          "buy_price": 31,
+          "sell_price": 28,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 5,
-          "buy_price": 188,
-          "sell_price": 161,
+          "stock": 6,
+          "buy_price": 149,
+          "sell_price": 151,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 12,
-          "buy_price": 38,
-          "sell_price": 33,
+          "stock": 13,
+          "buy_price": 34,
+          "sell_price": 31,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tea",
-          "stock": 6,
-          "buy_price": 96,
-          "sell_price": 82,
+          "stock": 7,
+          "buy_price": 78,
+          "sell_price": 79,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 10,
-          "buy_price": 41,
-          "sell_price": 35,
+          "stock": 11,
+          "buy_price": 35,
+          "sell_price": 33,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 5,
-          "buy_price": 78,
-          "sell_price": 67,
+          "stock": 2,
+          "buy_price": 186,
+          "sell_price": 172,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 5,
-          "buy_price": 20,
-          "sell_price": 17,
+          "stock": 6,
+          "buy_price": 16,
+          "sell_price": 14,
           "flood_penalty": 0.0
         }
       ]
@@ -204,58 +204,58 @@
       "market": [
         {
           "good_id": "timber",
-          "stock": 45,
+          "stock": 43,
           "buy_price": 11,
-          "sell_price": 9,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 20,
-          "buy_price": 19,
-          "sell_price": 16,
+          "stock": 18,
+          "buy_price": 20,
+          "sell_price": 18,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 15,
-          "buy_price": 17,
-          "sell_price": 15,
+          "stock": 17,
+          "buy_price": 14,
+          "sell_price": 13,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 8,
-          "buy_price": 34,
-          "sell_price": 29,
+          "stock": 9,
+          "buy_price": 28,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
           "good_id": "weapons",
-          "stock": 5,
-          "buy_price": 141,
-          "sell_price": 121,
+          "stock": 6,
+          "buy_price": 111,
+          "sell_price": 103,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 12,
+          "stock": 10,
           "buy_price": 6,
-          "sell_price": 5,
+          "sell_price": 6,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 8,
-          "buy_price": 38,
-          "sell_price": 33,
+          "stock": 9,
+          "buy_price": 32,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 4,
+          "buy_price": 179,
+          "sell_price": 181,
           "flood_penalty": 0.0
         }
       ]
@@ -265,72 +265,72 @@
       "market": [
         {
           "good_id": "weapons",
-          "stock": 25,
+          "stock": 24,
           "buy_price": 26,
-          "sell_price": 22,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 30,
+          "stock": 28,
           "buy_price": 12,
-          "sell_price": 10,
+          "sell_price": 11,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
-          "stock": 20,
-          "buy_price": 21,
-          "sell_price": 18,
+          "stock": 18,
+          "buy_price": 22,
+          "sell_price": 20,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 4,
+          "buy_price": 179,
+          "sell_price": 181,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 4,
-          "buy_price": 113,
-          "sell_price": 97,
+          "stock": 5,
+          "buy_price": 86,
+          "sell_price": 79,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 10,
-          "buy_price": 6,
-          "sell_price": 5,
+          "stock": 9,
+          "buy_price": 7,
+          "sell_price": 6,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 8,
-          "buy_price": 23,
-          "sell_price": 20,
+          "stock": 9,
+          "buy_price": 19,
+          "sell_price": 18,
           "flood_penalty": 0.0
         },
         {
           "good_id": "black_powder",
           "stock": 8,
-          "buy_price": 40,
+          "buy_price": 38,
           "sell_price": 35,
           "flood_penalty": 0.0
         },
         {
           "good_id": "stolen_cargo",
-          "stock": 12,
-          "buy_price": 30,
-          "sell_price": 26,
+          "stock": 11,
+          "buy_price": 31,
+          "sell_price": 29,
           "flood_penalty": 0.0
         },
         {
           "good_id": "opium",
           "stock": 3,
-          "buy_price": 174,
-          "sell_price": 150,
+          "buy_price": 165,
+          "sell_price": 153,
           "flood_penalty": 0.0
         }
       ]
@@ -340,65 +340,65 @@
       "market": [
         {
           "good_id": "iron",
-          "stock": 50,
+          "stock": 48,
           "buy_price": 14,
-          "sell_price": 12,
+          "sell_price": 13,
           "flood_penalty": 0.0
         },
         {
           "good_id": "weapons",
-          "stock": 35,
+          "stock": 33,
           "buy_price": 26,
-          "sell_price": 22,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 15,
-          "buy_price": 29,
-          "sell_price": 25,
+          "stock": 18,
+          "buy_price": 23,
+          "sell_price": 21,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 10,
-          "buy_price": 35,
-          "sell_price": 30,
+          "stock": 11,
+          "buy_price": 30,
+          "sell_price": 28,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 8,
-          "buy_price": 48,
-          "sell_price": 42,
+          "stock": 9,
+          "buy_price": 41,
+          "sell_price": 38,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
-          "stock": 12,
-          "buy_price": 42,
-          "sell_price": 36,
+          "stock": 13,
+          "buy_price": 37,
+          "sell_price": 34,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 10,
-          "buy_price": 9,
-          "sell_price": 7,
+          "stock": 12,
+          "buy_price": 7,
+          "sell_price": 6,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 279,
-          "sell_price": 240,
+          "stock": 4,
+          "buy_price": 199,
+          "sell_price": 201,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 5,
-          "buy_price": 57,
-          "sell_price": 49,
+          "stock": 6,
+          "buy_price": 45,
+          "sell_price": 42,
           "flood_penalty": 0.0
         }
       ]
@@ -408,58 +408,58 @@
       "market": [
         {
           "good_id": "weapons",
-          "stock": 15,
-          "buy_price": 53,
-          "sell_price": 45,
+          "stock": 17,
+          "buy_price": 44,
+          "sell_price": 41,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 20,
-          "buy_price": 13,
-          "sell_price": 11,
+          "stock": 22,
+          "buy_price": 11,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 18,
-          "buy_price": 22,
-          "sell_price": 18,
+          "stock": 20,
+          "buy_price": 18,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 15,
+          "stock": 14,
           "buy_price": 22,
-          "sell_price": 18,
+          "sell_price": 20,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 10,
-          "buy_price": 52,
-          "sell_price": 44,
+          "stock": 11,
+          "buy_price": 45,
+          "sell_price": 41,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
           "stock": 8,
-          "buy_price": 68,
-          "sell_price": 59,
+          "buy_price": 65,
+          "sell_price": 60,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 13,
-          "sell_price": 12,
+          "stock": 9,
+          "buy_price": 11,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 4,
+          "buy_price": 179,
+          "sell_price": 181,
           "flood_penalty": 0.0
         }
       ]
@@ -469,58 +469,58 @@
       "market": [
         {
           "good_id": "tea",
-          "stock": 25,
+          "stock": 24,
           "buy_price": 25,
-          "sell_price": 22,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
-          "stock": 30,
+          "stock": 28,
           "buy_price": 16,
-          "sell_price": 13,
+          "sell_price": 15,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 20,
+          "stock": 18,
           "buy_price": 15,
-          "sell_price": 12,
+          "sell_price": 14,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 18,
+          "stock": 17,
           "buy_price": 5,
           "sell_price": 4,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 5,
-          "buy_price": 134,
-          "sell_price": 115,
+          "stock": 6,
+          "buy_price": 106,
+          "sell_price": 98,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 4,
+          "buy_price": 179,
+          "sell_price": 181,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 4,
-          "buy_price": 177,
-          "sell_price": 153,
+          "stock": 5,
+          "buy_price": 135,
+          "sell_price": 137,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
           "stock": 2,
-          "buy_price": 258,
-          "sell_price": 222,
+          "buy_price": 245,
+          "sell_price": 249,
           "flood_penalty": 0.0
         }
       ]
@@ -530,58 +530,58 @@
       "market": [
         {
           "good_id": "cotton",
-          "stock": 35,
+          "stock": 33,
           "buy_price": 9,
-          "sell_price": 8,
+          "sell_price": 9,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 25,
+          "stock": 24,
           "buy_price": 18,
-          "sell_price": 16,
+          "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
           "good_id": "dyes",
-          "stock": 20,
-          "buy_price": 15,
-          "sell_price": 13,
+          "stock": 18,
+          "buy_price": 16,
+          "sell_price": 15,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 15,
+          "stock": 14,
           "buy_price": 5,
-          "sell_price": 4,
+          "sell_price": 5,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 2,
+          "buy_price": 357,
+          "sell_price": 363,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 5,
-          "buy_price": 189,
-          "sell_price": 163,
+          "stock": 6,
+          "buy_price": 150,
+          "sell_price": 152,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 10,
-          "buy_price": 32,
-          "sell_price": 28,
+          "stock": 11,
+          "buy_price": 28,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 3,
-          "buy_price": 195,
-          "sell_price": 168,
+          "stock": 4,
+          "buy_price": 139,
+          "sell_price": 141,
           "flood_penalty": 0.0
         }
       ]
@@ -591,58 +591,58 @@
       "market": [
         {
           "good_id": "rum",
-          "stock": 40,
+          "stock": 38,
           "buy_price": 11,
           "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 12,
-          "buy_price": 23,
-          "sell_price": 20,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "timber",
-          "stock": 8,
-          "buy_price": 40,
-          "sell_price": 35,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "cotton",
-          "stock": 15,
-          "buy_price": 18,
-          "sell_price": 15,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "tobacco",
-          "stock": 18,
+          "stock": 14,
           "buy_price": 19,
           "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
+          "good_id": "timber",
+          "stock": 13,
+          "buy_price": 24,
+          "sell_price": 22,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock": 17,
+          "buy_price": 15,
+          "sell_price": 14,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "tobacco",
+          "stock": 17,
+          "buy_price": 19,
+          "sell_price": 18,
+          "flood_penalty": 0.0
+        },
+        {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 12,
-          "sell_price": 10,
+          "stock": 9,
+          "buy_price": 10,
+          "sell_price": 9,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 4,
+          "buy_price": 179,
+          "sell_price": 181,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 5,
-          "buy_price": 72,
-          "sell_price": 62,
+          "stock": 6,
+          "buy_price": 57,
+          "sell_price": 52,
           "flood_penalty": 0.0
         }
       ]
@@ -652,58 +652,58 @@
       "market": [
         {
           "good_id": "iron",
-          "stock": 50,
+          "stock": 48,
           "buy_price": 14,
-          "sell_price": 12,
+          "sell_price": 13,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 8,
-          "buy_price": 39,
-          "sell_price": 33,
+          "stock": 9,
+          "buy_price": 33,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 12,
-          "buy_price": 30,
-          "sell_price": 26,
+          "stock": 14,
+          "buy_price": 25,
+          "sell_price": 23,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 2,
-          "buy_price": 235,
-          "sell_price": 202,
+          "stock": 3,
+          "buy_price": 149,
+          "sell_price": 151,
           "flood_penalty": 0.0
         },
         {
           "good_id": "weapons",
-          "stock": 8,
-          "buy_price": 101,
-          "sell_price": 87,
+          "stock": 9,
+          "buy_price": 85,
+          "sell_price": 79,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 5,
-          "buy_price": 57,
-          "sell_price": 49,
+          "stock": 6,
+          "buy_price": 45,
+          "sell_price": 42,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 3,
-          "buy_price": 125,
-          "sell_price": 108,
+          "stock": 4,
+          "buy_price": 89,
+          "sell_price": 83,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 6,
-          "buy_price": 13,
-          "sell_price": 11,
+          "stock": 7,
+          "buy_price": 10,
+          "sell_price": 10,
           "flood_penalty": 0.0
         }
       ]
@@ -713,58 +713,58 @@
       "market": [
         {
           "good_id": "pearls",
-          "stock": 15,
-          "buy_price": 48,
-          "sell_price": 41,
+          "stock": 14,
+          "buy_price": 49,
+          "sell_price": 50,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 20,
-          "buy_price": 12,
-          "sell_price": 10,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "dyes",
-          "stock": 15,
-          "buy_price": 14,
+          "stock": 18,
+          "buy_price": 13,
           "sell_price": 12,
           "flood_penalty": 0.0
         },
         {
+          "good_id": "dyes",
+          "stock": 14,
+          "buy_price": 14,
+          "sell_price": 13,
+          "flood_penalty": 0.0
+        },
+        {
           "good_id": "medicines",
-          "stock": 3,
-          "buy_price": 139,
-          "sell_price": 120,
+          "stock": 4,
+          "buy_price": 99,
+          "sell_price": 92,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 10,
-          "buy_price": 22,
-          "sell_price": 19,
+          "stock": 12,
+          "buy_price": 18,
+          "sell_price": 16,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 251,
-          "sell_price": 216,
+          "stock": 4,
+          "buy_price": 179,
+          "sell_price": 181,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 8,
-          "buy_price": 11,
-          "sell_price": 9,
+          "stock": 9,
+          "buy_price": 9,
+          "sell_price": 8,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 6,
-          "buy_price": 41,
-          "sell_price": 35,
+          "stock": 7,
+          "buy_price": 33,
+          "sell_price": 31,
           "flood_penalty": 0.0
         }
       ]
@@ -774,65 +774,65 @@
       "market": [
         {
           "good_id": "porcelain",
-          "stock": 35,
+          "stock": 33,
           "buy_price": 35,
-          "sell_price": 30,
+          "sell_price": 35,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 25,
-          "buy_price": 51,
-          "sell_price": 44,
+          "stock": 24,
+          "buy_price": 50,
+          "sell_price": 51,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tea",
-          "stock": 20,
-          "buy_price": 30,
-          "sell_price": 26,
+          "stock": 18,
+          "buy_price": 31,
+          "sell_price": 32,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 15,
-          "buy_price": 64,
+          "stock": 17,
+          "buy_price": 54,
           "sell_price": 55,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 5,
-          "buy_price": 41,
-          "sell_price": 36,
+          "stock": 6,
+          "buy_price": 33,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 3,
-          "buy_price": 90,
-          "sell_price": 77,
+          "stock": 4,
+          "buy_price": 64,
+          "sell_price": 59,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 6,
-          "buy_price": 48,
-          "sell_price": 41,
+          "stock": 7,
+          "buy_price": 39,
+          "sell_price": 36,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 4,
-          "buy_price": 18,
-          "sell_price": 16,
+          "stock": 5,
+          "buy_price": 14,
+          "sell_price": 13,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 5,
-          "buy_price": 43,
-          "sell_price": 37,
+          "stock": 6,
+          "buy_price": 34,
+          "sell_price": 31,
           "flood_penalty": 0.0
         }
       ]
@@ -842,65 +842,65 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 25,
+          "stock": 24,
           "buy_price": 37,
-          "sell_price": 32,
+          "sell_price": 37,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 20,
-          "buy_price": 56,
-          "sell_price": 49,
+          "stock": 18,
+          "buy_price": 60,
+          "sell_price": 60,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 5,
-          "buy_price": 52,
-          "sell_price": 44,
+          "stock": 6,
+          "buy_price": 41,
+          "sell_price": 38,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 5,
-          "buy_price": 69,
-          "sell_price": 59,
+          "stock": 6,
+          "buy_price": 54,
+          "sell_price": 50,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 8,
-          "buy_price": 45,
-          "sell_price": 39,
+          "stock": 9,
+          "buy_price": 38,
+          "sell_price": 35,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 8,
-          "buy_price": 52,
-          "sell_price": 45,
+          "stock": 9,
+          "buy_price": 44,
+          "sell_price": 41,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 6,
-          "buy_price": 36,
-          "sell_price": 31,
+          "stock": 7,
+          "buy_price": 29,
+          "sell_price": 27,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 8,
-          "buy_price": 101,
-          "sell_price": 87,
+          "stock": 9,
+          "buy_price": 85,
+          "sell_price": 86,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 5,
-          "buy_price": 17,
-          "sell_price": 15,
+          "stock": 6,
+          "buy_price": 14,
+          "sell_price": 13,
           "flood_penalty": 0.0
         }
       ]
@@ -910,65 +910,65 @@
       "market": [
         {
           "good_id": "silk",
-          "stock": 40,
+          "stock": 38,
           "buy_price": 39,
-          "sell_price": 33,
+          "sell_price": 39,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 15,
-          "buy_price": 43,
-          "sell_price": 37,
+          "stock": 14,
+          "buy_price": 44,
+          "sell_price": 44,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 10,
-          "buy_price": 79,
-          "sell_price": 68,
+          "stock": 11,
+          "buy_price": 68,
+          "sell_price": 69,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 5,
-          "buy_price": 76,
-          "sell_price": 66,
+          "stock": 4,
+          "buy_price": 91,
+          "sell_price": 84,
           "flood_penalty": 0.0
         },
         {
           "good_id": "dyes",
-          "stock": 3,
-          "buy_price": 79,
-          "sell_price": 68,
+          "stock": 4,
+          "buy_price": 56,
+          "sell_price": 52,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 3,
-          "buy_price": 90,
-          "sell_price": 77,
+          "stock": 4,
+          "buy_price": 64,
+          "sell_price": 59,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 5,
-          "buy_price": 47,
-          "sell_price": 40,
+          "stock": 6,
+          "buy_price": 37,
+          "sell_price": 34,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 4,
-          "buy_price": 35,
-          "sell_price": 30,
+          "stock": 5,
+          "buy_price": 27,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 3,
-          "buy_price": 24,
-          "sell_price": 21,
+          "stock": 4,
+          "buy_price": 17,
+          "sell_price": 16,
           "flood_penalty": 0.0
         }
       ]
@@ -979,77 +979,77 @@
         {
           "good_id": "grain",
           "stock": 15,
-          "buy_price": 13,
+          "buy_price": 12,
           "sell_price": 11,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
           "stock": 12,
-          "buy_price": 19,
+          "buy_price": 18,
           "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
           "stock": 10,
-          "buy_price": 27,
-          "sell_price": 23,
+          "buy_price": 26,
+          "sell_price": 24,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
           "stock": 10,
-          "buy_price": 16,
+          "buy_price": 15,
           "sell_price": 14,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
           "stock": 10,
-          "buy_price": 59,
-          "sell_price": 51,
+          "buy_price": 56,
+          "sell_price": 57,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
           "stock": 8,
-          "buy_price": 75,
-          "sell_price": 65,
+          "buy_price": 71,
+          "sell_price": 73,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
           "stock": 10,
-          "buy_price": 22,
-          "sell_price": 18,
+          "buy_price": 20,
+          "sell_price": 19,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
           "stock": 6,
-          "buy_price": 64,
-          "sell_price": 56,
+          "buy_price": 61,
+          "sell_price": 62,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tea",
           "stock": 8,
-          "buy_price": 43,
-          "sell_price": 37,
+          "buy_price": 41,
+          "sell_price": 41,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 6,
-          "buy_price": 13,
-          "sell_price": 11,
+          "stock": 7,
+          "buy_price": 10,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
           "stock": 8,
-          "buy_price": 30,
+          "buy_price": 29,
           "sell_price": 26,
           "flood_penalty": 0.0
         }
@@ -1060,58 +1060,58 @@
       "market": [
         {
           "good_id": "tea",
-          "stock": 30,
-          "buy_price": 24,
-          "sell_price": 21,
+          "stock": 27,
+          "buy_price": 25,
+          "sell_price": 26,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 20,
-          "buy_price": 45,
-          "sell_price": 38,
+          "stock": 18,
+          "buy_price": 47,
+          "sell_price": 48,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
-          "stock": 3,
-          "buy_price": 157,
-          "sell_price": 135,
+          "stock": 4,
+          "buy_price": 112,
+          "sell_price": 103,
           "flood_penalty": 0.0
         },
         {
           "good_id": "iron",
-          "stock": 5,
-          "buy_price": 86,
-          "sell_price": 74,
+          "stock": 6,
+          "buy_price": 68,
+          "sell_price": 63,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
-          "stock": 4,
-          "buy_price": 90,
-          "sell_price": 78,
+          "stock": 5,
+          "buy_price": 69,
+          "sell_price": 63,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 6,
-          "buy_price": 48,
-          "sell_price": 41,
+          "stock": 7,
+          "buy_price": 39,
+          "sell_price": 36,
           "flood_penalty": 0.0
         },
         {
           "good_id": "cotton",
-          "stock": 5,
-          "buy_price": 40,
-          "sell_price": 34,
+          "stock": 6,
+          "buy_price": 31,
+          "sell_price": 29,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 4,
-          "buy_price": 18,
-          "sell_price": 16,
+          "stock": 5,
+          "buy_price": 14,
+          "sell_price": 13,
           "flood_penalty": 0.0
         }
       ]
@@ -1121,72 +1121,72 @@
       "market": [
         {
           "good_id": "spice",
-          "stock": 45,
+          "stock": 43,
           "buy_price": 29,
-          "sell_price": 25,
+          "sell_price": 29,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pearls",
-          "stock": 8,
-          "buy_price": 59,
-          "sell_price": 51,
+          "stock": 7,
+          "buy_price": 64,
+          "sell_price": 65,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 10,
-          "buy_price": 100,
-          "sell_price": 86,
+          "stock": 11,
+          "buy_price": 87,
+          "sell_price": 88,
           "flood_penalty": 0.0
         },
         {
           "good_id": "weapons",
-          "stock": 3,
-          "buy_price": 161,
-          "sell_price": 139,
+          "stock": 4,
+          "buy_price": 115,
+          "sell_price": 106,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 5,
-          "buy_price": 41,
-          "sell_price": 36,
+          "stock": 6,
+          "buy_price": 33,
+          "sell_price": 30,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 6,
-          "buy_price": 48,
-          "sell_price": 41,
+          "stock": 4,
+          "buy_price": 68,
+          "sell_price": 63,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 5,
-          "buy_price": 13,
-          "sell_price": 11,
+          "stock": 6,
+          "buy_price": 10,
+          "sell_price": 9,
           "flood_penalty": 0.0
         },
         {
           "good_id": "opium",
           "stock": 10,
-          "buy_price": 52,
-          "sell_price": 45,
+          "buy_price": 50,
+          "sell_price": 46,
           "flood_penalty": 0.0
         },
         {
           "good_id": "stolen_cargo",
-          "stock": 8,
-          "buy_price": 32,
-          "sell_price": 28,
+          "stock": 9,
+          "buy_price": 27,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
           "good_id": "black_powder",
           "stock": 3,
-          "buy_price": 155,
-          "sell_price": 134,
+          "buy_price": 148,
+          "sell_price": 136,
           "flood_penalty": 0.0
         }
       ]
@@ -1196,65 +1196,65 @@
       "market": [
         {
           "good_id": "medicines",
-          "stock": 25,
+          "stock": 24,
           "buy_price": 19,
-          "sell_price": 16,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "dyes",
-          "stock": 20,
-          "buy_price": 14,
-          "sell_price": 12,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "iron",
-          "stock": 15,
-          "buy_price": 18,
-          "sell_price": 15,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "grain",
-          "stock": 5,
-          "buy_price": 41,
-          "sell_price": 36,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "timber",
-          "stock": 5,
-          "buy_price": 62,
-          "sell_price": 53,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "weapons",
-          "stock": 3,
-          "buy_price": 161,
-          "sell_price": 139,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "rum",
-          "stock": 5,
-          "buy_price": 57,
-          "sell_price": 49,
-          "flood_penalty": 0.0
-        },
-        {
-          "good_id": "pelts",
-          "stock": 5,
-          "buy_price": 20,
           "sell_price": 17,
           "flood_penalty": 0.0
         },
         {
-          "good_id": "cotton",
+          "good_id": "dyes",
+          "stock": 18,
+          "buy_price": 15,
+          "sell_price": 14,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "iron",
+          "stock": 14,
+          "buy_price": 18,
+          "sell_price": 17,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "grain",
+          "stock": 6,
+          "buy_price": 33,
+          "sell_price": 30,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "timber",
+          "stock": 6,
+          "buy_price": 49,
+          "sell_price": 45,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "weapons",
           "stock": 4,
-          "buy_price": 44,
-          "sell_price": 38,
+          "buy_price": 115,
+          "sell_price": 106,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "rum",
+          "stock": 6,
+          "buy_price": 45,
+          "sell_price": 42,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "pelts",
+          "stock": 6,
+          "buy_price": 16,
+          "sell_price": 14,
+          "flood_penalty": 0.0
+        },
+        {
+          "good_id": "cotton",
+          "stock": 5,
+          "buy_price": 33,
+          "sell_price": 31,
           "flood_penalty": 0.0
         }
       ]
@@ -1264,65 +1264,65 @@
       "market": [
         {
           "good_id": "pearls",
-          "stock": 20,
+          "stock": 19,
           "buy_price": 45,
-          "sell_price": 39,
+          "sell_price": 46,
           "flood_penalty": 0.0
         },
         {
           "good_id": "timber",
-          "stock": 25,
+          "stock": 24,
           "buy_price": 12,
-          "sell_price": 10,
+          "sell_price": 11,
           "flood_penalty": 0.0
         },
         {
           "good_id": "spice",
-          "stock": 12,
-          "buy_price": 41,
-          "sell_price": 35,
+          "stock": 11,
+          "buy_price": 43,
+          "sell_price": 43,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 3,
-          "buy_price": 279,
-          "sell_price": 240,
+          "stock": 4,
+          "buy_price": 199,
+          "sell_price": 201,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 2,
-          "buy_price": 287,
-          "sell_price": 247,
+          "stock": 3,
+          "buy_price": 182,
+          "sell_price": 184,
           "flood_penalty": 0.0
         },
         {
           "good_id": "medicines",
           "stock": 8,
-          "buy_price": 59,
-          "sell_price": 51,
+          "buy_price": 56,
+          "sell_price": 52,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 5,
-          "buy_price": 57,
-          "sell_price": 49,
+          "stock": 6,
+          "buy_price": 45,
+          "sell_price": 42,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 6,
-          "buy_price": 13,
-          "sell_price": 11,
+          "stock": 7,
+          "buy_price": 10,
+          "sell_price": 10,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 4,
-          "buy_price": 35,
-          "sell_price": 30,
+          "stock": 5,
+          "buy_price": 27,
+          "sell_price": 25,
           "flood_penalty": 0.0
         }
       ]
@@ -1332,65 +1332,65 @@
       "market": [
         {
           "good_id": "pearls",
-          "stock": 12,
-          "buy_price": 57,
-          "sell_price": 49,
+          "stock": 11,
+          "buy_price": 59,
+          "sell_price": 60,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tobacco",
-          "stock": 20,
-          "buy_price": 19,
-          "sell_price": 17,
+          "stock": 18,
+          "buy_price": 20,
+          "sell_price": 19,
           "flood_penalty": 0.0
         },
         {
           "good_id": "rum",
-          "stock": 18,
+          "stock": 17,
           "buy_price": 14,
-          "sell_price": 12,
+          "sell_price": 13,
           "flood_penalty": 0.0
         },
         {
           "good_id": "weapons",
           "stock": 2,
-          "buy_price": 242,
-          "sell_price": 208,
+          "buy_price": 230,
+          "sell_price": 212,
           "flood_penalty": 0.0
         },
         {
           "good_id": "silk",
-          "stock": 2,
-          "buy_price": 376,
-          "sell_price": 324,
+          "stock": 0,
+          "buy_price": 715,
+          "sell_price": 725,
           "flood_penalty": 0.0
         },
         {
           "good_id": "tea",
-          "stock": 3,
-          "buy_price": 143,
-          "sell_price": 123,
+          "stock": 4,
+          "buy_price": 102,
+          "sell_price": 104,
           "flood_penalty": 0.0
         },
         {
           "good_id": "grain",
-          "stock": 4,
-          "buy_price": 35,
-          "sell_price": 30,
+          "stock": 5,
+          "buy_price": 27,
+          "sell_price": 25,
           "flood_penalty": 0.0
         },
         {
           "good_id": "pelts",
-          "stock": 5,
-          "buy_price": 20,
-          "sell_price": 17,
+          "stock": 6,
+          "buy_price": 16,
+          "sell_price": 14,
           "flood_penalty": 0.0
         },
         {
           "good_id": "porcelain",
-          "stock": 2,
-          "buy_price": 287,
-          "sell_price": 247,
+          "stock": 0,
+          "buy_price": 545,
+          "sell_price": 553,
           "flood_penalty": 0.0
         }
       ]
@@ -1437,8 +1437,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 1525 more silver"
+          "detail": "Silver: 474",
+          "action": "Earn 1526 more silver"
         }
       ]
     },
@@ -1476,8 +1476,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Accumulate 1025 more silver"
+          "detail": "Silver: 474",
+          "action": "Accumulate 1026 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1527,8 +1527,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 1525 more silver"
+          "detail": "Silver: 474",
+          "action": "Earn 1526 more silver"
         }
       ]
     },
@@ -1566,8 +1566,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 2525 more silver"
+          "detail": "Silver: 474",
+          "action": "Earn 2526 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1576,6 +1576,14 @@
           "action": "Acquire 3 more license(s)"
         }
       ]
+    }
+  ],
+  "milestones": [
+    {
+      "milestone_id": "integrated_brigantine",
+      "completed_day": 2,
+      "evidence": "Operating a cutter",
+      "family": "integrated_house"
     }
   ],
   "log": [
@@ -2433,6 +2441,15 @@
         "player_stamina": 7,
         "player_stamina_max": 8
       }
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [
+        "Shortage: silk scarce at Coral Throne"
+      ]
     }
   ]
 }

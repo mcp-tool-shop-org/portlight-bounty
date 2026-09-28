@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "privateer",
-    "silver": 475,
+    "silver": 613,
     "provisions": 30,
     "day": 1,
     "wanted_level": 0,
@@ -46,10 +46,12 @@
       "commercial_trust": 8,
       "port_standing": [],
       "underworld": {
-        "iron_wolves": -5
+        "iron_wolves": -5,
+        "monsoon_syndicate": 2
       },
       "incidents": []
     },
+    "duels_won": 1,
     "injuries": [
       {
         "injury_id": "gunshot_wound",
@@ -57,7 +59,8 @@
         "heal_remaining": 30,
         "treated": false
       }
-    ]
+    ],
+    "melee_weapon": "kris"
   },
   "voyage": {
     "origin_id": "stormwall",
@@ -1437,8 +1440,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 1525 more silver"
+          "detail": "Silver: 613",
+          "action": "Earn 1387 more silver"
         }
       ]
     },
@@ -1476,8 +1479,8 @@
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Accumulate 1025 more silver"
+          "detail": "Silver: 613",
+          "action": "Accumulate 887 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1527,8 +1530,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 1525 more silver"
+          "detail": "Silver: 613",
+          "action": "Earn 1387 more silver"
         }
       ]
     },
@@ -1566,8 +1569,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 475",
-          "action": "Earn 2525 more silver"
+          "detail": "Silver: 613",
+          "action": "Earn 2387 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -2433,6 +2436,13 @@
         "player_stamina": 7,
         "player_stamina_max": 8
       }
+    },
+    {
+      "command": "take_all",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": []
     }
   ]
 }

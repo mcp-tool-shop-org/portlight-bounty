@@ -56,7 +56,17 @@
       "port_standing": [],
       "underworld": {},
       "incidents": []
-    }
+    },
+    "encounters": [
+      {
+        "captain_id": "scarlet_ana",
+        "faction_id": "crimson_tide",
+        "day": 2,
+        "outcome": "duel_win",
+        "region": "Mediterranean"
+      }
+    ],
+    "duels_won": 1
   },
   "voyage": {
     "origin_id": "porto_novo",

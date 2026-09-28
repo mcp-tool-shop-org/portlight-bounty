@@ -159,6 +159,14 @@ pub struct Ship {
     pub marines: i64,
     pub quartermasters: i64,
     pub officers: Vec<Officer>,
+    pub upgrades: Vec<InstalledUpgrade>,
+}
+
+/// An upgrade fitted to one hull. `installed_day` is the world day it was bought.
+#[derive(Debug, Clone)]
+pub struct InstalledUpgrade {
+    pub upgrade_id: String,
+    pub installed_day: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -191,6 +199,7 @@ impl Ship {
             marines: 0,
             quartermasters: 0,
             officers: Vec::new(),
+            upgrades: Vec::new(),
         }
     }
 
@@ -354,10 +363,48 @@ pub struct PirateEncounterRecord {
 }
 
 /// A prize or docked hull besides the flagship.
+///
+/// `docked_port_id` is empty while the hull is in the convoy. Cargo on a fleet
+/// hull is not the flagship hold; [`Captain::cargo`] stays the flagship's.
 #[derive(Debug, Clone)]
-pub struct OwnedShip {
+pub struct FleetShip {
     pub ship: Ship,
     pub docked_port_id: String,
+    pub cargo: Vec<CargoItem>,
+}
+
+/// Name used by the prize-capture path before this area.
+pub type OwnedShip = FleetShip;
+
+/// A wound that persists between fights. `heal_remaining` is `None` when permanent.
+#[derive(Debug, Clone)]
+pub struct Injury {
+    pub injury_id: String,
+    pub acquired_day: i64,
+    pub heal_remaining: Option<i64>,
+    pub treated: bool,
+}
+
+/// Combat modifiers for one quality tier (`weapon_quality.QUALITY_EFFECTS`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WeaponQuality {
+    pub damage_mod: i64,
+    pub accuracy_mod: f64,
+    pub label: &'static str,
+}
+
+/// History of one weapon. Saved under `combat_gear.weapon_provenance`.
+#[derive(Debug, Clone)]
+pub struct WeaponProvenance {
+    pub weapon_id: String,
+    pub acquired_port: String,
+    pub acquired_day: i64,
+    pub acquired_region: String,
+    pub kills: i64,
+    pub named_kills: Vec<String>,
+    pub epithet: Option<String>,
+    pub custom_name: Option<String>,
+    pub times_recognized: i64,
 }
 
 /// A learned captain skill. `level` is 1–3; untrained skills are absent.
@@ -472,7 +519,7 @@ pub struct Captain {
     pub duels_won: i64,
     pub duels_lost: i64,
     pub encounters: Vec<PirateEncounterRecord>,
-    pub fleet: Vec<OwnedShip>,
+    pub fleet: Vec<FleetShip>,
     pub naval_victories: i64,
     pub naval_defeats: i64,
     /// Fighting styles learned from regional masters, in learn order.
@@ -480,6 +527,58 @@ pub struct Captain {
     /// Captain skills, in the order they were first learned.
     pub skills: Vec<Skill>,
     pub party: Party,
+    pub injuries: Vec<Injury>,
+    /// Insertion order matches Python `dict` order in the save.
+    pub weapon_quality: Vec<(String, String)>,
+    pub weapon_usage: Vec<(String, i64)>,
+    pub weapon_provenance: Vec<(String, WeaponProvenance)>,
+    pub weapon_upgrades: Vec<(String, Vec<String>)>,
+}
+
+impl Captain {
+    pub fn quality_of(&self, weapon_id: &str) -> &str {
+        self.weapon_quality
+            .iter()
+            .find(|(id, _)| id == weapon_id)
+            .map(|(_, quality)| quality.as_str())
+            .unwrap_or("standard")
+    }
+
+    pub fn set_quality(&mut self, weapon_id: &str, quality: &str) {
+        if let Some(slot) = self
+            .weapon_quality
+            .iter_mut()
+            .find(|(id, _)| id == weapon_id)
+        {
+            slot.1 = quality.to_string();
+        } else {
+            self.weapon_quality
+                .push((weapon_id.to_string(), quality.to_string()));
+        }
+    }
+
+    pub fn usage_of(&self, weapon_id: &str) -> i64 {
+        self.weapon_usage
+            .iter()
+            .find(|(id, _)| id == weapon_id)
+            .map(|(_, uses)| *uses)
+            .unwrap_or(0)
+    }
+
+    pub fn set_usage(&mut self, weapon_id: &str, usage: i64) {
+        if let Some(slot) = self.weapon_usage.iter_mut().find(|(id, _)| id == weapon_id) {
+            slot.1 = usage;
+        } else {
+            self.weapon_usage.push((weapon_id.to_string(), usage));
+        }
+    }
+
+    pub fn provenance_mut(&mut self, weapon_id: &str) -> Option<&mut WeaponProvenance> {
+        self.weapon_provenance
+            .iter_mut()
+            .find(|(id, _)| id == weapon_id)
+            .map(|(_, prov)| prov)
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -69,6 +69,20 @@ pub struct CaptainSnap {
     pub learned_styles: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub companions: Vec<CompanionSnap>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub injuries: Vec<InjurySnap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub armor: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub melee_weapon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub firearm: Option<String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub weapon_quality: BTreeMap<String, String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub weapon_usage: BTreeMap<String, i64>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub weapon_provenance: BTreeMap<String, ProvenanceSnap>,
 }
 
 fn is_zero(value: &i64) -> bool {
@@ -92,6 +106,35 @@ pub struct FleetSnap {
     pub hull_max: i64,
     pub crew: i64,
     pub docked_port_id: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub cargo: Vec<CargoSnap>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct InjurySnap {
+    pub injury_id: String,
+    pub acquired_day: i64,
+    pub heal_remaining: Option<i64>,
+    pub treated: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ProvenanceSnap {
+    pub weapon_id: String,
+    pub acquired_port: String,
+    pub acquired_day: i64,
+    pub acquired_region: String,
+    pub kills: i64,
+    pub named_kills: Vec<String>,
+    pub epithet: Option<String>,
+    pub custom_name: Option<String>,
+    pub times_recognized: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct UpgradeSnap {
+    pub upgrade_id: String,
+    pub installed_day: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -154,6 +197,10 @@ pub struct EncounterLog {
     pub style_effect: String,
     pub prize_ok: bool,
     pub prize_reason: String,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub player_stamina: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub player_stamina_max: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -186,6 +233,8 @@ pub struct ShipSnap {
     pub quartermasters: i64,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub officers: Vec<OfficerSnap>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub upgrades: Vec<UpgradeSnap>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -457,6 +506,8 @@ pub fn from_encounter(step: &EncounterStep) -> EncounterLog {
         style_effect: step.style_effect.clone(),
         prize_ok: step.prize_ok,
         prize_reason: step.prize_reason.clone(),
+        player_stamina: step.player_stamina,
+        player_stamina_max: step.player_stamina_max,
     }
 }
 
@@ -677,6 +728,14 @@ fn captain_snap(captain: &Captain) -> CaptainSnap {
                     trait_name: officer.trait_name.clone(),
                 })
                 .collect(),
+            upgrades: ship
+                .upgrades
+                .iter()
+                .map(|upgrade| UpgradeSnap {
+                    upgrade_id: upgrade.upgrade_id.clone(),
+                    installed_day: upgrade.installed_day,
+                })
+                .collect(),
         }),
         standing: standing_snap(&captain.standing),
         encounters: captain
@@ -704,6 +763,53 @@ fn captain_snap(captain: &Captain) -> CaptainSnap {
                 hull_max: owned.ship.hull_max,
                 crew: owned.ship.crew,
                 docked_port_id: owned.docked_port_id.clone(),
+                cargo: owned
+                    .cargo
+                    .iter()
+                    .map(|item| CargoSnap {
+                        good_id: item.good_id.clone(),
+                        quantity: item.quantity,
+                        cost_basis: item.cost_basis,
+                        acquired_port: item.acquired_port.clone(),
+                        acquired_region: item.acquired_region.clone(),
+                        acquired_day: item.acquired_day,
+                    })
+                    .collect(),
+            })
+            .collect(),
+        injuries: captain
+            .injuries
+            .iter()
+            .map(|injury| InjurySnap {
+                injury_id: injury.injury_id.clone(),
+                acquired_day: injury.acquired_day,
+                heal_remaining: injury.heal_remaining,
+                treated: injury.treated,
+            })
+            .collect(),
+        armor: captain.armor.as_ref().map(|armor| armor.id.clone()),
+        melee_weapon: captain.melee.as_ref().map(|weapon| weapon.id.clone()),
+        firearm: captain.firearm.as_ref().map(|weapon| weapon.id.clone()),
+        weapon_quality: captain.weapon_quality.iter().cloned().collect(),
+        weapon_usage: captain.weapon_usage.iter().cloned().collect(),
+        weapon_provenance: captain
+            .weapon_provenance
+            .iter()
+            .map(|(id, prov)| {
+                (
+                    id.clone(),
+                    ProvenanceSnap {
+                        weapon_id: prov.weapon_id.clone(),
+                        acquired_port: prov.acquired_port.clone(),
+                        acquired_day: prov.acquired_day,
+                        acquired_region: prov.acquired_region.clone(),
+                        kills: prov.kills,
+                        named_kills: prov.named_kills.clone(),
+                        epithet: prov.epithet.clone(),
+                        custom_name: prov.custom_name.clone(),
+                        times_recognized: prov.times_recognized,
+                    },
+                )
             })
             .collect(),
         skills: captain
@@ -1041,6 +1147,13 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
             skills: Vec::new(),
             learned_styles: Vec::new(),
             companions: Vec::new(),
+            injuries: Vec::new(),
+            armor: None,
+            melee_weapon: None,
+            firearm: None,
+            weapon_quality: BTreeMap::new(),
+            weapon_usage: BTreeMap::new(),
+            weapon_provenance: BTreeMap::new(),
         },
         voyage: VoyageSnap {
             origin_id: String::new(),

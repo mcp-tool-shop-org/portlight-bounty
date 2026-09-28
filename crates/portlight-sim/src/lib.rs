@@ -20,7 +20,10 @@ pub mod duel;
 pub mod economy;
 pub mod encounter;
 pub mod error;
+pub mod fleet;
 pub mod infrastructure;
+pub mod injuries;
+pub mod loot;
 pub mod memory;
 pub mod merchant;
 pub mod model;
@@ -36,6 +39,8 @@ pub mod snapshot;
 pub mod training;
 pub mod util;
 pub mod voyage;
+pub mod weapon_provenance;
+pub mod weapon_quality;
 pub mod world;
 
 pub use campaign::{

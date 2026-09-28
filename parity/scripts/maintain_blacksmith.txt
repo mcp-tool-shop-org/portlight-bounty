@@ -1,0 +1,7 @@
+# Apprentice blacksmith (level 1) discounts cutlass maintenance.
+# Porto Novo teaches blacksmith. Level 0 still charges the catalog cost;
+# see maintain.txt. Level 1 is int(15 * 0.75) = 11.
+new merchant Ada 1
+skill blacksmith
+gear cutlass
+maintain cutlass

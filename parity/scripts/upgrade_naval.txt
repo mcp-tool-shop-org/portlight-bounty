@@ -1,0 +1,5 @@
+# A sloop has no cannons. extra_gun_ports makes broadside legal.
+new merchant Ada 1
+upgrade extra_gun_ports
+encounter fight raj_the_quiet
+naval broadside

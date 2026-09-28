@@ -1,0 +1,10 @@
+# Seed 9 storms on day one. repair_fleet is GameSession.repair: the flagship only.
+# The escort stays damaged. Python does not repair escort hull.
+new merchant Ada 9
+buy_ship swift_cutter
+hire 7
+depart silva_bay
+advance
+advance
+advance
+repair_fleet

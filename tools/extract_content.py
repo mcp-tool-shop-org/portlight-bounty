@@ -29,14 +29,17 @@ from portlight.content.infrastructure import (
     PORT_WAREHOUSE_TIERS,
     WAREHOUSE_TIERS,
 )
+from portlight.content.injuries import INJURIES
+from portlight.content.loot_tables import CAPTAIN_LOOT_OVERRIDES, LOOT_TABLES
 from portlight.content.melee_weapons import MELEE_WEAPONS
 from portlight.content.port_institutions import PORT_INSTITUTIONAL_PROFILES
 from portlight.content.port_institutions_east import EAST_PROFILES
 from portlight.content.ports import PORTS
-from portlight.content.ranged_weapons import RANGED_WEAPONS
+from portlight.content.ranged_weapons import AMMO, RANGED_WEAPONS
 from portlight.content.routes import ROUTES
 from portlight.content.seasons import SEASONAL_PROFILES
 from portlight.content.ships import SHIPS
+from portlight.content.upgrades import UPGRADES
 from portlight.engine.captain_identity import CAPTAIN_TEMPLATES
 
 
@@ -494,6 +497,88 @@ def main() -> None:
                 "required_body_parts": list(s.required_body_parts),
             }
             for s in FIGHTING_STYLES.values()
+        ],
+        "upgrades": [
+            {
+                "id": u.id,
+                "name": u.name,
+                "category": u.category.value,
+                "price": u.price,
+                "speed_bonus": u.speed_bonus,
+                "hull_max_bonus": u.hull_max_bonus,
+                "cargo_bonus": u.cargo_bonus,
+                "cannon_bonus": u.cannon_bonus,
+                "maneuver_bonus": u.maneuver_bonus,
+                "storm_resist_bonus": u.storm_resist_bonus,
+                "crew_max_bonus": u.crew_max_bonus,
+                "speed_penalty": u.speed_penalty,
+                "special": u.special,
+            }
+            for u in UPGRADES.values()
+        ],
+        "injuries": [
+            {
+                "id": inj.id,
+                "name": inj.name,
+                "description": inj.description,
+                "severity": inj.severity,
+                "body_part": inj.body_part,
+                "melee_damage_mod": inj.melee_damage_mod,
+                "stamina_max_mod": inj.stamina_max_mod,
+                "hp_max_mod": inj.hp_max_mod,
+                "ranged_accuracy_mod": inj.ranged_accuracy_mod,
+                "can_dodge": inj.can_dodge,
+                "can_use_firearms": inj.can_use_firearms,
+                "thrust_multiplier": inj.thrust_multiplier,
+                "heal_days": inj.heal_days,
+                "heal_silver": inj.heal_silver,
+                "blocked_body_parts": list(inj.blocked_body_parts),
+                "attack_types": list(inj.attack_types),
+            }
+            for inj in INJURIES.values()
+        ],
+        "loot_tables": [
+            {
+                "id": table.id,
+                "entries": [
+                    {
+                        "item_type": entry.item_type,
+                        "item_id": entry.item_id,
+                        "quantity_min": entry.quantity_min,
+                        "quantity_max": entry.quantity_max,
+                        "weight": entry.weight,
+                    }
+                    for entry in table.entries
+                ],
+            }
+            for table in LOOT_TABLES.values()
+        ],
+        "captain_loot": [
+            {
+                "id": table.id,
+                "entries": [
+                    {
+                        "item_type": entry.item_type,
+                        "item_id": entry.item_id,
+                        "quantity_min": entry.quantity_min,
+                        "quantity_max": entry.quantity_max,
+                        "weight": entry.weight,
+                    }
+                    for entry in table.entries
+                ],
+            }
+            for table in CAPTAIN_LOOT_OVERRIDES.values()
+        ],
+        "ammo": [
+            {
+                "id": ammo.id,
+                "name": ammo.name,
+                "weapon_type": ammo.weapon_type,
+                "silver_cost": ammo.silver_cost,
+                "quantity": ammo.quantity,
+                "available_regions": list(ammo.available_regions),
+            }
+            for ammo in AMMO.values()
         ],
         "skills": skills_payload(),
         "companions": companions_payload(),

@@ -1,9 +1,8 @@
 //! Personal fight after boarding. Port of `engine/combat.py`.
 //!
 //! Shoot, throw, dodge, fighting styles, and stamina. This is not the voyage
-//! stance duel in `duel.rs`. Injury rolls use the same pools and chances as
-//! `engine/injuries.py` so the session RNG stays aligned. The injury catalog
-//! itself stays with Area 5; the rows combat needs are copied here.
+//! stance duel in `duel.rs`. Injury rolls go through [`crate::injuries`] so
+//! the catalog and the session RNG stay aligned.
 
 use std::collections::BTreeMap;
 
@@ -23,175 +22,14 @@ const GENERIC_FIREARM_ACCURACY: f64 = 0.65;
 const GENERIC_FIREARM_RELOAD: i64 = 1;
 const DEFAULT_OPPONENT_FIREARM: &str = "matchlock_pistol";
 
-#[derive(Debug, Clone)]
-struct InjuryRow {
-    id: &'static str,
-    melee_damage_mod: i64,
-    stamina_max_mod: i64,
-    hp_max_mod: i64,
-    ranged_accuracy_mod: f64,
-    can_dodge: bool,
-    can_use_firearms: bool,
-    thrust_multiplier: f64,
-    attack_types: &'static [&'static str],
-}
-
-const INJURIES: &[InjuryRow] = &[
-    InjuryRow {
-        id: "cut_hand",
-        melee_damage_mod: -1,
-        stamina_max_mod: 0,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-        attack_types: &["slash"],
-    },
-    InjuryRow {
-        id: "bruised_ribs",
-        melee_damage_mod: 0,
-        stamina_max_mod: -1,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-        attack_types: &["slash", "thrust"],
-    },
-    InjuryRow {
-        id: "deep_slash",
-        melee_damage_mod: -1,
-        stamina_max_mod: 0,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-        attack_types: &["slash"],
-    },
-    InjuryRow {
-        id: "shattered_knee",
-        melee_damage_mod: 0,
-        stamina_max_mod: -1,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: false,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-        attack_types: &["slash", "thrust"],
-    },
-    InjuryRow {
-        id: "blinded_eye",
-        melee_damage_mod: 0,
-        stamina_max_mod: 0,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: -0.15,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-        attack_types: &["slash", "thrust"],
-    },
-    InjuryRow {
-        id: "broken_sword_arm",
-        melee_damage_mod: -2,
-        stamina_max_mod: 0,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 0.5,
-        attack_types: &["slash", "thrust"],
-    },
-    InjuryRow {
-        id: "gunshot_wound",
-        melee_damage_mod: 0,
-        stamina_max_mod: -2,
-        hp_max_mod: -2,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-        attack_types: &["shoot"],
-    },
-    InjuryRow {
-        id: "severed_fingers",
-        melee_damage_mod: -1,
-        stamina_max_mod: 0,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: false,
-        thrust_multiplier: 1.0,
-        attack_types: &["slash"],
-    },
-];
-
-#[derive(Debug, Clone)]
-struct InjuryEffects {
-    melee_damage_mod: i64,
-    stamina_max_mod: i64,
-    hp_max_mod: i64,
-    ranged_accuracy_mod: f64,
-    can_dodge: bool,
-    can_use_firearms: bool,
-    thrust_multiplier: f64,
-}
-
-fn injury_row(id: &str) -> Option<&'static InjuryRow> {
-    INJURIES.iter().find(|row| row.id == id)
-}
+type InjuryEffects = crate::injuries::Effects;
 
 fn injury_effects(ids: &[String]) -> InjuryEffects {
-    let mut effects = InjuryEffects {
-        melee_damage_mod: 0,
-        stamina_max_mod: 0,
-        hp_max_mod: 0,
-        ranged_accuracy_mod: 0.0,
-        can_dodge: true,
-        can_use_firearms: true,
-        thrust_multiplier: 1.0,
-    };
-    for id in ids {
-        let Some(row) = injury_row(id) else {
-            continue;
-        };
-        effects.melee_damage_mod += row.melee_damage_mod;
-        effects.stamina_max_mod += row.stamina_max_mod;
-        effects.hp_max_mod += row.hp_max_mod;
-        effects.ranged_accuracy_mod += row.ranged_accuracy_mod;
-        if !row.can_dodge {
-            effects.can_dodge = false;
-        }
-        if !row.can_use_firearms {
-            effects.can_use_firearms = false;
-        }
-        effects.thrust_multiplier *= row.thrust_multiplier;
-    }
-    effects
-}
-
-fn injury_pool(attack_type: &str) -> Vec<&'static str> {
-    INJURIES
-        .iter()
-        .filter(|row| row.attack_types.contains(&attack_type))
-        .map(|row| row.id)
-        .collect()
+    crate::injuries::effects(ids)
 }
 
 fn roll_injury(damage: i64, attack_type: &str, rng: &mut PyRandom, bonus: f64) -> Option<String> {
-    if damage < 4 {
-        return None;
-    }
-    let chance = ((damage - 4 + 1) as f64 * 0.15 + bonus).min(0.90);
-    if rng.random() >= chance {
-        return None;
-    }
-    let pool = injury_pool(attack_type);
-    if pool.is_empty() {
-        return None;
-    }
-    Some(pool[rng.choice_index(pool.len())].to_string())
+    crate::injuries::roll_injury(damage, attack_type, rng, bonus)
 }
 
 fn quality_mods(quality: &str) -> (i64, f64) {

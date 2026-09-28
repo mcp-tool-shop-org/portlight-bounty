@@ -43,6 +43,12 @@
           "origin_port": "porto_novo",
           "trait": "loyal"
         }
+      ],
+      "upgrades": [
+        {
+          "upgrade_id": "lateen",
+          "installed_day": 0
+        }
       ]
     },
     "standing": {

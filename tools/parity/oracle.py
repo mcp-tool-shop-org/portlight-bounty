@@ -349,6 +349,7 @@ def do_advance(state, entry: dict) -> None:
                 contract_id=outcome.contract_id,
             )
     notes = apply_upkeep(state)
+    heal_injuries(state)
     if world.voyage.status != VoyageStatus.AT_SEA:
         shocks = tick_markets(world.ports, days=1, rng=rng)
         world.day += 1
@@ -363,6 +364,8 @@ def do_advance(state, entry: dict) -> None:
                 wage = compute_daily_wages(ship.roster, daily)
             else:
                 wage = daily * ship.crew
+            from portlight.engine.fleet import fleet_daily_wages
+            wage += fleet_daily_wages(world.captain)
             if wage > 0 and world.captain.silver >= wage:
                 world.captain.silver -= wage
         entry["shocks"] = shocks
@@ -426,6 +429,7 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         state["encounter"] = None
         state["player_combat"] = None
         state["opponent_combat"] = None
+        state["pending_victory"] = False
         state["history"] = fresh_history()
         port = current_port(world)
         if port is not None:
@@ -584,6 +588,46 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         if len(tokens) != 1:
             raise ScriptError("Usage: agency")
         do_agency(state, entry)
+    elif cmd == "spare":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: spare")
+        do_spare(state, True)
+    elif cmd == "take_all":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: take_all")
+        do_spare(state, False)
+    elif cmd == "gear":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: gear <id>")
+        do_gear(state, tokens[1])
+    elif cmd == "buy_ship":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: buy_ship <template_id>")
+        do_buy_ship(state, tokens[1])
+    elif cmd == "upgrade":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: upgrade <upgrade_id>")
+        do_install_upgrade(state, tokens[1])
+    elif cmd == "form_convoy":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: form_convoy")
+        do_form_convoy(state)
+    elif cmd == "repair_fleet":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: repair_fleet")
+        do_repair_fleet(state)
+    elif cmd == "transfer":
+        if len(tokens) != 5:
+            raise ScriptError("Usage: transfer <good> <qty> <from> <to>")
+        try:
+            qty = int(tokens[2])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[2]}") from exc
+        do_transfer(state, tokens[1], qty, tokens[3], tokens[4])
+    elif cmd == "maintain":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: maintain <weapon_id>")
+        do_maintain(state, tokens[1])
     else:
         raise ScriptError(f"Unknown command: {cmd}")
 
@@ -685,6 +729,7 @@ def clear_encounter(state) -> None:
     state["encounter"] = None
     state["player_combat"] = None
     state["opponent_combat"] = None
+    state["pending_victory"] = False
 
 
 def ensure_encounter(state, captain_id, band) -> None:
@@ -731,6 +776,7 @@ def ensure_encounter(state, captain_id, band) -> None:
     state["encounter"] = enc
     state["player_combat"] = None
     state["opponent_combat"] = None
+    state["pending_victory"] = False
 
 
 def encounter_view(enc, ship, **kw) -> dict:
@@ -780,6 +826,10 @@ def encounter_view(enc, ship, **kw) -> dict:
         "prize_reason": "",
     }
     base.update(kw)
+    if not base.get("player_stamina"):
+        base.pop("player_stamina", None)
+    if not base.get("player_stamina_max"):
+        base.pop("player_stamina_max", None)
     return base
 
 
@@ -803,6 +853,7 @@ def do_encounter(state, choice, captain_id, band, entry) -> None:
         raise ScriptError("No ship")
     enc = state["encounter"]
     rng = state["rng"]
+    combat = resolved_player_ship(ship)
     if choice == "negotiate":
         success, message = resolve_negotiate(
             enc, world.captain.standing.underworld_standing,
@@ -816,12 +867,12 @@ def do_encounter(state, choice, captain_id, band, entry) -> None:
             )
             clear_encounter(state)
         else:
-            message = message + "\n" + begin_fight(enc, ship)
+            message = message + "\n" + begin_fight(enc, combat)
             entry["encounter"] = encounter_view(
                 enc, ship, kind="choice", choice="negotiate", success=False, message=message,
             )
     elif choice == "flee":
-        escaped, damage, message = resolve_flee(enc, ship, rng)
+        escaped, damage, message = resolve_flee(enc, combat, rng)
         if damage > 0:
             ship.hull = max(0, ship.hull - damage)
         if escaped:
@@ -832,13 +883,13 @@ def do_encounter(state, choice, captain_id, band, entry) -> None:
             )
             clear_encounter(state)
         else:
-            message = message + "\n" + begin_fight(enc, ship)
+            message = message + "\n" + begin_fight(enc, combat)
             entry["encounter"] = encounter_view(
                 enc, ship, kind="choice", choice="flee", success=False, escaped=False,
                 hull_damage=damage, message=message,
             )
     else:
-        message = begin_fight(enc, ship)
+        message = begin_fight(enc, combat)
         entry["encounter"] = encounter_view(
             enc, ship, kind="choice", choice="fight", success=True, message=message,
         )
@@ -858,10 +909,13 @@ def do_naval(state, action, entry) -> None:
     if ship is None:
         raise ScriptError("No ship")
     action = action.strip().lower()
-    valid = get_valid_actions(ship.cannons)
+    from portlight.content.upgrades import UPGRADES
+    from portlight.engine.ship_stats import resolve_cannons
+    valid = get_valid_actions(resolve_cannons(ship, UPGRADES))
     if action not in valid:
         raise ScriptError("Invalid action. Available: " + ", ".join(valid))
     rng = state["rng"]
+    combat = resolved_player_ship(ship)
     if action == "flee":
         enemy = EnemyShip(
             name=f"{enc.enemy_captain_name}'s Ship",
@@ -870,7 +924,7 @@ def do_naval(state, action, entry) -> None:
             speed=enc.enemy_ship_speed, crew=enc.enemy_ship_crew,
             crew_max=enc.enemy_ship_crew_max,
         )
-        escaped, damage = attempt_flee(ship, enemy, rng)
+        escaped, damage = attempt_flee(combat, enemy, rng)
         ship.hull = max(0, ship.hull - damage)
         enc.naval_turns += 1
         message = "You break away!" if escaped else f"Flee failed! Their broadside rakes you for {damage} hull damage."
@@ -895,7 +949,7 @@ def do_naval(state, action, entry) -> None:
             view["phase"] = "resolved"
         entry["encounter"] = view
         return
-    result = resolve_naval_turn(enc, action, ship, rng)
+    result = resolve_naval_turn(enc, action, combat, rng)
     ship.hull = max(0, ship.hull + result["player_hull_delta"])
     crew_lost = max(0, -int(result.get("player_crew_delta") or 0))
     apply_crew_casualties(ship, crew_lost)
@@ -962,18 +1016,14 @@ def do_board(state, entry) -> None:
 
 def do_fight(state, action, entry) -> None:
     from portlight.engine.combat import get_available_actions
-    from portlight.engine.encounter import create_duel_combatants, resolve_duel_turn
+    from portlight.engine.encounter import resolve_duel_turn
 
     enc = state.get("encounter")
     if enc is None or enc.phase != "duel":
         raise ScriptError("Not in personal combat.")
     action = action.strip().lower()
     world = state["world"]
-    if state.get("player_combat") is None or state.get("opponent_combat") is None:
-        crew = world.captain.ship.crew if world.captain.ship else 5
-        state["player_combat"], state["opponent_combat"] = create_duel_combatants(
-            enc, crew, world.captain.active_style, [], None, 0, 0,
-        )
+    ensure_combatants(state)
     player = state["player_combat"]
     opponent = state["opponent_combat"]
     valid = get_available_actions(player)
@@ -998,18 +1048,13 @@ def do_fight(state, action, entry) -> None:
         injury=result.injury_inflicted or "",
         opponent_injury=result.opponent_injury or "",
         style_effect=result.style_effect or "",
+        player_stamina=player.stamina,
+        player_stamina_max=player.stamina_max,
     )
     if finished:
-        if player_won or draw:
-            state["history"]["duels_won"] += 1
-        else:
-            state["history"]["duels_lost"] += 1
-            loss = 15 + enc.enemy_strength * 3
-            world.captain.silver = max(0, world.captain.silver - loss)
-        outcome = "duel_win" if player_won else ("duel_draw" if draw else "duel_loss")
-        remember(state, enc, outcome)
-        clear_encounter(state)
-        view["phase"] = "resolved"
+        finish_personal_fight(state, result, player_won, draw)
+        if not player_won:
+            view["phase"] = "resolved"
     entry["encounter"] = view
 
 
@@ -1071,6 +1116,358 @@ def _plunder(captain) -> None:
         item.quantity = max(0, item.quantity - item.quantity // 2)
     captain.cargo = [item for item in captain.cargo if item.quantity > 0]
     captain.silver -= captain.silver // 4
+
+
+def resolved_player_ship(ship):
+    """Upgrade-resolved copy. Hull changes stay on the real ship."""
+    from portlight.content.upgrades import UPGRADES
+    from portlight.engine.ship_stats import resolved_ship
+    return resolved_ship(ship, UPGRADES)
+
+
+def heal_injuries(state) -> None:
+    """GameSession.advance: in port, or at sea with a surgeon's bay."""
+    world = state["world"]
+    if not world.captain.injuries:
+        return
+    in_port = world.voyage.status != VoyageStatus.AT_SEA
+    ship = world.captain.ship
+    bay = False
+    if ship is not None:
+        bay = any(getattr(inst, "upgrade_id", "") == "surgeons_bay" for inst in ship.upgrades)
+    if not (in_port or bay):
+        return
+    from portlight.engine.injuries import heal_injury_tick
+    medicines = any(item.good_id == "medicines" for item in world.captain.cargo)
+    world.captain.injuries = heal_injury_tick(
+        world.captain.injuries, days=1, in_port=True, has_medicines=medicines,
+    )
+
+
+def ensure_combatants(state) -> None:
+    """CLI fight path: armor DR and dodge penalty after create_duel_combatants."""
+    if state.get("player_combat") is not None and state.get("opponent_combat") is not None:
+        return
+    from portlight.content.armor import ARMOR
+    from portlight.engine.encounter import create_duel_combatants
+    world = state["world"]
+    enc = state["encounter"]
+    gear = world.captain.combat_gear
+    throwing = gear.throwing_weapons or {}
+    total_throwing = sum(throwing.values())
+    tw_ids = []
+    for weapon_id, count in throwing.items():
+        tw_ids.extend([weapon_id] * count)
+    melee_q = gear.weapon_quality.get(gear.melee_weapon, "standard") if gear.melee_weapon else "standard"
+    ranged_q = gear.weapon_quality.get(gear.firearm, "standard") if gear.firearm else "standard"
+    injury_ids = [injury.injury_id for injury in world.captain.injuries]
+    crew = world.captain.ship.crew if world.captain.ship else 5
+    player, opponent = create_duel_combatants(
+        enc, crew, world.captain.active_style, injury_ids,
+        gear.firearm, gear.firearm_ammo, total_throwing,
+        gear.mechanical_weapon, gear.mechanical_ammo,
+    )
+    player.throwing_weapon_ids = tw_ids
+    player.melee_weapon_id = gear.melee_weapon
+    player.melee_quality = melee_q
+    player.ranged_quality = ranged_q
+    if gear.armor:
+        armor_def = ARMOR.get(gear.armor)
+        if armor_def:
+            player.armor_dr = armor_def.damage_reduction
+            player.dodge_stamina_penalty = armor_def.dodge_penalty
+    state["player_combat"] = player
+    state["opponent_combat"] = opponent
+
+
+def finish_personal_fight(state, result, player_won: bool, draw: bool) -> None:
+    from portlight.engine.injuries import create_injury
+    from portlight.engine.skill_engine import get_degrade_threshold_bonus, get_skill_level
+    from portlight.engine.weapon_quality import tick_weapon_degradation
+    world = state["world"]
+    gear = world.captain.combat_gear
+    if result.injury_inflicted:
+        world.captain.injuries.append(create_injury(result.injury_inflicted, world.day))
+    bonus = get_degrade_threshold_bonus(get_skill_level(world.captain.skills, "blacksmith"))
+    if gear.melee_weapon:
+        tick_weapon_degradation(
+            gear.weapon_quality, gear.weapon_usage, gear.melee_weapon, "melee", 1, bonus,
+        )
+    if gear.armor:
+        tick_weapon_degradation(
+            gear.weapon_quality, gear.weapon_usage, gear.armor, "armor", 1, bonus,
+        )
+    sync_combat_ammo(state)
+    if player_won:
+        state["pending_victory"] = True
+    elif draw:
+        state["history"]["duels_won"] += 1
+        clear_encounter(state)
+    else:
+        enc = state.get("encounter")
+        strength = enc.enemy_strength if enc is not None else 0
+        loss = 15 + strength * 3
+        world.captain.silver = max(0, world.captain.silver - loss)
+        state["history"]["duels_lost"] += 1
+        clear_encounter(state)
+
+
+def sync_combat_ammo(state) -> None:
+    player = state.get("player_combat")
+    if player is None:
+        return
+    gear = state["world"].captain.combat_gear
+    gear.firearm_ammo = player.ammo
+    gear.mechanical_ammo = player.mechanical_ammo
+    if not gear.throwing_weapons:
+        return
+    total = sum(gear.throwing_weapons.values())
+    spent = total - player.throwing_weapons
+    for weapon_id in list(gear.throwing_weapons):
+        if spent <= 0:
+            break
+        take = min(spent, gear.throwing_weapons[weapon_id])
+        gear.throwing_weapons[weapon_id] -= take
+        spent -= take
+    gear.throwing_weapons = {key: qty for key, qty in gear.throwing_weapons.items() if qty > 0}
+
+
+def do_spare(state, spared: bool) -> None:
+    enc = state.get("encounter")
+    if not state.get("pending_victory") or enc is None:
+        if enc is not None and enc.phase == "capture_available":
+            raise ScriptError("Prize waiting. Use portlight capture <crew> (or 0 to decline).")
+        if spared:
+            raise ScriptError("No defeated opponent to spare. Win a duel first.")
+        raise ScriptError("No defeated opponent. Win a duel first.")
+    from portlight.engine.loot import apply_loot, roll_loot
+    from portlight.engine.underworld import record_duel_outcome
+    from portlight.engine.weapon_provenance import create_provenance, record_kill
+    world = state["world"]
+    gear = world.captain.combat_gear
+    silver_gain = 20 + enc.enemy_strength * (3 if spared else 7)
+    world.captain.silver += silver_gain
+    state["history"]["duels_won"] += 1
+    from portlight.engine.captain_memory import get_or_create_memory, record_encounter
+    from portlight.engine.companion_engine import apply_morale_trigger, check_departures
+    memory = get_or_create_memory(world.pirates.captain_memories, enc.enemy_captain_id)
+    crew_killed = max(0, enc.enemy_ship_crew_max - enc.enemy_ship_crew)
+    record_encounter(
+        memory, world.day, enc.enemy_region, "player_won",
+        player_spared=spared, player_used_firearm=False, crew_killed=crew_killed,
+    )
+    record_duel_outcome(
+        world.captain.standing.underworld_standing,
+        enc.enemy_faction_id,
+        True,
+        spared,
+    )
+    if gear.melee_weapon:
+        prov = gear.weapon_provenance.get(gear.melee_weapon)
+        if prov is None:
+            prov = create_provenance(gear.melee_weapon)
+            gear.weapon_provenance[gear.melee_weapon] = prov
+        record_kill(prov, enc.enemy_captain_id, enc.enemy_captain_name)
+    if not spared:
+        drops = roll_loot(enc.enemy_strength, enc.enemy_captain_id, state["rng"], 2)
+        apply_loot(world.captain, drops)
+    trigger = "spared_enemy" if spared else "took_all"
+    party = _party_from(world.captain.party)
+    apply_morale_trigger(party, trigger)
+    check_departures(party)
+    world.captain.party = _party_dict(party)
+    clear_encounter(state)
+
+
+def do_buy_ship(state, ship_id: str) -> None:
+    from portlight.app.session import _trim_cargo_to_capacity
+    from portlight.content.ships import SHIPS, create_ship_from_template
+    from portlight.engine.models import OwnedShip, PortFeature, max_fleet_size
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    if PortFeature.SHIPYARD not in port.features:
+        raise ScriptError(f"{port.name} has no shipyard")
+    template = SHIPS.get(ship_id)
+    if template is None:
+        raise ScriptError(f"Unknown ship: {ship_id}")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    if template.id == ship.template_id:
+        raise ScriptError("You already have this ship")
+    if template.price > world.captain.silver:
+        raise ScriptError(f"Need {template.price} silver, have {world.captain.silver}")
+    trust = world.captain.standing.commercial_trust
+    fleet_limit = max_fleet_size(trust)
+    fleet_count = len(world.captain.fleet) + 1
+    if fleet_count < fleet_limit:
+        world.captain.fleet.append(OwnedShip(ship=ship, docked_port_id=port.id))
+    else:
+        old = SHIPS.get(ship.template_id)
+        if old is not None:
+            world.captain.silver += int(old.price * 0.4)
+    world.captain.silver -= template.price
+    world.captain.ship = create_ship_from_template(template)
+    _trim_cargo_to_capacity(world.captain.cargo, template.cargo_capacity)
+
+
+def do_install_upgrade(state, upgrade_id: str) -> None:
+    from portlight.content.upgrades import UPGRADES
+    from portlight.engine.models import InstalledUpgrade, PortFeature
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    if PortFeature.SHIPYARD not in port.features:
+        raise ScriptError(f"{port.name} has no shipyard")
+    template = UPGRADES.get(upgrade_id)
+    if template is None:
+        raise ScriptError(f"Unknown upgrade: {upgrade_id}")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    if len(ship.upgrades) >= ship.upgrade_slots:
+        raise ScriptError(
+            f"No upgrade slots remaining ({ship.upgrade_slots}/{ship.upgrade_slots} used)"
+        )
+    if template.price > world.captain.silver:
+        raise ScriptError(f"Need {template.price} silver, have {world.captain.silver}")
+    world.captain.silver -= template.price
+    ship.upgrades.append(InstalledUpgrade(upgrade_id=upgrade_id, installed_day=world.day))
+
+
+def do_form_convoy(state) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    for owned in world.captain.fleet:
+        if owned.docked_port_id == port.id:
+            owned.docked_port_id = ""
+
+
+def do_repair_fleet(state) -> None:
+    """GameSession.repair with no amount: the flagship only.
+
+    fleet.py, dry_dock, and arrival do not patch escort hull. dry_dock restores
+    template hull_max and is not this command.
+    """
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked to repair")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    damage = ship.hull_max - ship.hull
+    if damage == 0:
+        raise ScriptError("Ship is already in perfect condition")
+    cost_per = max(1, int(port.repair_cost * get_service_modifier(world.captain.standing, port.id)))
+    amount = damage
+    cost = amount * cost_per
+    if cost > world.captain.silver:
+        affordable = world.captain.silver // cost_per if cost_per > 0 else 0
+        if affordable == 0:
+            raise ScriptError("Can't afford any repairs")
+        amount = affordable
+        cost = amount * cost_per
+    world.captain.silver -= cost
+    ship.hull += amount
+
+
+def do_transfer(state, good_id: str, qty: int, src: str, dst: str) -> None:
+    from portlight.engine.fleet import transfer_cargo
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    err = transfer_cargo(world.captain, good_id, qty, src, dst, port.id)
+    if err:
+        raise ScriptError(err)
+
+
+def do_gear(state, gear_id: str) -> None:
+    """Buy one item from the port's merchant via `buy_from_merchant`."""
+    from portlight.content.merchants import get_merchants_at_port
+    from portlight.engine.merchant import buy_from_merchant, get_merchant_inventory
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    merchants = get_merchants_at_port(port.id)
+    if not merchants:
+        raise ScriptError("Unknown merchant")
+    chosen = None
+    for merchant in merchants:
+        inventory = get_merchant_inventory(merchant, port.region)
+        if any(item["item_id"] == gear_id for item in inventory):
+            chosen = merchant
+            break
+    if chosen is None:
+        chosen = merchants[0]
+    result = buy_from_merchant(world.captain, chosen.id, gear_id, 1, port.region)
+    if isinstance(result, str):
+        raise ScriptError(result)
+
+
+def do_maintain(state, weapon_id: str) -> None:
+    """CLI `maintain`: blacksmith discount, then reset usage."""
+    from portlight.engine.skill_engine import apply_maintenance_discount, get_skill_level
+    from portlight.engine.weapon_quality import get_maintenance_cost
+    world = state["world"]
+    if current_port(world) is None:
+        raise ScriptError("Must be docked")
+    gear = world.captain.combat_gear
+    level = get_skill_level(world.captain.skills, "blacksmith")
+    base = get_maintenance_cost(weapon_id, gear.weapon_quality)
+    cost = apply_maintenance_discount(base, level)
+    if world.captain.silver < cost:
+        raise ScriptError(
+            f"Maintenance costs {cost} silver. You have {world.captain.silver}."
+        )
+    gear.weapon_usage[weapon_id] = 0
+    world.captain.silver -= cost
+
+
+def cargo_snap(item) -> dict:
+    return {
+        "good_id": item.good_id,
+        "quantity": item.quantity,
+        "cost_basis": item.cost_basis,
+        "acquired_port": item.acquired_port,
+        "acquired_region": item.acquired_region,
+        "acquired_day": item.acquired_day,
+    }
+
+
+def fleet_snap(owned) -> dict:
+    row = {
+        "template_id": owned.ship.template_id,
+        "name": owned.ship.name,
+        "hull": owned.ship.hull,
+        "hull_max": owned.ship.hull_max,
+        "crew": owned.ship.crew,
+        "docked_port_id": owned.docked_port_id,
+    }
+    if owned.cargo:
+        row["cargo"] = [cargo_snap(item) for item in owned.cargo]
+    return row
+
+
+def provenance_snap(prov) -> dict:
+    return {
+        "weapon_id": prov.weapon_id,
+        "acquired_port": prov.acquired_port,
+        "acquired_day": prov.acquired_day,
+        "acquired_region": prov.acquired_region,
+        "kills": prov.kills,
+        "named_kills": list(prov.named_kills),
+        "epithet": prov.epithet,
+        "custom_name": prov.custom_name,
+        "times_recognized": prov.times_recognized,
+    }
 
 
 def split_stances(tokens: list[str]) -> list[str]:
@@ -1396,6 +1793,18 @@ def _apply_duel(state, stances: list[str], entry: dict) -> None:
         player_crew=crew,
     )
     world.captain.silver = max(0, world.captain.silver + result.silver_delta)
+    outcome_str = "duel_win" if result.player_won else ("duel_draw" if result.draw else "duel_loss")
+    state["history"]["encounters"].append({
+        "captain_id": pending.captain_id,
+        "faction_id": pending.faction_id,
+        "day": world.day,
+        "outcome": outcome_str,
+        "region": pending.region,
+    })
+    if result.player_won:
+        state["history"]["duels_won"] += 1
+    elif not result.draw:
+        state["history"]["duels_lost"] += 1
     world.pirates.pending_duel = None
     entry["duel"] = {
         "opponent_id": result.opponent_id,
@@ -1527,6 +1936,11 @@ def snapshot(state: dict, log: list[dict]) -> dict:
                 }
                 for officer in ship.officers
             ]
+        if ship.upgrades:
+            ship_view["upgrades"] = [
+                {"upgrade_id": inst.upgrade_id, "installed_day": inst.installed_day}
+                for inst in ship.upgrades
+            ]
     pending = None
     duel = world.pirates.pending_duel
     if duel is not None:
@@ -1570,8 +1984,34 @@ def snapshot(state: dict, log: list[dict]) -> dict:
         captain_view["naval_victories"] = history["naval_victories"]
     if history["naval_defeats"]:
         captain_view["naval_defeats"] = history["naval_defeats"]
-    if history["fleet"]:
-        captain_view["fleet"] = history["fleet"]
+    if world.captain.fleet:
+        captain_view["fleet"] = [fleet_snap(owned) for owned in world.captain.fleet]
+    if world.captain.injuries:
+        captain_view["injuries"] = [
+            {
+                "injury_id": injury.injury_id,
+                "acquired_day": injury.acquired_day,
+                "heal_remaining": injury.heal_remaining,
+                "treated": injury.treated,
+            }
+            for injury in world.captain.injuries
+        ]
+    gear = world.captain.combat_gear
+    if gear.armor:
+        captain_view["armor"] = gear.armor
+    if gear.melee_weapon:
+        captain_view["melee_weapon"] = gear.melee_weapon
+    if gear.firearm:
+        captain_view["firearm"] = gear.firearm
+    if gear.weapon_quality:
+        captain_view["weapon_quality"] = dict(gear.weapon_quality)
+    if gear.weapon_usage:
+        captain_view["weapon_usage"] = dict(gear.weapon_usage)
+    if gear.weapon_provenance:
+        captain_view["weapon_provenance"] = {
+            key: provenance_snap(prov)
+            for key, prov in gear.weapon_provenance.items()
+        }
     snap = {
         "seed": world.seed,
         "day": world.day,
@@ -1766,21 +2206,11 @@ def do_purchase_license(state, license_id: str) -> None:
     _engine_result(purchase_license(state["infra"], world.captain, spec, world.captain.standing, world.day))
 
 
-def do_dry_dock(state, ship_name: str | None) -> None:
-    world = state["world"]
-    port = current_port(world)
-    if port is None:
-        raise ScriptError("Must be docked")
-    if PortFeature.SHIPYARD not in port.features:
-        raise ScriptError(f"{port.name} has no shipyard")
-    if ship_name:
-        raise ScriptError(f"No ship named '{ship_name}' docked at this port")
-    ship = world.captain.ship
-    if ship is None:
-        raise ScriptError("No ship")
+def _dry_dock_ship(world, ship, port, missing: str) -> None:
+    """`GameSession._do_dry_dock`. `missing` is the flagship's existing sentence."""
     template = SHIPS.get(ship.template_id)
     if template is None:
-        raise ScriptError(f"Unknown ship: {ship.template_id}")
+        raise ScriptError(missing)
     degradation = template.hull_max - ship.hull_max
     if degradation <= 0:
         raise ScriptError("Ship hull is not degraded")
@@ -1794,6 +2224,29 @@ def do_dry_dock(state, ship_name: str | None) -> None:
     world.captain.silver -= cost
     ship.hull_max = template.hull_max
     ship.hull = min(ship.hull + degradation, ship.hull_max)
+
+
+def do_dry_dock(state, ship_name: str | None) -> None:
+    world = state["world"]
+    port = current_port(world)
+    if port is None:
+        raise ScriptError("Must be docked")
+    if PortFeature.SHIPYARD not in port.features:
+        raise ScriptError(f"{port.name} has no shipyard")
+    if ship_name:
+        wanted = ship_name.lower()
+        for owned in world.captain.fleet:
+            if owned.docked_port_id == port.id and (
+                owned.ship.name.lower() == wanted
+                or owned.ship.template_id.lower() == wanted
+            ):
+                _dry_dock_ship(world, owned.ship, port, "Unknown ship template")
+                return
+        raise ScriptError(f"No ship named '{ship_name}' docked at this port")
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    _dry_dock_ship(world, ship, port, f"Unknown ship: {ship.template_id}")
 
 
 def do_take_credit(state, tier: str, amount: int) -> None:
