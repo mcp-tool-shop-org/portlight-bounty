@@ -24,7 +24,7 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | Python | Rust | Status |
 | --- | --- | --- |
 | `engine/models.py` | `model.rs` | Partial. Goods, markets, ports, ships, cargo, standing, voyage, world. Combat, culture, festival, and fleet structs are not modeled yet. |
-| `engine/economy.py` | `economy.rs` | Partial. Price formula, `tick_markets`, buy, sell, FIFO cargo, receipt ids. `work_docks` and gear sell-back are not ported. |
+| `engine/economy.py` | `economy.rs` | Partial. Price formula, `tick_markets`, buy, sell, FIFO cargo, receipt ids, and `work_docks`. Gear sell-back is not ported. |
 | `engine/voyage.py` | `voyage.rs` | Ported for `depart`, `advance_day`, `arrive`, the event table, and the sail-picker lane list (`sail_lanes`), including ship-class block versus warning. |
 | `engine/reputation.py` | `reputation.rs` | Partial. Trade, inspection, arrival, daily heat decay, inspection-chance modifier. Fee and service modifiers exist in Python and are not applied by `depart` today; they are not ported. |
 | `engine/ship_stats.py` | `ship.rs` | Partial. Speed, cargo, storm resist, wages, morale, casualty selection. No upgrade catalog, so bonuses are zero, which matches a stock ship. |
@@ -38,7 +38,7 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | `content/factions.py` | content JSON | Partial. Id, name, territory, and the eight captains' id, name, personality, and strength, which voyage events need. Dialogue and faction diplomacy are not ported. |
 | `content/crew_roles.py` | wage table in `ship.rs` | Partial. The six role wages only. |
 | `receipts/models.py` | receipt id in `economy.rs` | Partial. The 16-hex SHA-256 id used by buy/sell. Ledger export and wall-clock timestamps are not ported (they are not deterministic). |
-| `app/session.py` | `session.rs`, `script.rs` | Partial. `Session` is the public turn API (`new`, `buy`, `sell`, `depart`, `advance`, `world`, `sail_lanes`, `victory`). `run_script` and the Godot view only call those methods. See "Public session" below. |
+| `app/session.py` | `session.rs`, `script.rs` | Partial. `Session` in this crate is the only turn API. The Godot view calls it and does not define a second session type. See "Public session" and "Rebasing stage 2". |
 | `app/cli.py`, `app/tui/**`, `app/views.py` | `portlight-cli` (new, not a port); `portlight-godot` chart and market panel | First playable only. The panel lists `sail_lanes` and the docked market. It does not reimplement the quirks below. |
 | `engine/campaign.py` victory paths | `campaign.rs` | Ported. `compute_victory_progress` and `evaluate_victory_closure` for `lawful_house`, `shadow_network`, `oceanic_reach`, and `commercial_empire`. Milestone evaluation is not ported. |
 | Everything else under `engine/`, `content/`, `balance/`, `stress/`, `printandplay/` | — | Not started. Listed in the checklist. |
@@ -262,7 +262,20 @@ Chart water and the port marker are still placeholders, stamped PH with a magent
 
 Default camera frames the Mediterranean ports that are on screen: Porto Novo, Al-Manar, Silva Bay, and Corsair's Rest. The overlay is exactly `Session::sail_lanes`: only the current port, including warning and blocked lanes, in picker order, with the raw-speed day estimate and the suitability note copied through. The chart takes a `&Session` and does not call the free `sail_lanes` helper. Godot starts games with `Session::new`, sails and trades with `depart`, `buy`, and `sell`, hires with `hire_crew`, buys provisions with `provision`, works the docks with `work`, advances with `advance`, and reads `world`, `sail_lanes`, `victory`, and `books`. It does not call `books_mut` (no save, and the view does not grant contracts), `new_game`, `economy`, or `voyage`. A pending duel is shown on the panel and Next day is disabled before `advance`, so reputation does not tick. The player picks at least three stances (`thrust`, `slash`, `parry`) and the view calls `Session::duel`, or Auto-resolve calls `Session::resolve_pending_duel`. The log shows `DuelOutcome`, including `standing_delta`, and does not write that delta onto reputation. Negotiate, flee, fight, naval rounds, and boarding are not on `Session` and are not offered. Hire sailor calls `hire_crew(1, "sailor")` and Provisions +5 calls `provision(5)`. A `SimError` is shown with its `Display` text. Good names and the season name are catalog labels. Off-region ends (Ironhaven, Sun Harbor) are listed in the panel and drawn as lines, but the camera does not pull back to show them. A blocked lane still has a Sail button; `depart` refuses it. While at sea, `sail_lanes` is empty and the view draws the active leg from voyage progress. Position is a lerp of chart coordinates by `progress / distance`. Facing is the whole-leg chart delta.
 
-The market panel calls `Session::buy` and `Session::sell` for quantity 1. Next day calls `Session::advance`. Labels, prices, stock, and lane days are fields the sim already computed.
+The market panel calls `Session::buy` and `Session::sell` for quantity 1. Next day calls `Session::advance`. While docked, one row holds Market, Hire sailor, Provisions +5, and Work. Work calls `Session::work` and shows the silver it returns (3 to 5). Markets, provisions, wages, and reputation do not tick. A `SimError` is shown with its `Display` text. Labels, prices, stock, and lane days are fields the sim already computed.
+
+### Rebasing stage 2 onto a squashed stage 1
+
+Stage 2 does not own `crates/portlight-sim/src/session.rs`. The chart and the Godot view call `portlight_sim::Session` and nothing else for rules. There is no shim and no second `Session` type. The sim tree on this branch matches stage 1.
+
+When stage 1 is squash-merged, rebase this branch onto that commit:
+
+```
+git fetch origin
+git rebase --onto <squashed-stage1> <old-stage1-tip> cursor/rust-port-stage2-dimetric-e4ee
+```
+
+`<old-stage1-tip>` is the stage 1 commit this branch was last stacked on (`d4eee429d7b436fc133896e3e700a83da6ce19fc` until the next stack). The replay should only touch `crates/portlight-chart`, `crates/portlight-godot`, `godot/`, `docs/PORTING-PLAN.md`, `README.md`, and the lockfile lines those crates need. If `crates/portlight-sim` conflicts, take the squashed stage 1 file. Do not resurrect a local `session.rs`.
 
 New game in the view is merchant Ada, seed 1, home Porto Novo. That seed completes Porto Novo to Al-Manar without a pending duel. The scripted smoke buys grain, sails, advances until docked, sells the grain, and buys and sells one spice.
 

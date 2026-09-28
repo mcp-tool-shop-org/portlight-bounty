@@ -1,7 +1,7 @@
 //! Portlight simulation core.
 //!
 //! Rules and world state live here with no terminal, ratatui, or graphics
-//! dependency, so the dimetric chart can sit in its own crate.
+//! dependency, so a later dimetric front end can sit on the same crate.
 //!
 //! The first slice covers content, prices, trade, reputation side effects of
 //! trade and travel, one day of voyaging, and the four victory paths.

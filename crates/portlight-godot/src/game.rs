@@ -165,6 +165,10 @@ impl IControl for PortlightGame {
             self.smoke = true;
             self.run_duel_resolution(true);
             self.capture_frames = 2;
+        } else if user_arg("--work") {
+            self.smoke = true;
+            self.run_work();
+            self.capture_frames = 2;
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
@@ -265,17 +269,17 @@ impl PortlightGame {
         let next = action_button("Next day", game_id, Action::NextDay);
         buttons.add_child(&next);
         self.next_button = Some(next);
-        let work = action_button("Work", game_id, Action::Work);
-        buttons.add_child(&work);
-        self.work_button = Some(work);
-        let market = action_button("Market", game_id, Action::ToggleMarket);
-        buttons.add_child(&market);
-        self.market_button = Some(market);
         column.add_child(&buttons);
 
         let mut port_row = HBoxContainer::new_alloc();
+        let market = action_button("Market", game_id, Action::ToggleMarket);
+        port_row.add_child(&market);
+        self.market_button = Some(market);
         port_row.add_child(&action_button("Hire sailor", game_id, Action::HireSailor));
         port_row.add_child(&action_button("Provisions +5", game_id, Action::Provision));
+        let work = action_button("Work", game_id, Action::Work);
+        port_row.add_child(&work);
+        self.work_button = Some(work);
         port_row.set_visible(false);
         column.add_child(&port_row);
         self.port_row = Some(port_row);
@@ -456,6 +460,48 @@ impl PortlightGame {
             self.push_log(format!(
                 "Duel with {name}. Advance stays refused. Pick at least 3 stances, or auto-resolve."
             ));
+        }
+        self.refresh();
+    }
+
+    /// Docked at the start port. `Session::work` pays 3 to 5 silver.
+    /// Markets, provisions, wages, and reputation do not tick. The captain's
+    /// day is copied onto the world, which is how the sim records the day of work.
+    fn run_work(&mut self) {
+        let before = match self.session.as_ref() {
+            Some(session) => {
+                let world = session.world();
+                (world.captain.silver, world.day, world.captain.provisions)
+            }
+            None => {
+                self.smoke_ok = false;
+                self.push_log("Work: no session.".to_string());
+                self.refresh();
+                return;
+            }
+        };
+        if self.docked_id().is_none() {
+            self.smoke_ok = false;
+            self.push_log("Work: expected to be docked.".to_string());
+        }
+        self.work_docks();
+        let after = self.session.as_ref().map(|session| {
+            let world = session.world();
+            (world.captain.silver, world.day, world.captain.provisions)
+        });
+        let (silver, day, provisions) = before;
+        match after {
+            Some((next_silver, next_day, next_provisions))
+                if (3..=5).contains(&(next_silver - silver))
+                    && next_day == day + 1
+                    && next_provisions == provisions => {}
+            _ => {
+                self.smoke_ok = false;
+                self.push_log(
+                    "Work: expected 3 to 5 silver, the day copied forward, and provisions unchanged."
+                        .to_string(),
+                );
+            }
         }
         self.refresh();
     }

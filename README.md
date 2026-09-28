@@ -35,7 +35,7 @@ cargo +stable build -p portlight-godot
 godot --path godot
 ```
 
-New game starts merchant Ada at Porto Novo, seed 1. The chart draws that port's `sail_lanes`, including warning and blocked lanes. Sail, Next day, and the market buttons call `Session`. They do not compute prices, days, or whether a lane is legal. Hire sailor and Provisions +5 sit next to the market and show `SimError` text on failure. A pending duel disables Next day and offers a stance fight (`thrust`, `slash`, `parry`, at least three) or auto-resolve. The outcome's standing change is shown and not applied. Negotiate, flee, naval rounds, and boarding are not offered.
+New game starts merchant Ada at Porto Novo, seed 1. The chart draws that port's `sail_lanes`, including warning and blocked lanes. Sail, Next day, and the market buttons call `Session`. They do not compute prices, days, or whether a lane is legal. While docked, Market, Hire sailor, Provisions +5, and Work sit on one row. Work calls `Session::work` (3 to 5 silver; markets, provisions, wages, and reputation do not tick). A failure shows `SimError` text. A pending duel disables Next day and offers a stance fight (`thrust`, `slash`, `parry`, at least three) or auto-resolve. The outcome's standing change is shown and not applied. Negotiate, flee, naval rounds, and boarding are not offered.
 
 Chart water and the port marker are generated placeholders, stamped PH:
 
