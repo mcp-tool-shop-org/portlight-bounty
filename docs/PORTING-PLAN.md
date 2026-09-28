@@ -22,21 +22,21 @@ Python modules map onto Rust modules as follows. "Ported" means the behavior use
 | --- | --- | --- |
 | `engine/models.py` | `model.rs` | Partial. Goods, markets, ports, ships, cargo, standing, voyage, world. Combat, culture, festival, and fleet structs are not modeled yet. |
 | `engine/economy.py` | `economy.rs` | Partial. Price formula, `tick_markets`, buy, sell, FIFO cargo, receipt ids. `work_docks` and gear sell-back are not ported. |
-| `engine/voyage.py` | `voyage.rs` | Ported for `depart`, `advance_day`, `arrive`, and the event table, including pirate duels that block the next day. |
+| `engine/voyage.py` | `voyage.rs` | Ported for `depart`, `advance_day`, `arrive`, the event table, and the sail-picker lane list (`sail_lanes`), including ship-class block versus warning. |
 | `engine/reputation.py` | `reputation.rs` | Partial. Trade, inspection, arrival, daily heat decay, inspection-chance modifier. Fee and service modifiers exist in Python and are not applied by `depart` today; they are not ported. |
 | `engine/ship_stats.py` | `ship.rs` | Partial. Speed, cargo, storm resist, wages, morale, casualty selection. No upgrade catalog, so bonuses are zero, which matches a stock ship. |
 | `engine/captain_identity.py` | content JSON `captains` | Partial. All nine archetypes' numbers (prices, voyage, inspection, reputation seed, home port, ship, silver). Backstory and mentor text are not copied. |
 | `content/world.py` | `world.rs` `new_game` | Ported. Initial prices ignore captain modifiers, matching Python. |
 | `content/goods.py` | content JSON | Ported. 18 goods. |
-| `content/ports.py` | content JSON | Ported. 20 ports, markets, fees, `map_x` / `map_y` kept for a later map view. |
-| `content/routes.py` | content JSON | Ported. 43 routes. |
+| `content/ports.py` | content JSON + `Port` | Ported. 20 ports, markets, fees, and `map_x` / `map_y` on the 50×36 grid (`MAP_GRID_WIDTH` / `MAP_GRID_HEIGHT`). The later dimetric map places ports from those fields. |
+| `content/routes.py` | content JSON + `Route` | Ported. 43 routes, including `min_ship_class`. |
 | `content/ships.py` | content JSON + `Ship::from_template` | Ported for the five templates and instantiation. Buying or swapping ships is not ported. |
 | `content/seasons.py` | content JSON | Partial. Danger, speed, and market multipliers. Weather blurbs are not ported. |
 | `content/factions.py` | content JSON | Partial. Id, name, territory, and the eight captains' id, name, personality, and strength, which voyage events need. Dialogue and faction diplomacy are not ported. |
 | `content/crew_roles.py` | wage table in `ship.rs` | Partial. The six role wages only. |
 | `receipts/models.py` | receipt id in `economy.rs` | Partial. The 16-hex SHA-256 id used by buy/sell. Ledger export and wall-clock timestamps are not ported (they are not deterministic). |
 | `app/session.py` | `script.rs` | Partial. See "What the script runner includes" below. |
-| `app/cli.py`, `app/tui/**`, `app/views.py` | `portlight-cli` (new, not a port) | Not started. The Python CLI and Textual UI stay in Python until the sim is further along. |
+| `app/cli.py`, `app/tui/**`, `app/views.py` | `portlight-cli` (new, not a port); lane query in `voyage.rs` | UI not started. The sail picker's lane list is in the sim (`sail_lanes`), so a later screen can render it without reimplementing the quirks below. |
 | Everything else under `engine/`, `content/`, `balance/`, `stress/`, `printandplay/` | — | Not started. Listed in the checklist. |
 
 `world/`, `world-map/`, `atlas/`, `site/`, and the translated Python READMEs are reference material for later. They are not copied into this repo.
@@ -76,12 +76,26 @@ For each command the oracle calls the Python engine and the Rust runner calls th
 
 Not in the comparison: contracts, infrastructure, credit, insurance, injuries, sea-culture enrichment (it draws from the same RNG after `advance_day`), arrival prose, consequences, campaign milestones, narrative beats, saves.
 
+## Known Python quirks
+
+These are real disagreements inside the Python game. The Rust port keeps them. A later UI should call `sail_lanes` rather than "correcting" the numbers.
+
+**Sail-picker days ignore modifiers.** `execute_sail_flow`, `routes_view`, `formatting.travel_time`, and `_estimate_sail_days` all estimate days as `max(1, round(distance / speed))` where `speed` is the template `ship.speed`. They do not apply crew ratio, morale, season, captain speed bonus, or the event modifier that `advance_day` uses. From Porto Novo a coastal sloop (speed 8) shows Ironhaven (distance 36) as 4 days, because `round(4.5)` is 4. The same ship's first sea day in spring in the Mediterranean actually advances about 7.15 progress, and `round(36 / 7.15)` is 5. `sail_lanes` returns 4.
+
+When there is no ship the three call sites disagree on the fallback speed: the TUI picker uses 5, `routes_view` uses 4, and `_estimate_sail_days` uses 6. `sail_lanes` uses 5. `new_game` always fits a ship, so that fallback is unused on the ported path.
+
+**The picker lists lanes that `depart` then blocks.** Both the TUI picker and `routes_view` show every direct route from the current port, including a rank gap of 2 or more. Suitability only changes the min-ship color. `depart` returns the `BLOCKED` string and stays in port. A gap of 1 is a warning: the lane is listed, sailing is allowed, and danger is multiplied by 1.5. A sloop at Sun Harbor still sees the galleon lane to Crosswind Isle, and `depart("crosswind_isle")` refuses it.
+
+`routes_view` keeps catalog order. The TUI picker stable-sorts by distance. `sail_lanes` follows the TUI sort. Provisions shown in the routes table are estimated days plus 2; that buffer is on `SailLane.provisions_needed`.
+
+**Victory path id `commercial_empire` versus milestone family `commercial_finance`.** These are not two names for a rename that should be collapsed. `VictoryPathStatus.path_id`, `COMPLETION_SUMMARIES`, `CANDIDATE_BOOSTS`, and the TUI `_PATH_NAMES` key are `commercial_empire`. `MilestoneFamily.COMMERCIAL_FINANCE` and `PROFILE_MILESTONE_FAMILIES` use `commercial_finance`. The other three victory path ids (`lawful_house`, `shadow_network`, `oceanic_reach`) match a milestone family of the same string. Campaign evaluation is not ported yet. When it is, both strings stay as they are in Python.
+
 ## Porting order
 
 1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival.
 2. **Next, still stage 1.** Ship purchase and upgrades (unblocks stat resolution), contracts and the contract RNG (`seed + 7919`), save/load, then combat and duels so a pending duel can be answered inside the script. After duels, sea-culture enrichment can be added and the harness can move from the engine slice to `GameSession.advance`.
 3. **Then.** Infrastructure, credit, insurance, injuries, companions, hunting, fleet convoys, campaign victory checks. Balance and stress runners should call the Rust sim once those systems exist.
-4. **Stage 2.** A dimetric renderer that only reads `World` (port `map_x`/`map_y`, voyage progress). It must not move rules back into the UI crate.
+4. **Stage 2.** A dimetric renderer that only reads `World`: port `map_x`/`map_y` on the 50×36 grid, `sail_lanes` for the route overlay, and voyage progress. It must not move rules back into the UI crate.
 
 ## Parity harness
 
@@ -115,8 +129,9 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 - [x] CPython MT19937 and `random` / `randint` / `choice` / `choices`
 - [x] Python 3 `round` and truncating `int` for prices and voyage math
 - [x] 18 goods
-- [x] 20 ports and their market slots, fees, features, map coordinates
-- [x] 43 routes, including ship-class block versus warning
+- [x] 20 ports and their market slots, fees, features, and `map_x` / `map_y` on the 50×36 grid
+- [x] 43 routes with distance, danger, lore, and `min_ship_class`
+- [x] Sail-picker lanes: every neighbor is listed, including lanes `depart` blocks; estimated days use raw `ship.speed` and Python `round`
 - [x] 5 ship templates and starting crew (sailors = crew minimum)
 - [x] 9 captain archetypes, mechanical fields only
 - [x] `new_game` initial prices without captain modifiers
@@ -147,7 +162,7 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 
 ### Not started
 
-- [ ] `engine/campaign.py` victory paths and milestones
+- [ ] `engine/campaign.py` victory paths and milestones. Keep path id `commercial_empire` and milestone family `commercial_finance` as separate strings.
 - [ ] `engine/combat.py`, `engine/duel.py`, `engine/naval.py`
 - [ ] `engine/encounter.py`, `engine/hunting.py`, `engine/loot.py`
 - [ ] `engine/contracts.py` and `content/contracts.py`

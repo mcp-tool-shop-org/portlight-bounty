@@ -85,4 +85,50 @@ mod tests {
             assert!(home.market.iter().all(|slot| slot.buy_price >= 1));
         }
     }
+
+    #[test]
+    fn ports_keep_python_map_coordinates_on_the_board_grid() {
+        use crate::model::{MAP_GRID_HEIGHT, MAP_GRID_WIDTH};
+
+        let expected = [
+            ("porto_novo", 18, 8),
+            ("al_manar", 24, 6),
+            ("silva_bay", 14, 10),
+            ("corsairs_rest", 21, 13),
+            ("ironhaven", 8, 4),
+            ("stormwall", 4, 8),
+            ("thornport", 11, 10),
+            ("sun_harbor", 14, 22),
+            ("palm_cove", 10, 26),
+            ("iron_point", 18, 24),
+            ("pearl_shallows", 12, 30),
+            ("jade_port", 34, 10),
+            ("monsoon_reach", 38, 14),
+            ("silk_haven", 42, 8),
+            ("crosswind_isle", 32, 16),
+            ("dragons_gate", 44, 12),
+            ("spice_narrows", 38, 20),
+            ("ember_isle", 34, 28),
+            ("typhoon_anchorage", 40, 30),
+            ("coral_throne", 44, 26),
+        ];
+        let world = new_game("C", "merchant", 1, None).expect("game");
+        assert_eq!(world.ports.len(), expected.len());
+        for (id, x, y) in expected {
+            let port = world.port(id).unwrap_or_else(|| panic!("missing {id}"));
+            assert_eq!((port.map_x, port.map_y), (x, y), "{id}");
+            assert!(
+                (0..=MAP_GRID_WIDTH).contains(&port.map_x)
+                    && (0..=MAP_GRID_HEIGHT).contains(&port.map_y),
+                "{id} sits outside the 50x36 grid"
+            );
+        }
+        assert_eq!(world.routes.len(), 43);
+        assert!(world.routes.iter().all(|route| {
+            matches!(
+                route.min_ship_class.as_str(),
+                "sloop" | "cutter" | "brigantine" | "galleon" | "man_of_war"
+            )
+        }));
+    }
 }

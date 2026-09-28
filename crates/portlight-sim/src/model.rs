@@ -6,6 +6,17 @@ use crate::content::{self, upgrade_slots, CaptainDef, MarketSlotDef, PortDef, Ro
 
 pub const CONTRABAND: [&str; 3] = ["opium", "black_powder", "stolen_cargo"];
 
+/// Portlight's port grid width (`GAME_W` in the Python world map).
+///
+/// Stored `map_x` values run from 0 through this width, matching the
+/// print-and-play board comment.
+pub const MAP_GRID_WIDTH: i64 = 50;
+
+/// Portlight's port grid height (`GAME_H` in the Python world map).
+///
+/// Stored `map_y` values run from 0 through this height.
+pub const MAP_GRID_HEIGHT: i64 = 36;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VoyageStatus {

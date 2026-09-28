@@ -13,7 +13,7 @@ use crate::ship::{
     apply_crew_delta, morale_speed_modifier, navigator_speed_bonus, resolve_speed,
     resolve_storm_resist, template_crew_min, tick_morale_at_port, tick_morale_at_sea, wage_bill,
 };
-use crate::util::py_trunc;
+use crate::util::{py_round, py_trunc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventType {
@@ -646,6 +646,108 @@ fn bounty_hunter_event(captain_silver_debt: i64, rng: &mut PyRandom) -> VoyageEv
     ev
 }
 
+/// How a ship sits against a lane's `min_ship_class`.
+///
+/// A warning still sails (`depart` only rejects notes that start with
+/// `BLOCKED`). The sail picker lists both.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LaneSuitability {
+    Ok,
+    Warning,
+    Blocked,
+}
+
+/// One neighbor the sail picker offers from the docked port.
+///
+/// `estimated_days` is `max(1, round(distance / raw_ship_speed))`. It ignores
+/// crew, morale, season, and events. `depart` still applies those when the
+/// day actually advances. Blocked lanes stay in this list.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SailLane {
+    pub destination_id: String,
+    pub destination_name: String,
+    pub region: String,
+    pub distance: i64,
+    pub danger: f64,
+    pub min_ship_class: String,
+    pub suitability: LaneSuitability,
+    /// Python `check_route_suitability` text, when the fit is not clean.
+    pub suitability_note: Option<String>,
+    pub estimated_days: i64,
+    /// `routes_view` provision column: estimated days plus a two-day buffer.
+    pub provisions_needed: i64,
+}
+
+/// TUI `execute_sail_flow` speed when the captain has no ship.
+///
+/// `routes_view` uses 4 and `_estimate_sail_days` uses 6 in that same case.
+/// `new_game` always fits a ship, so the picker path uses `ship.speed`.
+const SAIL_PICKER_FALLBACK_SPEED: f64 = 5.0;
+
+/// Estimated sail days from raw speed, matching the Python picker.
+pub fn estimate_sail_days(distance: i64, raw_speed: f64) -> i64 {
+    1.max(py_round(distance as f64 / raw_speed))
+}
+
+/// Lanes leaving the docked port, in the TUI sail picker's order.
+///
+/// Catalog order, then a stable sort by distance. Empty while `AtSea`,
+/// matching `execute_sail_flow`. Every direct route is included, including
+/// ones `depart` will refuse.
+pub fn sail_lanes(world: &World) -> Vec<SailLane> {
+    if world.voyage.status == VoyageStatus::AtSea {
+        return Vec::new();
+    }
+    let port_id = world.voyage.destination_id.as_str();
+    let speed = world
+        .captain
+        .ship
+        .as_ref()
+        .map(|ship| ship.speed)
+        .unwrap_or(SAIL_PICKER_FALLBACK_SPEED);
+    let mut lanes = Vec::new();
+    for route in &world.routes {
+        let dest_id = if route.port_a == port_id {
+            route.port_b.as_str()
+        } else if route.port_b == port_id {
+            route.port_a.as_str()
+        } else {
+            continue;
+        };
+        let Some(dest) = world.port(dest_id) else {
+            continue;
+        };
+        let (suitability, suitability_note) = match world.captain.ship.as_ref() {
+            Some(ship) => {
+                match check_route_suitability(&route.min_ship_class, &ship.template_id, &ship.name)
+                {
+                    Some(note) if note.starts_with("BLOCKED") => {
+                        (LaneSuitability::Blocked, Some(note))
+                    }
+                    Some(note) => (LaneSuitability::Warning, Some(note)),
+                    None => (LaneSuitability::Ok, None),
+                }
+            }
+            None => (LaneSuitability::Ok, None),
+        };
+        let estimated_days = estimate_sail_days(route.distance, speed);
+        lanes.push(SailLane {
+            destination_id: dest.id.clone(),
+            destination_name: dest.name.clone(),
+            region: dest.region.clone(),
+            distance: route.distance,
+            danger: route.danger,
+            min_ship_class: route.min_ship_class.clone(),
+            suitability,
+            suitability_note,
+            estimated_days,
+            provisions_needed: estimated_days + 2,
+        });
+    }
+    lanes.sort_by_key(|lane| lane.distance);
+    lanes
+}
+
 pub fn check_route_suitability(
     min_ship_class: &str,
     template_id: &str,
@@ -936,4 +1038,94 @@ pub fn arrive(world: &mut World) -> Result<(), String> {
         world.captain.deferred_fees = remaining;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::new_game;
+
+    fn lane<'a>(lanes: &'a [SailLane], id: &str) -> &'a SailLane {
+        lanes
+            .iter()
+            .find(|lane| lane.destination_id == id)
+            .unwrap_or_else(|| panic!("missing lane {id}"))
+    }
+
+    #[test]
+    fn picker_uses_raw_speed_and_lists_warning_lanes() {
+        let world = new_game("Ada", "merchant", 42, None).expect("game");
+        assert_eq!(world.captain.ship.as_ref().map(|s| s.speed), Some(8.0));
+        let lanes = sail_lanes(&world);
+        let ids: Vec<_> = lanes
+            .iter()
+            .map(|lane| lane.destination_id.as_str())
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                "silva_bay",
+                "corsairs_rest",
+                "al_manar",
+                "ironhaven",
+                "sun_harbor",
+            ]
+        );
+
+        let silva = lane(&lanes, "silva_bay");
+        assert_eq!(silva.distance, 16);
+        assert_eq!(silva.min_ship_class, "sloop");
+        assert_eq!(silva.suitability, LaneSuitability::Ok);
+        assert_eq!(silva.estimated_days, 2);
+        assert_eq!(silva.provisions_needed, 4);
+
+        // 36 / 8 = 4.5. Python round half-to-even yields 4. Crew, morale, and
+        // the Mediterranean spring multiplier bring the real day speed to
+        // about 7.15, and 36 / 7.15 rounds to 5. The picker must stay on 4.
+        let ironhaven = lane(&lanes, "ironhaven");
+        assert_eq!(ironhaven.min_ship_class, "cutter");
+        assert_eq!(ironhaven.suitability, LaneSuitability::Warning);
+        assert_eq!(ironhaven.estimated_days, estimate_sail_days(36, 8.0));
+        assert_eq!(ironhaven.estimated_days, 4);
+        assert_eq!(
+            ironhaven.suitability_note.as_deref(),
+            Some(
+                "WARNING: This route recommends a cutter. Your Coastal Sloop will face increased danger."
+            )
+        );
+
+        let sun = lane(&lanes, "sun_harbor");
+        assert_eq!(sun.suitability, LaneSuitability::Warning);
+        assert_eq!(sun.estimated_days, 5);
+    }
+
+    #[test]
+    fn blocked_lane_stays_listed_and_depart_refuses_it() {
+        let mut world = new_game("Ada", "merchant", 42, Some("sun_harbor")).expect("game");
+        let lanes = sail_lanes(&world);
+        let crosswind = lane(&lanes, "crosswind_isle");
+        assert_eq!(crosswind.min_ship_class, "galleon");
+        assert_eq!(crosswind.suitability, LaneSuitability::Blocked);
+        assert_eq!(crosswind.estimated_days, 8);
+        assert_eq!(
+            crosswind.suitability_note.as_deref(),
+            Some(
+                "BLOCKED: This route requires at least a galleon. Your Coastal Sloop cannot attempt it."
+            )
+        );
+
+        let al_manar = lane(&lanes, "al_manar");
+        assert_eq!(al_manar.min_ship_class, "brigantine");
+        assert_eq!(al_manar.suitability, LaneSuitability::Blocked);
+
+        let err = depart(&mut world, "crosswind_isle", false).expect_err("blocked");
+        assert!(err.starts_with("BLOCKED"), "{err}");
+        assert_eq!(world.voyage.status, VoyageStatus::InPort);
+
+        let warned = lane(&lanes, "porto_novo");
+        assert_eq!(warned.suitability, LaneSuitability::Warning);
+        depart(&mut world, "porto_novo", false).expect("warning still sails");
+        assert_eq!(world.voyage.status, VoyageStatus::AtSea);
+        assert!(sail_lanes(&world).is_empty());
+    }
 }
