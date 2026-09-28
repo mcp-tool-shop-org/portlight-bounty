@@ -29,21 +29,28 @@
 //!
 //! A pending pirate duel still freezes [`Session::advance`] until
 //! [`Session::duel`] or [`Session::resolve_pending_duel`] clears it. That is
-//! `portlight duel` and `GameSession._resolve_pending_duel`. Negotiate, flee,
-//! naval combat, boarding, and `engine/combat.py` are not on this type.
+//! `portlight duel` and `GameSession._resolve_pending_duel`. The voyage event
+//! still goes straight to that duel. [`Session::encounter_choice`],
+//! [`Session::naval_round`], and [`Session::resolve_boarding`] are the separate
+//! approach machine: negotiate, flee, or fight, then naval combat and boarding.
+//! [`Session::board`] is the contract board. The script command for the deck
+//! melee is still `board`.
 //! `advance` does not auto-resolve, matching `auto_resolve_duels = False`.
 
 use std::path::{Path, PathBuf};
 
 use crate::campaign::{self, CompletedContract, HouseBooks, VictoryPathStatus};
+use crate::combat::{self, CombatRound, CombatantState};
 use crate::content::{self, PricingDef};
 use crate::contracts;
 use crate::duel::{self, DuelOutcome};
 use crate::economy::{self, recalculate_prices, TradeReceipt};
+use crate::encounter::{self, BoardingOutcome, EncounterState};
 use crate::error::SimError;
 use crate::model::{
     ActiveContract, Contract, ContractBoard, ContractOutcome, Officer, VoyageStatus, World,
 };
+use crate::naval::{self, NavalRound};
 use crate::pyrand::PyRandom;
 use crate::reputation::{self, record_trade_outcome};
 use crate::save::{self, LoadedGame};
@@ -71,6 +78,54 @@ pub struct Sale {
     pub contracts: Vec<ContractOutcome>,
 }
 
+/// One step of the approach, naval, boarding, or personal-fight machine.
+#[derive(Debug, Clone)]
+pub struct EncounterStep {
+    pub kind: String,
+    pub phase: String,
+    pub message: String,
+    pub choice: String,
+    pub success: bool,
+    pub escaped: bool,
+    pub hull_damage: i64,
+    pub enemy_captain_id: String,
+    pub enemy_captain_name: String,
+    pub enemy_strength: i64,
+    pub turn: i64,
+    pub player_action: String,
+    pub enemy_action: String,
+    pub player_hull_delta: i64,
+    pub enemy_hull_delta: i64,
+    pub player_crew_delta: i64,
+    pub enemy_crew_delta: i64,
+    pub boarding_progress: i64,
+    pub boarding_threshold: i64,
+    pub enemy_sunk: bool,
+    pub player_sunk: bool,
+    pub boarding_triggered: bool,
+    pub flavor: String,
+    pub player_hull: i64,
+    pub enemy_hull: i64,
+    pub player_crew: i64,
+    pub enemy_crew: i64,
+    pub player_crew_lost: i64,
+    pub enemy_crew_lost: i64,
+    pub player_advantage: bool,
+    pub damage_to_opponent: i64,
+    pub damage_to_player: i64,
+    pub player_hp: i64,
+    pub opponent_hp: i64,
+    pub player_stamina_delta: i64,
+    pub opponent_stamina_delta: i64,
+    pub player_won: bool,
+    pub draw: bool,
+    pub injury: String,
+    pub opponent_injury: String,
+    pub style_effect: String,
+    pub prize_ok: bool,
+    pub prize_reason: String,
+}
+
 /// One playable game.
 #[derive(Debug, Clone)]
 pub struct Session {
@@ -81,6 +136,9 @@ pub struct Session {
     receipts: Vec<TradeReceipt>,
     run_id: String,
     board: ContractBoard,
+    encounter: Option<EncounterState>,
+    player_combat: Option<CombatantState>,
+    opponent_combat: Option<CombatantState>,
 }
 
 impl Session {
@@ -105,6 +163,9 @@ impl Session {
             receipts: Vec::new(),
             run_id,
             board: ContractBoard::default(),
+            encounter: None,
+            player_combat: None,
+            opponent_combat: None,
         };
         session.refresh_new_game_board();
         Ok(session)
@@ -126,6 +187,11 @@ impl Session {
             &self.run_id,
             &self.books,
             &self.board,
+            save::LiveEncounter {
+                encounter: self.encounter.as_ref(),
+                player: self.player_combat.as_ref(),
+                opponent: self.opponent_combat.as_ref(),
+            },
         )
     }
 
@@ -158,6 +224,9 @@ impl Session {
             receipts: loaded.receipts,
             run_id: loaded.run_id,
             board: loaded.board,
+            encounter: loaded.encounter,
+            player_combat: loaded.player_combat,
+            opponent_combat: loaded.opponent_combat,
         };
         reprice_all(&mut session.world);
         Ok(session)
@@ -472,6 +541,650 @@ impl Session {
         self.world.captain.silver = 0.max(self.world.captain.silver + outcome.silver_delta);
         self.world.pending_duel = None;
         Ok(outcome)
+    }
+
+    /// Respond to an approach: `negotiate`, `flee`, or `fight`.
+    ///
+    /// Opens an encounter for the voyage destination when none is active.
+    /// `captain_id` locks a catalog pirate. `band_strength` builds a ship with
+    /// [`naval::generate_enemy_ship`] for that strength, including the 1–3 band
+    /// that has no named captain. A failed flee applies the broadside and
+    /// opens naval combat. It does not enter [`crate::duel`].
+    pub fn encounter_choice(&mut self, choice: &str) -> Result<EncounterStep, SimError> {
+        self.encounter_choice_with(choice, None, None)
+    }
+
+    pub fn encounter_choice_with(
+        &mut self,
+        choice: &str,
+        captain_id: Option<&str>,
+        band_strength: Option<i64>,
+    ) -> Result<EncounterStep, SimError> {
+        let choice = choice.trim().to_lowercase();
+        if !matches!(choice.as_str(), "negotiate" | "flee" | "fight") {
+            return Err(SimError::ChooseApproach);
+        }
+        self.ensure_encounter(captain_id, band_strength)?;
+        if self.encounter.as_ref().map(|enc| enc.phase.as_str()) != Some("approach") {
+            return Err(SimError::NoActiveEncounter);
+        }
+        if self.world.captain.ship.is_none() {
+            return Err(SimError::NoShip);
+        }
+        match choice.as_str() {
+            "negotiate" => self.choose_negotiate(),
+            "flee" => self.choose_flee(),
+            "fight" => self.choose_fight(),
+            _ => Err(SimError::ChooseApproach),
+        }
+    }
+
+    /// One naval action: `broadside`, `close`, `evade`, `rake`, or `flee`.
+    ///
+    /// Stops when the enemy sinks or the boarding threshold is met.
+    /// [`Session::resolve_boarding`] resolves the deck melee. Cannon math uses the
+    /// session RNG.
+    pub fn naval_round(&mut self, action: &str) -> Result<EncounterStep, SimError> {
+        let action = action.trim().to_lowercase();
+        let phase = self.encounter.as_ref().map(|enc| enc.phase.clone());
+        if phase.as_deref() != Some("naval") {
+            return Err(SimError::NotInNavalCombat);
+        }
+        let cannons = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.cannons)
+            .unwrap_or(0);
+        let valid = naval::valid_actions(cannons);
+        if !valid.contains(&action.as_str()) {
+            return Err(SimError::InvalidAction(valid.join(", ")));
+        }
+        if action == "flee" {
+            return self.naval_flee();
+        }
+        let round = {
+            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let encounter = self.encounter.as_mut().ok_or(SimError::NotInNavalCombat)?;
+            encounter::resolve_naval_turn(encounter, &action, ship, &mut self.rng)
+        };
+        let crew_lost = 0.max(-round.player_crew_delta);
+        if let Some(ship) = self.world.captain.ship.as_mut() {
+            ship.hull = 0.max(ship.hull + round.player_hull_delta);
+            naval::apply_crew_loss(ship, crew_lost);
+        }
+        let enemy_sunk = self
+            .encounter
+            .as_ref()
+            .is_some_and(|enc| enc.enemy_ship_hull <= 0);
+        let boarding_triggered = self
+            .encounter
+            .as_ref()
+            .is_some_and(|enc| enc.boarding_progress >= enc.boarding_threshold);
+        let player_sunk = self.player_lost_ship();
+        let crew_gone = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .is_some_and(|ship| ship.crew <= 0);
+        let mut prize_ok = false;
+        let mut prize_reason = String::new();
+        if enemy_sunk {
+            let (ok, reason) = naval::can_capture_prize(&self.world.captain, self.enemy_strength());
+            prize_ok = ok;
+            prize_reason = reason;
+        }
+        let mut step = self.naval_step(
+            round,
+            enemy_sunk,
+            player_sunk,
+            boarding_triggered,
+            prize_ok,
+            prize_reason.clone(),
+        );
+        if enemy_sunk {
+            self.world.captain.naval_victories += 1;
+            if prize_ok {
+                if let Some(enc) = self.encounter.as_mut() {
+                    enc.phase = "capture_available".to_string();
+                }
+                step.phase = "capture_available".into();
+            } else if let Some(enc) = self.encounter.clone() {
+                encounter::remember(&mut self.world.captain, &enc, self.world.day, "attack");
+                self.clear_encounter();
+                step.phase = "resolved".into();
+            }
+        } else if player_sunk || (crew_gone && !boarding_triggered) {
+            if crew_gone && !player_sunk {
+                self.plunder();
+            }
+            self.world.captain.naval_defeats += 1;
+            self.clear_encounter();
+            step.phase = "resolved".into();
+            step.player_sunk = player_sunk;
+        }
+        Ok(step)
+    }
+
+    /// Resolve the boarding melee and open the personal fight.
+    ///
+    /// The script command is still `board`. The method is not `board` because
+    /// that name is the contract-board getter.
+    pub fn resolve_boarding(&mut self) -> Result<EncounterStep, SimError> {
+        if self.encounter.as_ref().map(|enc| enc.phase.as_str()) != Some("boarding") {
+            return Err(SimError::NotBoarding);
+        }
+        let crew = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.crew)
+            .unwrap_or(0);
+        let outcome = {
+            let encounter = self.encounter.as_mut().ok_or(SimError::NotBoarding)?;
+            encounter::resolve_boarding_phase(encounter, crew, &mut self.rng)
+        };
+        if let Some(ship) = self.world.captain.ship.as_mut() {
+            naval::apply_crew_loss(ship, outcome.player_crew_lost);
+        }
+        self.player_combat = None;
+        self.opponent_combat = None;
+        Ok(self.board_step(outcome))
+    }
+
+    /// One action of the personal fight (`engine/combat.py`).
+    pub fn fight(&mut self, action: &str) -> Result<EncounterStep, SimError> {
+        let action = action.trim().to_lowercase();
+        if self.encounter.as_ref().map(|enc| enc.phase.as_str()) != Some("duel") {
+            return Err(SimError::NotInPersonalCombat);
+        }
+        self.ensure_combatants();
+        let valid = self
+            .player_combat
+            .as_ref()
+            .map(combat::available_actions)
+            .unwrap_or_default();
+        if !valid.iter().any(|item| item == &action) {
+            return Err(SimError::InvalidAction(valid.join(", ")));
+        }
+        let round = {
+            let encounter = self
+                .encounter
+                .as_mut()
+                .ok_or(SimError::NotInPersonalCombat)?;
+            let player = self
+                .player_combat
+                .as_mut()
+                .ok_or(SimError::NotInPersonalCombat)?;
+            let opponent = self
+                .opponent_combat
+                .as_mut()
+                .ok_or(SimError::NotInPersonalCombat)?;
+            encounter::resolve_duel_turn(encounter, &action, player, opponent, &mut self.rng)
+        };
+        let player_hp = self.player_combat.as_ref().map(|c| c.hp).unwrap_or(0);
+        let opponent_hp = self.opponent_combat.as_ref().map(|c| c.hp).unwrap_or(0);
+        let finished = self.encounter.as_ref().map(|enc| enc.phase.as_str()) == Some("resolved");
+        let mut player_won = false;
+        let mut draw = false;
+        if finished {
+            player_won = opponent_hp <= 0 && player_hp > 0;
+            draw = player_hp <= 0 && opponent_hp <= 0;
+        }
+        let mut step = self.fight_step(round, player_hp, opponent_hp, player_won, draw);
+        if finished {
+            if player_won || draw {
+                self.world.captain.duels_won += 1;
+            } else {
+                self.world.captain.duels_lost += 1;
+                let loss = 15 + self.enemy_strength() * 3;
+                self.world.captain.silver = 0.max(self.world.captain.silver - loss);
+            }
+            let outcome = if player_won {
+                "duel_win"
+            } else if draw {
+                "duel_draw"
+            } else {
+                "duel_loss"
+            };
+            if let Some(enc) = self.encounter.clone() {
+                encounter::remember(&mut self.world.captain, &enc, self.world.day, outcome);
+            }
+            self.clear_encounter();
+            step.phase = "resolved".into();
+        }
+        Ok(step)
+    }
+
+    /// Take the sunk enemy as a prize, or pass `0` to let it go under.
+    pub fn capture(&mut self, crew_to_prize: i64) -> Result<EncounterStep, SimError> {
+        if self.encounter.as_ref().map(|enc| enc.phase.as_str()) != Some("capture_available") {
+            return Err(SimError::CannotCapture(
+                "No ship available to capture.".into(),
+            ));
+        }
+        if crew_to_prize <= 0 {
+            let mut step = self.blank_step("capture");
+            step.message = "You let the prize go under.".into();
+            step.phase = "resolved".into();
+            self.clear_encounter();
+            return Ok(step);
+        }
+        let enc = self
+            .encounter
+            .clone()
+            .ok_or_else(|| SimError::CannotCapture("No ship available to capture.".into()))?;
+        let (ok, reason) = naval::can_capture_prize(&self.world.captain, enc.enemy_strength);
+        if !ok {
+            return Err(SimError::CannotCapture(reason));
+        }
+        let catalog = content::content();
+        let prize_min = catalog
+            .ship(naval::prize_template_id(enc.enemy_strength))
+            .map(|ship| ship.crew_min)
+            .unwrap_or(3);
+        let current_min = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .and_then(|ship| catalog.ship(&ship.template_id))
+            .map(|ship| ship.crew_min)
+            .unwrap_or(3);
+        if crew_to_prize < prize_min {
+            return Err(SimError::CannotCapture(format!(
+                "Need at least {prize_min} crew for the prize ship."
+            )));
+        }
+        let have = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.crew)
+            .unwrap_or(0);
+        let leftover = have - crew_to_prize;
+        if leftover < current_min {
+            return Err(SimError::CannotCapture(format!(
+                "Would leave your flagship with {leftover} crew (need {current_min})."
+            )));
+        }
+        let dock = self.world.voyage.destination_id.clone();
+        let owned = naval::capture_prize(
+            &mut self.world.captain,
+            &enc.enemy_captain_name,
+            enc.enemy_strength,
+            enc.enemy_ship_hull,
+            crew_to_prize,
+            &dock,
+            &mut self.rng,
+        );
+        let name = owned.ship.name.clone();
+        self.world.captain.fleet.push(owned);
+        encounter::remember(&mut self.world.captain, &enc, self.world.day, "attack");
+        self.clear_encounter();
+        let mut step = self.blank_step("capture");
+        step.message = format!("Prize captured! {name} added to your fleet.");
+        step.phase = "resolved".into();
+        step.prize_ok = true;
+        step.prize_reason = name;
+        step.player_crew = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.crew)
+            .unwrap_or(0);
+        Ok(step)
+    }
+
+    fn ensure_encounter(
+        &mut self,
+        captain_id: Option<&str>,
+        band_strength: Option<i64>,
+    ) -> Result<(), SimError> {
+        let active = self
+            .encounter
+            .as_ref()
+            .is_some_and(|enc| !enc.phase.is_empty() && enc.phase != "resolved");
+        if active {
+            return Ok(());
+        }
+        if let Some(id) = captain_id {
+            if content::content().pirate(id).is_none() {
+                return Err(SimError::UnknownPirate(id.to_string()));
+            }
+        }
+        let created = if let Some(strength) = band_strength {
+            Some(encounter::create_band_encounter(
+                &self.world,
+                strength,
+                &mut self.rng,
+            ))
+        } else {
+            encounter::create_encounter(&self.world, &mut self.rng, captain_id)
+        };
+        let Some(created) = created else {
+            return Err(SimError::NoPirateCaptain);
+        };
+        self.encounter = Some(created);
+        self.player_combat = None;
+        self.opponent_combat = None;
+        Ok(())
+    }
+
+    fn choose_negotiate(&mut self) -> Result<EncounterStep, SimError> {
+        let (success, mut message) = {
+            let standing_type = self.world.captain.captain_type.clone();
+            let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
+            encounter::resolve_negotiate(
+                encounter,
+                &self.world.captain.standing,
+                &standing_type,
+                &mut self.rng,
+            )
+        };
+        if success {
+            let allied = message.contains("ally");
+            let outcome = if allied { "alliance" } else { "trade" };
+            if let Some(enc) = self.encounter.clone() {
+                encounter::remember(&mut self.world.captain, &enc, self.world.day, outcome);
+            }
+            let step = self.choice_step("negotiate", true, false, 0, message);
+            self.clear_encounter();
+            Ok(step)
+        } else {
+            let fight = {
+                let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+                let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
+                encounter::begin_fight(encounter, ship)
+            };
+            message.push('\n');
+            message.push_str(&fight);
+            Ok(self.choice_step("negotiate", false, false, 0, message))
+        }
+    }
+
+    fn choose_flee(&mut self) -> Result<EncounterStep, SimError> {
+        let (escaped, damage, mut message) = {
+            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
+            encounter::resolve_flee(encounter, ship, &mut self.rng)
+        };
+        if damage > 0 {
+            if let Some(ship) = self.world.captain.ship.as_mut() {
+                ship.hull = 0.max(ship.hull - damage);
+            }
+        }
+        if escaped {
+            if let Some(enc) = self.encounter.clone() {
+                encounter::remember(&mut self.world.captain, &enc, self.world.day, "fled");
+            }
+            let step = self.choice_step("flee", true, true, damage, message);
+            self.clear_encounter();
+            Ok(step)
+        } else {
+            let fight = {
+                let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+                let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
+                encounter::begin_fight(encounter, ship)
+            };
+            message.push('\n');
+            message.push_str(&fight);
+            Ok(self.choice_step("flee", false, false, damage, message))
+        }
+    }
+
+    fn choose_fight(&mut self) -> Result<EncounterStep, SimError> {
+        let message = {
+            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let encounter = self.encounter.as_mut().ok_or(SimError::NoActiveEncounter)?;
+            encounter::begin_fight(encounter, ship)
+        };
+        Ok(self.choice_step("fight", true, false, 0, message))
+    }
+
+    fn naval_flee(&mut self) -> Result<EncounterStep, SimError> {
+        let (escaped, damage) = {
+            let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
+            let encounter = self.encounter.as_ref().ok_or(SimError::NotInNavalCombat)?;
+            let enemy = encounter::enemy_ship(encounter);
+            naval::attempt_flee(ship, &enemy, &mut self.rng)
+        };
+        if let Some(ship) = self.world.captain.ship.as_mut() {
+            ship.hull = 0.max(ship.hull - damage);
+        }
+        if let Some(enc) = self.encounter.as_mut() {
+            enc.naval_turns += 1;
+        }
+        let mut message = if escaped {
+            let mut msg = "You break away!".to_string();
+            if damage > 0 {
+                msg.push_str(&format!(
+                    " A parting shot catches your hull for {damage} damage."
+                ));
+            }
+            msg
+        } else {
+            format!("Flee failed! Their broadside rakes you for {damage} hull damage.")
+        };
+        let player_sunk = self.player_lost_ship();
+        let crew_gone = self
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .is_some_and(|ship| ship.crew <= 0);
+        let mut step = self.choice_step("flee", escaped, escaped, damage, message.clone());
+        step.kind = "naval".into();
+        step.turn = self
+            .encounter
+            .as_ref()
+            .map(|enc| enc.naval_turns)
+            .unwrap_or(0);
+        step.player_sunk = player_sunk;
+        if escaped {
+            if let Some(enc) = self.encounter.clone() {
+                encounter::remember(&mut self.world.captain, &enc, self.world.day, "fled");
+            }
+            self.clear_encounter();
+            step.phase = "resolved".into();
+        } else if player_sunk || crew_gone {
+            if crew_gone && !player_sunk {
+                self.plunder();
+                message.push_str(" No crew left to sail.");
+                step.message = message;
+            }
+            self.world.captain.naval_defeats += 1;
+            self.clear_encounter();
+            step.phase = "resolved".into();
+        }
+        Ok(step)
+    }
+
+    fn plunder(&mut self) {
+        for item in &mut self.world.captain.cargo {
+            item.quantity = 0.max(item.quantity - item.quantity / 2);
+        }
+        self.world.captain.cargo.retain(|item| item.quantity > 0);
+        let silver_loss = self.world.captain.silver / 4;
+        self.world.captain.silver -= silver_loss;
+    }
+
+    fn player_lost_ship(&self) -> bool {
+        self.world
+            .captain
+            .ship
+            .as_ref()
+            .is_some_and(|ship| ship.hull <= 0)
+    }
+
+    fn enemy_strength(&self) -> i64 {
+        self.encounter
+            .as_ref()
+            .map(|enc| enc.enemy_strength)
+            .unwrap_or(0)
+    }
+
+    fn ensure_combatants(&mut self) {
+        if self.player_combat.is_some() && self.opponent_combat.is_some() {
+            return;
+        }
+        let Some(enc) = self.encounter.clone() else {
+            return;
+        };
+        let (player, opponent) = encounter::create_duel_combatants(&enc, &self.world.captain);
+        self.player_combat = Some(player);
+        self.opponent_combat = Some(opponent);
+    }
+
+    fn clear_encounter(&mut self) {
+        self.encounter = None;
+        self.player_combat = None;
+        self.opponent_combat = None;
+    }
+
+    fn blank_step(&self, kind: &str) -> EncounterStep {
+        let enc = self.encounter.as_ref();
+        let ship = self.world.captain.ship.as_ref();
+        EncounterStep {
+            kind: kind.to_string(),
+            phase: enc.map(|e| e.phase.clone()).unwrap_or_default(),
+            message: String::new(),
+            choice: String::new(),
+            success: false,
+            escaped: false,
+            hull_damage: 0,
+            enemy_captain_id: enc.map(|e| e.enemy_captain_id.clone()).unwrap_or_default(),
+            enemy_captain_name: enc
+                .map(|e| e.enemy_captain_name.clone())
+                .unwrap_or_default(),
+            enemy_strength: enc.map(|e| e.enemy_strength).unwrap_or(0),
+            turn: 0,
+            player_action: String::new(),
+            enemy_action: String::new(),
+            player_hull_delta: 0,
+            enemy_hull_delta: 0,
+            player_crew_delta: 0,
+            enemy_crew_delta: 0,
+            boarding_progress: enc.map(|e| e.boarding_progress).unwrap_or(0),
+            boarding_threshold: enc.map(|e| e.boarding_threshold).unwrap_or(0),
+            enemy_sunk: false,
+            player_sunk: false,
+            boarding_triggered: false,
+            flavor: String::new(),
+            player_hull: ship.map(|s| s.hull).unwrap_or(0),
+            enemy_hull: enc.map(|e| e.enemy_ship_hull).unwrap_or(0),
+            player_crew: ship.map(|s| s.crew).unwrap_or(0),
+            enemy_crew: enc.map(|e| e.enemy_ship_crew).unwrap_or(0),
+            player_crew_lost: 0,
+            enemy_crew_lost: 0,
+            player_advantage: false,
+            damage_to_opponent: 0,
+            damage_to_player: 0,
+            player_hp: self.player_combat.as_ref().map(|c| c.hp).unwrap_or(0),
+            opponent_hp: self.opponent_combat.as_ref().map(|c| c.hp).unwrap_or(0),
+            player_stamina_delta: 0,
+            opponent_stamina_delta: 0,
+            player_won: false,
+            draw: false,
+            injury: String::new(),
+            opponent_injury: String::new(),
+            style_effect: String::new(),
+            prize_ok: false,
+            prize_reason: String::new(),
+        }
+    }
+
+    fn choice_step(
+        &self,
+        choice: &str,
+        success: bool,
+        escaped: bool,
+        hull_damage: i64,
+        message: String,
+    ) -> EncounterStep {
+        let mut step = self.blank_step("choice");
+        step.choice = choice.to_string();
+        step.success = success;
+        step.escaped = escaped;
+        step.hull_damage = hull_damage;
+        step.message = message;
+        step
+    }
+
+    fn naval_step(
+        &self,
+        round: NavalRound,
+        enemy_sunk: bool,
+        player_sunk: bool,
+        boarding_triggered: bool,
+        prize_ok: bool,
+        prize_reason: String,
+    ) -> EncounterStep {
+        let mut step = self.blank_step("naval");
+        step.turn = round.turn;
+        step.player_action = round.player_action;
+        step.enemy_action = round.enemy_action;
+        step.player_hull_delta = round.player_hull_delta;
+        step.enemy_hull_delta = round.enemy_hull_delta;
+        step.player_crew_delta = round.player_crew_delta;
+        step.enemy_crew_delta = round.enemy_crew_delta;
+        step.boarding_progress = round.boarding_progress;
+        step.flavor = round.flavor;
+        step.enemy_sunk = enemy_sunk;
+        step.player_sunk = player_sunk;
+        step.boarding_triggered = boarding_triggered;
+        step.prize_ok = prize_ok;
+        step.prize_reason = prize_reason;
+        if (enemy_sunk || player_sunk) && self.encounter.is_none() {
+            step.phase = "resolved".into();
+        }
+        step
+    }
+
+    fn board_step(&self, outcome: BoardingOutcome) -> EncounterStep {
+        let mut step = self.blank_step("board");
+        step.player_crew_lost = outcome.player_crew_lost;
+        step.enemy_crew_lost = outcome.enemy_crew_lost;
+        step.player_advantage = outcome.player_advantage;
+        step.flavor = outcome.flavor.clone();
+        step.message = outcome.flavor;
+        step
+    }
+
+    fn fight_step(
+        &self,
+        round: CombatRound,
+        player_hp: i64,
+        opponent_hp: i64,
+        player_won: bool,
+        draw: bool,
+    ) -> EncounterStep {
+        let mut step = self.blank_step("fight");
+        if self.encounter.is_none() {
+            step.phase = "resolved".into();
+        }
+        step.turn = round.turn;
+        step.player_action = round.player_action;
+        step.enemy_action = round.opponent_action;
+        step.damage_to_opponent = round.damage_to_opponent;
+        step.damage_to_player = round.damage_to_player;
+        step.player_stamina_delta = round.player_stamina_delta;
+        step.opponent_stamina_delta = round.opponent_stamina_delta;
+        step.flavor = round.flavor.clone();
+        step.message = round.flavor;
+        step.player_hp = player_hp;
+        step.opponent_hp = opponent_hp;
+        step.player_won = player_won;
+        step.draw = draw;
+        step.injury = round.injury_inflicted.unwrap_or_default();
+        step.opponent_injury = round.opponent_injury.unwrap_or_default();
+        step.style_effect = round.style_effect.unwrap_or_default();
+        step
     }
 
     /// One session day. In port this ticks markets. At sea this sails.
@@ -1111,6 +1824,52 @@ mod tests {
             rust["captain"]["breach_records"],
             python["captain"]["breach_records"]
         );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn python_v12_encounter_round_trips() {
+        let fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../parity/saves/encounter_v12.json");
+        let python: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&fixture).unwrap()).unwrap();
+        let root = fixture.parent().unwrap().parent().unwrap();
+        let loaded = Session::load(root, "encounter_v12").unwrap().unwrap();
+        assert_eq!(loaded.world.captain.name, "Ada");
+        assert_eq!(loaded.world.captain.captain_type, "corsair");
+        assert_eq!(loaded.world.seed, 1);
+        assert_eq!(loaded.world.captain.duels_won, 2);
+        assert_eq!(loaded.world.captain.duels_lost, 1);
+        assert_eq!(loaded.world.captain.naval_victories, 3);
+        assert_eq!(loaded.world.captain.naval_defeats, 4);
+        assert_eq!(loaded.world.captain.encounters.len(), 1);
+        assert_eq!(loaded.world.captain.encounters[0].captain_id, "old_coral");
+        assert_eq!(loaded.world.captain.encounters[0].outcome, "trade");
+        assert_eq!(loaded.world.captain.encounters[0].region, "Mediterranean");
+        let enc = loaded.encounter.as_ref().expect("active encounter");
+        assert_eq!(enc.phase, "naval");
+        assert_eq!(enc.enemy_captain_id, "scarlet_ana");
+        assert_eq!(enc.naval_turns, 1);
+        assert_eq!(enc.enemy_ship_hull, 120);
+        let player = loaded.player_combat.as_ref().expect("player hp");
+        let opponent = loaded.opponent_combat.as_ref().expect("opponent hp");
+        assert_eq!((player.hp, player.stamina), (9, 6));
+        assert_eq!((opponent.hp, opponent.stamina), (4, 5));
+
+        let dir = std::env::temp_dir().join(format!("portlight-enc-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut loaded = loaded;
+        loaded.save(&dir, "encounter_v12").unwrap();
+        let again = Session::load(&dir, "encounter_v12").unwrap().unwrap();
+        assert_eq!(again.world.captain.duels_won, 2);
+        assert_eq!(again.encounter.as_ref().unwrap().enemy_ship_hull, 120);
+        assert_eq!(again.player_combat.as_ref().unwrap().hp, 9);
+        let rust: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(dir.join("saves").join("encounter_v12.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(rust["pirate_state"], python["pirate_state"]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -375,6 +375,10 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         state["board"] = ContractBoard()
         state["infra"] = InfrastructureState()
         state["campaign"] = CampaignState()
+        state["encounter"] = None
+        state["player_combat"] = None
+        state["opponent_combat"] = None
+        state["history"] = fresh_history()
         port = current_port(world)
         if port is not None:
             refresh_with_board_rng(state, port)
@@ -441,6 +445,31 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         if len(tokens) != 2:
             raise ScriptError("Usage: complete_contract <offer_id>")
         do_complete(state, tokens[1], entry)
+    elif cmd == "encounter":
+        if len(tokens) < 2 or len(tokens) > 3:
+            raise ScriptError("Usage: encounter <negotiate|flee|fight> [captain_id|strength:N]")
+        captain_id, band = parse_encounter_target(tokens[2] if len(tokens) > 2 else None)
+        do_encounter(state, tokens[1], captain_id, band, entry)
+    elif cmd == "naval":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: naval <action>")
+        do_naval(state, tokens[1], entry)
+    elif cmd == "board":
+        if len(tokens) != 1:
+            raise ScriptError("Usage: board")
+        do_board(state, entry)
+    elif cmd == "fight":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: fight <action>")
+        do_fight(state, tokens[1], entry)
+    elif cmd == "capture":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: capture <crew>")
+        try:
+            crew = int(tokens[1])
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {tokens[1]}") from exc
+        do_capture(state, crew, entry)
     else:
         raise ScriptError(f"Unknown command: {cmd}")
 
@@ -502,6 +531,432 @@ def do_complete(state, offer_id: str, entry: dict) -> None:
     if not rows:
         raise ScriptError("Contract is not yet fulfilled")
     attach_contracts(entry, rows)
+
+
+def fresh_history() -> dict:
+    return {
+        "encounters": [],
+        "duels_won": 0,
+        "duels_lost": 0,
+        "naval_victories": 0,
+        "naval_defeats": 0,
+        "fleet": [],
+    }
+
+
+def parse_encounter_target(token):
+    if token is None:
+        return None, None
+    if token.startswith("strength:"):
+        rest = token.split(":", 1)[1]
+        try:
+            return None, int(rest)
+        except ValueError as exc:
+            raise ScriptError(f"Invalid number: {rest}") from exc
+    return token, None
+
+
+def remember(state, enc, outcome: str) -> None:
+    world = state["world"]
+    state["history"]["encounters"].append({
+        "captain_id": enc.enemy_captain_id,
+        "faction_id": enc.enemy_faction_id,
+        "day": world.day,
+        "outcome": outcome,
+        "region": enc.enemy_region,
+    })
+
+
+def clear_encounter(state) -> None:
+    state["encounter"] = None
+    state["player_combat"] = None
+    state["opponent_combat"] = None
+
+
+def ensure_encounter(state, captain_id, band) -> None:
+    enc = state.get("encounter")
+    if enc is not None and enc.phase not in ("", "resolved"):
+        return
+    if captain_id is not None:
+        from portlight.content.factions import PIRATE_CAPTAINS
+        if captain_id not in PIRATE_CAPTAINS:
+            raise ScriptError(f"Unknown pirate captain: {captain_id}")
+    world = state["world"]
+    rng = state["rng"]
+    if band is not None:
+        from portlight.engine.models import EncounterState as Enc
+        from portlight.engine.naval import generate_enemy_ship
+        dest = world.ports.get(world.voyage.destination_id)
+        region = dest.region if dest else "Mediterranean"
+        enemy = generate_enemy_ship(f"Band {band}", band, rng)
+        enc = Enc(
+            enemy_captain_id=f"band-{band}",
+            enemy_captain_name=f"Band {band}",
+            enemy_faction_id="",
+            enemy_personality="balanced",
+            enemy_strength=band,
+            enemy_region=region,
+            enemy_ship_hull=enemy.hull,
+            enemy_ship_hull_max=enemy.hull_max,
+            enemy_ship_cannons=enemy.cannons,
+            enemy_ship_maneuver=enemy.maneuver,
+            enemy_ship_speed=enemy.speed,
+            enemy_ship_crew=enemy.crew,
+            enemy_ship_crew_max=enemy.crew_max,
+            phase="approach",
+            boarding_progress=0,
+            boarding_threshold=3,
+        )
+    else:
+        from portlight.engine.encounter import create_encounter
+        enc = create_encounter(
+            world.ports, world.voyage.destination_id, rng, captain_id,
+        )
+        if enc is None:
+            raise ScriptError("No pirate captain in this region.")
+    state["encounter"] = enc
+    state["player_combat"] = None
+    state["opponent_combat"] = None
+
+
+def encounter_view(enc, ship, **kw) -> dict:
+    base = {
+        "kind": "",
+        "phase": enc.phase if enc is not None else "",
+        "message": "",
+        "choice": "",
+        "success": False,
+        "escaped": False,
+        "hull_damage": 0,
+        "enemy_captain_id": enc.enemy_captain_id if enc is not None else "",
+        "enemy_captain_name": enc.enemy_captain_name if enc is not None else "",
+        "enemy_strength": enc.enemy_strength if enc is not None else 0,
+        "turn": 0,
+        "player_action": "",
+        "enemy_action": "",
+        "player_hull_delta": 0,
+        "enemy_hull_delta": 0,
+        "player_crew_delta": 0,
+        "enemy_crew_delta": 0,
+        "boarding_progress": enc.boarding_progress if enc is not None else 0,
+        "boarding_threshold": enc.boarding_threshold if enc is not None else 0,
+        "enemy_sunk": False,
+        "player_sunk": False,
+        "boarding_triggered": False,
+        "flavor": "",
+        "player_hull": ship.hull if ship is not None else 0,
+        "enemy_hull": enc.enemy_ship_hull if enc is not None else 0,
+        "player_crew": ship.crew if ship is not None else 0,
+        "enemy_crew": enc.enemy_ship_crew if enc is not None else 0,
+        "player_crew_lost": 0,
+        "enemy_crew_lost": 0,
+        "player_advantage": False,
+        "damage_to_opponent": 0,
+        "damage_to_player": 0,
+        "player_hp": 0,
+        "opponent_hp": 0,
+        "player_stamina_delta": 0,
+        "opponent_stamina_delta": 0,
+        "player_won": False,
+        "draw": False,
+        "injury": "",
+        "opponent_injury": "",
+        "style_effect": "",
+        "prize_ok": False,
+        "prize_reason": "",
+    }
+    base.update(kw)
+    return base
+
+
+def do_encounter(state, choice, captain_id, band, entry) -> None:
+    from portlight.engine.encounter import begin_fight, resolve_flee, resolve_negotiate
+
+    choice = choice.strip().lower()
+    if choice not in ("negotiate", "flee", "fight"):
+        raise ScriptError("Choose: negotiate, flee, or fight")
+    enc = state.get("encounter")
+    if enc is not None and enc.phase not in ("", "resolved"):
+        if enc.phase != "approach":
+            raise ScriptError(
+                "No active encounter. Encounters happen during pirate encounters at sea."
+            )
+    else:
+        ensure_encounter(state, captain_id, band)
+    world = state["world"]
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    enc = state["encounter"]
+    rng = state["rng"]
+    if choice == "negotiate":
+        success, message = resolve_negotiate(
+            enc, world.captain.standing.underworld_standing,
+            world.captain.captain_type, rng,
+        )
+        if success:
+            outcome = "alliance" if "ally" in message else "trade"
+            remember(state, enc, outcome)
+            entry["encounter"] = encounter_view(
+                enc, ship, kind="choice", choice="negotiate", success=True, message=message,
+            )
+            clear_encounter(state)
+        else:
+            message = message + "\n" + begin_fight(enc, ship)
+            entry["encounter"] = encounter_view(
+                enc, ship, kind="choice", choice="negotiate", success=False, message=message,
+            )
+    elif choice == "flee":
+        escaped, damage, message = resolve_flee(enc, ship, rng)
+        if damage > 0:
+            ship.hull = max(0, ship.hull - damage)
+        if escaped:
+            remember(state, enc, "fled")
+            entry["encounter"] = encounter_view(
+                enc, ship, kind="choice", choice="flee", success=True, escaped=True,
+                hull_damage=damage, message=message,
+            )
+            clear_encounter(state)
+        else:
+            message = message + "\n" + begin_fight(enc, ship)
+            entry["encounter"] = encounter_view(
+                enc, ship, kind="choice", choice="flee", success=False, escaped=False,
+                hull_damage=damage, message=message,
+            )
+    else:
+        message = begin_fight(enc, ship)
+        entry["encounter"] = encounter_view(
+            enc, ship, kind="choice", choice="fight", success=True, message=message,
+        )
+
+
+def do_naval(state, action, entry) -> None:
+    from portlight.app.session import apply_crew_casualties
+    from portlight.engine.encounter import resolve_naval_turn
+    from portlight.engine.models import EnemyShip
+    from portlight.engine.naval import attempt_flee, get_valid_actions
+
+    enc = state.get("encounter")
+    if enc is None or enc.phase != "naval":
+        raise ScriptError("Not in naval combat.")
+    world = state["world"]
+    ship = world.captain.ship
+    if ship is None:
+        raise ScriptError("No ship")
+    action = action.strip().lower()
+    valid = get_valid_actions(ship.cannons)
+    if action not in valid:
+        raise ScriptError("Invalid action. Available: " + ", ".join(valid))
+    rng = state["rng"]
+    if action == "flee":
+        enemy = EnemyShip(
+            name=f"{enc.enemy_captain_name}'s Ship",
+            hull=enc.enemy_ship_hull, hull_max=enc.enemy_ship_hull_max,
+            cannons=enc.enemy_ship_cannons, maneuver=enc.enemy_ship_maneuver,
+            speed=enc.enemy_ship_speed, crew=enc.enemy_ship_crew,
+            crew_max=enc.enemy_ship_crew_max,
+        )
+        escaped, damage = attempt_flee(ship, enemy, rng)
+        ship.hull = max(0, ship.hull - damage)
+        enc.naval_turns += 1
+        message = "You break away!" if escaped else f"Flee failed! Their broadside rakes you for {damage} hull damage."
+        if escaped and damage > 0:
+            message += f" A parting shot catches your hull for {damage} damage."
+        player_sunk = ship.hull <= 0
+        crew_gone = ship.crew <= 0
+        view = encounter_view(
+            enc, ship, kind="naval", choice="flee", success=escaped, escaped=escaped,
+            hull_damage=damage, message=message, turn=enc.naval_turns, player_sunk=player_sunk,
+        )
+        if escaped:
+            remember(state, enc, "fled")
+            clear_encounter(state)
+            view["phase"] = "resolved"
+        elif player_sunk or crew_gone:
+            if crew_gone and not player_sunk:
+                _plunder(world.captain)
+                view["message"] = message + " No crew left to sail."
+            state["history"]["naval_defeats"] += 1
+            clear_encounter(state)
+            view["phase"] = "resolved"
+        entry["encounter"] = view
+        return
+    result = resolve_naval_turn(enc, action, ship, rng)
+    ship.hull = max(0, ship.hull + result["player_hull_delta"])
+    crew_lost = max(0, -int(result.get("player_crew_delta") or 0))
+    apply_crew_casualties(ship, crew_lost)
+    enemy_sunk = enc.enemy_ship_hull <= 0
+    boarding_triggered = enc.boarding_progress >= enc.boarding_threshold
+    player_sunk = ship.hull <= 0
+    crew_gone = ship.crew <= 0
+    prize_ok = False
+    prize_reason = ""
+    if enemy_sunk:
+        from portlight.engine.encounter import can_capture_prize as gate
+        from portlight.engine.models import max_fleet_size
+        trust = world.captain.standing.commercial_trust
+        prize_ok, prize_reason = gate(world.captain, enc, max_fleet_size(trust))
+    view = encounter_view(
+        enc, ship, kind="naval", turn=result["turn"], player_action=result["player_action"],
+        enemy_action=result["enemy_action"], player_hull_delta=result["player_hull_delta"],
+        enemy_hull_delta=result["enemy_hull_delta"], player_crew_delta=result["player_crew_delta"],
+        enemy_crew_delta=result["enemy_crew_delta"], boarding_progress=result["boarding_progress"],
+        flavor=result["flavor"], enemy_sunk=enemy_sunk, player_sunk=player_sunk,
+        boarding_triggered=boarding_triggered, prize_ok=prize_ok, prize_reason=prize_reason or "",
+    )
+    if enemy_sunk:
+        state["history"]["naval_victories"] += 1
+        if prize_ok:
+            enc.phase = "capture_available"
+            view["phase"] = "capture_available"
+        else:
+            remember(state, enc, "attack")
+            clear_encounter(state)
+            view["phase"] = "resolved"
+    elif player_sunk or (crew_gone and enc.phase != "boarding"):
+        if crew_gone and not player_sunk:
+            _plunder(world.captain)
+        state["history"]["naval_defeats"] += 1
+        clear_encounter(state)
+        view["phase"] = "resolved"
+    entry["encounter"] = view
+
+
+def do_board(state, entry) -> None:
+    from portlight.app.session import apply_crew_casualties
+    from portlight.engine.encounter import resolve_boarding_phase
+
+    enc = state.get("encounter")
+    if enc is None or enc.phase != "boarding":
+        raise ScriptError("Not boarding.")
+    world = state["world"]
+    ship = world.captain.ship
+    crew = ship.crew if ship is not None else 0
+    outcome = resolve_boarding_phase(enc, crew, state["rng"])
+    if ship is not None:
+        apply_crew_casualties(ship, outcome["player_crew_lost"])
+    state["player_combat"] = None
+    state["opponent_combat"] = None
+    entry["encounter"] = encounter_view(
+        enc, ship, kind="board",
+        player_crew_lost=outcome["player_crew_lost"],
+        enemy_crew_lost=outcome["enemy_crew_lost"],
+        player_advantage=outcome["player_advantage"],
+        flavor=outcome["flavor"], message=outcome["flavor"],
+    )
+
+
+def do_fight(state, action, entry) -> None:
+    from portlight.engine.combat import get_available_actions
+    from portlight.engine.encounter import create_duel_combatants, resolve_duel_turn
+
+    enc = state.get("encounter")
+    if enc is None or enc.phase != "duel":
+        raise ScriptError("Not in personal combat.")
+    action = action.strip().lower()
+    world = state["world"]
+    if state.get("player_combat") is None or state.get("opponent_combat") is None:
+        crew = world.captain.ship.crew if world.captain.ship else 5
+        state["player_combat"], state["opponent_combat"] = create_duel_combatants(
+            enc, crew, world.captain.active_style, [], None, 0, 0,
+        )
+    player = state["player_combat"]
+    opponent = state["opponent_combat"]
+    valid = get_available_actions(player)
+    if action not in valid:
+        raise ScriptError("Invalid action. Available: " + ", ".join(valid))
+    result = resolve_duel_turn(enc, action, player, opponent, state["rng"])
+    player_hp = player.hp
+    opponent_hp = opponent.hp
+    finished = enc.phase == "resolved"
+    player_won = finished and opponent_hp <= 0 and player_hp > 0
+    draw = finished and player_hp <= 0 and opponent_hp <= 0
+    ship = world.captain.ship
+    view = encounter_view(
+        enc, ship, kind="fight", turn=result.turn, player_action=result.player_action,
+        enemy_action=result.opponent_action, damage_to_opponent=result.damage_to_opponent,
+        damage_to_player=result.damage_to_player,
+        player_stamina_delta=result.player_stamina_delta,
+        opponent_stamina_delta=result.opponent_stamina_delta,
+        flavor=result.flavor, message=result.flavor,
+        player_hp=player_hp, opponent_hp=opponent_hp,
+        player_won=player_won, draw=draw,
+        injury=result.injury_inflicted or "",
+        opponent_injury=result.opponent_injury or "",
+        style_effect=result.style_effect or "",
+    )
+    if finished:
+        if player_won or draw:
+            state["history"]["duels_won"] += 1
+        else:
+            state["history"]["duels_lost"] += 1
+            loss = 15 + enc.enemy_strength * 3
+            world.captain.silver = max(0, world.captain.silver - loss)
+        outcome = "duel_win" if player_won else ("duel_draw" if draw else "duel_loss")
+        remember(state, enc, outcome)
+        clear_encounter(state)
+        view["phase"] = "resolved"
+    entry["encounter"] = view
+
+
+def do_capture(state, crew_to_prize, entry) -> None:
+    enc = state.get("encounter")
+    if enc is None or enc.phase != "capture_available":
+        raise ScriptError("Cannot capture: No ship available to capture.")
+    world = state["world"]
+    ship = world.captain.ship
+    if crew_to_prize <= 0:
+        entry["encounter"] = encounter_view(
+            enc, ship, kind="capture", phase="resolved", message="You let the prize go under.",
+        )
+        clear_encounter(state)
+        return
+    from portlight.engine.encounter import can_capture_prize, capture_prize, prize_template_id
+    from portlight.engine.models import max_fleet_size
+    from portlight.content.ships import SHIPS
+    trust = world.captain.standing.commercial_trust
+    ok, reason = can_capture_prize(world.captain, enc, max_fleet_size(trust))
+    if not ok:
+        raise ScriptError(f"Cannot capture: {reason}")
+    prize_tid = prize_template_id(enc.enemy_strength)
+    prize_min = SHIPS[prize_tid].crew_min if prize_tid in SHIPS else 3
+    current = SHIPS.get(ship.template_id) if ship is not None else None
+    current_min = current.crew_min if current else 3
+    if crew_to_prize < prize_min:
+        raise ScriptError(f"Cannot capture: Need at least {prize_min} crew for the prize ship.")
+    have = ship.crew if ship is not None else 0
+    leftover = have - crew_to_prize
+    if leftover < current_min:
+        raise ScriptError(
+            f"Cannot capture: Would leave your flagship with {leftover} crew (need {current_min})."
+        )
+    owned = capture_prize(world.captain, enc, crew_to_prize, state["rng"])
+    owned.docked_port_id = world.voyage.destination_id
+    world.captain.fleet.append(owned)
+    state["history"]["fleet"].append({
+        "template_id": owned.ship.template_id,
+        "name": owned.ship.name,
+        "hull": owned.ship.hull,
+        "hull_max": owned.ship.hull_max,
+        "crew": owned.ship.crew,
+        "docked_port_id": owned.docked_port_id,
+    })
+    remember(state, enc, "attack")
+    name = owned.ship.name
+    entry["encounter"] = encounter_view(
+        enc, world.captain.ship, kind="capture", phase="resolved",
+        message=f"Prize captured! {name} added to your fleet.",
+        prize_ok=True, prize_reason=name,
+        player_crew=world.captain.ship.crew if world.captain.ship else 0,
+    )
+    clear_encounter(state)
+
+
+def _plunder(captain) -> None:
+    for item in captain.cargo:
+        item.quantity = max(0, item.quantity - item.quantity // 2)
+    captain.cargo = [item for item in captain.cargo if item.quantity > 0]
+    captain.silver -= captain.silver // 4
 
 
 def split_stances(tokens: list[str]) -> list[str]:
@@ -763,31 +1218,45 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             "strength": duel.strength,
             "region": duel.region,
         }
+    captain_view = {
+        "name": world.captain.name,
+        "captain_type": world.captain.captain_type,
+        "silver": world.captain.silver,
+        "provisions": world.captain.provisions,
+        "day": world.captain.day,
+        "wanted_level": world.captain.wanted_level,
+        "cargo": [
+            {
+                "good_id": item.good_id,
+                "quantity": item.quantity,
+                "cost_basis": item.cost_basis,
+                "acquired_port": item.acquired_port,
+                "acquired_region": item.acquired_region,
+                "acquired_day": item.acquired_day,
+            }
+            for item in world.captain.cargo
+        ],
+        "ship": ship_view,
+        "standing": standing_view(world.captain.standing),
+    }
+    history = state.get("history") or fresh_history()
+    if history["encounters"]:
+        captain_view["encounters"] = history["encounters"]
+    if history["duels_won"]:
+        captain_view["duels_won"] = history["duels_won"]
+    if history["duels_lost"]:
+        captain_view["duels_lost"] = history["duels_lost"]
+    if history["naval_victories"]:
+        captain_view["naval_victories"] = history["naval_victories"]
+    if history["naval_defeats"]:
+        captain_view["naval_defeats"] = history["naval_defeats"]
+    if history["fleet"]:
+        captain_view["fleet"] = history["fleet"]
     return {
         "seed": world.seed,
         "day": world.day,
         "trade_seq": state["trade_seq"],
-        "captain": {
-            "name": world.captain.name,
-            "captain_type": world.captain.captain_type,
-            "silver": world.captain.silver,
-            "provisions": world.captain.provisions,
-            "day": world.captain.day,
-            "wanted_level": world.captain.wanted_level,
-            "cargo": [
-                {
-                    "good_id": item.good_id,
-                    "quantity": item.quantity,
-                    "cost_basis": item.cost_basis,
-                    "acquired_port": item.acquired_port,
-                    "acquired_region": item.acquired_region,
-                    "acquired_day": item.acquired_day,
-                }
-                for item in world.captain.cargo
-            ],
-            "ship": ship_view,
-            "standing": standing_view(world.captain.standing),
-        },
+        "captain": captain_view,
         "voyage": {
             "origin_id": world.voyage.origin_id,
             "destination_id": world.voyage.destination_id,

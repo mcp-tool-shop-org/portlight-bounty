@@ -16,13 +16,15 @@ use crate::campaign::{
     ActiveLicense, BrokerSite, CompletedContract, CreditBook, HouseBooks, VictoryRecord,
     WarehouseSite,
 };
+use crate::combat::CombatantState;
 use crate::content::{self, REGIONS};
 use crate::economy::TradeReceipt;
+use crate::encounter::{self, EncounterState};
 use crate::error::SimError;
 use crate::model::{
     ActiveContract, BreachRecord, Captain, CargoItem, Contract, ContractBoard, ContractOutcome,
-    DeferredFee, Incident, MarketSlot, Officer, PendingDuel, Port, Route, Ship, Standing, Voyage,
-    VoyageStatus, World,
+    DeferredFee, Incident, MarketSlot, Officer, PendingDuel, PirateEncounterRecord, Port, Route,
+    Ship, Standing, Voyage, VoyageStatus, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -58,6 +60,13 @@ enum MigrateError {
     Bad,
 }
 
+/// Active encounter passed into [`write_save`]. Absent fields are an idle sea.
+pub(crate) struct LiveEncounter<'a> {
+    pub encounter: Option<&'a EncounterState>,
+    pub player: Option<&'a CombatantState>,
+    pub opponent: Option<&'a CombatantState>,
+}
+
 /// A slot `load_game` would turn back into a session.
 #[derive(Debug)]
 pub(crate) struct LoadedGame {
@@ -66,6 +75,9 @@ pub(crate) struct LoadedGame {
     pub run_id: String,
     pub books: HouseBooks,
     pub board: ContractBoard,
+    pub encounter: Option<EncounterState>,
+    pub player_combat: Option<CombatantState>,
+    pub opponent_combat: Option<CombatantState>,
 }
 
 /// Filename for a slot. Characters outside letters, digits, `-`, and `_` are
@@ -87,6 +99,7 @@ pub fn migrate_save(data: &mut Value) -> Result<(), SimError> {
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn write_save(
     base: &Path,
     slot: &str,
@@ -95,11 +108,12 @@ pub(crate) fn write_save(
     run_id: &str,
     books: &HouseBooks,
     board: &ContractBoard,
+    live: LiveEncounter<'_>,
 ) -> Result<PathBuf, SimError> {
     let dir = base.join(SAVE_DIR);
     fs::create_dir_all(&dir).map_err(io_err)?;
     let path = dir.join(save_filename(slot));
-    let value = encode(world, receipts, run_id, books, board);
+    let value = encode(world, receipts, run_id, books, board, live);
     let text =
         serde_json::to_string_pretty(&value).map_err(|err| SimError::SaveIo(err.to_string()))?;
     fs::write(&path, text).map_err(io_err)?;
@@ -480,12 +494,14 @@ fn setdefault(map: &mut Map<String, Value>, key: &str, value: Value) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn encode(
     world: &World,
     receipts: &[TradeReceipt],
     run_id: &str,
     books: &HouseBooks,
     board: &ContractBoard,
+    live: LiveEncounter<'_>,
 ) -> Value {
     let mut ports = Map::new();
     for port in &world.ports {
@@ -502,7 +518,10 @@ fn encode(
         ("voyage", voyage_value(&world.voyage)),
         ("day", Value::from(world.day)),
         ("seed", seed_value(world.seed)),
-        ("pirate_state", pirate_value(&world.pending_duel)),
+        (
+            "pirate_state",
+            pirate_value(world, live.encounter, live.player, live.opponent),
+        ),
         ("ledger", ledger_value(receipts, run_id, books)),
         ("contract_board", board_value(board, books)),
         ("infrastructure", infra_value(books)),
@@ -532,10 +551,17 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         None => 0,
         Some(value) => json_i128(value)?,
     };
-    let pending_duel = match truthy(data.get("pirate_state")) {
-        Some(value) => pending_from(value)?,
-        None => None,
+    let pirate = match truthy(data.get("pirate_state")) {
+        Some(value) => pirate_from(value, &captain)?,
+        None => PirateLoaded::default(),
     };
+    let mut captain = captain;
+    captain.duels_won = pirate.duels_won;
+    captain.duels_lost = pirate.duels_lost;
+    captain.naval_victories = pirate.naval_victories;
+    captain.naval_defeats = pirate.naval_defeats;
+    captain.encounters = pirate.encounters;
+    let pending_duel = pirate.pending_duel;
     let ledger = match truthy(data.get("ledger")) {
         Some(value) => ledger_from(value)?,
         None => LedgerParts {
@@ -591,6 +617,9 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         run_id: ledger.run_id,
         books,
         board,
+        encounter: pirate.encounter,
+        player_combat: pirate.player,
+        opponent_combat: pirate.opponent,
     })
 }
 
@@ -610,6 +639,14 @@ fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
         ("provisions", Value::from(captain.provisions)),
         ("day", Value::from(captain.day)),
         ("standing", standing_value(&captain.standing)),
+        (
+            "active_style",
+            captain
+                .active_style
+                .as_ref()
+                .map(|id| Value::from(id.as_str()))
+                .unwrap_or(Value::Null),
+        ),
         (
             "deferred_fees",
             Value::Array(captain.deferred_fees.iter().map(fee_value).collect()),
@@ -660,6 +697,19 @@ fn captain_from(value: &Value) -> Option<Captain> {
         wanted_level: opt_i64(map, "wanted_level").unwrap_or(0),
         active_bounties: string_list(map.get("active_bounties"))?,
         deferred_fees: fee_list(map.get("deferred_fees"))?,
+        melee: None,
+        firearm: None,
+        mechanical: None,
+        throwing: Vec::new(),
+        armor: None,
+        styles: Vec::new(),
+        active_style: opt_str(map, "active_style"),
+        duels_won: 0,
+        duels_lost: 0,
+        encounters: Vec::new(),
+        fleet: Vec::new(),
+        naval_victories: 0,
+        naval_defeats: 0,
     })
 }
 
@@ -1108,18 +1158,45 @@ fn voyage_from(value: &Value) -> Option<Voyage> {
     })
 }
 
-fn pirate_value(pending: &Option<PendingDuel>) -> Value {
+fn pirate_value(
+    world: &World,
+    encounter: Option<&EncounterState>,
+    player: Option<&CombatantState>,
+    opponent: Option<&CombatantState>,
+) -> Value {
+    let captain = &world.captain;
     let mut map = Map::new();
-    map.insert("encounters".to_string(), Value::Array(Vec::new()));
+    map.insert(
+        "encounters".to_string(),
+        Value::Array(
+            captain
+                .encounters
+                .iter()
+                .map(encounter_record_value)
+                .collect(),
+        ),
+    );
     map.insert("nemesis_id".to_string(), Value::Null);
-    map.insert("duels_won".to_string(), Value::from(0));
-    map.insert("duels_lost".to_string(), Value::from(0));
-    map.insert("naval_victories".to_string(), Value::from(0));
-    map.insert("naval_defeats".to_string(), Value::from(0));
-    map.insert("encounter_phase".to_string(), Value::from(""));
-    map.insert("encounter_state".to_string(), Value::Object(Map::new()));
+    map.insert("duels_won".to_string(), Value::from(captain.duels_won));
+    map.insert("duels_lost".to_string(), Value::from(captain.duels_lost));
+    map.insert(
+        "naval_victories".to_string(),
+        Value::from(captain.naval_victories),
+    );
+    map.insert(
+        "naval_defeats".to_string(),
+        Value::from(captain.naval_defeats),
+    );
+    map.insert(
+        "encounter_phase".to_string(),
+        Value::from(encounter.map(|enc| enc.phase.as_str()).unwrap_or("")),
+    );
+    map.insert(
+        "encounter_state".to_string(),
+        encounter_blob(encounter, player, opponent),
+    );
     map.insert("bounty_board".to_string(), Value::Array(Vec::new()));
-    if let Some(duel) = pending {
+    if let Some(duel) = &world.pending_duel {
         map.insert(
             "pending_duel".to_string(),
             json_obj(&[
@@ -1133,6 +1210,233 @@ fn pirate_value(pending: &Option<PendingDuel>) -> Value {
         );
     }
     Value::Object(map)
+}
+
+fn encounter_record_value(record: &PirateEncounterRecord) -> Value {
+    json_obj(&[
+        ("captain_id", Value::from(record.captain_id.as_str())),
+        ("faction_id", Value::from(record.faction_id.as_str())),
+        ("day", Value::from(record.day)),
+        ("outcome", Value::from(record.outcome.as_str())),
+        ("region", Value::from(record.region.as_str())),
+    ])
+}
+
+/// `app.session.encounter_persist_blob`. `pending_victory` stays false: the
+/// spare/take-all choice is not on this session.
+fn encounter_blob(
+    encounter: Option<&EncounterState>,
+    player: Option<&CombatantState>,
+    opponent: Option<&CombatantState>,
+) -> Value {
+    let Some(enc) = encounter else {
+        return Value::Object(Map::new());
+    };
+    let mut map = Map::new();
+    map.insert(
+        "enemy_captain_id".to_string(),
+        Value::from(enc.enemy_captain_id.as_str()),
+    );
+    map.insert(
+        "enemy_captain_name".to_string(),
+        Value::from(enc.enemy_captain_name.as_str()),
+    );
+    map.insert(
+        "enemy_faction_id".to_string(),
+        Value::from(enc.enemy_faction_id.as_str()),
+    );
+    map.insert(
+        "enemy_personality".to_string(),
+        Value::from(enc.enemy_personality.as_str()),
+    );
+    map.insert(
+        "enemy_strength".to_string(),
+        Value::from(enc.enemy_strength),
+    );
+    map.insert(
+        "enemy_region".to_string(),
+        Value::from(enc.enemy_region.as_str()),
+    );
+    map.insert(
+        "enemy_ship_hull".to_string(),
+        Value::from(enc.enemy_ship_hull),
+    );
+    map.insert(
+        "enemy_ship_hull_max".to_string(),
+        Value::from(enc.enemy_ship_hull_max),
+    );
+    map.insert(
+        "enemy_ship_cannons".to_string(),
+        Value::from(enc.enemy_ship_cannons),
+    );
+    map.insert(
+        "enemy_ship_maneuver".to_string(),
+        f64_value(enc.enemy_ship_maneuver),
+    );
+    map.insert(
+        "enemy_ship_speed".to_string(),
+        f64_value(enc.enemy_ship_speed),
+    );
+    map.insert(
+        "enemy_ship_crew".to_string(),
+        Value::from(enc.enemy_ship_crew),
+    );
+    map.insert(
+        "enemy_ship_crew_max".to_string(),
+        Value::from(enc.enemy_ship_crew_max),
+    );
+    map.insert(
+        "boarding_progress".to_string(),
+        Value::from(enc.boarding_progress),
+    );
+    map.insert(
+        "boarding_threshold".to_string(),
+        Value::from(enc.boarding_threshold),
+    );
+    map.insert("naval_turns".to_string(), Value::from(enc.naval_turns));
+    map.insert("duel_turns".to_string(), Value::from(enc.duel_turns));
+    map.insert("pending_victory".to_string(), Value::from(false));
+    if let Some(player) = player {
+        map.insert("player_hp".to_string(), Value::from(player.hp));
+        map.insert("player_stamina".to_string(), Value::from(player.stamina));
+    }
+    if let Some(opponent) = opponent {
+        map.insert("opponent_hp".to_string(), Value::from(opponent.hp));
+        map.insert(
+            "opponent_stamina".to_string(),
+            Value::from(opponent.stamina),
+        );
+    }
+    Value::Object(map)
+}
+
+#[derive(Default)]
+struct PirateLoaded {
+    encounters: Vec<PirateEncounterRecord>,
+    duels_won: i64,
+    duels_lost: i64,
+    naval_victories: i64,
+    naval_defeats: i64,
+    pending_duel: Option<PendingDuel>,
+    encounter: Option<EncounterState>,
+    player: Option<CombatantState>,
+    opponent: Option<CombatantState>,
+}
+
+fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
+    let map = value.as_object()?;
+    let pending_duel = pending_from(value)?;
+    let mut encounters = Vec::new();
+    if let Some(saved) = map.get("encounters").and_then(Value::as_array) {
+        for record in saved {
+            let record = record.as_object()?;
+            encounters.push(PirateEncounterRecord {
+                captain_id: req_str(record, "captain_id")?,
+                faction_id: req_str(record, "faction_id")?,
+                day: req_i64(record, "day")?,
+                outcome: req_str(record, "outcome")?,
+                region: opt_str(record, "region").unwrap_or_default(),
+            });
+        }
+    }
+    let phase = opt_str(map, "encounter_phase").unwrap_or_default();
+    let empty_estate = Map::new();
+    let estate = match map.get("encounter_state") {
+        Some(Value::Object(estate)) => estate,
+        _ => &empty_estate,
+    };
+    let encounter = encounter_from(&phase, estate, pending_duel.as_ref());
+    let (player, opponent) = match &encounter {
+        Some(enc) => combatants_from(captain, enc, estate),
+        None => (None, None),
+    };
+    Some(PirateLoaded {
+        encounters,
+        duels_won: opt_i64(map, "duels_won").unwrap_or(0),
+        duels_lost: opt_i64(map, "duels_lost").unwrap_or(0),
+        naval_victories: opt_i64(map, "naval_victories").unwrap_or(0),
+        naval_defeats: opt_i64(map, "naval_defeats").unwrap_or(0),
+        pending_duel,
+        encounter,
+        player,
+        opponent,
+    })
+}
+
+fn encounter_from(
+    phase: &str,
+    estate: &Map<String, Value>,
+    pending: Option<&PendingDuel>,
+) -> Option<EncounterState> {
+    if phase.is_empty() && estate.is_empty() {
+        return None;
+    }
+    let hull = opt_i64(estate, "enemy_ship_hull").unwrap_or(0);
+    let crew = opt_i64(estate, "enemy_ship_crew").unwrap_or(0);
+    let mut enc = EncounterState {
+        enemy_captain_id: opt_str(estate, "enemy_captain_id")
+            .or_else(|| pending.map(|duel| duel.captain_id.clone()))
+            .unwrap_or_default(),
+        enemy_captain_name: opt_str(estate, "enemy_captain_name")
+            .or_else(|| pending.map(|duel| duel.captain_name.clone()))
+            .unwrap_or_default(),
+        enemy_faction_id: opt_str(estate, "enemy_faction_id")
+            .or_else(|| pending.map(|duel| duel.faction_id.clone()))
+            .unwrap_or_default(),
+        enemy_personality: opt_str(estate, "enemy_personality")
+            .or_else(|| pending.map(|duel| duel.personality.clone()))
+            .unwrap_or_default(),
+        enemy_strength: opt_i64(estate, "enemy_strength")
+            .or_else(|| pending.map(|duel| duel.strength))
+            .unwrap_or(0),
+        enemy_region: opt_str(estate, "enemy_region")
+            .or_else(|| pending.map(|duel| duel.region.clone()))
+            .unwrap_or_default(),
+        enemy_ship_hull: hull,
+        enemy_ship_hull_max: opt_i64(estate, "enemy_ship_hull_max").unwrap_or(hull),
+        enemy_ship_cannons: opt_i64(estate, "enemy_ship_cannons").unwrap_or(0),
+        enemy_ship_maneuver: opt_f64(estate, "enemy_ship_maneuver").unwrap_or(0.5),
+        enemy_ship_speed: opt_f64(estate, "enemy_ship_speed").unwrap_or(6.0),
+        enemy_ship_crew: crew,
+        enemy_ship_crew_max: opt_i64(estate, "enemy_ship_crew_max").unwrap_or(crew),
+        phase: if phase.is_empty() {
+            "approach".to_string()
+        } else {
+            phase.to_string()
+        },
+        boarding_progress: opt_i64(estate, "boarding_progress").unwrap_or(0),
+        boarding_threshold: opt_i64(estate, "boarding_threshold").unwrap_or(3),
+        naval_turns: opt_i64(estate, "naval_turns").unwrap_or(0),
+        duel_turns: opt_i64(estate, "duel_turns").unwrap_or(0),
+    };
+    if opt_bool(estate, "pending_victory").unwrap_or(false) && enc.phase != "capture_available" {
+        enc.phase = "resolved".to_string();
+    }
+    Some(enc)
+}
+
+fn combatants_from(
+    captain: &Captain,
+    encounter: &EncounterState,
+    estate: &Map<String, Value>,
+) -> (Option<CombatantState>, Option<CombatantState>) {
+    if !estate.contains_key("player_hp") && !estate.contains_key("opponent_hp") {
+        return (None, None);
+    }
+    let (mut player, mut opponent) = encounter::create_duel_combatants(encounter, captain);
+    if let Some(hp) = opt_i64(estate, "player_hp") {
+        player.hp = hp;
+    }
+    if let Some(stamina) = opt_i64(estate, "player_stamina") {
+        player.stamina = stamina;
+    }
+    if let Some(hp) = opt_i64(estate, "opponent_hp") {
+        opponent.hp = hp;
+    }
+    if let Some(stamina) = opt_i64(estate, "opponent_stamina") {
+        opponent.stamina = stamina;
+    }
+    (Some(player), Some(opponent))
 }
 
 fn pending_from(value: &Value) -> Option<Option<PendingDuel>> {

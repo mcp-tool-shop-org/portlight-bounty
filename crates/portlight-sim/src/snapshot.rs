@@ -9,6 +9,7 @@ use crate::content;
 use crate::duel::{DuelOutcome, DuelRound};
 use crate::economy::TradeReceipt;
 use crate::model::{ActiveContract, Captain, ContractOutcome, Standing, Voyage, World};
+use crate::session::EncounterStep;
 use crate::voyage::VoyageEvent;
 
 #[derive(Debug, Clone, Serialize)]
@@ -35,6 +36,88 @@ pub struct CaptainSnap {
     pub cargo: Vec<CargoSnap>,
     pub ship: Option<ShipSnap>,
     pub standing: StandingSnap,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub encounters: Vec<EncounterRecordSnap>,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub duels_won: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub duels_lost: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub naval_victories: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub naval_defeats: i64,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fleet: Vec<FleetSnap>,
+}
+
+fn is_zero(value: &i64) -> bool {
+    *value == 0
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct EncounterRecordSnap {
+    pub captain_id: String,
+    pub faction_id: String,
+    pub day: i64,
+    pub outcome: String,
+    pub region: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct FleetSnap {
+    pub template_id: String,
+    pub name: String,
+    pub hull: i64,
+    pub hull_max: i64,
+    pub crew: i64,
+    pub docked_port_id: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct EncounterLog {
+    pub kind: String,
+    pub phase: String,
+    pub message: String,
+    pub choice: String,
+    pub success: bool,
+    pub escaped: bool,
+    pub hull_damage: i64,
+    pub enemy_captain_id: String,
+    pub enemy_captain_name: String,
+    pub enemy_strength: i64,
+    pub turn: i64,
+    pub player_action: String,
+    pub enemy_action: String,
+    pub player_hull_delta: i64,
+    pub enemy_hull_delta: i64,
+    pub player_crew_delta: i64,
+    pub enemy_crew_delta: i64,
+    pub boarding_progress: i64,
+    pub boarding_threshold: i64,
+    pub enemy_sunk: bool,
+    pub player_sunk: bool,
+    pub boarding_triggered: bool,
+    pub flavor: String,
+    pub player_hull: i64,
+    pub enemy_hull: i64,
+    pub player_crew: i64,
+    pub enemy_crew: i64,
+    pub player_crew_lost: i64,
+    pub enemy_crew_lost: i64,
+    pub player_advantage: bool,
+    pub damage_to_opponent: i64,
+    pub damage_to_player: i64,
+    pub player_hp: i64,
+    pub opponent_hp: i64,
+    pub player_stamina_delta: i64,
+    pub opponent_stamina_delta: i64,
+    pub player_won: bool,
+    pub draw: bool,
+    pub injury: String,
+    pub opponent_injury: String,
+    pub style_effect: String,
+    pub prize_ok: bool,
+    pub prize_reason: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -189,6 +272,8 @@ pub struct LogEntry {
     /// Contract accept, completion, or expiry produced by this command.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub contracts: Vec<ContractLog>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encounter: Option<EncounterLog>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -240,6 +325,7 @@ impl LogEntry {
             duel: None,
             earned: None,
             contracts: Vec::new(),
+            encounter: None,
         }
     }
 }
@@ -279,6 +365,54 @@ pub fn from_accepted(contract: &ActiveContract) -> ContractLog {
         standing_delta: 0,
         heat_delta: 0,
         summary: contract.title.clone(),
+    }
+}
+
+pub fn from_encounter(step: &EncounterStep) -> EncounterLog {
+    EncounterLog {
+        kind: step.kind.clone(),
+        phase: step.phase.clone(),
+        message: step.message.clone(),
+        choice: step.choice.clone(),
+        success: step.success,
+        escaped: step.escaped,
+        hull_damage: step.hull_damage,
+        enemy_captain_id: step.enemy_captain_id.clone(),
+        enemy_captain_name: step.enemy_captain_name.clone(),
+        enemy_strength: step.enemy_strength,
+        turn: step.turn,
+        player_action: step.player_action.clone(),
+        enemy_action: step.enemy_action.clone(),
+        player_hull_delta: step.player_hull_delta,
+        enemy_hull_delta: step.enemy_hull_delta,
+        player_crew_delta: step.player_crew_delta,
+        enemy_crew_delta: step.enemy_crew_delta,
+        boarding_progress: step.boarding_progress,
+        boarding_threshold: step.boarding_threshold,
+        enemy_sunk: step.enemy_sunk,
+        player_sunk: step.player_sunk,
+        boarding_triggered: step.boarding_triggered,
+        flavor: step.flavor.clone(),
+        player_hull: step.player_hull,
+        enemy_hull: step.enemy_hull,
+        player_crew: step.player_crew,
+        enemy_crew: step.enemy_crew,
+        player_crew_lost: step.player_crew_lost,
+        enemy_crew_lost: step.enemy_crew_lost,
+        player_advantage: step.player_advantage,
+        damage_to_opponent: step.damage_to_opponent,
+        damage_to_player: step.damage_to_player,
+        player_hp: step.player_hp,
+        opponent_hp: step.opponent_hp,
+        player_stamina_delta: step.player_stamina_delta,
+        opponent_stamina_delta: step.opponent_stamina_delta,
+        player_won: step.player_won,
+        draw: step.draw,
+        injury: step.injury.clone(),
+        opponent_injury: step.opponent_injury.clone(),
+        style_effect: step.style_effect.clone(),
+        prize_ok: step.prize_ok,
+        prize_reason: step.prize_reason.clone(),
     }
 }
 
@@ -429,6 +563,33 @@ fn captain_snap(captain: &Captain) -> CaptainSnap {
                 .collect(),
         }),
         standing: standing_snap(&captain.standing),
+        encounters: captain
+            .encounters
+            .iter()
+            .map(|record| EncounterRecordSnap {
+                captain_id: record.captain_id.clone(),
+                faction_id: record.faction_id.clone(),
+                day: record.day,
+                outcome: record.outcome.clone(),
+                region: record.region.clone(),
+            })
+            .collect(),
+        duels_won: captain.duels_won,
+        duels_lost: captain.duels_lost,
+        naval_victories: captain.naval_victories,
+        naval_defeats: captain.naval_defeats,
+        fleet: captain
+            .fleet
+            .iter()
+            .map(|owned| FleetSnap {
+                template_id: owned.ship.template_id.clone(),
+                name: owned.ship.name.clone(),
+                hull: owned.ship.hull,
+                hull_max: owned.ship.hull_max,
+                crew: owned.ship.crew,
+                docked_port_id: owned.docked_port_id.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -504,6 +665,12 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
                 underworld: BTreeMap::new(),
                 incidents: Vec::new(),
             },
+            encounters: Vec::new(),
+            duels_won: 0,
+            duels_lost: 0,
+            naval_victories: 0,
+            naval_defeats: 0,
+            fleet: Vec::new(),
         },
         voyage: VoyageSnap {
             origin_id: String::new(),

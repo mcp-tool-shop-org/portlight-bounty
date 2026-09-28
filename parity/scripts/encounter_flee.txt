@@ -1,0 +1,9 @@
+# Approach flee across the three generate_enemy_ship bands.
+# No catalog captain is strength 1-3, so each game probes strength:N.
+# Each `new` replaces the session so a failed flee (phase naval) does not block the next band.
+new merchant Low 1
+encounter flee strength:2
+new merchant Mid 3
+encounter flee strength:5
+new merchant High 1
+encounter flee strength:9

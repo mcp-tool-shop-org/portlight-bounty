@@ -355,10 +355,10 @@ Inside your own area, do the work in this order:
 As you add catalogs, tick them off:
 - [x] `contracts`
 - [ ] `infrastructure`
-- [ ] `armor`
-- [ ] `melee_weapons`
-- [ ] `ranged_weapons`
-- [ ] `fighting_styles`
+- [x] `armor`
+- [x] `melee_weapons`
+- [x] `ranged_weapons`
+- [x] `fighting_styles`
 - [ ] `skills`
 - [ ] `injuries`
 - [ ] `loot_tables`

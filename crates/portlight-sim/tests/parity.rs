@@ -74,6 +74,52 @@ fn golden_scripts_match_python() {
 }
 
 #[test]
+fn encounter_goldens_cover_flee_bands() {
+    let root = parity_root();
+    for name in [
+        "encounter_negotiate",
+        "encounter_flee",
+        "naval_combat",
+        "boarding",
+    ] {
+        assert!(
+            root.join("scripts").join(format!("{name}.txt")).is_file(),
+            "missing script {name}"
+        );
+        assert!(
+            root.join("golden").join(format!("{name}.json")).is_file(),
+            "missing golden {name}"
+        );
+    }
+    let flee: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("golden/encounter_flee.json")).expect("flee golden"),
+    )
+    .expect("flee json");
+    let mut low = false;
+    let mut mid = false;
+    let mut high = false;
+    for log in flee["log"].as_array().expect("log") {
+        let Some(strength) = log
+            .get("encounter")
+            .and_then(|item| item.get("enemy_strength"))
+            .and_then(|item| item.as_i64())
+        else {
+            continue;
+        };
+        if strength <= 3 {
+            low = true;
+        } else if strength <= 6 {
+            mid = true;
+        } else {
+            high = true;
+        }
+    }
+    assert!(low, "flee golden has no strength <= 3");
+    assert!(mid, "flee golden has no strength 4-6");
+    assert!(high, "flee golden has no strength >= 7");
+}
+
+#[test]
 fn goldens_guard_the_checklist_paths() {
     let root = parity_root().join("golden");
     let mut events = std::collections::BTreeSet::new();

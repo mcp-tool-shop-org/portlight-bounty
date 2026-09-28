@@ -1,0 +1,8 @@
+# Privateer vs Raj the Quiet. Stops before the close that meets the boarding threshold.
+new privateer Ada 4
+encounter fight raj_the_quiet
+naval broadside
+naval broadside
+naval rake
+naval evade
+naval close

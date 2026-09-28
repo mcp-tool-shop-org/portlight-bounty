@@ -136,6 +136,94 @@ pub struct FactionDef {
     pub id: String,
     pub name: String,
     pub territory_regions: Vec<String>,
+    /// Friendly / neutral / hostile / business / cooperative / respectful.
+    /// Missing on older extracts means no smuggler bonus.
+    #[serde(default)]
+    pub smuggler_attitude: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ArmorDef {
+    pub id: String,
+    pub name: String,
+    pub armor_type: String,
+    pub damage_reduction: i64,
+    pub dodge_penalty: i64,
+    pub stamina_penalty: i64,
+    pub silver_cost: i64,
+    pub available_regions: Vec<String>,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MeleeWeaponDef {
+    pub id: String,
+    pub name: String,
+    pub weapon_class: String,
+    pub damage_bonus: i64,
+    pub thrust_bonus: i64,
+    pub slash_bonus: i64,
+    pub silver_cost: i64,
+    pub available_regions: Vec<String>,
+    pub description: String,
+    #[serde(default)]
+    pub compatible_styles: Vec<String>,
+    #[serde(default)]
+    pub speed_mod: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RangedWeaponDef {
+    pub id: String,
+    pub name: String,
+    pub weapon_type: String,
+    pub damage_min: i64,
+    pub damage_max: i64,
+    pub accuracy: f64,
+    pub reload_turns: i64,
+    pub silver_cost: i64,
+    pub ammo_per_purchase: i64,
+    pub available_regions: Vec<String>,
+    pub description: String,
+    #[serde(default)]
+    pub stun_turns: i64,
+    #[serde(default)]
+    pub loud: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct StyleActionDef {
+    pub id: String,
+    pub name: String,
+    pub action_type: String,
+    pub stamina_cost: i64,
+    pub beats: Vec<String>,
+    pub loses_to: Vec<String>,
+    pub damage_bonus: i64,
+    pub flavor: String,
+    pub cooldown: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FightingStyleDef {
+    pub id: String,
+    pub name: String,
+    pub region: String,
+    pub description: String,
+    pub historical_note: String,
+    pub passive_thrust_bonus: i64,
+    pub passive_slash_bonus: i64,
+    pub passive_parry_bonus: i64,
+    pub passive_hp_bonus: i64,
+    pub passive_dodge_counter: i64,
+    pub passive_ranged_accuracy: f64,
+    pub passive_injury_bonus: f64,
+    pub special_action: Option<StyleActionDef>,
+    pub training_port_ids: Vec<String>,
+    pub silver_cost: i64,
+    pub training_days: i64,
+    pub prerequisite_styles: i64,
+    pub required_body_parts: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -184,6 +272,14 @@ pub struct Content {
     pub factions: Vec<FactionDef>,
     pub pirate_captains: Vec<PirateCaptainDef>,
     pub contracts: Vec<ContractDef>,
+    #[serde(default)]
+    pub armor: Vec<ArmorDef>,
+    #[serde(default)]
+    pub melee_weapons: Vec<MeleeWeaponDef>,
+    #[serde(default)]
+    pub ranged_weapons: Vec<RangedWeaponDef>,
+    #[serde(default)]
+    pub fighting_styles: Vec<FightingStyleDef>,
 }
 
 pub const REGIONS: [&str; 5] = [
@@ -242,6 +338,26 @@ impl Content {
 
     pub fn pirate(&self, id: &str) -> Option<&PirateCaptainDef> {
         self.pirate_captains.iter().find(|c| c.id == id)
+    }
+
+    pub fn faction(&self, id: &str) -> Option<&FactionDef> {
+        self.factions.iter().find(|f| f.id == id)
+    }
+
+    pub fn armor(&self, id: &str) -> Option<&ArmorDef> {
+        self.armor.iter().find(|a| a.id == id)
+    }
+
+    pub fn melee_weapon(&self, id: &str) -> Option<&MeleeWeaponDef> {
+        self.melee_weapons.iter().find(|w| w.id == id)
+    }
+
+    pub fn ranged_weapon(&self, id: &str) -> Option<&RangedWeaponDef> {
+        self.ranged_weapons.iter().find(|w| w.id == id)
+    }
+
+    pub fn fighting_style(&self, id: &str) -> Option<&FightingStyleDef> {
+        self.fighting_styles.iter().find(|s| s.id == id)
     }
 }
 

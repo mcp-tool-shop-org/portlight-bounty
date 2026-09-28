@@ -1,0 +1,6 @@
+# Merchant standing 0 is hostile: negotiate fails and naval combat opens.
+new merchant Ada 2
+encounter negotiate scarlet_ana
+# Corsair underworld standing with Crimson Tide is trade: negotiate succeeds.
+new corsair Ada 1
+encounter negotiate scarlet_ana
