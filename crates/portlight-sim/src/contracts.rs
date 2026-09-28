@@ -6,8 +6,8 @@
 //! [`tick_contracts`] expires anything past its deadline and drops offers
 //! whose acceptance window has closed.
 //!
-//! The board draw uses `Random(seed + 7919)` and must not advance the session
-//! stream. [`crate::session::Session`] saves that stream, draws, and restores it.
+//! The new-game board draw uses `Random(seed + 7919)` and does not advance the
+//! session stream. Arrival and later in-port refreshes draw that stream.
 
 use std::collections::HashSet;
 

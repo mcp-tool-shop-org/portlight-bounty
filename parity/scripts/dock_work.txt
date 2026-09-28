@@ -1,0 +1,7 @@
+# Dock work at the starting port. g9 used to reach `work` after several
+# arrivals; those later commands now stop on a pending duel because the
+# arrival refresh draws the session RNG.
+new merchant Ada 1
+work
+work
+work

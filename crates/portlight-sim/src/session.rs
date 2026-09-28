@@ -21,8 +21,11 @@
 //! Not included: infrastructure purchases, credit draws, insurance policies,
 //! sea-culture enrichment, narrative, and milestone evaluation. Those books
 //! stay empty until those systems run. A fulfilled contract is written by
-//! [`Session::complete_contract`]. Callers do not use [`Session::books_mut`]
-//! for that.
+//! [`Session::sell`], which also calls [`Session::complete_contract`]'s
+//! settlement. A second `complete_contract` does not pay again. Callers do
+//! not use [`Session::books_mut`] for that. The new-game board is drawn from
+//! `Random(seed + 7919)` and then the session RNG is restored. Arrival and
+//! later in-port refreshes draw the session stream.
 //!
 //! A pending pirate duel still freezes [`Session::advance`] until
 //! [`Session::duel`] or [`Session::resolve_pending_duel`] clears it. That is
@@ -55,6 +58,16 @@ pub struct Turn {
     pub events: Vec<VoyageEvent>,
     pub shocks: Vec<String>,
     /// Contracts that expired on this day. Empty when nothing lapsed.
+    pub contracts: Vec<ContractOutcome>,
+}
+
+/// A sale, plus any contracts that sale completed.
+///
+/// Python `GameSession.sell` credits delivery and resolves fulfilled
+/// contracts in the same call. The silver is already on the captain.
+#[derive(Debug, Clone)]
+pub struct Sale {
+    pub receipt: TradeReceipt,
     pub contracts: Vec<ContractOutcome>,
 }
 
@@ -93,7 +106,7 @@ impl Session {
             run_id,
             board: ContractBoard::default(),
         };
-        session.refresh_contract_board();
+        session.refresh_new_game_board();
         Ok(session)
     }
 
@@ -163,8 +176,9 @@ impl Session {
     }
 
     /// Mutable books for systems that grant licenses, warehouses, brokers,
-    /// policies, or credit. Trade receipts update the ledger. Completed
-    /// contracts are written by [`Session::complete_contract`].
+    /// policies, or credit. Trade receipts update the ledger. A fulfilled
+    /// contract is written by the settlement shared by [`Session::sell`] and
+    /// [`Session::complete_contract`].
     pub fn books_mut(&mut self) -> &mut HouseBooks {
         &mut self.books
     }
@@ -200,7 +214,7 @@ impl Session {
         Ok(receipt)
     }
 
-    pub fn sell(&mut self, good_id: &str, qty: i64) -> Result<TradeReceipt, SimError> {
+    pub fn sell(&mut self, good_id: &str, qty: i64) -> Result<Sale, SimError> {
         let Some(port_id) = current_port_id(&self.world).map(str::to_string) else {
             return Err(SimError::NotDocked);
         };
@@ -256,7 +270,7 @@ impl Session {
             stock_target,
             flood_before,
         );
-        contracts::check_delivery(
+        let credited = contracts::check_delivery(
             &mut self.board,
             &port_id,
             good_id,
@@ -264,11 +278,16 @@ impl Session {
             &source_port,
             &source_region,
         );
+        let contracts = if credited.is_empty() {
+            Vec::new()
+        } else {
+            self.settle_fulfilled()
+        };
         let pricing = pricing(&self.world).cloned();
         if let Some(port) = self.world.port_mut(&port_id) {
             recalculate_prices(port, pricing.as_ref());
         }
-        Ok(receipt)
+        Ok(Sale { receipt, contracts })
     }
 
     pub fn depart(&mut self, destination_id: &str) -> Result<(), SimError> {
@@ -507,8 +526,9 @@ impl Session {
 
     /// Offers on the board at the current port.
     ///
-    /// Refreshes when the day has changed since the last draw. The draw uses
-    /// `Random(seed + 7919)` and restores the session RNG.
+    /// A later day redraws through [`Session::refresh_contract_board`], which
+    /// consumes the session RNG. The isolated `Random(seed + 7919)` draw is
+    /// only the new-game refresh.
     pub fn available_contracts(&mut self) -> Vec<Contract> {
         self.refresh_contract_board();
         self.board.offers.clone()
@@ -519,14 +539,44 @@ impl Session {
         contracts::accept_offer(&mut self.board, offer_id, self.world.day)
     }
 
-    /// Pay a fulfilled contract and write it onto the house books.
+    /// Resolve a fulfilled contract and write it onto the house books.
     ///
-    /// Delivery is credited by [`Session::sell`]. This method is what pays the
-    /// silver and appends the outcome. Callers do not use [`Session::books_mut`].
+    /// This is the same settlement [`Session::sell`] runs after `check_delivery`.
+    /// A second call returns the recorded outcome and does not pay again.
     pub fn complete_contract(&mut self, offer_id: &str) -> Result<ContractOutcome, SimError> {
-        let outcome = contracts::complete_contract(&mut self.board, offer_id, self.world.day)?;
-        self.note_contract_on_books(&outcome);
-        Ok(outcome)
+        if let Some(contract) = self
+            .board
+            .active
+            .iter()
+            .find(|contract| contract.offer_id == offer_id)
+        {
+            if contract.status != "accepted" {
+                return Err(SimError::NoActiveContract);
+            }
+            if contract.delivered_quantity < contract.required_quantity {
+                return Err(SimError::ContractNotFulfilled);
+            }
+            return self
+                .settle_fulfilled()
+                .into_iter()
+                .find(|outcome| outcome.contract_id == offer_id)
+                .ok_or(SimError::ContractNotFulfilled);
+        }
+        self.board
+            .completed
+            .iter()
+            .find(|outcome| outcome.contract_id == offer_id)
+            .cloned()
+            .ok_or(SimError::NoActiveContract)
+    }
+
+    /// `resolve_completed`: pay every fulfilled obligation and record it.
+    fn settle_fulfilled(&mut self) -> Vec<ContractOutcome> {
+        let outcomes = contracts::resolve_completed(&mut self.board, self.world.day);
+        for outcome in &outcomes {
+            self.note_contract_on_books(outcome);
+        }
+        outcomes
     }
 
     fn expire_contracts(&mut self) -> Vec<ContractOutcome> {
@@ -546,11 +596,10 @@ impl Session {
         });
     }
 
-    /// `GameSession._refresh_board`, with the new-game RNG bracket.
+    /// `GameSession._refresh_board`. Draws `self.rng`, the session stream.
     ///
-    /// Python's arrival refresh draws the session RNG. This port saves that
-    /// stream, draws `Random(seed + 7919)`, and restores it, so a refresh
-    /// cannot move the voyage or market sequence.
+    /// Arrival and a later in-port view both use this. Only
+    /// [`Session::refresh_new_game_board`] substitutes `Random(seed + 7919)`.
     fn refresh_contract_board(&mut self) {
         let Some(port_id) = current_port_id(&self.world).map(str::to_string) else {
             return;
@@ -558,9 +607,6 @@ impl Session {
         if self.board.last_refresh_day == self.world.day {
             return;
         }
-        let seed = self.world.seed;
-        let saved = self.rng.clone();
-        self.rng = PyRandom::from_seed(seed + 7919);
         let captain_type = self.world.captain.captain_type.clone();
         let rank = self
             .world
@@ -576,6 +622,13 @@ impl Session {
         };
         self.board.offers = offers;
         self.board.last_refresh_day = self.world.day;
+    }
+
+    /// New-game board only: save the session RNG, draw `Random(seed + 7919)`, restore.
+    fn refresh_new_game_board(&mut self) {
+        let seed = self.world.seed;
+        let saved = std::mem::replace(&mut self.rng, PyRandom::from_seed(seed + 7919));
+        self.refresh_contract_board();
         self.rng = saved;
     }
 }
@@ -845,7 +898,7 @@ mod tests {
     }
 
     #[test]
-    fn board_refresh_does_not_advance_the_session_rng() {
+    fn new_game_board_restores_the_session_rng_and_a_later_refresh_draws_it() {
         let mut session = Session::new("Ada", "merchant", 42, None).unwrap();
         let mut expected = PyRandom::from_seed(42);
         assert_eq!(session.rng.random(), expected.random());
@@ -854,10 +907,22 @@ mod tests {
 
         session.world.day += 1;
         session.board.last_refresh_day = 0;
-        let mut expected = session.rng.clone();
+        let mut replay = session.rng.clone();
+        let port_id = session.world.voyage.destination_id.clone();
+        let captain_type = session.world.captain.captain_type.clone();
+        let rank =
+            content::ship_class_rank(&session.world.captain.ship.as_ref().unwrap().template_id);
         session.available_contracts();
-        assert_eq!(session.rng.random(), expected.random());
+        let _ = contracts::generate_offers(
+            &session.world,
+            &port_id,
+            &captain_type,
+            Some(rank),
+            session.board.max_offers,
+            &mut replay,
+        );
         assert_eq!(session.board.offers.len(), 5);
+        assert_eq!(session.rng.random(), replay.random());
     }
 
     #[test]
@@ -874,16 +939,24 @@ mod tests {
         }
         assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
         assert_eq!(session.world.voyage.destination_id, "corsairs_rest");
-        session.sell("grain", 23).unwrap();
-        let before = session.world.captain.silver;
-        let outcome = session.complete_contract(offer).unwrap();
-        assert_eq!(outcome.outcome_type, "completed_bonus");
-        assert_eq!(outcome.silver_delta, 612);
+        let before_sell = session.world.captain.silver;
+        let sale = session.sell("grain", 23).unwrap();
+        assert_eq!(sale.contracts.len(), 1);
+        assert_eq!(sale.contracts[0].outcome_type, "completed_bonus");
+        assert_eq!(sale.contracts[0].silver_delta, 612);
         assert_eq!(
-            outcome.summary,
+            sale.contracts[0].summary,
             "Delivered 23 grain to corsairs_rest (early bonus: +60 silver)"
         );
-        assert_eq!(session.world.captain.silver, before + 612);
+        assert_eq!(
+            session.world.captain.silver,
+            before_sell + sale.receipt.total_price + 612
+        );
+        assert_eq!(session.books.completed_contracts.len(), 1);
+        let after_sell = session.world.captain.silver;
+        let outcome = session.complete_contract(offer).unwrap();
+        assert_eq!(outcome.silver_delta, 612);
+        assert_eq!(session.world.captain.silver, after_sell);
         assert_eq!(session.books.completed_contracts.len(), 1);
         assert_eq!(
             session.books.completed_contracts[0].family.as_deref(),

@@ -70,8 +70,13 @@ fn dispatch(
                 return Err(SimError::UsageSell);
             }
             let qty = parse_qty(&tokens[2])?;
-            let receipt = session.sell(&tokens[1], qty)?;
-            entry.receipt = Some(snapshot::from_receipt(&receipt));
+            let sale = session.sell(&tokens[1], qty)?;
+            entry.receipt = Some(snapshot::from_receipt(&sale.receipt));
+            entry.contracts = sale
+                .contracts
+                .iter()
+                .map(snapshot::from_contract_outcome)
+                .collect();
             Ok(())
         }
         "depart" => {

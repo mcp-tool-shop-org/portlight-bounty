@@ -3,8 +3,9 @@
 
 This is the reference side of the parity harness. It calls the same engine
 functions the Rust script runner calls — not the full GameSession — so
-sea culture and insurance stay out of the comparison. Contract offers are
-drawn from Random(seed + 7919) without advancing the session stream.
+sea culture and insurance stay out of the comparison. The new-game
+contract board is drawn from Random(seed + 7919) and the session RNG is
+restored. Arrival refreshes the board from the session stream.
 `duel` and `resolve_duel` call `engine/duel.py`. See docs/PORTING-PLAN.md.
 
 Usage:
@@ -270,9 +271,11 @@ def do_sell(state, good_id: str, qty: int, entry: dict) -> None:
         flood_before,
         is_sell=True,
     )
-    check_delivery(
+    credited = check_delivery(
         state["board"], port.id, good_id, result.quantity, source_port, source_region,
     )
+    if credited:
+        attach_contracts(entry, settle_fulfilled(state))
     reprice_port(world, port)
     state["ledger"].append(result)
     entry["receipt"] = receipt_view(result)
@@ -299,14 +302,10 @@ def do_advance(state, entry: dict) -> None:
     rows = []
     for outcome in outcomes:
         world.captain.silver += outcome.silver_delta
-        rows.append(contract_row(
+        rows.append(stash_resolution(
+            state,
             before[outcome.contract_id],
-            outcome.outcome_type,
-            outcome.silver_delta,
-            outcome.trust_delta,
-            outcome.standing_delta,
-            outcome.heat_delta,
-            outcome.summary,
+            outcome,
         ))
     attach_contracts(entry, rows)
     if world.voyage.status != VoyageStatus.AT_SEA:
@@ -346,7 +345,7 @@ def do_advance(state, entry: dict) -> None:
             port = world.ports.get(world.voyage.destination_id)
             if port is not None:
                 record_port_arrival(world.captain.standing, world.day, port.id, port.region)
-                refresh_with_board_rng(state, port)
+                refresh_board(state, port)
         entry["events"] = [event_view(event) for event in events]
     reprice_all(world)
     newly = evaluate_victory_closure(session_snapshot(state))
@@ -455,23 +454,8 @@ def do_accept(state, offer_id: str, entry: dict) -> None:
     )])
 
 
-def do_complete(state, offer_id: str, entry: dict) -> None:
-    """Pay one fulfilled contract. Delivery itself is credited by sell."""
-    board = state["board"]
-    contract = next((c for c in board.active if c.offer_id == offer_id), None)
-    if contract is None or contract.status != "accepted":
-        raise ScriptError("No active contract with that ID")
-    if contract.delivered_quantity < contract.required_quantity:
-        raise ScriptError("Contract is not yet fulfilled")
-    others = [c for c in board.active if c.offer_id != offer_id]
-    board.active = [contract]
-    outcomes = resolve_completed(board, state["world"].day)
-    board.active = others + board.active
-    if not outcomes:
-        raise ScriptError("Contract is not yet fulfilled")
-    outcome = outcomes[0]
-    state["world"].captain.silver += outcome.silver_delta
-    attach_contracts(entry, [contract_row(
+def stash_resolution(state, contract, outcome) -> dict:
+    row = contract_row(
         contract,
         outcome.outcome_type,
         outcome.silver_delta,
@@ -479,7 +463,45 @@ def do_complete(state, offer_id: str, entry: dict) -> None:
         outcome.standing_delta,
         outcome.heat_delta,
         outcome.summary,
-    )])
+    )
+    state.setdefault("resolved_contracts", {})[contract.offer_id] = row
+    return row
+
+
+def settle_fulfilled(state) -> list[dict]:
+    """resolve_completed, then silver and the house-books equivalent on the board."""
+    board = state["board"]
+    ready = [
+        c for c in board.active
+        if c.status == "accepted" and c.delivered_quantity >= c.required_quantity
+    ]
+    outcomes = resolve_completed(board, state["world"].day)
+    rows = []
+    for outcome in outcomes:
+        state["world"].captain.silver += outcome.silver_delta
+        contract = next(c for c in ready if c.offer_id == outcome.contract_id)
+        rows.append(stash_resolution(state, contract, outcome))
+    return rows
+
+
+def do_complete(state, offer_id: str, entry: dict) -> None:
+    """Same settlement as sell. A second call returns the recorded outcome."""
+    board = state["board"]
+    contract = next((c for c in board.active if c.offer_id == offer_id), None)
+    if contract is None:
+        row = state.get("resolved_contracts", {}).get(offer_id)
+        if row is None:
+            raise ScriptError("No active contract with that ID")
+        attach_contracts(entry, [row])
+        return
+    if contract.status != "accepted":
+        raise ScriptError("No active contract with that ID")
+    if contract.delivered_quantity < contract.required_quantity:
+        raise ScriptError("Contract is not yet fulfilled")
+    rows = [row for row in settle_fulfilled(state) if row["contract_id"] == offer_id]
+    if not rows:
+        raise ScriptError("Contract is not yet fulfilled")
+    attach_contracts(entry, rows)
 
 
 def split_stances(tokens: list[str]) -> list[str]:

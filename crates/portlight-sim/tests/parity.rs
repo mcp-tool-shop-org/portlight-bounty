@@ -236,6 +236,7 @@ fn goldens_guard_the_checklist_paths() {
     assert!(saw_dock_work, "dock work is not in a golden");
     for name in [
         "contract_accept.json",
+        "contract_arrival_rng.json",
         "contract_complete.json",
         "contract_expire.json",
     ] {

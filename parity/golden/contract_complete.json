@@ -1717,7 +1717,25 @@
         "day": 4
       },
       "events": [],
-      "shocks": []
+      "shocks": [],
+      "contracts": [
+        {
+          "contract_id": "71773aae754b",
+          "outcome_type": "completed_bonus",
+          "family": "shortage",
+          "good_id": "grain",
+          "quantity": 23,
+          "delivered_quantity": 23,
+          "destination_port_id": "corsairs_rest",
+          "deadline_day": 19,
+          "reward_silver": 552,
+          "silver_delta": 612,
+          "trust_delta": 2,
+          "standing_delta": 1,
+          "heat_delta": -1,
+          "summary": "Delivered 23 grain to corsairs_rest (early bonus: +60 silver)"
+        }
+      ]
     },
     {
       "command": "complete_contract 71773aae754b",
