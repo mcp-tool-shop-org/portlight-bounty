@@ -2,5 +2,5 @@ new merchant Ada 42
 buy grain 8
 depart silva_bay
 advance
-duel slash,slash,parry,slash,slash,parry,thrust,parry,parry
+duel thrust,thrust,thrust,slash,thrust,slash,thrust,parry,parry
 advance

@@ -2,11 +2,11 @@
 //!
 //! Python keeps the relationships in `content/cross_port_networks.py` and
 //! looks them up from `engine/consequences.py` when a trusted captain hears
-//! gossip. The draw itself stays with the caller: this module does not touch
-//! an RNG. `gossip` builds the same sentence consequences would, given the
-//! relationship the caller already chose.
+//! gossip. [`gossip`] draws `rng.choice` on the relationships that touch the
+//! port, which is `Random.choice` / [`crate::pyrand::PyRandom::choice_index`].
 
 use crate::content::{self, CrossPortNetworkDef};
+use crate::pyrand::PyRandom;
 
 /// Relationships in one network: `merchant`, `tavern`, `broker`, or `inspector`.
 pub fn relationships(network: &str) -> Vec<&'static CrossPortNetworkDef> {
@@ -43,12 +43,15 @@ pub fn player_impacts_at(port_id: &str) -> Vec<&'static str> {
 
 /// The gossip consequence `check_port_consequences` builds after `rng.choice`.
 ///
-/// `index` is the chosen relationship among [`relationships_for_port`].
-/// `remote_port_name` is the display name of the other port; Python falls
-/// back to the port id when the port is missing.
-pub fn gossip(port_id: &str, index: usize, remote_port_name: &str) -> Option<NetworkGossip> {
+/// The draw is the relationship among [`relationships_for_port`], in catalog
+/// order. The remote port's display name comes from the world catalog; Python
+/// falls back to the port id when that port is missing.
+pub fn gossip(port_id: &str, rng: &mut PyRandom) -> Option<NetworkGossip> {
     let rels = relationships_for_port(port_id);
-    let rel = rels.get(index).copied()?;
+    if rels.is_empty() {
+        return None;
+    }
+    let rel = rels[rng.choice_index(rels.len())];
     let local_here = rel.npc_a_port == port_id;
     let local_name = if local_here {
         rel.npc_a_name.as_str()
@@ -65,6 +68,10 @@ pub fn gossip(port_id: &str, index: usize, remote_port_name: &str) -> Option<Net
     } else {
         rel.npc_a_port.as_str()
     };
+    let remote_port_name = content::content()
+        .port(remote_port)
+        .map(|port| port.name.as_str())
+        .unwrap_or(remote_port);
     let text = format!(
         "At the exchange, {local_name} pulls you aside. 'I heard from {remote_name} at {remote_port_name} — they mentioned your name. You're building a reputation, Captain. The people who matter are starting to notice.' A pause. 'That can be good or bad. Depends on what you do next.'"
     );
@@ -147,9 +154,14 @@ mod tests {
 
     #[test]
     fn gossip_names_the_local_npc() {
-        let gossip = gossip("porto_novo", 0, "Sun Harbor").expect("relationship");
-        assert!(gossip.text.contains(&gossip.local_name));
-        assert!(gossip.text.contains("Sun Harbor"));
-        assert!(!gossip.player_impact.is_empty());
+        let mut rng = crate::pyrand::PyRandom::from_seed(1);
+        let heard = gossip("porto_novo", &mut rng).expect("relationship");
+        let mut again = crate::pyrand::PyRandom::from_seed(1);
+        let second = gossip("porto_novo", &mut again).expect("relationship");
+        assert_eq!(heard, second);
+        assert!(heard.text.contains(&heard.local_name));
+        assert!(heard.text.contains(&heard.remote_name));
+        assert!(!heard.player_impact.is_empty());
+        assert!(gossip("no_such_port", &mut rng).is_none());
     }
 }

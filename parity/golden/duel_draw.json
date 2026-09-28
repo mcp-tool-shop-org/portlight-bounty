@@ -71,12 +71,14 @@
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 14,
+    "progress": 11,
     "days_elapsed": 2,
     "status": "at_sea",
     "recent_events": [
       "pirates",
-      "nothing"
+      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+      "calm_seas"
     ]
   },
   "pending_duel": null,
@@ -1603,6 +1605,26 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 42",
@@ -1650,12 +1672,34 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "Strength 6, balanced fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
     },
     {
-      "command": "duel slash,slash,parry,slash,slash,parry,thrust,parry,parry",
+      "command": "duel thrust,thrust,thrust,slash,thrust,slash,thrust,parry,parry",
       "error": null,
       "receipt": null,
       "events": [],
@@ -1669,25 +1713,25 @@
         "standing_delta": 2,
         "rounds": [
           {
-            "player_stance": "slash",
+            "player_stance": "thrust",
             "opponent_stance": "thrust",
-            "damage_to_opponent": 0,
-            "damage_to_player": 2,
-            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
           },
           {
-            "player_stance": "slash",
+            "player_stance": "thrust",
             "opponent_stance": "slash",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Blades cross in a shower of sparks. Matched power."
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
           },
           {
-            "player_stance": "parry",
+            "player_stance": "thrust",
             "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You lunge forward, but their parry turns your blade aside."
           },
           {
             "player_stance": "slash",
@@ -1697,18 +1741,18 @@
             "flavor": "Your slash meets empty air \u2014 they were already thrusting."
           },
           {
-            "player_stance": "slash",
-            "opponent_stance": "thrust",
+            "player_stance": "thrust",
+            "opponent_stance": "parry",
             "damage_to_opponent": 0,
             "damage_to_player": 2,
-            "flavor": "Your slash meets empty air \u2014 they were already thrusting."
+            "flavor": "You lunge forward, but their parry turns your blade aside."
           },
           {
-            "player_stance": "parry",
-            "opponent_stance": "thrust",
+            "player_stance": "slash",
+            "opponent_stance": "parry",
             "damage_to_opponent": 2,
             "damage_to_player": 0,
-            "flavor": "You read the thrust perfectly. Their blade slides past as yours finds the opening."
+            "flavor": "A wide arc catches them mid-parry. The cut connects."
           },
           {
             "player_stance": "thrust",
@@ -1720,7 +1764,7 @@
           {
             "player_stance": "parry",
             "opponent_stance": "thrust",
-            "damage_to_opponent": 3,
+            "damage_to_opponent": 2,
             "damage_to_player": 0,
             "flavor": "You read the thrust perfectly. Their blade slides past as yours finds the opening."
           },
@@ -1740,13 +1784,13 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.0,
+          "speed_modifier": 0.6,
           "cargo_lost": [],
           "flavor": ""
         }

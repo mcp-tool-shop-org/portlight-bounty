@@ -1,24 +1,15 @@
 {
-  "seed": 42,
+  "seed": 4,
   "day": 3,
-  "trade_seq": 1,
+  "trade_seq": 0,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 462,
+    "silver": 547,
     "provisions": 28,
     "day": 3,
     "wanted_level": 0,
-    "cargo": [
-      {
-        "good_id": "grain",
-        "quantity": 8,
-        "cost_basis": 64,
-        "acquired_port": "porto_novo",
-        "acquired_region": "Mediterranean",
-        "acquired_day": 1
-      }
-    ],
+    "cargo": [],
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
@@ -56,30 +47,21 @@
       "port_standing": [],
       "underworld": {},
       "incidents": []
-    },
-    "encounters": [
-      {
-        "captain_id": "scarlet_ana",
-        "faction_id": "crimson_tide",
-        "day": 2,
-        "outcome": "duel_loss",
-        "region": "Mediterranean"
-      }
-    ],
-    "duels_lost": 1
+    }
   },
   "voyage": {
     "origin_id": "porto_novo",
     "destination_id": "silva_bay",
     "distance": 16,
-    "progress": 14,
+    "progress": 11,
     "days_elapsed": 2,
     "status": "at_sea",
     "recent_events": [
-      "pirates",
-      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
-      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
-      "merchant_encounter"
+      "calm_seas",
+      "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
+      "The Mediterranean in spring is kind. Gentle swells, clear horizons, and a breeze that fills the sails without testing the rigging. The sea remembers how to be generous.",
+      "merchant_encounter",
+      "Your ship's carpenter examines the hull planking and nods. 'Silva Bay timber. Best in the Mediterranean. This wood will outlast all of us.'"
     ]
   },
   "pending_duel": null,
@@ -89,9 +71,9 @@
       "market": [
         {
           "good_id": "grain",
-          "stock": 32,
-          "buy_price": 9,
-          "sell_price": 9,
+          "stock": 40,
+          "buy_price": 7,
+          "sell_price": 7,
           "flood_penalty": 0.0
         },
         {
@@ -1451,8 +1433,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Earn 1538 more silver"
+          "detail": "Silver: 547",
+          "action": "Earn 1453 more silver"
         }
       ]
     },
@@ -1484,19 +1466,19 @@
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -64, heat: 0",
+          "detail": "Profit: 0, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Accumulate 1038 more silver"
+          "detail": "Silver: 547",
+          "action": "Accumulate 953 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 1, max heat: 0",
+          "detail": "Trades: 0, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1541,8 +1523,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Earn 1538 more silver"
+          "detail": "Silver: 547",
+          "action": "Earn 1453 more silver"
         }
       ]
     },
@@ -1580,8 +1562,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 462",
-          "action": "Earn 2538 more silver"
+          "detail": "Silver: 547",
+          "action": "Earn 2453 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1608,18 +1590,11 @@
   ],
   "narrative": {
     "fired": [
-      "first_voyage",
-      "survived_pirates"
+      "first_voyage"
     ],
     "journal": [
       {
         "beat_id": "first_voyage",
-        "day": 2,
-        "port_id": "",
-        "region": ""
-      },
-      {
-        "beat_id": "survived_pirates",
         "day": 2,
         "port_id": "",
         "region": ""
@@ -1628,26 +1603,9 @@
   },
   "log": [
     {
-      "command": "new merchant Ada 42",
+      "command": "new merchant Ada 4",
       "error": null,
       "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "buy grain 8",
-      "error": null,
-      "receipt": {
-        "receipt_id": "42471bdaf1a4a6ea",
-        "action": "buy",
-        "good_id": "grain",
-        "quantity": 8,
-        "unit_price": 8,
-        "total_price": 64,
-        "stock_before": 40,
-        "stock_after": 32,
-        "day": 1
-      },
       "events": [],
       "shocks": []
     },
@@ -1664,19 +1622,19 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "pirates",
-          "message": "Scarlet Ana of the The Crimson Tide blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.0,
+          "speed_modifier": 0.6,
           "cargo_lost": [],
-          "flavor": "Strength 6, balanced fighter."
+          "flavor": ""
         },
         {
           "event_type": "nothing",
-          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "message": "A fishing boat crosses your path. The fisherman shouts: 'Elena's building something big! Three masts! I saw the keel!'",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
@@ -1687,69 +1645,17 @@
         },
         {
           "event_type": "nothing",
-          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "message": "The Mediterranean in spring is kind. Gentle swells, clear horizons, and a breeze that fills the sails without testing the rigging. The sea remembers how to be generous.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "[crew]"
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
-    },
-    {
-      "command": "resolve_duel",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": [],
-      "duel": {
-        "opponent_id": "scarlet_ana",
-        "opponent_name": "Scarlet Ana",
-        "player_won": false,
-        "draw": false,
-        "silver_delta": -33,
-        "standing_delta": -2,
-        "rounds": [
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 3,
-            "damage_to_player": 0,
-            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "parry",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both hold their ground, blades locked. A test of strength."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
-          }
-        ]
-      }
     },
     {
       "command": "advance",
@@ -1758,14 +1664,25 @@
       "events": [
         {
           "event_type": "merchant_encounter",
-          "message": "A passing merchant offers information and a small gift. (+18 silver)",
+          "message": "A passing merchant offers information and a small gift. (+6 silver)",
           "hull_delta": 0,
           "provision_delta": 0,
-          "silver_delta": 18,
+          "silver_delta": 6,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your ship's carpenter examines the hull planking and nods. 'Silva Bay timber. Best in the Mediterranean. This wood will outlast all of us.'",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []

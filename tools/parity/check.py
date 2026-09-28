@@ -52,6 +52,9 @@ def run_rust(script_path: str) -> dict:
 
 def run_oracle(script_path: str) -> dict:
     env = os.environ.copy()
+    # Trade-intelligence consequences draw rng.choice(list(set_of_ports)).
+    # CPython 3.12 set order follows PYTHONHASHSEED. The Rust side matches seed 0.
+    env["PYTHONHASHSEED"] = "0"
     proc = subprocess.run(
         [sys.executable, ORACLE, script_path],
         check=False,

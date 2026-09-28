@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 505,
+    "silver": 479,
     "provisions": 24,
     "day": 7,
     "wanted_level": 0,
@@ -22,7 +22,7 @@
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 53,
+      "hull": 52,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
@@ -48,40 +48,30 @@
       "heat": {
         "Mediterranean": 0,
         "North Atlantic": 0,
-        "West Africa": 2,
+        "West Africa": 0,
         "East Indies": 0,
         "South Seas": 0
       },
       "commercial_trust": 15,
       "port_standing": [],
       "underworld": {},
-      "incidents": [
-        {
-          "day": 7,
-          "port_id": "porto_novo",
-          "region": "West Africa",
-          "incident_type": "inspection",
-          "description": "Routine inspection (8 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        }
-      ]
+      "incidents": []
     }
   },
   "voyage": {
     "origin_id": "porto_novo",
     "destination_id": "sun_harbor",
     "distance": 40,
-    "progress": 29,
+    "progress": 31,
     "days_elapsed": 6,
     "status": "at_sea",
     "recent_events": [
-      "nothing",
-      "storm",
+      "lighthouse",
+      "Your navigator explains the stars to a young sailor. The old hands pretend not to listen. They listen anyway.",
+      "pirates",
       "calm_seas",
-      "nothing",
-      "inspection"
+      "calm_seas",
+      "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility."
     ]
   },
   "pending_duel": null,
@@ -1447,14 +1437,14 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 2",
-          "action": "Reduce customs heat from 2 to 5 or below"
+          "detail": "Max heat: 0",
+          "action": "Reduce customs heat from 0 to 5 or below"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Earn 1495 more silver"
+          "detail": "Silver: 479",
+          "action": "Earn 1521 more silver"
         }
       ]
     },
@@ -1474,31 +1464,31 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "missing",
-          "detail": "Max heat: 2",
-          "action": "Shadow commerce requires operating under customs pressure (heat 2, need 10+)"
+          "detail": "Max heat: 0",
+          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 2",
-          "action": "Reduce heat from 2 \u2014 network collapses above 40"
+          "detail": "Max heat: 0",
+          "action": "Reduce heat from 0 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -16, heat: 2",
+          "detail": "Profit: -16, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Accumulate 995 more silver"
+          "detail": "Silver: 479",
+          "action": "Accumulate 1021 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 1, max heat: 2",
+          "detail": "Trades: 1, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1543,8 +1533,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Earn 1495 more silver"
+          "detail": "Silver: 479",
+          "action": "Earn 1521 more silver"
         }
       ]
     },
@@ -1582,8 +1572,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 505",
-          "action": "Earn 2495 more silver"
+          "detail": "Silver: 479",
+          "action": "Earn 2521 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1608,6 +1598,26 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 5,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 4",
@@ -1655,25 +1665,28 @@
           "speed_modifier": 0.6,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+        },
         {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "A pod of dolphins escorts you for an hour. Your bosun says it's a sign of welcome from the coast. The crew believes him.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[encounter]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Steady wind, steady sun, steady sea. The Gold Coast in dry season is sailing as it should be \u2014 predictable, warm, and kind. Your ship makes good time without drama.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []
@@ -1684,13 +1697,73 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "storm",
-          "message": "A violent storm batters the ship! (-7 hull)",
-          "hull_delta": -7,
+          "event_type": "merchant_encounter",
+          "message": "A passing merchant offers information and a small gift. (+6 silver)",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 6,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "You pass a merchant vessel flying the Exchange Alliance flag, heading north. 'Cotton north, grain south,' your navigator says. 'Been this way for centuries.'",
+          "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 0.5,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "lighthouse",
+          "message": "The beacon of Porto Novo breaks through the haze. You're on course.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.1,
+          "cargo_lost": [],
+          "flavor": "Known waters. The charts don't lie."
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your navigator explains the stars to a young sailor. The old hands pretend not to listen. They listen anyway.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "pirates",
+          "message": "Pirates attack! You fight them off but lose 40 silver. (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": -40,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
         }
@@ -1722,34 +1795,26 @@
       "receipt": null,
       "events": [
         {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 8 silver fee.",
-          "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": -8,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[crew]"
         }
       ],
       "shocks": []

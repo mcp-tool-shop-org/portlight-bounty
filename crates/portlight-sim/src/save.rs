@@ -22,12 +22,13 @@ use crate::economy::TradeReceipt;
 use crate::encounter::{self, EncounterState};
 use crate::error::SimError;
 use crate::model::{
-    ActiveContract, ActivePolicy, Armor, BreachRecord, BrokerOffice, Captain, CaptainMemory,
-    CaptainRelationship, CargoItem, Companion, Contract, ContractBoard, ContractOutcome,
-    CreditState, DeferredFee, EncounterMemory, FleetShip, Incident, InfrastructureRecord, Injury,
-    InstalledUpgrade, InsuranceClaim, MarketSlot, Officer, OwnedLicense, Party, PendingDuel,
-    PirateEncounterRecord, Port, Route, Ship, Skill, Standing, StoredLot, Voyage, VoyageStatus,
-    WarehouseLease, Weapon, WeaponProvenance, World,
+    ActiveContract, ActiveFestival, ActivePolicy, Armor, BreachRecord, BrokerOffice, Captain,
+    CaptainMemory, CaptainRelationship, CargoItem, Companion, Contract, ContractBoard,
+    ContractOutcome, CreditState, CulturalState, DeferredFee, EncounterMemory, FleetShip, Incident,
+    InfrastructureRecord, Injury, InstalledUpgrade, InsuranceClaim, JournalEntry, MarketSlot,
+    NarrativeState, Officer, OwnedLicense, Party, PendingDuel, PirateEncounterRecord, Port, Route,
+    Ship, Skill, Standing, StoredLot, Voyage, VoyageStatus, WarehouseLease, Weapon,
+    WeaponProvenance, World,
 };
 
 pub const SAVE_DIR: &str = "saves";
@@ -84,6 +85,7 @@ pub(crate) struct LoadedGame {
     pub player_combat: Option<CombatantState>,
     pub opponent_combat: Option<CombatantState>,
     pub pending_victory: bool,
+    pub narrative: NarrativeState,
 }
 
 /// Filename for a slot. Characters outside letters, digits, `-`, and `_` are
@@ -116,11 +118,14 @@ pub(crate) fn write_save(
     board: &ContractBoard,
     live: LiveEncounter<'_>,
     infra: &crate::model::InfrastructureRecord,
+    narrative: &NarrativeState,
 ) -> Result<PathBuf, SimError> {
     let dir = base.join(SAVE_DIR);
     fs::create_dir_all(&dir).map_err(io_err)?;
     let path = dir.join(save_filename(slot));
-    let value = encode(world, receipts, run_id, books, board, live, infra);
+    let value = encode(
+        world, receipts, run_id, books, board, live, infra, narrative,
+    );
     let text =
         serde_json::to_string_pretty(&value).map_err(|err| SimError::SaveIo(err.to_string()))?;
     fs::write(&path, text).map_err(io_err)?;
@@ -510,6 +515,7 @@ fn encode(
     board: &ContractBoard,
     live: LiveEncounter<'_>,
     infra: &crate::model::InfrastructureRecord,
+    narrative: &NarrativeState,
 ) -> Value {
     let mut ports = Map::new();
     for port in &world.ports {
@@ -526,6 +532,7 @@ fn encode(
         ("voyage", voyage_value(&world.voyage)),
         ("day", Value::from(world.day)),
         ("seed", seed_value(world.seed)),
+        ("cultural_state", culture_value(&world.culture)),
         (
             "pirate_state",
             pirate_value(
@@ -540,6 +547,7 @@ fn encode(
         ("contract_board", board_value(board, books)),
         ("infrastructure", infra_value(infra)),
         ("campaign", campaign_value(books)),
+        ("narrative", narrative_value(narrative)),
     ])
 }
 
@@ -633,6 +641,9 @@ fn decode(data: &Value) -> Option<LoadedGame> {
             seed,
             pending_duel,
             captain_memories: pirate.captain_memories,
+            culture: culture_from(data.get("cultural_state")),
+            sea_culture: crate::model::SeaCultureState::default(),
+            nemesis_id: pirate.nemesis_id,
         },
         receipts: ledger.receipts,
         run_id: ledger.run_id,
@@ -643,6 +654,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         player_combat: pirate.player,
         opponent_combat: pirate.opponent,
         pending_victory: pirate.pending_victory,
+        narrative: narrative_from(data.get("narrative")),
     })
 }
 
@@ -651,6 +663,7 @@ fn captain_value(captain: &Captain, breaches: &[BreachRecord]) -> Value {
         ("name", Value::from(captain.name.as_str())),
         ("captain_type", Value::from(captain.captain_type.as_str())),
         ("silver", Value::from(captain.silver)),
+        ("reputation", Value::from(captain.reputation)),
         (
             "ship",
             captain.ship.as_ref().map(ship_value).unwrap_or(Value::Null),
@@ -730,6 +743,7 @@ fn captain_from(value: &Value) -> Option<Captain> {
         name: req_str(map, "name")?,
         captain_type: opt_str(map, "captain_type").unwrap_or_else(|| "merchant".to_string()),
         silver: req_i64(map, "silver")?,
+        reputation: opt_i64(map, "reputation").unwrap_or(0),
         ship: match truthy(map.get("ship")) {
             Some(ship) => Some(ship_from(ship)?),
             None => None,
@@ -1669,6 +1683,133 @@ fn route_from(value: &Value) -> Option<Route> {
     })
 }
 
+fn culture_value(state: &CulturalState) -> Value {
+    let mut visits = Map::new();
+    for (port_id, count) in &state.port_visits {
+        visits.insert(port_id.clone(), Value::from(*count));
+    }
+    json_obj(&[
+        (
+            "active_festivals",
+            Value::Array(
+                state
+                    .active_festivals
+                    .iter()
+                    .map(|fest| {
+                        json_obj(&[
+                            ("festival_id", Value::from(fest.festival_id.as_str())),
+                            ("port_id", Value::from(fest.port_id.as_str())),
+                            ("start_day", Value::from(fest.start_day)),
+                            ("end_day", Value::from(fest.end_day)),
+                        ])
+                    })
+                    .collect(),
+            ),
+        ),
+        (
+            "regions_entered",
+            Value::Array(
+                state
+                    .regions_entered
+                    .iter()
+                    .map(|region| Value::from(region.as_str()))
+                    .collect(),
+            ),
+        ),
+        (
+            "cultural_encounters",
+            Value::from(state.cultural_encounters),
+        ),
+        ("port_visits", Value::Object(visits)),
+        ("festivals_visited", Value::from(state.festivals_visited)),
+    ])
+}
+
+fn culture_from(value: Option<&Value>) -> CulturalState {
+    let Some(map) = value.and_then(Value::as_object) else {
+        return CulturalState::default();
+    };
+    let mut active_festivals = Vec::new();
+    if let Some(saved) = map.get("active_festivals").and_then(Value::as_array) {
+        for fest in saved {
+            let Some(fest) = fest.as_object() else {
+                continue;
+            };
+            active_festivals.push(ActiveFestival {
+                festival_id: opt_str(fest, "festival_id").unwrap_or_default(),
+                port_id: opt_str(fest, "port_id").unwrap_or_default(),
+                start_day: opt_i64(fest, "start_day").unwrap_or(0),
+                end_day: opt_i64(fest, "end_day").unwrap_or(0),
+            });
+        }
+    }
+    let mut port_visits = Vec::new();
+    if let Some(saved) = map.get("port_visits").and_then(Value::as_object) {
+        for (port_id, count) in saved {
+            port_visits.push((port_id.clone(), json_i64(count).unwrap_or(0)));
+        }
+    }
+    CulturalState {
+        active_festivals,
+        regions_entered: string_list(map.get("regions_entered")).unwrap_or_default(),
+        cultural_encounters: opt_i64(map, "cultural_encounters").unwrap_or(0),
+        port_visits,
+        festivals_visited: opt_i64(map, "festivals_visited").unwrap_or(0),
+    }
+}
+
+fn narrative_value(state: &NarrativeState) -> Value {
+    json_obj(&[
+        (
+            "fired",
+            Value::Array(
+                state
+                    .fired
+                    .iter()
+                    .map(|id| Value::from(id.as_str()))
+                    .collect(),
+            ),
+        ),
+        (
+            "journal",
+            Value::Array(state.journal.iter().map(journal_value).collect()),
+        ),
+    ])
+}
+
+fn journal_value(entry: &JournalEntry) -> Value {
+    json_obj(&[
+        ("beat_id", Value::from(entry.beat_id.as_str())),
+        ("day", Value::from(entry.day)),
+        ("port_id", Value::from(entry.port_id.as_str())),
+        ("region", Value::from(entry.region.as_str())),
+    ])
+}
+
+fn narrative_from(value: Option<&Value>) -> NarrativeState {
+    let Some(map) = value.and_then(Value::as_object) else {
+        return NarrativeState::default();
+    };
+    let mut journal = Vec::new();
+    if let Some(saved) = map.get("journal").and_then(Value::as_array) {
+        for entry in saved {
+            let Some(entry) = entry.as_object() else {
+                continue;
+            };
+            journal.push(JournalEntry {
+                beat_id: opt_str(entry, "beat_id").unwrap_or_default(),
+                day: opt_i64(entry, "day").unwrap_or(0),
+                port_id: opt_str(entry, "port_id").unwrap_or_default(),
+                region: opt_str(entry, "region").unwrap_or_default(),
+            });
+        }
+    }
+    NarrativeState {
+        fired: string_list(map.get("fired")).unwrap_or_default(),
+        journal,
+    }
+}
+
 fn voyage_value(voyage: &Voyage) -> Value {
     json_obj(&[
         ("origin_id", Value::from(voyage.origin_id.as_str())),
@@ -1738,7 +1879,13 @@ fn pirate_value(
                 .collect(),
         ),
     );
-    map.insert("nemesis_id".to_string(), Value::Null);
+    map.insert(
+        "nemesis_id".to_string(),
+        match &world.nemesis_id {
+            Some(id) => Value::from(id.as_str()),
+            None => Value::Null,
+        },
+    );
     map.insert("duels_won".to_string(), Value::from(captain.duels_won));
     map.insert("duels_lost".to_string(), Value::from(captain.duels_lost));
     map.insert(
@@ -2014,6 +2161,7 @@ struct PirateLoaded {
     opponent: Option<CombatantState>,
     captain_memories: Vec<CaptainMemory>,
     pending_victory: bool,
+    nemesis_id: Option<String>,
 }
 
 fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
@@ -2055,6 +2203,10 @@ fn pirate_from(value: &Value, captain: &Captain) -> Option<PirateLoaded> {
         opponent,
         captain_memories: memories_from(map.get("captain_memories"))?,
         pending_victory: opt_bool(estate, "pending_victory").unwrap_or(false),
+        nemesis_id: match map.get("nemesis_id") {
+            Some(Value::String(id)) if !id.is_empty() => Some(id.clone()),
+            _ => None,
+        },
     })
 }
 

@@ -79,6 +79,16 @@ pub struct VoyageEvent {
 }
 
 impl VoyageEvent {
+    pub(crate) fn annotated(
+        event_type: EventType,
+        message: impl Into<String>,
+        flavor: impl Into<String>,
+    ) -> Self {
+        let mut event = Self::new(event_type, message);
+        event.flavor = flavor.into();
+        event
+    }
+
     fn new(event_type: EventType, message: impl Into<String>) -> Self {
         Self {
             event_type,

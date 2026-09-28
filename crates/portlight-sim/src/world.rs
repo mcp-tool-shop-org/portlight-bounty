@@ -32,6 +32,7 @@ pub fn new_game(
             name: captain_name.to_string(),
             captain_type: captain_type.to_string(),
             silver: captain_def.starting_silver,
+            reputation: 0,
             ship: Some(Ship::from_template(ship_def)),
             cargo: Vec::new(),
             provisions: captain_def.starting_provisions,
@@ -77,6 +78,9 @@ pub fn new_game(
         seed,
         pending_duel: None,
         captain_memories: Vec::new(),
+        culture: crate::model::CulturalState::default(),
+        sea_culture: crate::model::SeaCultureState::default(),
+        nemesis_id: None,
     })
 }
 

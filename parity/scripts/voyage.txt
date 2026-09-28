@@ -1,13 +1,11 @@
+# Seed 9. resolve_duel clears the Butcher so the crossing can finish.
+# Arrival, three in-port days, then one grain sold at Silva Bay.
 new merchant Ada 9
 buy grain 8
 depart silva_bay
 advance
 advance
-advance
-advance
-advance
-advance
-advance
+resolve_duel
 advance
 advance
 advance

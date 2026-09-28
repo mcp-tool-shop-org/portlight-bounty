@@ -66,7 +66,9 @@
     "days_elapsed": 1,
     "status": "at_sea",
     "recent_events": [
-      "pirates"
+      "pirates",
+      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous."
     ]
   },
   "pending_duel": {
@@ -1600,6 +1602,26 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 42",
@@ -1647,6 +1669,28 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "Strength 6, balanced fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []

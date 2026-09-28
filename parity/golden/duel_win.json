@@ -12,8 +12,8 @@
     "cargo": [
       {
         "good_id": "grain",
-        "quantity": 8,
-        "cost_basis": 64,
+        "quantity": 5,
+        "cost_basis": 40,
         "acquired_port": "porto_novo",
         "acquired_region": "Mediterranean",
         "acquired_day": 1
@@ -77,7 +77,10 @@
     "status": "at_sea",
     "recent_events": [
       "pirates",
-      "nothing"
+      "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+      "cargo_damaged",
+      "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey."
     ]
   },
   "pending_duel": null,
@@ -1604,6 +1607,33 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_pirates",
+      "first_duel_win"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "first_duel_win",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 42",
@@ -1651,12 +1681,34 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "Strength 6, balanced fighter."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A timber barge from Silva Bay passes, logs lashed together and riding the current. The smell of fresh-cut oak carries across the water.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
     },
     {
-      "command": "duel thrust,slash,thrust,thrust,parry,thrust",
+      "command": "duel thrust,thrust,slash,parry,slash",
       "error": null,
       "receipt": null,
       "events": [],
@@ -1677,39 +1729,32 @@
             "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
           },
           {
+            "player_stance": "thrust",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 3,
+            "damage_to_player": 0,
+            "flavor": "A wide arc catches them mid-parry. The cut connects."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 3,
+            "damage_to_player": 0,
+            "flavor": "You read the thrust perfectly. Their blade slides past as yours finds the opening."
+          },
+          {
             "player_stance": "slash",
             "opponent_stance": "parry",
             "damage_to_opponent": 2,
             "damage_to_player": 0,
             "flavor": "A wide arc catches them mid-parry. The cut connects."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 2,
-            "damage_to_player": 0,
-            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 1,
-            "damage_to_player": 1,
-            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
-          },
-          {
-            "player_stance": "parry",
-            "opponent_stance": "thrust",
-            "damage_to_opponent": 2,
-            "damage_to_player": 0,
-            "flavor": "You read the thrust perfectly. Their blade slides past as yours finds the opening."
-          },
-          {
-            "player_stance": "thrust",
-            "opponent_stance": "slash",
-            "damage_to_opponent": 3,
-            "damage_to_player": 0,
-            "flavor": "Your blade finds its mark \u2014 a clean thrust past their guard."
           }
         ]
       }
@@ -1720,15 +1765,31 @@
       "receipt": null,
       "events": [
         {
+          "event_type": "cargo_damaged",
+          "message": "Rough seas damaged 3 units of grain in the hold.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [
+            {
+              "good_id": "grain",
+              "quantity": 3
+            }
+          ],
+          "flavor": ""
+        },
+        {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[weather]"
         }
       ],
       "shocks": []

@@ -5,7 +5,7 @@
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 541,
+    "silver": 530,
     "provisions": 28,
     "day": 3,
     "wanted_level": 0,
@@ -37,7 +37,7 @@
         "South Seas": 0
       },
       "heat": {
-        "Mediterranean": 0,
+        "Mediterranean": 2,
         "North Atlantic": 0,
         "West Africa": 0,
         "East Indies": 0,
@@ -46,7 +46,18 @@
       "commercial_trust": 15,
       "port_standing": [],
       "underworld": {},
-      "incidents": []
+      "incidents": [
+        {
+          "day": 3,
+          "port_id": "porto_novo",
+          "region": "Mediterranean",
+          "incident_type": "inspection",
+          "description": "Routine inspection (11 silver fee)",
+          "heat_delta": 2,
+          "standing_delta": 0,
+          "trust_delta": 0
+        }
+      ]
     }
   },
   "voyage": {
@@ -58,7 +69,8 @@
     "status": "at_sea",
     "recent_events": [
       "nothing",
-      "musician_aboard"
+      "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+      "inspection"
     ]
   },
   "pending_duel": null,
@@ -1424,14 +1436,14 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 0",
-          "action": "Reduce customs heat from 0 to 5 or below"
+          "detail": "Max heat: 2",
+          "action": "Reduce customs heat from 2 to 5 or below"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 541",
-          "action": "Earn 1459 more silver"
+          "detail": "Silver: 530",
+          "action": "Earn 1470 more silver"
         }
       ]
     },
@@ -1451,31 +1463,31 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "missing",
-          "detail": "Max heat: 0",
-          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
+          "detail": "Max heat: 2",
+          "action": "Shadow commerce requires operating under customs pressure (heat 2, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 0",
-          "action": "Reduce heat from 0 \u2014 network collapses above 40"
+          "detail": "Max heat: 2",
+          "action": "Reduce heat from 2 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 0, heat: 0",
+          "detail": "Profit: 0, heat: 2",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 541",
-          "action": "Accumulate 959 more silver"
+          "detail": "Silver: 530",
+          "action": "Accumulate 970 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 0, max heat: 0",
+          "detail": "Trades: 0, max heat: 2",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1520,8 +1532,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 541",
-          "action": "Earn 1459 more silver"
+          "detail": "Silver: 530",
+          "action": "Earn 1470 more silver"
         }
       ]
     },
@@ -1559,8 +1571,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 541",
-          "action": "Earn 2459 more silver"
+          "detail": "Silver: 530",
+          "action": "Earn 2470 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1585,6 +1597,26 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "first_inspection"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "first_inspection",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 8",
@@ -1615,6 +1647,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1625,15 +1668,15 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "musician_aboard",
-          "message": "A northern ballad, deep and slow, about iron and ice and the lights in winter skies.",
+          "event_type": "inspection",
+          "message": "A patrol inspects your cargo and levies a 11 silver fee.",
           "hull_delta": 0,
           "provision_delta": 0,
-          "silver_delta": 0,
+          "silver_delta": -11,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "For a moment, the sea feels smaller."
+          "flavor": ""
         }
       ],
       "shocks": []

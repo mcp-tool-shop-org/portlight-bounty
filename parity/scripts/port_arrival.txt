@@ -1,0 +1,7 @@
+new merchant Ada 2
+arrival_narrative
+depart silva_bay
+advance
+advance
+advance
+advance

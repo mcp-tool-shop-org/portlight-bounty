@@ -57,7 +57,8 @@
     "days_elapsed": 1,
     "status": "at_sea",
     "recent_events": [
-      "sea_ceremony"
+      "sea_ceremony",
+      "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey."
     ]
   },
   "pending_duel": null,
@@ -1584,6 +1585,19 @@
       "family": "lawful_house"
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 23",
@@ -1614,6 +1628,17 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "Some rituals are older than the ships that carry them."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []

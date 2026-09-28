@@ -18,7 +18,7 @@ from enum import Enum
 from portlight.content.armor import ARMOR
 from portlight.content.cross_port_networks import ALL_CROSS_PORT_RELATIONSHIPS
 from portlight.content.contracts import TEMPLATES
-from portlight.content.factions import FACTIONS, PIRATE_CAPTAINS
+from portlight.content.factions import FACTIONS, FACTION_RELATIONSHIPS, PIRATE_CAPTAINS
 from portlight.content.fighting_styles import FIGHTING_STYLES
 from portlight.content.goods import GOODS
 from portlight.content.infrastructure import (
@@ -251,6 +251,186 @@ def campaign_payload() -> dict:
     }
 
 
+def _culture() -> dict:
+    from portlight.content.culture import PORT_CULTURES, REGION_CULTURES
+
+    return {
+        "regions": [
+            {
+                "id": rc.id,
+                "region_name": rc.region_name,
+                "cultural_name": rc.cultural_name,
+                "ethos": rc.ethos,
+                "trade_philosophy": rc.trade_philosophy,
+                "sacred_goods": list(rc.sacred_goods),
+                "forbidden_goods": list(rc.forbidden_goods),
+                "prized_goods": list(rc.prized_goods),
+                "greeting": rc.greeting,
+                "farewell": rc.farewell,
+                "proverb": rc.proverb,
+                "weather_flavor": list(rc.weather_flavor),
+                "festivals": [
+                    {
+                        "id": fest.id,
+                        "name": fest.name,
+                        "description": fest.description,
+                        "region": fest.region,
+                        "frequency_days": fest.frequency_days,
+                        "market_effects": dict(fest.market_effects),
+                        "duration_days": fest.duration_days,
+                        "standing_bonus": fest.standing_bonus,
+                    }
+                    for fest in rc.festivals
+                ],
+            }
+            for rc in REGION_CULTURES.values()
+        ],
+        "ports": [
+            {
+                "port_id": pc.port_id,
+                "landmark": pc.landmark,
+                "local_custom": pc.local_custom,
+                "atmosphere": pc.atmosphere,
+                "dock_scene": pc.dock_scene,
+                "tavern_rumor": pc.tavern_rumor,
+                "cultural_group": pc.cultural_group,
+                "cultural_group_description": pc.cultural_group_description,
+            }
+            for pc in PORT_CULTURES.values()
+        ],
+    }
+
+
+def _sea_culture() -> dict:
+    from portlight.content.sea_culture import (
+        CREW_MOODS,
+        NPC_SIGHTINGS,
+        REGION_ENCOUNTERS,
+        ROUTE_ENCOUNTERS,
+        SEA_SUPERSTITIONS,
+        WEATHER_NARRATIVES,
+    )
+
+    def table(item):
+        return {
+            "route_key": item.route_key,
+            "encounters": [
+                {
+                    "text": enc.text,
+                    "category": enc.category,
+                    "mechanical_effect": enc.mechanical_effect,
+                }
+                for enc in item.encounters
+            ],
+        }
+
+    return {
+        "route_encounters": [table(item) for item in ROUTE_ENCOUNTERS.values()],
+        "region_encounters": [table(item) for item in REGION_ENCOUNTERS.values()],
+        "npc_sightings": [
+            {
+                "npc_name": sight.npc_name,
+                "port_id": sight.port_id,
+                "region": sight.region,
+                "text": sight.text,
+            }
+            for sights in NPC_SIGHTINGS.values()
+            for sight in sights
+        ],
+        "weather": [
+            {
+                "region": narrative.region,
+                "season": narrative.season,
+                "departure_text": narrative.departure_text,
+                "mid_voyage_texts": list(narrative.mid_voyage_texts),
+                "arrival_text": narrative.arrival_text,
+                "night_text": narrative.night_text,
+                "crew_weather_reaction": narrative.crew_weather_reaction,
+            }
+            for narrative in WEATHER_NARRATIVES.values()
+        ],
+        "superstitions": [
+            {
+                "id": sup.id,
+                "trigger": sup.trigger,
+                "text": sup.text,
+                "crew_reaction": sup.crew_reaction,
+            }
+            for sup in SEA_SUPERSTITIONS
+        ],
+        "crew_moods": [
+            {
+                "id": mood.id,
+                "condition": mood.condition,
+                "flavor_texts": list(mood.flavor_texts),
+            }
+            for mood in CREW_MOODS
+        ],
+    }
+
+
+def _port_politics() -> dict:
+    from portlight.content.port_politics import (
+        BLOC_RELATIONSHIPS,
+        PORT_POLITICS,
+        TRADE_BLOCS,
+    )
+
+    return {
+        "blocs": [
+            {
+                "id": bloc.id,
+                "name": bloc.name,
+                "port_ids": list(bloc.port_ids),
+                "description": bloc.description,
+                "trade_philosophy": bloc.trade_philosophy,
+                "preferred_partners": list(bloc.preferred_partners),
+                "rivals": list(bloc.rivals),
+                "hostile_to": list(bloc.hostile_to),
+                "loyalty_bonus": bloc.loyalty_bonus,
+                "disloyalty_penalty": bloc.disloyalty_penalty,
+            }
+            for bloc in TRADE_BLOCS.values()
+        ],
+        "ports": [
+            {
+                "port_id": profile.port_id,
+                "bloc_id": profile.bloc_id,
+                "local_rival_port": profile.local_rival_port,
+                "rivalry_reason": profile.rivalry_reason,
+                "trade_embargo": list(profile.trade_embargo),
+                "political_flavor": profile.political_flavor,
+                "port_grudge": profile.port_grudge,
+            }
+            for profile in PORT_POLITICS.values()
+        ],
+        "relationships": [
+            {
+                "bloc_a": rel.bloc_a,
+                "bloc_b": rel.bloc_b,
+                "disposition": rel.disposition,
+                "description": rel.description,
+                "spillover": rel.spillover,
+            }
+            for rel in BLOC_RELATIONSHIPS
+        ],
+    }
+
+
+def _faction_relationships() -> list:
+    return [
+        {
+            "faction_a": rel.faction_a,
+            "faction_b": rel.faction_b,
+            "disposition": rel.disposition,
+            "description": rel.description,
+            "spillover": rel.spillover,
+            "vendetta_trigger": rel.vendetta_trigger,
+        }
+        for rel in FACTION_RELATIONSHIPS
+    ]
+
+
 def main() -> None:
     data = {
         "source_commit": "9b02494cca9cd8f58c4531c41f75be02c9720e43",
@@ -328,6 +508,7 @@ def main() -> None:
                 "title": c.title,
                 "home_region": c.home_region,
                 "home_port_id": c.home_port_id,
+                "mentor_npc_id": c.mentor_npc_id,
                 "starting_silver": c.starting_silver,
                 "starting_ship_id": c.starting_ship_id,
                 "starting_provisions": c.starting_provisions,
@@ -596,6 +777,10 @@ def main() -> None:
         ),
         "port_institutions_east": _profiles(EAST_PROFILES),
         "cross_port_networks": _networks(),
+        "culture": _culture(),
+        "sea_culture": _sea_culture(),
+        "port_politics": _port_politics(),
+        "faction_relationships": _faction_relationships(),
     }
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "crates", "portlight-sim", "data", "content.json")

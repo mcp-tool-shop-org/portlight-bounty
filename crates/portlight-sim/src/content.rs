@@ -113,6 +113,9 @@ pub struct CaptainDef {
     pub title: String,
     pub home_region: String,
     pub home_port_id: String,
+    /// NPC who mentored this archetype. Empty when the template has none.
+    #[serde(default)]
+    pub mentor_npc_id: String,
     pub starting_silver: i64,
     pub starting_ship_id: String,
     pub starting_provisions: i64,
@@ -535,6 +538,176 @@ pub struct PortInstitutionDef {
     pub npcs: Vec<PortNpcDef>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct FestivalDef {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub region: String,
+    pub frequency_days: i64,
+    pub market_effects: BTreeMap<String, f64>,
+    pub duration_days: i64,
+    pub standing_bonus: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RegionCultureDef {
+    pub id: String,
+    pub region_name: String,
+    pub cultural_name: String,
+    pub ethos: String,
+    pub trade_philosophy: String,
+    pub sacred_goods: Vec<String>,
+    pub forbidden_goods: Vec<String>,
+    pub prized_goods: Vec<String>,
+    pub greeting: String,
+    pub farewell: String,
+    pub proverb: String,
+    pub weather_flavor: Vec<String>,
+    pub festivals: Vec<FestivalDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PortCultureDef {
+    pub port_id: String,
+    pub landmark: String,
+    pub local_custom: String,
+    pub atmosphere: String,
+    pub dock_scene: String,
+    pub tavern_rumor: String,
+    pub cultural_group: String,
+    pub cultural_group_description: String,
+}
+
+/// Region cultures and per-port cultural flavor (`content/culture.py`).
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct CultureDef {
+    #[serde(default)]
+    pub regions: Vec<RegionCultureDef>,
+    #[serde(default)]
+    pub ports: Vec<PortCultureDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SeaEncounterDef {
+    pub text: String,
+    pub category: String,
+    #[serde(default)]
+    pub mechanical_effect: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SeaEncounterTableDef {
+    pub route_key: String,
+    pub encounters: Vec<SeaEncounterDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct NpcSightingDef {
+    pub npc_name: String,
+    pub port_id: String,
+    pub region: String,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct WeatherNarrativeDef {
+    pub region: String,
+    pub season: String,
+    pub departure_text: String,
+    pub mid_voyage_texts: Vec<String>,
+    pub arrival_text: String,
+    pub night_text: String,
+    pub crew_weather_reaction: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SeaSuperstitionDef {
+    pub id: String,
+    pub trigger: String,
+    pub text: String,
+    pub crew_reaction: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CrewMoodDef {
+    pub id: String,
+    pub condition: String,
+    pub flavor_texts: Vec<String>,
+}
+
+/// Route flavor, sightings, weather, and crew voice (`content/sea_culture.py`).
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct SeaCultureDef {
+    #[serde(default)]
+    pub route_encounters: Vec<SeaEncounterTableDef>,
+    #[serde(default)]
+    pub region_encounters: Vec<SeaEncounterTableDef>,
+    #[serde(default)]
+    pub npc_sightings: Vec<NpcSightingDef>,
+    #[serde(default)]
+    pub weather: Vec<WeatherNarrativeDef>,
+    #[serde(default)]
+    pub superstitions: Vec<SeaSuperstitionDef>,
+    #[serde(default)]
+    pub crew_moods: Vec<CrewMoodDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TradeBlocDef {
+    pub id: String,
+    pub name: String,
+    pub port_ids: Vec<String>,
+    pub description: String,
+    pub trade_philosophy: String,
+    pub preferred_partners: Vec<String>,
+    pub rivals: Vec<String>,
+    pub hostile_to: Vec<String>,
+    pub loyalty_bonus: f64,
+    pub disloyalty_penalty: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PortPoliticalProfileDef {
+    pub port_id: String,
+    pub bloc_id: String,
+    pub local_rival_port: Option<String>,
+    pub rivalry_reason: String,
+    pub trade_embargo: Vec<String>,
+    pub political_flavor: String,
+    pub port_grudge: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BlocRelationshipDef {
+    pub bloc_a: String,
+    pub bloc_b: String,
+    pub disposition: String,
+    pub description: String,
+    pub spillover: f64,
+}
+
+/// Trade blocs and per-port politics (`content/port_politics.py`).
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct PortPoliticsDef {
+    #[serde(default)]
+    pub blocs: Vec<TradeBlocDef>,
+    #[serde(default)]
+    pub ports: Vec<PortPoliticalProfileDef>,
+    #[serde(default)]
+    pub relationships: Vec<BlocRelationshipDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FactionRelationshipDef {
+    pub faction_a: String,
+    pub faction_b: String,
+    pub disposition: String,
+    pub description: String,
+    pub spillover: f64,
+    pub vendetta_trigger: String,
+}
+
 /// One cross-port NPC relationship.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CrossPortNetworkDef {
@@ -642,6 +815,14 @@ pub struct Content {
     pub port_institutions: Vec<PortInstitutionDef>,
     pub port_institutions_east: Vec<PortInstitutionDef>,
     pub cross_port_networks: Vec<CrossPortNetworkDef>,
+    #[serde(default)]
+    pub culture: CultureDef,
+    #[serde(default)]
+    pub sea_culture: SeaCultureDef,
+    #[serde(default)]
+    pub port_politics: PortPoliticsDef,
+    #[serde(default)]
+    pub faction_relationships: Vec<FactionRelationshipDef>,
     #[serde(default)]
     pub upgrades: Vec<UpgradeDef>,
     #[serde(default)]
@@ -911,6 +1092,81 @@ impl Content {
 
     pub fn ammo(&self, id: &str) -> Option<&AmmoDef> {
         self.ammo.iter().find(|ammo| ammo.id == id)
+    }
+
+    pub fn region_culture(&self, region: &str) -> Option<&RegionCultureDef> {
+        self.culture
+            .regions
+            .iter()
+            .find(|rc| rc.region_name == region || rc.id == region)
+    }
+
+    pub fn port_culture(&self, port_id: &str) -> Option<&PortCultureDef> {
+        self.culture.ports.iter().find(|pc| pc.port_id == port_id)
+    }
+
+    pub fn route_encounters(&self, lore_name: &str) -> Option<&SeaEncounterTableDef> {
+        self.sea_culture
+            .route_encounters
+            .iter()
+            .find(|table| table.route_key == lore_name)
+    }
+
+    pub fn region_encounters(&self, region: &str) -> Option<&SeaEncounterTableDef> {
+        self.sea_culture
+            .region_encounters
+            .iter()
+            .find(|table| table.route_key == region)
+    }
+
+    pub fn npc_sightings(&self, region: &str) -> Vec<&NpcSightingDef> {
+        self.sea_culture
+            .npc_sightings
+            .iter()
+            .filter(|sight| sight.region == region)
+            .collect()
+    }
+
+    pub fn weather_narrative(&self, region: &str, season: &str) -> Option<&WeatherNarrativeDef> {
+        self.sea_culture
+            .weather
+            .iter()
+            .find(|row| row.region == region && row.season == season)
+    }
+
+    pub fn trade_bloc(&self, id: &str) -> Option<&TradeBlocDef> {
+        self.port_politics.blocs.iter().find(|bloc| bloc.id == id)
+    }
+
+    pub fn port_politics(&self, port_id: &str) -> Option<&PortPoliticalProfileDef> {
+        self.port_politics
+            .ports
+            .iter()
+            .find(|profile| profile.port_id == port_id)
+    }
+
+    pub fn bloc_relationship(&self, bloc_a: &str, bloc_b: &str) -> Option<&BlocRelationshipDef> {
+        self.port_politics.relationships.iter().find(|rel| {
+            (rel.bloc_a == bloc_a && rel.bloc_b == bloc_b)
+                || (rel.bloc_a == bloc_b && rel.bloc_b == bloc_a)
+        })
+    }
+
+    /// Hostile faction ids, in `FACTION_RELATIONSHIPS` order (`get_enemies`).
+    pub fn faction_enemies(&self, faction_id: &str) -> Vec<&str> {
+        self.faction_relationships
+            .iter()
+            .filter(|rel| rel.disposition == "hostile")
+            .filter_map(|rel| {
+                if rel.faction_a == faction_id {
+                    Some(rel.faction_b.as_str())
+                } else if rel.faction_b == faction_id {
+                    Some(rel.faction_a.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     /// Strength tiers from `get_loot_table_for_strength`.

@@ -5,8 +5,8 @@
   "captain": {
     "name": "C",
     "captain_type": "bounty_hunter",
-    "silver": 358,
-    "provisions": 26,
+    "silver": 364,
+    "provisions": 23,
     "day": 5,
     "wanted_level": 0,
     "cargo": [],
@@ -40,7 +40,7 @@
         "Mediterranean": 0,
         "North Atlantic": 0,
         "West Africa": 0,
-        "East Indies": 1,
+        "East Indies": 0,
         "South Seas": 0
       },
       "commercial_trust": 3,
@@ -51,18 +51,7 @@
         }
       ],
       "underworld": {},
-      "incidents": [
-        {
-          "day": 3,
-          "port_id": "crosswind_isle",
-          "region": "East Indies",
-          "incident_type": "inspection",
-          "description": "Routine inspection (6 silver fee)",
-          "heat_delta": 2,
-          "standing_delta": 0,
-          "trust_delta": 0
-        }
-      ]
+      "incidents": []
     }
   },
   "voyage": {
@@ -73,10 +62,11 @@
     "days_elapsed": 4,
     "status": "in_port",
     "recent_events": [
-      "pirates",
-      "inspection",
-      "nothing",
-      "foreign_vessel"
+      "flotsam",
+      "Your crew handles the cargo more carefully here. In the East Indies, they've learned that porcelain commands respect \u2014 and that broken porcelain means broken trust.",
+      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+      "foreign_vessel",
+      "provisions_spoiled"
     ]
   },
   "pending_duel": null,
@@ -1442,14 +1432,14 @@
         {
           "description": "Max heat <= 5",
           "status": "met",
-          "detail": "Max heat: 1",
-          "action": "Reduce customs heat from 1 to 5 or below"
+          "detail": "Max heat: 0",
+          "action": "Reduce customs heat from 0 to 5 or below"
         },
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 358",
-          "action": "Earn 1642 more silver"
+          "detail": "Silver: 364",
+          "action": "Earn 1636 more silver"
         }
       ]
     },
@@ -1493,8 +1483,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 358",
-          "action": "Earn 1642 more silver"
+          "detail": "Silver: 364",
+          "action": "Earn 1636 more silver"
         }
       ]
     },
@@ -1514,31 +1504,31 @@
         {
           "description": "Operated under meaningful heat (>= 10)",
           "status": "missing",
-          "detail": "Max heat: 1",
-          "action": "Shadow commerce requires operating under customs pressure (heat 1, need 10+)"
+          "detail": "Max heat: 0",
+          "action": "Shadow commerce requires operating under customs pressure (heat 0, need 10+)"
         },
         {
           "description": "Heat manageable (<= 40)",
           "status": "met",
-          "detail": "Max heat: 1",
-          "action": "Reduce heat from 1 \u2014 network collapses above 40"
+          "detail": "Max heat: 0",
+          "action": "Reduce heat from 0 \u2014 network collapses above 40"
         },
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 0, heat: 1",
+          "detail": "Profit: 0, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 358",
-          "action": "Accumulate 1142 more silver"
+          "detail": "Silver: 364",
+          "action": "Accumulate 1136 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 0, max heat: 1",
+          "detail": "Trades: 0, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1577,8 +1567,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 358",
-          "action": "Earn 2642 more silver"
+          "detail": "Silver: 364",
+          "action": "Earn 2636 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1597,6 +1587,54 @@
       "family": "integrated_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "jade_port",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "East Indies"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "ship_upgrade",
+      "survived_pirates",
+      "east_indies_arrival"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "ship_upgrade",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_pirates",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "east_indies_arrival",
+        "day": 5,
+        "port_id": "jade_port",
+        "region": "East Indies"
+      }
+    ]
+  },
   "log": [
     {
       "command": "new bounty_hunter C 13",
@@ -1637,34 +1675,37 @@
       "receipt": null,
       "events": [
         {
-          "event_type": "inspection",
-          "message": "A patrol inspects your cargo and levies a 6 silver fee.",
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+3 provisions)",
           "hull_delta": 0,
-          "provision_delta": 0,
-          "silver_delta": -6,
+          "provision_delta": 3,
+          "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+        },
         {
           "event_type": "nothing",
-          "message": "An uneventful day at sea.",
+          "message": "Your crew handles the cargo more carefully here. In the East Indies, they've learned that porcelain commands respect \u2014 and that broken porcelain means broken trust.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": ""
+          "flavor": "[crew]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1676,7 +1717,7 @@
       "events": [
         {
           "event_type": "foreign_vessel",
-          "message": "A carved fishing boat with outriggers crosses your wake. The crew sings as they work.",
+          "message": "A cotton trader's vessel passes, bales stacked so high the deck is barely visible.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
@@ -1684,6 +1725,36 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "The sea is shared."
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "provisions_spoiled",
+          "message": "Some provisions have spoiled. (-6 days)",
+          "hull_delta": 0,
+          "provision_delta": -6,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Jade Port.[/bold]\n\nThe port is blooming. Literally \u2014 flowers on the docks, garlands on the warehouses, the scent of jasmine mixing with salt air. Spring arrivals in the East Indies feel like being invited to a celebration of survival.\n\nBamboo cranes lift crates padded with straw from the hold. Each piece of porcelain is inspected by guild markers before it leaves the dock.\n\n[bold]Harbor Director Li Wei:[/bold] \"Welcome to Jade Port. Your vessel will be berthed according to protocol. May I inquire about the nature of your cargo?\"\n\n[dim]Landmark: The Porcelain Quarter \u2014 a district of workshops where master potters fire kilns day and night.[/dim]\n[dim]Custom: Porcelain is presented on silk, never bare-handed. Fingerprints on porcelain void a sale.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []

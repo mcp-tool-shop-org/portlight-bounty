@@ -59,7 +59,9 @@
     "days_elapsed": 1,
     "status": "at_sea",
     "recent_events": [
-      "whale_sighting"
+      "whale_sighting",
+      "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+      "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey."
     ]
   },
   "pending_duel": null,
@@ -1572,6 +1574,40 @@
       ]
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "underworld_contact",
+      "faction_spillover",
+      "vendetta_declared"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "underworld_contact",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "faction_spillover",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "vendetta_declared",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new corsair C 2",
@@ -1602,6 +1638,28 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "Some things are bigger than commerce."
+        },
+        {
+          "event_type": "nothing",
+          "message": "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
         }
       ],
       "shocks": []

@@ -1,7 +1,10 @@
+# Seed 1 grain famine. The third sea day damages 3 grain, so buy 26.
+# Arrival is the fourth sea day. The sale completes the contract early.
 new merchant Ada 1
 accept_contract 71773aae754b
-buy grain 23
+buy grain 26
 depart corsairs_rest
+advance
 advance
 advance
 advance

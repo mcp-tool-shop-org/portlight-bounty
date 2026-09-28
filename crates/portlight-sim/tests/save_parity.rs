@@ -69,6 +69,7 @@ fn snap(session: &Session) -> Value {
         session.trade_seq(),
         session.books(),
         session.infrastructure(),
+        session.narrative(),
         Vec::new(),
     ))
     .unwrap()
@@ -547,5 +548,55 @@ fn python_v12_infrastructure_round_trips() {
     let again = Session::load(&dir, "infrastructure_v12").unwrap().unwrap();
     assert_eq!(again.infrastructure().warehouses[0].id, "b21e3e594ab0");
     assert_eq!(again.books().claims_paid, 1);
+    let _ = fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn python_v12_area6_round_trips() {
+    let root = parity_root();
+    let fixture: Value =
+        serde_json::from_str(&fs::read_to_string(root.join("saves/area6_v12.json")).unwrap())
+            .unwrap();
+    let loaded = Session::load(&root, "area6_v12").unwrap().unwrap();
+    assert_eq!(loaded.world().captain.reputation, 3);
+    assert_eq!(loaded.world().culture.visits("porto_novo"), 2);
+    assert_eq!(loaded.world().culture.visits("silva_bay"), 1);
+    assert_eq!(
+        loaded.world().culture.regions_entered,
+        ["Mediterranean".to_string(), "North Atlantic".to_string()]
+    );
+    assert_eq!(loaded.world().culture.cultural_encounters, 1);
+    assert_eq!(loaded.world().culture.festivals_visited, 1);
+    assert_eq!(loaded.world().culture.active_festivals.len(), 1);
+    assert_eq!(
+        loaded.world().culture.active_festivals[0].festival_id,
+        "harvest_of_plenty"
+    );
+    assert_eq!(
+        loaded.narrative().fired,
+        ["first_trade".to_string(), "first_profit".to_string()]
+    );
+    assert_eq!(loaded.narrative().journal[1].region, "");
+    assert_eq!(loaded.world().nemesis_id.as_deref(), Some("the_butcher"));
+
+    let dir = scratch("area6");
+    let mut loaded = loaded;
+    loaded.save(&dir, "area6_v12").unwrap();
+    let rust: Value = serde_json::from_str(
+        &fs::read_to_string(dir.join("saves").join("area6_v12.json")).unwrap(),
+    )
+    .unwrap();
+    for path in [
+        "captain.reputation",
+        "cultural_state",
+        "narrative",
+        "pirate_state.nemesis_id",
+    ] {
+        close(&dig(&fixture, path), &dig(&rust, path), path);
+    }
+    let again = Session::load(&dir, "area6_v12").unwrap().unwrap();
+    assert_eq!(again.world().captain.reputation, 3);
+    assert_eq!(again.narrative().journal[0].port_id, "porto_novo");
+    assert_eq!(again.world().nemesis_id.as_deref(), Some("the_butcher"));
     let _ = fs::remove_dir_all(&dir);
 }

@@ -1590,6 +1590,19 @@
       ]
     }
   ],
+  "narrative": {
+    "fired": [
+      "first_trade"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_trade",
+        "day": 1,
+        "port_id": "porto_novo",
+        "region": "Mediterranean"
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 42",

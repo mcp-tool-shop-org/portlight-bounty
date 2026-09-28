@@ -32,6 +32,7 @@ pub fn run_script(script: &str) -> Snapshot {
             session.trade_seq(),
             session.books(),
             session.infrastructure(),
+            session.narrative(),
             log,
         ),
         None => snapshot::empty(log),
@@ -101,6 +102,20 @@ fn dispatch(
                 .map(snapshot::from_contract_outcome)
                 .collect();
             entry.notes = turn.notes;
+            Ok(())
+        }
+        "arrival_narrative" => {
+            let session = active(session)?;
+            entry.notes = session.arrival_narrative();
+            Ok(())
+        }
+        "evaluate_consequences" => {
+            let session = active(session)?;
+            entry.notes = session
+                .evaluate_consequences()
+                .iter()
+                .map(|row| format!("{}: {}", row.id, row.text))
+                .collect();
             Ok(())
         }
         "accept_contract" => {

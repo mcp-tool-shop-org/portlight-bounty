@@ -1,25 +1,25 @@
 {
   "seed": 1,
-  "day": 4,
+  "day": 5,
   "trade_seq": 2,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant",
-    "silver": 1449,
-    "provisions": 28,
-    "day": 4,
+    "silver": 1422,
+    "provisions": 26,
+    "day": 5,
     "wanted_level": 0,
     "cargo": [],
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
-      "hull": 60,
+      "hull": 52,
       "hull_max": 60,
       "cargo_capacity": 30,
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 58,
+      "morale": 59,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -53,7 +53,7 @@
       "underworld": {},
       "incidents": [
         {
-          "day": 4,
+          "day": 5,
           "port_id": "corsairs_rest",
           "region": "Mediterranean",
           "incident_type": "trade",
@@ -70,12 +70,14 @@
     "destination_id": "corsairs_rest",
     "distance": 18,
     "progress": 24,
-    "days_elapsed": 3,
+    "days_elapsed": 4,
     "status": "in_port",
     "recent_events": [
-      "nothing",
-      "flotsam",
-      "favorable_wind"
+      "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+      "cargo_damaged",
+      "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+      "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+      "lighthouse"
     ]
   },
   "pending_duel": null,
@@ -85,9 +87,9 @@
       "market": [
         {
           "good_id": "grain",
-          "stock": 17,
-          "buy_price": 17,
-          "sell_price": 17,
+          "stock": 14,
+          "buy_price": 21,
+          "sell_price": 21,
           "flood_penalty": 0.0
         },
         {
@@ -1447,8 +1449,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Earn 551 more silver"
+          "detail": "Silver: 1422",
+          "action": "Earn 578 more silver"
         }
       ]
     },
@@ -1480,14 +1482,14 @@
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: 299, heat: 4",
+          "detail": "Profit: 275, heat: 4",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Accumulate 51 more silver"
+          "detail": "Silver: 1422",
+          "action": "Accumulate 78 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
@@ -1537,8 +1539,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Earn 551 more silver"
+          "detail": "Silver: 1422",
+          "action": "Earn 578 more silver"
         }
       ]
     },
@@ -1576,8 +1578,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 1449",
-          "action": "Earn 1551 more silver"
+          "detail": "Silver: 1422",
+          "action": "Earn 1578 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1602,6 +1604,68 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "corsairs_rest",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
+  "narrative": {
+    "fired": [
+      "first_voyage",
+      "survived_storm",
+      "first_trade",
+      "first_profit",
+      "first_contract",
+      "first_big_contract"
+    ],
+    "journal": [
+      {
+        "beat_id": "first_voyage",
+        "day": 2,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "survived_storm",
+        "day": 3,
+        "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "first_trade",
+        "day": 5,
+        "port_id": "corsairs_rest",
+        "region": "Mediterranean"
+      },
+      {
+        "beat_id": "first_profit",
+        "day": 5,
+        "port_id": "corsairs_rest",
+        "region": ""
+      },
+      {
+        "beat_id": "first_contract",
+        "day": 5,
+        "port_id": "corsairs_rest",
+        "region": ""
+      },
+      {
+        "beat_id": "first_big_contract",
+        "day": 5,
+        "port_id": "corsairs_rest",
+        "region": ""
+      }
+    ]
+  },
   "log": [
     {
       "command": "new merchant Ada 1",
@@ -1636,17 +1700,17 @@
       ]
     },
     {
-      "command": "buy grain 23",
+      "command": "buy grain 26",
       "error": null,
       "receipt": {
         "receipt_id": "42471bdaf1a4a6ea",
         "action": "buy",
         "good_id": "grain",
-        "quantity": 23,
+        "quantity": 26,
         "unit_price": 8,
-        "total_price": 184,
+        "total_price": 208,
         "stock_before": 40,
-        "stock_after": 17,
+        "stock_after": 14,
         "day": 1
       },
       "events": [],
@@ -1674,44 +1738,123 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+        },
         {
-          "event_type": "flotsam",
-          "message": "Floating wreckage yields salvageable supplies. (+1 provisions)",
-          "hull_delta": 0,
-          "provision_delta": 1,
-          "silver_delta": 0,
-          "crew_delta": 0,
-          "speed_modifier": 1.0,
-          "cargo_lost": [],
-          "flavor": ""
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
-        {
-          "event_type": "favorable_wind",
-          "message": "Strong tailwinds speed your journey!",
+          "event_type": "nothing",
+          "message": "The sky is the Mediterranean's trademark blue \u2014 the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
-          "speed_modifier": 1.5,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "storm",
+          "message": "A violent storm batters the ship! (-8 hull)",
+          "hull_delta": -8,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.5,
           "cargo_lost": [],
           "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A ship passes with no flag flying. The crew watches you. You watch them. Nobody waves. This is the Shadow Lane.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[sighting]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "cargo_damaged",
+          "message": "Rough seas damaged 3 units of grain in the hold.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [
+            {
+              "good_id": "grain",
+              "quantity": 3
+            }
+          ],
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "The smell of the sea \u2014 salt, kelp, distance. For the crew, this is the smell of possibility. For the captain, it's the smell of responsibility.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
+        }
+      ],
+      "shocks": []
+    },
+    {
+      "command": "advance",
+      "error": null,
+      "receipt": null,
+      "events": [
+        {
+          "event_type": "lighthouse",
+          "message": "Ember Peak's volcanic glow marks the horizon. The South Seas await.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.1,
+          "cargo_lost": [],
+          "flavor": "Known waters. The charts don't lie."
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Corsair's Rest.[/bold]\n\nThe port appears through a golden haze \u2014 sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nShips anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee \u2014 payable in silver, no questions.\n\n[bold]One-Eye Basso:[/bold] \"...Clear behind you. Come in. Kill your running lights before the bend.\"\n\n[dim]Landmark: The Cliff Tavern \u2014 carved into the rock face, visible only from the sea.[/dim]\n[dim]Custom: No names. Every captain here is 'friend' until proven otherwise.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
@@ -1720,7 +1863,7 @@
       "command": "sell grain 23",
       "error": null,
       "receipt": {
-        "receipt_id": "00470f2da14c847a",
+        "receipt_id": "39010b44a68a199f",
         "action": "sell",
         "good_id": "grain",
         "quantity": 23,
@@ -1728,7 +1871,7 @@
         "total_price": 483,
         "stock_before": 8,
         "stock_after": 31,
-        "day": 4
+        "day": 5
       },
       "events": [],
       "shocks": [],

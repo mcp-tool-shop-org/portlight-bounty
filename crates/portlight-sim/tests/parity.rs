@@ -368,6 +368,7 @@ fn sea_captain_agency_golden_records_the_ambush() {
         .collect();
     assert_eq!(calls.len(), 3);
     assert_eq!(calls[0]["agency"]["notices"].as_array().unwrap().len(), 0);
+    assert_eq!(calls[1]["agency"]["ambush"], false);
     assert_eq!(calls[2]["agency"]["ambush"], true);
     assert_eq!(
         calls[2]["agency"]["encounter"]["enemy_captain_id"],
@@ -375,6 +376,7 @@ fn sea_captain_agency_golden_records_the_ambush() {
     );
     assert_eq!(calls[2]["agency"]["encounter"]["phase"], "naval");
     assert_eq!(golden["pending_duel"]["captain_id"], "the_butcher");
+    assert_eq!(golden["day"], 4);
 }
 
 fn load_golden(stem: &str) -> Value {
