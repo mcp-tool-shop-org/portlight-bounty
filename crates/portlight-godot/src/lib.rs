@@ -3,6 +3,7 @@
 
 mod chart_canvas;
 mod game;
+mod harbour;
 mod logic;
 mod seam;
 

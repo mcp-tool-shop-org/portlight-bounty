@@ -1,11 +1,15 @@
 //! Harbour seam plate. Not a harbour layout and not the first playable.
 //!
 //! Every tile is placed by [`grid_to_screen`](crate::grid_to_screen) for a
-//! 256×128 cell, then the footprint bottom, then the −48 sea datum. Water is
-//! a 3×3 block so four cells meet at an interior vertex. The pier plate is
-//! the exact corner set facing the quay, and that cell is water.
+//! 256×128 cell, then the footprint bottom, then the −48 sea datum. Water
+//! covers the viewport at both capture zooms so no open edge is on screen.
+//! The pier plate is the exact corner set facing the quay, and that cell is
+//! water. Pilings sit on a different open water cell.
 
-use crate::project::{grid_to_screen, HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y};
+use crate::harbour::{
+    build_harbour, harbour_anchor, harbour_water_cells, harbour_water_tile, harbour_work_tile,
+    seam_view, HarbourTile, WorkKind,
+};
 
 /// One corner of a harbour diamond, named in screen space.
 ///
@@ -58,121 +62,71 @@ pub fn corner_toward(from_col: i32, from_row: i32, to_col: i32, to_row: i32) -> 
     }
 }
 
-/// Anchor pixel of a harbour cell: grid centre, half a cell down to the
-/// footprint bottom, then the sea datum. Godot Y grows down, so datum −48
-/// is a `+48` screen shift. Chart water does not use this.
-pub fn harbour_anchor(col: i32, row: i32) -> (i32, i32) {
-    let (sx, sy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
-    (sx, sy + HARBOUR_CELL_H / 2 - WATER_DATUM_Y)
-}
-
 /// Bottom tip of cell `(1, 1)`. Cells `(1,1)`, `(2,1)`, `(1,2)`, and `(2,2)`
 /// meet there. Those four are water, so the vertex is an interior seam.
 pub fn seam_interior_vertex() -> (i32, i32) {
     harbour_anchor(1, 1)
 }
 
-/// One placed plate. `screen` is where the texture anchor lands.
-#[derive(Clone, Copy, Debug)]
-pub struct SeamTile {
-    pub col: i32,
-    pub row: i32,
-    pub path: &'static str,
-    pub anchor_x: i32,
-    pub anchor_y: i32,
-    pub canvas_w: i32,
-    pub canvas_h: i32,
-    pub z: i32,
-    pub screen_x: i32,
-    pub screen_y: i32,
-}
-
-/// Centre of the sprite bounds, so a zoomed camera frames the whole plate.
+/// Centre of the quay, pier, and pilings, not of the padded water.
+/// Expanding water must not move the camera.
 pub fn seam_camera_center() -> (i32, i32) {
-    let mut min_x = i32::MAX;
-    let mut min_y = i32::MAX;
-    let mut max_x = i32::MIN;
-    let mut max_y = i32::MIN;
-    for tile in harbour_seam() {
+    let (vx, vy) = seam_interior_vertex();
+    let mut rect = crate::project::ScreenRect::from_point(vx, vy);
+    for tile in seam_works() {
         let left = tile.screen_x - tile.anchor_x;
         let top = tile.screen_y - tile.anchor_y;
-        min_x = min_x.min(left);
-        min_y = min_y.min(top);
-        max_x = max_x.max(left + tile.canvas_w);
-        max_y = max_y.max(top + tile.canvas_h);
+        rect.include(left, top);
+        rect.include(left + tile.canvas_w - 1, top + tile.canvas_h - 1);
     }
-    ((min_x + max_x) / 2, (min_y + max_y) / 2)
+    ((rect.min_x + rect.max_x) / 2, (rect.min_y + rect.max_y) / 2)
 }
 
-/// 3×3 water, `quay_1111` at `(0, 1)`, pier root and pilings at `(0, 2)`.
-pub fn harbour_seam() -> Vec<SeamTile> {
-    let mut tiles = Vec::with_capacity(12);
-    for row in 0..3 {
-        for col in 0..3 {
-            tiles.push(water(col, row));
-        }
-    }
-    // The pier root is the water cell beside the quay, not the quay cell.
-    // Only the corner that faces the quay is set.
+/// Quay at `(0, 1)`, pier root at `(0, 2)`, pilings on open water `(2, 0)`.
+fn seam_works() -> Vec<HarbourTile> {
     let quay = (0, 1);
     let pier = (0, 2);
     let corner = corner_toward(pier.0, pier.1, quay.0, quay.1);
-    tiles.push(works(
-        pier.0,
-        pier.1,
-        "res://assets/landing/props/pier_pilings_1x1/beauty.png",
-        1,
-    ));
-    tiles.push(works(
-        pier.0,
-        pier.1,
-        pier_path(&pier_plate_id(&[corner])),
-        2,
-    ));
-    tiles.push(works(
-        quay.0,
-        quay.1,
-        "res://assets/landing/structures/quay_1111/beauty.png",
-        3,
-    ));
-    tiles
+    vec![
+        harbour_work_tile(
+            2,
+            0,
+            WorkKind::Pilings,
+            "res://assets/landing/props/pier_pilings_1x1/beauty.png",
+        ),
+        harbour_work_tile(
+            pier.0,
+            pier.1,
+            WorkKind::Pier,
+            pier_path(&pier_plate_id(&[corner])),
+        ),
+        harbour_work_tile(
+            quay.0,
+            quay.1,
+            WorkKind::Quay,
+            "res://assets/landing/structures/quay_1111/beauty.png",
+        ),
+    ]
 }
 
-fn water(col: i32, row: i32) -> SeamTile {
-    let path = match (col + row).rem_euclid(3) {
-        0 => "res://assets/landing/ground/water_a.png",
-        1 => "res://assets/landing/ground/water_b.png",
-        _ => "res://assets/landing/ground/water_c.png",
-    };
-    let (screen_x, screen_y) = harbour_anchor(col, row);
-    SeamTile {
-        col,
-        row,
-        path,
-        anchor_x: 128,
-        anchor_y: 127,
-        canvas_w: 256,
-        canvas_h: 128,
-        z: 0,
-        screen_x,
-        screen_y,
+/// Water past both capture zooms, then the three works in draw order.
+pub fn harbour_seam() -> Vec<HarbourTile> {
+    let center = seam_camera_center();
+    // 0.72 shows more world than 1.0, so covering it covers the tighter frame.
+    let view = seam_view(center, 0.72);
+    let mut cells = harbour_water_cells(&view);
+    for row in 0..3 {
+        for col in 0..3 {
+            if !cells.contains(&(col, row)) {
+                cells.push((col, row));
+            }
+        }
     }
-}
-
-fn works(col: i32, row: i32, path: &'static str, z: i32) -> SeamTile {
-    let (screen_x, screen_y) = harbour_anchor(col, row);
-    SeamTile {
-        col,
-        row,
-        path,
-        anchor_x: 128,
-        anchor_y: 255,
-        canvas_w: 256,
-        canvas_h: 256,
-        z,
-        screen_x,
-        screen_y,
-    }
+    let water = cells
+        .into_iter()
+        .map(|(col, row)| harbour_water_tile(col, row))
+        .collect();
+    build_harbour(water, seam_works()).expect("seam layout")
 }
 
 fn pier_path(id: &str) -> &'static str {
@@ -188,12 +142,19 @@ fn pier_path(id: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{grid_to_screen, water_cell_center, CELL_HEIGHT, CELL_WIDTH};
+    use crate::harbour::{
+        harbour_water_covers, validate_harbour, HarbourFault, HarbourLayer, WorkKind,
+    };
+    use crate::project::{
+        grid_to_screen, water_cell_center, CELL_HEIGHT, CELL_WIDTH, HARBOUR_CELL_H, HARBOUR_CELL_W,
+        WATER_DATUM_Y,
+    };
 
     #[test]
     fn seam_scene_uses_the_shared_projection() {
-        let placement = include_str!("seam.rs");
+        let placement = include_str!("harbour.rs");
         let scene = include_str!("../../portlight-godot/src/seam.rs");
+        let placer = include_str!("../../portlight-godot/src/harbour.rs");
         assert!(
             placement.contains("grid_to_screen("),
             "harbour placement must call grid_to_screen"
@@ -203,10 +164,24 @@ mod tests {
             "the seam scene must place the chart crate's tiles"
         );
         assert!(
+            scene.contains("place_harbour("),
+            "the seam scene must use the shared harbour placer"
+        );
+        assert!(
+            placer.contains("set_y_sort_enabled(true)"),
+            "works share one y-sort node"
+        );
+        assert!(
+            !placer.contains("set_z_index(tile"),
+            "works are not given a z per id"
+        );
+        assert!(
             !scene.contains("STEP_U"),
             "the seam scene must not hand-place a step"
         );
+        assert!(!placer.contains("STEP_U"));
         assert!(!scene.contains("(col - row) * 128"));
+        assert!(!placer.contains("(col - row) * 128"));
 
         for tile in harbour_seam() {
             let (sx, sy) = grid_to_screen(tile.col, tile.row, HARBOUR_CELL_W, HARBOUR_CELL_H);
@@ -236,12 +211,13 @@ mod tests {
     #[test]
     fn seam_is_a_3x3_with_a_water_pier_root() {
         let tiles = harbour_seam();
-        let water: Vec<_> = tiles.iter().filter(|tile| tile.z == 0).collect();
-        assert_eq!(water.len(), 9);
+        assert!(validate_harbour(&tiles).is_ok());
         for row in 0..3 {
             for col in 0..3 {
                 assert!(
-                    water.iter().any(|tile| tile.col == col && tile.row == row),
+                    tiles.iter().any(|tile| {
+                        tile.layer == HarbourLayer::Water && tile.col == col && tile.row == row
+                    }),
                     "missing water {col},{row}"
                 );
             }
@@ -258,9 +234,9 @@ mod tests {
             .iter()
             .find(|tile| tile.path.contains("pier_pilings"))
             .expect("pilings");
-        assert!(water
-            .iter()
-            .any(|tile| tile.col == pier.col && tile.row == pier.row));
+        assert!(tiles.iter().any(|tile| {
+            tile.layer == HarbourLayer::Water && tile.col == pier.col && tile.row == pier.row
+        }));
         assert!(quay.col != pier.col || quay.row != pier.row);
         assert_eq!((pier.col - quay.col).abs() + (pier.row - quay.row).abs(), 1);
         let facing = corner_toward(pier.col, pier.row, quay.col, quay.row);
@@ -268,16 +244,58 @@ mod tests {
         assert_eq!(pier.path, pier_path(&plate));
         assert_eq!(plate, "pier_UR");
         assert!(!pier.path.contains("UL_UR"));
-        assert_eq!((pilings.col, pilings.row), (pier.col, pier.row));
+        assert_eq!((pilings.col, pilings.row), (2, 0));
+        assert!(pilings.col != pier.col || pilings.row != pier.row);
+        let works: Vec<_> = tiles
+            .iter()
+            .filter(|tile| tile.layer == HarbourLayer::Work)
+            .collect();
+        let quay_at = works
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("quay");
+        let pier_at = works
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Pier))
+            .expect("pier");
+        assert!(
+            quay_at < pier_at,
+            "the front pier draws after the back quay"
+        );
         for (col, row) in [(1, 1), (2, 1), (1, 2), (2, 2)] {
             assert!(
                 tiles
                     .iter()
                     .filter(|tile| tile.col == col && tile.row == row)
-                    .all(|tile| tile.z == 0),
+                    .all(|tile| tile.layer == HarbourLayer::Water),
                 "interior cell {col},{row} must stay water"
             );
         }
         assert_eq!(seam_interior_vertex(), harbour_anchor(1, 1));
+        let center = seam_camera_center();
+        let wide = seam_view(center, 0.72);
+        let tight = seam_view(center, 1.0);
+        let cells: Vec<_> = tiles
+            .iter()
+            .filter(|tile| tile.layer == HarbourLayer::Water)
+            .map(|tile| (tile.col, tile.row))
+            .collect();
+        assert!(harbour_water_covers(&cells, &wide));
+        assert!(harbour_water_covers(&cells, &tight));
+    }
+
+    #[test]
+    fn seam_keeps_pilings_off_the_pier() {
+        let tiles = harbour_seam();
+        let err = validate_harbour(&tiles);
+        assert_eq!(err, Ok(()));
+        let bad = vec![
+            harbour_work_tile(0, 2, WorkKind::Pilings, "res://pilings"),
+            harbour_work_tile(0, 2, WorkKind::Pier, "res://pier"),
+        ];
+        assert_eq!(
+            validate_harbour(&bad),
+            Err(vec![HarbourFault::PilingsOnPier { col: 0, row: 2 }])
+        );
     }
 }

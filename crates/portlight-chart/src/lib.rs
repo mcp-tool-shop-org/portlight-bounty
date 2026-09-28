@@ -6,6 +6,8 @@
 //! lanes are legal and does not call the voyage helper underneath that method.
 
 mod assets;
+mod cover;
+mod harbour;
 #[cfg(test)]
 mod landing;
 mod placeholder;
@@ -14,6 +16,7 @@ mod seam;
 mod view;
 
 pub use assets::{asset, ship_asset, Asset, AssetFamily, ASSETS};
+pub use harbour::{harbour_anchor, HarbourLayer, HarbourTile, WorkKind};
 pub use placeholder::write_asset_files;
 pub use project::{
     chart_to_screen, chart_to_screen_f, chart_to_uv, facing_from_chart_delta, facing_from_uv,
@@ -21,7 +24,7 @@ pub use project::{
     Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, DOCKED_OFFSET_X, DOCKED_OFFSET_Y,
     HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y,
 };
-pub use seam::{harbour_anchor, harbour_seam, seam_camera_center, seam_interior_vertex, SeamTile};
+pub use seam::{harbour_seam, seam_camera_center, seam_interior_vertex};
 pub use view::{
     docked_sloop_marker, hover_at, lane_inspect, press_port, project_chart, ActiveLeg, ChartLane,
     ChartModel, ChartPort, PortPress, Rgba, ShipMarker, WaterTile, CHART_VIEW_H, CHART_VIEW_W,

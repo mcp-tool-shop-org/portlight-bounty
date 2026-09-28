@@ -4,9 +4,10 @@ use portlight_sim::model::{VoyageStatus, World};
 use portlight_sim::{LaneSuitability, SailLane, Session};
 
 use crate::assets::{self, chart_water_id, ship_asset, Asset, PORT_MARKER, SLOOP_WAKE};
+use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{
     chart_to_screen_f, facing_from_chart_delta, follow_ship, frame_to_view, sprite_origin,
-    water_cell_bottom, water_cell_center, Facing, Frame, ScreenRect, DOCKED_OFFSET_X,
+    water_cell_bottom, Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, DOCKED_OFFSET_X,
     DOCKED_OFFSET_Y,
 };
 
@@ -151,7 +152,7 @@ pub fn project_chart(session: &Session) -> ChartModel {
     let region = frame_to_view(focus, CHART_VIEW_W, CHART_VIEW_H);
     let at_sea = world.voyage.status == VoyageStatus::AtSea;
     let frame = follow_ship(region, ship.at, at_sea, CHART_VIEW_W, CHART_VIEW_H);
-    let tiles = water_tiles(&focus);
+    let tiles = water_tiles(&frame);
     ChartModel {
         tiles,
         ports,
@@ -470,51 +471,52 @@ fn focus_rect(ports: &[ChartPort], ship: &ShipMarker) -> ScreenRect {
     rect.pad(220, 180)
 }
 
-fn water_tiles(focus: &ScreenRect) -> Vec<WaterTile> {
+fn water_tiles(frame: &Frame) -> Vec<WaterTile> {
     let water = assets::asset(assets::CHART_WATER_A).expect("chart water");
-    let samples = [
-        (focus.min_x, focus.min_y),
-        (focus.max_x, focus.min_y),
-        (focus.min_x, focus.max_y),
-        (focus.max_x, focus.max_y),
-    ];
-    let mut min_u = i32::MAX;
-    let mut max_u = i32::MIN;
-    let mut min_v = i32::MAX;
-    let mut max_v = i32::MIN;
-    for (x, y) in samples {
-        let (u, v) = screen_to_uv(x as f64, y as f64);
-        min_u = min_u.min(u.floor() as i32);
-        max_u = max_u.max(u.ceil() as i32);
-        min_v = min_v.min(v.floor() as i32);
-        max_v = max_v.max(v.ceil() as i32);
-    }
-    let mut tiles = Vec::new();
-    for u in (min_u - 1)..=(max_u + 1) {
-        for v in (min_v - 1)..=(max_v + 1) {
-            let center = water_cell_center(u, v);
-            if !focus
-                .pad(96, 64)
-                .contains(center.0.round() as i32, center.1.round() as i32)
-            {
-                continue;
-            }
+    let anchor = (water.anchor_x, water.anchor_y);
+    let view = view_world_rect(
+        frame.center_x,
+        frame.center_y,
+        frame.zoom,
+        CHART_VIEW_W,
+        CHART_VIEW_H,
+    );
+    cells_covering(&view, WATER_COVER_PAD, |x, y| chart_cell_f(x, y, anchor))
+        .into_iter()
+        .map(|(u, v)| {
             let bottom = water_cell_bottom(u, v);
-            tiles.push(WaterTile {
+            WaterTile {
                 u,
                 v,
                 asset_id: chart_water_id(u, v),
-                origin: sprite_origin(bottom, water.anchor_x, water.anchor_y),
-            });
-        }
-    }
-    tiles
+                origin: sprite_origin(bottom, anchor.0, anchor.1),
+            }
+        })
+        .collect()
 }
 
-fn screen_to_uv(sx: f64, sy: f64) -> (f64, f64) {
-    let a = sx / f64::from(crate::project::CELL_WIDTH / 2);
-    let b = sy / f64::from(crate::project::CELL_HEIGHT / 2);
-    ((a + b) / 2.0, (b - a) / 2.0)
+/// Plate centre of the chart-water diamond. The anchor is the bottom tip,
+/// so the centre is not the grid centre.
+fn chart_diamond_center(u: i32, v: i32, anchor: (i32, i32)) -> (f32, f32) {
+    let bottom = water_cell_bottom(u, v);
+    let origin = sprite_origin(bottom, anchor.0, anchor.1);
+    (
+        origin.0 + (CELL_WIDTH / 2) as f32,
+        origin.1 + (CELL_HEIGHT / 2) as f32,
+    )
+}
+
+fn chart_cell_f(x: f32, y: f32, anchor: (i32, i32)) -> (f32, f32) {
+    let (cx, cy) = chart_diamond_center(0, 0, anchor);
+    let d = (x - cx) / (CELL_WIDTH as f32 / 2.0);
+    let s = (y - cy) / (CELL_HEIGHT as f32 / 2.0);
+    ((s + d) / 2.0, (s - d) / 2.0)
+}
+
+#[cfg(test)]
+fn chart_cell_at(x: f32, y: f32, anchor: (i32, i32)) -> (i32, i32) {
+    let (u, v) = chart_cell_f(x, y, anchor);
+    (u.round() as i32, v.round() as i32)
 }
 
 fn dist(a: (f32, f32), b: (f32, f32)) -> f32 {
@@ -538,7 +540,8 @@ fn segment_distance(from: (f32, f32), to: (f32, f32), p: (f32, f32)) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{chart_to_screen, chart_to_uv, uv_to_screen};
+    use crate::cover::{grid_covers_view, TIP_FEATHER_PX};
+    use crate::project::{chart_to_screen, chart_to_uv, uv_to_screen, CELL_HEIGHT, CELL_WIDTH};
     use portlight_sim::LaneSuitability;
 
     fn merchant_at(port: Option<&str>) -> Session {
@@ -693,6 +696,43 @@ mod tests {
             PortPress::Depart("porto_novo".into())
         );
         assert_eq!(press_port(&session, "corsairs_rest"), PortPress::OpenHere);
+    }
+
+    #[test]
+    fn chart_water_runs_past_the_visible_frame() {
+        let water = crate::assets::asset(crate::assets::CHART_WATER_A).unwrap();
+        let anchor = (water.anchor_x, water.anchor_y);
+        let docked = merchant_at(None);
+        let mut at_sea = merchant_at(None);
+        at_sea.depart("al_manar").unwrap();
+        for session in [&docked, &at_sea] {
+            let chart = project_chart(session);
+            let view = view_world_rect(
+                chart.frame.center_x,
+                chart.frame.center_y,
+                chart.frame.zoom,
+                CHART_VIEW_W,
+                CHART_VIEW_H,
+            );
+            let cells: Vec<_> = chart.tiles.iter().map(|tile| (tile.u, tile.v)).collect();
+            assert!(
+                grid_covers_view(
+                    &cells,
+                    &view,
+                    (CELL_WIDTH / 2) as f32,
+                    (CELL_HEIGHT / 2) as f32,
+                    TIP_FEATHER_PX,
+                    |u, v| chart_diamond_center(u, v, anchor),
+                    |x, y| chart_cell_at(x, y, anchor),
+                ),
+                "open water edge inside the {} frame",
+                if session.world().voyage.status == VoyageStatus::AtSea {
+                    "at-sea"
+                } else {
+                    "docked"
+                }
+            );
+        }
     }
 
     #[test]

@@ -2,11 +2,12 @@
 //! The list is [`portlight_chart::grid_to_screen`] plus the sea datum.
 //! No label. Captures zoom 1, zoom 0.72, and a crop of the interior vertex.
 
-use godot::classes::canvas_item::TextureFilter;
-use godot::classes::{Camera2D, INode2D, Image, Node2D, ResourceLoader, Sprite2D, Texture2D};
+use godot::classes::{Camera2D, INode2D, Image, Node2D};
 use godot::global::Error;
 use godot::prelude::*;
 use portlight_chart::{harbour_seam, seam_camera_center, seam_interior_vertex};
+
+use crate::harbour::place_harbour;
 
 #[derive(GodotClass)]
 #[class(base = Node2D)]
@@ -31,25 +32,10 @@ impl INode2D for HarbourSeam {
     }
 
     fn ready(&mut self) {
-        for tile in harbour_seam() {
-            let Some(resource) = ResourceLoader::singleton().load(&GString::from(tile.path)) else {
-                godot_print!("missing texture {}", tile.path);
-                self.failed = true;
-                continue;
-            };
-            let Ok(texture) = resource.try_cast::<Texture2D>() else {
-                godot_print!("not a texture {}", tile.path);
-                self.failed = true;
-                continue;
-            };
-            let mut sprite = Sprite2D::new_alloc();
-            sprite.set_texture(&texture);
-            sprite.set_centered(false);
-            sprite.set_texture_filter(TextureFilter::NEAREST);
-            sprite.set_position(Vector2::new(tile.screen_x as f32, tile.screen_y as f32));
-            sprite.set_offset(Vector2::new(-tile.anchor_x as f32, -tile.anchor_y as f32));
-            sprite.set_z_index(tile.z);
-            self.base_mut().add_child(&sprite);
+        let tiles = harbour_seam();
+        if !place_harbour(&mut self.base_mut(), &tiles) {
+            godot_print!("harbour seam missing a plate");
+            self.failed = true;
         }
 
         let (cx, cy) = seam_camera_center();
