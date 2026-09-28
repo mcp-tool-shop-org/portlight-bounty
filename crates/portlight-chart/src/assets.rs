@@ -1,10 +1,11 @@
 //! Chart plate ids. Real art replaces the file; the id stays.
 //!
-//! The sloop frames and wake are the approved landing plates
-//! (`godot/assets/landing/`, MANIFEST v0.2.0). Chart water and the port
-//! marker are still placeholders, stamped PH. Harbour water, quay, pier,
-//! and pilings are in that same bundle and are not drawn on the chart.
-//! Their datum (−48) is recorded in `godot/assets/catalog/locked-ids.csv`.
+//! Chart water, the port marker, and the sloop frames are the approved
+//! landing plates (`godot/assets/landing/`, MANIFEST v0.3.0). The port
+//! marker anchor is the sidecar value recorded in that manifest, `(64, 95)`.
+//! Harbour water, quay, pier, and pilings are in the same bundle and are
+//! not drawn on the chart. Their datum (−48) is recorded in
+//! `godot/assets/catalog/locked-ids.csv`.
 
 use crate::project::Facing;
 
@@ -95,42 +96,42 @@ const fn approved(asset: Asset) -> Asset {
 }
 
 pub static ASSETS: &[Asset] = &[
-    plate(
+    approved(plate(
         CHART_WATER_A,
-        "placeholders/chart_water_a.png",
+        "landing/chart/chart_water_a.png",
         128,
         64,
         CHART_WATER_ANCHOR.0,
         CHART_WATER_ANCHOR.1,
         AssetFamily::ChartWater,
-    ),
-    plate(
+    )),
+    approved(plate(
         CHART_WATER_B,
-        "placeholders/chart_water_b.png",
+        "landing/chart/chart_water_b.png",
         128,
         64,
         CHART_WATER_ANCHOR.0,
         CHART_WATER_ANCHOR.1,
         AssetFamily::ChartWater,
-    ),
-    plate(
+    )),
+    approved(plate(
         CHART_WATER_C,
-        "placeholders/chart_water_c.png",
+        "landing/chart/chart_water_c.png",
         128,
         64,
         CHART_WATER_ANCHOR.0,
         CHART_WATER_ANCHOR.1,
         AssetFamily::ChartWater,
-    ),
-    plate(
+    )),
+    approved(plate(
         PORT_MARKER,
-        "placeholders/chart_port_marker.png",
+        "landing/chart/chart_port_marker.png",
         128,
         128,
         PORT_ANCHOR.0,
         PORT_ANCHOR.1,
         AssetFamily::Port,
-    ),
+    )),
     approved(plate(
         "ship_sloop_f0",
         "landing/chart/ships/ship_sloop/ship_sloop_f0.png",
@@ -257,7 +258,9 @@ mod tests {
         assert_eq!((ship.anchor_x, ship.anchor_y), SLOOP_ANCHOR);
         assert!(ship.file.starts_with("landing/"));
         assert_ne!(ship.note, PLACEHOLDER);
-        assert_eq!(water.note, PLACEHOLDER);
+        assert_eq!(water.note, APPROVED);
+        assert!(water.file.starts_with("landing/chart/"));
+        assert!(marker.file.starts_with("landing/chart/"));
         let wake = asset(SLOOP_WAKE).unwrap();
         assert_eq!((wake.anchor_x, wake.anchor_y), SLOOP_ANCHOR);
         assert!(wake.file.ends_with("ship_sloop_wake.png"));

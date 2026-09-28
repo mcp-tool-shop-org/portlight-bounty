@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://hk7b1yrroevw"
-path="res://.godot/imported/chart_port_marker.png-3ab79df395281afdfdf271f2f52bbc49.ctex"
+uid="uid://cba8bc3f30edd"
+path="res://.godot/imported/chart_water_b.png-5a94e2d943bb52566544e43089e380ad.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/placeholders/chart_port_marker.png"
-dest_files=["res://.godot/imported/chart_port_marker.png-3ab79df395281afdfdf271f2f52bbc49.ctex"]
+source_file="res://assets/landing/chart/chart_water_b.png"
+dest_files=["res://.godot/imported/chart_water_b.png-5a94e2d943bb52566544e43089e380ad.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

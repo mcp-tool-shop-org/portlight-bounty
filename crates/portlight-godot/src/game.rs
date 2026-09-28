@@ -270,7 +270,7 @@ impl PortlightGame {
         let game_id = self.instance_id();
         column.add_child(&title_label("Portlight", 22, GOLD));
         column.add_child(&body_label(
-            "Chart water is a PH placeholder. Sloop plates are approved.",
+            "Chart water and port markers are the approved plates.",
             13,
             MUTED,
         ));
@@ -458,7 +458,7 @@ impl PortlightGame {
         });
         if ok {
             self.push_log(
-                "Art check: docked sloop at Porto Novo, sailing sloop at f7 with wake. Chart water is still the PH placeholder."
+                "Art check: docked sloop at Porto Novo, sailing sloop at f7 with wake, on the approved chart water."
                     .to_string(),
             );
         } else {

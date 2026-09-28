@@ -1,8 +1,8 @@
 id,file,canvas_w,canvas_h,anchor_x,anchor_y,family,note
-chart_water_a,placeholders/chart_water_a.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
-chart_water_b,placeholders/chart_water_b.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
-chart_water_c,placeholders/chart_water_c.png,128,64,64,63,chart_water,PLACEHOLDER flat colour; replace this file by id
-chart_port_marker,placeholders/chart_port_marker.png,128,128,64,95,port,PLACEHOLDER flat colour; replace this file by id
+chart_water_a,landing/chart/chart_water_a.png,128,64,64,63,chart_water,approved landing plate; do not regenerate
+chart_water_b,landing/chart/chart_water_b.png,128,64,64,63,chart_water,approved landing plate; do not regenerate
+chart_water_c,landing/chart/chart_water_c.png,128,64,64,63,chart_water,approved landing plate; do not regenerate
+chart_port_marker,landing/chart/chart_port_marker.png,128,128,64,95,port,approved landing plate; do not regenerate
 ship_sloop_f0,landing/chart/ships/ship_sloop/ship_sloop_f0.png,64,64,32,50,ship,approved landing plate; do not regenerate
 ship_sloop_f1,landing/chart/ships/ship_sloop/ship_sloop_f1.png,64,64,32,50,ship,approved landing plate; do not regenerate
 ship_sloop_f2,landing/chart/ships/ship_sloop/ship_sloop_f2.png,64,64,32,50,ship,approved landing plate; do not regenerate

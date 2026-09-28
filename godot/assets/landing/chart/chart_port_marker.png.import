@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bt7ldy2mbgbfc"
-path="res://.godot/imported/chart_water_b.png-6345018bdf4374434d7df26bc67d96c5.ctex"
+uid="uid://bd21ec01dbafd"
+path="res://.godot/imported/chart_port_marker.png-2c1adf0a762b8200fc2c8f738864b39c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/placeholders/chart_water_b.png"
-dest_files=["res://.godot/imported/chart_water_b.png-6345018bdf4374434d7df26bc67d96c5.ctex"]
+source_file="res://assets/landing/chart/chart_port_marker.png"
+dest_files=["res://.godot/imported/chart_port_marker.png-2c1adf0a762b8200fc2c8f738864b39c.ctex"]
 
 [params]
 

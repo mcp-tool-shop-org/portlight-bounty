@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-const MANIFEST_SHA256: &str = "acfacd1d507d4a77c703a6e0b8578d40b746a8c6d944e52eac8ea5469424e7a2";
+const MANIFEST_SHA256: &str = "f8d735fb035039c808a113e5bd5d771a3070f87b863f13ea4c77c903f930ca31";
 
 fn landing_dir() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot/assets/landing")
@@ -57,16 +57,30 @@ fn manifest_hashes_match_the_committed_files() {
     assert_eq!(sha256(&manifest_bytes), MANIFEST_SHA256);
 
     let manifest: Value = serde_json::from_slice(&manifest_bytes).expect("manifest json");
-    assert_eq!(manifest["version"], "0.2.0");
-    assert_eq!(manifest["count"], 66);
+    assert_eq!(manifest["version"], "0.3.0");
+    assert_eq!(manifest["count"], 70);
     assert_eq!(manifest["counts"]["ships"], 36);
     assert_eq!(manifest["counts"]["harbour"], 30);
+    assert_eq!(manifest["counts"]["chart"], 4);
+    let path_convention = manifest["path_convention"]["entry.path"]
+        .as_str()
+        .expect("path_convention");
+    assert!(path_convention.contains("relative"), "{path_convention}");
+    assert!(manifest["path_convention"]["provenance.*"]
+        .as_str()
+        .expect("provenance convention")
+        .contains("relative"));
+    assert!(manifest["import_policy"]["rule"]
+        .as_str()
+        .expect("import_policy")
+        .contains("Rev 4 R11"));
 
     let entries = manifest["entries"].as_array().expect("entries");
-    assert_eq!(entries.len(), 66);
+    assert_eq!(entries.len(), 70);
     let mut listed = BTreeSet::new();
     let mut class_counts = [0u32; 4];
     let mut harbour = 0u32;
+    let mut chart = 0u32;
     for entry in entries {
         let rel = entry["path"].as_str().expect("path");
         assert!(
@@ -93,30 +107,63 @@ fn manifest_hashes_match_the_committed_files() {
             listed.insert(rel.to_string()),
             "duplicate manifest path {rel}"
         );
-        match entry["class"].as_str() {
-            Some("ship_sloop") => class_counts[0] += 1,
-            Some("ship_cutter") => class_counts[1] += 1,
-            Some("ship_brigantine") => class_counts[2] += 1,
-            Some("ship_galleon") => class_counts[3] += 1,
-            Some(other) => panic!("unexpected ship class {other}"),
-            None => {
-                harbour += 1;
-                assert!(
-                    rel.starts_with("ground/")
-                        || rel.starts_with("structures/")
-                        || rel.starts_with("props/"),
-                    "{rel} is not a harbour plate"
-                );
+        let source = entry["provenance"]["source_path"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{rel} source_path"));
+        let sidecar = entry["provenance"]["render_sidecar"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{rel} render_sidecar"));
+        for provenance_path in [source, sidecar] {
+            assert!(
+                !provenance_path.starts_with('/') && !provenance_path.contains(".."),
+                "{rel} provenance is not repo-relative: {provenance_path}"
+            );
+        }
+        let import = &entry["import"];
+        assert_eq!(import["fix_alpha_border"], true, "{rel}");
+        assert_eq!(import["premult_alpha"], false, "{rel}");
+        assert_eq!(import["compress"], "Lossless", "{rel}");
+        match entry["group"].as_str() {
+            Some("ships") => {
+                assert_eq!(import["mipmaps"], false, "{rel}");
+                assert!(entry["subgroup"].is_null(), "{rel}");
+                match entry["class"].as_str() {
+                    Some("ship_sloop") => class_counts[0] += 1,
+                    Some("ship_cutter") => class_counts[1] += 1,
+                    Some("ship_brigantine") => class_counts[2] += 1,
+                    Some("ship_galleon") => class_counts[3] += 1,
+                    Some(other) => panic!("unexpected ship class {other}"),
+                    None => panic!("{rel} ship has no class"),
+                }
             }
+            Some("harbour") => {
+                harbour += 1;
+                assert_eq!(import["mipmaps"], false, "{rel}");
+                assert!(entry["class"].is_null(), "{rel}");
+                match entry["subgroup"].as_str() {
+                    Some("water" | "quay" | "pier" | "pilings") => {}
+                    other => panic!("{rel} harbour subgroup {other:?}"),
+                }
+            }
+            Some("chart") => {
+                chart += 1;
+                match entry["subgroup"].as_str() {
+                    Some("water") => assert_eq!(import["mipmaps"], true, "{rel}"),
+                    Some("marker") => assert_eq!(import["mipmaps"], false, "{rel}"),
+                    other => panic!("{rel} chart subgroup {other:?}"),
+                }
+            }
+            other => panic!("{rel} unexpected group {other:?}"),
         }
     }
     assert_eq!(class_counts, [9, 9, 9, 9], "four classes, nine plates each");
     assert_eq!(harbour, 30);
+    assert_eq!(chart, 4);
 
     let mut pngs = Vec::new();
     collect_files(&dir, ".png", &mut pngs);
     let on_disk: BTreeSet<String> = pngs.iter().map(|path| rel_to(&dir, path)).collect();
-    assert_eq!(on_disk.len(), 66, "committed PNG count");
+    assert_eq!(on_disk.len(), 70, "committed PNG count");
     assert_eq!(on_disk, listed, "committed PNGs and MANIFEST paths differ");
     for png in &pngs {
         let import = PathBuf::from(format!("{}.import", png.display()));
@@ -143,79 +190,69 @@ fn manifest_hashes_match_the_committed_files() {
     }
 }
 
-/// asset-spec Rev 3, R11. Nearest filtering is the project canvas filter, not a
-/// per-import key. Fix Alpha Border is on for every plate. Mipmaps are off for
-/// ship plates and harbour plates. Approved chart-water plates use mipmaps; the
-/// files under `placeholders/chart_water_*.png` are not those plates, so they
-/// stay off until the real water lands. When it does, this test should require
-/// `mipmaps/generate=true` for those three paths.
-const R11_LINES: &[&str] = &[
-    "compress/mode=0",
-    "process/fix_alpha_border=true",
-    "process/premult_alpha=false",
-    "process/size_limit=0",
-    "process/hdr_as_srgb=false",
-];
-
+/// asset-spec Rev 4, R11. Each `.import` is checked against that plate's
+/// `import` object in MANIFEST.json. Nearest filtering is the project canvas
+/// filter, not a per-import key. `size_limit: null` is Godot's `0` (no limit).
 #[test]
-fn plate_imports_follow_r11_and_hdr_2d_is_off() {
+fn plate_imports_follow_the_manifest_and_hdr_2d_is_off() {
     let godot = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot");
-    let mut landing = Vec::new();
-    collect_files(&godot.join("assets/landing"), ".png.import", &mut landing);
-    assert_eq!(landing.len(), 66, "one import per landing plate");
-    let mut placeholders = Vec::new();
-    collect_files(
-        &godot.join("assets/placeholders"),
-        ".png.import",
-        &mut placeholders,
-    );
-    assert_eq!(placeholders.len(), 4);
-    let mut chart_water_placeholders = 0;
+    let manifest: Value = serde_json::from_slice(
+        &fs::read(landing_dir().join("MANIFEST.json")).expect("MANIFEST.json"),
+    )
+    .expect("manifest json");
+    let entries = manifest["entries"].as_array().expect("entries");
+    assert_eq!(entries.len(), 70);
 
-    for path in landing.iter().chain(&placeholders) {
-        let text =
-            fs::read_to_string(path).unwrap_or_else(|err| panic!("{}: {err}", path.display()));
-        for line in R11_LINES {
+    let mut mipmaps_on = Vec::new();
+    for entry in entries {
+        let rel = entry["path"].as_str().expect("path");
+        let import_path = landing_dir().join(format!("{rel}.import"));
+        let text = fs::read_to_string(&import_path)
+            .unwrap_or_else(|err| panic!("{}: {err}", import_path.display()));
+        let spec = &entry["import"];
+        let mipmaps = if spec["mipmaps"].as_bool().expect("mipmaps") {
+            mipmaps_on.push(entry["id"].as_str().unwrap().to_string());
+            "mipmaps/generate=true"
+        } else {
+            "mipmaps/generate=false"
+        };
+        let size_limit = match &spec["size_limit"] {
+            Value::Null => 0,
+            Value::Number(number) => number.as_i64().expect("size_limit"),
+            other => panic!("{rel} size_limit {other}"),
+        };
+        assert_eq!(spec["compress"], "Lossless", "{rel}");
+        assert_eq!(spec["fix_alpha_border"], true, "{rel}");
+        assert_eq!(spec["premult_alpha"], false, "{rel}");
+        for line in [
+            "compress/mode=0",
+            mipmaps,
+            "process/fix_alpha_border=true",
+            "process/premult_alpha=false",
+            "process/hdr_as_srgb=false",
+        ] {
             assert!(
-                text.lines().any(|existing| existing == *line),
+                text.lines().any(|existing| existing == line),
                 "{} missing `{line}`",
-                path.display()
+                import_path.display()
             );
         }
         assert!(
+            text.lines()
+                .any(|existing| existing == format!("process/size_limit={size_limit}")),
+            "{} size_limit",
+            import_path.display()
+        );
+        assert!(
             text.contains("\"vram_texture\": false"),
             "{} enables vram_texture",
-            path.display()
+            import_path.display()
         );
-        let name = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("");
-        let in_landing = path.components().any(|part| part.as_os_str() == "landing");
-        let chart_water_placeholder = !in_landing && name.starts_with("chart_water_");
-        let port_marker = !in_landing && name.starts_with("chart_port_marker");
-        assert!(
-            in_landing || chart_water_placeholder || port_marker,
-            "unexpected plate {}",
-            path.display()
-        );
-        // R11: mipmaps off for ship plates and harbour plates (everything under
-        // landing/). The port marker is a placeholder and stays off too.
-        // Approved chart water turns mipmaps on; these three placeholders are
-        // not that art, so they stay off until those plates replace them.
-        assert!(
-            text.lines()
-                .any(|existing| existing == "mipmaps/generate=false"),
-            "{} mipmaps",
-            path.display()
-        );
-        if chart_water_placeholder {
-            chart_water_placeholders += 1;
-        }
     }
+    mipmaps_on.sort();
     assert_eq!(
-        chart_water_placeholders, 3,
-        "chart_water_a/b/c stay placeholders with mipmaps off until approved water lands"
+        mipmaps_on,
+        ["chart_water_a", "chart_water_b", "chart_water_c"]
     );
 
     let project = fs::read_to_string(godot.join("project.godot")).expect("project.godot");

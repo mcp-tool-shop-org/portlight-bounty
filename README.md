@@ -37,15 +37,15 @@ godot --path godot
 
 New game starts merchant Ada at Porto Novo, seed 1. The chart draws that port's `sail_lanes`, including warning and blocked lanes. Sail, Next day, and the market buttons call `Session`. They do not compute prices, days, or whether a lane is legal. While docked, Market, Hire sailor, Provisions +5, and Work sit on one row. Work calls `Session::work` (3 to 5 silver; markets, provisions, wages, and reputation do not tick). A failure shows `SimError` text. A pending duel offers a stance fight (`thrust`, `slash`, `parry`) or auto-resolve. Next day still calls `Session::advance`, and the sim checks the stances. The outcome's standing change is shown and not applied. Negotiate, flee, naval rounds, and boarding are not offered. The lane list sits in a scroll pane beside the chart so the Sail buttons stay inside the 1280×720 window.
 
-Chart water and the port marker are generated placeholders, stamped PH:
+Chart water and the port marker are the approved landing plates. The generator still writes the catalog and any future placeholder:
 
 ```
 cargo run -p portlight-chart --bin gen_placeholders -- godot/assets
 ```
 
-That command does not rewrite `godot/assets/landing/`. That directory is the whole v0.2.0 bundle: 66 PNGs (sloop, cutter, brigantine, and galleon, nine plates each, plus 30 harbour tiles) and `MANIFEST.json`. `cargo test -p portlight-chart` checks the manifest hash, every entry sha256, that the committed PNG set matches the manifest, and that every plate `.import` follows asset-spec Rev 3 R11 (lossless, Fix Alpha Border on, premultiply off, mipmaps off for ships and harbour). Placeholder chart water keeps mipmaps off until the approved plates land; those plates use mipmaps. Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
+That command does not rewrite `godot/assets/landing/`. That directory is the whole v0.3.0 bundle: 70 PNGs (sloop, cutter, brigantine, and galleon, nine plates each, 30 harbour tiles, and chart water plus the port marker) and `MANIFEST.json`. `cargo test -p portlight-chart` checks the manifest hash, every entry sha256, that the committed PNG set matches the manifest, and that every plate `.import` follows that entry's import fields (asset-spec Rev 4 R11: lossless, Fix Alpha Border on, premultiply off, mipmaps on for chart water only). Harbour ids, including the −48 px sea datum, are listed in `godot/assets/catalog/locked-ids.csv`. That folder is `.gdignore`d so Godot does not import the catalog as a translation. The first playable does not open a harbour scene. `godot/scenes/harbour_seam.tscn` is a separate seam plate.
 
-`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files follow R11: lossless, Fix Alpha Border on, premultiplied alpha off, VRAM off. Mipmaps are off for ship and harbour plates. The canvas filter is Nearest (`default_texture_filter=0`), so a plate drawn at 1:1 keeps its pixels.
+`godot/project.godot` sets `rendering/viewport/hdr_2d=false` (the Godot default, written explicitly). 2D blending stays sRGB. Sprite `.import` files follow Rev 4 R11: lossless, Fix Alpha Border on, premultiplied alpha off, VRAM off. Mipmaps are on for `chart_water_a`–`c` only. The canvas filter is Nearest (`default_texture_filter=0`), so a plate drawn at 1:1 keeps its pixels.
 
 Headless smoke (session only; the dummy renderer does not return a viewport image):
 
