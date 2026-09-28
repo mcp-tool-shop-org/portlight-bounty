@@ -15,9 +15,10 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy
-        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+        # gdext 0.5.5 does not build on the 1.83 pin. The godot job uses stable.
+        run: cargo clippy --locked --workspace --exclude portlight-godot --all-targets --all-features -- -D warnings
       - name: Test
-        run: cargo test --locked --workspace
+        run: cargo test --locked --workspace --exclude portlight-godot
 
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.
@@ -42,3 +43,24 @@ jobs:
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
       - name: Victory fixtures
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check
+
+  godot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the GDExtension
+        run: cargo build -p portlight-godot
+      - name: Install Godot 4.7.2
+        run: |
+          curl -fsSL -o /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          sudo install -m 755 /tmp/godot-bin/Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
+          godot --version
+      - name: Import and smoke-test the chart
+        env:
+          PORTLIGHT_SHOT: /tmp/portlight-first-playable.png
+        run: |
+          godot --headless --path godot --import --quit
+          godot --headless --path godot -- --smoke

@@ -1,0 +1,13 @@
+[package]
+name = "portlight-chart"
+description = "Dimetric chart projection and view model for Portlight (no Godot)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+portlight-sim = { path = "../portlight-sim" }
+
+[dev-dependencies]
+png = "0.17"

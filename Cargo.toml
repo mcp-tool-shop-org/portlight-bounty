@@ -1,6 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["crates/portlight-sim", "crates/portlight-cli"]
+members = [
+    "crates/portlight-sim",
+    "crates/portlight-cli",
+    "crates/portlight-chart",
+    "crates/portlight-godot",
+]
 
 [workspace.package]
 version = "0.1.0"

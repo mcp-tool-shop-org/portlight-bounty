@@ -1,0 +1,15 @@
+[package]
+name = "portlight-godot"
+description = "Godot 4.7 dimetric view over the Portlight simulation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+godot = { version = "0.5.5", features = ["api-4-7"] }
+portlight-chart = { path = "../portlight-chart" }
+portlight-sim = { path = "../portlight-sim" }

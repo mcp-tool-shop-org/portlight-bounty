@@ -3,3 +3,6 @@
 .DS_Store
 __pycache__/
 *.pyc
+godot/.godot/*
+!godot/.godot/extension_list.cfg
+godot/**/*.uid
