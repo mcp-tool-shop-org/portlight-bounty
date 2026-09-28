@@ -24,14 +24,14 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Script commands, in `script.rs` order: `new`, `buy`, `sell`, `depart`, `advance`, `arrival_narrative`, `evaluate_consequences`, `accept_contract`, `complete_contract`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `deposit`, `withdraw`, `repay_credit`, `hire`, `provision`, `work`, `duel`, `resolve_duel`, `encounter`, `naval`, `board`, `fight`, `capture`, `train`, `recruit`, `skill`, `remember`, `agency`, `spare`, `take_all`, `gear`, `buy_ship`, `upgrade`, `form_convoy`, `repair_fleet`, `repair`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `abandon_contract`, `transfer`, `maintain`, `hunt`, `bounty`, `wanted`.
 
-`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` stays 1.83.0, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`; without it Cargo 1.83 parses `godot-bindings` and the job fails before Godot starts. The job still downloads Godot 4.7.2, runs `cargo test -p portlight-godot`, and runs the headless import and `--smoke`. Build the extension locally with `cargo +stable build -p portlight-godot`.
+`godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` is 1.98.1, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`. The job still downloads Godot 4.7.2, runs `cargo test -p portlight-godot`, and runs the headless import and `--smoke`. Build the extension locally with `cargo build -p portlight-godot`.
 
 ## Run the chart
 
 Godot 4.7.2, official build. The extension looks for `target/debug/libportlight_godot.so` (and the release and other-platform names in `godot/portlight.gdextension`).
 
 ```
-cargo +stable build -p portlight-godot
+cargo build -p portlight-godot
 godot --path godot
 ```
 

@@ -11,6 +11,7 @@ md-5 = "0.10"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 # serde_json's preserve_order feature accepts indexmap 2.2.3+, and 2.14 needs
-# Rust 1.85. This crate stays on 1.83, so pin the last 1.83-compatible release.
+# Rust 1.85. The toolchain is 1.98.1. Keep =2.11.4 (the last release that also
+# built on 1.83) so Cargo.lock does not move.
 indexmap = "=2.11.4"
 sha2 = "0.10"

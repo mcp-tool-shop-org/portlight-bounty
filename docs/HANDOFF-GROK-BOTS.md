@@ -258,7 +258,7 @@ Every new system must include:
 3. **Golden JSON** generated with `python3 tools/parity/check.py --write-golden` against the Python checkout.
 4. **Victory fixtures** if the system affects victory paths.
 
-Run this on a branch cut from `main`. The Godot crate is on `main`. The 1.83 pin cannot build it, so the sim CI job excludes `portlight-godot`. The Godot CI job uses stable.
+Run this on a branch cut from `main`. The Godot crate is on `main`. The 1.98.1 pin can build it, and the sim CI job excludes `portlight-godot`. The Godot CI job uses stable.
 
 ```bash
 cargo test --locked --workspace
