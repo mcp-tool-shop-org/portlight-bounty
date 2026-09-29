@@ -114,7 +114,7 @@ fn harbour_cell_at(x: f32, y: f32) -> (i32, i32) {
 }
 
 pub fn harbour_water_tile(col: i32, row: i32) -> HarbourTile {
-    let path = match (col + row).rem_euclid(3) {
+    let path = match crate::assets::water_variant(col, row) {
         0 => "res://assets/landing/ground/water_a.png",
         1 => "res://assets/landing/ground/water_b.png",
         _ => "res://assets/landing/ground/water_c.png",
@@ -290,6 +290,39 @@ mod tests {
             .collect();
         assert_eq!((works[0].col, works[0].row), (1, 2));
         assert_eq!((works[1].col, works[1].row), (0, 3));
+    }
+
+    #[test]
+    fn water_tiles_follow_the_cell_hash() {
+        let mut seen = [false; 3];
+        let mut differs_from_stripe = false;
+        for row in 0..5 {
+            for col in 0..5 {
+                let tile = harbour_water_tile(col, row);
+                let variant = crate::assets::water_variant(col, row);
+                let expect = match variant {
+                    0 => "water_a.png",
+                    1 => "water_b.png",
+                    _ => "water_c.png",
+                };
+                assert!(
+                    tile.path.ends_with(expect),
+                    "({}, {}) -> {} wanted {expect}",
+                    tile.col,
+                    tile.row,
+                    tile.path
+                );
+                seen[variant as usize] = true;
+                let stripe = match (col + row).rem_euclid(3) {
+                    0 => "water_a.png",
+                    1 => "water_b.png",
+                    _ => "water_c.png",
+                };
+                differs_from_stripe |= expect != stripe;
+            }
+        }
+        assert_eq!(seen, [true, true, true]);
+        assert!(differs_from_stripe);
     }
 
     #[test]

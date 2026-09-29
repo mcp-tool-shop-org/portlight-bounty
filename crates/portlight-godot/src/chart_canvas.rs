@@ -111,6 +111,7 @@ impl INode2D for ChartCanvas {
                 &textures,
                 tile.asset_id,
                 Vector2::new(tile.origin.0, tile.origin.1),
+                false,
             );
         }
         if let Some(leg) = &model.leg {
@@ -254,7 +255,12 @@ enum Sortable {
 impl ChartCanvas {
     pub fn show(&mut self, model: ChartModel, snap: bool) {
         if let Some(mut camera) = self.camera.clone() {
-            camera.set_position(Vector2::new(model.frame.center_x, model.frame.center_y));
+            // Integer camera pixels so a zoom of 1.0 lands plate texels on
+            // framebuffer pixels.
+            camera.set_position(Vector2::new(
+                model.frame.center_x.round(),
+                model.frame.center_y.round(),
+            ));
             camera.set_zoom(Vector2::new(model.frame.zoom, model.frame.zoom));
         }
         debug_assert_eq!(model.ship.footprint, SHIP_FOOTPRINT_CELLS);
@@ -360,6 +366,7 @@ fn draw_port(
         textures,
         port.marker_id,
         Vector2::new(port.sprite_origin.0, port.sprite_origin.1),
+        true,
     );
 }
 
@@ -376,6 +383,7 @@ fn draw_ship(
             textures,
             ship.wake_id,
             Vector2::new(ship.wake_origin.0, ship.wake_origin.1) + delta,
+            true,
         );
     }
     draw_sprite(
@@ -383,6 +391,7 @@ fn draw_ship(
         textures,
         ship.asset_id,
         Vector2::new(ship.sprite_origin.0, ship.sprite_origin.1) + delta,
+        true,
     );
 }
 
@@ -419,9 +428,15 @@ fn draw_sprite(
     textures: &HashMap<String, Gd<Texture2D>>,
     id: &str,
     at: Vector2,
+    snap: bool,
 ) {
     let Some(texture) = textures.get(id) else {
         return;
+    };
+    let at = if snap {
+        Vector2::new(at.x.round(), at.y.round())
+    } else {
+        at
     };
     canvas.draw_texture(texture, at);
 }

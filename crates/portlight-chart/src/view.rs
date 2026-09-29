@@ -3,12 +3,12 @@
 use portlight_sim::model::{VoyageStatus, World};
 use portlight_sim::{LaneSuitability, SailLane, Session};
 
-use crate::assets::{self, chart_water_id, ship_asset, Asset, PORT_MARKER, SLOOP_WAKE};
+use crate::assets::{self, chart_water_id, ship_draw, Asset, PORT_MARKER};
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{
     chart_to_screen_f, facing_from_chart_delta, follow_ship, frame_to_view, sprite_origin,
-    water_cell_bottom, Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, DOCKED_OFFSET_X,
-    DOCKED_OFFSET_Y,
+    water_cell_bottom, Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, CHART_ZOOM_FULL,
+    CHART_ZOOM_STEP, DOCKED_OFFSET_X, DOCKED_OFFSET_Y,
 };
 
 /// First-playable waters. Ports outside this region are drawn only when the
@@ -107,6 +107,8 @@ pub struct ShipMarker {
     pub wake_origin: (f32, f32),
     pub asset_id: &'static str,
     pub wake_id: &'static str,
+    /// Catalog class. A man-of-war drawn with galleon plates still says `man_of_war`.
+    pub class_name: &'static str,
     pub docked: bool,
 }
 
@@ -418,18 +420,24 @@ fn ship_marker(world: &World) -> ShipMarker {
         at.0 += DOCKED_OFFSET_X;
         at.1 += DOCKED_OFFSET_Y;
     }
-    let hull = ship_asset(facing);
-    let wake = assets::asset(SLOOP_WAKE).expect("wake");
+    let template_id = world
+        .captain
+        .ship
+        .as_ref()
+        .map(|ship| ship.template_id.as_str())
+        .unwrap_or("");
+    let drawn = ship_draw(template_id, facing);
     ShipMarker {
         chart_x,
         chart_y,
         footprint: SHIP_FOOTPRINT_CELLS,
         facing,
         at,
-        sprite_origin: placed(at, hull),
-        wake_origin: placed(at, wake),
-        asset_id: hull.id,
-        wake_id: wake.id,
+        sprite_origin: placed(at, drawn.hull),
+        wake_origin: placed(at, drawn.wake),
+        asset_id: drawn.hull.id,
+        wake_id: drawn.wake.id,
+        class_name: drawn.class_name,
         docked,
     }
 }
@@ -443,18 +451,18 @@ pub fn docked_sloop_marker(map_x: i64, map_y: i64) -> ShipMarker {
     let mut at = chart_to_screen_f(chart_x, chart_y);
     at.0 += DOCKED_OFFSET_X;
     at.1 += DOCKED_OFFSET_Y;
-    let hull = ship_asset(Facing::F1);
-    let wake = assets::asset(SLOOP_WAKE).expect("wake");
+    let drawn = ship_draw("coastal_sloop", Facing::F1);
     ShipMarker {
         chart_x,
         chart_y,
         footprint: SHIP_FOOTPRINT_CELLS,
         facing: Facing::F1,
         at,
-        sprite_origin: placed(at, hull),
-        wake_origin: placed(at, wake),
-        asset_id: hull.id,
-        wake_id: wake.id,
+        sprite_origin: placed(at, drawn.hull),
+        wake_origin: placed(at, drawn.wake),
+        asset_id: drawn.hull.id,
+        wake_id: drawn.wake.id,
+        class_name: drawn.class_name,
         docked: true,
     }
 }
@@ -506,6 +514,87 @@ fn chart_diamond_center(u: i32, v: i32, anchor: (i32, i32)) -> (f32, f32) {
     )
 }
 
+/// Art-director frame. Zoom is 1.0 when the docked gallery ship and the
+/// sailing ship, including its wake, fit in the chart viewport. Otherwise
+/// the zoom is 0.72. The center stays on the chart focus when that still
+/// holds the plates.
+pub fn art_frame(chart: &ChartModel, view_w: f32, view_h: f32) -> Frame {
+    let mut bounds = plate_bounds(chart.ship.sprite_origin, chart.ship.asset_id);
+    if !chart.ship.docked {
+        bounds.union(plate_bounds(chart.ship.wake_origin, chart.ship.wake_id));
+    }
+    for extra in &chart.gallery {
+        bounds.union(plate_bounds(extra.sprite_origin, extra.asset_id));
+        if !extra.docked {
+            bounds.union(plate_bounds(extra.wake_origin, extra.wake_id));
+        }
+    }
+    let focus_center = (
+        (chart.focus.min_x + chart.focus.max_x) as f32 / 2.0,
+        (chart.focus.min_y + chart.focus.max_y) as f32 / 2.0,
+    );
+    let ship_center = bounds.center();
+    let zoom = if bounds.fits(focus_center, CHART_ZOOM_FULL, view_w, view_h)
+        || bounds.fits(ship_center, CHART_ZOOM_FULL, view_w, view_h)
+    {
+        CHART_ZOOM_FULL
+    } else {
+        CHART_ZOOM_STEP
+    };
+    let center = if bounds.fits(focus_center, zoom, view_w, view_h) {
+        focus_center
+    } else {
+        ship_center
+    };
+    Frame {
+        center_x: center.0.round(),
+        center_y: center.1.round(),
+        zoom,
+    }
+}
+
+fn plate_bounds(origin: (f32, f32), id: &str) -> PlateBounds {
+    let plate = assets::asset(id).unwrap_or_else(|| panic!("missing plate {id}"));
+    PlateBounds {
+        min_x: origin.0,
+        min_y: origin.1,
+        max_x: origin.0 + plate.canvas_w as f32,
+        max_y: origin.1 + plate.canvas_h as f32,
+    }
+}
+
+struct PlateBounds {
+    min_x: f32,
+    min_y: f32,
+    max_x: f32,
+    max_y: f32,
+}
+
+impl PlateBounds {
+    fn union(&mut self, other: PlateBounds) {
+        self.min_x = self.min_x.min(other.min_x);
+        self.min_y = self.min_y.min(other.min_y);
+        self.max_x = self.max_x.max(other.max_x);
+        self.max_y = self.max_y.max(other.max_y);
+    }
+
+    fn center(&self) -> (f32, f32) {
+        (
+            (self.min_x + self.max_x) / 2.0,
+            (self.min_y + self.max_y) / 2.0,
+        )
+    }
+
+    fn fits(&self, center: (f32, f32), zoom: f32, view_w: f32, view_h: f32) -> bool {
+        let half_w = view_w / zoom / 2.0;
+        let half_h = view_h / zoom / 2.0;
+        self.min_x >= center.0 - half_w
+            && self.max_x <= center.0 + half_w
+            && self.min_y >= center.1 - half_h
+            && self.max_y <= center.1 + half_h
+    }
+}
+
 fn chart_cell_f(x: f32, y: f32, anchor: (i32, i32)) -> (f32, f32) {
     let (cx, cy) = chart_diamond_center(0, 0, anchor);
     let d = (x - cx) / (CELL_WIDTH as f32 / 2.0);
@@ -540,6 +629,7 @@ fn segment_distance(from: (f32, f32), to: (f32, f32), p: (f32, f32)) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assets::ship_asset;
     use crate::cover::{grid_covers_view, TIP_FEATHER_PX};
     use crate::project::{chart_to_screen, chart_to_uv, uv_to_screen, CELL_HEIGHT, CELL_WIDTH};
     use portlight_sim::LaneSuitability;
@@ -882,5 +972,77 @@ mod tests {
                 .any(|lane| lane.suitability == LaneSuitability::Blocked),
             "Al-Manar still lists the lane depart will refuse"
         );
+    }
+
+    #[test]
+    fn a_bought_cutter_keeps_the_shared_dock_offset() {
+        let mut session = Session::new("Ada", "merchant", FIRST_PLAYABLE_SEED, None).unwrap();
+        session.buy_ship("swift_cutter").unwrap();
+        assert_eq!(
+            session.world().captain.ship.as_ref().unwrap().template_id,
+            "swift_cutter"
+        );
+        let chart = project_chart(&session);
+        assert_eq!(chart.ship.class_name, "cutter");
+        assert_eq!(chart.ship.asset_id, "ship_cutter_f1");
+        assert_eq!(chart.ship.wake_id, "ship_cutter_wake");
+        assert!(chart.ship.docked);
+        let here = chart.ports.iter().find(|port| port.is_here).unwrap();
+        let sloop = docked_sloop_marker(here.chart_x, here.chart_y);
+        assert!((chart.ship.at.0 - sloop.at.0).abs() < 1e-4);
+        assert!((chart.ship.at.1 - sloop.at.1).abs() < 1e-4);
+        assert!((chart.ship.at.0 - (here.at.0 + DOCKED_OFFSET_X)).abs() < 0.01);
+        assert!((chart.ship.at.1 - (here.at.1 + DOCKED_OFFSET_Y)).abs() < 0.01);
+        let hull = crate::assets::asset("ship_cutter_f1").unwrap();
+        assert_eq!((hull.canvas_w, hull.canvas_h), (72, 80));
+        assert_eq!((hull.anchor_x, hull.anchor_y), (36, 64));
+        assert_eq!(
+            chart.ship.sprite_origin,
+            sprite_origin(chart.ship.at, hull.anchor_x, hull.anchor_y)
+        );
+        assert_ne!(chart.ship.sprite_origin, sloop.sprite_origin);
+
+        session.depart("al_manar").unwrap();
+        session.advance().unwrap();
+        let sailing = project_chart(&session);
+        assert_eq!(sailing.ship.facing, Facing::F7);
+        assert!(!sailing.ship.docked);
+        assert_eq!(sailing.ship.asset_id, "ship_cutter_f7");
+        assert_eq!(sailing.ship.wake_id, "ship_cutter_wake");
+        assert_eq!(sailing.ship.class_name, "cutter");
+    }
+
+    #[test]
+    fn grain_road_f7_frame_is_zoom_one() {
+        let mut session = Session::new("Ada", "merchant", FIRST_PLAYABLE_SEED, None).unwrap();
+        session.buy_ship("swift_cutter").unwrap();
+        session.depart("al_manar").unwrap();
+        session.advance().unwrap();
+        let mut chart = project_chart(&session);
+        let port = session.world().port("porto_novo").unwrap();
+        chart
+            .gallery
+            .push(docked_sloop_marker(port.map_x, port.map_y));
+        // Chart area inside the 1280×720 window, beside the 420 px panel.
+        for (view_w, view_h) in [(856.0, 720.0), (CHART_VIEW_W, CHART_VIEW_H)] {
+            let frame = art_frame(&chart, view_w, view_h);
+            assert_eq!(frame.zoom, CHART_ZOOM_FULL, "{view_w}x{view_h}");
+            let half_w = view_w / frame.zoom / 2.0;
+            let half_h = view_h / frame.zoom / 2.0;
+            for (origin, id) in [
+                (chart.gallery[0].sprite_origin, chart.gallery[0].asset_id),
+                (chart.ship.sprite_origin, chart.ship.asset_id),
+                (chart.ship.wake_origin, chart.ship.wake_id),
+            ] {
+                let plate = crate::assets::asset(id).unwrap();
+                assert!(
+                    origin.0 >= frame.center_x - half_w
+                        && origin.0 + plate.canvas_w as f32 <= frame.center_x + half_w
+                        && origin.1 >= frame.center_y - half_h
+                        && origin.1 + plate.canvas_h as f32 <= frame.center_y + half_h,
+                    "{id} outside the {view_w}x{view_h} frame"
+                );
+            }
+        }
     }
 }

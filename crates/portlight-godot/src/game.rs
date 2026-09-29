@@ -15,9 +15,11 @@
 //! and provisions call `hire_crew` and `provision`; a `SimError` is shown
 //! with its `Display`.
 
+use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
+use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
     Button, Control, HBoxContainer, IControl, Label, Node, Os, PanelContainer, ScrollContainer,
     StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
@@ -26,9 +28,8 @@ use godot::global::Error;
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
-    docked_sloop_marker, frame_to_view, lane_inspect, press_port, project_chart, ChartModel,
-    Facing, PortPress, CHART_VIEW_H, CHART_VIEW_W, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME,
-    FIRST_PLAYABLE_SEED,
+    art_frame, docked_sloop_marker, lane_inspect, press_port, project_chart, ChartModel, Facing,
+    PortPress, FIRST_PLAYABLE_CAPTAIN, FIRST_PLAYABLE_NAME, FIRST_PLAYABLE_SEED,
 };
 use portlight_sim::economy::TradeReceipt;
 use portlight_sim::model::VoyageStatus;
@@ -112,7 +113,7 @@ struct PortlightGame {
     market_open: bool,
     armed_sail: Option<String>,
     smoke: bool,
-    /// Art-director frame: a docked sloop plus the sailing sloop. Not play.
+    /// Art-director frame: a docked sloop plus a sailing cutter. Not play.
     art: bool,
     smoke_ok: bool,
     shot_path: Option<String>,
@@ -158,7 +159,8 @@ impl IControl for PortlightGame {
         // one logs `Parameter "t" is null` while still exiting 0.
         self.shot_path = std::env::var("PORTLIGHT_SHOT")
             .ok()
-            .filter(|path| !path.is_empty());
+            .filter(|path| !path.is_empty())
+            .map(|path| resolve_repo_path(&path));
         self.build_ui();
         self.start_game();
         if user_arg("--encounter") {
@@ -180,7 +182,7 @@ impl IControl for PortlightGame {
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some("/tmp/portlight-art-sloop.png".to_string());
+                self.shot_path = Some(art_shot_path());
             }
             self.run_art();
             self.capture_frames = 4;
@@ -243,15 +245,18 @@ impl PortlightGame {
         row.set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
 
         let mut view_host = SubViewportContainer::new_alloc();
-        // The viewport stays CHART_VIEW_* and stretches into the space left
-        // beside the panel, so 1280 does not clip the Sail column.
+        // Stretch resizes this viewport to the control, so the chart is 1:1
+        // with the pixels beside the panel. The project Nearest setting does
+        // not apply inside a SubViewport; Linear is the viewport default.
         view_host.set_custom_minimum_size(Vector2::new(chart_host_width(), WINDOW_H));
         view_host.set_h_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_v_size_flags(SizeFlags::EXPAND_FILL);
         view_host.set_stretch(true);
+        view_host.set_texture_filter(TextureFilter::NEAREST);
         let mut viewport = SubViewport::new_alloc();
-        viewport.set_size(Vector2i::new(CHART_VIEW_W as i32, CHART_VIEW_H as i32));
+        viewport.set_size(Vector2i::new(chart_host_width() as i32, WINDOW_H as i32));
         viewport.set_disable_3d(true);
+        viewport.set_default_canvas_item_texture_filter(DefaultCanvasItemTextureFilter::NEAREST);
         let mut canvas = ChartCanvas::new_alloc();
         let game_for_chart = self.instance_id();
         connect_port_pressed(&mut canvas, move |port_id: GString| {
@@ -460,29 +465,46 @@ impl PortlightGame {
         self.refresh();
     }
 
-    /// One chart frame for the art gate: docked sloop at Porto Novo, and the
-    /// seed-1 ship one day along the Grain Road at facing f7 with its wake.
+    /// One chart frame for the art gate: docked sloop at Porto Novo, and a
+    /// cutter bought through Session, one day along the Grain Road at facing
+    /// f7 with its own wake.
     fn run_art(&mut self) {
         self.art = true;
+        let bought = {
+            let Some(session) = self.session.as_mut() else {
+                self.smoke_ok = false;
+                self.push_log("Art: no session.".to_string());
+                self.refresh();
+                return;
+            };
+            session.buy_ship("swift_cutter")
+        };
+        if let Err(err) = bought {
+            self.smoke_ok = false;
+            self.push_log(format!("Art: could not buy a cutter: {err}"));
+        }
         self.perform(Action::Sail("al_manar".into()));
         self.perform(Action::NextDay);
         let chart = self.chart_now();
         let ok = chart.as_ref().is_some_and(|chart| {
             chart.ship.facing == Facing::F7
                 && !chart.ship.docked
-                && chart.ship.asset_id == "ship_sloop_f7"
+                && chart.ship.class_name == "cutter"
+                && chart.ship.asset_id == "ship_cutter_f7"
+                && chart.ship.wake_id == "ship_cutter_wake"
                 && chart.gallery.len() == 1
                 && chart.gallery[0].docked
                 && chart.gallery[0].asset_id == "ship_sloop_f1"
+                && chart.gallery[0].class_name == "sloop"
         });
         if ok {
             self.push_log(
-                "Art check: docked sloop at Porto Novo, sailing sloop at f7 with wake, on the approved chart water."
+                "Art check: docked sloop at Porto Novo, sailing cutter at f7 with wake, on the approved chart water."
                     .to_string(),
             );
         } else {
             self.smoke_ok = false;
-            self.push_log("Art: expected a docked f1 sloop and a sailing f7 sloop.".to_string());
+            self.push_log("Art: expected a docked f1 sloop and a sailing f7 cutter.".to_string());
         }
         self.refresh();
     }
@@ -1132,7 +1154,7 @@ impl PortlightGame {
         let ship = world.captain.ship.as_ref();
         let place = match world.voyage.status {
             VoyageStatus::AtSea => format!(
-                "At sea  {} → {}  {}/{}",
+                "At sea  {} -> {}  {}/{}",
                 port_name(world, &world.voyage.origin_id),
                 port_name(world, &world.voyage.destination_id),
                 world.voyage.progress,
@@ -1153,8 +1175,12 @@ impl PortlightGame {
         };
         let ship_line = ship
             .map(|ship| {
+                let class = content::content()
+                    .ship(&ship.template_id)
+                    .map(|template| template.ship_class.as_str())
+                    .unwrap_or(ship.template_id.as_str());
                 format!(
-                    "{}   hull {}/{}   crew {}",
+                    "{}   {class}   hull {}/{}   crew {}",
                     ship.name, ship.hull, ship.hull_max, ship.crew
                 )
             })
@@ -1180,9 +1206,9 @@ impl PortlightGame {
                     .gallery
                     .push(docked_sloop_marker(port.map_x, port.map_y));
             }
-            // Keep the Mediterranean in frame so the docked ship and the
-            // sailing ship are both on screen. Play still follows the ship.
-            chart.frame = frame_to_view(chart.focus, CHART_VIEW_W, CHART_VIEW_H);
+            // 1.0 when both plates fit in the chart area of the 1280×720
+            // window, otherwise 0.72. Play still follows the ship.
+            chart.frame = art_frame(&chart, chart_host_width(), WINDOW_H);
         }
         Some(chart)
     }
@@ -1454,6 +1480,34 @@ fn victory_line(session: &Session) -> String {
     }
     let names: Vec<&str> = paths.iter().map(|path| path.name.as_str()).collect();
     format!("Victory paths: {}", names.join(", "))
+}
+
+/// `--art` writes `/tmp/chart-cutter-f7.png`. `PORTLIGHT_ART_DOCS` or
+/// `--art-docs` writes `docs/screenshots/chart-cutter-f7.png`. Godot changes
+/// into the project directory, so a relative path is taken from the repo root.
+fn art_shot_path() -> String {
+    if !(flag_set("PORTLIGHT_ART_DOCS") || user_arg("--art-docs")) {
+        return "/tmp/chart-cutter-f7.png".to_string();
+    }
+    resolve_repo_path("docs/screenshots/chart-cutter-f7.png")
+}
+
+/// Absolute paths stay as given. A relative `PORTLIGHT_SHOT` is from the repo
+/// root, not Godot's project directory.
+fn resolve_repo_path(path: &str) -> String {
+    let path_buf = std::path::Path::new(path);
+    if path_buf.is_absolute() {
+        return path.to_string();
+    }
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let root = if cwd.file_name().and_then(|name| name.to_str()) == Some("godot") {
+        cwd.parent()
+            .map(std::path::Path::to_path_buf)
+            .unwrap_or(cwd)
+    } else {
+        cwd
+    };
+    root.join(path_buf).to_string_lossy().into_owned()
 }
 
 fn docked_port_id(session: &Session) -> Option<&str> {
