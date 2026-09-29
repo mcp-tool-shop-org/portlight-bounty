@@ -28,8 +28,8 @@ use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
-    Button, Control, HBoxContainer, IControl, Label, Node, Os, PanelContainer, ScrollContainer,
-    StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
+    Button, Control, DisplayServer, HBoxContainer, IControl, Label, Node, Os, PanelContainer,
+    ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
 };
 use godot::global::Error;
 use godot::obj::InstanceId;
@@ -2309,7 +2309,15 @@ fn encounter_shot_dir() -> String {
 }
 
 fn headless_runtime() -> bool {
-    Os::singleton().has_feature("headless")
+    // `--headless` is an engine argument, so it is not in the user-arg list.
+    // The dummy display server has no viewport texture. A capture there logs
+    // `Parameter "t" is null` and must not run.
+    let display = DisplayServer::singleton().get_name();
+    if display == "headless" {
+        return true;
+    }
+    let args = Os::singleton().get_cmdline_args();
+    (0..args.len()).any(|index| args.get(index).is_some_and(|value| value == "--headless"))
 }
 
 /// Absolute paths stay as given. A relative `PORTLIGHT_SHOT` is from the repo
