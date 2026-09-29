@@ -178,6 +178,9 @@ struct PortlightGame {
     capture_crew: i64,
     encounter_shot_dir: Option<String>,
     encounter_shot: Option<ShotPhase>,
+    /// Capture path only. Draws `royal_man_of_war` so the frame shows the
+    /// galleon canvas with the class name `man_of_war`.
+    galleon_frame: bool,
 }
 
 #[godot_api]
@@ -215,6 +218,7 @@ impl IControl for PortlightGame {
             capture_crew: 0,
             encounter_shot_dir: None,
             encounter_shot: None,
+            galleon_frame: false,
         }
     }
 
@@ -241,6 +245,16 @@ impl IControl for PortlightGame {
                 self.run_encounter_screen();
                 self.capture_frames = 2;
             }
+        } else if user_arg("--encounter-galleon") {
+            self.smoke = true;
+            self.galleon_frame = true;
+            if self.shot_path.is_none() {
+                self.shot_path = Some(resolve_repo_path("docs/screenshots/encounter-galleon.png"));
+            }
+            self.prepare_scripted_voyage();
+            self.open_scripted_approach();
+            self.refresh();
+            self.capture_frames = 4;
         } else if user_arg("--encounter") {
             self.smoke = true;
             self.run_encounter();
@@ -1745,17 +1759,26 @@ impl PortlightGame {
     fn sync_encounter_screen(&mut self) {
         let game_id = self.instance_id();
         let crew_count = self.capture_crew;
-        let template_id = self
-            .session
-            .as_ref()
-            .and_then(|session| session.world().captain.ship.as_ref())
-            .map(|ship| ship.template_id.clone())
-            .unwrap_or_default();
+        let template_id = if self.galleon_frame {
+            "royal_man_of_war".to_string()
+        } else {
+            self.session
+                .as_ref()
+                .and_then(|session| session.world().captain.ship.as_ref())
+                .map(|ship| ship.template_id.clone())
+                .unwrap_or_default()
+        };
         let view = self.encounter.as_ref().and_then(present);
         let Some(nodes) = self.encounter_nodes.as_mut() else {
             return;
         };
-        set_ship_plate(&mut nodes.plate, &mut nodes.plate_panel, &template_id);
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &template_id,
+        );
         let open = view.is_some();
         nodes.root.set_visible(open);
         nodes.root.set_mouse_filter(if open {

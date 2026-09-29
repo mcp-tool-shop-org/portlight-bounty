@@ -34,6 +34,8 @@ pub(crate) struct EncounterNodes {
     pub crew: Gd<Label>,
     pub plate: Gd<TextureRect>,
     pub plate_panel: Gd<PanelContainer>,
+    pub plate_caption: Gd<Label>,
+    pub placeholder: Gd<PanelContainer>,
 }
 
 pub(crate) fn build_encounter_screen() -> EncounterNodes {
@@ -52,8 +54,12 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     row.add_theme_constant_override("separation", 20);
     root.add_child(&row);
 
-    let (side, plate, plate_panel) = side_column();
-    row.add_child(&side);
+    let side = side_column();
+    let plate = side.plate;
+    let plate_panel = side.panel;
+    let plate_caption = side.caption;
+    let placeholder = side.placeholder;
+    row.add_child(&side.column);
 
     let mut column = VBoxContainer::new_alloc();
     column.set_h_size_flags(SizeFlags::EXPAND_FILL);
@@ -90,6 +96,8 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
         crew,
         plate,
         plate_panel,
+        plate_caption,
+        placeholder,
     }
 }
 
@@ -98,7 +106,15 @@ pub(crate) fn fill_parent(root: &mut Gd<PanelContainer>) {
     root.set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
 }
 
-fn side_column() -> (Gd<VBoxContainer>, Gd<TextureRect>, Gd<PanelContainer>) {
+struct SideColumn {
+    column: Gd<VBoxContainer>,
+    plate: Gd<TextureRect>,
+    panel: Gd<PanelContainer>,
+    caption: Gd<Label>,
+    placeholder: Gd<PanelContainer>,
+}
+
+fn side_column() -> SideColumn {
     let mut column = VBoxContainer::new_alloc();
     column.set_name("ShipPlateColumn");
     column.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
@@ -110,9 +126,24 @@ fn side_column() -> (Gd<VBoxContainer>, Gd<TextureRect>, Gd<PanelContainer>) {
     // The plate itself stays at exact 2×; only the parchment grows.
     panel.set_h_size_flags(SizeFlags::FILL);
     column.add_child(&panel);
-    column.add_child(&text_label("Ship plate", 13, CREAM));
-    column.add_child(&placeholder_panel());
-    (column, plate, panel)
+    let mut caption = text_label("Ship plate", 13, CREAM);
+    column.add_child(&caption);
+    let mut placeholder = placeholder_panel();
+    column.add_child(&placeholder);
+    set_ship_plate(
+        &mut plate.clone(),
+        &mut panel,
+        &mut placeholder,
+        &mut caption,
+        "",
+    );
+    SideColumn {
+        column,
+        plate,
+        panel,
+        caption,
+        placeholder,
+    }
 }
 
 /// Tan panel, 20 px of padding, plate at exact 2× nearest. No tint.
@@ -149,7 +180,6 @@ fn plate_panel() -> (Gd<PanelContainer>, Gd<TextureRect>) {
         let mut rect = rect_for_resize.clone();
         center_plate(&host_for_resize, &mut rect);
     });
-    set_ship_plate(&mut rect, &mut panel, "");
     (panel, rect)
 }
 
@@ -158,11 +188,19 @@ fn plate_panel() -> (Gd<PanelContainer>, Gd<TextureRect>) {
 pub(crate) fn set_ship_plate(
     rect: &mut Gd<TextureRect>,
     panel: &mut Gd<PanelContainer>,
+    placeholder: &mut Gd<PanelContainer>,
+    caption: &mut Gd<Label>,
     template_id: &str,
 ) {
-    let plate = encounter_plate(template_id).hull;
+    let drawn = encounter_plate(template_id);
+    let plate = drawn.hull;
     let (panel_w, panel_h) = ui_plate_panel(plate.canvas_w, plate.canvas_h);
     panel.set_custom_minimum_size(Vector2::new(panel_w as f32, panel_h as f32));
+    // The column width is this plate's panel, not a fixed cutter width. The
+    // placeholder's own text can still make a narrower plate's column wider.
+    let hold = placeholder.get_custom_minimum_size();
+    placeholder.set_custom_minimum_size(Vector2::new(panel_w as f32, hold.y));
+    caption.set_text(plate_caption(drawn.class_name));
     let draw = Vector2::new(
         (plate.canvas_w * UI_PLATE_SCALE) as f32,
         (plate.canvas_h * UI_PLATE_SCALE) as f32,
@@ -184,12 +222,25 @@ pub(crate) fn set_ship_plate(
 /// 144-wide plate cannot split the spare pixel, so the two sides differ by 1.
 fn center_plate(host: &Gd<Control>, rect: &mut Gd<TextureRect>) {
     let host_w = host.get_size().x;
+    let host_h = host.get_size().y;
     let draw_w = rect.get_size().x;
-    if host_w <= 0.0 || draw_w <= 0.0 {
+    let draw_h = rect.get_size().y;
+    if host_w <= 0.0 || host_h <= 0.0 || draw_w <= 0.0 || draw_h <= 0.0 {
         return;
     }
     let x = ((host_w - draw_w) / 2.0).round();
-    rect.set_position(Vector2::new(x, 0.0));
+    let y = ((host_h - draw_h) / 2.0).round();
+    rect.set_position(Vector2::new(x, y));
+}
+
+/// Galleon-class plates name the catalog class. `man_of_war` stays
+/// `man_of_war` even though the canvas is the galleon. Other classes keep
+/// the signed-off "Ship plate" caption.
+fn plate_caption(class_name: &str) -> &str {
+    match class_name {
+        "man_of_war" | "galleon" => class_name,
+        _ => "Ship plate",
+    }
 }
 
 fn load_plate(rect: &mut Gd<TextureRect>, plate: &Asset) {
