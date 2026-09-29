@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-const MANIFEST_SHA256: &str = "f8d735fb035039c808a113e5bd5d771a3070f87b863f13ea4c77c903f930ca31";
+const MANIFEST_SHA256: &str = "e778a8032d9faf8f74aa64560754adc7b643f48ca97606c1a626805604f3a68d";
 
 fn landing_dir() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot/assets/landing")
@@ -57,11 +57,12 @@ fn manifest_hashes_match_the_committed_files() {
     assert_eq!(sha256(&manifest_bytes), MANIFEST_SHA256);
 
     let manifest: Value = serde_json::from_slice(&manifest_bytes).expect("manifest json");
-    assert_eq!(manifest["version"], "0.3.0");
-    assert_eq!(manifest["count"], 70);
+    assert_eq!(manifest["version"], "0.4.0");
+    assert_eq!(manifest["count"], 73);
     assert_eq!(manifest["counts"]["ships"], 36);
     assert_eq!(manifest["counts"]["harbour"], 30);
     assert_eq!(manifest["counts"]["chart"], 4);
+    assert_eq!(manifest["counts"]["quay_flag"], 3);
     let path_convention = manifest["path_convention"]["entry.path"]
         .as_str()
         .expect("path_convention");
@@ -76,11 +77,12 @@ fn manifest_hashes_match_the_committed_files() {
         .contains("Rev 4 R11"));
 
     let entries = manifest["entries"].as_array().expect("entries");
-    assert_eq!(entries.len(), 70);
+    assert_eq!(entries.len(), 73);
     let mut listed = BTreeSet::new();
     let mut class_counts = [0u32; 4];
     let mut harbour = 0u32;
     let mut chart = 0u32;
+    let mut quay_flag = 0u32;
     for entry in entries {
         let rel = entry["path"].as_str().expect("path");
         assert!(
@@ -153,17 +155,24 @@ fn manifest_hashes_match_the_committed_files() {
                     other => panic!("{rel} chart subgroup {other:?}"),
                 }
             }
+            Some("quay_flag") => {
+                quay_flag += 1;
+                assert_eq!(import["mipmaps"], false, "{rel}");
+                assert!(entry["class"].is_null(), "{rel}");
+                assert_eq!(entry["subgroup"].as_str(), Some("flag"), "{rel}");
+            }
             other => panic!("{rel} unexpected group {other:?}"),
         }
     }
     assert_eq!(class_counts, [9, 9, 9, 9], "four classes, nine plates each");
     assert_eq!(harbour, 30);
     assert_eq!(chart, 4);
+    assert_eq!(quay_flag, 3);
 
     let mut pngs = Vec::new();
     collect_files(&dir, ".png", &mut pngs);
     let on_disk: BTreeSet<String> = pngs.iter().map(|path| rel_to(&dir, path)).collect();
-    assert_eq!(on_disk.len(), 70, "committed PNG count");
+    assert_eq!(on_disk.len(), 73, "committed PNG count");
     assert_eq!(on_disk, listed, "committed PNGs and MANIFEST paths differ");
     for png in &pngs {
         let import = PathBuf::from(format!("{}.import", png.display()));
@@ -201,7 +210,7 @@ fn plate_imports_follow_the_manifest_and_hdr_2d_is_off() {
     )
     .expect("manifest json");
     let entries = manifest["entries"].as_array().expect("entries");
-    assert_eq!(entries.len(), 70);
+    assert_eq!(entries.len(), 73);
 
     let mut mipmaps_on = Vec::new();
     for entry in entries {
