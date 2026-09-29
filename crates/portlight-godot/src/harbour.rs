@@ -1,6 +1,10 @@
 //! Places a [`portlight_chart::HarbourTile`] list.
 //!
-//! Water stays on its own layer. Every raised work is a child of one
+//! Water stays on its own layer and does not Y-sort. Quay paving uses the
+//! existing Land ground layer (art-gate U.4: offset `0,0`, y-sort origin `0`),
+//! which is the same ground band as water and is not a layer of its own above
+//! the works. Land Y-sorts its own tiles by the footprint anchor and does not
+//! sort against blocks or props. Every raised work is a child of one
 //! `y_sort_enabled` node, positioned on the footprint-bottom anchor, so
 //! Godot orders them by footprint depth (`col + row`). The seam uses that
 //! depth sort. Equal Y keeps tree order, which is the builder's tie-break
@@ -18,6 +22,14 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
     water.set_z_index(0);
     water.set_y_sort_enabled(false);
 
+    // Land is the quay-paving ground layer. z 0 keeps it with water, under
+    // works at z 1, so paving cannot draw over quay blocks or props.
+    // Y-sort origin 0 is the sprite anchor; the node position stays 0,0.
+    let mut land = Node2D::new_alloc();
+    land.set_name("Land");
+    land.set_z_index(0);
+    land.set_y_sort_enabled(true);
+
     let mut works = Node2D::new_alloc();
     works.set_name("Works");
     works.set_z_index(1);
@@ -31,10 +43,12 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
         };
         match tile.layer {
             HarbourLayer::Water => water.add_child(&sprite),
+            HarbourLayer::Land => land.add_child(&sprite),
             HarbourLayer::Work => works.add_child(&sprite),
         }
     }
     root.add_child(&water);
+    root.add_child(&land);
     root.add_child(&works);
     ok
 }

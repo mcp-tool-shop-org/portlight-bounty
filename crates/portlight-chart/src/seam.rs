@@ -225,6 +225,20 @@ mod tests {
             "works share one y-sort node"
         );
         assert!(
+            placer.contains("set_name(\"Land\")"),
+            "quay paving uses the Land ground layer"
+        );
+        assert!(
+            placer.contains("land.set_z_index(0)"),
+            "land stays on the ground band, under works"
+        );
+        let land_at = placer.find("HarbourLayer::Land").expect("land arm");
+        let work_at = placer.find("HarbourLayer::Work").expect("work arm");
+        assert!(
+            land_at < work_at,
+            "paving is parented before quay blocks and props"
+        );
+        assert!(
             !placer.contains("set_z_index(tile"),
             "works are not given a z per id"
         );
@@ -270,12 +284,14 @@ mod tests {
             );
             assert_eq!(sy, (tile.col + tile.row) * 64);
             assert_eq!(tile.screen_x, sx);
-            assert_eq!(
-                tile.screen_y,
-                sy + HARBOUR_CELL_H / 2 - WATER_DATUM_Y,
-                "datum applies to {}",
-                tile.path
-            );
+            let ground_y = sy + HARBOUR_CELL_H / 2;
+            let screen_y = if tile.layer == HarbourLayer::Land {
+                // U.4 layer offset is 0,0. Sea datum stays on water and works.
+                ground_y
+            } else {
+                ground_y - WATER_DATUM_Y
+            };
+            assert_eq!(tile.screen_y, screen_y, "placement for {}", tile.path);
         }
 
         let (cx, cy) = grid_to_screen(4, 2, CELL_WIDTH, CELL_HEIGHT);
@@ -302,6 +318,26 @@ mod tests {
             .iter()
             .find(|tile| tile.path.contains("quay_1111"))
             .expect("quay");
+        let paving = tiles
+            .iter()
+            .find(|tile| {
+                tile.layer == HarbourLayer::Land && tile.col == quay.col && tile.row == quay.row
+            })
+            .expect("quay paving");
+        assert!(paving.path.contains("quay_flag_"));
+        assert!(paving.kind.is_none());
+        let paving_at = tiles
+            .iter()
+            .position(|tile| tile.layer == HarbourLayer::Land)
+            .expect("paving");
+        let quay_list_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("quay block");
+        assert!(
+            paving_at < quay_list_at,
+            "paving draws before the quay block"
+        );
         let pier = tiles
             .iter()
             .find(|tile| tile.path.contains("structures/pier_"))

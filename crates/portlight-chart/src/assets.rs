@@ -438,6 +438,95 @@ pub fn chart_water_id(u: i32, v: i32) -> &'static str {
     }
 }
 
+/// One quay paving plate from the landing manifest.
+///
+/// Path, canvas, anchor, layer, and offset come from that entry. The harbour
+/// does not keep a second copy of `ground/quay_flag_*.png`.
+#[derive(Debug)]
+pub struct QuayFlagPlate {
+    pub id: &'static str,
+    pub res_path: &'static str,
+    pub anchor_x: i32,
+    pub anchor_y: i32,
+    pub canvas_w: i32,
+    pub canvas_h: i32,
+    pub layer: &'static str,
+    pub offset_x: i32,
+    pub offset_y: i32,
+    /// Art-gate U.4 `y_sort_origin`. `0` is the footprint anchor, with no extra shift.
+    pub y_sort: i32,
+}
+
+/// Deterministic quay-paving index in `0..3` for one cell.
+///
+/// The same `(col, row)` always selects the same plate. The mix is not
+/// `(col + row) % 3`, and it is not [`water_variant`]: a quay cell is not
+/// tied to the water plate on that cell. Nothing here reads time or RNG.
+pub fn quay_flag_variant(col: i32, row: i32) -> u8 {
+    let mut hash = (col as u32).wrapping_mul(0x85EB_CA6B);
+    hash ^= (row as u32).wrapping_mul(0x9E37_79B1);
+    hash ^= hash >> 16;
+    hash = hash.wrapping_mul(0x1656_67B1);
+    hash ^= hash >> 13;
+    hash = hash.wrapping_mul(0x9E37_79B9);
+    hash ^= hash >> 16;
+    (hash % 3) as u8
+}
+
+/// Manifest plate for this cell. Variant `0` is `quay_flag_a`, then `b`, then `c`.
+pub fn quay_flag_plate(col: i32, row: i32) -> &'static QuayFlagPlate {
+    let id = match quay_flag_variant(col, row) {
+        0 => "quay_flag_a",
+        1 => "quay_flag_b",
+        _ => "quay_flag_c",
+    };
+    quay_flag_plates()
+        .iter()
+        .find(|plate| plate.id == id)
+        .unwrap_or_else(|| panic!("MANIFEST has no {id}"))
+}
+
+fn quay_flag_plates() -> &'static [QuayFlagPlate] {
+    static PLATES: OnceLock<Vec<QuayFlagPlate>> = OnceLock::new();
+    PLATES.get_or_init(load_quay_flag_plates).as_slice()
+}
+
+fn load_quay_flag_plates() -> Vec<QuayFlagPlate> {
+    let manifest: serde_json::Value =
+        serde_json::from_str(LANDING_MANIFEST).expect("embedded landing MANIFEST");
+    let entries = manifest["entries"].as_array().expect("MANIFEST entries");
+    let mut plates = Vec::new();
+    for entry in entries {
+        if entry["group"] != "quay_flag" {
+            continue;
+        }
+        let id = entry["id"].as_str().expect("quay_flag id");
+        let rel = entry["path"].as_str().expect("quay_flag path");
+        let canvas = entry["canvas"].as_array().expect("canvas");
+        let anchor = entry["anchor"].as_array().expect("anchor");
+        let offset = entry["layer_offset_px"]
+            .as_array()
+            .expect("layer_offset_px");
+        let layer = entry["layer"].as_str().expect("layer");
+        let y_sort = i32::try_from(entry["y_sort_origin"].as_i64().expect("y_sort_origin"))
+            .expect("y_sort_origin");
+        plates.push(QuayFlagPlate {
+            id: leak_str(id.to_string()),
+            res_path: leak_str(format!("res://assets/landing/{rel}")),
+            anchor_x: json_i32(&anchor[0], id, "anchor x"),
+            anchor_y: json_i32(&anchor[1], id, "anchor y"),
+            canvas_w: json_i32(&canvas[0], id, "canvas w"),
+            canvas_h: json_i32(&canvas[1], id, "canvas h"),
+            layer: leak_str(layer.to_string()),
+            offset_x: json_i32(&offset[0], id, "offset x"),
+            offset_y: json_i32(&offset[1], id, "offset y"),
+            y_sort,
+        });
+    }
+    assert_eq!(plates.len(), 3, "MANIFEST quay_flag count");
+    plates
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
