@@ -10,7 +10,7 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
                      sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
                      ships inventory must equal the 36 ids (empty fails). A missing row, a row that
-                     is not pass, or a nonzero exit refuses the build.
+                     is not pass, a row with no exit key, or a nonzero exit refuses the build.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -31,8 +31,11 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      The quay retrieval doc must contain its results sha256.
                      The results file is read once: those bytes are parsed and hashed.
                      Inventory ids must equal the expected plate set (quay_flag, harbour, and ships).
-                     A FAIL verdict row (plain FAIL, or a markdown | FAIL | cell), a duplicate row id,
-                     or an unexpected row id refuses the build. A counted summary such as "0 FAIL" does not.
+                     A real FAIL verdict refuses the build: a line whose verdict token is exactly
+                     FAIL or **FAIL** (a plain line, or Verdict:/Result:), or a table cell that is
+                     exactly FAIL under a Verdict or Result header. Prose that only mentions FAIL
+                     does not, and the chart stock row "| water_a..c | FAIL (exit 1) |" does not.
+                     A duplicate row id or an unexpected row id also refuses the build.
                      A results file that is not a JSON object is a problem, not a traceback.
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
@@ -227,23 +230,82 @@ def _bare_cell(text):
     return re.sub(r"[*_`]", "", text).strip()
 
 
-def fail_result_lines(text):
-    """Lines that report a FAIL verdict row.
+def _table_cells(line):
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
 
-    A counted summary such as '0 FAIL' or '36 PASS, 0 FAIL' is not a verdict.
-    A plain FAIL token is, and so is a markdown cell whose text is FAIL
-    (`| FAIL |`, `| **FAIL** |`).
+
+def _is_table_row(line):
+    stripped = line.strip()
+    return stripped.startswith("|") and stripped.endswith("|") and stripped.count("|") >= 2
+
+
+def _is_separator_row(line):
+    if not _is_table_row(line):
+        return False
+    cells = _table_cells(line)
+    return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell.replace(" ", "")) for cell in cells)
+
+
+def _is_verdict_header(cell):
+    return _bare_cell(cell).lower() in {"verdict", "result"}
+
+
+def _is_stock_v011_water_row(line):
+    """Chart retrieval documents the stock v0.1.1 canvas-size failure. Not a plate verdict."""
+    return "water_a..c" in line and re.search(r"FAIL\s*\(exit\s*1\)", line) is not None
+
+
+def _line_verdict_token_is_fail(line):
+    """A plain FAIL / **FAIL** line, or Verdict:/Result: whose token is exactly that."""
+    if re.fullmatch(r"\**\s*FAIL\s*\**", line):
+        return True
+    labelled = re.match(r"(?i)^(?:\**\s*)?(?:verdict|result)\s*:\s*(.*?)\s*$", line)
+    if not labelled:
+        return False
+    token = _bare_cell(labelled.group(1)).rstrip(".")
+    return token == "FAIL"
+
+
+def _verdict_columns(header):
+    return [i for i, cell in enumerate(header) if _is_verdict_header(cell)]
+
+
+def fail_result_lines(text):
+    """Lines that report a real FAIL verdict.
+
+    A counted summary such as '0 FAIL' is not one. Neither is prose that merely
+    mentions FAIL, nor the chart stock row '| water_a..c | FAIL (exit 1) |'.
+    A table cell counts only when it is exactly FAIL and its column header is
+    Verdict or Result.
     """
-    found = []
-    for raw in text.splitlines():
+    raw_lines = text.splitlines()
+    header_for = {}
+    current = None
+    for index, raw in enumerate(raw_lines):
         line = raw.strip()
-        if not line:
+        if _is_separator_row(line) and index > 0 and _is_table_row(raw_lines[index - 1]):
+            current = _table_cells(raw_lines[index - 1])
             continue
-        if any(_bare_cell(cell) == "FAIL" for cell in line.split("|")):
+        if current is not None and _is_table_row(line) and not _is_separator_row(line):
+            header_for[index] = current
+        elif line and not _is_table_row(line):
+            current = None
+    found = []
+    for index, raw in enumerate(raw_lines):
+        line = raw.strip()
+        if not line or _is_stock_v011_water_row(line):
+            continue
+        if _line_verdict_token_is_fail(line):
             found.append(line)
             continue
-        bare = re.sub(r"\b\d+\s+FAIL\b", "", _bare_cell(line))
-        if re.search(r"\bFAIL\b", bare):
+        header = header_for.get(index)
+        if not header:
+            continue
+        cells = _table_cells(line)
+        if any(
+            column < len(cells) and _bare_cell(cells[column]) == "FAIL"
+            for column in _verdict_columns(header)
+        ):
             found.append(line)
     return found
 
@@ -414,13 +476,15 @@ def main(argv=None):
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
             if vj is not None and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
             ship_row = vrows.get(aid)
-            ship_exit = ship_row.get("exit") if isinstance(ship_row, dict) else None
             if vj is not None and (
                 not isinstance(ship_row, dict)
                 or ship_row.get("pass") is not True
-                or ship_exit not in (None, 0)
+                or "exit" not in ship_row
+                or ship_row.get("exit") != 0
             ):
-                problems.append(f"{aid}: Verifier ships row missing, not pass, or nonzero exit")
+                problems.append(
+                    f"{aid}: Verifier ships row missing, not pass, missing exit, or nonzero exit"
+                )
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
             loa, _ = csv_field(r["hull_len_px"], aid, "LOA", parse_int, nulls, na)

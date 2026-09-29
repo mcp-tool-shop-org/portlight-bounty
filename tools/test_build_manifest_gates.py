@@ -23,7 +23,12 @@ import zlib
 try:
     import pytest
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pytest"])
+    # A --user install is not visible to this process on GitHub's runner.
+    _pytest_target = "/tmp/portlight-pytest"
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--target", _pytest_target, "pytest"]
+    )
+    sys.path.insert(0, _pytest_target)
     import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -143,7 +148,7 @@ def test_gate_helpers():
     # G1: PASS summary plus a FAIL result line.
     doc = (
         "Result: **3/3 PASS**\n"
-        "Recheck: quay_flag_b **FAIL** still open\n"
+        "Verdict: **FAIL**\n"
         "Result: **2/3 PASS**\n"
         "✅ Builder may land\n"
     )
@@ -158,11 +163,31 @@ def test_gate_helpers():
         "no FAIL result line",
     )
 
-    # 1. A plain FAIL token, and a markdown cell "| FAIL |", are verdict rows.
-    for sample in ("FAIL", "| FAIL |", "| quay_flag_a | FAIL |", "| **FAIL** |"):
+    # Real verdicts: a plain FAIL token, a Verdict:/Result: line, or a FAIL cell
+    # under a Verdict or Result header. A bare "| FAIL |" row with no header is not.
+    verdicts = (
+        "FAIL",
+        "**FAIL**",
+        "Verdict: FAIL",
+        "Result: **FAIL**",
+        "| id | Verdict |\n| --- | --- |\n| quay_flag_a | FAIL |",
+        "| id | Result |\n| --- | --- |\n| quay_flag_a | **FAIL** |",
+    )
+    for sample in verdicts:
         problems = []
         mod.require_no_fail_results(sample + "\n", "retrieval.md", problems)
-        check(f"negative: FAIL verdict {sample!r}", bool(problems), joined(problems))
+        check(f"negative: FAIL verdict {sample.splitlines()[0]!r}", bool(problems), joined(problems))
+    prose_fail = (
+        "Neither is a FAIL of the delivered images.\n"
+        "| water_a..c | FAIL (exit 1) |\n"
+        "Addendum V.1 keeps that FAIL…\n"
+        "| id | Result |\n| --- | --- |\n| water_a..c | FAIL (exit 1) |\n"
+    )
+    check(
+        "prose FAIL and the stock water row are not verdicts",
+        mod.fail_result_lines(prose_fail) == [],
+        "no FAIL verdict",
+    )
 
     # Duplicate row id, fail then pass. Last row would pass; the duplicate must not.
     dup_rows = [
@@ -368,12 +393,13 @@ def build_fixture(studio):
         os.path.join(verifier, "ships_results.json"),
         {
             "inventory": [{"id": aid, "sha256": png_sha} for aid in ship_ids()],
-            "rows": [{"id": aid, "pass": True} for aid in ship_ids()],
+            "rows": [{"id": aid, "pass": True, "exit": 0} for aid in ship_ids()],
         },
     )
     write_text(
         os.path.join(outbox, "retrieval-ships.md"),
         "**Result: 36 PASS, 0 FAIL**\n"
+        "Neither is a FAIL of the delivered images.\n"
         + "".join(f"| {aid} | **PASS** |\n" for aid in ship_ids()),
     )
 
@@ -420,7 +446,9 @@ def build_fixture(studio):
     write_json(os.path.join(verifier, "chart", "chart_retrieval_results.json"), chart_obj)
     write_text(
         os.path.join(outbox, "retrieval-chart.md"),
-        "**Chart profile (SIMULATED): 4 PASS, 0 FAIL.**\n✅ Builder may land\n",
+        "**Chart profile (SIMULATED): 4 PASS, 0 FAIL.**\n"
+        "| water_a..c | FAIL (exit 1) |\n"
+        "✅ Builder may land\n",
     )
 
     quay_ids = list(mod.EXP_QUAY_FLAG)
@@ -456,7 +484,8 @@ def build_fixture(studio):
         os.path.join(outbox, "retrieval-quay_flag_painterly.md"),
         "Result: **3/3 PASS**\n"
         + hashlib.sha256(quay_raw).hexdigest()
-        + "\n✅ Builder may land\n",
+        + "\nAddendum V.1 keeps that FAIL…\n"
+        "✅ Builder may land\n",
     )
 
     spec_rows = "\n".join(f"| `ship_{cls}` | hull | `{prefix}` |" for cls in mod.CLASSES)
@@ -569,7 +598,17 @@ def mutate_results(copy, which, mutate):
 
 
 @pytest.mark.parametrize("doc", RETRIEVAL_DOCS)
-@pytest.mark.parametrize("verdict", ["FAIL", "| plate | FAIL |"])
+@pytest.mark.parametrize(
+    "verdict",
+    [
+        "FAIL",
+        "**FAIL**",
+        "Verdict: FAIL",
+        "Result: **FAIL**",
+        "| id | Verdict |\n| --- | --- |\n| plate | FAIL |",
+        "| id | Result |\n| --- | --- |\n| plate | **FAIL** |",
+    ],
+)
 def test_fail_verdict_anywhere_in_retrieval_doc(studio, tmp_path, doc, verdict):
     copy = clone_studio(studio, str(tmp_path / "copy"))
     insert_middle(os.path.join(copy, "outbox-PB-002", doc), verdict)
@@ -616,7 +655,7 @@ def test_ships_missing_row_fails(studio, tmp_path):
     mutate_results(copy, "ships", lambda body: body["rows"].pop(0))
     status, out = run_main(main_argv(copy))
     assert status != 0
-    assert "missing, not pass, or nonzero exit" in out
+    assert "Verifier ships row" in out
 
 
 def test_ships_failing_row_fails(studio, tmp_path):
@@ -629,7 +668,19 @@ def test_ships_failing_row_fails(studio, tmp_path):
     mutate_results(copy, "ships", fail_row)
     status, out = run_main(main_argv(copy))
     assert status != 0
-    assert "missing, not pass, or nonzero exit" in out
+    assert "not pass" in out
+
+
+def test_ships_row_without_exit_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+
+    def drop_exit(body):
+        body["rows"][0].pop("exit")
+
+    mutate_results(copy, "ships", drop_exit)
+    status, out = run_main(main_argv(copy))
+    assert status != 0
+    assert "missing exit" in out
 
 
 def test_ships_nonzero_exit_fails(studio, tmp_path):
@@ -642,7 +693,25 @@ def test_ships_nonzero_exit_fails(studio, tmp_path):
     mutate_results(copy, "ships", bad_exit)
     status, out = run_main(main_argv(copy))
     assert status != 0
-    assert "missing, not pass, or nonzero exit" in out
+    assert "nonzero exit" in out
+
+
+PROSE_FAIL_LINES = (
+    "Neither is a FAIL of the delivered images.",
+    "| water_a..c | FAIL (exit 1) |",
+    "Addendum V.1 keeps that FAIL…",
+)
+
+
+def test_prose_fail_mentions_are_not_verdicts():
+    text = "\n".join(PROSE_FAIL_LINES) + "\n"
+    assert mod.fail_result_lines(text) == []
+    stock_under_result = (
+        "| id | Result |\n"
+        "| --- | --- |\n"
+        "| water_a..c | FAIL (exit 1) |\n"
+    )
+    assert mod.fail_result_lines(stock_under_result) == []
 
 
 def test_clean_fixture_main_exits_0_and_check_matches(studio):
@@ -693,7 +762,8 @@ def test_ci_compare_mismatch_exits_nonzero(tmp_path):
     assert proc.returncode != 0
 
 
-def test_041_manifest_sha_and_diff_scope():
+def test_committed_041_manifest_sha():
+    """Hash the committed 0.4.1 manifest. Rebuild from studio inputs when they are present."""
     manifest = os.path.join(ROOT, "godot", "assets", "landing", "MANIFEST.json")
     data = open(manifest, "rb").read()
     assert hashlib.sha256(data).hexdigest() == MANIFEST_SHA
@@ -704,13 +774,30 @@ def test_041_manifest_sha_and_diff_scope():
         status, out = run_main(["--studio", studio_root, "--version", "0.4.1", "--check"])
         assert status == 0, out
         assert "MATCHES" in out
-    changed = set(subprocess.check_output(
-        ["git", "diff", "--name-only", "origin/main"],
-        cwd=ROOT,
-        text=True,
-    ).split())
-    status = subprocess.check_output(["git", "status", "--porcelain", "-u"], cwd=ROOT, text=True)
-    for line in status.splitlines():
+
+
+def test_diff_scope_skips_without_git():
+    try:
+        subprocess.check_output(["git", "--version"], stderr=subprocess.DEVNULL)
+        diff = subprocess.run(
+            ["git", "diff", "--name-only", "origin/main"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "-u"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        pytest.skip(f"git scope check skipped: git is not available ({exc})")
+    if diff.returncode != 0 or status.returncode != 0:
+        detail = (diff.stderr or status.stderr or "git diff failed").strip()
+        pytest.skip(f"git scope check skipped: {detail}")
+    changed = set(diff.stdout.split())
+    for line in status.stdout.splitlines():
         path = line[3:]
         if " -> " in path:
             path = path.split(" -> ", 1)[1]
