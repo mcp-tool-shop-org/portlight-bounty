@@ -232,17 +232,7 @@ pub fn asset(id: &str) -> Option<&'static Asset> {
         .find(|asset| asset.id == id)
 }
 
-<<<<<<< HEAD
 /// Sloop plate from the static catalog. Placeholder generation still uses this.
-=======
-/// MANIFEST id `ship_{class}_{facing}` (`sloop`, `cutter`, `brigantine`, `galleon`).
-/// `None` when that class has no locked plate.
-pub fn ship_class_plate(class: &str, facing: Facing) -> Option<&'static Asset> {
-    let id = format!("ship_{class}_{}", facing.asset_suffix());
-    asset(&id)
-}
-
->>>>>>> 49ee8b7 (Show encounter plates at exact 2x nearest in a shrink-wrapped panel.)
 pub fn ship_asset(facing: Facing) -> &'static Asset {
     let id = match facing {
         Facing::F0 => "ship_sloop_f0",
@@ -480,10 +470,6 @@ mod tests {
             assert_eq!(ship_asset(facing).family, AssetFamily::Ship);
             assert!(ship_asset(facing).id.ends_with(facing.asset_suffix()));
         }
-        let cutter = ship_class_plate("cutter", Facing::F3).unwrap();
-        assert_eq!(cutter.id, "ship_cutter_f3");
-        assert_eq!((cutter.canvas_w, cutter.canvas_h), (72, 80));
-        assert!(ship_class_plate("man_of_war", Facing::F3).is_none());
     }
 
     #[test]

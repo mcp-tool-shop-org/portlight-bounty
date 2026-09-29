@@ -147,14 +147,14 @@ fn plate_panel() -> (Gd<PanelContainer>, Gd<TextureRect>) {
     (panel, rect)
 }
 
-/// Draw `class` at exact [`UI_PLATE_SCALE`], nearest, untinted.
+/// Draw `template_id` at exact [`UI_PLATE_SCALE`], nearest, untinted.
 /// The panel is the plate size times that scale, plus [`UI_PLATE_PAD`] each side.
 pub(crate) fn set_ship_plate(
     rect: &mut Gd<TextureRect>,
     panel: &mut Gd<PanelContainer>,
-    class: &str,
+    template_id: &str,
 ) {
-    let plate = encounter_plate(class);
+    let plate = encounter_plate(template_id).hull;
     let (panel_w, panel_h) = ui_plate_panel(plate.canvas_w, plate.canvas_h);
     panel.set_custom_minimum_size(Vector2::new(panel_w as f32, panel_h as f32));
     let draw = Vector2::new(

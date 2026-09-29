@@ -4,12 +4,9 @@
 //! use of that math, plus the button rules that sit beside `Session`.
 //! Sampling a captured image only reads pixels; it does not draw.
 
-use std::collections::BTreeSet;
-use std::sync::Mutex;
-
 use godot::classes::Image;
 use godot::prelude::*;
-use portlight_chart::{ship_asset, ship_class_plate, Asset, Facing};
+use portlight_chart::{plates_for_class, ship_draw, Facing, ShipDraw};
 use portlight_sim::encounter::EncounterState;
 use portlight_sim::session::{EncounterStep, Session};
 use portlight_sim::SimError;
@@ -158,46 +155,17 @@ pub(crate) fn ui_plate_panel(canvas_w: i32, canvas_h: i32) -> (i32, i32) {
     )
 }
 
-/// Classes that have already logged the unknown-plate warning.
-static UNKNOWN_PLATE_WARNINGS: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
-
-/// Side-on plate for the ship's content class.
+/// Side-on plate for one ship template, via [`ship_draw`].
 ///
-/// `man_of_war` has no locked plate. It draws `ship_galleon_f3`. The catalog
-/// class stays `man_of_war` in every label; this function does not rename it.
-/// An unknown class logs one warning, then uses the sloop. `ship_draw` can
-/// replace the lookup when that helper is on main; the warned-once log stays.
-pub(crate) fn encounter_plate(class: &str) -> &'static Asset {
-    if class == "man_of_war" {
-        return ship_class_plate("galleon", Facing::F3).expect("galleon f3 plate");
+/// `royal_man_of_war` draws the galleon f3 plate and keeps the class name
+/// `man_of_war`. An unknown template logs one warning on the chart's
+/// warned-once set, then uses the sloop. An empty id is the plate widget
+/// before a ship exists, so it does not log.
+pub(crate) fn encounter_plate(template_id: &str) -> ShipDraw {
+    if template_id.is_empty() {
+        return plates_for_class("sloop", Facing::F3);
     }
-    if let Some(plate) = ship_class_plate(class, Facing::F3) {
-        return plate;
-    }
-    // The plate widget is built before a ship is known. That empty class is
-    // not a catalog miss.
-    if !class.is_empty() {
-        warn_unknown_ship_class_once(class);
-    }
-    ship_asset(Facing::F3)
-}
-
-/// One stderr line per unknown class, matching the chart's warned-once set.
-fn warn_unknown_ship_class_once(class: &str) {
-    let mut warned = UNKNOWN_PLATE_WARNINGS.lock().expect("unknown ship classes");
-    if warned.insert(class.to_string()) {
-        eprintln!("warning: unknown ship class {class} drawn with sloop plates");
-    }
-}
-
-#[cfg(test)]
-fn unknown_plate_warning_count(class: &str) -> usize {
-    usize::from(
-        UNKNOWN_PLATE_WARNINGS
-            .lock()
-            .expect("unknown ship classes")
-            .contains(class),
-    )
+    ship_draw(template_id, Facing::F3)
 }
 
 /// Hull and crew the screen can read off [`Session::world`].
@@ -578,9 +546,7 @@ fn dominant_color_fraction(samples: &[[u8; 3]]) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use portlight_chart::{
-        chart_to_screen_f, chart_to_uv, facing_from_uv, ship_class_plate, Facing,
-    };
+    use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
 
     use super::*;
 
@@ -739,38 +705,45 @@ mod tests {
     #[test]
     fn a_sloop_plate_is_168_and_a_cutter_uses_its_own_canvas() {
         assert_eq!(ui_plate_panel(64, 64), (168, 168));
-        let sloop = encounter_plate("sloop");
-        assert_eq!(sloop.id, "ship_sloop_f3");
-        assert_eq!(ui_plate_panel(sloop.canvas_w, sloop.canvas_h), (168, 168));
-        let cutter = encounter_plate("cutter");
-        assert_eq!(cutter.id, "ship_cutter_f3");
-        assert_eq!(ui_plate_panel(cutter.canvas_w, cutter.canvas_h), (184, 200));
+        let sloop = encounter_plate("coastal_sloop");
+        assert_eq!(sloop.class_name, "sloop");
+        assert_eq!(sloop.hull.id, "ship_sloop_f3");
+        assert_eq!(
+            ui_plate_panel(sloop.hull.canvas_w, sloop.hull.canvas_h),
+            (168, 168)
+        );
+        let cutter = encounter_plate("swift_cutter");
+        assert_eq!(cutter.class_name, "cutter");
+        assert_eq!(cutter.hull.id, "ship_cutter_f3");
+        assert_eq!(
+            ui_plate_panel(cutter.hull.canvas_w, cutter.hull.canvas_h),
+            (184, 200)
+        );
     }
 
     #[test]
     fn man_of_war_maps_to_the_galleon_plate_and_keeps_its_class_name() {
-        let class = "man_of_war";
-        let plate = encounter_plate(class);
-        let galleon = ship_class_plate("galleon", Facing::F3).unwrap();
-        assert_eq!(plate.id, "ship_galleon_f3");
-        assert_eq!(plate.id, galleon.id);
-        assert_eq!((plate.canvas_w, plate.canvas_h), (112, 112));
-        // Labels keep the catalog class. The galleon plate does not rename it.
-        assert_eq!(class, "man_of_war");
-        assert!(!class.contains("galleon"));
-        assert_eq!(unknown_plate_warning_count(class), 0);
-        assert_eq!(encounter_plate(class).id, plate.id);
-        assert_eq!(unknown_plate_warning_count(class), 0);
+        let drawn = encounter_plate("royal_man_of_war");
+        assert_eq!(drawn.hull.id, "ship_galleon_f3");
+        assert_eq!(drawn.class_name, "man_of_war");
+        assert_eq!((drawn.hull.canvas_w, drawn.hull.canvas_h), (112, 112));
+        assert_eq!(
+            ui_plate_panel(drawn.hull.canvas_w, drawn.hull.canvas_h),
+            (264, 264)
+        );
+        let again = encounter_plate("royal_man_of_war");
+        assert_eq!(again.class_name, "man_of_war");
+        assert_eq!(again.hull.id, drawn.hull.id);
     }
 
     #[test]
-    fn an_unknown_class_warns_once_and_uses_the_sloop() {
-        let class = "skiff";
-        assert_eq!(encounter_plate(class).id, "ship_sloop_f3");
-        assert_eq!(encounter_plate(class).id, "ship_sloop_f3");
-        assert_eq!(unknown_plate_warning_count(class), 1);
-        assert_eq!(encounter_plate("").id, "ship_sloop_f3");
-        assert_eq!(unknown_plate_warning_count(""), 0);
+    fn an_unknown_template_uses_the_sloop_through_ship_draw() {
+        let drawn = encounter_plate("not_a_ship");
+        assert_eq!(drawn.hull.id, "ship_sloop_f3");
+        assert_eq!(drawn.class_name, "not_a_ship");
+        assert_eq!(encounter_plate("not_a_ship").hull.id, drawn.hull.id);
+        assert_eq!(encounter_plate("").hull.id, "ship_sloop_f3");
+        assert_eq!(encounter_plate("").class_name, "sloop");
     }
 
     #[test]

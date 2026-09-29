@@ -1745,18 +1745,17 @@ impl PortlightGame {
     fn sync_encounter_screen(&mut self) {
         let game_id = self.instance_id();
         let crew_count = self.capture_crew;
-        let ship_class = self
+        let template_id = self
             .session
             .as_ref()
             .and_then(|session| session.world().captain.ship.as_ref())
-            .and_then(|ship| content::content().ship(&ship.template_id))
-            .map(|ship| ship.ship_class.clone())
+            .map(|ship| ship.template_id.clone())
             .unwrap_or_default();
         let view = self.encounter.as_ref().and_then(present);
         let Some(nodes) = self.encounter_nodes.as_mut() else {
             return;
         };
-        set_ship_plate(&mut nodes.plate, &mut nodes.plate_panel, &ship_class);
+        set_ship_plate(&mut nodes.plate, &mut nodes.plate_panel, &template_id);
         let open = view.is_some();
         nodes.root.set_visible(open);
         nodes.root.set_mouse_filter(if open {
