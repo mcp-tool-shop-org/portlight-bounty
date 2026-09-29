@@ -313,6 +313,7 @@ def main():
         problems.append("asset-spec R11 wording not as encoded (chart_water_a..c mipmaps only; fix alpha border everywhere)")
 
     entries, counts = [], {}
+    qgate = {"addendum": "V.2"}
 
     # ================= ships =================
     if "ships" in groups:
@@ -564,6 +565,20 @@ def main():
             problems.append("art-gate.md Addendum V.2 (painterly v5p) PASS not found")
         if not re.search(r"## Addendum U\.4 [^\n]*placement", gate):
             problems.append("art-gate.md Addendum U.4 (placement) not found")
+        # Cited gate. Default: Addendum V.2 (unchanged behaviour). If the quay_flag <id>.render.json sidecars all carry the
+        # same "manifest_gate" {"addendum", "art_director", "summary"}, that addendum must be a PASS heading in art-gate.md,
+        # and its strings are cited instead (W.3 for the W.2 retone).
+        qgate = {"addendum": "V.2",
+                 "art_director": "art-gate.md Addendum V.2 (2026-09-29): PASS, painterly v5p quay stone a/b/c; placement Addendum U.4",
+                 "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8"}
+        sgates = [(load_json(os.path.join(QUAY_FLAG_SRC, q + ".render.json")) or {}).get("manifest_gate") for q in EXP_QUAY_FLAG]
+        if any(sgates):
+            if not all(isinstance(g, dict) and g == sgates[0] and all(isinstance(g.get(k), str) and g.get(k) for k in qgate) for g in sgates):
+                problems.append("quay_flag render.json manifest_gate missing, malformed or not identical on all ids")
+            else:
+                if not re.search(r"## Addendum " + re.escape(sgates[0]["addendum"]) + r" [^\n]*PASS[^\n]*\n", gate):
+                    problems.append(f"art-gate.md Addendum {sgates[0]['addendum']} PASS not found (render.json manifest_gate)")
+                qgate = {k: sgates[0][k] for k in qgate}
         qraw = read_file_bytes(VJ_QUAY_FLAG)
         qj = parse_json_object(qraw, "quay_flag_painterly_results.json", problems)
         if qraw is None:
@@ -634,10 +649,11 @@ def main():
                                  "base_square_sha256": (rj.get("base_square") or {}).get("sha256"),
                                  "source_square_sha256": (rj.get("source_square") or {}).get("sha256"),
                                  "brushwork": {k: bw.get(k) for k in ("model", "lora", "lora_strength", "seed", "denoise", "method", "graph", "graph_sha256")},
-                                 "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8"},
+                                 **({"retone": {k: (rj.get("retone") or {}).get(k) for k in ("lut_sha256", "script", "script_sha256", "params", "params_sha256", "parent_diamond_sha256")}} if rj.get("retone") else {}),
+                                 "summary": qgate["summary"]},
                     "andon": {"version": andon.get("andon_version") if andon else None,
                               "kind": andon.get("kind") if andon else None, "pass": andon.get("pass") if andon else None},
-                    "gate": {"art_director": "art-gate.md Addendum V.2 (2026-09-29): PASS, painterly v5p quay stone a/b/c; placement Addendum U.4",
+                    "gate": {"art_director": qgate["art_director"],
                              "verifier": ("grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS" if qj else None)},
                     "render_sidecar": srel(base + ".render.json"),
                     "source_path": srel(src)}})
@@ -669,12 +685,12 @@ def main():
         "path_convention": {"entry.path": "relative to the bundle root (this MANIFEST's directory)",
                             "provenance.*": "relative to the studio workspace root"},
         "sources": {"asset_list": "outbox-PB-002/asset-list.csv", "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" if "quay_flag" in groups else ""),
+                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" + ("" if qgate["addendum"] == "V.2" else ", " + qgate["addendum"]) if "quay_flag" in groups else ""),
                     "verifier": [f"outbox-PB-002/retrieval-{g}.md" for g in ("ships", "harbour", "chart", "quay_flag_painterly") if g.split("_painterly")[0] in groups]},
         "layout": {"ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec §7g)",
                    "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec §4 Output)",
                    "chart": "chart/<id>.png (asset-spec §4 Output)",
-                   **({"quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum V.2)"} if "quay_flag" in groups else {})},
+                   **({"quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum " + qgate["addendum"] + ")"} if "quay_flag" in groups else {})},
         "import_policy": {"rule": "asset-spec Rev 4 R11: Lossless, fix_alpha_border on, premult off, VRAM off; mipmaps ON for chart_water_a..c only",
                           "summary": imp_summary},
         "px_per_bu": {"chart": 90.51, "harbour": 181.019, **({"quay_flag": 181.019} if "quay_flag" in groups else {})},

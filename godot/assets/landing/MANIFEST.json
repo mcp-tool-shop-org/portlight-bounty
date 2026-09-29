@@ -2,7 +2,7 @@
   "manifest": "portlight-bounty PB-002 landing bundle",
   "consumer": "portlight-bounty",
   "task": "PB-002",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "generator": "pb-002-plates/tools/build_manifest_pb002.py",
   "path_convention": {
     "entry.path": "relative to the bundle root (this MANIFEST's directory)",
@@ -11,7 +11,7 @@
   "sources": {
     "asset_list": "outbox-PB-002/asset-list.csv",
     "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F, U.4, V.2",
+    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F, U.4, V.2, W.3",
     "verifier": [
       "outbox-PB-002/retrieval-ships.md",
       "outbox-PB-002/retrieval-harbour.md",
@@ -23,7 +23,7 @@
     "ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec \u00a77g)",
     "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec \u00a74 Output)",
     "chart": "chart/<id>.png (asset-spec \u00a74 Output)",
-    "quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum V.2)"
+    "quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum W.3)"
   },
   "import_policy": {
     "rule": "asset-spec Rev 4 R11: Lossless, fix_alpha_border on, premult off, VRAM off; mipmaps ON for chart_water_a..c only",
@@ -4825,8 +4825,8 @@
       "view": "harbour",
       "phase": "P0",
       "status": "LOCKED",
-      "sha256": "fd8091487c410617fa8b95a3657b264273580be1f0f71f6b711747c9278ee36f",
-      "bytes": 52161,
+      "sha256": "4e57e8f7f323507c255cf8d88e60c79ef356042b86074d94c3c301e96e3a3d3c",
+      "bytes": 45163,
       "import": {
         "mipmaps": false,
         "fix_alpha_border": true,
@@ -4840,10 +4840,10 @@
         "renderer": {
           "name": "procedural base + img2img brushwork",
           "version": null,
-          "engine": "procedural v5 base (numpy/PIL) + ComfyUI img2img brushwork (Salt Road LoRA); projection/clip via Encoder pipeline",
+          "engine": "procedural v5 base (numpy/PIL) + ComfyUI img2img brushwork (Salt Road LoRA); projection/clip via Encoder pipeline; W.2 deterministic pointwise tonal map (numpy/PIL, no generation)",
           "samples": null,
           "supersample": 8,
-          "scene_kind": "ground_painterly_quay_flag",
+          "scene_kind": "ground_painterly_quay_flag_retoned_w2",
           "camera_euler_deg": [
             60.0,
             0.0,
@@ -4866,7 +4866,15 @@
             "graph": "plates/painterly_v5/quay_flag_painterly_v5_graph.json",
             "graph_sha256": "60e158e5ba8635b89d81f3713dafaf57c9c1eb5c12256c22b9b6a5d5ce134fb2"
           },
-          "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8"
+          "retone": {
+            "lut_sha256": "559ddbe31bcc088063a41655657fa29b73a96a19e2d00749ba04692789e6da79",
+            "script": "plates/retone_w2/retone_w2.py",
+            "script_sha256": "ad9902bdf9914bc548c0571747b54f8995291afbed7616d19de3ef5f91cc1c2d",
+            "params": "plates/retone_w2/retone_w2_map_params.json",
+            "params_sha256": "240365259b64f41cd573e89a2a285464e0542ec0d165390f2d0493f012ac03df",
+            "parent_diamond_sha256": "fd8091487c410617fa8b95a3657b264273580be1f0f71f6b711747c9278ee36f"
+          },
+          "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8 -> W.2 pointwise retone LUT 559ddbe3 (Addendum W.3)"
         },
         "andon": {
           "version": "0.1.1",
@@ -4874,7 +4882,7 @@
           "pass": true
         },
         "gate": {
-          "art_director": "art-gate.md Addendum V.2 (2026-09-29): PASS, painterly v5p quay stone a/b/c; placement Addendum U.4",
+          "art_director": "art-gate.md Addendum W.3 (2026-09-29): PASS, quay_flag_w2 a/b/c plate check (Addendum W.2 \u00a71 retone of the V.2 painterly v5p bytes); placement Addendum U.4",
           "verifier": "grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS"
         },
         "render_sidecar": "pb-002-plates/ground/quay_flag_a.render.json",
@@ -4913,8 +4921,8 @@
       "view": "harbour",
       "phase": "P0",
       "status": "LOCKED",
-      "sha256": "81039171253349767ab91ac47c1bc51d47c8d5dbf5857a318ff84fe614f587b0",
-      "bytes": 51840,
+      "sha256": "133fb01ea91aa28bbb25feca73173b2e5a8803c446aec2f172849f5bfe905143",
+      "bytes": 45076,
       "import": {
         "mipmaps": false,
         "fix_alpha_border": true,
@@ -4928,10 +4936,10 @@
         "renderer": {
           "name": "procedural base + img2img brushwork",
           "version": null,
-          "engine": "procedural v5 base (numpy/PIL) + ComfyUI img2img brushwork (Salt Road LoRA); projection/clip via Encoder pipeline",
+          "engine": "procedural v5 base (numpy/PIL) + ComfyUI img2img brushwork (Salt Road LoRA); projection/clip via Encoder pipeline; W.2 deterministic pointwise tonal map (numpy/PIL, no generation)",
           "samples": null,
           "supersample": 8,
-          "scene_kind": "ground_painterly_quay_flag",
+          "scene_kind": "ground_painterly_quay_flag_retoned_w2",
           "camera_euler_deg": [
             60.0,
             0.0,
@@ -4954,7 +4962,15 @@
             "graph": "plates/painterly_v5/quay_flag_painterly_v5_graph.json",
             "graph_sha256": "60e158e5ba8635b89d81f3713dafaf57c9c1eb5c12256c22b9b6a5d5ce134fb2"
           },
-          "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8"
+          "retone": {
+            "lut_sha256": "559ddbe31bcc088063a41655657fa29b73a96a19e2d00749ba04692789e6da79",
+            "script": "plates/retone_w2/retone_w2.py",
+            "script_sha256": "ad9902bdf9914bc548c0571747b54f8995291afbed7616d19de3ef5f91cc1c2d",
+            "params": "plates/retone_w2/retone_w2_map_params.json",
+            "params_sha256": "240365259b64f41cd573e89a2a285464e0542ec0d165390f2d0493f012ac03df",
+            "parent_diamond_sha256": "81039171253349767ab91ac47c1bc51d47c8d5dbf5857a318ff84fe614f587b0"
+          },
+          "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8 -> W.2 pointwise retone LUT 559ddbe3 (Addendum W.3)"
         },
         "andon": {
           "version": "0.1.1",
@@ -4962,7 +4978,7 @@
           "pass": true
         },
         "gate": {
-          "art_director": "art-gate.md Addendum V.2 (2026-09-29): PASS, painterly v5p quay stone a/b/c; placement Addendum U.4",
+          "art_director": "art-gate.md Addendum W.3 (2026-09-29): PASS, quay_flag_w2 a/b/c plate check (Addendum W.2 \u00a71 retone of the V.2 painterly v5p bytes); placement Addendum U.4",
           "verifier": "grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS"
         },
         "render_sidecar": "pb-002-plates/ground/quay_flag_b.render.json",
@@ -5001,8 +5017,8 @@
       "view": "harbour",
       "phase": "P0",
       "status": "LOCKED",
-      "sha256": "cb0192861f6c24794c37bafb6646abbb7f1f7d0c049d17386dac601dc50fa810",
-      "bytes": 51933,
+      "sha256": "7e0273edfafd486107cb2f1dadd04e34787c7dc596bc5762800038397a85efe2",
+      "bytes": 45187,
       "import": {
         "mipmaps": false,
         "fix_alpha_border": true,
@@ -5016,10 +5032,10 @@
         "renderer": {
           "name": "procedural base + img2img brushwork",
           "version": null,
-          "engine": "procedural v5 base (numpy/PIL) + ComfyUI img2img brushwork (Salt Road LoRA); projection/clip via Encoder pipeline",
+          "engine": "procedural v5 base (numpy/PIL) + ComfyUI img2img brushwork (Salt Road LoRA); projection/clip via Encoder pipeline; W.2 deterministic pointwise tonal map (numpy/PIL, no generation)",
           "samples": null,
           "supersample": 8,
-          "scene_kind": "ground_painterly_quay_flag",
+          "scene_kind": "ground_painterly_quay_flag_retoned_w2",
           "camera_euler_deg": [
             60.0,
             0.0,
@@ -5042,7 +5058,15 @@
             "graph": "plates/painterly_v5/quay_flag_painterly_v5_graph.json",
             "graph_sha256": "60e158e5ba8635b89d81f3713dafaf57c9c1eb5c12256c22b9b6a5d5ce134fb2"
           },
-          "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8"
+          "retone": {
+            "lut_sha256": "559ddbe31bcc088063a41655657fa29b73a96a19e2d00749ba04692789e6da79",
+            "script": "plates/retone_w2/retone_w2.py",
+            "script_sha256": "ad9902bdf9914bc548c0571747b54f8995291afbed7616d19de3ef5f91cc1c2d",
+            "params": "plates/retone_w2/retone_w2_map_params.json",
+            "params_sha256": "240365259b64f41cd573e89a2a285464e0542ec0d165390f2d0493f012ac03df",
+            "parent_diamond_sha256": "cb0192861f6c24794c37bafb6646abbb7f1f7d0c049d17386dac601dc50fa810"
+          },
+          "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8 -> W.2 pointwise retone LUT 559ddbe3 (Addendum W.3)"
         },
         "andon": {
           "version": "0.1.1",
@@ -5050,7 +5074,7 @@
           "pass": true
         },
         "gate": {
-          "art_director": "art-gate.md Addendum V.2 (2026-09-29): PASS, painterly v5p quay stone a/b/c; placement Addendum U.4",
+          "art_director": "art-gate.md Addendum W.3 (2026-09-29): PASS, quay_flag_w2 a/b/c plate check (Addendum W.2 \u00a71 retone of the V.2 painterly v5p bytes); placement Addendum U.4",
           "verifier": "grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS"
         },
         "render_sidecar": "pb-002-plates/ground/quay_flag_c.render.json",

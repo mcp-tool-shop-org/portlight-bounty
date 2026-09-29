@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-const MANIFEST_SHA256: &str = "562bb5e7a5fbb9fc9d5319754ece3ea45b2e9ea4d2a4940b4280cb2c446da8f8";
+const MANIFEST_SHA256: &str = "8df9409212ce88e22353cc9cc0babf20e75899283053a9161ec1ebd6c4693197";
 
 fn landing_dir() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot/assets/landing")
@@ -57,7 +57,7 @@ fn manifest_hashes_match_the_committed_files() {
     assert_eq!(sha256(&manifest_bytes), MANIFEST_SHA256);
 
     let manifest: Value = serde_json::from_slice(&manifest_bytes).expect("manifest json");
-    assert_eq!(manifest["version"], "0.4.1");
+    assert_eq!(manifest["version"], "0.4.2");
     assert_eq!(manifest["count"], 73);
     assert_eq!(manifest["counts"]["ships"], 36);
     assert_eq!(manifest["counts"]["harbour"], 30);
