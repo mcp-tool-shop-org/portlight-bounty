@@ -118,6 +118,20 @@ jobs:
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
             godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
+          # Filename is not encounter-*.png. The capture mode still has to
+          # accept the ink ground. A flat rejection exits non-zero.
+          run_godot /tmp/godot-galleon.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/galleon1.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --encounter-galleon
+          if ! grep -q 'portlight smoke ok' /tmp/godot-galleon.log; then
+            echo "galleon capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/galleon1.png ]; then
+            echo "galleon capture did not write /tmp/galleon1.png"
+            exit 1
+          fi
           # The seam capture validates the layout before it writes. An illegal
           # layout, a blank image, or a flat frame exits non-zero. This run is
           # the legal plate, so it must print ok and must not report a fault.

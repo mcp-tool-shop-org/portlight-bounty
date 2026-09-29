@@ -248,8 +248,9 @@ impl IControl for PortlightGame {
         } else if user_arg("--encounter-galleon") {
             self.smoke = true;
             self.galleon_frame = true;
+            // Docs is only written when PORTLIGHT_SHOT names that path.
             if self.shot_path.is_none() {
-                self.shot_path = Some(resolve_repo_path("docs/screenshots/encounter-galleon.png"));
+                self.shot_path = Some("/tmp/encounter-galleon.png".to_string());
             }
             self.prepare_scripted_voyage();
             self.open_scripted_approach();
@@ -301,7 +302,10 @@ impl IControl for PortlightGame {
             self.assert_panel_labels();
         }
         if let Some(path) = self.shot_path.clone() {
-            if !self.save_shot(&path) {
+            // `--encounter-galleon` is still on the encounter screen. The
+            // multi-frame shot saves its own files before this, then the
+            // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
+            if !self.save_shot(&path, self.galleon_frame) {
                 self.smoke_ok = false;
             }
         }
@@ -1483,7 +1487,7 @@ impl PortlightGame {
     /// Saves the window. An empty image or a frame that is mostly one colour
     /// is a failed capture. Headless Godot cannot produce this image; call
     /// this only from a real GL context (`PORTLIGHT_SHOT` set).
-    fn save_shot(&self, path: &str) -> bool {
+    fn save_shot(&self, path: &str, encounter: bool) -> bool {
         let image = self.base().get_viewport().and_then(|viewport| {
             viewport
                 .get_texture()
@@ -1503,7 +1507,8 @@ impl PortlightGame {
         let samples = frame_samples(&image);
         let flat = frame_mostly_flat(&samples);
         // The encounter ground is ink. Chart and harbour shots keep the 80% rule.
-        let encounter = path.contains("encounter-");
+        // The mode is the capture, not the filename: `/tmp/galleon1.png` is
+        // still an encounter frame.
         let rejected = if encounter {
             encounter_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples)
         } else {
@@ -1880,7 +1885,7 @@ impl PortlightGame {
         };
         self.expect_phase(phase.screen(), phase.file_name());
         let path = format!("{dir}/{}", phase.file_name());
-        if !self.save_shot(&path) {
+        if !self.save_shot(&path, true) {
             self.smoke_ok = false;
         }
         match phase {
