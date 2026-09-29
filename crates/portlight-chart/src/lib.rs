@@ -15,7 +15,10 @@ mod project;
 mod seam;
 mod view;
 
-pub use assets::{asset, ship_asset, Asset, AssetFamily, ASSETS};
+pub use assets::{
+    asset, plate_note_emissions, plates_for_class, ship_asset, ship_draw, Asset, AssetFamily,
+    ShipDraw, ASSETS,
+};
 pub use harbour::{harbour_anchor, HarbourLayer, HarbourTile, WorkKind};
 pub use placeholder::write_asset_files;
 pub use project::{

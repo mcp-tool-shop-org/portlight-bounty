@@ -397,14 +397,17 @@ static PLATE_NOTE_LOGS: Mutex<BTreeMap<String, u32>> = Mutex::new(BTreeMap::new(
 fn log_plate_note_once(line: &str) {
     let mut logs = PLATE_NOTE_LOGS.lock().expect("plate notes");
     let count = logs.entry(line.to_string()).or_insert(0);
-    if *count == 0 {
-        eprintln!("{line}");
+    if *count > 0 {
+        return;
     }
-    *count = 1;
+    // Count the print, not membership. A second call must leave this at 1.
+    eprintln!("{line}");
+    *count += 1;
 }
 
-#[cfg(test)]
-fn plate_note_emissions(line: &str) -> u32 {
+/// How many times `line` was actually printed. The encounter screen and the
+/// chart share this sink.
+pub fn plate_note_emissions(line: &str) -> u32 {
     PLATE_NOTE_LOGS
         .lock()
         .expect("plate notes")
