@@ -45,6 +45,7 @@ GATE = os.path.join(OUTBOX, "art-gate.md")
 RETR_SHIPS = os.path.join(OUTBOX, "retrieval-ships.md")
 RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
 RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
+RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag.md")
 VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
 VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
 VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
@@ -429,7 +430,18 @@ def main():
         if not gate_u3:
             problems.append("art-gate.md Addendum U.3 PASS not found")
         qj = load_json(VJ_QUAY_FLAG)
+        if not qj: problems.append("verifier quay_flag_results.json missing")
         qinv = {r["id"]: r["sha256"] for r in qj["inventory"]} if qj else {}
+        qrows = {r["id"]: r for r in qj.get("rows", [])} if qj else {}
+        for q in EXP_QUAY_FLAG:
+            qr = qrows.get(q)
+            if not qr or qr.get("pass") is not True or qr.get("exit") != 0:
+                problems.append(f"{q}: Verifier quay_flag row missing or not pass/exit 0")
+        rq = open(RETR_QUAY_FLAG, encoding="utf-8").read() if os.path.isfile(RETR_QUAY_FLAG) else ""
+        if not re.search(r"Result: \*\*3/3 PASS\*\*", rq):
+            problems.append("retrieval-quay_flag.md missing or not 'Result: **3/3 PASS**'")
+        if not re.search(r"✅ Builder may land\s*$", rq):
+            problems.append("retrieval-quay_flag.md does not end with '✅ Builder may land'")
         rows = [r for r in rows_all if r["id"] in EXP_QUAY_FLAG and r["status"].startswith("LOCKED")]
         if sorted(r["id"] for r in rows) != sorted(EXP_QUAY_FLAG):
             problems.append(f"csv quay_flag ids != expected 3: {[r['id'] for r in rows]}")
