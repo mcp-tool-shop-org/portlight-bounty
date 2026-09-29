@@ -143,6 +143,12 @@ fn plate_panel() -> (Gd<PanelContainer>, Gd<TextureRect>) {
     rect.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
     rect.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
     host.add_child(&rect);
+    let host_for_resize = host.clone();
+    let rect_for_resize = rect.clone();
+    host.signals().resized().connect(move || {
+        let mut rect = rect_for_resize.clone();
+        center_plate(&host_for_resize, &mut rect);
+    });
     set_ship_plate(&mut rect, &mut panel, "");
     (panel, rect)
 }
@@ -163,10 +169,27 @@ pub(crate) fn set_ship_plate(
     );
     rect.set_custom_minimum_size(draw);
     rect.set_size(draw);
-    rect.set_position(Vector2::ZERO);
     rect.set_texture_filter(TextureFilter::NEAREST);
     rect.set_modulate(PLATE_WHITE);
     load_plate(rect, plate);
+    if let Some(parent) = rect.get_parent() {
+        if let Ok(host) = parent.try_cast::<Control>() {
+            center_plate(&host, rect);
+        }
+    }
+}
+
+/// Centre the 2× plate in the panel. The size stays the canvas times
+/// [`UI_PLATE_SCALE`]; only the position moves. A 203-wide panel around a
+/// 144-wide plate cannot split the spare pixel, so the two sides differ by 1.
+fn center_plate(host: &Gd<Control>, rect: &mut Gd<TextureRect>) {
+    let host_w = host.get_size().x;
+    let draw_w = rect.get_size().x;
+    if host_w <= 0.0 || draw_w <= 0.0 {
+        return;
+    }
+    let x = ((host_w - draw_w) / 2.0).round();
+    rect.set_position(Vector2::new(x, 0.0));
 }
 
 fn load_plate(rect: &mut Gd<TextureRect>, plate: &Asset) {

@@ -57,6 +57,9 @@ use crate::logic::{
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
+/// Same ink as the encounter ground. Hover and focus fills are lighter than
+/// the normal fill, and cream on them is 2.76:1. This ink is 5.08:1.
+const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 
 struct MarketRow {
@@ -2284,10 +2287,9 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     button.add_theme_stylebox_override("pressed", &pressed);
     button.add_theme_stylebox_override("focus", &hover);
     button.add_theme_color_override("font_color", CREAM);
-    // Cream on the hover and focus fills. Gold on those fills is 2.37:1.
-    button.add_theme_color_override("font_hover_color", CREAM);
+    button.add_theme_color_override("font_hover_color", INK);
     button.add_theme_color_override("font_pressed_color", GOLD);
-    button.add_theme_color_override("font_focus_color", CREAM);
+    button.add_theme_color_override("font_focus_color", INK);
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {

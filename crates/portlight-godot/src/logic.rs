@@ -546,7 +546,9 @@ fn dominant_color_fraction(samples: &[[u8; 3]]) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
+    use portlight_chart::{
+        chart_to_screen_f, chart_to_uv, facing_from_uv, plate_note_emissions, Facing,
+    };
 
     use super::*;
 
@@ -737,13 +739,20 @@ mod tests {
     }
 
     #[test]
-    fn an_unknown_template_uses_the_sloop_through_ship_draw() {
+    fn an_unknown_template_warns_once_and_uses_the_sloop() {
+        let line = "warning: unknown ship class not_a_ship drawn with sloop plates";
+        let before = plate_note_emissions(line);
         let drawn = encounter_plate("not_a_ship");
         assert_eq!(drawn.hull.id, "ship_sloop_f3");
         assert_eq!(drawn.class_name, "not_a_ship");
+        assert_eq!(plate_note_emissions(line), before + 1);
         assert_eq!(encounter_plate("not_a_ship").hull.id, drawn.hull.id);
+        assert_eq!(plate_note_emissions(line), before + 1);
+        let silent = "warning: unknown ship class <none> drawn with sloop plates";
+        let silent_before = plate_note_emissions(silent);
         assert_eq!(encounter_plate("").hull.id, "ship_sloop_f3");
         assert_eq!(encounter_plate("").class_name, "sloop");
+        assert_eq!(plate_note_emissions(silent), silent_before);
     }
 
     #[test]
