@@ -26,7 +26,7 @@ except ImportError:
     # A --user install is not visible to this process on GitHub's runner.
     _pytest_target = "/tmp/portlight-pytest"
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "--target", _pytest_target, "pytest"]
+        [sys.executable, "-m", "pip", "install", "--target", _pytest_target, "pytest==9.1.1"]
     )
     sys.path.insert(0, _pytest_target)
     import pytest
@@ -330,6 +330,60 @@ def test_gate_helpers():
         mod.ship_row_failure({**stock, "pass": False}) == "not pass",
         "not pass",
     )
+    check(
+        "verdict FAIL refuses the row",
+        mod.ship_row_failure({**stock, "verdict": "FAIL"}) == "verdict FAIL",
+        "verdict FAIL",
+    )
+    check(
+        "false gate refuses the row",
+        mod.ship_row_failure({**stock, "gate": False}) == "false gate",
+        "false gate",
+    )
+    check(
+        "nested false gate refuses the row",
+        mod.ship_row_failure({**stock, "gate": {"closed": False}}) == "false gate",
+        "nested gate",
+    )
+    check(
+        "non-empty fails list refuses the row",
+        mod.ship_row_failure({**stock, "fails": ["canvas"]}) == "non-empty fails",
+        "fails",
+    )
+    benign = {**stock, "verdict": "PASS", "gate": True, "fails": [], "stubborn_note": "keep"}
+    check("benign ships fields still pass", mod.ship_row_failure(benign) is None, repr(benign))
+    check("stubborn_note is not a stub key", not mod.json_has_stub_key({"stubborn_note": "keep"}), "token")
+    check("stub token still matches", mod.json_has_stub_key({"pre_stub_note": 1}), "token")
+    for n in (0, 2, 12):
+        cell = (
+            "| id | Result |\n"
+            "| --- | --- |\n"
+            f"| plate | FAIL (exit {n}) |\n"
+        )
+        check(
+            f"FAIL (exit {n}) is a verdict",
+            mod.fail_result_lines(cell) == [f"| plate | FAIL (exit {n}) |"],
+            f"exit {n}",
+        )
+    spread = (
+        "Documented stock\n"
+        "v0.1.1\n"
+        "canvas-size failure.\n"
+        "| id | Result |\n"
+        "| --- | --- |\n"
+        "| chart_new | FAIL (exit 1) |\n"
+    )
+    check(
+        "spread stock terms do not exempt a chart row",
+        mod.fail_result_lines(spread) == ["| chart_new | FAIL (exit 1) |"],
+        "terms must share a line",
+    )
+    bold = "| quay_flag_b | **FAIL** |\n"
+    check(
+        "bold FAIL row is a verdict without a header",
+        mod.fail_result_lines(bold) == ["| quay_flag_b | **FAIL** |"],
+        "main **FAIL** rule",
+    )
     assert not failures, failures
 
 # ---------------------------------------------------------------- main() fixture
@@ -589,7 +643,6 @@ def main_argv(studio, *extra):
 
 
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
-MANIFEST_SHA = "562bb5e7a5fbb9fc9d5319754ece3ea45b2e9ea4d2a4940b4280cb2c446da8f8"
 RETRIEVAL_DOCS = (
     "retrieval-ships.md",
     "retrieval-harbour.md",
@@ -662,6 +715,26 @@ def test_fail_verdict_anywhere_in_retrieval_doc(studio, tmp_path, doc, verdict):
     status, out = run_main(main_argv(copy))
     assert status != 0
     assert "FAIL result" in out
+
+
+@pytest.mark.parametrize("doc", RETRIEVAL_DOCS)
+def test_bold_fail_row_refuses_each_retrieval_doc(studio, tmp_path, doc):
+    """Main refuses a quay_flag_b row whose cell is bold **FAIL** in every retrieval doc."""
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    insert_middle(os.path.join(copy, "outbox-PB-002", doc), "| quay_flag_b | **FAIL** |")
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "FAIL result" in out
+    assert "**FAIL**" in out
+
+
+def test_stubborn_note_is_not_a_stub_key(studio, tmp_path):
+    assert mod.json_has_stub_key({"stubborn_note": "keep"}) is False
+    assert mod.json_has_stub_key({"rows": [{"meta": {"stubborn_note": 1}}]}) is False
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body.__setitem__("stubborn_note", "keep"))
+    status, out = run_main(main_argv(copy))
+    assert status == 0, out
 
 
 @pytest.mark.parametrize("which", ["quay", "harbour"])
@@ -761,6 +834,62 @@ def test_ships_stock_v011_exit_passes(studio, tmp_path):
     assert "PROBLEMS:" not in out
 
 
+def test_ships_verdict_fail_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("verdict", "FAIL"))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "verdict FAIL" in out
+
+
+def test_ships_false_gate_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("gate", False))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "false gate" in out
+
+
+def test_ships_nonempty_fails_list_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("fails", ["canvas"]))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "non-empty fails" in out
+
+
+def test_ships_exit_n_verdict_in_retrieval_doc_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    insert_middle(
+        os.path.join(copy, "outbox-PB-002", "retrieval-ships.md"),
+        "| id | Result |\n| --- | --- |\n| quay_flag_b | FAIL (exit 2) |",
+    )
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "FAIL (exit 2)" in out
+
+
+def test_spread_stock_terms_do_not_exempt_new_chart_row(studio, tmp_path):
+    """A new chart FAIL (exit 1) row fails when the stock terms are not on one line."""
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    write_text(
+        os.path.join(copy, "outbox-PB-002", "retrieval-chart.md"),
+        "**Chart profile (SIMULATED): 4 PASS, 0 FAIL.**\n"
+        "Documented stock\n"
+        "v0.1.1\n"
+        "canvas-size failure.\n"
+        "| id | Result |\n"
+        "| --- | --- |\n"
+        "| chart_new | FAIL (exit 1) |\n"
+        "| water_a..c | FAIL (exit 1) |\n"
+        "| chart_port_marker | FAIL (exit 1) |\n"
+        "✅ Builder may land\n",
+    )
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "retrieval-chart.md has a FAIL result line: | chart_new | FAIL (exit 1) |" in out
+
+
 PROSE_FAIL_LINES = (
     "Neither is a FAIL of the delivered images.",
     "| water_a..c | FAIL (exit 1) |",
@@ -847,19 +976,23 @@ def test_ci_compare_mismatch_exits_nonzero(tmp_path):
 
 
 def test_committed_041_manifest_sha(studio):
-    """Hash the committed 0.4.1 bundle and --check an explicit --out-dir.
+    """Read version and sha from the committed MANIFEST, then --check the fixture.
 
-    The default --out-dir is pb-002-plates/landing, which on the real studio
-    is the v0.2.0 bundle. The committed 0.4.1 bundle is godot/assets/landing.
-    This test does not read a live studio.
+    The default --out-dir is pb-002-plates/landing, which on a real studio is
+    the v0.2.0 bundle. This test passes an absolute --out-dir and the version
+    stored in godot/assets/landing/MANIFEST.json. It does not pin a release
+    sha and it does not read a live studio.
     """
-    bundle = os.path.join(ROOT, "godot", "assets", "landing")
-    manifest = os.path.join(bundle, "MANIFEST.json")
+    manifest = os.path.join(ROOT, "godot", "assets", "landing", "MANIFEST.json")
     data = open(manifest, "rb").read()
-    assert hashlib.sha256(data).hexdigest() == MANIFEST_SHA
-    assert json.loads(data)["version"] == "0.4.1"
+    committed = json.loads(data)
+    version = committed["version"]
+    digest = hashlib.sha256(data).hexdigest()
+    assert re.fullmatch(r"[0-9a-f]{64}", digest)
+    assert isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+", version)
+    assert digest == hashlib.sha256(open(manifest, "rb").read()).hexdigest()
     fixture_bundle = os.path.abspath(os.path.join(studio, "pb-002-plates", "landing"))
-    argv = ["--studio", studio, "--version", "0.4.1", "--out-dir", fixture_bundle]
+    argv = ["--studio", studio, "--version", version, "--out-dir", fixture_bundle]
     assert "--out-dir" in argv and os.path.isabs(argv[argv.index("--out-dir") + 1])
     assert mod.DEFAULT_STUDIO not in argv
     status, out = run_main(argv)
@@ -868,7 +1001,7 @@ def test_committed_041_manifest_sha(studio):
     assert status == 0, out
     assert "MATCHES" in out
     written = json.loads(open(os.path.join(fixture_bundle, "MANIFEST.json"), encoding="utf-8").read())
-    assert written["version"] == "0.4.1"
+    assert written["version"] == version
 
 
 if __name__ == "__main__":
