@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use godot::classes::canvas_item::TextureFilter;
 use godot::classes::{
     Camera2D, Font, INode2D, InputEvent, InputEventMouseButton, InputEventMouseMotion, Node2D,
     ResourceLoader, Texture2D, ThemeDb,
@@ -19,7 +20,9 @@ pub struct ChartCanvas {
     base: Base<Node2D>,
     model: Option<ChartModel>,
     textures: HashMap<String, Gd<Texture2D>>,
-    font: Option<Gd<Font>>,
+    /// In-chart names, badges, and lane captions. Separate so their filter
+    /// can be linear while plates stay nearest.
+    labels: Option<Gd<ChartLabels>>,
     camera: Option<Gd<Camera2D>>,
     hover: String,
     /// Presentation point while a day tween is in flight.
@@ -36,7 +39,7 @@ impl INode2D for ChartCanvas {
             base,
             model: None,
             textures: HashMap::new(),
-            font: None,
+            labels: None,
             camera: None,
             hover: String::new(),
             shown_ship: None,
@@ -47,12 +50,18 @@ impl INode2D for ChartCanvas {
     }
 
     fn ready(&mut self) {
+        // Plates, water, and strokes. The viewport default is nearest too.
+        self.base_mut().set_texture_filter(TextureFilter::NEAREST);
         let mut camera = Camera2D::new_alloc();
         camera.set_enabled(true);
         self.base_mut().add_child(&camera);
         camera.make_current();
         self.camera = Some(camera);
-        self.font = ThemeDb::singleton().get_fallback_font();
+        let mut labels = ChartLabels::new_alloc();
+        labels.set_name("ChartLabels");
+        labels.set_texture_filter(TextureFilter::LINEAR);
+        self.base_mut().add_child(&labels);
+        self.labels = Some(labels);
     }
 
     fn process(&mut self, delta: f64) {
@@ -84,11 +93,7 @@ impl INode2D for ChartCanvas {
             return;
         };
         self.ensure_textures(&model);
-        if self.font.is_none() {
-            self.font = ThemeDb::singleton().get_fallback_font();
-        }
         let textures = self.textures.clone();
-        let font = self.font.clone();
         let hover = self.hover.clone();
         let ship_at = self
             .shown_ship
@@ -159,73 +164,6 @@ impl INode2D for ChartCanvas {
                 }
             }
         }
-        let Some(font) = font else {
-            return;
-        };
-        for port in &model.ports {
-            let color = if port.is_here || hover.contains(&port.name) {
-                Color::from_rgb(0.96, 0.84, 0.45)
-            } else {
-                Color::from_rgb(0.93, 0.9, 0.84)
-            };
-            canvas
-                .draw_string_ex(
-                    &font,
-                    Vector2::new(port.at.0 - 48.0, port.at.1 - 78.0),
-                    &GString::from(&port.name),
-                )
-                .font_size(18)
-                .modulate(color)
-                .done();
-            if let Some(badge) = port.badge {
-                canvas
-                    .draw_string_ex(
-                        &font,
-                        Vector2::new(port.at.0 + 28.0, port.at.1 - 36.0),
-                        &GString::from(badge.to_string().as_str()),
-                    )
-                    .font_size(16)
-                    .modulate(Color::from_rgba8(
-                        port.region_color.r,
-                        port.region_color.g,
-                        port.region_color.b,
-                        255,
-                    ))
-                    .done();
-            }
-        }
-        for lane in &model.lanes {
-            let caption = lane_caption(lane);
-            canvas
-                .draw_string_ex(
-                    &font,
-                    Vector2::new(
-                        (lane.from.0 + lane.to.0) / 2.0 - 36.0,
-                        (lane.from.1 + lane.to.1) / 2.0 - 18.0,
-                    ),
-                    &GString::from(caption.as_str()),
-                )
-                .font_size(14)
-                .modulate(Color::from_rgba8(
-                    lane.color.r,
-                    lane.color.g,
-                    lane.color.b,
-                    255,
-                ))
-                .done();
-        }
-        if !hover.is_empty() {
-            let at = canvas.get_local_mouse_position();
-            canvas
-                .draw_string_ex(
-                    &font,
-                    at + Vector2::new(14.0, -14.0),
-                    &GString::from(hover.as_str()),
-                )
-                .font_size(15)
-                .modulate(Color::from_rgb(0.96, 0.93, 0.86))
-                .done();
-        }
     }
 }
 
@@ -278,6 +216,7 @@ impl ChartCanvas {
         }
         self.model = Some(model);
         self.base_mut().set_process(true);
+        self.sync_labels();
         self.base_mut().queue_redraw();
     }
 
@@ -289,8 +228,21 @@ impl ChartCanvas {
         let next = hover_at(model, at.x, at.y).unwrap_or_default();
         if next != self.hover {
             self.hover = next;
+            self.sync_labels();
             self.base_mut().queue_redraw();
         }
+    }
+
+    /// Copy the chart text onto the linear label item. Font sizes stay in
+    /// world pixels; the camera zoom scales that item and is not divided out.
+    fn sync_labels(&mut self) {
+        let Some(mut labels) = self.labels.clone() else {
+            return;
+        };
+        let model = self.model.clone();
+        let hover = self.hover.clone();
+        let hover_at = self.base().get_local_mouse_position();
+        labels.bind_mut().set_scene(model, hover, hover_at);
     }
 
     fn click_port(&mut self) {
@@ -441,6 +393,139 @@ fn draw_sprite(
     canvas.draw_texture(texture, at);
 }
 
+/// World-pixel sizes. [`ChartLabels`] is scaled by the camera; these are not
+/// divided by zoom. Linear filtering on that item evens the 0.72 scale.
+const PORT_NAME_PX: i32 = 18;
+const BADGE_PX: i32 = 16;
+const LANE_PX: i32 = 14;
+const HOVER_PX: i32 = 15;
+
+/// In-chart text only. Plates stay on [`ChartCanvas`] at nearest.
+#[derive(GodotClass)]
+#[class(base = Node2D)]
+struct ChartLabels {
+    base: Base<Node2D>,
+    model: Option<ChartModel>,
+    hover: String,
+    hover_at: Vector2,
+    font: Option<Gd<Font>>,
+}
+
+#[godot_api]
+impl INode2D for ChartLabels {
+    fn init(base: Base<Node2D>) -> Self {
+        Self {
+            base,
+            model: None,
+            hover: String::new(),
+            hover_at: Vector2::ZERO,
+            font: None,
+        }
+    }
+
+    fn ready(&mut self) {
+        self.base_mut().set_texture_filter(TextureFilter::LINEAR);
+        self.font = ThemeDb::singleton().get_fallback_font();
+    }
+
+    fn draw(&mut self) {
+        if self.font.is_none() {
+            self.font = ThemeDb::singleton().get_fallback_font();
+        }
+        let Some(model) = self.model.clone() else {
+            return;
+        };
+        let Some(font) = self.font.clone() else {
+            return;
+        };
+        let hover = self.hover.clone();
+        let hover_at = self.hover_at;
+        let mut canvas = self.base_mut();
+        draw_chart_text(&mut canvas, &font, &model, &hover, hover_at);
+    }
+}
+
+impl ChartLabels {
+    fn set_scene(&mut self, model: Option<ChartModel>, hover: String, hover_at: Vector2) {
+        self.model = model;
+        self.hover = hover;
+        self.hover_at = hover_at;
+        self.base_mut().queue_redraw();
+    }
+}
+
+fn draw_chart_text(
+    canvas: &mut Node2D,
+    font: &Gd<Font>,
+    model: &ChartModel,
+    hover: &str,
+    hover_at: Vector2,
+) {
+    for port in &model.ports {
+        let color = if port.is_here || hover.contains(&port.name) {
+            Color::from_rgb(0.96, 0.84, 0.45)
+        } else {
+            Color::from_rgb(0.93, 0.9, 0.84)
+        };
+        canvas
+            .draw_string_ex(
+                font,
+                Vector2::new(port.at.0 - 48.0, port.at.1 - 78.0),
+                &GString::from(&port.name),
+            )
+            .font_size(PORT_NAME_PX)
+            .modulate(color)
+            .done();
+        if let Some(badge) = port.badge {
+            canvas
+                .draw_string_ex(
+                    font,
+                    Vector2::new(port.at.0 + 28.0, port.at.1 - 36.0),
+                    &GString::from(badge.to_string().as_str()),
+                )
+                .font_size(BADGE_PX)
+                .modulate(Color::from_rgba8(
+                    port.region_color.r,
+                    port.region_color.g,
+                    port.region_color.b,
+                    255,
+                ))
+                .done();
+        }
+    }
+    for lane in &model.lanes {
+        let caption = lane_caption(lane);
+        canvas
+            .draw_string_ex(
+                font,
+                Vector2::new(
+                    (lane.from.0 + lane.to.0) / 2.0 - 36.0,
+                    (lane.from.1 + lane.to.1) / 2.0 - 18.0,
+                ),
+                &GString::from(caption.as_str()),
+            )
+            .font_size(LANE_PX)
+            .modulate(Color::from_rgba8(
+                lane.color.r,
+                lane.color.g,
+                lane.color.b,
+                255,
+            ))
+            .done();
+    }
+    if !hover.is_empty() {
+        canvas
+            .draw_string_ex(
+                font,
+                hover_at + Vector2::new(14.0, -14.0),
+                &GString::from(hover),
+            )
+            .font_size(HOVER_PX)
+            .modulate(Color::from_rgb(0.96, 0.93, 0.86))
+            .done();
+    }
+}
+
 fn lane_caption(lane: &ChartLane) -> String {
     let tag = match lane.suitability {
         LaneSuitability::Ok => "",
@@ -451,5 +536,37 @@ fn lane_caption(lane: &ChartLane) -> String {
         format!("{}d{tag}", lane.estimated_days)
     } else {
         format!("{} {}d{tag}", lane.destination_name, lane.estimated_days)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn chart_text_is_linear_and_the_plates_stay_nearest() {
+        let src = include_str!("chart_canvas.rs");
+        let (art, labels) = src.split_once("struct ChartLabels").expect("label item");
+        assert!(
+            art.contains("set_texture_filter(TextureFilter::NEAREST)"),
+            "chart art and plates stay nearest"
+        );
+        assert!(
+            labels.contains("set_texture_filter(TextureFilter::LINEAR)"),
+            "in-chart text has its own linear filter"
+        );
+        let draw = labels
+            .split_once("fn draw_chart_text")
+            .expect("text draw")
+            .1
+            .split_once("fn lane_caption")
+            .expect("lane caption")
+            .0;
+        assert!(draw.contains("font_size(PORT_NAME_PX)"));
+        assert!(draw.contains("font_size(BADGE_PX)"));
+        assert!(draw.contains("font_size(LANE_PX)"));
+        assert!(draw.contains("font_size(HOVER_PX)"));
+        assert!(
+            !draw.contains("zoom"),
+            "font size stays in world pixels and is not divided by zoom"
+        );
     }
 }

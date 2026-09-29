@@ -234,12 +234,15 @@ fn center_plate(host: &Gd<Control>, rect: &mut Gd<TextureRect>) {
     rect.set_position(Vector2::new(x, y));
 }
 
-/// Galleon-class plates name the catalog class. `man_of_war` stays
-/// `man_of_war` even though the canvas is the galleon. Other classes keep
-/// the signed-off "Ship plate" caption.
+/// Display name under the plate. An empty or unknown class keeps the
+/// generic caption. `man_of_war` is still the galleon canvas.
 fn plate_caption(class_name: &str) -> &str {
     match class_name {
-        "man_of_war" | "galleon" => class_name,
+        "sloop" => "Sloop",
+        "cutter" => "Cutter",
+        "brigantine" => "Brigantine",
+        "galleon" => "Galleon",
+        "man_of_war" => "Man-of-war",
         _ => "Ship plate",
     }
 }
@@ -324,13 +327,14 @@ mod tests {
     use crate::logic::{encounter_plate, ui_plate_panel};
 
     #[test]
-    fn plate_caption_names_only_the_galleon_classes() {
-        assert_eq!(plate_caption("galleon"), "galleon");
-        assert_eq!(plate_caption("man_of_war"), "man_of_war");
-        assert_eq!(plate_caption("sloop"), "Ship plate");
-        assert_eq!(plate_caption("cutter"), "Ship plate");
-        assert_eq!(plate_caption("brigantine"), "Ship plate");
+    fn plate_caption_names_each_class_and_falls_back() {
+        assert_eq!(plate_caption("sloop"), "Sloop");
+        assert_eq!(plate_caption("cutter"), "Cutter");
+        assert_eq!(plate_caption("brigantine"), "Brigantine");
+        assert_eq!(plate_caption("galleon"), "Galleon");
+        assert_eq!(plate_caption("man_of_war"), "Man-of-war");
         assert_eq!(plate_caption(""), "Ship plate");
+        assert_eq!(plate_caption("carrack"), "Ship plate");
     }
 
     #[test]
