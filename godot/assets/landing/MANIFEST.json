@@ -2,7 +2,7 @@
   "manifest": "portlight-bounty PB-002 landing bundle",
   "consumer": "portlight-bounty",
   "task": "PB-002",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generator": "pb-002-plates/tools/build_manifest_pb002.py",
   "path_convention": {
     "entry.path": "relative to the bundle root (this MANIFEST's directory)",
@@ -11,7 +11,7 @@
   "sources": {
     "asset_list": "outbox-PB-002/asset-list.csv",
     "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F",
+    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F, U.3",
     "verifier": [
       "outbox-PB-002/retrieval-ships.md",
       "outbox-PB-002/retrieval-harbour.md",
@@ -21,26 +21,29 @@
   "layout": {
     "ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec \u00a77g)",
     "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec \u00a74 Output)",
-    "chart": "chart/<id>.png (asset-spec \u00a74 Output)"
+    "chart": "chart/<id>.png (asset-spec \u00a74 Output)",
+    "quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum U.3)"
   },
   "import_policy": {
     "rule": "asset-spec Rev 4 R11: Lossless, fix_alpha_border on, premult off, VRAM off; mipmaps ON for chart_water_a..c only",
     "summary": {
-      "mipmaps=off fix_alpha_border=on source=asset-spec Rev 4 R11": 66,
+      "mipmaps=off fix_alpha_border=on source=asset-spec Rev 4 R11": 69,
       "mipmaps=on fix_alpha_border=on source=import file": 3,
       "mipmaps=off fix_alpha_border=on source=import file": 1
     }
   },
   "px_per_bu": {
     "chart": 90.51,
-    "harbour": 181.019
+    "harbour": 181.019,
+    "quay_flag": 181.019
   },
   "counts": {
     "ships": 36,
     "harbour": 30,
-    "chart": 4
+    "chart": 4,
+    "quay_flag": 3
   },
-  "count": 70,
+  "count": 73,
   "entries": [
     {
       "id": "ship_sloop_f0",
@@ -4787,6 +4790,246 @@
         "render_sidecar": "pb-002-plates/chart/chart_port_marker.render.json",
         "import_sidecar": "pb-002-plates/chart/chart_port_marker.png.import",
         "source_path": "pb-002-plates/chart/chart_port_marker.png"
+      }
+    },
+    {
+      "id": "quay_flag_a",
+      "group": "quay_flag",
+      "subgroup": "flag",
+      "path": "ground/quay_flag_a.png",
+      "canvas": [
+        256,
+        128
+      ],
+      "canvas_str": "256x128",
+      "anchor": [
+        128,
+        127
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "ground",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "d639d6cd94d885fdea8ea70a66a97ef2677a00fa5c0c7204b847337c0f353731",
+      "bytes": 49542,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "procedural",
+          "version": null,
+          "engine": "procedural (numpy/PIL); no Blender render, no generation spend",
+          "samples": null,
+          "supersample": 8,
+          "scene_kind": "ground_procedural_quay_flag",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": null,
+          "generator": "_source/quay_flag_procedural.py",
+          "variant_rng": [
+            18,
+            "v4 layout"
+          ],
+          "source_square_sha256": "0b778b6c13c775bc83a025ceb54e3484fd7c2cfa8695cf84f405b9c0eba85b6a",
+          "summary": "procedural numpy/PIL, 2:1 projection + diamond_clip --feather 8"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "ground",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum U.3 (2026-09-29): PASS, procedural quay stone variants a/b/c",
+          "verifier": "grok-bot-verifier/PB-002/quay_flag_results.json"
+        },
+        "render_sidecar": "pb-002-plates/ground/quay_flag_a.render.json",
+        "source_path": "pb-002-plates/ground/quay_flag_a.png"
+      }
+    },
+    {
+      "id": "quay_flag_b",
+      "group": "quay_flag",
+      "subgroup": "flag",
+      "path": "ground/quay_flag_b.png",
+      "canvas": [
+        256,
+        128
+      ],
+      "canvas_str": "256x128",
+      "anchor": [
+        128,
+        127
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "ground",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "a5a26afdafd675155e938c24f9d636644e6c894db20cbf73bc340fe8b3db1f44",
+      "bytes": 49686,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "procedural",
+          "version": null,
+          "engine": "procedural (numpy/PIL); no Blender render, no generation spend",
+          "samples": null,
+          "supersample": 8,
+          "scene_kind": "ground_procedural_quay_flag",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": null,
+          "generator": "_source/quay_flag_procedural.py",
+          "variant_rng": [
+            18,
+            101
+          ],
+          "source_square_sha256": "0d73eef9f01b70f30ef9cd0a31c84379c14af16f52ec01dee3e6573d06c1f335",
+          "summary": "procedural numpy/PIL, 2:1 projection + diamond_clip --feather 8"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "ground",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum U.3 (2026-09-29): PASS, procedural quay stone variants a/b/c",
+          "verifier": "grok-bot-verifier/PB-002/quay_flag_results.json"
+        },
+        "render_sidecar": "pb-002-plates/ground/quay_flag_b.render.json",
+        "source_path": "pb-002-plates/ground/quay_flag_b.png"
+      }
+    },
+    {
+      "id": "quay_flag_c",
+      "group": "quay_flag",
+      "subgroup": "flag",
+      "path": "ground/quay_flag_c.png",
+      "canvas": [
+        256,
+        128
+      ],
+      "canvas_str": "256x128",
+      "anchor": [
+        128,
+        127
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "ground",
+      "view": "harbour",
+      "phase": "P0",
+      "status": "LOCKED",
+      "sha256": "cca9ea5fad0a43a2f4afbe90999169837128859605b80290cc02c91b7f52bad8",
+      "bytes": 49831,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "procedural",
+          "version": null,
+          "engine": "procedural (numpy/PIL); no Blender render, no generation spend",
+          "samples": null,
+          "supersample": 8,
+          "scene_kind": "ground_procedural_quay_flag",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": null,
+          "generator": "_source/quay_flag_procedural.py",
+          "variant_rng": [
+            18,
+            102
+          ],
+          "source_square_sha256": "4dfc4da1c2a5b331adc3b49c879f2b4220869126681368d7908d35b50dd138b8",
+          "summary": "procedural numpy/PIL, 2:1 projection + diamond_clip --feather 8"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "ground",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum U.3 (2026-09-29): PASS, procedural quay stone variants a/b/c",
+          "verifier": "grok-bot-verifier/PB-002/quay_flag_results.json"
+        },
+        "render_sidecar": "pb-002-plates/ground/quay_flag_c.render.json",
+        "source_path": "pb-002-plates/ground/quay_flag_c.png"
       }
     }
   ]
