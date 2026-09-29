@@ -108,6 +108,50 @@ jobs:
             godot --headless --path godot --import --quit
           run_godot /tmp/godot-headless-smoke.log \
             godot --headless --path godot -- --smoke
+          # An explicit shot on headless cannot be drawn. Main exits 1 and
+          # writes no file. The plain smoke above stays exit 0. This log
+          # contains the dummy-renderer error, so it is not run_godot.
+          expect_explicit_headless_shot_fails() {
+            local log="$1"
+            shift
+            set +e
+            "$@" >"$log" 2>&1
+            local code=$?
+            set -e
+            cat "$log"
+            if [ "$code" -eq 0 ]; then
+              echo "explicit headless capture exited 0"
+              exit 1
+            fi
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log"; then
+              echo "explicit headless capture printed smoke ok"
+              exit 1
+            fi
+          }
+          rm -f /tmp/hs.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs.png \
+            godot --headless --path godot -- --smoke
+          if [ -f /tmp/hs.png ]; then
+            echo "headless PORTLIGHT_SHOT wrote /tmp/hs.png"
+            exit 1
+          fi
+          rm -f /tmp/hs-encounter.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-encounter-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-encounter.png \
+            godot --headless --path godot -- --encounter-screen
+          if [ -f /tmp/hs-encounter.png ]; then
+            echo "headless encounter PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          rm -f /tmp/hs-galleon.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-galleon-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-galleon.png \
+            godot --headless --path godot -- --encounter-galleon
+          if [ -f /tmp/hs-galleon.png ]; then
+            echo "headless galleon PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
           run_godot /tmp/godot-encounter-smoke.log \
             godot --headless --path godot -- --encounter-screen
           if ! grep -q 'portlight encounter smoke ok' /tmp/godot-encounter-smoke.log; then

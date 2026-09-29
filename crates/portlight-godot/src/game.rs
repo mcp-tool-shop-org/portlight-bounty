@@ -181,6 +181,12 @@ struct PortlightGame {
     art: bool,
     smoke_ok: bool,
     shot_path: Option<String>,
+    /// The path was filled by a default, not `PORTLIGHT_SHOT`. Headless skips
+    /// that save. An explicit shot still runs and fails when it cannot.
+    shot_implicit: bool,
+    /// The encounter script has finished, including the bounty pass. The ok
+    /// line waits until every capture has been judged.
+    encounter_checked: bool,
     capture_frames: i32,
     encounter_nodes: Option<EncounterNodes>,
     encounter: Option<EncounterFacts>,
@@ -225,6 +231,8 @@ impl IControl for PortlightGame {
             art: false,
             smoke_ok: true,
             shot_path: None,
+            shot_implicit: false,
+            encounter_checked: false,
             capture_frames: 0,
             encounter_nodes: None,
             encounter: None,
@@ -251,8 +259,9 @@ impl IControl for PortlightGame {
         if user_arg("--encounter-screen") {
             self.smoke = true;
             // The five frames are opt-in. A default `/tmp` path is not a
-            // request, and headless smoke never reads the viewport.
-            if encounter_frames_requested() && !headless_runtime() {
+            // request. An explicit directory still captures on headless, and
+            // the empty viewport fails the run.
+            if encounter_frames_requested() {
                 self.encounter_shot_dir = Some(encounter_shot_dir());
                 self.begin_encounter_shots();
                 self.capture_frames = 4;
@@ -265,9 +274,7 @@ impl IControl for PortlightGame {
             self.galleon_frame = true;
             if self.shot_path.is_none() {
                 self.shot_path = Some(art_shot_path("encounter-galleon.png"));
-            }
-            if headless_runtime() {
-                self.shot_path = None;
+                self.shot_implicit = true;
             }
             self.prepare_scripted_voyage();
             self.open_scripted_approach();
@@ -294,6 +301,7 @@ impl IControl for PortlightGame {
             self.smoke = true;
             if self.shot_path.is_none() {
                 self.shot_path = Some(art_shot_path("chart-cutter-f7.png"));
+                self.shot_implicit = true;
             }
             self.run_art();
             self.capture_frames = 4;
@@ -323,8 +331,10 @@ impl IControl for PortlightGame {
             // `--encounter-galleon` is still on the encounter screen. The
             // multi-frame shot saves its own files before this, then the
             // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
-            // Headless has no viewport texture, so it never takes this path.
-            if !headless_runtime() && !self.save_shot(&path, self.galleon_frame) {
+            // Headless skips only an implicit default. `PORTLIGHT_SHOT` still
+            // reads the viewport and fails when that image is empty.
+            let skip = headless_runtime() && self.shot_implicit;
+            if !skip && !self.save_shot(&path, self.galleon_frame) {
                 self.smoke_ok = false;
             }
         }
@@ -335,6 +345,12 @@ impl IControl for PortlightGame {
             return;
         }
         let code = if self.smoke_ok { 0 } else { 1 };
+        if self.encounter_checked {
+            godot_print!(
+                "portlight encounter smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        }
         godot_print!(
             "portlight smoke {}",
             if self.smoke_ok { "ok" } else { "FAILED" }
@@ -2084,11 +2100,7 @@ impl PortlightGame {
 
     fn report_encounter_smoke(&mut self) {
         self.run_bounty_encounter();
-        if self.smoke_ok {
-            godot_print!("portlight encounter smoke ok");
-        } else {
-            godot_print!("portlight encounter smoke FAILED");
-        }
+        self.encounter_checked = true;
     }
 
     /// `parity/scripts/bounty_claim.txt` through the fight. After `take_all`,
