@@ -47,6 +47,14 @@ pub enum HarbourFault {
     PilingsOnPier { col: i32, row: i32 },
     /// A pier root has to be water, not the quay cell.
     PierOnQuay { col: i32, row: i32 },
+    /// `quay_flag_*` is not art-gate U.4: layer Land, offset 0,0, y-sort 0.
+    QuayFlagPlacement {
+        id: &'static str,
+        layer: &'static str,
+        offset_x: i32,
+        offset_y: i32,
+        y_sort: i32,
+    },
 }
 
 impl std::fmt::Display for HarbourFault {
@@ -56,6 +64,17 @@ impl std::fmt::Display for HarbourFault {
                 write!(f, "pilings on a pier cell ({col}, {row})")
             }
             Self::PierOnQuay { col, row } => write!(f, "pier on a quay cell ({col}, {row})"),
+            Self::QuayFlagPlacement {
+                id,
+                layer,
+                offset_x,
+                offset_y,
+                y_sort,
+            } => write!(
+                f,
+                "{id} must be layer Land, offset 0,0, y_sort 0 (art-gate U.4); \
+                 MANIFEST has layer {layer}, offset {offset_x},{offset_y}, y_sort {y_sort}"
+            ),
         }
     }
 }
@@ -146,16 +165,14 @@ pub fn harbour_water_tile(col: i32, row: i32) -> HarbourTile {
 /// Quay paving for one cell. The plate is the manifest `quay_flag_*` entry
 /// for [`crate::assets::quay_flag_variant`]. Screen position is the footprint
 /// bottom plus that entry's layer offset (U.4 is `0,0`, so no sea datum).
-pub fn harbour_quay_paving_tile(col: i32, row: i32) -> HarbourTile {
+///
+/// A plate that is not layer Land at offset `0,0` with y-sort `0` returns
+/// an error. That used to panic while the frame was drawn.
+pub fn harbour_quay_paving_tile(col: i32, row: i32) -> Result<HarbourTile, HarbourFault> {
     let plate = crate::assets::quay_flag_plate(col, row);
-    assert_eq!(
-        plate.layer, "Land",
-        "quay paving stays on the land ground layer"
-    );
-    // U.4 y-sort origin is the footprint anchor, so the sprite is not shifted.
-    assert_eq!(plate.y_sort, 0, "quay paving y-sort origin");
+    quay_flag_u4(plate)?;
     let (sx, sy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
-    HarbourTile {
+    Ok(HarbourTile {
         col,
         row,
         path: plate.res_path,
@@ -167,7 +184,22 @@ pub fn harbour_quay_paving_tile(col: i32, row: i32) -> HarbourTile {
         screen_y: sy + HARBOUR_CELL_H / 2 + plate.offset_y,
         layer: HarbourLayer::Land,
         kind: None,
+    })
+}
+
+/// Art-gate U.4 for one manifest plate. Anything else is a fault the seam
+/// can print; it is not a panic.
+fn quay_flag_u4(plate: &crate::assets::QuayFlagPlate) -> Result<(), HarbourFault> {
+    if plate.layer == "Land" && plate.offset_x == 0 && plate.offset_y == 0 && plate.y_sort == 0 {
+        return Ok(());
     }
+    Err(HarbourFault::QuayFlagPlacement {
+        id: plate.id,
+        layer: plate.layer,
+        offset_x: plate.offset_x,
+        offset_y: plate.offset_y,
+        y_sort: plate.y_sort,
+    })
 }
 
 pub fn harbour_work_tile(col: i32, row: i32, kind: WorkKind, path: &'static str) -> HarbourTile {
@@ -251,7 +283,7 @@ pub fn build_harbour(
             other.kind == Some(WorkKind::Quay) && other.col == work.col && other.row == work.row
         });
         if !again {
-            tiles.push(harbour_quay_paving_tile(work.col, work.row));
+            tiles.push(harbour_quay_paving_tile(work.col, work.row).map_err(|fault| vec![fault])?);
         }
     }
     Ok(tiles)
@@ -360,7 +392,8 @@ mod tests {
                 seen[variant as usize] = true;
                 row_seen[variant as usize] = true;
                 differs_from_stripe |= variant != (col + row).rem_euclid(3) as u8;
-                let tile = harbour_quay_paving_tile(col, row);
+                let tile =
+                    harbour_quay_paving_tile(col, row).unwrap_or_else(|fault| panic!("{fault}"));
                 let letter = match variant {
                     0 => "quay_flag_a.png",
                     1 => "quay_flag_b.png",
@@ -410,7 +443,7 @@ mod tests {
             "anti-diagonal is a single variant"
         );
 
-        let seam = harbour_quay_paving_tile(0, 1);
+        let seam = harbour_quay_paving_tile(0, 1).unwrap_or_else(|fault| panic!("{fault}"));
         let plate = crate::assets::quay_flag_plate(0, 1);
         assert_eq!(plate.layer, "Land");
         assert_eq!((plate.offset_x, plate.offset_y), (0, 0));
@@ -428,14 +461,10 @@ mod tests {
         );
         assert_eq!((seam.canvas_w, seam.canvas_h), (256, 128));
 
-        let built =
-            build_harbour(Vec::new(), vec![quay(0, 1), quay(0, 1), pier(0, 2)]).expect("legal");
-        let paving: Vec<_> = built
-            .iter()
-            .filter(|tile| tile.layer == HarbourLayer::Land)
-            .collect();
-        assert_eq!(paving.len(), 1, "one plate per quay cell");
-        assert_eq!((paving[0].col, paving[0].row), (0, 1));
+        // One quay block, then a front prop. A second block on the same cell
+        // stays in front of paving that was inserted before the block, so
+        // `position` on the first block would still pass that revert.
+        let built = build_harbour(Vec::new(), vec![quay(0, 1), pier(0, 2)]).expect("legal");
         let paving_at = built
             .iter()
             .position(|tile| tile.layer == HarbourLayer::Land)
@@ -448,8 +477,63 @@ mod tests {
             .iter()
             .position(|tile| tile.kind == Some(WorkKind::Pier))
             .expect("pier");
-        assert!(block_at < paving_at);
-        assert!(paving_at < prop_at);
+        assert_eq!(
+            built
+                .iter()
+                .filter(|tile| tile.kind == Some(WorkKind::Quay))
+                .count(),
+            1,
+            "the draw-order fixture has one quay block"
+        );
+        assert!(
+            block_at < paving_at && paving_at < prop_at,
+            "draw order is the block, then paving, then props"
+        );
+
+        let doubled = build_harbour(Vec::new(), vec![quay(0, 1), quay(0, 1)]).expect("legal");
+        let paving: Vec<_> = doubled
+            .iter()
+            .filter(|tile| tile.layer == HarbourLayer::Land)
+            .collect();
+        assert_eq!(paving.len(), 1, "one plate per quay cell");
+        assert_eq!((paving[0].col, paving[0].row), (0, 1));
+        let last_block = doubled
+            .iter()
+            .rposition(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("block");
+        let doubled_paving = doubled
+            .iter()
+            .position(|tile| tile.layer == HarbourLayer::Land)
+            .expect("paving");
+        assert!(
+            last_block < doubled_paving,
+            "paving follows the last quay block on that cell"
+        );
+    }
+
+    #[test]
+    fn a_quay_flag_off_u4_is_a_fault() {
+        let plate = crate::assets::QuayFlagPlate {
+            id: "quay_flag_a",
+            res_path: "res://assets/landing/ground/quay_flag_a.png",
+            anchor_x: 128,
+            anchor_y: 127,
+            canvas_w: 256,
+            canvas_h: 128,
+            layer: "Water",
+            offset_x: 4,
+            offset_y: -8,
+            y_sort: 12,
+        };
+        let fault = quay_flag_u4(&plate).expect_err("off U.4");
+        assert_eq!(
+            fault.to_string(),
+            "quay_flag_a must be layer Land, offset 0,0, y_sort 0 (art-gate U.4); \
+             MANIFEST has layer Water, offset 4,-8, y_sort 12"
+        );
+        assert!(quay_flag_u4(crate::assets::quay_flag_plate(1, 2)).is_ok());
+        assert!(quay_flag_u4(crate::assets::quay_flag_plate(1, 0)).is_ok());
+        assert!(quay_flag_u4(crate::assets::quay_flag_plate(0, 1)).is_ok());
     }
 
     #[test]

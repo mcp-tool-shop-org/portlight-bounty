@@ -347,10 +347,18 @@ fn manifest_ship_plates() -> &'static [Asset] {
     PLATES.get_or_init(load_manifest_ships).as_slice()
 }
 
+/// One parse of the embedded landing manifest. Ship plates and quay flags
+/// both read this value.
+fn landing_manifest() -> &'static serde_json::Value {
+    static MANIFEST: OnceLock<serde_json::Value> = OnceLock::new();
+    MANIFEST
+        .get_or_init(|| serde_json::from_str(LANDING_MANIFEST).expect("embedded landing MANIFEST"))
+}
+
 fn load_manifest_ships() -> Vec<Asset> {
-    let manifest: serde_json::Value =
-        serde_json::from_str(LANDING_MANIFEST).expect("embedded landing MANIFEST");
-    let entries = manifest["entries"].as_array().expect("MANIFEST entries");
+    let entries = landing_manifest()["entries"]
+        .as_array()
+        .expect("MANIFEST entries");
     let mut plates = Vec::new();
     for entry in entries {
         if entry["group"] != "ships" {
@@ -492,9 +500,9 @@ fn quay_flag_plates() -> &'static [QuayFlagPlate] {
 }
 
 fn load_quay_flag_plates() -> Vec<QuayFlagPlate> {
-    let manifest: serde_json::Value =
-        serde_json::from_str(LANDING_MANIFEST).expect("embedded landing MANIFEST");
-    let entries = manifest["entries"].as_array().expect("MANIFEST entries");
+    let entries = landing_manifest()["entries"]
+        .as_array()
+        .expect("MANIFEST entries");
     let mut plates = Vec::new();
     for entry in entries {
         if entry["group"] != "quay_flag" {
@@ -793,9 +801,84 @@ mod tests {
         );
     }
 
+    // Art-gate U.4. A layer, offset, or y-sort edit fails here with the
+    // plate id and the values the manifest actually has. Placement reports
+    // that same mismatch as a harbour fault instead of panicking in-game.
+    #[test]
+    fn quay_flag_manifest_placement_is_u4_land() {
+        let mut seen = 0u32;
+        for entry in landing_manifest()["entries"].as_array().expect("entries") {
+            let Some(id) = entry["id"].as_str() else {
+                continue;
+            };
+            if !matches!(id, "quay_flag_a" | "quay_flag_b" | "quay_flag_c") {
+                continue;
+            }
+            seen += 1;
+            let layer = entry["layer"].as_str().unwrap_or("<missing>");
+            let offset = entry["layer_offset_px"].as_array();
+            let offset_x = offset
+                .and_then(|pair| pair.first())
+                .and_then(|v| v.as_i64());
+            let offset_y = offset.and_then(|pair| pair.get(1)).and_then(|v| v.as_i64());
+            let y_sort = entry["y_sort_origin"].as_i64();
+            assert_eq!(
+                (layer, offset_x, offset_y, y_sort),
+                ("Land", Some(0), Some(0), Some(0)),
+                "{id} must be layer Land, offset 0,0, y_sort 0 (art-gate U.4); \
+                 MANIFEST has layer {layer}, offset {offset_x:?},{offset_y:?}, y_sort {y_sort:?}"
+            );
+        }
+        assert_eq!(
+            seen, 3,
+            "MANIFEST is missing quay_flag_a, quay_flag_b, or quay_flag_c"
+        );
+    }
+
+    /// The committed seam frames only show `quay_flag_c`. This grid is the
+    /// proof that the hash also selects `a` and `b`, and that a cell does
+    /// not change plate between calls.
+    #[test]
+    fn quay_flag_variant_is_stable_and_selects_every_plate() {
+        let mut seen = [false; 3];
+        for row in 0..4 {
+            for col in 0..4 {
+                let variant = quay_flag_variant(col, row);
+                assert_eq!(
+                    quay_flag_variant(col, row),
+                    variant,
+                    "({col}, {row}) quay flag changed between calls"
+                );
+                assert!(variant < 3, "({col}, {row}) variant {variant}");
+                let expect = match variant {
+                    0 => "quay_flag_a",
+                    1 => "quay_flag_b",
+                    _ => "quay_flag_c",
+                };
+                let plate = quay_flag_plate(col, row);
+                assert_eq!(plate.id, expect, "({col}, {row})");
+                assert_eq!(
+                    quay_flag_plate(col, row).id,
+                    plate.id,
+                    "({col}, {row}) plate changed between calls"
+                );
+                assert!(
+                    plate.res_path.ends_with(&format!("ground/{expect}.png")),
+                    "({col}, {row}) -> {}",
+                    plate.res_path
+                );
+                seen[variant as usize] = true;
+            }
+        }
+        assert_eq!(
+            seen,
+            [true, true, true],
+            "a 4×4 grid must select quay_flag_a, quay_flag_b, and quay_flag_c"
+        );
+    }
+
     fn manifest_geom(id: &str) -> (i32, i32, i32, i32) {
-        let manifest: serde_json::Value = serde_json::from_str(LANDING_MANIFEST).expect("manifest");
-        let entry = manifest["entries"]
+        let entry = landing_manifest()["entries"]
             .as_array()
             .unwrap()
             .iter()
