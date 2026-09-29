@@ -12,9 +12,10 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      ships inventory must equal the 36 ids (empty fails). A missing row refuses the build.
                      A row passes when `pass` is true. `exit`, if present, must be 0. A missing
                      `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
-                     A verdict of FAIL, a false `gate` value, or a non-empty `fails` list refuses
-                     the row. Real rows look like {"pass": true, "v011_exit": 1} with no `exit`
-                     key and are accepted as they are.
+                     A verdict of FAIL, a false top-level `gate` or `gates` value, or a non-empty
+                     `fails` list refuses the row. `gates` is a dict of booleans. Nested info
+                     such as info.G5_would_pass false does not. Real rows look like
+                     {"pass": true, "v011_exit": 1, "gates": {...}} with no `exit` key.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -462,8 +463,9 @@ def ship_row_failure(row):
 
     A row passes when `pass` is true. `exit`, if present, must be 0. A missing
     `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
-    `verdict` FAIL, a false `gate` value, or a non-empty `fails` list refuses
-    the row. Real rows are {"pass": true, "v011_exit": 1, ...} with no exit key.
+    `verdict` FAIL, a false top-level `gate` or `gates` value, or a non-empty
+    `fails` list refuses the row. Only those top-level keys are read. Real rows
+    carry info.G5_would_pass false, and that nested false does not refuse the row.
     """
     if not isinstance(row, dict):
         return "missing"
@@ -474,9 +476,10 @@ def ship_row_failure(row):
     present, verdict = _row_field(row, "verdict")
     if present and _text_verdict_fail(verdict):
         return "verdict FAIL"
-    present, gate = _row_field(row, "gate")
-    if present and _contains_false(gate):
-        return "false gate"
+    for name in ("gate", "gates"):
+        present, gate = _row_field(row, name)
+        if present and _contains_false(gate):
+            return "false gate"
     present, fails = _row_field(row, "fails")
     if present and isinstance(fails, list) and fails:
         return "non-empty fails"

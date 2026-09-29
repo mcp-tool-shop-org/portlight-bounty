@@ -346,6 +346,21 @@ def test_gate_helpers():
         "nested gate",
     )
     check(
+        "false gates dict refuses the row",
+        mod.ship_row_failure({**stock, "gates": {"G1": False}}) == "false gate",
+        "gates G1",
+    )
+    real_gates = {
+        **stock,
+        "gates": {"G1": True, "G2": True},
+        "info": {"G5_would_pass": False},
+    }
+    check(
+        "info.G5_would_pass false does not refuse the row",
+        mod.ship_row_failure(real_gates) is None,
+        repr(real_gates),
+    )
+    check(
         "non-empty fails list refuses the row",
         mod.ship_row_failure({**stock, "fails": ["canvas"]}) == "non-empty fails",
         "fails",
@@ -848,6 +863,31 @@ def test_ships_false_gate_fails(studio, tmp_path):
     status, out = run_main(main_argv(copy))
     assert status == 1
     assert "false gate" in out
+
+
+def test_ships_false_gates_dict_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("gates", {"G1": False}))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "false gate" in out
+
+
+def test_ships_info_g5_would_pass_false_still_passes(studio, tmp_path):
+    """Real rows nest G5_would_pass under info. A false there is not a gate."""
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+
+    def real(body):
+        row = body["rows"][0]
+        row["pass"] = True
+        row["v011_exit"] = 1
+        row.pop("exit", None)
+        row["gates"] = {"G1": True, "G2": True}
+        row["info"] = {"G5_would_pass": False}
+
+    mutate_results(copy, "ships", real)
+    status, out = run_main(main_argv(copy))
+    assert status == 0, out
 
 
 def test_ships_nonempty_fails_list_fails(studio, tmp_path):
