@@ -415,6 +415,148 @@ fn parse_points(value: &str) -> Result<i64, SimError> {
         .map_err(|_| SimError::InvalidNumber(value.to_string()))
 }
 
+/// One catalog archetype, in Python `CAPTAIN_ORDER`. Custom is not in this list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StartingCaptain {
+    pub id: String,
+    pub name: String,
+    pub title: String,
+    pub home_port_id: String,
+    pub home_port_name: String,
+    pub starting_ship_id: String,
+    pub starting_ship_class: String,
+    pub starting_silver: i64,
+}
+
+/// `CAPTAIN_ORDER` (`captain_identity.py`). Custom is the separate builder.
+pub const CAPTAIN_ORDER: [&str; 9] = [
+    "merchant",
+    "smuggler",
+    "navigator",
+    "privateer",
+    "corsair",
+    "scholar",
+    "merchant_prince",
+    "dockhand",
+    "bounty_hunter",
+];
+
+/// Id and display name for a bloc, faction, port, or mentor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NamedChoice {
+    pub id: String,
+    pub name: String,
+}
+
+/// A home port [`validate_spec`] will accept for `region`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PortChoice {
+    pub id: String,
+    pub name: String,
+    pub region: String,
+}
+
+/// A mentor NPC. [`validate_spec`] requires `port_id` to be the home port.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MentorChoice {
+    pub id: String,
+    pub name: String,
+    pub port_id: String,
+}
+
+/// Catalog lists a custom spec may use. Empty bloc, faction, mentor, and
+/// backstory stay valid; those are not included as required rows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CustomCaptainOptions {
+    pub regions: Vec<String>,
+    pub ports: Vec<PortChoice>,
+    pub blocs: Vec<NamedChoice>,
+    pub factions: Vec<NamedChoice>,
+    pub mentors: Vec<MentorChoice>,
+}
+
+/// Archetypes [`crate::session::Session::new`] accepts, in roster order.
+pub fn starting_captains() -> Vec<StartingCaptain> {
+    let catalog = content::content();
+    CAPTAIN_ORDER
+        .iter()
+        .filter_map(|id| {
+            let captain = catalog.captain(id)?;
+            let home_port_name = catalog
+                .port(&captain.home_port_id)
+                .map(|port| port.name.clone())
+                .unwrap_or_else(|| captain.home_port_id.clone());
+            let starting_ship_class = catalog
+                .ship(&captain.starting_ship_id)
+                .map(|ship| ship.ship_class.clone())
+                .unwrap_or_else(|| captain.starting_ship_id.clone());
+            Some(StartingCaptain {
+                id: captain.id.clone(),
+                name: captain.name.clone(),
+                title: captain.title.clone(),
+                home_port_id: captain.home_port_id.clone(),
+                home_port_name,
+                starting_ship_id: captain.starting_ship_id.clone(),
+                starting_ship_class,
+                starting_silver: captain.starting_silver,
+            })
+        })
+        .collect()
+}
+
+/// Regions, ports, blocs, factions, and mentors [`validate_spec`] knows.
+pub fn custom_captain_options() -> CustomCaptainOptions {
+    let catalog = content::content();
+    let regions = content::REGIONS
+        .iter()
+        .map(|region| (*region).to_string())
+        .collect();
+    let ports = catalog
+        .ports
+        .iter()
+        .map(|port| PortChoice {
+            id: port.id.clone(),
+            name: port.name.clone(),
+            region: port.region.clone(),
+        })
+        .collect();
+    let blocs = catalog
+        .port_politics
+        .blocs
+        .iter()
+        .map(|bloc| NamedChoice {
+            id: bloc.id.clone(),
+            name: bloc.name.clone(),
+        })
+        .collect();
+    let factions = catalog
+        .factions
+        .iter()
+        .map(|faction| NamedChoice {
+            id: faction.id.clone(),
+            name: faction.name.clone(),
+        })
+        .collect();
+    let mentors = catalog
+        .port_institutions
+        .iter()
+        .chain(catalog.port_institutions_east.iter())
+        .flat_map(|profile| profile.npcs.iter())
+        .map(|npc| MentorChoice {
+            id: npc.id.clone(),
+            name: npc.name.clone(),
+            port_id: npc.port_id.clone(),
+        })
+        .collect();
+    CustomCaptainOptions {
+        regions,
+        ports,
+        blocs,
+        factions,
+        mentors,
+    }
+}
+
 fn region_starting_silver(region: &str) -> i64 {
     match region {
         "Mediterranean" => 500,
@@ -725,5 +867,147 @@ mod tests {
         assert!(med.starting_silver > south.starting_silver);
         assert_eq!(south.starting_silver, 350);
         assert_eq!(south.reputation.south_seas, 4);
+    }
+
+    #[test]
+    fn starting_captains_follow_the_python_roster_and_omit_custom() {
+        let captains = starting_captains();
+        let ids: Vec<_> = captains.iter().map(|captain| captain.id.as_str()).collect();
+        assert_eq!(ids, CAPTAIN_ORDER);
+        let merchant = captains
+            .iter()
+            .find(|captain| captain.id == "merchant")
+            .unwrap();
+        assert_eq!(merchant.home_port_id, "porto_novo");
+        assert_eq!(merchant.home_port_name, "Porto Novo");
+        assert_eq!(merchant.starting_ship_class, "sloop");
+        assert_eq!(merchant.starting_silver, 550);
+        let hunter = captains
+            .iter()
+            .find(|captain| captain.id == "bounty_hunter")
+            .unwrap();
+        assert_eq!(hunter.starting_ship_class, "cutter");
+    }
+
+    #[test]
+    fn custom_options_are_the_catalog_validate_spec_accepts() {
+        let options = custom_captain_options();
+        assert_eq!(
+            options.regions,
+            content::REGIONS
+                .iter()
+                .map(|region| (*region).to_string())
+                .collect::<Vec<_>>()
+        );
+        assert!(options
+            .ports
+            .iter()
+            .any(|port| port.id == "porto_novo" && port.region == "Mediterranean"));
+        assert!(options
+            .blocs
+            .iter()
+            .any(|bloc| bloc.id == "exchange_alliance"));
+        assert!(options
+            .factions
+            .iter()
+            .any(|faction| faction.id == "crimson_tide"));
+        let mentor = options
+            .mentors
+            .iter()
+            .find(|mentor| mentor.id == "pn_marta")
+            .expect("marta");
+        assert_eq!(mentor.port_id, "porto_novo");
+        let mut spec = points(3, 3, 2, 2);
+        spec.bloc_alignment = options.blocs[0].id.clone();
+        spec.faction_alignment = options.factions[0].id.clone();
+        spec.mentor_npc_id = mentor.id.clone();
+        assert!(validate_spec(&spec).is_empty());
+    }
+
+    /// `parity/golden/roster_options.json` is Python `CAPTAIN_ORDER` plus the
+    /// catalogs `validate_spec` accepts, written by `tools/parity/roster_options.py`.
+    /// Captains, regions, ports, blocs, factions, and mentors match in that order.
+    #[test]
+    fn roster_and_options_match_the_python_catalogs() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../parity/golden/roster_options.json");
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run tools/parity/roster_options.py",
+                path.display()
+            )
+        });
+        let golden: serde_json::Value = serde_json::from_str(&text).expect("roster golden");
+        let captains = starting_captains();
+        let options = custom_captain_options();
+        assert_eq!(captains.len(), 9);
+        assert_eq!(options.regions.len(), 5);
+        assert_eq!(options.ports.len(), 20);
+        assert_eq!(options.blocs.len(), 7);
+        assert_eq!(options.factions.len(), 4);
+        assert_eq!(options.mentors.len(), 134);
+        let got_captains: Vec<serde_json::Value> = captains
+            .iter()
+            .map(|captain| {
+                serde_json::json!({
+                    "id": captain.id,
+                    "name": captain.name,
+                    "title": captain.title,
+                    "home_port_id": captain.home_port_id,
+                    "home_port_name": captain.home_port_name,
+                    "starting_ship_id": captain.starting_ship_id,
+                    "starting_ship_class": captain.starting_ship_class,
+                    "starting_silver": captain.starting_silver,
+                })
+            })
+            .collect();
+        assert_eq!(&got_captains, golden["captains"].as_array().unwrap());
+        assert_eq!(serde_json::json!(options.regions), golden["regions"]);
+        let ports: Vec<serde_json::Value> = options
+            .ports
+            .iter()
+            .map(|port| {
+                serde_json::json!({
+                    "id": port.id,
+                    "name": port.name,
+                    "region": port.region,
+                })
+            })
+            .collect();
+        assert_eq!(&ports, golden["ports"].as_array().unwrap());
+        let blocs: Vec<serde_json::Value> = options
+            .blocs
+            .iter()
+            .map(|bloc| serde_json::json!({"id": bloc.id, "name": bloc.name}))
+            .collect();
+        assert_eq!(&blocs, golden["blocs"].as_array().unwrap());
+        let factions: Vec<serde_json::Value> = options
+            .factions
+            .iter()
+            .map(|faction| serde_json::json!({"id": faction.id, "name": faction.name}))
+            .collect();
+        assert_eq!(&factions, golden["factions"].as_array().unwrap());
+        let mentors: Vec<serde_json::Value> = options
+            .mentors
+            .iter()
+            .map(|mentor| {
+                serde_json::json!({
+                    "id": mentor.id,
+                    "name": mentor.name,
+                    "port_id": mentor.port_id,
+                })
+            })
+            .collect();
+        assert_eq!(&mentors, golden["mentors"].as_array().unwrap());
+        assert_eq!(
+            crate::session::Session::starting_captains().len(),
+            captains.len()
+        );
+        assert_eq!(
+            crate::session::Session::custom_captain_options()
+                .mentors
+                .len(),
+            mentors.len()
+        );
     }
 }

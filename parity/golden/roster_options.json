@@ -1,0 +1,923 @@
+{
+  "captains": [
+    {
+      "id": "merchant",
+      "name": "The Merchant",
+      "title": "Licensed Trader",
+      "home_port_id": "porto_novo",
+      "home_port_name": "Porto Novo",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 550
+    },
+    {
+      "id": "smuggler",
+      "name": "The Smuggler",
+      "title": "Shadow Trader",
+      "home_port_id": "palm_cove",
+      "home_port_name": "Palm Cove",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 500
+    },
+    {
+      "id": "navigator",
+      "name": "The Navigator",
+      "title": "Route Specialist",
+      "home_port_id": "silva_bay",
+      "home_port_name": "Silva Bay",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 450
+    },
+    {
+      "id": "privateer",
+      "name": "The Privateer",
+      "title": "Licensed Hunter",
+      "home_port_id": "stormwall",
+      "home_port_name": "Stormwall",
+      "starting_ship_id": "swift_cutter",
+      "starting_ship_class": "cutter",
+      "starting_silver": 475
+    },
+    {
+      "id": "corsair",
+      "name": "The Corsair",
+      "title": "Crimson Tide Captain",
+      "home_port_id": "corsairs_rest",
+      "home_port_name": "Corsair's Rest",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 500
+    },
+    {
+      "id": "scholar",
+      "name": "The Scholar",
+      "title": "Wind Temple Student",
+      "home_port_id": "monsoon_reach",
+      "home_port_name": "Monsoon Reach",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 400
+    },
+    {
+      "id": "merchant_prince",
+      "name": "The Merchant Prince",
+      "title": "Khoury Dynasty Scion",
+      "home_port_id": "al_manar",
+      "home_port_name": "Al-Manar",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 700
+    },
+    {
+      "id": "dockhand",
+      "name": "The Dockhand",
+      "title": "Self-Made Captain",
+      "home_port_id": "crosswind_isle",
+      "home_port_name": "Crosswind Isle",
+      "starting_ship_id": "coastal_sloop",
+      "starting_ship_class": "sloop",
+      "starting_silver": 300
+    },
+    {
+      "id": "bounty_hunter",
+      "name": "The Bounty Hunter",
+      "title": "Licensed Hunter",
+      "home_port_id": "crosswind_isle",
+      "home_port_name": "Crosswind Isle",
+      "starting_ship_id": "swift_cutter",
+      "starting_ship_class": "cutter",
+      "starting_silver": 425
+    }
+  ],
+  "regions": [
+    "Mediterranean",
+    "North Atlantic",
+    "West Africa",
+    "East Indies",
+    "South Seas"
+  ],
+  "ports": [
+    {
+      "id": "porto_novo",
+      "name": "Porto Novo",
+      "region": "Mediterranean"
+    },
+    {
+      "id": "al_manar",
+      "name": "Al-Manar",
+      "region": "Mediterranean"
+    },
+    {
+      "id": "silva_bay",
+      "name": "Silva Bay",
+      "region": "Mediterranean"
+    },
+    {
+      "id": "corsairs_rest",
+      "name": "Corsair's Rest",
+      "region": "Mediterranean"
+    },
+    {
+      "id": "ironhaven",
+      "name": "Ironhaven",
+      "region": "North Atlantic"
+    },
+    {
+      "id": "stormwall",
+      "name": "Stormwall",
+      "region": "North Atlantic"
+    },
+    {
+      "id": "thornport",
+      "name": "Thornport",
+      "region": "North Atlantic"
+    },
+    {
+      "id": "sun_harbor",
+      "name": "Sun Harbor",
+      "region": "West Africa"
+    },
+    {
+      "id": "palm_cove",
+      "name": "Palm Cove",
+      "region": "West Africa"
+    },
+    {
+      "id": "iron_point",
+      "name": "Iron Point",
+      "region": "West Africa"
+    },
+    {
+      "id": "pearl_shallows",
+      "name": "Pearl Shallows",
+      "region": "West Africa"
+    },
+    {
+      "id": "jade_port",
+      "name": "Jade Port",
+      "region": "East Indies"
+    },
+    {
+      "id": "monsoon_reach",
+      "name": "Monsoon Reach",
+      "region": "East Indies"
+    },
+    {
+      "id": "silk_haven",
+      "name": "Silk Haven",
+      "region": "East Indies"
+    },
+    {
+      "id": "crosswind_isle",
+      "name": "Crosswind Isle",
+      "region": "East Indies"
+    },
+    {
+      "id": "dragons_gate",
+      "name": "Dragon's Gate",
+      "region": "East Indies"
+    },
+    {
+      "id": "spice_narrows",
+      "name": "Spice Narrows",
+      "region": "East Indies"
+    },
+    {
+      "id": "ember_isle",
+      "name": "Ember Isle",
+      "region": "South Seas"
+    },
+    {
+      "id": "typhoon_anchorage",
+      "name": "Typhoon Anchorage",
+      "region": "South Seas"
+    },
+    {
+      "id": "coral_throne",
+      "name": "Coral Throne",
+      "region": "South Seas"
+    }
+  ],
+  "blocs": [
+    {
+      "id": "exchange_alliance",
+      "name": "The Exchange Alliance"
+    },
+    {
+      "id": "iron_pact",
+      "name": "The Iron Pact"
+    },
+    {
+      "id": "gold_coast",
+      "name": "The Gold Coast Compact"
+    },
+    {
+      "id": "silk_circle",
+      "name": "The Silk Circle"
+    },
+    {
+      "id": "free_ports",
+      "name": "The Free Ports"
+    },
+    {
+      "id": "shadow_ports",
+      "name": "The Shadow Ports"
+    },
+    {
+      "id": "coral_crown",
+      "name": "The Coral Crown"
+    }
+  ],
+  "factions": [
+    {
+      "id": "crimson_tide",
+      "name": "The Crimson Tide"
+    },
+    {
+      "id": "monsoon_syndicate",
+      "name": "The Monsoon Syndicate"
+    },
+    {
+      "id": "deep_reef",
+      "name": "The Deep Reef Brotherhood"
+    },
+    {
+      "id": "iron_wolves",
+      "name": "The Iron Wolves"
+    }
+  ],
+  "mentors": [
+    {
+      "id": "pn_vasco",
+      "name": "Vasco da Reira",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "pn_marta",
+      "name": "Marta Soares",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "pn_dimitri",
+      "name": "Dimitri Andros",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "pn_senhora_costa",
+      "name": "Senhora Isabela Costa",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "pn_old_enzo",
+      "name": "Old Enzo",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "pn_inspector_salva",
+      "name": "Inspector Salva",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "pn_broker_reis",
+      "name": "Fernanda Reis",
+      "port_id": "porto_novo"
+    },
+    {
+      "id": "am_khalil",
+      "name": "Khalil al-Rashid",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "am_yasmin",
+      "name": "Yasmin al-Nadir",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "am_senhora_nadia",
+      "name": "Senhora Nadia Khoury",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "am_old_farouk",
+      "name": "Old Farouk",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "am_inspector_zara",
+      "name": "Inspector Zara Osman",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "am_hakim",
+      "name": "Hakim al-Nadir",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "am_broker_tariq",
+      "name": "Tariq Sayed",
+      "port_id": "al_manar"
+    },
+    {
+      "id": "sb_elena",
+      "name": "Elena Madeira",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "sb_nuno",
+      "name": "Nuno Ferreira",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "sb_tom\u00e1s",
+      "name": "Tom\u00e1s Verdelho",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "sb_council",
+      "name": "The Brotherhood Council",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "sb_rosa",
+      "name": "Rosa Carvalho",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "sb_customs_pires",
+      "name": "Customs Officer Pires",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "sb_broker_ana",
+      "name": "Ana Sousa",
+      "port_id": "silva_bay"
+    },
+    {
+      "id": "cr_one_eye",
+      "name": "One-Eye Basso",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "cr_whisper",
+      "name": "Whisper",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "cr_no_one",
+      "name": "No One",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "cr_mama_lucia",
+      "name": "Mama Lucia",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "cr_the_physician",
+      "name": "The Physician",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "cr_ghost",
+      "name": "Ghost",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "cr_little_fish",
+      "name": "Little Fish",
+      "port_id": "corsairs_rest"
+    },
+    {
+      "id": "ih_gunnar",
+      "name": "Gunnar Stahl",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "ih_forge_master",
+      "name": "Forge Master Henrik Brandt",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "ih_astrid",
+      "name": "Astrid Vekhren",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "ih_the_smith",
+      "name": "The Smith",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "ih_olga",
+      "name": "Olga Strand",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "ih_inspector_kross",
+      "name": "Inspector Kross",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "ih_broker_jan",
+      "name": "Jan Eriksson",
+      "port_id": "ironhaven"
+    },
+    {
+      "id": "sw_commander_vogt",
+      "name": "Commander Elias Vogt",
+      "port_id": "stormwall"
+    },
+    {
+      "id": "sw_quartermaster",
+      "name": "Quartermaster Maren Dahl",
+      "port_id": "stormwall"
+    },
+    {
+      "id": "sw_dr_halvorsen",
+      "name": "Dr. Kristian Halvorsen",
+      "port_id": "stormwall"
+    },
+    {
+      "id": "sw_ingrid",
+      "name": "Ingrid Norum",
+      "port_id": "stormwall"
+    },
+    {
+      "id": "sw_inspector_berg",
+      "name": "Inspector Berg",
+      "port_id": "stormwall"
+    },
+    {
+      "id": "sw_broker_siv",
+      "name": "Siv Lindgren",
+      "port_id": "stormwall"
+    },
+    {
+      "id": "tp_captain_berg_not",
+      "name": "Harbormaster Ake",
+      "port_id": "thornport"
+    },
+    {
+      "id": "tp_sigrid",
+      "name": "Sigrid Halvdan",
+      "port_id": "thornport"
+    },
+    {
+      "id": "tp_elder_astrid_t",
+      "name": "Elder Astrid",
+      "port_id": "thornport"
+    },
+    {
+      "id": "tp_old_magnus",
+      "name": "Old Magnus",
+      "port_id": "thornport"
+    },
+    {
+      "id": "tp_bones",
+      "name": "Bones Thorsen",
+      "port_id": "thornport"
+    },
+    {
+      "id": "tp_customs_lena",
+      "name": "Customs Officer Lena",
+      "port_id": "thornport"
+    },
+    {
+      "id": "tp_broker_erik",
+      "name": "Erik Strand",
+      "port_id": "thornport"
+    },
+    {
+      "id": "sh_adama",
+      "name": "Adama Keita",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "sh_ama",
+      "name": "Ama Mensah",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "sh_grandmother_binta",
+      "name": "Grandmother Binta",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "sh_kofi",
+      "name": "Kofi Asante",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "sh_yusuf",
+      "name": "Yusuf Diallo",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "sh_inspector_amara",
+      "name": "Inspector Amara",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "sh_broker_fatou",
+      "name": "Fatou Ndiaye",
+      "port_id": "sun_harbor"
+    },
+    {
+      "id": "pc_captain_abel",
+      "name": "Captain Abel",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "pc_old_cassius",
+      "name": "Old Cassius",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "pc_elder_kwame",
+      "name": "Elder Kwame",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "pc_mama_joy",
+      "name": "Mama Joy",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "pc_dock_master_esi",
+      "name": "Esi Owusu",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "pc_customs_abu",
+      "name": "Customs Officer Abu",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "pc_broker_chioma",
+      "name": "Chioma Obi",
+      "port_id": "palm_cove"
+    },
+    {
+      "id": "ip_foreman_kofi",
+      "name": "Foreman Kofi Mensah",
+      "port_id": "iron_point"
+    },
+    {
+      "id": "ip_river_dock",
+      "name": "Dock Boss Adjei",
+      "port_id": "iron_point"
+    },
+    {
+      "id": "ip_mama_adwoa",
+      "name": "Mama Adwoa",
+      "port_id": "iron_point"
+    },
+    {
+      "id": "ip_assayer_mensah",
+      "name": "Assayer Mensah",
+      "port_id": "iron_point"
+    },
+    {
+      "id": "ip_customs_kwesi",
+      "name": "Customs Officer Kwesi",
+      "port_id": "iron_point"
+    },
+    {
+      "id": "ip_broker_yaa",
+      "name": "Yaa Acheampong",
+      "port_id": "iron_point"
+    },
+    {
+      "id": "ps_elder_ama_d",
+      "name": "Elder Ama Diallo",
+      "port_id": "pearl_shallows"
+    },
+    {
+      "id": "ps_harbor_nana",
+      "name": "Harbor Keeper Nana",
+      "port_id": "pearl_shallows"
+    },
+    {
+      "id": "ps_pearl_grader",
+      "name": "Grader Kweku",
+      "port_id": "pearl_shallows"
+    },
+    {
+      "id": "ps_dye_master",
+      "name": "Dye Master Yaw",
+      "port_id": "pearl_shallows"
+    },
+    {
+      "id": "ps_healer_abena",
+      "name": "Healer Abena",
+      "port_id": "pearl_shallows"
+    },
+    {
+      "id": "ps_broker_esi_p",
+      "name": "Esi Kumi",
+      "port_id": "pearl_shallows"
+    },
+    {
+      "id": "jp_harbor_li",
+      "name": "Harbor Director Li Wei",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "jp_master_chen",
+      "name": "Kiln Master Chen Bai",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "jp_lady_mei",
+      "name": "Lady Mei Ling",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "jp_tea_master_huang",
+      "name": "Tea Master Huang",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "jp_inspector_zhao",
+      "name": "Inspector Zhao Min",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "jp_factor_wu",
+      "name": "Factor Wu Jian",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "jp_apprentice_lin",
+      "name": "Apprentice Lin Yue",
+      "port_id": "jade_port"
+    },
+    {
+      "id": "mr_harbor_ravi",
+      "name": "Harbor Master Ravi",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "mr_brother_anand",
+      "name": "Brother Anand",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "mr_shipwright_devi",
+      "name": "Shipwright Devi",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "mr_spice_trader_priya",
+      "name": "Priya Sundaram",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "mr_elder_council",
+      "name": "The Harbor Council",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "mr_customs_sanjay",
+      "name": "Customs Officer Sanjay",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "mr_broker_kamala",
+      "name": "Kamala Nair",
+      "port_id": "monsoon_reach"
+    },
+    {
+      "id": "slh_harbor_jun",
+      "name": "Harbor Keeper Jun",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "slh_grand_weaver",
+      "name": "Grand Weaver Seo-yeon",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "slh_lady_sato",
+      "name": "Lady Sato Hana",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "slh_master_ink",
+      "name": "Master Ink",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "slh_silk_merchant_feng",
+      "name": "Merchant Feng",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "slh_inspector_yuki",
+      "name": "Inspector Yuki",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "slh_broker_chang",
+      "name": "Broker Chang",
+      "port_id": "silk_haven"
+    },
+    {
+      "id": "ci_captain_council",
+      "name": "The Captain's Table",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "ci_dock_master_tao",
+      "name": "Dock Master Tao",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "ci_every_merchant",
+      "name": "Every Merchant",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "ci_neutrality_keeper",
+      "name": "Mother Ko",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "ci_money_changer_hassan",
+      "name": "Hassan al-Farsi",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "ci_inspector_nobody",
+      "name": "(Nobody)",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "ci_broker_various",
+      "name": "The Dock Brokers",
+      "port_id": "crosswind_isle"
+    },
+    {
+      "id": "dg_commander_zhang",
+      "name": "Commander Zhang Wei",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "dg_harbor_captain_li",
+      "name": "Harbor Captain Li Jun",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "dg_tea_merchant_liu",
+      "name": "Tea Merchant Liu",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "dg_weapons_inspector_sun",
+      "name": "Inspector Sun",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "dg_healer_chen_ling",
+      "name": "Healer Chen Ling",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "dg_inn_keeper_wu",
+      "name": "Inn Keeper Wu",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "dg_broker_ming",
+      "name": "Broker Ming",
+      "port_id": "dragons_gate"
+    },
+    {
+      "id": "sn_the_mouth",
+      "name": "The Mouth",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "sn_spice_lord_kiran",
+      "name": "Spice Lord Kiran",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "sn_the_weigher",
+      "name": "The Weigher",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "sn_raj_shadow",
+      "name": "Raj the Quiet's Shadow",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "sn_mama_smoke",
+      "name": "Mama Smoke",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "sn_poison_doctor",
+      "name": "The Poison Doctor",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "sn_ghost_broker",
+      "name": "The Ghost Broker",
+      "port_id": "spice_narrows"
+    },
+    {
+      "id": "ei_elder_kai",
+      "name": "Elder Kai",
+      "port_id": "ember_isle"
+    },
+    {
+      "id": "ei_harbor_manu",
+      "name": "Harbor Chief Manu",
+      "port_id": "ember_isle"
+    },
+    {
+      "id": "ei_head_herbalist",
+      "name": "Head Herbalist Sera",
+      "port_id": "ember_isle"
+    },
+    {
+      "id": "ei_dye_keeper",
+      "name": "Dye Keeper Lono",
+      "port_id": "ember_isle"
+    },
+    {
+      "id": "ei_spring_keeper",
+      "name": "Spring Keeper Olo",
+      "port_id": "ember_isle"
+    },
+    {
+      "id": "ei_broker_tia",
+      "name": "Broker Tia",
+      "port_id": "ember_isle"
+    },
+    {
+      "id": "ta_storm_chief",
+      "name": "Storm Chief Rangi",
+      "port_id": "typhoon_anchorage"
+    },
+    {
+      "id": "ta_harbor_chains",
+      "name": "Harbor Master Koa",
+      "port_id": "typhoon_anchorage"
+    },
+    {
+      "id": "ta_pearl_boss",
+      "name": "Dive Boss Moana",
+      "port_id": "typhoon_anchorage"
+    },
+    {
+      "id": "ta_shipwright_ahe",
+      "name": "Shipwright Ahe",
+      "port_id": "typhoon_anchorage"
+    },
+    {
+      "id": "ta_cook_hine",
+      "name": "Cook Hine",
+      "port_id": "typhoon_anchorage"
+    },
+    {
+      "id": "ta_broker_wiremu",
+      "name": "Broker Wiremu",
+      "port_id": "typhoon_anchorage"
+    },
+    {
+      "id": "ct_coral_king",
+      "name": "The Coral King",
+      "port_id": "coral_throne"
+    },
+    {
+      "id": "ct_reef_pilot",
+      "name": "Reef Pilot Iti",
+      "port_id": "coral_throne"
+    },
+    {
+      "id": "ct_pearl_trader",
+      "name": "Pearl Trader Hana",
+      "port_id": "coral_throne"
+    },
+    {
+      "id": "ct_war_chief",
+      "name": "War Chief Tane",
+      "port_id": "coral_throne"
+    },
+    {
+      "id": "ct_drum_keeper",
+      "name": "Drum Keeper Miri",
+      "port_id": "coral_throne"
+    },
+    {
+      "id": "ct_broker_ariki",
+      "name": "Broker Ariki",
+      "port_id": "coral_throne"
+    }
+  ]
+}
