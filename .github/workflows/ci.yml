@@ -21,6 +21,8 @@ jobs:
         run: cargo test --locked --workspace --exclude portlight-godot
       - name: Manifest gate fixtures
         run: python3 -m pip install --target /tmp/portlight-pytest 'pytest==9.1.1' && PYTHONPATH=/tmp/portlight-pytest python3 tools/test_build_manifest_gates.py
+      - name: Parity allowlist
+        run: python3 tools/parity/test_check.py
 
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.

@@ -9,9 +9,8 @@ without the private game checkout.
 The live comparison (oracle, GameSession, and save round-trips) includes the
 contract board, captain memories, active bounties, deferred fees, and the
 ledger. Those keys are stripped before the golden comparison. Goldens stay
-the narrow shape. `parity/expected_divergences.json` names scripts whose
-live check is a known Rust-versus-Python divergence. CI prints that list
-and does not fail those scripts.
+the narrow shape. `parity/expected_divergences.json` names the JSON paths
+that may differ. CI prints that list. Any other difference fails.
 
 Usage (from the repo root, after `cargo build -p portlight-cli`):
 
@@ -233,12 +232,26 @@ def listed(entries: list[dict], name: str, check: str) -> list[dict]:
     return [entry for entry in entries if entry["script"] == name and entry["check"] == check]
 
 
+# Prefixes added by roundtrip_errors. Stripped only when they start the line.
+# A ` $` inside a compared value is not a prefix.
+ROUNDTRIP_PREFIXES = (
+    "rust-save/python-load ",
+    "python-save/rust-load ",
+    "rust-save/python-save ",
+)
+
+
 def error_path(line: str) -> str:
-    """The JSON path at the start of a close() line, after any round-trip prefix."""
+    """The JSON path of a close() line.
+
+    A round-trip line starts with one of ROUNDTRIP_PREFIXES and then `$...`.
+    The path ends at the first `: `. A ` $` later in the value is left alone.
+    """
     text = line
-    marker = " $"
-    if marker in text:
-        text = text[text.index(marker) + 1 :]
+    for prefix in ROUNDTRIP_PREFIXES:
+        if text.startswith(prefix):
+            text = text[len(prefix) :]
+            break
     if text.startswith("$"):
         return text.split(": ", 1)[0]
     return text
@@ -275,6 +288,21 @@ def partition(errors: list[str], patterns: list[str]) -> tuple[list[str], list[s
 def drop_meta(snap: dict) -> dict:
     """Golden files may carry `_source` / `_note`. Those are not snapshot fields."""
     return {key: value for key, value in snap.items() if not key.startswith("_")}
+
+
+def golden_to_write(oracle_snap: dict, existing: dict | None) -> dict:
+    """Narrow oracle snapshot, keeping `_source` and other `_` keys on the file.
+
+    Regenerating must not drop `_source` (for example `python-oracle`). Meta
+    keys stay at the front. Wide snapshot keys are still omitted.
+    """
+    body = {key: value for key, value in narrow(oracle_snap).items() if not key.startswith("_")}
+    meta = {}
+    if existing:
+        meta = {key: value for key, value in existing.items() if key.startswith("_")}
+    written = dict(meta)
+    written.update(body)
+    return written
 
 
 def report(name: str, check: str, errors: list[str], entries: list[dict], failed: list[int]) -> None:
@@ -330,18 +358,18 @@ def roundtrip_errors(name: str, script_path: str) -> list[str]:
     py_of_rust = run_python_load(rust_dir, "slot")
     rust_reloaded = run_rust_load(rust_dir, "slot")
     errors.extend(
-        f"rust-save/python-load {line}"
+        f"{ROUNDTRIP_PREFIXES[0]}{line}"
         for line in close(without_log(rust_reloaded), without_log(py_of_rust), "$")
     )
     run_oracle_saved(script_path, py_dir, "slot")
     rust_of_py = run_rust_load(py_dir, "slot")
     py_reloaded = run_python_load(py_dir, "slot")
     errors.extend(
-        f"python-save/rust-load {line}"
+        f"{ROUNDTRIP_PREFIXES[1]}{line}"
         for line in close(without_log(py_reloaded), without_log(rust_of_py), "$")
     )
     errors.extend(
-        f"rust-save/python-save {line}"
+        f"{ROUNDTRIP_PREFIXES[2]}{line}"
         for line in close(without_log(rust_reloaded), without_log(rust_of_py), "$")
     )
     return errors
@@ -433,8 +461,9 @@ def main() -> int:
                 elif args.skip_roundtrip:
                     counts["roundtrip_skipped"] += 1
                 if args.write_golden:
+                    existing = load_json(golden_path) if os.path.exists(golden_path) else None
                     with open(golden_path, "w", encoding="utf-8") as fh:
-                        json.dump(narrow(oracle), fh, indent=2)
+                        json.dump(golden_to_write(oracle, existing), fh, indent=2)
                         fh.write("\n")
                     print(f"  wrote {golden_path}")
         if os.path.exists(golden_path):
