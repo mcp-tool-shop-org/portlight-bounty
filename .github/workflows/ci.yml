@@ -141,7 +141,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -189,6 +189,22 @@ jobs:
             godot --headless --path godot -- --encounter-screen
           if ! grep -q 'portlight encounter smoke ok' /tmp/godot-encounter-smoke.log; then
             echo "encounter smoke did not report ok"
+            exit 1
+          fi
+          rm -f /tmp/hs-newgame.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-newgame-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-newgame.png \
+            godot --headless --path godot -- --newgame-screen
+          if [ -f /tmp/hs-newgame.png ]; then
+            echo "headless newgame PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-newgame.log \
+            godot --headless --path godot -- --art-docs --newgame-screen
+          run_godot /tmp/godot-newgame-smoke.log \
+            godot --headless --path godot -- --newgame-screen
+          if ! grep -q 'portlight newgame smoke ok' /tmp/godot-newgame-smoke.log; then
+            echo "newgame smoke did not report ok"
             exit 1
           fi
           run_godot /tmp/godot-gl-smoke.log \
@@ -300,6 +316,22 @@ jobs:
             echo "art capture did not report ok"
             exit 1
           fi
+          # New-game frames are 1280x800. The chart shots above stay 1280x720.
+          mkdir -p /tmp/newgame-shots
+          run_godot /tmp/godot-newgame-frames.log \
+            xvfb-run -a -s "-screen 0 1280x800x24" \
+            env PORTLIGHT_SHOT=/tmp/newgame-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --newgame-screen
+          if ! grep -q 'portlight newgame smoke ok' /tmp/godot-newgame-frames.log; then
+            echo "newgame frame capture did not report ok"
+            exit 1
+          fi
+          for name in newgame-title.png newgame-captains.png newgame-custom.png newgame-load.png newgame-save.png; do
+            if [ ! -f "/tmp/newgame-shots/${name}" ]; then
+              echo "newgame capture did not write /tmp/newgame-shots/${name}"
+              exit 1
+            fi
+          done
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -313,6 +345,11 @@ jobs:
           }
           cmp_committed chart-1280.png /tmp/portlight-chart-1280.png
           cmp_committed chart-cutter-f7.png /tmp/chart-cutter-f7.png
+          cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
+          cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
+          cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png
+          cmp_committed newgame-load.png /tmp/newgame-shots/newgame-load.png
+          cmp_committed newgame-save.png /tmp/newgame-shots/newgame-save.png
           cmp_committed encounter-galleon.png /tmp/galleon1.png
           cmp_committed encounter-approach.png /tmp/encounter-approach.png
           cmp_committed encounter-naval.png /tmp/encounter-naval.png

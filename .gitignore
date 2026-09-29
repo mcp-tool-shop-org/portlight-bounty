@@ -1,4 +1,7 @@
 /target
+# Interactive chart saves. Session writes <cwd>/saves, which is the repo root
+# when Godot is launched from this checkout. Fixtures live under parity/.
+/saves/
 **/*.rs.bk
 .DS_Store
 __pycache__/

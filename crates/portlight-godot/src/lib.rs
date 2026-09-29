@@ -6,6 +6,7 @@ mod encounter_screen;
 mod game;
 mod harbour;
 mod logic;
+mod newgame_screen;
 mod seam;
 
 use godot::prelude::*;
