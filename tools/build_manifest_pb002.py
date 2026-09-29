@@ -24,6 +24,7 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      MANDATORY Verifier gate (B1): grok-bot-verifier/PB-002/quay_flag_painterly_results.json
                      (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
                      ("Result: **3/3 PASS**", ends "✅ Builder may land")
+                     B2: that results JSON must not have a _STUB key, and the retrieval doc must contain its sha256
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
 
@@ -138,6 +139,15 @@ def read_import(p):
 
 def load_json(p):
     return json.load(open(p, encoding="utf-8")) if os.path.isfile(p) else None
+
+
+def json_has_key(obj, key):
+    """True if key occurs anywhere in a JSON object or array."""
+    if isinstance(obj, dict):
+        return key in obj or any(json_has_key(v, key) for v in obj.values())
+    if isinstance(obj, list):
+        return any(json_has_key(v, key) for v in obj)
+    return False
 
 
 def walk_strings(o):
@@ -437,6 +447,8 @@ def main():
             problems.append("art-gate.md Addendum U.4 (placement) not found")
         qj = load_json(VJ_QUAY_FLAG)
         if not qj: problems.append("verifier quay_flag_painterly_results.json missing")
+        elif json_has_key(qj, "_STUB"):
+            problems.append("verifier quay_flag_painterly_results.json has a _STUB key")
         qinv = {r["id"]: r["sha256"] for r in qj["inventory"]} if qj else {}
         qrows = {r["id"]: r for r in qj.get("rows", [])} if qj else {}
         for q in EXP_QUAY_FLAG:
@@ -444,6 +456,8 @@ def main():
             if not qr or qr.get("pass") is not True or qr.get("exit") != 0:
                 problems.append(f"{q}: Verifier quay_flag row missing or not pass/exit 0")
         rq = open(RETR_QUAY_FLAG, encoding="utf-8").read() if os.path.isfile(RETR_QUAY_FLAG) else ""
+        if os.path.isfile(VJ_QUAY_FLAG) and sha256(VJ_QUAY_FLAG) not in rq:
+            problems.append("retrieval-quay_flag_painterly.md does not contain the sha256 of quay_flag_painterly_results.json")
         if not re.search(r"Result: \*\*3/3 PASS\*\*", rq):
             problems.append("retrieval-quay_flag_painterly.md missing or not 'Result: **3/3 PASS**'")
         if not re.search(r"✅ Builder may land\s*$", rq):
