@@ -9,7 +9,8 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
   ships (36, P1)     ids/anchor/LOA/mesh      <- asset-list.csv; canvas <- PNG; sha256 computed
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
                      sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
-                     ships inventory must equal the 36 ids (empty inventory fails) and every row must pass
+                     ships inventory must equal the 36 ids (empty fails). A missing row, a row that
+                     is not pass, or a nonzero exit refuses the build.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -26,7 +27,8 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
                      ("Result: **3/3 PASS**", ends "✅ Builder may land")
                      B2: every gate input (ships, harbour, chart, quay_flag results JSON) refuses a key
-                     containing _STUB (any case). The quay retrieval doc must contain its results sha256.
+                     containing stub (any case, any depth), including _STUB, _stub, and stub.
+                     The quay retrieval doc must contain its results sha256.
                      The results file is read once: those bytes are parsed and hashed.
                      Inventory ids must equal the expected plate set (quay_flag, harbour, and ships).
                      A FAIL verdict row (plain FAIL, or a markdown | FAIL | cell), a duplicate row id,
@@ -201,10 +203,24 @@ def json_has_key(obj, key):
     return False
 
 
+def json_has_stub_key(obj):
+    """True if any key contains 'stub', ignoring case, at any depth."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if isinstance(key, str) and "stub" in key.lower():
+                return True
+            if json_has_stub_key(value):
+                return True
+        return False
+    if isinstance(obj, list):
+        return any(json_has_stub_key(value) for value in obj)
+    return False
+
+
 def reject_stub_keys(obj, label, problems):
-    """Every gate input refuses a key that contains _STUB, at any depth and case."""
-    if obj is not None and json_has_key(obj, "_STUB"):
-        problems.append(f"{label} has a key containing _STUB")
+    """Quay and harbour results, and every other gate input, refuse a stub key."""
+    if obj is not None and json_has_stub_key(obj):
+        problems.append(f"{label} has a stub key")
 
 
 def _bare_cell(text):
@@ -397,8 +413,14 @@ def main(argv=None):
             w, h = png_size(p); digest = sha256(p)
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
             if vj is not None and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
-            if vj is not None and (not isinstance(vrows.get(aid), dict) or vrows[aid].get("pass") is not True):
-                problems.append(f"{aid}: Verifier ships row missing or not pass")
+            ship_row = vrows.get(aid)
+            ship_exit = ship_row.get("exit") if isinstance(ship_row, dict) else None
+            if vj is not None and (
+                not isinstance(ship_row, dict)
+                or ship_row.get("pass") is not True
+                or ship_exit not in (None, 0)
+            ):
+                problems.append(f"{aid}: Verifier ships row missing, not pass, or nonzero exit")
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
             loa, _ = csv_field(r["hull_len_px"], aid, "LOA", parse_int, nulls, na)

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Negative cases for the build_manifest verifier gates.
 
-The studio bundle is not required. These fixtures call the same helpers
-`build_manifest_pb002.py` uses, and main() runs end to end on a temporary
-studio fixture. A passing real run still emits MANIFEST.json only when
-`problems` stays empty.
+The studio bundle is not required. Acceptance tests are pytest cases that
+call main() on a temporary studio fixture. A passing real run still emits
+MANIFEST.json only when `problems` stays empty.
 """
 from __future__ import annotations
 
@@ -14,11 +13,18 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import struct
+import subprocess
 import sys
-import tempfile
 import zlib
+
+try:
+    import pytest
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pytest"])
+    import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = importlib.util.spec_from_file_location(
@@ -61,201 +67,207 @@ def quay_row_gate(qrows, problems):
             problems.append(f"{aid}: Verifier quay_flag row missing or not pass/exit 0")
 
 
-# Happy path: exact inventory, passing rows, no stub, no FAIL line.
-happy = quay_object()
-problems = []
-inv = mod.bind_inventory(happy, QUAY, "quay_flag", problems)
-rows = mod.index_rows(happy, QUAY, "quay_flag", problems)
-quay_row_gate(rows, problems)
-mod.require_no_fail_results(
-    "Result: **3/3 PASS**\n✅ Builder may land\n",
-    "retrieval-quay_flag_painterly.md",
-    problems,
-)
-check(
-    "happy quay object",
-    not problems and not mod.json_has_key(happy, "_STUB") and set(inv) == set(QUAY),
-    joined(problems) if problems else "no problems",
-)
-
-# G2 quay: empty inventory.
-problems = []
-mod.bind_inventory({"inventory": [], "rows": happy["rows"]}, QUAY, "quay_flag", problems)
-check("quay empty inventory", any("inventory ids" in p for p in problems), joined(problems))
-
-# G2 quay: partial inventory.
-problems = []
-mod.bind_inventory(quay_object(QUAY[:2]), QUAY, "quay_flag", problems)
-check("quay partial inventory", any("inventory ids" in p for p in problems), joined(problems))
-
-# G2 quay: extra inventory id.
-problems = []
-mod.bind_inventory(quay_object(QUAY + ["quay_flag_d"]), QUAY, "quay_flag", problems)
-check("quay extra inventory id", any("inventory ids" in p for p in problems), joined(problems))
-
-problems = []
-dup_inv = quay_object()
-dup_inv["inventory"].append({"id": "quay_flag_a", "sha256": "other"})
-mod.bind_inventory(dup_inv, QUAY, "quay_flag", problems)
-check(
-    "quay duplicate inventory id",
-    any("duplicate inventory id quay_flag_a" in p for p in problems),
-    joined(problems),
-)
-
-# G2 harbour: empty, partial, and extra against the real expected set.
-problems = []
-mod.bind_inventory({"inventory": []}, mod.EXP_HARB, "harbour", problems)
-check("harbour empty inventory", any("inventory ids" in p for p in problems), joined(problems))
-
-problems = []
-mod.bind_inventory(
-    {"inventory": [{"id": mod.EXP_HARB[0], "sha256": "abc"}]},
-    mod.EXP_HARB,
-    "harbour",
-    problems,
-)
-check("harbour partial inventory", any("inventory ids" in p for p in problems), joined(problems))
-
-problems = []
-extra = [{"id": aid, "sha256": "abc"} for aid in mod.EXP_HARB]
-extra.append({"id": "not_a_plate", "sha256": "abc"})
-mod.bind_inventory({"inventory": extra}, mod.EXP_HARB, "harbour", problems)
-check("harbour extra inventory id", any("inventory ids" in p for p in problems), joined(problems))
-
-problems = []
-full = [{"id": aid, "sha256": "abc"} for aid in mod.EXP_HARB]
-got = mod.bind_inventory({"inventory": full}, mod.EXP_HARB, "harbour", problems)
-check(
-    "harbour exact inventory",
-    not problems and set(got) == set(mod.EXP_HARB),
-    joined(problems) if problems else f"{len(got)} ids",
-)
-
-# G1: PASS summary plus a FAIL result line.
-doc = (
-    "Result: **3/3 PASS**\n"
-    "Recheck: quay_flag_b **FAIL** still open\n"
-    "Result: **2/3 PASS**\n"
-    "✅ Builder may land\n"
-)
-problems = []
-mod.require_no_fail_results(doc, "retrieval-quay_flag_painterly.md", problems)
-check("PASS doc with a FAIL result line", bool(problems), joined(problems))
-
-summary = "**Result: 36 PASS, 0 FAIL**\n| **PASS** |\n| notes | 0 FAIL |\n**ANDON v0.1.1: 30 PASS, 0 FAIL.**\n"
-check(
-    "zero-FAIL summary is not a FAIL result",
-    mod.fail_result_lines(summary) == [],
-    "no FAIL result line",
-)
-
-# 1. A plain FAIL token, and a markdown cell "| FAIL |", are verdict rows.
-for sample in ("FAIL", "| FAIL |", "| quay_flag_a | FAIL |", "| **FAIL** |"):
+def test_gate_helpers():
+    failures.clear()
+    # Happy path: exact inventory, passing rows, no stub, no FAIL line.
+    happy = quay_object()
     problems = []
-    mod.require_no_fail_results(sample + "\n", "retrieval.md", problems)
-    check(f"negative: FAIL verdict {sample!r}", bool(problems), joined(problems))
-
-# Duplicate row id, fail then pass. Last row would pass; the duplicate must not.
-dup_rows = [
-    {"id": "quay_flag_a", "pass": False, "exit": 1},
-    {"id": "quay_flag_a", "pass": True, "exit": 0},
-    {"id": "quay_flag_b", "pass": True, "exit": 0},
-    {"id": "quay_flag_c", "pass": True, "exit": 0},
-]
-problems = []
-mapped = mod.index_rows({"rows": dup_rows}, QUAY, "quay_flag", problems)
-check(
-    "duplicate row id fail-then-pass",
-    any("duplicate row id quay_flag_a" in p for p in problems) and mapped["quay_flag_a"]["pass"] is True,
-    joined(problems),
-)
-
-# Unexpected extra row.
-problems = []
-mod.index_rows(
-    {"rows": happy["rows"] + [{"id": "quay_flag_d", "pass": False, "exit": 1}]},
-    QUAY,
-    "quay_flag",
-    problems,
-)
-check("unexpected extra row", any("unexpected row id quay_flag_d" in p for p in problems), joined(problems))
-
-# B1: a failing row, and a non-zero exit, still fail.
-for name, row in (
-    ("row pass false", {"id": "quay_flag_b", "pass": False, "exit": 0}),
-    ("row exit 1", {"id": "quay_flag_b", "pass": True, "exit": 1}),
-):
-    rows = [{"id": aid, "pass": True, "exit": 0} for aid in QUAY]
-    rows[1] = row
-    problems = []
-    indexed = mod.index_rows({"rows": rows}, QUAY, "quay_flag", problems)
-    quay_row_gate(indexed, problems)
-    check(f"B1 {name}", any("quay_flag_b" in p and "not pass/exit 0" in p for p in problems), joined(problems))
-
-# B2: _STUB at any case, including nested. A value that merely says _STUB is not a key.
-for key in ("_STUB", "_stub", "_Stub"):
-    check(f"B2 key {key}", mod.json_has_key({key: True}, "_STUB"), "matched")
-    check(
-        f"B2 nested {key}",
-        mod.json_has_key({"rows": [{"id": "quay_flag_a", "meta": {key: 1}}]}, "_STUB"),
-        "matched",
+    inv = mod.bind_inventory(happy, QUAY, "quay_flag", problems)
+    rows = mod.index_rows(happy, QUAY, "quay_flag", problems)
+    quay_row_gate(rows, problems)
+    mod.require_no_fail_results(
+        "Result: **3/3 PASS**\n✅ Builder may land\n",
+        "retrieval-quay_flag_painterly.md",
+        problems,
     )
-check("STUB without underscore is not _STUB", not mod.json_has_key({"STUB": 1}, "_STUB"), "ignored")
-check("_STUB value is not a key", not mod.json_has_key({"note": "_STUB"}, "_STUB"), "ignored")
-check(
-    "negative: key containing _STUB",
-    mod.json_has_key({"harbour_STUB_marker": True}, "_STUB"),
-    "matched",
-)
-check(
-    "negative: nested harbour stub key",
-    mod.json_has_key({"rows": [{"id": "water_a", "meta": {"pre_stub_note": 1}}]}, "_STUB"),
-    "matched",
-)
-problems = []
-mod.reject_stub_keys(
-    {"inventory": [], "harbour_STUB_marker": True},
-    "harbour_andon_results.json",
-    problems,
-)
-check("negative: harbour stub key is a gate problem", bool(problems), joined(problems))
-
-raw = b'{"_STUB": true, "inventory": []}\n'
-digest = mod.sha256_bytes(raw)
-doc_real = "Result: **3/3 PASS**\nplate notes\n"
-check("B2 doc missing results sha", digest not in doc_real, digest[:12])
-check("B2 doc containing results sha", digest in (doc_real + digest), "bound")
-
-# One buffer is parsed and hashed. Re-serializing the object is a different byte string.
-parsed_problems = []
-parsed = mod.parse_json_object(raw, "quay_flag_painterly_results.json", parsed_problems)
-check(
-    "results bytes parsed and hashed once",
-    parsed == {"_STUB": True, "inventory": []}
-    and digest == hashlib.sha256(raw).hexdigest()
-    and not parsed_problems,
-    digest[:12],
-)
-
-# A non-object or broken results file is a problem, not an exception.
-for raw_bad, needle in (
-    (b"[]", "not a JSON object"),
-    (b"1", "not a JSON object"),
-    (b'"x"', "not a JSON object"),
-    (b"null", "not a JSON object"),
-    (b"{", "not valid JSON"),
-):
-    problems = []
-    try:
-        got = mod.parse_json_object(raw_bad, "results.json", problems)
-    except Exception as exc:  # noqa: BLE001 - the gate must not traceback
-        got = exc
     check(
-        f"clean problem for {raw_bad!r}",
-        got is None and any(needle in p for p in problems),
+        "happy quay object",
+        not problems and not mod.json_has_key(happy, "_STUB") and set(inv) == set(QUAY),
+        joined(problems) if problems else "no problems",
+    )
+
+    # G2 quay: empty inventory.
+    problems = []
+    mod.bind_inventory({"inventory": [], "rows": happy["rows"]}, QUAY, "quay_flag", problems)
+    check("quay empty inventory", any("inventory ids" in p for p in problems), joined(problems))
+
+    # G2 quay: partial inventory.
+    problems = []
+    mod.bind_inventory(quay_object(QUAY[:2]), QUAY, "quay_flag", problems)
+    check("quay partial inventory", any("inventory ids" in p for p in problems), joined(problems))
+
+    # G2 quay: extra inventory id.
+    problems = []
+    mod.bind_inventory(quay_object(QUAY + ["quay_flag_d"]), QUAY, "quay_flag", problems)
+    check("quay extra inventory id", any("inventory ids" in p for p in problems), joined(problems))
+
+    problems = []
+    dup_inv = quay_object()
+    dup_inv["inventory"].append({"id": "quay_flag_a", "sha256": "other"})
+    mod.bind_inventory(dup_inv, QUAY, "quay_flag", problems)
+    check(
+        "quay duplicate inventory id",
+        any("duplicate inventory id quay_flag_a" in p for p in problems),
         joined(problems),
     )
+
+    # G2 harbour: empty, partial, and extra against the real expected set.
+    problems = []
+    mod.bind_inventory({"inventory": []}, mod.EXP_HARB, "harbour", problems)
+    check("harbour empty inventory", any("inventory ids" in p for p in problems), joined(problems))
+
+    problems = []
+    mod.bind_inventory(
+        {"inventory": [{"id": mod.EXP_HARB[0], "sha256": "abc"}]},
+        mod.EXP_HARB,
+        "harbour",
+        problems,
+    )
+    check("harbour partial inventory", any("inventory ids" in p for p in problems), joined(problems))
+
+    problems = []
+    extra = [{"id": aid, "sha256": "abc"} for aid in mod.EXP_HARB]
+    extra.append({"id": "not_a_plate", "sha256": "abc"})
+    mod.bind_inventory({"inventory": extra}, mod.EXP_HARB, "harbour", problems)
+    check("harbour extra inventory id", any("inventory ids" in p for p in problems), joined(problems))
+
+    problems = []
+    full = [{"id": aid, "sha256": "abc"} for aid in mod.EXP_HARB]
+    got = mod.bind_inventory({"inventory": full}, mod.EXP_HARB, "harbour", problems)
+    check(
+        "harbour exact inventory",
+        not problems and set(got) == set(mod.EXP_HARB),
+        joined(problems) if problems else f"{len(got)} ids",
+    )
+
+    # G1: PASS summary plus a FAIL result line.
+    doc = (
+        "Result: **3/3 PASS**\n"
+        "Recheck: quay_flag_b **FAIL** still open\n"
+        "Result: **2/3 PASS**\n"
+        "✅ Builder may land\n"
+    )
+    problems = []
+    mod.require_no_fail_results(doc, "retrieval-quay_flag_painterly.md", problems)
+    check("PASS doc with a FAIL result line", bool(problems), joined(problems))
+
+    summary = "**Result: 36 PASS, 0 FAIL**\n| **PASS** |\n| notes | 0 FAIL |\n**ANDON v0.1.1: 30 PASS, 0 FAIL.**\n"
+    check(
+        "zero-FAIL summary is not a FAIL result",
+        mod.fail_result_lines(summary) == [],
+        "no FAIL result line",
+    )
+
+    # 1. A plain FAIL token, and a markdown cell "| FAIL |", are verdict rows.
+    for sample in ("FAIL", "| FAIL |", "| quay_flag_a | FAIL |", "| **FAIL** |"):
+        problems = []
+        mod.require_no_fail_results(sample + "\n", "retrieval.md", problems)
+        check(f"negative: FAIL verdict {sample!r}", bool(problems), joined(problems))
+
+    # Duplicate row id, fail then pass. Last row would pass; the duplicate must not.
+    dup_rows = [
+        {"id": "quay_flag_a", "pass": False, "exit": 1},
+        {"id": "quay_flag_a", "pass": True, "exit": 0},
+        {"id": "quay_flag_b", "pass": True, "exit": 0},
+        {"id": "quay_flag_c", "pass": True, "exit": 0},
+    ]
+    problems = []
+    mapped = mod.index_rows({"rows": dup_rows}, QUAY, "quay_flag", problems)
+    check(
+        "duplicate row id fail-then-pass",
+        any("duplicate row id quay_flag_a" in p for p in problems) and mapped["quay_flag_a"]["pass"] is True,
+        joined(problems),
+    )
+
+    # Unexpected extra row.
+    problems = []
+    mod.index_rows(
+        {"rows": happy["rows"] + [{"id": "quay_flag_d", "pass": False, "exit": 1}]},
+        QUAY,
+        "quay_flag",
+        problems,
+    )
+    check("unexpected extra row", any("unexpected row id quay_flag_d" in p for p in problems), joined(problems))
+
+    # B1: a failing row, and a non-zero exit, still fail.
+    for name, row in (
+        ("row pass false", {"id": "quay_flag_b", "pass": False, "exit": 0}),
+        ("row exit 1", {"id": "quay_flag_b", "pass": True, "exit": 1}),
+    ):
+        rows = [{"id": aid, "pass": True, "exit": 0} for aid in QUAY]
+        rows[1] = row
+        problems = []
+        indexed = mod.index_rows({"rows": rows}, QUAY, "quay_flag", problems)
+        quay_row_gate(indexed, problems)
+        check(f"B1 {name}", any("quay_flag_b" in p and "not pass/exit 0" in p for p in problems), joined(problems))
+
+    # B2: _STUB at any case, including nested. A value that merely says _STUB is not a key.
+    for key in ("_STUB", "_stub", "_Stub"):
+        check(f"B2 key {key}", mod.json_has_key({key: True}, "_STUB"), "matched")
+        check(
+            f"B2 nested {key}",
+            mod.json_has_key({"rows": [{"id": "quay_flag_a", "meta": {key: 1}}]}, "_STUB"),
+            "matched",
+        )
+    problems = []
+    mod.reject_stub_keys({"stub": True}, "results.json", problems)
+    check("stub key is rejected", bool(problems), joined(problems))
+    check("_STUB value is not a key", not mod.json_has_stub_key({"note": "_STUB"}), "ignored")
+    check("stub value is not a key", not mod.json_has_stub_key({"note": "stub"}), "ignored")
+    check(
+        "negative: key containing _STUB",
+        mod.json_has_key({"harbour_STUB_marker": True}, "_STUB"),
+        "matched",
+    )
+    check(
+        "negative: nested harbour stub key",
+        mod.json_has_key({"rows": [{"id": "water_a", "meta": {"pre_stub_note": 1}}]}, "_STUB"),
+        "matched",
+    )
+    problems = []
+    mod.reject_stub_keys(
+        {"inventory": [], "harbour_STUB_marker": True},
+        "harbour_andon_results.json",
+        problems,
+    )
+    check("negative: harbour stub key is a gate problem", bool(problems), joined(problems))
+
+    raw = b'{"_STUB": true, "inventory": []}\n'
+    digest = mod.sha256_bytes(raw)
+    doc_real = "Result: **3/3 PASS**\nplate notes\n"
+    check("B2 doc missing results sha", digest not in doc_real, digest[:12])
+    check("B2 doc containing results sha", digest in (doc_real + digest), "bound")
+
+    # One buffer is parsed and hashed. Re-serializing the object is a different byte string.
+    parsed_problems = []
+    parsed = mod.parse_json_object(raw, "quay_flag_painterly_results.json", parsed_problems)
+    check(
+        "results bytes parsed and hashed once",
+        parsed == {"_STUB": True, "inventory": []}
+        and digest == hashlib.sha256(raw).hexdigest()
+        and not parsed_problems,
+        digest[:12],
+    )
+
+    # A non-object or broken results file is a problem, not an exception.
+    for raw_bad, needle in (
+        (b"[]", "not a JSON object"),
+        (b"1", "not a JSON object"),
+        (b'"x"', "not a JSON object"),
+        (b"null", "not a JSON object"),
+        (b"{", "not valid JSON"),
+    ):
+        problems = []
+        try:
+            got = mod.parse_json_object(raw_bad, "results.json", problems)
+        except Exception as exc:  # noqa: BLE001 - the gate must not traceback
+            got = exc
+        check(
+            f"clean problem for {raw_bad!r}",
+            got is None and any(needle in p for p in problems),
+            joined(problems),
+        )
+    assert not failures, failures
 
 # ---------------------------------------------------------------- main() fixture
 COLUMNS = [
@@ -499,112 +511,218 @@ def main_argv(studio, *extra):
     return ["--studio", studio, "--version", "9.9.9", *extra]
 
 
-def clip(text, needle):
-    hits = [line.strip() for line in text.splitlines() if needle in line]
-    return hits[0] if hits else text[-400:]
+
+ROOT = os.path.abspath(os.path.join(HERE, ".."))
+MANIFEST_SHA = "562bb5e7a5fbb9fc9d5319754ece3ea45b2e9ea4d2a4940b4280cb2c446da8f8"
+RETRIEVAL_DOCS = (
+    "retrieval-ships.md",
+    "retrieval-harbour.md",
+    "retrieval-chart.md",
+    "retrieval-quay_flag_painterly.md",
+)
+RESULT_FILES = {
+    "quay": os.path.join("grok-bot-verifier", "PB-002", "quay_flag_painterly_results.json"),
+    "harbour": os.path.join("grok-bot-verifier", "PB-002", "harbour_andon_results.json"),
+    "ships": os.path.join("grok-bot-verifier", "PB-002", "ships_results.json"),
+}
 
 
-def cloned(studio, name):
-    dest = os.path.join(os.path.dirname(studio), name)
+@pytest.fixture(scope="module")
+def studio(tmp_path_factory):
+    path = tmp_path_factory.mktemp("acceptance") / "studio"
+    build_fixture(str(path))
+    return str(path)
+
+
+def clone_studio(studio, dest):
     shutil.copytree(studio, dest)
-    # Mesh paths in the csv are absolute and must stay inside this studio.
     csv_path = os.path.join(dest, "outbox-PB-002", "asset-list.csv")
-    write_text(csv_path, open(csv_path, encoding="utf-8").read().replace(studio, dest))
+    text = open(csv_path, encoding="utf-8").read().replace(studio, dest)
+    write_text(csv_path, text)
     return dest
 
 
-with tempfile.TemporaryDirectory() as tmp:
-    studio = os.path.join(tmp, "studio")
-    build_fixture(studio)
+def insert_middle(path, line):
+    """Put a verdict line after the first line, not only at the end of the doc."""
+    text = open(path, encoding="utf-8").read()
+    lines = text.splitlines(keepends=True)
+    extra = line if line.endswith("\n") else line + "\n"
+    lines.insert(1, extra)
+    write_text(path, "".join(lines))
+
+
+def mutate_results(copy, which, mutate):
+    rel = RESULT_FILES[which]
+    path = os.path.join(copy, rel)
+    old = open(path, "rb").read()
+    body = json.loads(old)
+    mutate(body)
+    raw = write_json(path, body)
+    if which == "quay":
+        doc = os.path.join(copy, "outbox-PB-002", "retrieval-quay_flag_painterly.md")
+        text = open(doc, encoding="utf-8").read()
+        old_sha = hashlib.sha256(old).hexdigest()
+        new_sha = hashlib.sha256(raw).hexdigest()
+        assert old_sha in text
+        write_text(doc, text.replace(old_sha, new_sha))
+    return raw
+
+
+@pytest.mark.parametrize("doc", RETRIEVAL_DOCS)
+@pytest.mark.parametrize("verdict", ["FAIL", "| plate | FAIL |"])
+def test_fail_verdict_anywhere_in_retrieval_doc(studio, tmp_path, doc, verdict):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    insert_middle(os.path.join(copy, "outbox-PB-002", doc), verdict)
+    status, out = run_main(main_argv(copy))
+    assert status != 0
+    assert "FAIL result" in out
+
+
+@pytest.mark.parametrize("which", ["quay", "harbour"])
+@pytest.mark.parametrize("key", ["_STUB", "_stub", "stub"])
+def test_stub_key_rejected_in_quay_and_harbour(studio, tmp_path, which, key):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, which, lambda body: body.__setitem__(key, True))
+    status, out = run_main(main_argv(copy))
+    label = os.path.basename(RESULT_FILES[which])
+    assert status != 0
+    assert f"{label} has a stub key" in out
+
+
+@pytest.mark.parametrize("which", ["quay", "harbour"])
+def test_nested_stub_key_rejected_in_quay_and_harbour(studio, tmp_path, which):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+
+    def nest(body):
+        body["rows"][0]["meta"] = {"stub": True}
+
+    mutate_results(copy, which, nest)
+    status, out = run_main(main_argv(copy))
+    label = os.path.basename(RESULT_FILES[which])
+    assert status != 0
+    assert f"{label} has a stub key" in out
+
+
+def test_ships_empty_inventory_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body.__setitem__("inventory", []))
+    status, out = run_main(main_argv(copy))
+    assert status != 0
+    assert "ships inventory ids" in out
+
+
+def test_ships_missing_row_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"].pop(0))
+    status, out = run_main(main_argv(copy))
+    assert status != 0
+    assert "missing, not pass, or nonzero exit" in out
+
+
+def test_ships_failing_row_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+
+    def fail_row(body):
+        body["rows"][0]["pass"] = False
+        body["rows"][0]["exit"] = 0
+
+    mutate_results(copy, "ships", fail_row)
+    status, out = run_main(main_argv(copy))
+    assert status != 0
+    assert "missing, not pass, or nonzero exit" in out
+
+
+def test_ships_nonzero_exit_fails(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+
+    def bad_exit(body):
+        body["rows"][0]["pass"] = True
+        body["rows"][0]["exit"] = 1
+
+    mutate_results(copy, "ships", bad_exit)
+    status, out = run_main(main_argv(copy))
+    assert status != 0
+    assert "missing, not pass, or nonzero exit" in out
+
+
+def test_clean_fixture_main_exits_0_and_check_matches(studio):
     status, out = run_main(main_argv(studio))
-    check(
-        "main() fixture passes",
-        status == 0 and "73 entries" in out and "PROBLEMS:" not in out,
-        "73 entries",
-    )
+    assert status == 0, out
+    assert "PROBLEMS:" not in out
+    assert "73 entries" in out
     status, out = run_main(main_argv(studio, "--check"))
-    check(
-        "main() fixture --check",
-        status == 0 and "MATCHES" in out and "problems=0" in out,
-        "MATCHES problems=0",
+    assert status == 0, out
+    assert "MATCHES" in out
+    assert "problems=0" in out
+
+
+def _cmp_committed_source():
+    text = open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8").read()
+    match = re.search(r"^([ \t]*)cmp_committed\(\) \{.*?\n\1\}", text, re.M | re.S)
+    assert match, "CI compare function cmp_committed() was not found"
+    return match.group(0)
+
+
+def _run_compare(root, name, fresh, committed_bytes, fresh_bytes):
+    shot = root / "docs" / "screenshots"
+    shot.mkdir(parents=True)
+    (shot / name).write_bytes(committed_bytes)
+    fresh.write_bytes(fresh_bytes)
+    script = _cmp_committed_source() + f'\ncmp_committed "{name}" "{fresh}"\n'
+    return subprocess.run(
+        ["bash", "-c", script],
+        cwd=root,
+        capture_output=True,
+        text=True,
     )
 
-    verdict = cloned(studio, "fail-verdict")
-    retr = os.path.join(verdict, "outbox-PB-002", "retrieval-quay_flag_painterly.md")
-    write_text(
-        retr,
-        open(retr, encoding="utf-8").read().replace(
-            "✅ Builder may land",
-            "FAIL\n| quay_flag_a | FAIL |\n✅ Builder may land",
-        ),
-    )
-    status, out = run_main(main_argv(verdict))
-    check(
-        "main() fixture failing verdict",
-        status != 0 and "FAIL result" in out,
-        clip(out, "FAIL result"),
-    )
 
-    # 2. A non-exact _STUB key in every gate input, including harbour, fails main().
-    stub_files = {
-        "ships_results.json": os.path.join("grok-bot-verifier", "PB-002", "ships_results.json"),
-        "harbour_andon_results.json": os.path.join("grok-bot-verifier", "PB-002", "harbour_andon_results.json"),
-        "chart_retrieval_results.json": os.path.join("grok-bot-verifier", "PB-002", "chart", "chart_retrieval_results.json"),
-        "quay_flag_painterly_results.json": os.path.join("grok-bot-verifier", "PB-002", "quay_flag_painterly_results.json"),
+def test_ci_compare_match_prints_one_success_line(tmp_path):
+    payload = b"plate-bytes"
+    fresh = tmp_path / "fresh.png"
+    proc = _run_compare(tmp_path / "repo", "plate.png", fresh, payload, payload)
+    digest = hashlib.sha256(payload).hexdigest()
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout == f"compared docs/screenshots/plate.png sha256={digest}\n"
+    assert proc.stdout.count("\n") == 1
+
+
+def test_ci_compare_mismatch_exits_nonzero(tmp_path):
+    fresh = tmp_path / "fresh.png"
+    proc = _run_compare(tmp_path / "repo", "plate.png", fresh, b"committed", b"fresh")
+    assert proc.returncode != 0
+
+
+def test_041_manifest_sha_and_diff_scope():
+    manifest = os.path.join(ROOT, "godot", "assets", "landing", "MANIFEST.json")
+    data = open(manifest, "rb").read()
+    assert hashlib.sha256(data).hexdigest() == MANIFEST_SHA
+    assert json.loads(data)["version"] == "0.4.1"
+    studio_root = mod.DEFAULT_STUDIO
+    plates = os.path.join(studio_root, "pb-002-plates")
+    if os.path.isdir(plates):
+        status, out = run_main(["--studio", studio_root, "--version", "0.4.1", "--check"])
+        assert status == 0, out
+        assert "MATCHES" in out
+    changed = set(subprocess.check_output(
+        ["git", "diff", "--name-only", "origin/main"],
+        cwd=ROOT,
+        text=True,
+    ).split())
+    status = subprocess.check_output(["git", "status", "--porcelain", "-u"], cwd=ROOT, text=True)
+    for line in status.splitlines():
+        path = line[3:]
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if line.startswith("??"):
+            changed.add(path)
+    allowed = {
+        "tools/build_manifest_pb002.py",
+        "tools/test_build_manifest_gates.py",
+        ".github/workflows/ci.yml",
     }
-    for label, rel in stub_files.items():
-        stubbed = cloned(studio, "stub-" + label)
-        path = os.path.join(stubbed, rel)
-        body = json.loads(open(path, encoding="utf-8").read())
-        body["gate_STUB_marker"] = True
-        raw = write_json(path, body)
-        if label == "quay_flag_painterly_results.json":
-            quay_doc = os.path.join(stubbed, "outbox-PB-002", "retrieval-quay_flag_painterly.md")
-            text = open(quay_doc, encoding="utf-8").read()
-            old_sha = hashlib.sha256(open(os.path.join(studio, rel), "rb").read()).hexdigest()
-            write_text(quay_doc, text.replace(old_sha, hashlib.sha256(raw).hexdigest()))
-        status, out = run_main(main_argv(stubbed))
-        needle = f"{label} has a key containing _STUB"
-        check(
-            f"negative: {label} key containing _STUB",
-            status != 0 and needle in out,
-            clip(out, needle),
-        )
+    assert changed <= allowed, sorted(changed - allowed)
 
-    # 3. Ships must read rows, and an empty inventory must fail.
-    empty = cloned(studio, "ships-empty")
-    ships_path = os.path.join(empty, "grok-bot-verifier", "PB-002", "ships_results.json")
-    ships_body = json.loads(open(ships_path, encoding="utf-8").read())
-    ships_body["inventory"] = []
-    write_json(ships_path, ships_body)
-    status, out = run_main(main_argv(empty))
-    check(
-        "negative: ships empty inventory",
-        status != 0 and "ships inventory ids" in out,
-        clip(out, "ships inventory ids"),
-    )
 
-    bad_row = cloned(studio, "ships-row")
-    ships_path = os.path.join(bad_row, "grok-bot-verifier", "PB-002", "ships_results.json")
-    ships_body = json.loads(open(ships_path, encoding="utf-8").read())
-    ships_body["rows"][0]["pass"] = False
-    write_json(ships_path, ships_body)
-    status, out = run_main(main_argv(bad_row))
-    check(
-        "negative: ships row not pass",
-        status != 0 and "Verifier ships row missing or not pass" in out,
-        clip(out, "Verifier ships row missing or not pass"),
-    )
-
-committed = os.path.join(HERE, "..", "godot", "assets", "landing", "MANIFEST.json")
-committed_sha = hashlib.sha256(open(committed, "rb").read()).hexdigest()
-check(
-    "committed MANIFEST sha unchanged",
-    committed_sha == "562bb5e7a5fbb9fc9d5319754ece3ea45b2e9ea4d2a4940b4280cb2c446da8f8",
-    committed_sha,
-)
-
-if failures:
-    print(f"{len(failures)} case(s) did not fail closed")
-    sys.exit(1)
-print("all gate fixtures failed closed")
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-q", "--tb=short"]))
