@@ -119,12 +119,16 @@ jobs:
             local code=$?
             set -e
             cat "$log"
-            if [ "$code" -eq 0 ]; then
-              echo "explicit headless capture exited 0"
+            if [ "$code" -ne 1 ]; then
+              echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
             if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
+              exit 1
+            fi
+            if ! grep -q 'FAILED' "$log"; then
+              echo "explicit headless capture did not print FAILED"
               exit 1
             fi
           }
@@ -152,6 +156,17 @@ jobs:
             echo "headless galleon PORTLIGHT_SHOT wrote a file"
             exit 1
           fi
+          # --art-docs and PORTLIGHT_ART_DOCS request a capture. Headless
+          # must fail them. Only the implicit /tmp default is skipped.
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-galleon.log \
+            godot --headless --path godot -- --art-docs --encounter-galleon
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-env.log \
+            env PORTLIGHT_ART_DOCS=1 \
+            godot --headless --path godot -- --encounter-galleon
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-screen.log \
+            godot --headless --path godot -- --art-docs --encounter-screen
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-art.log \
+            godot --headless --path godot -- --art-docs --art
           run_godot /tmp/godot-encounter-smoke.log \
             godot --headless --path godot -- --encounter-screen
           if ! grep -q 'portlight encounter smoke ok' /tmp/godot-encounter-smoke.log; then

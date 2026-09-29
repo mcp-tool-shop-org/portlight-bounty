@@ -181,8 +181,9 @@ struct PortlightGame {
     art: bool,
     smoke_ok: bool,
     shot_path: Option<String>,
-    /// The path was filled by a default, not `PORTLIGHT_SHOT`. Headless skips
-    /// that save. An explicit shot still runs and fails when it cannot.
+    /// The path is the implicit `/tmp` default. Headless skips that save.
+    /// `PORTLIGHT_SHOT`, `PORTLIGHT_ENCOUNTER_DIR`, `--art-docs`, and
+    /// `PORTLIGHT_ART_DOCS` are explicit and still fail when they cannot save.
     shot_implicit: bool,
     /// The encounter script has finished, including the bounty pass. The ok
     /// line waits until every capture has been judged.
@@ -274,7 +275,9 @@ impl IControl for PortlightGame {
             self.galleon_frame = true;
             if self.shot_path.is_none() {
                 self.shot_path = Some(art_shot_path("encounter-galleon.png"));
-                self.shot_implicit = true;
+                // `--art-docs` names docs/screenshots. Only the bare `/tmp`
+                // default is implicit.
+                self.shot_implicit = !docs_capture();
             }
             self.prepare_scripted_voyage();
             self.open_scripted_approach();
@@ -301,7 +304,7 @@ impl IControl for PortlightGame {
             self.smoke = true;
             if self.shot_path.is_none() {
                 self.shot_path = Some(art_shot_path("chart-cutter-f7.png"));
-                self.shot_implicit = true;
+                self.shot_implicit = !docs_capture();
             }
             self.run_art();
             self.capture_frames = 4;
@@ -331,8 +334,8 @@ impl IControl for PortlightGame {
             // `--encounter-galleon` is still on the encounter screen. The
             // multi-frame shot saves its own files before this, then the
             // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
-            // Headless skips only an implicit default. `PORTLIGHT_SHOT` still
-            // reads the viewport and fails when that image is empty.
+            // Headless skips only an implicit `/tmp` default. `PORTLIGHT_SHOT`
+            // and `--art-docs` still read the viewport and fail when it is empty.
             let skip = headless_runtime() && self.shot_implicit;
             if !skip && !self.save_shot(&path, self.galleon_frame) {
                 self.smoke_ok = false;
