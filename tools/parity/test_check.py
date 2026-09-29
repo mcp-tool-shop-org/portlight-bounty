@@ -101,6 +101,78 @@ class AllowlistTest(unittest.TestCase):
         self.assertEqual(failed[0], 1)
         self.assertFalse(check.values_equal(99, pinned["rust"]))
 
+    def test_roundtrip_dropped_offer_is_not_allowlisted(self) -> None:
+        offer = {"id": "kept", "reward_silver": 10}
+        python = {"board": {"offers": [dict(offer) for _ in range(5)]}}
+        rust = {"board": {"offers": [dict(offer) for _ in range(4)]}}
+        errors = [f"rust-save/python-save {line}" for line in check.close(rust, python, "$")]
+        self.assertTrue(any(check.error_path(line) == "$.board.offers[4]" for line in errors))
+
+        def entry(path: str, python_value, rust_value) -> list[dict]:
+            return [{
+                "script": "broker_board.txt",
+                "check": "roundtrip",
+                "summary": "dropped offer",
+                "rust": "session.rs",
+                "python": "session.py",
+                "paths": [{"path": path, "python": python_value, "rust": rust_value}],
+            }]
+
+        container = entry("$.board.offers", python["board"]["offers"], rust["board"]["offers"])
+        failed = [0]
+        container_out = io.StringIO()
+        with contextlib.redirect_stdout(container_out):
+            check.report("broker_board.txt", "roundtrip", errors, container, failed, python, rust)
+        self.assertEqual(failed[0], 1, container_out.getvalue())
+        self.assertIn("list or object", container_out.getvalue())
+
+        bogus = entry("$.board.offers[4]", {"id": "present"}, {"id": "bogus"})
+        failed = [0]
+        pin_out = io.StringIO()
+        with contextlib.redirect_stdout(pin_out):
+            check.report("broker_board.txt", "roundtrip", errors, bogus, failed, python, rust)
+        self.assertEqual(failed[0], 1, pin_out.getvalue())
+        self.assertIn("not the pinned pair", pin_out.getvalue())
+        self.assertIn("bogus", pin_out.getvalue())
+
+        failed = [0]
+        with contextlib.redirect_stdout(io.StringIO()):
+            check.report("broker_board.txt", "roundtrip", errors, container, failed)
+        self.assertEqual(failed[0], 1)
+
+    def test_wildcard_pattern_is_readable(self) -> None:
+        message = check.pattern_error("$.board.offers[*]")
+        self.assertIsNotNone(message)
+        assert message is not None
+        self.assertIn("wildcard", message)
+        self.assertIn("[*]", message)
+        self.assertIsNone(check.pattern_error("$.board.offers[4].id"))
+        entry = [{
+            "script": "broker_board.txt",
+            "check": "roundtrip",
+            "summary": "wildcard",
+            "rust": "r",
+            "python": "p",
+            "paths": [{"path": "$.board.offers[*].id", "python": "a", "rust": "b"}],
+        }]
+        failed = [0]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            check.report(
+                "broker_board.txt",
+                "roundtrip",
+                ["$.board.offers[0].id: 'a' != 'b'"],
+                entry,
+                failed,
+                {"board": {"offers": [{"id": "a"}]}},
+                {"board": {"offers": [{"id": "b"}]}},
+            )
+        self.assertEqual(failed[0], 1)
+        text = out.getvalue()
+        self.assertIn("wildcard", text)
+        self.assertIn("[*]", text)
+        self.assertNotIn("Traceback", text)
+
 
 class ErrorPathTest(unittest.TestCase):
     def test_dollar_inside_a_value_does_not_move_the_path(self) -> None:
@@ -157,17 +229,26 @@ class WriteGoldenTest(unittest.TestCase):
             self.skipTest("Python game is not importable")
         if not os.path.exists(check.rust_bin()):
             self.skipTest("portlight binary is missing")
+        import tempfile
+
         capture = os.path.join(check.GOLDEN, "capture_prize.json")
-        for name in check.scripts():
-            script = os.path.join(check.SCRIPTS, name)
-            oracle = check.run_oracle(script, os.path.join("/tmp", "pl-golden-bytes"))
-            path = os.path.join(check.GOLDEN, name.replace(".txt", ".json"))
-            with open(path, encoding="utf-8") as fh:
-                existing = fh.read()
-            rendered = check.golden_text(oracle, existing)
-            self.assertEqual(rendered, existing, name)
-        with open(capture, encoding="utf-8") as fh:
-            text = fh.read()
+        with tempfile.TemporaryDirectory(prefix="pl-golden-save-") as save_root:
+            with tempfile.TemporaryDirectory(prefix="pl-golden-out-") as dest:
+                self.assertEqual(os.listdir(dest), [])
+                for name in check.scripts():
+                    script = os.path.join(check.SCRIPTS, name)
+                    oracle = check.run_oracle(script, save_root)
+                    path = os.path.join(check.GOLDEN, name.replace(".txt", ".json"))
+                    with open(path, "rb") as fh:
+                        committed = fh.read()
+                    rendered = check.golden_text(oracle, committed.decode("utf-8")).encode("utf-8")
+                    out = os.path.join(dest, os.path.basename(path))
+                    with open(out, "wb") as fh:
+                        fh.write(rendered)
+                    with open(out, "rb") as fh:
+                        self.assertEqual(fh.read(), committed, name)
+        with open(capture, "rb") as fh:
+            text = fh.read().decode("utf-8")
         self.assertIn('"_source": "python-oracle"', text)
         self.assertIn('"_note":', text)
 

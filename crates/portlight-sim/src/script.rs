@@ -3,9 +3,10 @@
 //! The commands are a thin wrapper: each one calls the same public method a
 //! front end would call. Parity goldens therefore cover the stepwise API.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard};
 
 use crate::custom_captain;
 use crate::error::SimError;
@@ -616,9 +617,43 @@ fn active(session: &mut Option<Session>) -> Result<&mut Session, SimError> {
 
 thread_local! {
     static SAVE_ROOT: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+    static SAVE_ENV_GUARD: RefCell<Option<MutexGuard<'static, ()>>> = const { RefCell::new(None) };
+    static SAVE_ENV_DEPTH: Cell<u32> = const { Cell::new(0) };
 }
 
 static SAVE_SEQ: AtomicU64 = AtomicU64::new(0);
+static SAVE_ENV: Mutex<()> = Mutex::new(());
+
+/// Serializes `PORTLIGHT_SAVE_ROOT` across threads. Reentrant on one thread so
+/// `save` can read the variable while a test holds the lock.
+struct SaveEnvLock;
+
+impl SaveEnvLock {
+    fn acquire() -> Self {
+        SAVE_ENV_DEPTH.with(|depth| {
+            if depth.get() == 0 {
+                let guard = SAVE_ENV.lock().unwrap_or_else(|err| err.into_inner());
+                SAVE_ENV_GUARD.with(|slot| *slot.borrow_mut() = Some(guard));
+            }
+            depth.set(depth.get() + 1);
+        });
+        Self
+    }
+}
+
+impl Drop for SaveEnvLock {
+    fn drop(&mut self) {
+        SAVE_ENV_DEPTH.with(|depth| {
+            let next = depth.get().saturating_sub(1);
+            depth.set(next);
+            if next == 0 {
+                SAVE_ENV_GUARD.with(|slot| {
+                    slot.borrow_mut().take();
+                });
+            }
+        });
+    }
+}
 
 /// Removes the temp directory created for a script's `save` verb.
 struct SaveScope {
@@ -627,6 +662,7 @@ struct SaveScope {
 
 impl SaveScope {
     fn begin() -> Self {
+        let _lock = SaveEnvLock::acquire();
         if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
             if !dir.is_empty() {
                 return Self { owned: None };
@@ -657,6 +693,7 @@ impl Drop for SaveScope {
 
 /// `PORTLIGHT_SAVE_ROOT`, or the temp directory owned by the current [`SaveScope`].
 fn save_root() -> PathBuf {
+    let _lock = SaveEnvLock::acquire();
     if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
         if !dir.is_empty() {
             return PathBuf::from(dir);
@@ -738,7 +775,18 @@ mod tests {
 
     #[test]
     fn save_verb_removes_its_temp_dir() {
+        let _lock = SaveEnvLock::acquire();
         let previous = std::env::var("PORTLIGHT_SAVE_ROOT").ok();
+        struct Restore(Option<String>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                match self.0.take() {
+                    Some(dir) => std::env::set_var("PORTLIGHT_SAVE_ROOT", dir),
+                    None => std::env::remove_var("PORTLIGHT_SAVE_ROOT"),
+                }
+            }
+        }
+        let _restore = Restore(previous);
         std::env::remove_var("PORTLIGHT_SAVE_ROOT");
         let slot = format!("parity-save-{}", std::process::id());
         let snap = run_script(&format!("new merchant Ada 1\nsave {slot}\nload {slot}\n"));
@@ -752,9 +800,6 @@ mod tests {
                     .join(format!("{slot}.json"))
                     .is_file()
             });
-        if let Some(dir) = previous {
-            std::env::set_var("PORTLIGHT_SAVE_ROOT", dir);
-        }
         assert!(
             snap.log.iter().all(|entry| entry.error.is_none()),
             "{:?}",

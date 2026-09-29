@@ -161,28 +161,51 @@ fn oracle_pins(root: &Path, script: &str) -> Vec<Pin> {
     pins
 }
 
-fn lookup<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
+fn pattern_error(path: &str) -> Option<String> {
+    if path.contains('*') {
+        Some(format!("allowlist path contains a wildcard: {path}"))
+    } else {
+        None
+    }
+}
+
+fn lookup<'a>(value: &'a Value, path: &str) -> Result<Option<&'a Value>, String> {
+    if let Some(message) = pattern_error(path) {
+        return Err(message);
+    }
     if path == "$" {
-        return Some(value);
+        return Ok(Some(value));
     }
     let mut cur = value;
-    let mut rest = path.strip_prefix('$').expect("path starts with $");
+    let mut rest = path
+        .strip_prefix('$')
+        .ok_or_else(|| format!("allowlist path contains a wildcard: {path}"))?;
     while !rest.is_empty() {
         if let Some(stripped) = rest.strip_prefix('.') {
             let end = stripped.find(['.', '[']).unwrap_or(stripped.len());
             let key = &stripped[..end];
-            cur = cur.get(key)?;
+            cur = match cur.get(key) {
+                Some(next) => next,
+                None => return Ok(None),
+            };
             rest = &stripped[end..];
         } else if let Some(stripped) = rest.strip_prefix('[') {
-            let end = stripped.find(']').expect("index");
-            let index: usize = stripped[..end].parse().expect("index");
-            cur = cur.get(index)?;
+            let end = stripped
+                .find(']')
+                .ok_or_else(|| format!("allowlist path contains a wildcard: {path}"))?;
+            let index: usize = stripped[..end]
+                .parse()
+                .map_err(|_| format!("allowlist path contains a wildcard: {path}"))?;
+            cur = match cur.get(index) {
+                Some(next) => next,
+                None => return Ok(None),
+            };
             rest = &stripped[end + 1..];
         } else {
-            panic!("bad path {path}");
+            return Err(format!("allowlist path contains a wildcard: {path}"));
         }
     }
-    Some(cur)
+    Ok(Some(cur))
 }
 
 fn is_missing_pin(value: &Value) -> bool {
@@ -203,13 +226,16 @@ fn values_pinned(actual: Option<&Value>, expected: &Value) -> bool {
     errors.is_empty()
 }
 
-fn pattern_names_container(left: &Value, right: &Value, pattern: &str) -> bool {
-    [left, right].into_iter().any(|snap| {
-        matches!(
-            lookup(snap, pattern),
+fn pattern_names_container(left: &Value, right: &Value, pattern: &str) -> Result<bool, String> {
+    for snap in [left, right] {
+        if matches!(
+            lookup(snap, pattern)?,
             Some(Value::Array(_)) | Some(Value::Object(_))
-        )
-    })
+        ) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 fn assert_close(left: &Value, right: &Value, path: &str) {
@@ -247,8 +273,12 @@ fn golden_scripts_match_python() {
         if python_golden {
             let pins = oracle_pins(&root, &format!("{stem}.txt"));
             for pin in &pins {
+                if let Some(message) = pattern_error(&pin.path) {
+                    panic!("{stem}: {message}");
+                }
                 assert!(
-                    !pattern_names_container(&golden, &got, &pin.path),
+                    !pattern_names_container(&golden, &got, &pin.path)
+                        .unwrap_or_else(|message| panic!("{stem}: {message}")),
                     "{stem} allowlist path names a list or object: {}",
                     pin.path
                 );
@@ -281,12 +311,20 @@ fn golden_scripts_match_python() {
             );
             for pin in &pins {
                 assert!(
-                    values_pinned(lookup(&golden, &pin.path), &pin.python),
+                    values_pinned(
+                        lookup(&golden, &pin.path)
+                            .unwrap_or_else(|message| panic!("{stem}: {message}")),
+                        &pin.python
+                    ),
                     "{stem} {} python value is not the pin",
                     pin.path
                 );
                 assert!(
-                    values_pinned(lookup(&got, &pin.path), &pin.rust),
+                    values_pinned(
+                        lookup(&got, &pin.path)
+                            .unwrap_or_else(|message| panic!("{stem}: {message}")),
+                        &pin.rust
+                    ),
                     "{stem} {} rust value is not the pin",
                     pin.path
                 );
@@ -307,7 +345,7 @@ fn container_pattern_does_not_hide_an_offer_mutation() {
     close(&left, &right, "$", &mut errors);
     let pattern = "$.board.offers";
     assert!(
-        pattern_names_container(&left, &right, pattern),
+        pattern_names_container(&left, &right, pattern).expect("pattern"),
         "offers is a list and must be rejected"
     );
     let hidden: Vec<_> = errors
@@ -341,11 +379,72 @@ fn enemy_crew_pin_rejects_a_different_rust_value() {
     let mut rust = python.clone();
     rust["log"][0]["encounter"]["enemy_crew"] = serde_json::json!(99);
     let path = "$.log[0].encounter.enemy_crew";
-    assert!(values_pinned(lookup(&python, path), &crew.python));
+    assert!(values_pinned(
+        lookup(&python, path).expect("path"),
+        &crew.python
+    ));
     assert!(
-        !values_pinned(lookup(&rust, path), &crew.rust),
+        !values_pinned(lookup(&rust, path).expect("path"), &crew.rust),
         "enemy_crew 99 must not satisfy the pinned rust value"
     );
+}
+
+#[test]
+fn roundtrip_dropped_offer_is_not_allowlisted() {
+    let offer = || serde_json::json!({"id": "kept", "reward_silver": 10});
+    let python = serde_json::json!({
+        "board": {"offers": [offer(), offer(), offer(), offer(), offer()]}
+    });
+    let mut rust = python.clone();
+    rust["board"]["offers"]
+        .as_array_mut()
+        .expect("offers")
+        .pop();
+    let mut errors = Vec::new();
+    close(&rust, &python, "$", &mut errors);
+    let pattern = "$.board.offers";
+    assert!(
+        pattern_names_container(&python, &rust, pattern).expect("pattern"),
+        "offers is a list and must be rejected"
+    );
+    assert!(
+        errors
+            .iter()
+            .any(|line| error_path(line) == "$.board.offers[4]"),
+        "{errors:?}"
+    );
+    assert!(
+        errors
+            .iter()
+            .any(|line| path_matches(error_path(line), pattern)),
+        "trailing index would hide the dropped offer: {errors:?}"
+    );
+    let bogus = serde_json::json!({"id": "bogus"});
+    assert!(
+        !values_pinned(lookup(&rust, "$.board.offers[4]").expect("path"), &bogus),
+        "a bogus pin must not match the dropped offer"
+    );
+    assert!(lookup(&python, "$.board.offers[4]")
+        .expect("path")
+        .is_some());
+}
+
+#[test]
+fn wildcard_pattern_is_rejected() {
+    let err = lookup(
+        &serde_json::json!({"board": {"offers": [{"id": "kept"}]}}),
+        "$.board.offers[*].id",
+    )
+    .expect_err("wildcard must be an error");
+    assert!(err.contains("wildcard"), "{err}");
+    assert!(err.contains("[*]"), "{err}");
+    let container = pattern_names_container(
+        &serde_json::json!({"board": {"offers": []}}),
+        &serde_json::json!({"board": {"offers": []}}),
+        "$.board.offers[*]",
+    );
+    assert!(container.is_err(), "{container:?}");
+    assert!(container.unwrap_err().contains("wildcard"));
 }
 
 #[test]

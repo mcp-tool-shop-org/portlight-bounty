@@ -51,9 +51,10 @@ pub struct Snapshot {
 }
 
 /// `PORTLIGHT_WIDE_SNAPSHOT=1` adds the board, memories, bounties, deferred
-/// fees, and ledger to the JSON. Cargo golden tests clear the variable before
-/// they serialize, so a developer shell cannot widen that comparison. CI does
-/// not set it. Golden files stay the narrow shape.
+/// fees, and ledger to the JSON. Cargo golden tests, including
+/// `save_parity::snap`, clear the variable before they serialize, so a
+/// developer shell cannot widen that comparison. CI does not set it. Golden
+/// files stay the narrow shape.
 fn omit_unless_wide<T>(_: &T) -> bool {
     !wide_snapshot()
 }

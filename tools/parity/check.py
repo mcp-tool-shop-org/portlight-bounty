@@ -10,7 +10,9 @@ The live comparison (oracle, GameSession, and save round-trips) includes the
 contract board, captain memories, active bounties, deferred fees, and the
 ledger. Those keys are stripped before the golden comparison. Goldens stay
 the narrow shape. `parity/expected_divergences.json` names the JSON paths
-that may differ. CI prints that list. Any other difference fails.
+that may differ, including a round-trip entry, and pins both values. A path
+that names a list, an object, or a `[*]` wildcard is rejected. CI prints
+that list. Any other difference fails.
 
 Usage (from the repo root, after `cargo build -p portlight-cli`):
 
@@ -221,6 +223,9 @@ def load_divergences() -> list[dict]:
                 raise SystemExit(
                     f"{DIVERGENCES} path must pin python and rust values: {entry['script']} {spec}"
                 )
+            message = pattern_error(spec["path"])
+            if message:
+                raise SystemExit(f"{DIVERGENCES} {entry['script']}: {message}")
     return entries
 
 
@@ -269,6 +274,18 @@ def error_path(line: str) -> str:
     if text.startswith("$"):
         return text.split(": ", 1)[0]
     return text
+
+
+def pattern_error(path: str) -> str | None:
+    """`[*]` is not a leaf index. Callers print this instead of raising."""
+    if not isinstance(path, str) or "*" in path:
+        return f"allowlist path contains a wildcard: {path}"
+    return None
+
+
+class WildcardPath(Exception):
+    def __init__(self, path: str) -> None:
+        super().__init__(f"allowlist path contains a wildcard: {path}")
 
 
 def path_matches(path: str, pattern: str) -> bool:
@@ -326,7 +343,10 @@ def lookup(value, path: str):
             end = path.find("]", i)
             if end < 0:
                 raise ValueError(path)
-            idx = int(path[i + 1 : end])
+            token = path[i + 1 : end]
+            if not token.isdigit():
+                raise WildcardPath(path)
+            idx = int(token)
             if not isinstance(cur, list) or idx < 0 or idx >= len(cur):
                 return _MISSING
             cur = cur[idx]
@@ -362,6 +382,8 @@ def container_patterns(left, right, patterns: list[str]) -> list[str]:
     """Patterns whose value is a list or object. Those hide every field under them."""
     bad = []
     for pattern in patterns:
+        if pattern_error(pattern):
+            continue
         for snap in (left, right):
             found = lookup(snap, pattern)
             if found is not _MISSING and isinstance(found, (dict, list)):
@@ -426,8 +448,20 @@ def report(
     specs: list[dict] = []
     for entry in known:
         specs.extend(entry["paths"])
-    patterns = [spec["path"] for spec in specs]
     problems: list[str] = []
+    usable: list[dict] = []
+    for spec in specs:
+        message = pattern_error(spec["path"])
+        if message:
+            problems.append(message)
+        else:
+            usable.append(spec)
+    specs = usable
+    patterns = [spec["path"] for spec in specs]
+    # Trailing `[n]` makes `$.board.offers` match a dropped `$.board.offers[4]`.
+    # Without the snapshots that match is not rejected and the pin is not checked.
+    if patterns and (left is None or right is None):
+        problems.append("allowlist check has no snapshots")
     if left is not None and right is not None:
         for pattern in container_patterns(left, right, patterns):
             problems.append(f"allowlist path names a list or object: {pattern}")
@@ -456,8 +490,6 @@ def report(
             problems.append(text)
     if left is not None and right is not None:
         for spec in specs:
-            if spec["path"] in container_patterns(left, right, [spec["path"]]):
-                continue
             py = lookup(left, spec["path"])
             rs = lookup(right, spec["path"])
             if not values_equal(py, spec["python"]) or not values_equal(rs, spec["rust"]):
@@ -486,12 +518,16 @@ def report(
     print(f"{name}: {check} matches")
 
 
-def roundtrip_errors(name: str, script_path: str) -> list[str]:
+def roundtrip_errors(name: str, script_path: str) -> tuple[list[str], dict, dict]:
     """Compare loaded snapshots, not the pre-save snapshot.
 
     `Session::load` and `GameSession.load` recalculate port prices with the
     captain's modifiers. A fresh game has not done that yet, so the loaded
     snapshot can differ from the live one even when both loaders agree.
+
+    The returned snapshots are the Rust load of the Python save and the Rust
+    load of the Rust save, without the log. Allowlist pins use that pair:
+    Python value on the left, Rust value on the right.
     """
     errors: list[str] = []
     with tempfile.TemporaryDirectory(prefix=f"pl-rt-{name.replace('.txt', '')}-") as base:
@@ -513,11 +549,13 @@ def roundtrip_errors(name: str, script_path: str) -> list[str]:
             f"{ROUNDTRIP_PREFIXES[1]}{line}"
             for line in close(without_log(py_reloaded), without_log(rust_of_py), "$")
         )
+        python_view = without_log(rust_of_py)
+        rust_view = without_log(rust_reloaded)
         errors.extend(
             f"{ROUNDTRIP_PREFIXES[2]}{line}"
-            for line in close(without_log(rust_reloaded), without_log(rust_of_py), "$")
+            for line in close(rust_view, python_view, "$")
         )
-    return errors
+    return errors, python_view, rust_view
 
 
 def main() -> int:
@@ -599,7 +637,16 @@ def main() -> int:
                         )
                     if has_session(rust) and not args.skip_roundtrip:
                         counts["roundtrip_run"] += 1
-                        report(name, "roundtrip", roundtrip_errors(name, script_path), entries, failed)
+                        rt_errors, python_view, rust_view = roundtrip_errors(name, script_path)
+                        report(
+                            name,
+                            "roundtrip",
+                            rt_errors,
+                            entries,
+                            failed,
+                            python_view,
+                            rust_view,
+                        )
                     elif not has_session(rust):
                         counts["roundtrip_skipped"] += 1
                         if listed(entries, name, "roundtrip"):
