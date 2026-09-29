@@ -28,8 +28,9 @@ use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
-    Button, Control, DisplayServer, HBoxContainer, IControl, Label, Node, Os, PanelContainer,
-    ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
+    Button, Control, DisplayServer, HBoxContainer, IControl, Label, LineEdit, Node, Os,
+    PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer,
+    VBoxContainer,
 };
 use godot::global::Error;
 use godot::obj::InstanceId;
@@ -47,14 +48,17 @@ use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::logic::{
-    action_caption, action_list_from_error, at_sea, capture_frame_rejected, chart_host_width,
-    duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
-    facts_from_step, frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present,
-    session_text, stance_duel_visible, template_player_ship, EncounterFacts, ScreenAction,
-    ScreenPhase, StepInput, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
-    SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H,
-    WINDOW_W,
+    action_caption, action_list_from_error, ascii_label, at_sea, captain_button_label,
+    capture_frame_rejected, chart_host_width, cycle_index, duel_button_enabled,
+    encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
+    frame_mostly_flat, frame_samples, layout_fits_window, newgame_copy, newgame_frame_rejected,
+    player_ship, present, save_confirm_title, save_slot_label, session_text, stance_duel_visible,
+    template_player_ship, CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction,
+    ScreenPhase, StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W, PANEL_MIN_W, ROW_SEPARATION,
+    SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
+    SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
+use crate::newgame_screen::{self, NewgameNodes};
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
@@ -72,6 +76,20 @@ struct MarketRow {
 #[derive(Clone)]
 enum Action {
     NewGame,
+    SaveGame,
+    OpenCaptains,
+    OpenCustom,
+    OpenLoad,
+    NewgameBack,
+    StartCaptain(String),
+    BeginCustom,
+    AdjustPoints(PointPool, i64),
+    CycleRegion(i32),
+    CyclePort(i32),
+    CycleBloc(i32),
+    CycleFaction(i32),
+    CycleMentor(i32),
+    LoadSlot(String),
     NextDay,
     Work,
     ToggleMarket,
@@ -132,6 +150,44 @@ impl ShotPhase {
             Self::Boarding => ScreenPhase::Boarding,
             Self::Personal => ScreenPhase::Personal,
             Self::Outcome => ScreenPhase::Outcome,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum DraftEdit {
+    Name,
+    Title,
+    Story,
+}
+
+#[derive(Clone, Copy)]
+enum NewgameShot {
+    Title,
+    Captains,
+    Custom,
+    Load,
+    Save,
+}
+
+impl NewgameShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Title => "newgame-title.png",
+            Self::Captains => "newgame-captains.png",
+            Self::Custom => "newgame-custom.png",
+            Self::Load => "newgame-load.png",
+            Self::Save => "newgame-save.png",
+        }
+    }
+
+    fn page(self) -> NewgamePage {
+        match self {
+            Self::Title => NewgamePage::Title,
+            Self::Captains => NewgamePage::Captains,
+            Self::Custom => NewgamePage::Custom,
+            Self::Load => NewgamePage::Load,
+            Self::Save => NewgamePage::Saved,
         }
     }
 }
@@ -202,6 +258,20 @@ struct PortlightGame {
     /// A rejected screenshot. Kept off [`Self::smoke_ok`] so a failed frame
     /// does not stop the boarding script.
     capture_failed: bool,
+    save_button: Option<Gd<Button>>,
+    newgame_nodes: Option<NewgameNodes>,
+    newgame_page: NewgamePage,
+    newgame_built: Option<NewgamePage>,
+    draft: CustomDraft,
+    name_edit: Option<Gd<LineEdit>>,
+    title_edit: Option<Gd<LineEdit>>,
+    story_edit: Option<Gd<LineEdit>>,
+    save_base: std::path::PathBuf,
+    newgame_notice: String,
+    save_ok: bool,
+    newgame_checked: bool,
+    newgame_shot_dir: Option<String>,
+    newgame_shot: Option<NewgameShot>,
 }
 
 #[godot_api]
@@ -243,6 +313,20 @@ impl IControl for PortlightGame {
             encounter_shot: None,
             galleon_frame: false,
             capture_failed: false,
+            save_button: None,
+            newgame_nodes: None,
+            newgame_page: NewgamePage::Hidden,
+            newgame_built: None,
+            draft: CustomDraft::default(),
+            name_edit: None,
+            title_edit: None,
+            story_edit: None,
+            save_base: std::path::PathBuf::new(),
+            newgame_notice: String::new(),
+            save_ok: false,
+            newgame_checked: false,
+            newgame_shot_dir: None,
+            newgame_shot: None,
         }
     }
 
@@ -255,8 +339,90 @@ impl IControl for PortlightGame {
             .ok()
             .filter(|path| !path.is_empty())
             .map(|path| resolve_repo_path(&path));
+        self.save_base = std::path::PathBuf::from(resolve_repo_path("."));
         self.build_ui();
-        self.start_game();
+        if user_arg("--newgame-screen") {
+            self.smoke = true;
+            let capture = newgame_frames_requested(self.shot_path.is_some());
+            self.run_newgame_smoke();
+            if capture {
+                self.begin_newgame_shots();
+                self.capture_frames = 4;
+            } else {
+                self.capture_frames = 2;
+            }
+        } else if scripted_launch() {
+            self.start_game();
+            self.launch_scripted();
+        } else {
+            self.open_newgame(NewgamePage::Title);
+        }
+    }
+
+    fn process(&mut self, _delta: f64) {
+        if self.capture_frames <= 0 {
+            return;
+        }
+        self.capture_frames -= 1;
+        if self.capture_frames > 0 {
+            return;
+        }
+        if self.advance_newgame_shot() {
+            return;
+        }
+        if self.advance_encounter_shot() {
+            return;
+        }
+        // Measure after layout. Headless `--smoke` has no shot and skips this:
+        // the Xvfb capture is the run that has to see real label sizes.
+        if self.smoke && self.shot_path.is_some() && self.market_open {
+            self.assert_panel_labels();
+        }
+        if self.newgame_shot_dir.is_none() {
+            if let Some(path) = self.shot_path.clone() {
+                // `--encounter-galleon` is still on the encounter screen. The
+                // multi-frame shot saves its own files before this, then the
+                // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
+                // Headless skips only an implicit `/tmp` default. `PORTLIGHT_SHOT`
+                // and `--art-docs` still read the viewport and fail when it is empty.
+                // A new-game sequence already wrote its own frames.
+                let skip = headless_runtime() && self.shot_implicit;
+                if !skip && !self.save_shot(&path, self.galleon_frame) {
+                    self.smoke_ok = false;
+                }
+            }
+        }
+        if self.capture_failed {
+            self.smoke_ok = false;
+        }
+        if !self.smoke {
+            return;
+        }
+        let code = if self.smoke_ok { 0 } else { 1 };
+        if self.newgame_checked {
+            godot_print!(
+                "portlight newgame smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else {
+            if self.encounter_checked {
+                godot_print!(
+                    "portlight encounter smoke {}",
+                    if self.smoke_ok { "ok" } else { "FAILED" }
+                );
+            }
+            godot_print!(
+                "portlight smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        }
+        let mut tree = self.base().get_tree();
+        tree.quit_ex().exit_code(code).done();
+    }
+}
+
+impl PortlightGame {
+    fn launch_scripted(&mut self) {
         if user_arg("--encounter-screen") {
             self.smoke = true;
             // The five frames are opt-in. A default `/tmp` path is not a
@@ -314,56 +480,6 @@ impl IControl for PortlightGame {
         }
     }
 
-    fn process(&mut self, _delta: f64) {
-        if self.capture_frames <= 0 {
-            return;
-        }
-        self.capture_frames -= 1;
-        if self.capture_frames > 0 {
-            return;
-        }
-        if self.advance_encounter_shot() {
-            return;
-        }
-        // Measure after layout. Headless `--smoke` has no shot and skips this:
-        // the Xvfb capture is the run that has to see real label sizes.
-        if self.smoke && self.shot_path.is_some() && self.market_open {
-            self.assert_panel_labels();
-        }
-        if let Some(path) = self.shot_path.clone() {
-            // `--encounter-galleon` is still on the encounter screen. The
-            // multi-frame shot saves its own files before this, then the
-            // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
-            // Headless skips only an implicit `/tmp` default. `PORTLIGHT_SHOT`
-            // and `--art-docs` still read the viewport and fail when it is empty.
-            let skip = headless_runtime() && self.shot_implicit;
-            if !skip && !self.save_shot(&path, self.galleon_frame) {
-                self.smoke_ok = false;
-            }
-        }
-        if self.capture_failed {
-            self.smoke_ok = false;
-        }
-        if !self.smoke {
-            return;
-        }
-        let code = if self.smoke_ok { 0 } else { 1 };
-        if self.encounter_checked {
-            godot_print!(
-                "portlight encounter smoke {}",
-                if self.smoke_ok { "ok" } else { "FAILED" }
-            );
-        }
-        godot_print!(
-            "portlight smoke {}",
-            if self.smoke_ok { "ok" } else { "FAILED" }
-        );
-        let mut tree = self.base().get_tree();
-        tree.quit_ex().exit_code(code).done();
-    }
-}
-
-impl PortlightGame {
     fn build_ui(&mut self) {
         assert!(
             layout_fits_window(),
@@ -447,6 +563,11 @@ impl PortlightGame {
         let mut buttons = HBoxContainer::new_alloc();
         buttons.add_child(&action_button("New game", game_id, Action::NewGame));
         buttons.add_child(&action_button("Next day", game_id, Action::NextDay));
+        // Same control as New game and Next day. The docked port row is already
+        // full, and it is hidden at sea, so Save stays on this row.
+        let save = action_button("Save", game_id, Action::SaveGame);
+        buttons.add_child(&save);
+        self.save_button = Some(save);
         column.add_child(&buttons);
 
         let mut port_row = HBoxContainer::new_alloc();
@@ -529,6 +650,11 @@ impl PortlightGame {
         self.base_mut().add_child(&encounter_screen.root);
         encounter_screen::fill_parent(&mut encounter_screen.root);
         self.encounter_nodes = Some(encounter_screen);
+
+        let mut newgame = newgame_screen::build_newgame_screen();
+        self.base_mut().add_child(&newgame.root);
+        newgame_screen::fill_parent(&mut newgame.root);
+        self.newgame_nodes = Some(newgame);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -558,6 +684,666 @@ impl PortlightGame {
             }
         }
         self.refresh();
+    }
+
+    fn open_newgame(&mut self, page: NewgamePage) {
+        self.read_draft_fields();
+        if page != self.newgame_page {
+            self.newgame_notice.clear();
+        }
+        self.newgame_page = page;
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn newgame_back(&mut self) {
+        match self.newgame_page {
+            NewgamePage::Captains | NewgamePage::Load => self.open_newgame(NewgamePage::Title),
+            NewgamePage::Custom => self.open_newgame(NewgamePage::Captains),
+            NewgamePage::Title | NewgamePage::Saved if self.session.is_some() => {
+                self.open_newgame(NewgamePage::Hidden);
+            }
+            _ => {}
+        }
+    }
+
+    fn read_draft_fields(&mut self) {
+        if let Some(edit) = &self.name_edit {
+            self.draft.name = edit.get_text().to_string();
+        }
+        if let Some(edit) = &self.title_edit {
+            self.draft.title = edit.get_text().to_string();
+        }
+        if let Some(edit) = &self.story_edit {
+            self.draft.backstory = edit.get_text().to_string();
+        }
+    }
+
+    fn adjust_points(&mut self, pool: PointPool, delta: i64) {
+        self.read_draft_fields();
+        let next = self.draft.pool(pool) + delta;
+        self.draft.set_pool(pool, next);
+        self.newgame_notice.clear();
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn cycle_region(&mut self, delta: i32) {
+        self.read_draft_fields();
+        let options = Session::custom_captain_options();
+        let index = options
+            .regions
+            .iter()
+            .position(|region| region == &self.draft.home_region)
+            .unwrap_or(0);
+        let next = cycle_index(options.regions.len(), index, delta);
+        if let Some(region) = options.regions.get(next) {
+            self.draft.home_region = region.clone();
+            if let Some(port) = options.ports.iter().find(|port| port.region == *region) {
+                self.draft.home_port_id = port.id.clone();
+            }
+        }
+        self.keep_mentor();
+        self.newgame_notice.clear();
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn cycle_port(&mut self, delta: i32) {
+        self.read_draft_fields();
+        let options = Session::custom_captain_options();
+        let ports: Vec<_> = options
+            .ports
+            .iter()
+            .filter(|port| port.region == self.draft.home_region)
+            .map(|port| port.id.clone())
+            .collect();
+        let index = ports
+            .iter()
+            .position(|id| id == &self.draft.home_port_id)
+            .unwrap_or(0);
+        if let Some(id) = ports.get(cycle_index(ports.len(), index, delta)) {
+            self.draft.home_port_id = id.clone();
+        }
+        self.keep_mentor();
+        self.newgame_notice.clear();
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn cycle_bloc(&mut self, delta: i32) {
+        self.read_draft_fields();
+        let options = Session::custom_captain_options();
+        let ids = leading_none(options.blocs.iter().map(|bloc| bloc.id.clone()));
+        self.draft.bloc_alignment = cycled(&ids, &self.draft.bloc_alignment, delta);
+        self.newgame_notice.clear();
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn cycle_faction(&mut self, delta: i32) {
+        self.read_draft_fields();
+        let options = Session::custom_captain_options();
+        let ids = leading_none(options.factions.iter().map(|faction| faction.id.clone()));
+        self.draft.faction_alignment = cycled(&ids, &self.draft.faction_alignment, delta);
+        self.newgame_notice.clear();
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn cycle_mentor(&mut self, delta: i32) {
+        self.read_draft_fields();
+        let ids = self.mentor_ids();
+        self.draft.mentor_npc_id = cycled(&ids, &self.draft.mentor_npc_id, delta);
+        self.newgame_notice.clear();
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn keep_mentor(&mut self) {
+        let ids = self.mentor_ids();
+        if !ids.iter().any(|id| id == &self.draft.mentor_npc_id) {
+            self.draft.mentor_npc_id.clear();
+        }
+    }
+
+    fn mentor_ids(&self) -> Vec<String> {
+        let options = Session::custom_captain_options();
+        leading_none(
+            options
+                .mentors
+                .iter()
+                .filter(|mentor| mentor.port_id == self.draft.home_port_id)
+                .map(|mentor| mentor.id.clone()),
+        )
+    }
+
+    fn start_captain(&mut self, id: &str) {
+        self.read_draft_fields();
+        let spec_name = self.draft.spec().name;
+        match Session::new(&spec_name, id, FIRST_PLAYABLE_SEED, None) {
+            Ok(session) => self.begin_session(session),
+            Err(err) => self.note_newgame(err.to_string()),
+        }
+    }
+
+    fn begin_custom(&mut self) {
+        self.read_draft_fields();
+        let spec = self.draft.spec();
+        match Session::new_custom(&spec, FIRST_PLAYABLE_SEED, None) {
+            Ok(session) => self.begin_session(session),
+            Err(err) => self.note_newgame(err.to_string()),
+        }
+    }
+
+    fn begin_session(&mut self, session: Session) {
+        let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+        self.log_lines.clear();
+        self.market_open = false;
+        self.armed_sail = None;
+        self.stances.clear();
+        self.session = Some(session);
+        self.newgame_notice.clear();
+        self.push_log(format!("A new voyage begins. Docked at {place}."));
+        self.newgame_page = NewgamePage::Hidden;
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn note_newgame(&mut self, notice: String) {
+        self.newgame_notice = notice;
+        self.newgame_built = None;
+        if self.smoke {
+            self.smoke_ok = false;
+        }
+        self.refresh();
+    }
+
+    fn load_slot(&mut self, slot: &str) {
+        match Session::load(&self.save_base, slot) {
+            Ok(Some(session)) => {
+                let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+                self.log_lines.clear();
+                self.market_open = false;
+                self.armed_sail = None;
+                self.stances.clear();
+                self.session = Some(session);
+                self.push_log(format!("Loaded slot {slot}. Docked at {place}."));
+                self.newgame_page = NewgamePage::Hidden;
+                self.newgame_built = None;
+                self.refresh();
+            }
+            Ok(None) => self.note_newgame(format!("Could not load slot '{slot}'.")),
+            Err(err) => self.note_newgame(err.to_string()),
+        }
+    }
+
+    fn save_current_game(&mut self) {
+        let saved = {
+            let Some(session) = self.session.as_mut() else {
+                self.save_ok = false;
+                self.newgame_notice = "No game to save.".to_string();
+                self.newgame_page = NewgamePage::Saved;
+                self.newgame_built = None;
+                self.refresh();
+                return;
+            };
+            session.save(&self.save_base, "default")
+        };
+        match saved {
+            Ok(_) => {
+                self.save_ok = true;
+                self.newgame_notice = Session::list_saves(&self.save_base)
+                    .into_iter()
+                    .find(|row| row.slot == "default")
+                    .map(|row| save_slot_label(&row))
+                    .unwrap_or_else(|| "default  saved".to_string());
+            }
+            Err(err) => {
+                self.save_ok = false;
+                self.newgame_notice = err.to_string();
+                if self.smoke {
+                    self.smoke_ok = false;
+                }
+            }
+        }
+        self.newgame_page = NewgamePage::Saved;
+        self.newgame_built = None;
+        self.refresh();
+    }
+
+    fn run_newgame_smoke(&mut self) {
+        self.newgame_checked = true;
+        self.save_base = fresh_dir("portlight-newgame-smoke");
+        let draft = CustomDraft {
+            name: "Mara".to_string(),
+            ..CustomDraft::default()
+        };
+        let spec = draft.spec();
+        let mut session = match Session::new_custom(&spec, FIRST_PLAYABLE_SEED, None) {
+            Ok(session) => session,
+            Err(err) => {
+                self.fail_newgame(format!("New game smoke: custom captain refused: {err}"));
+                return;
+            }
+        };
+        let silver = session.world().captain.silver;
+        let day = session.world().day;
+        if let Err(err) = session.save(&self.save_base, "voyage") {
+            self.fail_newgame(format!("New game smoke: save failed: {err}"));
+            return;
+        }
+        let slots = Session::list_saves(&self.save_base);
+        let Some(row) = slots.iter().find(|row| row.slot == "voyage") else {
+            self.fail_newgame("New game smoke: list_saves missed the voyage slot.");
+            return;
+        };
+        if row.captain != "Mara" || row.day != day {
+            self.fail_newgame(format!(
+                "New game smoke: slot read {} day {}, expected Mara day {day}.",
+                row.captain, row.day
+            ));
+            return;
+        }
+        match Session::load(&self.save_base, "voyage") {
+            Ok(Some(loaded)) => {
+                let world = loaded.world();
+                if world.captain.name != "Mara"
+                    || world.captain.captain_type != "custom"
+                    || world.captain.silver != silver
+                    || world.day != day
+                    || world.voyage.destination_id != "porto_novo"
+                {
+                    self.fail_newgame(
+                        "New game smoke: loaded game did not match the custom captain.".to_string(),
+                    );
+                    return;
+                }
+            }
+            Ok(None) => {
+                self.fail_newgame("New game smoke: voyage slot was missing on load.".to_string());
+                return;
+            }
+            Err(err) => {
+                self.fail_newgame(format!("New game smoke: load failed: {err}"));
+                return;
+            }
+        }
+        let text =
+            std::fs::read_to_string(self.save_base.join("saves/voyage.json")).unwrap_or_default();
+        if !text.contains("\"version\": 12") {
+            self.fail_newgame("New game smoke: save was not version 12.".to_string());
+            return;
+        }
+        match Session::new("Ada", "merchant", FIRST_PLAYABLE_SEED, None) {
+            Ok(mut merchant) => {
+                if let Err(err) = merchant.save(&self.save_base, "ada") {
+                    self.fail_newgame(format!("New game smoke: merchant save failed: {err}"));
+                    return;
+                }
+            }
+            Err(err) => {
+                self.fail_newgame(format!("New game smoke: merchant start failed: {err}"));
+                return;
+            }
+        }
+        if Session::list_saves(&self.save_base).len() < 2 {
+            self.fail_newgame("New game smoke: expected two save slots.".to_string());
+            return;
+        }
+        if Session::starting_captains().len() != 9 {
+            self.fail_newgame("New game smoke: expected nine catalog captains.".to_string());
+            return;
+        }
+        self.session = Some(session);
+        self.push_log("New game smoke: custom captain saved and loaded.".to_string());
+        self.refresh();
+    }
+
+    fn fail_newgame(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.newgame_checked = true;
+    }
+
+    fn begin_newgame_shots(&mut self) {
+        self.resize_newgame_window();
+        self.newgame_shot_dir = Some(newgame_shot_dir(self.shot_path.as_deref()));
+        self.newgame_shot = Some(NewgameShot::Title);
+        self.newgame_page = NewgamePage::Title;
+        self.newgame_built = None;
+        self.newgame_notice.clear();
+        self.refresh();
+    }
+
+    fn advance_newgame_shot(&mut self) -> bool {
+        let Some(phase) = self.newgame_shot else {
+            return false;
+        };
+        let Some(dir) = self.newgame_shot_dir.clone() else {
+            return false;
+        };
+        if self.newgame_page != phase.page() {
+            self.smoke_ok = false;
+            godot_print!("New game smoke: screen was not {}", phase.file_name());
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_newgame_shot(&path) {
+            self.capture_failed = true;
+        }
+        match phase {
+            NewgameShot::Title => self.open_newgame(NewgamePage::Captains),
+            NewgameShot::Captains => self.open_newgame(NewgamePage::Custom),
+            NewgameShot::Custom => self.open_newgame(NewgamePage::Load),
+            NewgameShot::Load => self.save_current_game(),
+            NewgameShot::Save => {
+                self.newgame_shot = None;
+                return false;
+            }
+        }
+        self.newgame_shot = Some(match phase {
+            NewgameShot::Title => NewgameShot::Captains,
+            NewgameShot::Captains => NewgameShot::Custom,
+            NewgameShot::Custom => NewgameShot::Load,
+            NewgameShot::Load => NewgameShot::Save,
+            NewgameShot::Save => NewgameShot::Save,
+        });
+        self.capture_frames = 4;
+        true
+    }
+
+    fn resize_newgame_window(&mut self) {
+        let Some(mut window) = self.base().get_window() else {
+            return;
+        };
+        let size = Vector2i::new(NEWGAME_SHOT_W, NEWGAME_SHOT_H);
+        window.set_content_scale_size(size);
+        window.set_size(size);
+    }
+
+    fn sync_newgame(&mut self) {
+        let Some(mut nodes) = self.newgame_nodes.clone() else {
+            return;
+        };
+        newgame_screen::show_page(&mut nodes, self.newgame_page);
+        if self.newgame_page == NewgamePage::Hidden {
+            return;
+        }
+        let ship = self.newgame_ship_id();
+        if self.newgame_page == NewgamePage::Saved {
+            nodes
+                .confirm_title
+                .set_text(save_confirm_title(self.save_ok));
+            nodes.confirm_detail.set_text(&self.newgame_notice);
+            set_ship_plate(
+                &mut nodes.confirm_plate,
+                &mut nodes.confirm_plate_panel,
+                &mut nodes.confirm_placeholder,
+                &mut nodes.confirm_caption,
+                &ship,
+            );
+            if self.newgame_built != Some(NewgamePage::Saved) {
+                self.fill_saved_actions();
+                self.newgame_built = Some(NewgamePage::Saved);
+            }
+            return;
+        }
+        let (title, card) = newgame_copy(self.newgame_page);
+        nodes.title.set_text(title);
+        nodes.card.set_text(card);
+        nodes.detail.set_text(&self.menu_detail());
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &ship,
+        );
+        if self.newgame_built != Some(self.newgame_page) {
+            self.fill_newgame_actions();
+            self.newgame_built = Some(self.newgame_page);
+        }
+    }
+
+    fn menu_detail(&self) -> String {
+        let mut lines = Vec::new();
+        if self.newgame_page == NewgamePage::Custom {
+            lines.push(format!("Points left: {}", self.draft.points_left()));
+        }
+        if !self.newgame_notice.is_empty() {
+            lines.push(self.newgame_notice.clone());
+        }
+        lines.join("\n")
+    }
+
+    fn newgame_ship_id(&self) -> String {
+        if self.newgame_page == NewgamePage::Saved {
+            if let Some(id) = self.session.as_ref().and_then(|session| {
+                session
+                    .world()
+                    .captain
+                    .ship
+                    .as_ref()
+                    .map(|ship| ship.template_id.clone())
+            }) {
+                return id;
+            }
+        }
+        "coastal_sloop".to_string()
+    }
+
+    fn fill_saved_actions(&mut self) {
+        let Some(mut actions) = self
+            .newgame_nodes
+            .as_ref()
+            .map(|nodes| nodes.confirm_actions.clone())
+        else {
+            return;
+        };
+        clear_children(&mut actions);
+        let game_id = self.instance_id();
+        actions.add_child(&encounter_button(
+            "Back to the chart",
+            game_id,
+            Action::NewgameBack,
+        ));
+    }
+
+    fn fill_newgame_actions(&mut self) {
+        self.name_edit = None;
+        self.title_edit = None;
+        self.story_edit = None;
+        let Some(mut actions) = self
+            .newgame_nodes
+            .as_ref()
+            .map(|nodes| nodes.actions.clone())
+        else {
+            return;
+        };
+        clear_children(&mut actions);
+        let game_id = self.instance_id();
+        match self.newgame_page {
+            NewgamePage::Title => {
+                actions.add_child(&encounter_button("New game", game_id, Action::OpenCaptains));
+                actions.add_child(&encounter_button("Load game", game_id, Action::OpenLoad));
+                if self.session.is_some() {
+                    actions.add_child(&encounter_button(
+                        "Back to the chart",
+                        game_id,
+                        Action::NewgameBack,
+                    ));
+                }
+            }
+            NewgamePage::Captains => {
+                self.add_draft_edit(
+                    &mut actions,
+                    "Name",
+                    &self.draft.name.clone(),
+                    DraftEdit::Name,
+                );
+                for captain in Session::starting_captains() {
+                    let label = captain_button_label(&captain);
+                    actions.add_child(&encounter_button(
+                        &label,
+                        game_id,
+                        Action::StartCaptain(captain.id),
+                    ));
+                }
+                actions.add_child(&encounter_button(
+                    "Custom captain",
+                    game_id,
+                    Action::OpenCustom,
+                ));
+                actions.add_child(&encounter_button("Back", game_id, Action::NewgameBack));
+            }
+            NewgamePage::Custom => self.fill_custom(&mut actions, game_id),
+            NewgamePage::Load => {
+                let slots = Session::list_saves(&self.save_base);
+                if slots.is_empty() {
+                    actions.add_child(&body_label("No saves found.", 16, CREAM));
+                }
+                for slot in slots {
+                    let label = save_slot_label(&slot);
+                    actions.add_child(&encounter_button(
+                        &label,
+                        game_id,
+                        Action::LoadSlot(slot.slot),
+                    ));
+                }
+                actions.add_child(&encounter_button("Back", game_id, Action::NewgameBack));
+            }
+            NewgamePage::Hidden | NewgamePage::Saved => {}
+        }
+    }
+
+    fn fill_custom(&mut self, actions: &mut Gd<VBoxContainer>, game_id: InstanceId) {
+        let name = self.draft.name.clone();
+        let title = self.draft.title.clone();
+        let story = self.draft.backstory.clone();
+        self.add_draft_edit(actions, "Name", &name, DraftEdit::Name);
+        self.add_draft_edit(actions, "Title", &title, DraftEdit::Title);
+        for pool in [
+            PointPool::Trade,
+            PointPool::Sailing,
+            PointPool::Shadow,
+            PointPool::Reputation,
+        ] {
+            let mut row = HBoxContainer::new_alloc();
+            row.add_theme_constant_override("separation", 8);
+            row.add_child(&body_label(
+                &format!("{}  {}", pool_name(pool), self.draft.pool(pool)),
+                16,
+                CREAM,
+            ));
+            row.add_child(&encounter_button(
+                &format!("{} -", pool_name(pool)),
+                game_id,
+                Action::AdjustPoints(pool, -1),
+            ));
+            row.add_child(&encounter_button(
+                &format!("{} +", pool_name(pool)),
+                game_id,
+                Action::AdjustPoints(pool, 1),
+            ));
+            actions.add_child(&row);
+        }
+        let options = Session::custom_captain_options();
+        self.choice_row(
+            actions,
+            game_id,
+            &format!("Region: {}", self.draft.home_region),
+            Action::CycleRegion(-1),
+            Action::CycleRegion(1),
+            "Region",
+        );
+        let port_name = options
+            .ports
+            .iter()
+            .find(|port| port.id == self.draft.home_port_id)
+            .map(|port| ascii_label(&port.name, &port.id).to_string())
+            .unwrap_or_else(|| self.draft.home_port_id.clone());
+        self.choice_row(
+            actions,
+            game_id,
+            &format!("Home port: {port_name}"),
+            Action::CyclePort(-1),
+            Action::CyclePort(1),
+            "Port",
+        );
+        let bloc = named_or_none(&options.blocs, &self.draft.bloc_alignment);
+        self.choice_row(
+            actions,
+            game_id,
+            &format!("Trade bloc: {bloc}"),
+            Action::CycleBloc(-1),
+            Action::CycleBloc(1),
+            "Bloc",
+        );
+        let faction = named_or_none(&options.factions, &self.draft.faction_alignment);
+        self.choice_row(
+            actions,
+            game_id,
+            &format!("Pirate faction: {faction}"),
+            Action::CycleFaction(-1),
+            Action::CycleFaction(1),
+            "Faction",
+        );
+        let mentor = mentor_or_none(&options.mentors, &self.draft.mentor_npc_id);
+        self.choice_row(
+            actions,
+            game_id,
+            &format!("Mentor: {mentor}"),
+            Action::CycleMentor(-1),
+            Action::CycleMentor(1),
+            "Mentor",
+        );
+        self.add_draft_edit(actions, "Backstory", &story, DraftEdit::Story);
+        actions.add_child(&encounter_button(
+            "Begin voyage",
+            game_id,
+            Action::BeginCustom,
+        ));
+        actions.add_child(&encounter_button("Back", game_id, Action::NewgameBack));
+    }
+
+    fn choice_row(
+        &self,
+        actions: &mut Gd<VBoxContainer>,
+        game_id: InstanceId,
+        label: &str,
+        down: Action,
+        up: Action,
+        name: &str,
+    ) {
+        let mut row = HBoxContainer::new_alloc();
+        row.add_theme_constant_override("separation", 8);
+        let mut text = body_label(label, 16, CREAM);
+        text.set_h_size_flags(SizeFlags::EXPAND_FILL);
+        row.add_child(&text);
+        row.add_child(&encounter_button(&format!("{name} -"), game_id, down));
+        row.add_child(&encounter_button(&format!("{name} +"), game_id, up));
+        actions.add_child(&row);
+    }
+
+    fn add_draft_edit(
+        &mut self,
+        actions: &mut Gd<VBoxContainer>,
+        label: &str,
+        value: &str,
+        kind: DraftEdit,
+    ) {
+        actions.add_child(&body_label(label, 14, MUTED));
+        let mut edit = LineEdit::new_alloc();
+        edit.set_text(value);
+        newgame_screen::style_field(&mut edit);
+        actions.add_child(&edit);
+        match kind {
+            DraftEdit::Name => self.name_edit = Some(edit),
+            DraftEdit::Title => self.title_edit = Some(edit),
+            DraftEdit::Story => self.story_edit = Some(edit),
+        }
     }
 
     fn run_smoke(&mut self) {
@@ -802,7 +1588,21 @@ impl PortlightGame {
 
     fn perform(&mut self, action: Action) {
         match action {
-            Action::NewGame => self.start_game(),
+            Action::NewGame => self.open_newgame(NewgamePage::Title),
+            Action::SaveGame => self.save_current_game(),
+            Action::OpenCaptains => self.open_newgame(NewgamePage::Captains),
+            Action::OpenCustom => self.open_newgame(NewgamePage::Custom),
+            Action::OpenLoad => self.open_newgame(NewgamePage::Load),
+            Action::NewgameBack => self.newgame_back(),
+            Action::StartCaptain(id) => self.start_captain(&id),
+            Action::BeginCustom => self.begin_custom(),
+            Action::AdjustPoints(pool, delta) => self.adjust_points(pool, delta),
+            Action::CycleRegion(delta) => self.cycle_region(delta),
+            Action::CyclePort(delta) => self.cycle_port(delta),
+            Action::CycleBloc(delta) => self.cycle_bloc(delta),
+            Action::CycleFaction(delta) => self.cycle_faction(delta),
+            Action::CycleMentor(delta) => self.cycle_mentor(delta),
+            Action::LoadSlot(slot) => self.load_slot(&slot),
             Action::NextDay => self.next_day(),
             Action::Work => self.work_docks(),
             Action::HireSailor => self.hire_sailor(),
@@ -1200,6 +2000,9 @@ impl PortlightGame {
         if let Some(button) = self.duel_button.as_mut() {
             button.set_disabled(!can_duel);
         }
+        if let Some(button) = self.save_button.as_mut() {
+            button.set_disabled(self.session.is_none());
+        }
         let status_text = self.status_text();
         if let Some(label) = self.status.as_mut() {
             label.set_text(&status_text);
@@ -1215,6 +2018,7 @@ impl PortlightGame {
             }
         }
         self.sync_encounter_screen();
+        self.sync_newgame();
     }
 
     fn rebuild_lanes(&mut self) {
@@ -1567,6 +2371,40 @@ impl PortlightGame {
             godot_print!(
                 "screenshot rejected: expected a full 1280x720 frame that is not one flat colour"
             );
+            return false;
+        }
+        true
+    }
+
+    /// 1280×800 new-game frame. The ink ground is most of the shot, so the
+    /// check is the plate fill and a button fill, same as the encounter.
+    fn save_newgame_shot(&self, path: &str) -> bool {
+        let Some(image) = self.base().get_viewport().and_then(|viewport| {
+            viewport
+                .get_texture()
+                .and_then(|texture| texture.get_image())
+        }) else {
+            godot_print!("viewport image was empty");
+            return false;
+        };
+        if image.is_empty() {
+            godot_print!("viewport image was empty");
+            return false;
+        }
+        let width = image.get_width();
+        let height = image.get_height();
+        let err = image.save_png(path);
+        let samples = frame_samples(&image);
+        godot_print!(
+            "screenshot {path} {width}x{height} samples={} error={err:?}",
+            samples.len()
+        );
+        if err != Error::OK {
+            godot_print!("screenshot save failed");
+            return false;
+        }
+        if newgame_frame_rejected(width, height, &samples) {
+            godot_print!("screenshot rejected: expected a full 1280x800 new game frame");
             return false;
         }
         true
@@ -2298,6 +3136,95 @@ fn victory_line(session: &Session) -> String {
     }
     let names: Vec<&str> = paths.iter().map(|path| path.name.as_str()).collect();
     format!("Victory paths: {}", names.join(", "))
+}
+
+fn scripted_launch() -> bool {
+    user_arg("--encounter-screen")
+        || user_arg("--encounter-galleon")
+        || user_arg("--encounter")
+        || user_arg("--duel")
+        || user_arg("--resolve")
+        || user_arg("--work")
+        || user_arg("--art")
+        || flag_set("PORTLIGHT_SMOKE")
+        || user_arg("--smoke")
+}
+
+fn newgame_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+/// `PORTLIGHT_SHOT` wins. A `.png` path contributes its directory. `--art-docs`
+/// writes `docs/screenshots`. Headless still tries the save and fails it.
+fn newgame_shot_dir(shot: Option<&str>) -> String {
+    if let Some(path) = shot {
+        let path = std::path::Path::new(path);
+        if path.extension().and_then(|ext| ext.to_str()) == Some("png") {
+            if let Some(parent) = path.parent() {
+                if !parent.as_os_str().is_empty() {
+                    return parent.to_string_lossy().into_owned();
+                }
+            }
+            return ".".to_string();
+        }
+        return path.to_string_lossy().into_owned();
+    }
+    if docs_capture() {
+        resolve_repo_path("docs/screenshots")
+    } else {
+        "/tmp".to_string()
+    }
+}
+
+fn fresh_dir(name: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(name);
+    let _ = std::fs::remove_dir_all(&dir);
+    let _ = std::fs::create_dir_all(&dir);
+    dir
+}
+
+fn leading_none(ids: impl Iterator<Item = String>) -> Vec<String> {
+    let mut rows = vec![String::new()];
+    rows.extend(ids);
+    rows
+}
+
+fn cycled(ids: &[String], current: &str, delta: i32) -> String {
+    let index = ids.iter().position(|id| id == current).unwrap_or(0);
+    ids.get(cycle_index(ids.len(), index, delta))
+        .cloned()
+        .unwrap_or_default()
+}
+
+fn pool_name(pool: PointPool) -> &'static str {
+    match pool {
+        PointPool::Trade => "Trade",
+        PointPool::Sailing => "Sailing",
+        PointPool::Shadow => "Shadow",
+        PointPool::Reputation => "Reputation",
+    }
+}
+
+fn named_or_none(choices: &[portlight_sim::custom_captain::NamedChoice], id: &str) -> String {
+    if id.is_empty() {
+        return "none".to_string();
+    }
+    choices
+        .iter()
+        .find(|choice| choice.id == id)
+        .map(|choice| ascii_label(&choice.name, &choice.id).to_string())
+        .unwrap_or_else(|| id.to_string())
+}
+
+fn mentor_or_none(choices: &[portlight_sim::custom_captain::MentorChoice], id: &str) -> String {
+    if id.is_empty() {
+        return "none".to_string();
+    }
+    choices
+        .iter()
+        .find(|choice| choice.id == id)
+        .map(|choice| ascii_label(&choice.name, &choice.id).to_string())
+        .unwrap_or_else(|| id.to_string())
 }
 
 fn docs_capture() -> bool {

@@ -72,13 +72,32 @@ pub(crate) fn encounter_frame_rejected(
     expect_h: i32,
     samples: &[[u8; 3]],
 ) -> bool {
+    ink_frame_rejected(width, height, expect_w, expect_h, samples)
+}
+
+/// New-game captures are 1280×800. The same plate and button fills have to
+/// be on the frame. An ink ground that covers most of the shot is the layout.
+pub(crate) const NEWGAME_SHOT_W: i32 = 1280;
+pub(crate) const NEWGAME_SHOT_H: i32 = 800;
+
+pub(crate) fn newgame_frame_rejected(width: i32, height: i32, samples: &[[u8; 3]]) -> bool {
+    ink_frame_rejected(width, height, NEWGAME_SHOT_W, NEWGAME_SHOT_H, samples)
+}
+
+fn ink_frame_rejected(
+    width: i32,
+    height: i32,
+    expect_w: i32,
+    expect_h: i32,
+    samples: &[[u8; 3]],
+) -> bool {
     if samples.is_empty() || width != expect_w || height != expect_h {
         return true;
     }
     let plate = sample_fraction(samples, ENCOUNTER_PLATE_RGB);
     let button = sample_fraction(samples, ENCOUNTER_BUTTON_RGB);
-    // A 64×64 plate at 2× plus padding is ~3% of the frame. One stray pixel
-    // must not pass a blank ink overlay.
+    // A 64×64 plate at 2× plus padding is ~3% of a 720-tall frame, and still
+    // above 1% at 800. One stray pixel must not pass a blank ink overlay.
     plate < 0.01 || button < 0.002
 }
 
@@ -554,6 +573,188 @@ fn dominant_color_fraction(samples: &[[u8; 3]]) -> f32 {
         }
     }
     best as f32 / samples.len() as f32
+}
+
+/// Title, captain roster, custom builder, load list, or the in-game save note.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NewgamePage {
+    Hidden,
+    Title,
+    Captains,
+    Custom,
+    Load,
+    Saved,
+}
+
+/// Which of the four custom point pools a button changes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PointPool {
+    Trade,
+    Sailing,
+    Shadow,
+    Reputation,
+}
+
+/// Player choices for [`Session::new_custom`]. Defaults match the Python
+/// builder's prompts: 2/3/3/2, Porto Novo, title "Freelance Captain".
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CustomDraft {
+    pub name: String,
+    pub title: String,
+    pub home_port_id: String,
+    pub home_region: String,
+    pub trade_points: i64,
+    pub sailing_points: i64,
+    pub shadow_points: i64,
+    pub reputation_points: i64,
+    pub bloc_alignment: String,
+    pub faction_alignment: String,
+    pub mentor_npc_id: String,
+    pub backstory: String,
+}
+
+impl Default for CustomDraft {
+    fn default() -> Self {
+        Self {
+            name: "Ada".to_string(),
+            title: "Freelance Captain".to_string(),
+            home_port_id: "porto_novo".to_string(),
+            home_region: "Mediterranean".to_string(),
+            trade_points: 2,
+            sailing_points: 3,
+            shadow_points: 3,
+            reputation_points: 2,
+            bloc_alignment: String::new(),
+            faction_alignment: String::new(),
+            mentor_npc_id: String::new(),
+            backstory: String::new(),
+        }
+    }
+}
+
+impl CustomDraft {
+    pub(crate) fn spec(&self) -> portlight_sim::CustomCaptainSpec {
+        let name = if self.name.trim().is_empty() {
+            "Captain".to_string()
+        } else {
+            self.name.trim().to_string()
+        };
+        portlight_sim::CustomCaptainSpec {
+            name,
+            title: self.title.clone(),
+            home_port_id: self.home_port_id.clone(),
+            home_region: self.home_region.clone(),
+            trade_points: self.trade_points,
+            sailing_points: self.sailing_points,
+            shadow_points: self.shadow_points,
+            reputation_points: self.reputation_points,
+            bloc_alignment: self.bloc_alignment.clone(),
+            faction_alignment: self.faction_alignment.clone(),
+            mentor_npc_id: self.mentor_npc_id.clone(),
+            backstory: self.backstory.clone(),
+        }
+    }
+
+    pub(crate) fn total(&self) -> i64 {
+        self.trade_points + self.sailing_points + self.shadow_points + self.reputation_points
+    }
+
+    pub(crate) fn points_left(&self) -> i64 {
+        portlight_sim::custom_captain::TOTAL_SKILL_POINTS - self.total()
+    }
+
+    pub(crate) fn pool(&self, pool: PointPool) -> i64 {
+        match pool {
+            PointPool::Trade => self.trade_points,
+            PointPool::Sailing => self.sailing_points,
+            PointPool::Shadow => self.shadow_points,
+            PointPool::Reputation => self.reputation_points,
+        }
+    }
+
+    /// Clamp to 0..=7 and to the points still unspent. The total never
+    /// passes [`TOTAL_SKILL_POINTS`]. A short total is what `validate_spec`
+    /// rejects when the player presses Begin.
+    pub(crate) fn set_pool(&mut self, pool: PointPool, value: i64) {
+        let cap = portlight_sim::custom_captain::MAX_POINTS_PER_CATEGORY;
+        let other = self.total() - self.pool(pool);
+        let room = (portlight_sim::custom_captain::TOTAL_SKILL_POINTS - other).max(0);
+        let value = value.clamp(0, cap).min(room);
+        match pool {
+            PointPool::Trade => self.trade_points = value,
+            PointPool::Sailing => self.sailing_points = value,
+            PointPool::Shadow => self.shadow_points = value,
+            PointPool::Reputation => self.reputation_points = value,
+        }
+    }
+}
+
+pub(crate) fn newgame_copy(page: NewgamePage) -> (&'static str, &'static str) {
+    match page {
+        NewgamePage::Title => ("Portlight", "New game, or load a saved voyage."),
+        NewgamePage::Captains => (
+            "Choose a captain",
+            "Seed 1. The name is the captain you play.",
+        ),
+        NewgamePage::Custom => (
+            "Custom captain",
+            "Distribute 10 points. At most 7 in one category. The home port has to sit in the home region.",
+        ),
+        NewgamePage::Load => (
+            "Load game",
+            "Each slot lists the captain and the day stored in the save.",
+        ),
+        NewgamePage::Saved | NewgamePage::Hidden => ("", ""),
+    }
+}
+
+pub(crate) fn save_confirm_title(ok: bool) -> &'static str {
+    if ok {
+        "Game saved."
+    } else {
+        "Save failed."
+    }
+}
+
+/// TUI load row: `slot  captain  day N`. An empty name is "Unknown".
+pub(crate) fn save_slot_label(slot: &portlight_sim::save::SaveSlotSummary) -> String {
+    let captain = if slot.captain.is_empty() {
+        "Unknown"
+    } else {
+        slot.captain.as_str()
+    };
+    format!("{}  {}  day {}", slot.slot, captain, slot.day)
+}
+
+pub(crate) fn captain_button_label(
+    captain: &portlight_sim::custom_captain::StartingCaptain,
+) -> String {
+    format!(
+        "{}  --  {}  --  {}  --  {}  --  {} silver",
+        captain.name,
+        captain.title,
+        captain.home_port_name,
+        captain.starting_ship_class,
+        captain.starting_silver
+    )
+}
+
+/// Catalog text when it is ASCII. Otherwise the id, which the sim stores in ASCII.
+pub(crate) fn ascii_label<'a>(text: &'a str, fallback: &'a str) -> &'a str {
+    if !text.is_empty() && text.is_ascii() {
+        text
+    } else {
+        fallback
+    }
+}
+
+pub(crate) fn cycle_index(len: usize, index: usize, delta: i32) -> usize {
+    if len == 0 {
+        return 0;
+    }
+    let len = len as i32;
+    let index = index as i32;
+    (index + delta).rem_euclid(len) as usize
 }
 
 #[cfg(test)]
@@ -1063,5 +1264,68 @@ mod tests {
         assert!(present(&facts).is_none());
         let err = SimError::NotInNavalCombat;
         assert!(action_list_from_error(&err).is_none());
+    }
+
+    #[test]
+    fn newgame_copy_and_the_save_line_stay_ascii() {
+        for page in [
+            NewgamePage::Title,
+            NewgamePage::Captains,
+            NewgamePage::Custom,
+            NewgamePage::Load,
+        ] {
+            let (title, card) = newgame_copy(page);
+            assert!(title.is_ascii() && card.is_ascii(), "{title} / {card}");
+        }
+        assert_eq!(save_confirm_title(true), "Game saved.");
+        assert!(save_confirm_title(false).is_ascii());
+        let row = portlight_sim::save::SaveSlotSummary {
+            slot: "default".to_string(),
+            captain: String::new(),
+            day: 3,
+        };
+        assert_eq!(save_slot_label(&row), "default  Unknown  day 3");
+        let merchant = Session::starting_captains()
+            .into_iter()
+            .find(|captain| captain.id == "merchant")
+            .unwrap();
+        let label = captain_button_label(&merchant);
+        assert!(label.is_ascii());
+        assert!(label.contains("The Merchant"));
+        assert!(label.contains("Porto Novo"));
+        assert!(label.contains("sloop"));
+        assert!(label.contains("550 silver"));
+        assert_eq!(ascii_label("Tomas", "id"), "Tomas");
+        assert_eq!(ascii_label("Tom\u{00e1}s", "pn_tomas"), "pn_tomas");
+    }
+
+    #[test]
+    fn point_buttons_stay_inside_the_sim_budget() {
+        let mut draft = CustomDraft::default();
+        assert_eq!(draft.points_left(), 0);
+        assert_eq!(draft.total(), 10);
+        draft.set_pool(PointPool::Trade, 9);
+        assert_eq!(draft.trade_points, 2);
+        draft.set_pool(PointPool::Sailing, 0);
+        assert_eq!(draft.points_left(), 3);
+        draft.set_pool(PointPool::Trade, 7);
+        assert_eq!(draft.trade_points, 5);
+        assert_eq!(draft.total(), 10);
+        let spec = draft.spec();
+        assert_eq!(spec.name, "Ada");
+        assert!(portlight_sim::validate_spec(&spec).is_empty());
+        draft.name = "  ".to_string();
+        assert_eq!(draft.spec().name, "Captain");
+    }
+
+    #[test]
+    fn a_newgame_frame_needs_the_plate_and_a_button_at_1280x800() {
+        let mut samples = vec![[20, 28, 41]; 200];
+        assert!(newgame_frame_rejected(1280, 800, &samples));
+        samples.extend(std::iter::repeat_n([184, 148, 92], 4));
+        samples.extend(std::iter::repeat_n([140, 107, 61], 2));
+        assert!(!newgame_frame_rejected(1280, 800, &samples));
+        assert!(newgame_frame_rejected(1280, 720, &samples));
+        assert!(newgame_frame_rejected(1280, 800, &[]));
     }
 }
