@@ -1,4 +1,4 @@
-//! Encounter overlay. Text card, the approved sloop plate, and a placeholder
+//! Encounter overlay. Text card, the player's class plate, and a placeholder
 //! where a portrait would be. Character art is held, so that panel is marked
 //! [`PORTRAIT_PLACEHOLDER`] in the tree and on screen.
 
@@ -199,7 +199,8 @@ pub(crate) fn set_ship_plate(
     // The column width is this plate's panel, not a fixed cutter width. The
     // placeholder's own text can still make a narrower plate's column wider.
     let hold = placeholder.get_custom_minimum_size();
-    placeholder.set_custom_minimum_size(Vector2::new(panel_w as f32, hold.y));
+    let (hold_w, hold_h) = placeholder_minimum_size(panel_w, hold.y);
+    placeholder.set_custom_minimum_size(Vector2::new(hold_w, hold_h));
     caption.set_text(plate_caption(drawn.class_name));
     let draw = Vector2::new(
         (plate.canvas_w * UI_PLATE_SCALE) as f32,
@@ -241,6 +242,12 @@ fn plate_caption(class_name: &str) -> &str {
         "man_of_war" | "galleon" => class_name,
         _ => "Ship plate",
     }
+}
+
+/// Placeholder minimum size. Width matches the plate panel so the column's
+/// right edges meet. Height stays the held-portrait slot already on the node.
+pub(crate) fn placeholder_minimum_size(panel_w: i32, held_height: f32) -> (f32, f32) {
+    (panel_w as f32, held_height)
 }
 
 fn load_plate(rect: &mut Gd<TextureRect>, plate: &Asset) {
@@ -309,4 +316,37 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
     label.add_theme_font_size_override("font_size", size);
     label.add_theme_color_override("font_color", color);
     label
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{placeholder_minimum_size, plate_caption};
+    use crate::logic::{encounter_plate, ui_plate_panel};
+
+    #[test]
+    fn plate_caption_names_only_the_galleon_classes() {
+        assert_eq!(plate_caption("galleon"), "galleon");
+        assert_eq!(plate_caption("man_of_war"), "man_of_war");
+        assert_eq!(plate_caption("sloop"), "Ship plate");
+        assert_eq!(plate_caption("cutter"), "Ship plate");
+        assert_eq!(plate_caption("brigantine"), "Ship plate");
+        assert_eq!(plate_caption(""), "Ship plate");
+    }
+
+    #[test]
+    fn placeholder_width_matches_the_plate_panel() {
+        for template in [
+            "coastal_sloop",
+            "swift_cutter",
+            "trade_brigantine",
+            "merchant_galleon",
+            "royal_man_of_war",
+        ] {
+            let drawn = encounter_plate(template);
+            let (panel_w, _) = ui_plate_panel(drawn.hull.canvas_w, drawn.hull.canvas_h);
+            let (width, height) = placeholder_minimum_size(panel_w, 120.0);
+            assert_eq!(width, panel_w as f32, "{template}");
+            assert_eq!(height, 120.0, "{template}");
+        }
+    }
 }

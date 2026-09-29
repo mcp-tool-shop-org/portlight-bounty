@@ -1046,7 +1046,7 @@ impl PortlightGame {
                     })
                     .unwrap_or((0, 0));
                 self.push_log(format!(
-                    "Hired 1 sailor. Crew {crew}. Silver {} → {silver}.",
+                    "Hired 1 sailor. Crew {crew}. Silver {} -> {silver}.",
                     before.unwrap_or(silver)
                 ));
             }
@@ -1084,7 +1084,7 @@ impl PortlightGame {
                     })
                     .unwrap_or((0, 0));
                 self.push_log(format!(
-                    "Bought provisions. Days {} → {days}. Silver {silver}.",
+                    "Bought provisions. Days {} -> {days}. Silver {silver}.",
                     before.unwrap_or(days)
                 ));
             }

@@ -405,9 +405,10 @@ fn log_plate_note_once(line: &str) {
     *count += 1;
 }
 
-/// How many times `line` was actually printed. The encounter screen and the
-/// chart share this sink.
-pub fn plate_note_emissions(line: &str) -> u32 {
+/// How many times `line` was actually printed. Test-only: the chart tests
+/// read it, and it is not part of the library surface.
+#[cfg(test)]
+pub(crate) fn plate_note_emissions(line: &str) -> u32 {
     PLATE_NOTE_LOGS
         .lock()
         .expect("plate notes")

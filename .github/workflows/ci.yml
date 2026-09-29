@@ -19,6 +19,8 @@ jobs:
         run: cargo clippy --locked --workspace --exclude portlight-godot --all-targets --all-features -- -D warnings
       - name: Test
         run: cargo test --locked --workspace --exclude portlight-godot
+      - name: Manifest gate fixtures
+        run: python3 tools/test_build_manifest_gates.py
 
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.
@@ -49,6 +51,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Clippy (portlight-godot)
+        env:
+          RUSTUP_TOOLCHAIN: stable
+        run: cargo clippy --locked -p portlight-godot --all-targets -- -D warnings
       - name: Build the GDExtension
         # rust-toolchain.toml pins 1.98.1, which can build godot-bindings 0.5.5
         # (edition 2024). RUSTUP_TOOLCHAIN wins over the toolchain file, so this
@@ -271,3 +279,33 @@ jobs:
             echo "pier-on-quay harbour seam wrote a PNG"
             exit 1
           fi
+          # Headless Godot cannot draw a viewport. Compare the Xvfb frames
+          # above to the committed shots. A stale PNG fails the job.
+          rm -f /tmp/chart-cutter-f7.png
+          run_godot /tmp/godot-art.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/chart-cutter-f7.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --art
+          if ! grep -q 'portlight smoke ok' /tmp/godot-art.log; then
+            echo "art capture did not report ok"
+            exit 1
+          fi
+          cmp_committed() {
+            local name="$1"
+            local fresh="$2"
+            if ! cmp -s "docs/screenshots/${name}" "$fresh"; then
+              echo "committed frame docs/screenshots/${name} differs from ${fresh}"
+              exit 1
+            fi
+          }
+          cmp_committed chart-1280.png /tmp/portlight-chart-1280.png
+          cmp_committed chart-cutter-f7.png /tmp/chart-cutter-f7.png
+          cmp_committed encounter-galleon.png /tmp/galleon1.png
+          cmp_committed encounter-approach.png /tmp/encounter-approach.png
+          cmp_committed encounter-naval.png /tmp/encounter-naval.png
+          cmp_committed encounter-boarding.png /tmp/encounter-boarding.png
+          cmp_committed encounter-fight.png /tmp/encounter-fight.png
+          cmp_committed encounter-outcome.png /tmp/encounter-outcome.png
+          cmp_committed harbour-seam-z100.png /tmp/seam-shots/harbour-seam-z100.png
+          cmp_committed harbour-seam-z072.png /tmp/seam-shots/harbour-seam-z072.png
+          cmp_committed harbour-seam-vertex-crop.png /tmp/seam-shots/harbour-seam-vertex-crop.png
