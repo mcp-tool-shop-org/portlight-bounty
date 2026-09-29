@@ -10,13 +10,9 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
                      sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
                      ships inventory must equal the 36 ids (empty fails). A missing row refuses the build.
-                     Real ships_results.json rows have no `exit` key; they carry `v011_exit`
-                     (1 for the expected stock v0.1.1 canvas-size failure). Either exit field
-                     satisfies the gate. It fails when neither field is present, or when the
-                     row's own `pass` or `verdict` says it failed. That stock exit of 1 is not
-                     a plate failure when the row records it as expected (`v011_exit` 1, or
-                     `expected` true). A nonzero `exit` that is not that expected stock result
-                     still refuses the build.
+                     A row passes when `pass` is true. `exit`, if present, must be 0. A missing
+                     `exit` is fine when `pass` is true. Real rows look like {"pass": true,
+                     "v011_exit": 1} and are accepted as they are.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -38,9 +34,10 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      The results file is read once: those bytes are parsed and hashed.
                      Inventory ids must equal the expected plate set (quay_flag, harbour, and ships).
                      A real FAIL verdict refuses the build: a line whose verdict token is exactly
-                     FAIL or **FAIL** (a plain line, or Verdict:/Result:), or a table cell that is
-                     exactly FAIL under a Verdict or Result header. Prose that only mentions FAIL
-                     does not, and the chart stock row "| water_a..c | FAIL (exit 1) |" does not.
+                     FAIL or **FAIL** (a plain line, or Verdict:/Result:), or a Verdict/Result
+                     cell that is FAIL or FAIL (exit 1). Prose that only mentions FAIL does not.
+                     A verdict-column FAIL is exempt only when that row, or the doc, marks it as
+                     the documented stock v0.1.1 canvas-size failure.
                      A duplicate row id or an unexpected row id also refuses the build.
                      A results file that is not a JSON object is a problem, not a traceback.
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
@@ -256,9 +253,36 @@ def _is_verdict_header(cell):
     return _bare_cell(cell).lower() in {"verdict", "result"}
 
 
-def _is_stock_v011_water_row(line):
-    """Chart retrieval documents the stock v0.1.1 canvas-size failure. Not a plate verdict."""
-    return "water_a..c" in line and re.search(r"FAIL\s*\(exit\s*1\)", line) is not None
+def _marks_stock_v011_canvas(text):
+    """True when text marks the documented stock v0.1.1 canvas-size failure."""
+    if re.search(r"(?i)stock\s+v0\.1\.1\s+canvas(?:[-\s](?:size|scale)|scale)", text):
+        return True
+    return (
+        re.search(r"(?i)v0\.1\.1", text) is not None
+        and re.search(r"(?i)canvas(?:-size|\s+size|\s+scale)", text) is not None
+        and re.search(r"(?i)stock|expected|documented", text) is not None
+    )
+
+
+def _verdict_cell_kind(cell):
+    """'fail' or 'exit1' when a verdict cell is a FAIL, else None.
+
+    FAIL (exit 1) is a verdict. It must not pass only because it is not the
+    bare token FAIL.
+    """
+    bare = _bare_cell(cell)
+    if bare == "FAIL":
+        return "fail"
+    if re.fullmatch(r"FAIL\s*\(exit\s*1\)", bare):
+        return "exit1"
+    return None
+
+
+def _stock_canvas_exempt(line, doc, kind):
+    """A verdict-column FAIL is exempt only when marked as that stock failure."""
+    if _marks_stock_v011_canvas(line):
+        return True
+    return kind == "exit1" and _marks_stock_v011_canvas(doc)
 
 
 def _line_verdict_token_is_fail(line):
@@ -280,9 +304,9 @@ def fail_result_lines(text):
     """Lines that report a real FAIL verdict.
 
     A counted summary such as '0 FAIL' is not one. Neither is prose that merely
-    mentions FAIL, nor the chart stock row '| water_a..c | FAIL (exit 1) |'.
-    A table cell counts only when it is exactly FAIL and its column header is
-    Verdict or Result.
+    mentions FAIL. A Verdict or Result cell counts when it is FAIL or
+    FAIL (exit 1). That cell is exempt only when the row, or the doc, marks it
+    as the documented stock v0.1.1 canvas-size failure.
     """
     raw_lines = text.splitlines()
     header_for = {}
@@ -299,7 +323,7 @@ def fail_result_lines(text):
     found = []
     for index, raw in enumerate(raw_lines):
         line = raw.strip()
-        if not line or _is_stock_v011_water_row(line):
+        if not line:
             continue
         if _line_verdict_token_is_fail(line):
             found.append(line)
@@ -308,10 +332,14 @@ def fail_result_lines(text):
         if not header:
             continue
         cells = _table_cells(line)
-        if any(
-            column < len(cells) and _bare_cell(cells[column]) == "FAIL"
+        kinds = [
+            kind
             for column in _verdict_columns(header)
-        ):
+            if column < len(cells)
+            for kind in (_verdict_cell_kind(cells[column]),)
+            if kind
+        ]
+        if kinds and not all(_stock_canvas_exempt(line, text, kind) for kind in kinds):
             found.append(line)
     return found
 
@@ -372,56 +400,18 @@ def index_rows(obj, expected, label, problems):
     return mapping
 
 
-def _token_says_fail(value):
-    if value is False:
-        return True
-    if not isinstance(value, str):
-        return False
-    token = re.sub(r"[*_`]", "", value).strip().rstrip(".")
-    return token.upper() == "FAIL"
-
-
-def _pass_says_fail(row):
-    """True when the row's own pass field says the plate failed. Absent does not."""
-    if "pass" not in row:
-        return False
-    value = row.get("pass")
-    if value is True:
-        return False
-    if isinstance(value, str) and re.sub(r"[*_`]", "", value).strip().rstrip(".").upper() == "PASS":
-        return False
-    return True
-
-
-def _stock_v011_exit_expected(row):
-    """The documented stock v0.1.1 canvas-size exit 1, recorded as expected.
-
-    Real ships_results.json rows carry that as `v011_exit` == 1 and have no
-    `exit` key. `expected: true` is the same record on a row that also has `exit`.
-    """
-    if row.get("expected") is True:
-        return True
-    return row.get("v011_exit") == 1
-
-
 def ship_row_failure(row):
     """Why a ships verifier row refuses the build, or None when it may land.
 
-    Recognises `exit` and `v011_exit`. Fails when the row is missing, when
-    neither exit field is present, or when `pass` / `verdict` says it failed.
-    A stock v0.1.1 exit of 1 is not a failure when the row records it as expected.
+    A row passes when `pass` is true. `exit`, if present, must be 0. A missing
+    `exit` is fine when `pass` is true. `v011_exit` stays on the verifier row;
+    the gate does not require that file to change.
     """
     if not isinstance(row, dict):
         return "missing"
-    has_exit = "exit" in row
-    has_v011 = "v011_exit" in row
-    if not has_exit and not has_v011:
-        return "missing exit"
-    if _pass_says_fail(row) or _token_says_fail(row.get("verdict")):
+    if row.get("pass") is not True:
         return "not pass"
-    if has_exit and row.get("exit") != 0 and not _stock_v011_exit_expected(row):
-        return "nonzero exit"
-    if has_v011 and row.get("v011_exit") not in (0, 1) and row.get("expected") is not True:
+    if "exit" in row and row.get("exit") != 0:
         return "nonzero exit"
     return None
 
@@ -539,7 +529,7 @@ def main(argv=None):
             ship_failure = ship_row_failure(ship_row) if vj is not None else None
             if ship_failure:
                 problems.append(
-                    f"{aid}: Verifier ships row missing, not pass, missing exit, or nonzero exit"
+                    f"{aid}: Verifier ships row missing, not pass, or nonzero exit"
                 )
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)

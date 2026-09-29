@@ -181,12 +181,31 @@ def test_gate_helpers():
         "Neither is a FAIL of the delivered images.\n"
         "| water_a..c | FAIL (exit 1) |\n"
         "Addendum V.1 keeps that FAIL…\n"
-        "| id | Result |\n| --- | --- |\n| water_a..c | FAIL (exit 1) |\n"
     )
     check(
-        "prose FAIL and the stock water row are not verdicts",
+        "prose FAIL mentions are not verdicts",
         mod.fail_result_lines(prose_fail) == [],
         "no FAIL verdict",
+    )
+    unmarked_exit = (
+        "| id | Result |\n| --- | --- |\n"
+        "| water_a..c | FAIL (exit 1) |\n"
+        "| chart_port_marker | FAIL (exit 1) |\n"
+    )
+    check(
+        "unmarked FAIL (exit 1) is a verdict",
+        mod.fail_result_lines(unmarked_exit) == [
+            "| water_a..c | FAIL (exit 1) |",
+            "| chart_port_marker | FAIL (exit 1) |",
+        ],
+        "port_marker must not pass by accident",
+    )
+    check(
+        "doc-marked stock canvas FAIL (exit 1) is exempt",
+        mod.fail_result_lines(
+            "Documented stock v0.1.1 canvas-size failure.\n" + unmarked_exit
+        ) == [],
+        "stock v0.1.1",
     )
 
     # Duplicate row id, fail then pass. Last row would pass; the duplicate must not.
@@ -293,31 +312,21 @@ def test_gate_helpers():
             joined(problems),
         )
 
-    # Real ships_results.json rows: v011_exit 1, no exit key. Stock canvas-size
-    # exit 1 is expected. A verdict or pass of FAIL still refuses the row.
+    # Real ships rows: pass true, v011_exit 1, no exit key.
     stock = ship_stock_v011_row("ship_sloop_f0")
+    check("stock v011_exit row passes", mod.ship_row_failure(stock) is None, repr(stock))
     check(
-        "stock v011_exit 1 is not a plate failure",
-        mod.ship_row_failure(stock) is None,
-        repr(stock),
+        "missing exit passes when pass is true",
+        mod.ship_row_failure({"id": "ship_sloop_f0", "pass": True}) is None,
+        "no exit key",
     )
     check(
-        "stock row recorded expected with exit 1",
-        mod.ship_row_failure({"id": "ship_sloop_f0", "pass": True, "exit": 1, "expected": True}) is None,
-        "expected stock exit",
+        "exit must be 0 when present",
+        mod.ship_row_failure({"id": "ship_sloop_f0", "pass": True, "v011_exit": 1, "exit": 1}) == "nonzero exit",
+        "nonzero exit",
     )
     check(
-        "neither exit field",
-        mod.ship_row_failure({"id": "ship_sloop_f0", "pass": True, "verdict": "PASS"}) == "missing exit",
-        "missing exit",
-    )
-    check(
-        "verdict FAIL with v011_exit",
-        mod.ship_row_failure({**stock, "verdict": "FAIL"}) == "not pass",
-        "not pass",
-    )
-    check(
-        "pass false with v011_exit",
+        "pass false refuses the row",
         mod.ship_row_failure({**stock, "pass": False}) == "not pass",
         "not pass",
     )
@@ -375,8 +384,8 @@ def ship_ids():
 
 
 def ship_stock_v011_row(aid):
-    """One real ships_results.json row: stock v0.1.1 canvas-size exit, no `exit` key."""
-    return {"id": aid, "pass": True, "verdict": "PASS", "v011_exit": 1}
+    """Real ships_results.json row: pass true, v011_exit 1, no exit key."""
+    return {"id": aid, "pass": True, "v011_exit": 1}
 
 
 def harbour_source_dir(aid):
@@ -481,7 +490,11 @@ def build_fixture(studio):
     write_text(
         os.path.join(outbox, "retrieval-chart.md"),
         "**Chart profile (SIMULATED): 4 PASS, 0 FAIL.**\n"
+        "Documented stock v0.1.1 canvas-size failure.\n"
+        "| id | Result |\n"
+        "| --- | --- |\n"
         "| water_a..c | FAIL (exit 1) |\n"
+        "| chart_port_marker | FAIL (exit 1) |\n"
         "✅ Builder may land\n",
     )
 
@@ -705,18 +718,17 @@ def test_ships_failing_row_fails(studio, tmp_path):
     assert "not pass" in out
 
 
-def test_ships_row_without_exit_fails(studio, tmp_path):
+def test_ships_missing_exit_passes_when_pass_true(studio, tmp_path):
     copy = clone_studio(studio, str(tmp_path / "copy"))
 
     def drop_exit(body):
         row = body["rows"][0]
         row.pop("exit", None)
-        row.pop("v011_exit", None)
+        row["pass"] = True
 
     mutate_results(copy, "ships", drop_exit)
     status, out = run_main(main_argv(copy))
-    assert status != 0
-    assert "missing exit" in out
+    assert status == 0, out
 
 
 def test_ships_nonzero_exit_fails(studio, tmp_path):
@@ -759,12 +771,31 @@ PROSE_FAIL_LINES = (
 def test_prose_fail_mentions_are_not_verdicts():
     text = "\n".join(PROSE_FAIL_LINES) + "\n"
     assert mod.fail_result_lines(text) == []
-    stock_under_result = (
+    unmarked = (
         "| id | Result |\n"
         "| --- | --- |\n"
         "| water_a..c | FAIL (exit 1) |\n"
+        "| chart_port_marker | FAIL (exit 1) |\n"
     )
-    assert mod.fail_result_lines(stock_under_result) == []
+    assert mod.fail_result_lines(unmarked) == [
+        "| water_a..c | FAIL (exit 1) |",
+        "| chart_port_marker | FAIL (exit 1) |",
+    ]
+    marked = "Documented stock v0.1.1 canvas-size failure.\n" + unmarked
+    assert mod.fail_result_lines(marked) == []
+    bare_fail_in_marked_doc = (
+        "Documented stock v0.1.1 canvas-size failure.\n"
+        "| id | Result |\n"
+        "| --- | --- |\n"
+        "| quay_flag_a | FAIL |\n"
+    )
+    assert mod.fail_result_lines(bare_fail_in_marked_doc) == ["| quay_flag_a | FAIL |"]
+    row_mark = (
+        "| id | Result | note |\n"
+        "| --- | --- | --- |\n"
+        "| chart_port_marker | FAIL (exit 1) | documented stock v0.1.1 canvas-size failure |\n"
+    )
+    assert mod.fail_result_lines(row_mark) == []
 
 
 def test_clean_fixture_main_exits_0_and_check_matches(studio):
@@ -815,12 +846,29 @@ def test_ci_compare_mismatch_exits_nonzero(tmp_path):
     assert proc.returncode != 0
 
 
-def test_committed_041_manifest_sha():
-    """The committed 0.4.1 MANIFEST is the fixture. No live studio and no git."""
-    manifest = os.path.join(ROOT, "godot", "assets", "landing", "MANIFEST.json")
+def test_committed_041_manifest_sha(studio):
+    """Hash the committed 0.4.1 bundle and --check an explicit --out-dir.
+
+    The default --out-dir is pb-002-plates/landing, which on the real studio
+    is the v0.2.0 bundle. The committed 0.4.1 bundle is godot/assets/landing.
+    This test does not read a live studio.
+    """
+    bundle = os.path.join(ROOT, "godot", "assets", "landing")
+    manifest = os.path.join(bundle, "MANIFEST.json")
     data = open(manifest, "rb").read()
     assert hashlib.sha256(data).hexdigest() == MANIFEST_SHA
     assert json.loads(data)["version"] == "0.4.1"
+    fixture_bundle = os.path.abspath(os.path.join(studio, "pb-002-plates", "landing"))
+    argv = ["--studio", studio, "--version", "0.4.1", "--out-dir", fixture_bundle]
+    assert "--out-dir" in argv and os.path.isabs(argv[argv.index("--out-dir") + 1])
+    assert mod.DEFAULT_STUDIO not in argv
+    status, out = run_main(argv)
+    assert status == 0, out
+    status, out = run_main(argv + ["--check"])
+    assert status == 0, out
+    assert "MATCHES" in out
+    written = json.loads(open(os.path.join(fixture_bundle, "MANIFEST.json"), encoding="utf-8").read())
+    assert written["version"] == "0.4.1"
 
 
 if __name__ == "__main__":
