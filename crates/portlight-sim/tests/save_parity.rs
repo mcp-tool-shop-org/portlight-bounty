@@ -600,3 +600,53 @@ fn python_v12_area6_round_trips() {
     assert_eq!(again.world().nemesis_id.as_deref(), Some("the_butcher"));
     let _ = fs::remove_dir_all(&dir);
 }
+
+/// Python `GameSession.new` wrote this slot for Sable Quinn (custom, seed 1).
+///
+/// A reloaded custom captain reverts to merchant pricing in both games. The
+/// v12 file does not store the built template. Python's
+/// `GameSession.captain_template` hits `KeyError` on `CaptainType.CUSTOM` and
+/// returns the merchant archetype. Rust `captain_template` does the same when
+/// `world.custom_captain` is absent. Porto Novo porcelain is 176/151 in the
+/// file (new-game prices, no captain modifier). Seven trade points would sell
+/// it at 194. After load both games reprice with the merchant modifiers:
+/// buy 162, sell 159.
+#[test]
+fn python_custom_captain_v12_loads_name_type_silver_and_day() {
+    let root = parity_root();
+    let file: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("saves/custom_captain_v12.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(file["version"], 12);
+    let on_disk = file["ports"]["porto_novo"]["market"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|slot| slot["good_id"] == "porcelain")
+        .unwrap();
+    assert_eq!(on_disk["buy_price"], 176);
+    assert_eq!(on_disk["sell_price"], 151);
+
+    let loaded = Session::load(&root, "custom_captain_v12").unwrap().unwrap();
+    let captain = &loaded.world().captain;
+    assert_eq!(captain.name, "Sable Quinn");
+    assert_eq!(captain.captain_type, "custom");
+    assert_eq!(captain.silver, 500);
+    assert_eq!(loaded.world().day, 1);
+    assert_eq!(captain.day, 1);
+    assert!(loaded.world().custom_captain.is_none());
+    let port = loaded
+        .world()
+        .ports
+        .iter()
+        .find(|port| port.id == "porto_novo")
+        .unwrap();
+    let porcelain = port
+        .market
+        .iter()
+        .find(|slot| slot.good_id == "porcelain")
+        .unwrap();
+    assert_eq!(porcelain.buy_price, 162);
+    assert_eq!(porcelain.sell_price, 159);
+}

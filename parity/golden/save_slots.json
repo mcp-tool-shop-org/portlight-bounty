@@ -1,0 +1,271 @@
+{
+  "rust": [
+    {
+      "slot": "alpha",
+      "captain": "Ada",
+      "day": 4
+    },
+    {
+      "slot": "beta",
+      "captain": "Bea",
+      "day": 2
+    },
+    {
+      "slot": "blank_day",
+      "captain": "Eve",
+      "day": 5
+    },
+    {
+      "slot": "default",
+      "captain": "Held",
+      "day": 1
+    },
+    {
+      "slot": "empty_list_day",
+      "captain": "Lis",
+      "day": 7
+    },
+    {
+      "slot": "empty_object_day",
+      "captain": "Ora",
+      "day": 11
+    },
+    {
+      "slot": "false_day",
+      "captain": "Fay",
+      "day": 6
+    },
+    {
+      "slot": "float_day",
+      "captain": "Flo",
+      "day": 4
+    },
+    {
+      "slot": "list_name",
+      "captain": "",
+      "day": 1
+    },
+    {
+      "slot": "negative",
+      "captain": "Ned",
+      "day": -3
+    },
+    {
+      "slot": "null_day",
+      "captain": "Nia",
+      "day": 3
+    },
+    {
+      "slot": "number_name",
+      "captain": "",
+      "day": 1
+    },
+    {
+      "slot": "string_day",
+      "captain": "Sid",
+      "day": 12
+    },
+    {
+      "slot": "string_zero",
+      "captain": "Zed",
+      "day": 0
+    },
+    {
+      "slot": "true_day",
+      "captain": "Bol",
+      "day": 1
+    },
+    {
+      "slot": "true_name",
+      "captain": "",
+      "day": 1
+    },
+    {
+      "slot": "zero_top",
+      "captain": "Legacy",
+      "day": 8
+    }
+  ],
+  "python": [
+    {
+      "slot": "alpha",
+      "captain": "Ada",
+      "day": 4
+    },
+    {
+      "slot": "beta",
+      "captain": "Bea",
+      "day": 2
+    },
+    {
+      "slot": "blank_day",
+      "captain": "Eve",
+      "day": 5
+    },
+    {
+      "slot": "default",
+      "captain": "Held",
+      "day": 1
+    },
+    {
+      "slot": "empty_list_day",
+      "captain": "Lis",
+      "day": 7
+    },
+    {
+      "slot": "empty_object_day",
+      "captain": "Ora",
+      "day": 11
+    },
+    {
+      "slot": "false_day",
+      "captain": "Fay",
+      "day": 6
+    },
+    {
+      "slot": "float_day",
+      "captain": "Flo",
+      "day": 4
+    },
+    {
+      "slot": "list_name",
+      "captain": "['Ada']",
+      "day": 1
+    },
+    {
+      "slot": "negative",
+      "captain": "Ned",
+      "day": -3
+    },
+    {
+      "slot": "null_day",
+      "captain": "Nia",
+      "day": 3
+    },
+    {
+      "slot": "number_name",
+      "captain": "7",
+      "day": 1
+    },
+    {
+      "slot": "padded_day",
+      "captain": "Pad",
+      "day": 4
+    },
+    {
+      "slot": "string_day",
+      "captain": "Sid",
+      "day": 12
+    },
+    {
+      "slot": "string_zero",
+      "captain": "Zed",
+      "day": 0
+    },
+    {
+      "slot": "true_day",
+      "captain": "Bol",
+      "day": 1
+    },
+    {
+      "slot": "true_name",
+      "captain": "True",
+      "day": 1
+    },
+    {
+      "slot": "underscore_day",
+      "captain": "Una",
+      "day": 10
+    },
+    {
+      "slot": "zero_top",
+      "captain": "Legacy",
+      "day": 8
+    }
+  ],
+  "differences": [
+    {
+      "file": "number_name.json",
+      "python": {
+        "slot": "number_name",
+        "captain": "7",
+        "day": 1
+      },
+      "rust": {
+        "slot": "number_name",
+        "captain": "",
+        "day": 1
+      },
+      "note": "Python str() of a JSON number is \"7\". Rust peek_name keeps only a non-empty string, so the captain is empty. Both still list the slot on day 1."
+    },
+    {
+      "file": "true_name.json",
+      "python": {
+        "slot": "true_name",
+        "captain": "True",
+        "day": 1
+      },
+      "rust": {
+        "slot": "true_name",
+        "captain": "",
+        "day": 1
+      },
+      "note": "Python str(True) is \"True\". Rust drops the boolean and lists an empty captain name. false and 0 agree (both empty) and are not in this set."
+    },
+    {
+      "file": "list_name.json",
+      "python": {
+        "slot": "list_name",
+        "captain": "['Ada']",
+        "day": 1
+      },
+      "rust": {
+        "slot": "list_name",
+        "captain": "",
+        "day": 1
+      },
+      "note": "Python str(['Ada']) is \"['Ada']\". Rust does not stringify the array, so the captain is empty. Both list the slot on day 1."
+    },
+    {
+      "file": "padded_day.json",
+      "python": {
+        "slot": "padded_day",
+        "captain": "Pad",
+        "day": 4
+      },
+      "rust": "skip",
+      "note": "Python int(\" 4\") is 4, so the slot is Pad on day 4. Rust i64 parsing rejects the leading space, peek_int returns None, and the file is skipped."
+    },
+    {
+      "file": "underscore_day.json",
+      "python": {
+        "slot": "underscore_day",
+        "captain": "Una",
+        "day": 10
+      },
+      "rust": "skip",
+      "note": "Python int(\"1_0\") is 10. Rust's integer parser rejects the underscore, so the file is skipped."
+    },
+    {
+      "file": "captain_bad_day.json",
+      "python": "crash",
+      "exception": "ValueError",
+      "rust": "skip",
+      "note": "captain.day is \"nope\" and the top-level day is 4. Python calls int() on the captain day before the top-level day, outside the JSON try, so ValueError aborts the entire listing. Rust skips this file and still returns the other slots."
+    },
+    {
+      "file": "list_day.json",
+      "python": "crash",
+      "exception": "TypeError",
+      "rust": "skip",
+      "note": "The top-level day is [4]. Python int([4]) raises TypeError and aborts the listing. Rust skips the file."
+    },
+    {
+      "file": "object_day.json",
+      "python": "crash",
+      "exception": "TypeError",
+      "rust": "skip",
+      "note": "The top-level day is {\"n\": 4}. Python int() raises TypeError and aborts the listing. Rust skips the file."
+    }
+  ]
+}

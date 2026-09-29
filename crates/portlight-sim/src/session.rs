@@ -276,6 +276,25 @@ impl Session {
         Ok(Some(Self::from_loaded(loaded)?))
     }
 
+    /// Save slots under `base_path/saves`, peeked the way `list_save_slots` does.
+    ///
+    /// Missing directories are an empty list. The files are not migrated and
+    /// the version stays whatever is on disk.
+    pub fn list_saves(base_path: impl AsRef<Path>) -> Vec<save::SaveSlotSummary> {
+        save::list_save_slots(base_path.as_ref())
+    }
+
+    /// Catalog captains in Python roster order. Custom creation is
+    /// [`Session::new_custom`], not a row in this list.
+    pub fn starting_captains() -> Vec<custom_captain::StartingCaptain> {
+        custom_captain::starting_captains()
+    }
+
+    /// Regions, ports, blocs, factions, and mentors a custom spec may name.
+    pub fn custom_captain_options() -> custom_captain::CustomCaptainOptions {
+        custom_captain::custom_captain_options()
+    }
+
     fn from_loaded(loaded: LoadedGame) -> Result<Self, SimError> {
         let rng_seed = loaded
             .world
@@ -4252,5 +4271,31 @@ mod tests {
             .encounters
             .iter()
             .all(|record| !record.outcome.starts_with("duel")));
+    }
+
+    #[test]
+    fn list_saves_reads_a_v12_slot_without_rewriting_it() {
+        let dir = std::env::temp_dir().join(format!("portlight-list-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let day = session.world.day;
+        let silver = session.world.captain.silver;
+        session.save(&dir, "voyage").unwrap();
+        let path = dir.join("saves").join("voyage.json");
+        let before = std::fs::read(&path).unwrap();
+        assert!(std::str::from_utf8(&before)
+            .unwrap()
+            .contains("\"version\": 12"));
+        let slots = Session::list_saves(&dir);
+        assert_eq!(slots.len(), 1);
+        assert_eq!(slots[0].slot, "voyage");
+        assert_eq!(slots[0].captain, "Ada");
+        assert_eq!(slots[0].day, day);
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        let loaded = Session::load(&dir, "voyage").unwrap().unwrap();
+        assert_eq!(loaded.world.captain.name, "Ada");
+        assert_eq!(loaded.world.captain.silver, silver);
+        assert_eq!(loaded.world.day, day);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

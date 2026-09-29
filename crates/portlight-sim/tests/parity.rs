@@ -145,6 +145,10 @@ fn goldens_guard_the_checklist_paths() {
             saw_victory = true;
             continue;
         }
+        // Catalog and save-slot fixtures, not script snapshots.
+        if entry.file_name() == "roster_options.json" || entry.file_name() == "save_slots.json" {
+            continue;
+        }
         let value: Value =
             serde_json::from_str(&fs::read_to_string(entry.path()).expect("golden")).expect("json");
         if entry.file_name() == "hull_day20.json" {

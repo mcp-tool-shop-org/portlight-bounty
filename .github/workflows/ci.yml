@@ -45,6 +45,12 @@ jobs:
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
       - name: Victory fixtures
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check
+      - name: Roster and custom-captain options
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/roster_options.py --check
+      - name: Save-slot listing
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/save_slots.py --check
+      - name: Custom-captain save
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/custom_captain_save.py --check
 
   godot:
     runs-on: ubuntu-latest
