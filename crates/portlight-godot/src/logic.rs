@@ -176,6 +176,18 @@ pub(crate) struct PlayerShip {
     pub crew: i64,
 }
 
+/// Hull and crew a newly fitted template has. `Ship::from_template` is what
+/// `Session::buy_ship` stores: hull starts at `hull_max`, crew at `crew_min`.
+pub(crate) fn template_player_ship(template_id: &str) -> Option<PlayerShip> {
+    let template = portlight_sim::content::content().ship(template_id)?;
+    let ship = portlight_sim::model::Ship::from_template(template);
+    Some(PlayerShip {
+        hull: ship.hull,
+        hull_max: ship.hull_max,
+        crew: ship.crew,
+    })
+}
+
 pub(crate) fn player_ship(session: &Session) -> Option<PlayerShip> {
     session
         .world()
@@ -655,10 +667,10 @@ mod tests {
 
     use super::{
         action_list_from_error, at_sea, encounter_plate, facts_for_catalog_captain,
-        facts_from_step, player_ship, present, stance_duel_visible, ui_plate_panel, EncounterFacts,
-        ScreenAction, ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER, SCRIPTED_CAPTAIN,
-        SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
-        SCRIPTED_SEED,
+        facts_from_step, player_ship, present, stance_duel_visible, template_player_ship,
+        ui_plate_panel, EncounterFacts, ScreenAction, ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER,
+        SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
+        SCRIPTED_NAVAL, SCRIPTED_SEED,
     };
 
     fn scripted_session() -> Session {
@@ -736,6 +748,18 @@ mod tests {
         let again = encounter_plate("royal_man_of_war");
         assert_eq!(again.class_name, "man_of_war");
         assert_eq!(again.hull.id, drawn.hull.id);
+    }
+
+    #[test]
+    fn a_forced_man_of_war_card_uses_the_template_hull_and_crew() {
+        let template = portlight_sim::content::content()
+            .ship("royal_man_of_war")
+            .expect("catalog");
+        let ship = template_player_ship("royal_man_of_war").expect("template");
+        assert_eq!(ship.hull, template.hull_max);
+        assert_eq!(ship.hull_max, template.hull_max);
+        assert_eq!(ship.crew, template.crew_min);
+        assert!(template_player_ship("not_a_ship").is_none());
     }
 
     #[test]

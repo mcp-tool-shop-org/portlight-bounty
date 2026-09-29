@@ -50,9 +50,10 @@ use crate::logic::{
     action_caption, action_list_from_error, at_sea, capture_frame_rejected, chart_host_width,
     duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
     facts_from_step, frame_mostly_flat, frame_samples, layout_fits_window, player_ship, present,
-    session_text, stance_duel_visible, EncounterFacts, ScreenAction, ScreenPhase, StepInput,
-    PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
-    SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    session_text, stance_duel_visible, template_player_ship, EncounterFacts, ScreenAction,
+    ScreenPhase, StepInput, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+    SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H,
+    WINDOW_W,
 };
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -178,10 +179,9 @@ struct PortlightGame {
     capture_crew: i64,
     encounter_shot_dir: Option<String>,
     encounter_shot: Option<ShotPhase>,
-    /// Capture path only. Draws `royal_man_of_war` in the player plate slot.
+    /// Capture path only. Draws `royal_man_of_war` in the player plate slot
+    /// and shows that template's hull and crew on the card.
     galleon_frame: bool,
-    /// Capture path only. Draws the opponent's prize template for the open captain.
-    opponent_plate: bool,
 }
 
 #[godot_api]
@@ -220,7 +220,6 @@ impl IControl for PortlightGame {
             encounter_shot_dir: None,
             encounter_shot: None,
             galleon_frame: false,
-            opponent_plate: false,
         }
     }
 
@@ -238,7 +237,8 @@ impl IControl for PortlightGame {
         if user_arg("--encounter-screen") {
             self.smoke = true;
             // Headless smoke must not read the viewport. A display capture
-            // defaults to /tmp, same as [`art_shot_path`].
+            // defaults to /tmp. Docs is only an explicit PORTLIGHT_SHOT or
+            // PORTLIGHT_ENCOUNTER_DIR.
             if headless_runtime() && !encounter_dir_set() {
                 self.run_encounter_screen();
                 self.capture_frames = 2;
@@ -249,22 +249,13 @@ impl IControl for PortlightGame {
             }
         } else if user_arg("--encounter-galleon") {
             self.smoke = true;
-            self.opponent_plate = true;
-            if self.shot_path.is_none() {
-                self.shot_path = Some(art_shot_path("encounter-galleon.png"));
-            }
-            self.prepare_scripted_voyage();
-            self.open_named_approach(GALLEON_OPPONENT);
-            self.refresh();
-            self.capture_frames = 4;
-        } else if user_arg("--encounter-player") {
-            self.smoke = true;
             self.galleon_frame = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some(art_shot_path("encounter-player.png"));
+                self.shot_path = Some(tmp_shot_path("encounter-galleon.png"));
             }
             self.prepare_scripted_voyage();
             self.open_scripted_approach();
+            self.apply_template_ship_card("royal_man_of_war");
             self.refresh();
             self.capture_frames = 4;
         } else if user_arg("--encounter") {
@@ -313,11 +304,10 @@ impl IControl for PortlightGame {
             self.assert_panel_labels();
         }
         if let Some(path) = self.shot_path.clone() {
-            // `--encounter-galleon` and `--encounter-player` are still on the
-            // encounter screen. The multi-frame shot saves its own files
-            // before this, then the encounter has closed, so a trailing
-            // PORTLIGHT_SHOT is a chart.
-            if !self.save_shot(&path, self.galleon_frame || self.opponent_plate) {
+            // `--encounter-galleon` is still on the encounter screen. The
+            // multi-frame shot saves its own files before this, then the
+            // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
+            if !self.save_shot(&path, self.galleon_frame) {
                 self.smoke_ok = false;
             }
         }
@@ -1579,6 +1569,23 @@ impl PortlightGame {
         }
     }
 
+    /// Capture only. The plate is forced to `template_id`, so the card uses
+    /// that template's new-ship hull and crew (`Ship::from_template`) instead
+    /// of the scripted cutter.
+    fn apply_template_ship_card(&mut self, template_id: &str) {
+        let Some(ship) = template_player_ship(template_id) else {
+            self.smoke_ok = false;
+            self.push_log(format!("Encounter: unknown ship {template_id}."));
+            return;
+        };
+        let Some(facts) = self.encounter.as_mut() else {
+            return;
+        };
+        facts.player_hull = ship.hull;
+        facts.player_hull_max = Some(ship.hull_max);
+        facts.player_crew = ship.crew;
+    }
+
     fn choose_encounter(&mut self, choice: &str) {
         let locked = self.scripted_captain.clone();
         let on_session = self
@@ -1782,13 +1789,6 @@ impl PortlightGame {
         let crew_count = self.capture_crew;
         let template_id = if self.galleon_frame {
             "royal_man_of_war".to_string()
-        } else if self.opponent_plate {
-            let strength = self
-                .encounter
-                .as_ref()
-                .map(|facts| facts.strength)
-                .unwrap_or(0);
-            portlight_sim::naval::prize_template_id(strength).to_string()
         } else {
             self.session
                 .as_ref()
@@ -2265,23 +2265,25 @@ fn victory_line(session: &Session) -> String {
     format!("Victory paths: {}", names.join(", "))
 }
 
-/// Strength 9. `prize_template_id` maps that to `merchant_galleon` (class
-/// `galleon`). Capture only; the sim does not store an opponent template.
-const GALLEON_OPPONENT: &str = "gnaw";
-
 fn docs_capture() -> bool {
     flag_set("PORTLIGHT_ART_DOCS") || user_arg("--art-docs")
 }
 
-/// `/tmp/<file>` unless `--art-docs` or `PORTLIGHT_ART_DOCS` is set, which
-/// writes `docs/screenshots/<file>`. `PORTLIGHT_SHOT` is applied first and
-/// wins. Godot changes into the project directory, so a relative docs path
-/// is taken from the repo root.
+/// `/tmp/<file>`. Encounter captures use this. A docs path is only an
+/// explicit `PORTLIGHT_SHOT`, which is applied before the default.
+fn tmp_shot_path(file: &str) -> String {
+    format!("/tmp/{file}")
+}
+
+/// `--art` writes `/tmp/<file>`. `PORTLIGHT_ART_DOCS` or `--art-docs` writes
+/// `docs/screenshots/<file>`. `PORTLIGHT_SHOT` is applied first and wins.
+/// Godot changes into the project directory, so a relative docs path is
+/// taken from the repo root.
 fn art_shot_path(file: &str) -> String {
     if docs_capture() {
         resolve_repo_path(&format!("docs/screenshots/{file}"))
     } else {
-        format!("/tmp/{file}")
+        tmp_shot_path(file)
     }
 }
 
@@ -2291,9 +2293,9 @@ fn encounter_dir_set() -> bool {
         .is_some_and(|path| !path.is_empty())
 }
 
-/// Directory for the five encounter frames. `PORTLIGHT_ENCOUNTER_DIR` wins.
-/// Otherwise the same default as [`art_shot_path`]: `/tmp`, or
-/// `docs/screenshots` when a docs capture was asked for.
+/// Directory for the five encounter frames. Default `/tmp`.
+/// `PORTLIGHT_ENCOUNTER_DIR` is the only other path, the directory form of
+/// an explicit shot path. `--art-docs` does not write these files.
 fn encounter_shot_dir() -> String {
     if let Some(dir) = std::env::var("PORTLIGHT_ENCOUNTER_DIR")
         .ok()
@@ -2301,11 +2303,7 @@ fn encounter_shot_dir() -> String {
     {
         return resolve_repo_path(&dir);
     }
-    if docs_capture() {
-        resolve_repo_path("docs/screenshots")
-    } else {
-        "/tmp".to_string()
-    }
+    "/tmp".to_string()
 }
 
 fn headless_runtime() -> bool {
