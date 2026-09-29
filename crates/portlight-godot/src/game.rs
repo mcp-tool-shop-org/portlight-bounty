@@ -178,9 +178,10 @@ struct PortlightGame {
     capture_crew: i64,
     encounter_shot_dir: Option<String>,
     encounter_shot: Option<ShotPhase>,
-    /// Capture path only. Draws `royal_man_of_war` so the frame shows the
-    /// galleon canvas with the class name `man_of_war`.
+    /// Capture path only. Draws `royal_man_of_war` in the player plate slot.
     galleon_frame: bool,
+    /// Capture path only. Draws the opponent's prize template for the open captain.
+    opponent_plate: bool,
 }
 
 #[godot_api]
@@ -219,6 +220,7 @@ impl IControl for PortlightGame {
             encounter_shot_dir: None,
             encounter_shot: None,
             galleon_frame: false,
+            opponent_plate: false,
         }
     }
 
@@ -235,22 +237,31 @@ impl IControl for PortlightGame {
         self.start_game();
         if user_arg("--encounter-screen") {
             self.smoke = true;
-            self.encounter_shot_dir = std::env::var("PORTLIGHT_ENCOUNTER_DIR")
-                .ok()
-                .filter(|path| !path.is_empty());
-            if self.encounter_shot_dir.is_some() {
-                self.begin_encounter_shots();
-                self.capture_frames = 4;
-            } else {
+            // Headless smoke must not read the viewport. A display capture
+            // defaults to /tmp, same as [`art_shot_path`].
+            if headless_runtime() && !encounter_dir_set() {
                 self.run_encounter_screen();
                 self.capture_frames = 2;
+            } else {
+                self.encounter_shot_dir = Some(encounter_shot_dir());
+                self.begin_encounter_shots();
+                self.capture_frames = 4;
             }
         } else if user_arg("--encounter-galleon") {
             self.smoke = true;
-            self.galleon_frame = true;
-            // Docs is only written when PORTLIGHT_SHOT names that path.
+            self.opponent_plate = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some("/tmp/encounter-galleon.png".to_string());
+                self.shot_path = Some(art_shot_path("encounter-galleon.png"));
+            }
+            self.prepare_scripted_voyage();
+            self.open_named_approach(GALLEON_OPPONENT);
+            self.refresh();
+            self.capture_frames = 4;
+        } else if user_arg("--encounter-player") {
+            self.smoke = true;
+            self.galleon_frame = true;
+            if self.shot_path.is_none() {
+                self.shot_path = Some(art_shot_path("encounter-player.png"));
             }
             self.prepare_scripted_voyage();
             self.open_scripted_approach();
@@ -275,7 +286,7 @@ impl IControl for PortlightGame {
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some(art_shot_path());
+                self.shot_path = Some(art_shot_path("chart-cutter-f7.png"));
             }
             self.run_art();
             self.capture_frames = 4;
@@ -302,10 +313,11 @@ impl IControl for PortlightGame {
             self.assert_panel_labels();
         }
         if let Some(path) = self.shot_path.clone() {
-            // `--encounter-galleon` is still on the encounter screen. The
-            // multi-frame shot saves its own files before this, then the
-            // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
-            if !self.save_shot(&path, self.galleon_frame) {
+            // `--encounter-galleon` and `--encounter-player` are still on the
+            // encounter screen. The multi-frame shot saves its own files
+            // before this, then the encounter has closed, so a trailing
+            // PORTLIGHT_SHOT is a chart.
+            if !self.save_shot(&path, self.galleon_frame || self.opponent_plate) {
                 self.smoke_ok = false;
             }
         }
@@ -1546,19 +1558,23 @@ impl PortlightGame {
     }
 
     fn open_scripted_approach(&mut self) {
+        self.open_named_approach(SCRIPTED_CAPTAIN);
+    }
+
+    fn open_named_approach(&mut self, captain_id: &str) {
         let (ship, sailing) = self
             .session
             .as_ref()
             .map(|session| (player_ship(session), at_sea(session)))
             .unwrap_or((None, true));
-        match facts_for_catalog_captain(SCRIPTED_CAPTAIN, ship, sailing) {
+        match facts_for_catalog_captain(captain_id, ship, sailing) {
             Some(facts) => {
-                self.scripted_captain = Some(SCRIPTED_CAPTAIN.to_string());
+                self.scripted_captain = Some(captain_id.to_string());
                 self.encounter = Some(facts);
             }
             None => {
                 self.smoke_ok = false;
-                self.push_log(format!("Encounter: unknown captain {SCRIPTED_CAPTAIN}."));
+                self.push_log(format!("Encounter: unknown captain {captain_id}."));
             }
         }
     }
@@ -1766,6 +1782,13 @@ impl PortlightGame {
         let crew_count = self.capture_crew;
         let template_id = if self.galleon_frame {
             "royal_man_of_war".to_string()
+        } else if self.opponent_plate {
+            let strength = self
+                .encounter
+                .as_ref()
+                .map(|facts| facts.strength)
+                .unwrap_or(0);
+            portlight_sim::naval::prize_template_id(strength).to_string()
         } else {
             self.session
                 .as_ref()
@@ -2242,14 +2265,51 @@ fn victory_line(session: &Session) -> String {
     format!("Victory paths: {}", names.join(", "))
 }
 
-/// `--art` writes `/tmp/chart-cutter-f7.png`. `PORTLIGHT_ART_DOCS` or
-/// `--art-docs` writes `docs/screenshots/chart-cutter-f7.png`. Godot changes
-/// into the project directory, so a relative path is taken from the repo root.
-fn art_shot_path() -> String {
-    if !(flag_set("PORTLIGHT_ART_DOCS") || user_arg("--art-docs")) {
-        return "/tmp/chart-cutter-f7.png".to_string();
+/// Strength 9. `prize_template_id` maps that to `merchant_galleon` (class
+/// `galleon`). Capture only; the sim does not store an opponent template.
+const GALLEON_OPPONENT: &str = "gnaw";
+
+fn docs_capture() -> bool {
+    flag_set("PORTLIGHT_ART_DOCS") || user_arg("--art-docs")
+}
+
+/// `/tmp/<file>` unless `--art-docs` or `PORTLIGHT_ART_DOCS` is set, which
+/// writes `docs/screenshots/<file>`. `PORTLIGHT_SHOT` is applied first and
+/// wins. Godot changes into the project directory, so a relative docs path
+/// is taken from the repo root.
+fn art_shot_path(file: &str) -> String {
+    if docs_capture() {
+        resolve_repo_path(&format!("docs/screenshots/{file}"))
+    } else {
+        format!("/tmp/{file}")
     }
-    resolve_repo_path("docs/screenshots/chart-cutter-f7.png")
+}
+
+fn encounter_dir_set() -> bool {
+    std::env::var("PORTLIGHT_ENCOUNTER_DIR")
+        .ok()
+        .is_some_and(|path| !path.is_empty())
+}
+
+/// Directory for the five encounter frames. `PORTLIGHT_ENCOUNTER_DIR` wins.
+/// Otherwise the same default as [`art_shot_path`]: `/tmp`, or
+/// `docs/screenshots` when a docs capture was asked for.
+fn encounter_shot_dir() -> String {
+    if let Some(dir) = std::env::var("PORTLIGHT_ENCOUNTER_DIR")
+        .ok()
+        .filter(|path| !path.is_empty())
+    {
+        return resolve_repo_path(&dir);
+    }
+    if docs_capture() {
+        resolve_repo_path("docs/screenshots")
+    } else {
+        "/tmp".to_string()
+    }
+}
+
+fn headless_runtime() -> bool {
+    Os::singleton().has_feature("headless")
 }
 
 /// Absolute paths stay as given. A relative `PORTLIGHT_SHOT` is from the repo

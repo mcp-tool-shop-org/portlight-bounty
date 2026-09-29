@@ -62,7 +62,9 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
   godot --display-driver x11 --rendering-driver opengl3 --path godot -- --smoke
 ```
 
-The art-director frame (docked sloop at Porto Novo, Swift Cutter under sail at f7, `ship_cutter_wake`) writes `/tmp/chart-cutter-f7.png`. The deliberate re-capture is `PORTLIGHT_SHOT=docs/screenshots/chart-cutter-f7.png`. `--encounter-galleon` writes `/tmp/encounter-galleon.png`. A docs path is used only when `PORTLIGHT_SHOT` names it, for example `PORTLIGHT_SHOT=docs/screenshots/encounter-galleon.png`. The encounter frame check follows that capture, not the filename, so `PORTLIGHT_SHOT=/tmp/galleon1.png` is still an encounter frame. The harbour seam plate:
+The art-director frame (docked sloop at Porto Novo, Swift Cutter under sail at f7, `ship_cutter_wake`) and every encounter capture share one path rule. With no `PORTLIGHT_SHOT`, they write `/tmp/<file>`. `--art-docs` or `PORTLIGHT_ART_DOCS` writes `docs/screenshots/<file>` instead. `PORTLIGHT_SHOT` always wins, including `PORTLIGHT_SHOT=docs/screenshots/encounter-galleon.png` for a deliberate docs frame.
+
+`--art` writes `chart-cutter-f7.png`. `--encounter-screen` writes `encounter-approach.png`, `encounter-naval.png`, `encounter-boarding.png`, `encounter-fight.png`, and `encounter-outcome.png` (or under `PORTLIGHT_ENCOUNTER_DIR` when that is set). Headless `--encounter-screen` does not read the viewport. `--encounter-galleon` writes `encounter-galleon.png` with the opponent drawn as the galleon-class prize (`merchant_galleon`, caption `galleon`). `--encounter-player` writes `encounter-player.png` with `royal_man_of_war` in the player plate slot (caption `man_of_war`). The encounter frame check follows that capture mode, not the filename, so `PORTLIGHT_SHOT=/tmp/galleon1.png` is still an encounter frame. The harbour seam plate:
 
 ```
 xvfb-run -a -s "-screen 0 1280x720x24" \
