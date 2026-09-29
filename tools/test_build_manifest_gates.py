@@ -87,7 +87,7 @@ def test_gate_helpers():
     )
     check(
         "happy quay object",
-        not problems and not mod.json_has_key(happy, "_STUB") and set(inv) == set(QUAY),
+        not problems and not mod.json_has_stub_key(happy) and set(inv) == set(QUAY),
         joined(problems) if problems else "no problems",
     )
 
@@ -164,7 +164,7 @@ def test_gate_helpers():
     )
 
     # Real verdicts: a plain FAIL token, a Verdict:/Result: line, or a FAIL cell
-    # under a Verdict or Result header. A bare "| FAIL |" row with no header is not.
+    # in any column of a table row. A header is not required.
     verdicts = (
         "FAIL",
         "**FAIL**",
@@ -179,13 +179,50 @@ def test_gate_helpers():
         check(f"negative: FAIL verdict {sample.splitlines()[0]!r}", bool(problems), joined(problems))
     prose_fail = (
         "Neither is a FAIL of the delivered images.\n"
-        "| water_a..c | FAIL (exit 1) |\n"
         "Addendum V.1 keeps that FAIL…\n"
     )
     check(
         "prose FAIL mentions are not verdicts",
         mod.fail_result_lines(prose_fail) == [],
         "no FAIL verdict",
+    )
+    check(
+        "headerless FAIL (exit 1) is a verdict",
+        mod.fail_result_lines("| water_a..c | FAIL (exit 1) |\n") == [
+            "| water_a..c | FAIL (exit 1) |",
+        ],
+        "no Verdict header",
+    )
+    check(
+        "marked headerless exit 1 on a documented id is exempt",
+        mod.fail_result_lines(
+            "Documented stock v0.1.1 canvas-size failure.\n"
+            "| chart_water_a | FAIL (exit 1) |\n"
+            "| port_marker | FAIL (exit 1) |\n"
+        ) == [],
+        "documented ids",
+    )
+    check(
+        "exit 2 on chart_water_a is not exempt",
+        mod.fail_result_lines(
+            "Documented stock v0.1.1 canvas-size failure.\n"
+            "| chart_water_a | FAIL (exit 2) |\n"
+        ) == ["| chart_water_a | FAIL (exit 2) |"],
+        "exit 2",
+    )
+    check(
+        "undocumented id with exit 1 is not exempt",
+        mod.fail_result_lines(
+            "Documented stock v0.1.1 canvas-size failure.\n"
+            "| chart_new | FAIL (exit 1) |\n"
+        ) == ["| chart_new | FAIL (exit 1) |"],
+        "chart_new",
+    )
+    check(
+        "newline does not join a stock mark",
+        mod._marks_stock_v011_canvas("stock\nv0.1.1 canvas-size") is False
+        and mod._marks_stock_v011_canvas("Documented stock v0.1.1 canvas-size failure.") is True,
+        "one line",
     )
     unmarked_exit = (
         "| id | Result |\n| --- | --- |\n"
@@ -247,10 +284,10 @@ def test_gate_helpers():
 
     # B2: _STUB at any case, including nested. A value that merely says _STUB is not a key.
     for key in ("_STUB", "_stub", "_Stub"):
-        check(f"B2 key {key}", mod.json_has_key({key: True}, "_STUB"), "matched")
+        check(f"B2 key {key}", mod.json_has_stub_key({key: True}), "matched")
         check(
             f"B2 nested {key}",
-            mod.json_has_key({"rows": [{"id": "quay_flag_a", "meta": {key: 1}}]}, "_STUB"),
+            mod.json_has_stub_key({"rows": [{"id": "quay_flag_a", "meta": {key: 1}}]}),
             "matched",
         )
     problems = []
@@ -260,12 +297,12 @@ def test_gate_helpers():
     check("stub value is not a key", not mod.json_has_stub_key({"note": "stub"}), "ignored")
     check(
         "negative: key containing _STUB",
-        mod.json_has_key({"harbour_STUB_marker": True}, "_STUB"),
+        mod.json_has_stub_key({"harbour_STUB_marker": True}),
         "matched",
     )
     check(
         "negative: nested harbour stub key",
-        mod.json_has_key({"rows": [{"id": "water_a", "meta": {"pre_stub_note": 1}}]}, "_STUB"),
+        mod.json_has_stub_key({"rows": [{"id": "water_a", "meta": {"pre_stub_note": 1}}]}),
         "matched",
     )
     problems = []
@@ -349,6 +386,47 @@ def test_gate_helpers():
         "false gates dict refuses the row",
         mod.ship_row_failure({**stock, "gates": {"G1": False}}) == "false gate",
         "gates G1",
+    )
+    for label, gate in (
+        ("string false", "false"),
+        ("string FALSE", "FALSE"),
+        ("zero", 0),
+        ("null", None),
+    ):
+        check(
+            f"gate value {label} refuses the row",
+            mod.ship_row_failure({**stock, "gates": {"G1": gate}}) == "false gate",
+            label,
+        )
+    check(
+        "verdict fail any case refuses the row",
+        mod.ship_row_failure({**stock, "verdict": "fail"}) == "verdict FAIL",
+        "fail",
+    )
+    mixed_pass = {
+        **stock,
+        "fails": [],
+        "Fails": [],
+        "gates": {"G1": True},
+        "Gates": {"G1": True},
+        "verdict": "PASS",
+        "Verdict": "pass",
+    }
+    check("passing case variants still pass", mod.ship_row_failure(mixed_pass) is None, "variants")
+    check(
+        "Fails list refuses even when fails is empty",
+        mod.ship_row_failure({**stock, "fails": [], "Fails": ["canvas"]}) == "non-empty fails",
+        "Fails",
+    )
+    check(
+        "Gates false refuses even when gates are true",
+        mod.ship_row_failure({**stock, "gates": {"G1": True}, "Gates": {"G1": False}}) == "false gate",
+        "Gates",
+    )
+    check(
+        "Verdict fail refuses even when verdict is PASS",
+        mod.ship_row_failure({**stock, "verdict": "PASS", "Verdict": "fail"}) == "verdict FAIL",
+        "Verdict",
     )
     real_gates = {
         **stock,
@@ -469,8 +547,14 @@ def ship_ids():
 
 
 def ship_stock_v011_row(aid):
-    """Real ships_results.json row: pass true, v011_exit 1, no exit key."""
-    return {"id": aid, "pass": True, "v011_exit": 1}
+    """Real ships row: pass true, v011_exit 1, every gate true, info.G5_would_pass false."""
+    return {
+        "id": aid,
+        "pass": True,
+        "v011_exit": 1,
+        "gates": {"G1": True, "G2": True, "G3": True, "G4": True, "G5": True},
+        "info": {"G5_would_pass": False},
+    }
 
 
 def harbour_source_dir(aid):
@@ -684,6 +768,7 @@ RESULT_FILES = {
     "quay": os.path.join("grok-bot-verifier", "PB-002", "quay_flag_painterly_results.json"),
     "harbour": os.path.join("grok-bot-verifier", "PB-002", "harbour_andon_results.json"),
     "ships": os.path.join("grok-bot-verifier", "PB-002", "ships_results.json"),
+    "chart": os.path.join("grok-bot-verifier", "PB-002", "chart", "chart_retrieval_results.json"),
 }
 
 
@@ -757,6 +842,32 @@ def test_bold_fail_row_refuses_each_retrieval_doc(studio, tmp_path, doc):
     assert status == 1
     assert "FAIL result" in out
     assert "**FAIL**" in out
+
+
+@pytest.mark.parametrize("which", ["ships", "chart"])
+def test_stub_key_rejected_in_ships_and_chart(studio, tmp_path, which):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, which, lambda body: body.__setitem__("stub", True))
+    status, out = run_main(main_argv(copy))
+    label = os.path.basename(RESULT_FILES[which])
+    assert status == 1
+    assert f"{label} has a stub key" in out
+
+
+@pytest.mark.parametrize(
+    "which,nest",
+    [
+        ("ships", lambda body: body["rows"][0].__setitem__("meta", {"pre_stub_note": 1})),
+        ("chart", lambda body: body[next(iter(body))].__setitem__("meta", {"_STUB": True})),
+    ],
+)
+def test_nested_stub_key_rejected_in_ships_and_chart(studio, tmp_path, which, nest):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, which, nest)
+    status, out = run_main(main_argv(copy))
+    label = os.path.basename(RESULT_FILES[which])
+    assert status == 1
+    assert f"{label} has a stub key" in out
 
 
 def test_stubborn_note_is_not_a_stub_key(studio, tmp_path):
@@ -889,6 +1000,51 @@ def test_ships_false_gates_dict_fails(studio, tmp_path):
     assert "false gate" in out
 
 
+@pytest.mark.parametrize("gate", ["false", "FALSE", 0, None])
+def test_ships_falsey_gate_values_fail(studio, tmp_path, gate):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("gates", {"G1": gate}))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "false gate" in out
+
+
+def test_ships_verdict_fail_any_case(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("verdict", "Fail"))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "verdict FAIL" in out
+
+
+@pytest.mark.parametrize(
+    "mutate,needle",
+    [
+        (lambda row: row.update({"fails": [], "Fails": ["canvas"]}), "non-empty fails"),
+        (lambda row: row.update({"gates": {"G1": True}, "Gates": {"G1": "false"}}), "false gate"),
+        (lambda row: row.update({"verdict": "PASS", "Verdict": "fail"}), "verdict FAIL"),
+    ],
+)
+def test_ships_case_variant_keys_refuse_if_any_fails(studio, tmp_path, mutate, needle):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: mutate(body["rows"][0]))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert needle in out
+
+
+def test_real_ships_row_shape_passes(studio, tmp_path):
+    """The 36 real rows keep pass true, v011_exit 1, all gates true, and info.G5_would_pass false."""
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+
+    def real(body):
+        body["rows"] = [ship_stock_v011_row(row["id"]) for row in body["rows"]]
+
+    mutate_results(copy, "ships", real)
+    status, out = run_main(main_argv(copy))
+    assert status == 0, out
+
+
 def test_ships_info_g5_would_pass_false_still_passes(studio, tmp_path):
     """Real rows nest G5_would_pass under info. A false there is not a gate."""
     copy = clone_studio(studio, str(tmp_path / "copy"))
@@ -943,6 +1099,39 @@ def test_ships_exit_n_verdict_in_retrieval_doc_fails(studio, tmp_path):
     assert "FAIL (exit 2)" in out
 
 
+def test_chart_water_exit_2_is_not_stock_exempt(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    insert_middle(
+        os.path.join(copy, "outbox-PB-002", "retrieval-chart.md"),
+        "| chart_water_a | FAIL (exit 2) |",
+    )
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "| chart_water_a | FAIL (exit 2) |" in out
+
+
+def test_undocumented_exit_1_is_not_stock_exempt(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    insert_middle(
+        os.path.join(copy, "outbox-PB-002", "retrieval-chart.md"),
+        "| chart_new | FAIL (exit 1) |",
+    )
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "| chart_new | FAIL (exit 1) |" in out
+
+
+def test_headerless_fail_exit_row_is_recognised(studio, tmp_path):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    insert_middle(
+        os.path.join(copy, "outbox-PB-002", "retrieval-ships.md"),
+        "| chart_new | FAIL (exit 1) |",
+    )
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "FAIL (exit 1)" in out
+
+
 def test_spread_stock_terms_do_not_exempt_new_chart_row(studio, tmp_path):
     """A new chart FAIL (exit 1) row fails when the stock terms are not on one line."""
     copy = clone_studio(studio, str(tmp_path / "copy"))
@@ -966,7 +1155,6 @@ def test_spread_stock_terms_do_not_exempt_new_chart_row(studio, tmp_path):
 
 PROSE_FAIL_LINES = (
     "Neither is a FAIL of the delivered images.",
-    "| water_a..c | FAIL (exit 1) |",
     "Addendum V.1 keeps that FAIL…",
 )
 
@@ -974,6 +1162,21 @@ PROSE_FAIL_LINES = (
 def test_prose_fail_mentions_are_not_verdicts():
     text = "\n".join(PROSE_FAIL_LINES) + "\n"
     assert mod.fail_result_lines(text) == []
+    assert mod.fail_result_lines("| chart_water_a | FAIL (exit 1) |\n") == [
+        "| chart_water_a | FAIL (exit 1) |",
+    ]
+    assert mod.fail_result_lines(
+        "Documented stock v0.1.1 canvas-size failure.\n"
+        "| chart_water_a | FAIL (exit 1) |\n"
+    ) == []
+    assert mod.fail_result_lines(
+        "Documented stock v0.1.1 canvas-size failure.\n"
+        "| chart_water_a | FAIL (exit 2) |\n"
+    ) == ["| chart_water_a | FAIL (exit 2) |"]
+    assert mod.fail_result_lines(
+        "Documented stock v0.1.1 canvas-size failure.\n"
+        "| chart_new | FAIL (exit 1) |\n"
+    ) == ["| chart_new | FAIL (exit 1) |"]
     unmarked = (
         "| id | Result |\n"
         "| --- | --- |\n"
@@ -1049,33 +1252,20 @@ def test_ci_compare_mismatch_exits_nonzero(tmp_path):
     assert proc.returncode != 0
 
 
-def test_committed_041_manifest_sha(studio):
-    """Read version and sha from the committed MANIFEST, then --check the fixture.
+def test_committed_manifest_entry_bytes_match():
+    """Each committed MANIFEST entry sha is the bytes under godot/assets/landing.
 
-    The default --out-dir is pb-002-plates/landing, which on a real studio is
-    the v0.2.0 bundle. This test passes an absolute --out-dir and the version
-    stored in godot/assets/landing/MANIFEST.json. It does not pin a release
-    sha and it does not read a live studio.
+    This does not pin a release version and does not rebuild the bundle.
     """
-    manifest = os.path.join(ROOT, "godot", "assets", "landing", "MANIFEST.json")
-    data = open(manifest, "rb").read()
-    committed = json.loads(data)
-    version = committed["version"]
-    digest = hashlib.sha256(data).hexdigest()
-    assert re.fullmatch(r"[0-9a-f]{64}", digest)
-    assert isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+", version)
-    assert digest == hashlib.sha256(open(manifest, "rb").read()).hexdigest()
-    fixture_bundle = os.path.abspath(os.path.join(studio, "pb-002-plates", "landing"))
-    argv = ["--studio", studio, "--version", version, "--out-dir", fixture_bundle]
-    assert "--out-dir" in argv and os.path.isabs(argv[argv.index("--out-dir") + 1])
-    assert mod.DEFAULT_STUDIO not in argv
-    status, out = run_main(argv)
-    assert status == 0, out
-    status, out = run_main(argv + ["--check"])
-    assert status == 0, out
-    assert "MATCHES" in out
-    written = json.loads(open(os.path.join(fixture_bundle, "MANIFEST.json"), encoding="utf-8").read())
-    assert written["version"] == version
+    landing = os.path.join(ROOT, "godot", "assets", "landing")
+    manifest = json.loads(open(os.path.join(landing, "MANIFEST.json"), encoding="utf-8").read())
+    entries = manifest["entries"]
+    assert entries
+    for entry in entries:
+        path = os.path.join(landing, entry["path"])
+        assert os.path.isfile(path), entry["path"]
+        digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+        assert digest == entry["sha256"], entry["id"]
 
 
 if __name__ == "__main__":
