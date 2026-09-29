@@ -57,9 +57,6 @@ use crate::logic::{
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
-/// Same ink as the encounter ground. Hover and focus fills are lighter than
-/// the normal fill, and cream on them is 2.76:1. This ink is 5.08:1.
-const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 
 struct MarketRow {
@@ -1804,7 +1801,7 @@ impl PortlightGame {
                 ScreenAction::TakeAll => Action::TakeAll,
                 ScreenAction::Return { .. } => Action::LeaveEncounter,
             };
-            row.add_child(&action_button(&caption, game_id, command));
+            row.add_child(&encounter_button(&caption, game_id, command));
             count += 1;
         }
         if count > 0 {
@@ -1813,8 +1810,12 @@ impl PortlightGame {
         if show_crew {
             let mut crew_row = HBoxContainer::new_alloc();
             crew_row.add_theme_constant_override("separation", 8);
-            crew_row.add_child(&action_button("Crew −", game_id, Action::CaptureCrew(-1)));
-            crew_row.add_child(&action_button("Crew +", game_id, Action::CaptureCrew(1)));
+            crew_row.add_child(&encounter_button(
+                "Crew −",
+                game_id,
+                Action::CaptureCrew(-1),
+            ));
+            crew_row.add_child(&encounter_button("Crew +", game_id, Action::CaptureCrew(1)));
             box_node.add_child(&crew_row);
         }
     }
@@ -2277,19 +2278,8 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = Button::new_alloc();
     button.set_text(text);
-    // Tan fill and a gold border. The default (23, 26, 31) sits on the ink
-    // background (20, 28, 41) and reads as bare text.
-    let normal = button_style(Color::from_rgb(0.55, 0.42, 0.24));
-    let hover = button_style(Color::from_rgb(0.68, 0.52, 0.30));
-    let pressed = button_style(Color::from_rgb(0.40, 0.30, 0.16));
-    button.add_theme_stylebox_override("normal", &normal);
-    button.add_theme_stylebox_override("hover", &hover);
-    button.add_theme_stylebox_override("pressed", &pressed);
-    button.add_theme_stylebox_override("focus", &hover);
     button.add_theme_color_override("font_color", CREAM);
-    button.add_theme_color_override("font_hover_color", INK);
-    button.add_theme_color_override("font_pressed_color", GOLD);
-    button.add_theme_color_override("font_focus_color", INK);
+    button.add_theme_color_override("font_hover_color", GOLD);
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
@@ -2300,14 +2290,19 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     button
 }
 
-fn button_style(fill: Color) -> Gd<StyleBoxFlat> {
-    let mut style = StyleBoxFlat::new_gd();
-    style.set_bg_color(fill);
-    style.set_border_color(GOLD);
-    style.set_border_width_all(2);
-    style.set_content_margin_all(8.0);
-    style.set_corner_radius_all(2);
-    style
+/// Encounter actions only. The chart side panel keeps [`action_button`].
+fn encounter_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
+    let mut button = Button::new_alloc();
+    button.set_text(text);
+    encounter_screen::style_encounter_button(&mut button);
+    let action_for_click = action;
+    button.signals().pressed().connect(move || {
+        let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
+            return;
+        };
+        gd.bind_mut().perform(action_for_click.clone());
+    });
+    button
 }
 
 fn labels_under_box(node: &Gd<VBoxContainer>) -> Vec<Gd<Label>> {

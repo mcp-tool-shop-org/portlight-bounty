@@ -6,7 +6,7 @@ use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
 use godot::classes::text_server::AutowrapMode;
 use godot::classes::{
-    Control, HBoxContainer, Label, PanelContainer, ResourceLoader, StyleBoxFlat, Texture2D,
+    Button, Control, HBoxContainer, Label, PanelContainer, ResourceLoader, StyleBoxFlat, Texture2D,
     TextureRect, VBoxContainer,
 };
 use godot::prelude::*;
@@ -223,6 +223,33 @@ fn placeholder_panel() -> Gd<PanelContainer> {
     column.add_child(&note);
     panel.add_child(&column);
     panel
+}
+
+/// Tan fill, 2 px gold border, 8 px margin. Cream at rest. Dark ink on hover
+/// and focus: cream on the hover fill is 2.76:1, and this ink is 5.08:1.
+/// The chart panel does not use this style.
+pub(crate) fn style_encounter_button(button: &mut Gd<Button>) {
+    let normal = encounter_button_fill(Color::from_rgb(0.55, 0.42, 0.24));
+    let hover = encounter_button_fill(Color::from_rgb(0.68, 0.52, 0.30));
+    let pressed = encounter_button_fill(Color::from_rgb(0.40, 0.30, 0.16));
+    button.add_theme_stylebox_override("normal", &normal);
+    button.add_theme_stylebox_override("hover", &hover);
+    button.add_theme_stylebox_override("pressed", &pressed);
+    button.add_theme_stylebox_override("focus", &hover);
+    button.add_theme_color_override("font_color", CREAM);
+    button.add_theme_color_override("font_hover_color", INK);
+    button.add_theme_color_override("font_pressed_color", GOLD);
+    button.add_theme_color_override("font_focus_color", INK);
+}
+
+fn encounter_button_fill(fill: Color) -> Gd<StyleBoxFlat> {
+    let mut style = StyleBoxFlat::new_gd();
+    style.set_bg_color(fill);
+    style.set_border_color(GOLD);
+    style.set_border_width_all(2);
+    style.set_content_margin_all(8.0);
+    style.set_corner_radius_all(2);
+    style
 }
 
 fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
