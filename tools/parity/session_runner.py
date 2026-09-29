@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import shlex
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -356,13 +357,16 @@ def main() -> int:
             return 2
     base = Path(tempfile.mkdtemp(prefix="portlight-session-"))
     try:
-        snap = run(script, base)
-    except Skip as exc:
-        print(f"skip: GameSession runner has no {exc.verb}", file=sys.stderr)
-        return 2
-    json.dump(snap, sys.stdout, indent=2)
-    sys.stdout.write("\n")
-    return 0
+        try:
+            snap = run(script, base)
+        except Skip as exc:
+            print(f"skip: GameSession runner has no {exc.verb}", file=sys.stderr)
+            return 2
+        json.dump(snap, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
 
 
 if __name__ == "__main__":

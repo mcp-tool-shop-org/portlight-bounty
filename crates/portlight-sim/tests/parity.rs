@@ -2,6 +2,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use portlight_sim::run_script;
 use serde_json::Value;
@@ -32,12 +33,18 @@ fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
         }
         (Value::Null, Value::Null) => {}
         (Value::Array(a), Value::Array(b)) => {
-            if a.len() != b.len() {
-                errors.push(format!("{path}: length {} != {}", a.len(), b.len()));
-                return;
+            let shared = a.len().min(b.len());
+            for i in 0..shared {
+                close(&a[i], &b[i], &format!("{path}[{i}]"), errors);
             }
-            for (i, (x, y)) in a.iter().zip(b).enumerate() {
-                close(x, y, &format!("{path}[{i}]"), errors);
+            if a.len() > b.len() {
+                for (i, value) in a.iter().enumerate().skip(shared) {
+                    errors.push(format!("{path}[{i}]: {value} != <missing>"));
+                }
+            } else if b.len() > a.len() {
+                for (i, value) in b.iter().enumerate().skip(shared) {
+                    errors.push(format!("{path}[{i}]: <missing> != {value}"));
+                }
             }
         }
         (Value::Object(a), Value::Object(b)) => {
@@ -58,45 +65,69 @@ fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
 }
 
 fn path_matches(path: &str, pattern: &str) -> bool {
-    fn consume(path: &str, pattern: &str) -> bool {
-        if pattern.is_empty() {
-            // A listed field also covers an index under it (`tags[1]`).
-            return path.is_empty() || path.starts_with('[');
-        }
-        if let Some(rest) = pattern.strip_prefix("[*]") {
-            let Some(stripped) = path.strip_prefix('[') else {
-                return false;
-            };
-            let Some(end) = stripped.find(']') else {
-                return false;
-            };
-            if !stripped[..end].chars().all(|ch| ch.is_ascii_digit()) {
-                return false;
-            }
-            return consume(&stripped[end + 1..], rest);
-        }
-        let next = pattern.find("[*]").unwrap_or(pattern.len());
-        if !path.starts_with(&pattern[..next]) {
+    // Exact leaf, or that leaf plus trailing `[n]` indexes only.
+    // `$.board.offers` does not match `$.board.offers[0].id`.
+    if path == pattern {
+        return true;
+    }
+    let Some(rest) = path.strip_prefix(pattern) else {
+        return false;
+    };
+    if !rest.starts_with('[') {
+        return false;
+    }
+    let bytes = rest.as_bytes();
+    let mut index = 0;
+    let mut saw = false;
+    while index < bytes.len() {
+        if bytes[index] != b'[' {
             return false;
         }
-        consume(&path[next..], &pattern[next..])
+        index += 1;
+        let start = index;
+        while index < bytes.len() && bytes[index].is_ascii_digit() {
+            index += 1;
+        }
+        if index == start || index >= bytes.len() || bytes[index] != b']' {
+            return false;
+        }
+        index += 1;
+        saw = true;
     }
-    consume(path, pattern)
+    saw
 }
 
-fn assert_close(left: &Value, right: &Value, path: &str) {
-    let mut errors = Vec::new();
-    close(left, right, path, &mut errors);
-    assert!(errors.is_empty(), "{path}: {errors:?}");
+fn error_path(line: &str) -> &str {
+    line.split(": ").next().unwrap_or(line)
 }
 
-fn oracle_paths(root: &Path, script: &str) -> Vec<String> {
+/// Serializes the narrow snapshot. Clearing the variable is paired with the
+/// lock so one test cannot widen another test's golden JSON.
+static WIDE_ENV: Mutex<()> = Mutex::new(());
+
+fn narrow_value(script: &str) -> Value {
+    std::env::remove_var("PORTLIGHT_WIDE_SNAPSHOT");
+    serde_json::to_value(run_script(script)).expect("snapshot")
+}
+
+fn script_value(script: &str) -> Value {
+    let _guard = WIDE_ENV.lock().unwrap_or_else(|err| err.into_inner());
+    narrow_value(script)
+}
+
+struct Pin {
+    path: String,
+    python: Value,
+    rust: Value,
+}
+
+fn oracle_pins(root: &Path, script: &str) -> Vec<Pin> {
     let text = fs::read_to_string(root.join("expected_divergences.json")).unwrap_or_default();
     if text.is_empty() {
         return Vec::new();
     }
     let data: Value = serde_json::from_str(&text).expect("expected_divergences.json");
-    let mut paths = Vec::new();
+    let mut pins = Vec::new();
     for entry in data
         .get("entries")
         .and_then(Value::as_array)
@@ -109,18 +140,82 @@ fn oracle_paths(root: &Path, script: &str) -> Vec<String> {
         if entry.get("check").and_then(Value::as_str) != Some("oracle") {
             continue;
         }
-        for path in entry
+        for spec in entry
             .get("paths")
             .and_then(Value::as_array)
             .into_iter()
             .flatten()
         {
-            if let Some(path) = path.as_str() {
-                paths.push(path.to_string());
-            }
+            let path = spec
+                .get("path")
+                .and_then(Value::as_str)
+                .expect("allowlist path")
+                .to_string();
+            pins.push(Pin {
+                path,
+                python: spec.get("python").cloned().expect("python pin"),
+                rust: spec.get("rust").cloned().expect("rust pin"),
+            });
         }
     }
-    paths
+    pins
+}
+
+fn lookup<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
+    if path == "$" {
+        return Some(value);
+    }
+    let mut cur = value;
+    let mut rest = path.strip_prefix('$').expect("path starts with $");
+    while !rest.is_empty() {
+        if let Some(stripped) = rest.strip_prefix('.') {
+            let end = stripped.find(['.', '[']).unwrap_or(stripped.len());
+            let key = &stripped[..end];
+            cur = cur.get(key)?;
+            rest = &stripped[end..];
+        } else if let Some(stripped) = rest.strip_prefix('[') {
+            let end = stripped.find(']').expect("index");
+            let index: usize = stripped[..end].parse().expect("index");
+            cur = cur.get(index)?;
+            rest = &stripped[end + 1..];
+        } else {
+            panic!("bad path {path}");
+        }
+    }
+    Some(cur)
+}
+
+fn is_missing_pin(value: &Value) -> bool {
+    value.as_object().is_some_and(|map| {
+        map.len() == 1 && map.get("$missing").and_then(Value::as_bool) == Some(true)
+    })
+}
+
+fn values_pinned(actual: Option<&Value>, expected: &Value) -> bool {
+    if is_missing_pin(expected) {
+        return actual.is_none();
+    }
+    let Some(actual) = actual else {
+        return false;
+    };
+    let mut errors = Vec::new();
+    close(actual, expected, "$", &mut errors);
+    errors.is_empty()
+}
+
+fn pattern_names_container(left: &Value, right: &Value, pattern: &str) -> bool {
+    [left, right].into_iter().any(|snap| {
+        matches!(
+            lookup(snap, pattern),
+            Some(Value::Array(_)) | Some(Value::Object(_))
+        )
+    })
+}
+
+fn assert_close(left: &Value, right: &Value, path: &str) {
+    let mut errors = Vec::new();
+    close(left, right, path, &mut errors);
+    assert!(errors.is_empty(), "{path}: {errors:?}");
 }
 
 #[test]
@@ -146,16 +241,24 @@ fn golden_scripts_match_python() {
         if let Value::Object(map) = &mut golden {
             map.retain(|key, _| !key.starts_with('_'));
         }
-        let got = serde_json::to_value(run_script(&script)).expect("snapshot");
+        let got = script_value(&script);
         let mut errors = Vec::new();
         close(&golden, &got, "$", &mut errors);
         if python_golden {
-            let patterns = oracle_paths(&root, &format!("{stem}.txt"));
+            let pins = oracle_pins(&root, &format!("{stem}.txt"));
+            for pin in &pins {
+                assert!(
+                    !pattern_names_container(&golden, &got, &pin.path),
+                    "{stem} allowlist path names a list or object: {}",
+                    pin.path
+                );
+            }
             let unexpected: Vec<_> = errors
                 .iter()
                 .filter(|line| {
-                    let path = line.split(": ").next().unwrap_or(line);
-                    !patterns.iter().any(|pattern| path_matches(path, pattern))
+                    !pins
+                        .iter()
+                        .any(|pin| path_matches(error_path(line), &pin.path))
                 })
                 .cloned()
                 .collect();
@@ -163,24 +266,96 @@ fn golden_scripts_match_python() {
                 unexpected.is_empty(),
                 "{stem} python golden differs outside the allowlist: {unexpected:?}"
             );
-            let missing: Vec<_> = patterns
+            let missing: Vec<_> = pins
                 .iter()
-                .filter(|pattern| {
-                    !errors.iter().any(|line| {
-                        let path = line.split(": ").next().unwrap_or(line);
-                        path_matches(path, pattern)
-                    })
+                .filter(|pin| {
+                    !errors
+                        .iter()
+                        .any(|line| path_matches(error_path(line), &pin.path))
                 })
-                .cloned()
+                .map(|pin| pin.path.clone())
                 .collect();
             assert!(
                 missing.is_empty(),
                 "{stem} python golden no longer differs on {missing:?}"
             );
+            for pin in &pins {
+                assert!(
+                    values_pinned(lookup(&golden, &pin.path), &pin.python),
+                    "{stem} {} python value is not the pin",
+                    pin.path
+                );
+                assert!(
+                    values_pinned(lookup(&got, &pin.path), &pin.rust),
+                    "{stem} {} rust value is not the pin",
+                    pin.path
+                );
+            }
         } else {
             assert!(errors.is_empty(), "{stem}: {errors:?}");
         }
     }
+}
+
+#[test]
+fn container_pattern_does_not_hide_an_offer_mutation() {
+    let left = serde_json::json!({"board": {"offers": [{"id": "kept", "reward_silver": 10}]}});
+    let mut right = left.clone();
+    right["board"]["offers"][0]["id"] = serde_json::json!("mutated");
+    right["board"]["offers"][0]["reward_silver"] = serde_json::json!(99);
+    let mut errors = Vec::new();
+    close(&left, &right, "$", &mut errors);
+    let pattern = "$.board.offers";
+    assert!(
+        pattern_names_container(&left, &right, pattern),
+        "offers is a list and must be rejected"
+    );
+    let hidden: Vec<_> = errors
+        .iter()
+        .filter(|line| path_matches(error_path(line), pattern))
+        .cloned()
+        .collect();
+    assert!(
+        hidden.is_empty(),
+        "container pattern swallowed the mutation: {hidden:?}"
+    );
+    assert!(
+        errors
+            .iter()
+            .any(|line| error_path(line) == "$.board.offers[0].id"),
+        "{errors:?}"
+    );
+}
+
+#[test]
+fn enemy_crew_pin_rejects_a_different_rust_value() {
+    let root = parity_root();
+    let pins = oracle_pins(&root, "capture_prize.txt");
+    let crew = pins
+        .iter()
+        .find(|pin| pin.path.ends_with("enemy_crew"))
+        .expect("enemy_crew pin");
+    assert_eq!(crew.python, serde_json::json!(5));
+    assert_eq!(crew.rust, serde_json::json!(0));
+    let python = serde_json::json!({"log": [{"encounter": {"enemy_crew": 5}}]});
+    let mut rust = python.clone();
+    rust["log"][0]["encounter"]["enemy_crew"] = serde_json::json!(99);
+    let path = "$.log[0].encounter.enemy_crew";
+    assert!(values_pinned(lookup(&python, path), &crew.python));
+    assert!(
+        !values_pinned(lookup(&rust, path), &crew.rust),
+        "enemy_crew 99 must not satisfy the pinned rust value"
+    );
+}
+
+#[test]
+fn golden_compare_ignores_wide_snapshot_env() {
+    let _guard = WIDE_ENV.lock().unwrap_or_else(|err| err.into_inner());
+    std::env::set_var("PORTLIGHT_WIDE_SNAPSHOT", "1");
+    let value = narrow_value("new merchant Ada 1\n");
+    assert!(value.get("board").is_none(), "{value}");
+    assert!(value.get("ledger").is_none(), "{value}");
+    assert!(std::env::var("PORTLIGHT_WIDE_SNAPSHOT").is_err());
 }
 
 #[test]
@@ -429,7 +604,7 @@ fn area3_goldens_cover_training_recruiting_skill_and_milestone() {
                 .unwrap_or_else(|_| panic!("missing {}", golden_path.display())),
         )
         .expect("golden json");
-        let got = serde_json::to_value(run_script(&script)).expect("snapshot");
+        let got = script_value(&script);
         assert_close(&golden, &got, stem);
     }
     let train = load_golden("train_crew");
@@ -472,7 +647,7 @@ fn sea_captain_agency_golden_records_the_ambush() {
     let root = parity_root();
     let script = fs::read_to_string(root.join("scripts/sea_captain_agency.txt")).unwrap();
     let golden = load_golden("sea_captain_agency");
-    let got = serde_json::to_value(run_script(&script)).expect("snapshot");
+    let got = script_value(&script);
     assert_close(&golden, &got, "sea_captain_agency");
     let calls: Vec<_> = golden["log"]
         .as_array()

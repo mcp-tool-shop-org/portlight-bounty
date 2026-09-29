@@ -45,6 +45,8 @@ jobs:
         run: cargo build --locked -p portlight-cli
       - name: Live Python oracle
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
+      - name: Parity allowlist and golden bytes
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/test_check.py
       - name: Victory fixtures
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check
       - name: Roster and custom-captain options

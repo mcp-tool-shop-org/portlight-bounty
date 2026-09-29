@@ -165,10 +165,15 @@ def close(a, b, path: str) -> list[str]:
         return []
     if isinstance(a, list) and isinstance(b, list):
         errors = []
-        if len(a) != len(b):
-            return [f"{path}: length {len(a)} != {len(b)}"]
-        for i, (x, y) in enumerate(zip(a, b)):
-            errors.extend(close(x, y, f"{path}[{i}]"))
+        shared = min(len(a), len(b))
+        for i in range(shared):
+            errors.extend(close(a[i], b[i], f"{path}[{i}]"))
+        if len(a) > len(b):
+            for i in range(shared, len(a)):
+                errors.append(f"{path}[{i}]: {a[i]!r} != <missing>")
+        elif len(b) > len(a):
+            for i in range(shared, len(b)):
+                errors.append(f"{path}[{i}]: <missing> != {b[i]!r}")
         return errors
     if isinstance(a, dict) and isinstance(b, dict):
         errors = []
@@ -211,6 +216,11 @@ def load_divergences() -> list[dict]:
                 raise SystemExit(f"{DIVERGENCES} entry missing {key}: {entry}")
         if not entry["paths"]:
             raise SystemExit(f"{DIVERGENCES} entry has no paths: {entry['script']}")
+        for spec in entry["paths"]:
+            if not isinstance(spec, dict) or not {"path", "python", "rust"} <= set(spec):
+                raise SystemExit(
+                    f"{DIVERGENCES} path must pin python and rust values: {entry['script']} {spec}"
+                )
     return entries
 
 
@@ -221,7 +231,11 @@ def print_divergence_list(entries: list[dict]) -> None:
         return
     for entry in entries:
         print(f"  {entry['script']} [{entry['check']}]: {entry['summary']}")
-        print(f"    paths {', '.join(entry['paths'])}")
+        bits = [
+            f"{spec['path']} python={spec['python']!r} rust={spec['rust']!r}"
+            for spec in entry["paths"]
+        ]
+        print(f"    paths {'; '.join(bits)}")
         print(f"    rust {entry['rust']}")
         print(f"    python {entry['python']}")
         if entry.get("oracle"):
@@ -258,20 +272,21 @@ def error_path(line: str) -> str:
 
 
 def path_matches(path: str, pattern: str) -> bool:
-    """`[*]` matches one `[n]`. A pattern also covers a deeper index of that field (`tags[1]`)."""
+    """Exact leaf match, plus trailing `[n]` indexes and nothing else.
+
+    `$.board.offers[1].id` matches that path. `$.board.offers[1].tags[2]`
+    matches a pattern of the same path, or that path plus further indexes.
+    `$.board.offers` does not match `$.board.offers[0].id`, and `$.log` does
+    not match `$.log[0].command`.
+    """
     import re
 
-    body = []
-    i = 0
-    while i < len(pattern):
-        if pattern.startswith("[*]", i):
-            body.append(r"\[\d+\]")
-            i += 3
-        else:
-            body.append(re.escape(pattern[i]))
-            i += 1
-    compiled = "".join(body)
-    return re.fullmatch(compiled, path) is not None or re.match(compiled + r"\[", path) is not None
+    if path == pattern:
+        return True
+    if not path.startswith(pattern):
+        return False
+    rest = path[len(pattern) :]
+    return re.fullmatch(r"(?:\[\d+\])+", rest) is not None
 
 
 def partition(errors: list[str], patterns: list[str]) -> tuple[list[str], list[str], list[str]]:
@@ -285,48 +300,178 @@ def partition(errors: list[str], patterns: list[str]) -> tuple[list[str], list[s
     return allowed, unexpected, missing
 
 
+_MISSING = object()
+
+
+def lookup(value, path: str):
+    """Value at a `$...` path, or `_MISSING` when an index or key is absent."""
+    if path == "$":
+        return value
+    if not path.startswith("$"):
+        raise ValueError(path)
+    cur = value
+    i = 1
+    while i < len(path):
+        if path[i] == ".":
+            i += 1
+            end = i
+            while end < len(path) and path[end] not in ".[":
+                end += 1
+            key = path[i:end]
+            if not isinstance(cur, dict) or key not in cur:
+                return _MISSING
+            cur = cur[key]
+            i = end
+        elif path[i] == "[":
+            end = path.find("]", i)
+            if end < 0:
+                raise ValueError(path)
+            idx = int(path[i + 1 : end])
+            if not isinstance(cur, list) or idx < 0 or idx >= len(cur):
+                return _MISSING
+            cur = cur[idx]
+            i = end + 1
+        else:
+            raise ValueError(path)
+    return cur
+
+
+def is_missing_pin(expected) -> bool:
+    return (
+        isinstance(expected, dict)
+        and list(expected) == ["$missing"]
+        and expected["$missing"] is True
+    )
+
+
+def values_equal(actual, expected) -> bool:
+    if actual is _MISSING:
+        return is_missing_pin(expected)
+    if is_missing_pin(expected):
+        return False
+    return not close(actual, expected, "$")
+
+
+def show_value(actual) -> str:
+    if actual is _MISSING:
+        return "<missing>"
+    return repr(actual)
+
+
+def container_patterns(left, right, patterns: list[str]) -> list[str]:
+    """Patterns whose value is a list or object. Those hide every field under them."""
+    bad = []
+    for pattern in patterns:
+        for snap in (left, right):
+            found = lookup(snap, pattern)
+            if found is not _MISSING and isinstance(found, (dict, list)):
+                bad.append(pattern)
+                break
+    return bad
+
+
 def drop_meta(snap: dict) -> dict:
     """Golden files may carry `_source` / `_note`. Those are not snapshot fields."""
     return {key: value for key, value in snap.items() if not key.startswith("_")}
 
 
-def golden_to_write(oracle_snap: dict, existing: dict | None) -> dict:
-    """Narrow oracle snapshot, keeping `_source` and other `_` keys on the file.
+def _stabilize(new, old):
+    """Reorder objects to the existing golden's key order when the keys match."""
+    if isinstance(new, dict) and isinstance(old, dict):
+        out = {}
+        for key in old:
+            if key in new:
+                out[key] = _stabilize(new[key], old[key])
+        for key, value in new.items():
+            if key not in out:
+                out[key] = value
+        return out
+    if isinstance(new, list) and isinstance(old, list):
+        return [
+            _stabilize(item, old[i]) if i < len(old) else item for i, item in enumerate(new)
+        ]
+    return new
 
-    Regenerating must not drop `_source` (for example `python-oracle`). Meta
-    keys stay at the front. Wide snapshot keys are still omitted.
+
+def golden_text(oracle_snap: dict, existing_text: str | None) -> str:
+    """Bytes `--write-golden` would write.
+
+    An unchanged snapshot keeps the committed text, including `_source` and
+    `_note`. A changed snapshot still carries those keys.
     """
+    existing = json.loads(existing_text) if existing_text is not None else None
     body = {key: value for key, value in narrow(oracle_snap).items() if not key.startswith("_")}
+    if existing_text is not None and not close(drop_meta(existing), body, "$"):
+        return existing_text if existing_text.endswith("\n") else existing_text + "\n"
     meta = {}
     if existing:
         meta = {key: value for key, value in existing.items() if key.startswith("_")}
+    ordered = _stabilize(body, drop_meta(existing) if existing else {})
     written = dict(meta)
-    written.update(body)
-    return written
+    written.update(ordered)
+    ensure_ascii = existing_text is None or existing_text.isascii()
+    return json.dumps(written, indent=2, ensure_ascii=ensure_ascii) + "\n"
 
 
-def report(name: str, check: str, errors: list[str], entries: list[dict], failed: list[int]) -> None:
+def report(
+    name: str,
+    check: str,
+    errors: list[str],
+    entries: list[dict],
+    failed: list[int],
+    left=None,
+    right=None,
+) -> None:
     known = listed(entries, name, check)
-    patterns: list[str] = []
+    specs: list[dict] = []
     for entry in known:
-        patterns.extend(entry["paths"])
+        specs.extend(entry["paths"])
+    patterns = [spec["path"] for spec in specs]
+    problems: list[str] = []
+    if left is not None and right is not None:
+        for pattern in container_patterns(left, right, patterns):
+            problems.append(f"allowlist path names a list or object: {pattern}")
     allowed, unexpected, missing = partition(errors, patterns)
     if unexpected:
-        failed[0] += 1
         label = f"{check} mismatch"
         if allowed:
             label += f" ({len(unexpected)} outside the allowlist, {len(allowed)} allowed)"
         else:
             label += f" ({len(unexpected)} differences)"
-        print(f"{name}: {label}")
-        for line in unexpected[:30]:
-            print("   ", line)
-        return
-    if known and (not allowed or missing):
+        detail = "\n".join(f"    {line}" for line in unexpected[:30])
+        problems.append(f"{label}\n{detail}" if detail else label)
+    if known and (not allowed or missing) and not any(line.startswith("allowlist path") for line in problems):
+        # A container pattern is rejected above; do not also call it "missing".
+        real_missing = [
+            pat
+            for pat in missing
+            if left is None
+            or right is None
+            or pat not in container_patterns(left, right, [pat])
+        ]
+        if not allowed or real_missing:
+            text = f"expected {check} divergence did not reproduce"
+            if real_missing:
+                text += f"\n    paths that did not differ: {', '.join(real_missing)}"
+            problems.append(text)
+    if left is not None and right is not None:
+        for spec in specs:
+            if spec["path"] in container_patterns(left, right, [spec["path"]]):
+                continue
+            py = lookup(left, spec["path"])
+            rs = lookup(right, spec["path"])
+            if not values_equal(py, spec["python"]) or not values_equal(rs, spec["rust"]):
+                problems.append(
+                    f"{spec['path']} is not the pinned pair\n"
+                    f"    python {show_value(py)} pinned {spec['python']!r}\n"
+                    f"    rust {show_value(rs)} pinned {spec['rust']!r}"
+                )
+    if problems:
         failed[0] += 1
-        print(f"{name}: expected {check} divergence did not reproduce")
-        if missing:
-            print(f"    paths that did not differ: {', '.join(missing)}")
+        print(f"{name}: {check} mismatch")
+        for problem in problems:
+            for line in problem.splitlines():
+                print(f"    {line}" if not line.startswith("    ") else line)
         return
     if known:
         print(f"{name}: expected {check} divergence ({len(allowed)} allowlisted differences)")
@@ -348,30 +493,30 @@ def roundtrip_errors(name: str, script_path: str) -> list[str]:
     captain's modifiers. A fresh game has not done that yet, so the loaded
     snapshot can differ from the live one even when both loaders agree.
     """
-    base = tempfile.mkdtemp(prefix=f"pl-rt-{name.replace('.txt', '')}-")
     errors: list[str] = []
-    rust_dir = os.path.join(base, "from-rust")
-    py_dir = os.path.join(base, "from-python")
-    os.makedirs(rust_dir)
-    os.makedirs(py_dir)
-    run_rust_saved(script_path, rust_dir, "slot")
-    py_of_rust = run_python_load(rust_dir, "slot")
-    rust_reloaded = run_rust_load(rust_dir, "slot")
-    errors.extend(
-        f"{ROUNDTRIP_PREFIXES[0]}{line}"
-        for line in close(without_log(rust_reloaded), without_log(py_of_rust), "$")
-    )
-    run_oracle_saved(script_path, py_dir, "slot")
-    rust_of_py = run_rust_load(py_dir, "slot")
-    py_reloaded = run_python_load(py_dir, "slot")
-    errors.extend(
-        f"{ROUNDTRIP_PREFIXES[1]}{line}"
-        for line in close(without_log(py_reloaded), without_log(rust_of_py), "$")
-    )
-    errors.extend(
-        f"{ROUNDTRIP_PREFIXES[2]}{line}"
-        for line in close(without_log(rust_reloaded), without_log(rust_of_py), "$")
-    )
+    with tempfile.TemporaryDirectory(prefix=f"pl-rt-{name.replace('.txt', '')}-") as base:
+        rust_dir = os.path.join(base, "from-rust")
+        py_dir = os.path.join(base, "from-python")
+        os.makedirs(rust_dir)
+        os.makedirs(py_dir)
+        run_rust_saved(script_path, rust_dir, "slot")
+        py_of_rust = run_python_load(rust_dir, "slot")
+        rust_reloaded = run_rust_load(rust_dir, "slot")
+        errors.extend(
+            f"{ROUNDTRIP_PREFIXES[0]}{line}"
+            for line in close(without_log(rust_reloaded), without_log(py_of_rust), "$")
+        )
+        run_oracle_saved(script_path, py_dir, "slot")
+        rust_of_py = run_rust_load(py_dir, "slot")
+        py_reloaded = run_python_load(py_dir, "slot")
+        errors.extend(
+            f"{ROUNDTRIP_PREFIXES[1]}{line}"
+            for line in close(without_log(py_reloaded), without_log(rust_of_py), "$")
+        )
+        errors.extend(
+            f"{ROUNDTRIP_PREFIXES[2]}{line}"
+            for line in close(without_log(rust_reloaded), without_log(rust_of_py), "$")
+        )
     return errors
 
 
@@ -415,57 +560,65 @@ def main() -> int:
     for name in scripts():
         script_path = os.path.join(SCRIPTS, name)
         golden_path = os.path.join(GOLDEN, name.replace(".txt", ".json"))
-        save_root = tempfile.mkdtemp(prefix=f"pl-script-{name.replace('.txt', '')}-")
-        rust = run_rust(script_path, os.path.join(save_root, "rust"))
-        if not args.golden_only:
-            try:
-                import portlight  # noqa: F401
-            except ImportError as exc:
-                if args.require_oracle:
-                    raise SystemExit(
-                        f"Python game not importable (--require-oracle): {exc}"
-                    ) from exc
-                print(f"{name}: Python game not importable; comparing Rust to golden only")
-                args.golden_only = True
-            else:
-                oracle = run_oracle(script_path, os.path.join(save_root, "oracle"))
-                counts["oracle"] += 1
-                report(name, "oracle", close(oracle, rust, "$"), entries, failed)
-                session = run_session(script_path, os.path.join(save_root, "session"))
-                if session is None:
-                    counts["gamesession_skipped"] += 1
-                    if listed(entries, name, "gamesession"):
-                        failed[0] += 1
-                        print(f"{name}: expected gamesession divergence but the runner skipped the script")
-                    else:
-                        print(f"{name}: gamesession skipped")
+        with tempfile.TemporaryDirectory(prefix=f"pl-script-{name.replace('.txt', '')}-") as save_root:
+            rust = run_rust(script_path, os.path.join(save_root, "rust"))
+            if not args.golden_only:
+                try:
+                    import portlight  # noqa: F401
+                except ImportError as exc:
+                    if args.require_oracle:
+                        raise SystemExit(
+                            f"Python game not importable (--require-oracle): {exc}"
+                        ) from exc
+                    print(f"{name}: Python game not importable; comparing Rust to golden only")
+                    args.golden_only = True
                 else:
-                    counts["gamesession_run"] += 1
-                    report(
-                        name,
-                        "gamesession",
-                        close(without_log(session), without_log(rust), "$"),
-                        entries,
-                        failed,
-                    )
-                if has_session(rust) and not args.skip_roundtrip:
-                    counts["roundtrip_run"] += 1
-                    report(name, "roundtrip", roundtrip_errors(name, script_path), entries, failed)
-                elif not has_session(rust):
-                    counts["roundtrip_skipped"] += 1
-                    if listed(entries, name, "roundtrip"):
-                        failed[0] += 1
-                        print(f"{name}: expected roundtrip divergence but there is no session")
+                    oracle = run_oracle(script_path, os.path.join(save_root, "oracle"))
+                    counts["oracle"] += 1
+                    report(name, "oracle", close(oracle, rust, "$"), entries, failed, oracle, rust)
+                    session = run_session(script_path, os.path.join(save_root, "session"))
+                    if session is None:
+                        counts["gamesession_skipped"] += 1
+                        if listed(entries, name, "gamesession"):
+                            failed[0] += 1
+                            print(f"{name}: expected gamesession divergence but the runner skipped the script")
+                        else:
+                            print(f"{name}: gamesession skipped")
                     else:
-                        print(f"{name}: roundtrip skipped (no session)")
-                elif args.skip_roundtrip:
-                    counts["roundtrip_skipped"] += 1
-                if args.write_golden:
-                    existing = load_json(golden_path) if os.path.exists(golden_path) else None
-                    with open(golden_path, "w", encoding="utf-8") as fh:
-                        json.dump(golden_to_write(oracle, existing), fh, indent=2)
-                        fh.write("\n")
-                    print(f"  wrote {golden_path}")
+                        counts["gamesession_run"] += 1
+                        session_view = without_log(session)
+                        rust_view = without_log(rust)
+                        report(
+                            name,
+                            "gamesession",
+                            close(session_view, rust_view, "$"),
+                            entries,
+                            failed,
+                            session_view,
+                            rust_view,
+                        )
+                    if has_session(rust) and not args.skip_roundtrip:
+                        counts["roundtrip_run"] += 1
+                        report(name, "roundtrip", roundtrip_errors(name, script_path), entries, failed)
+                    elif not has_session(rust):
+                        counts["roundtrip_skipped"] += 1
+                        if listed(entries, name, "roundtrip"):
+                            failed[0] += 1
+                            print(f"{name}: expected roundtrip divergence but there is no session")
+                        else:
+                            print(f"{name}: roundtrip skipped (no session)")
+                    elif args.skip_roundtrip:
+                        counts["roundtrip_skipped"] += 1
+                    if args.write_golden:
+                        existing_text = None
+                        if os.path.exists(golden_path):
+                            with open(golden_path, encoding="utf-8") as fh:
+                                existing_text = fh.read()
+                        rendered = golden_text(oracle, existing_text)
+                        if rendered != existing_text:
+                            with open(golden_path, "w", encoding="utf-8") as fh:
+                                fh.write(rendered)
+                        print(f"  wrote {golden_path}")
         if os.path.exists(golden_path):
             golden = load_json(golden_path)
             python_golden = golden.get("_source") == "python-oracle"
@@ -474,7 +627,9 @@ def main() -> int:
                 # The file is the Python snapshot. The oracle allowlist names
                 # the fields where Rust is known to differ; anything else fails.
                 print(f"{name}: golden is the Python oracle snapshot")
-                report(name, "oracle", errors, entries, failed)
+                py_view = drop_meta(golden)
+                rust_view = narrow(rust)
+                report(name, "oracle", errors, entries, failed, py_view, rust_view)
             elif errors:
                 failed[0] += 1
                 print(f"{name}: golden != rust ({len(errors)} differences)")

@@ -51,7 +51,9 @@ pub struct Snapshot {
 }
 
 /// `PORTLIGHT_WIDE_SNAPSHOT=1` adds the board, memories, bounties, deferred
-/// fees, and ledger to the JSON. Cargo tests and golden files leave it unset.
+/// fees, and ledger to the JSON. Cargo golden tests clear the variable before
+/// they serialize, so a developer shell cannot widen that comparison. CI does
+/// not set it. Golden files stay the narrow shape.
 fn omit_unless_wide<T>(_: &T) -> bool {
     !wide_snapshot()
 }

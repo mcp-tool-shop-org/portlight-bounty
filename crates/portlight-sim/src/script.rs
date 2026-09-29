@@ -3,7 +3,9 @@
 //! The commands are a thin wrapper: each one calls the same public method a
 //! front end would call. Parity goldens therefore cover the stepwise API.
 
-use std::path::Path;
+use std::cell::RefCell;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::custom_captain;
 use crate::error::SimError;
@@ -37,6 +39,9 @@ pub fn load_snapshot(base: &Path, slot: &str) -> Result<Option<Snapshot>, SimErr
 }
 
 fn execute(script: &str) -> (Option<Session>, Vec<LogEntry>) {
+    // The `save` verb's default directory is removed when this run ends.
+    // `PORTLIGHT_SAVE_ROOT` belongs to the caller and is left in place.
+    let _save_dir = SaveScope::begin();
     let mut session: Option<Session> = None;
     let mut log = Vec::new();
     for line in script.lines() {
@@ -609,14 +614,59 @@ fn active(session: &mut Option<Session>) -> Result<&mut Session, SimError> {
     session.as_mut().ok_or(SimError::NoActiveGame)
 }
 
-/// `PORTLIGHT_SAVE_ROOT`, or a per-process directory when a script saves on its own.
-fn save_root() -> std::path::PathBuf {
-    if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
-        if !dir.is_empty() {
-            return std::path::PathBuf::from(dir);
+thread_local! {
+    static SAVE_ROOT: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+}
+
+static SAVE_SEQ: AtomicU64 = AtomicU64::new(0);
+
+/// Removes the temp directory created for a script's `save` verb.
+struct SaveScope {
+    owned: Option<PathBuf>,
+}
+
+impl SaveScope {
+    fn begin() -> Self {
+        if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
+            if !dir.is_empty() {
+                return Self { owned: None };
+            }
+        }
+        let dir = std::env::temp_dir().join(format!(
+            "portlight-script-{}-{}",
+            std::process::id(),
+            SAVE_SEQ.fetch_add(1, Ordering::Relaxed)
+        ));
+        SAVE_ROOT.with(|slot| *slot.borrow_mut() = Some(dir.clone()));
+        Self { owned: Some(dir) }
+    }
+}
+
+impl Drop for SaveScope {
+    fn drop(&mut self) {
+        if let Some(dir) = self.owned.take() {
+            let _ = std::fs::remove_dir_all(&dir);
+            SAVE_ROOT.with(|slot| {
+                if slot.borrow().as_ref() == Some(&dir) {
+                    *slot.borrow_mut() = None;
+                }
+            });
         }
     }
-    std::env::temp_dir().join(format!("portlight-script-{}", std::process::id()))
+}
+
+/// `PORTLIGHT_SAVE_ROOT`, or the temp directory owned by the current [`SaveScope`].
+fn save_root() -> PathBuf {
+    if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
+        if !dir.is_empty() {
+            return PathBuf::from(dir);
+        }
+    }
+    SAVE_ROOT.with(|slot| {
+        slot.borrow()
+            .clone()
+            .expect("save verb ran outside a script")
+    })
 }
 
 fn parse_encounter_target(token: Option<&str>) -> Result<(Option<String>, Option<i64>), SimError> {
@@ -684,6 +734,36 @@ mod tests {
         assert_eq!(snap.log.len(), 2);
         assert_eq!(snap.log[1].error.as_deref(), Some("Unknown command: fly"));
         assert_eq!(snap.captain.silver, 550);
+    }
+
+    #[test]
+    fn save_verb_removes_its_temp_dir() {
+        let previous = std::env::var("PORTLIGHT_SAVE_ROOT").ok();
+        std::env::remove_var("PORTLIGHT_SAVE_ROOT");
+        let slot = format!("parity-save-{}", std::process::id());
+        let snap = run_script(&format!("new merchant Ada 1\nsave {slot}\nload {slot}\n"));
+        let leaked = std::fs::read_dir(std::env::temp_dir())
+            .unwrap()
+            .flatten()
+            .any(|entry| {
+                entry
+                    .path()
+                    .join("saves")
+                    .join(format!("{slot}.json"))
+                    .is_file()
+            });
+        if let Some(dir) = previous {
+            std::env::set_var("PORTLIGHT_SAVE_ROOT", dir);
+        }
+        assert!(
+            snap.log.iter().all(|entry| entry.error.is_none()),
+            "{:?}",
+            snap.log
+                .iter()
+                .filter_map(|entry| entry.error.as_ref())
+                .collect::<Vec<_>>()
+        );
+        assert!(!leaked, "save verb left {slot} in the temp directory");
     }
 
     #[test]

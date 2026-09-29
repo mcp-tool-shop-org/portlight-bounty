@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import sys
 import unittest
@@ -18,20 +19,21 @@ def broker_paths() -> list[str]:
     entries = check.load_divergences()
     paths: list[str] = []
     for entry in check.listed(entries, "broker_board.txt", "gamesession"):
-        paths.extend(entry["paths"])
+        paths.extend(spec["path"] for spec in entry["paths"])
     return paths
 
 
-def report_failed(errors: list[str]) -> int:
-    entries = check.load_divergences()
+def report_failed(errors: list[str], left=None, right=None, entries=None) -> int:
+    if entries is None:
+        entries = check.load_divergences()
     failed = [0]
     with contextlib.redirect_stdout(io.StringIO()):
-        check.report("broker_board.txt", "gamesession", errors, entries, failed)
+        check.report("broker_board.txt", "gamesession", errors, entries, failed, left, right)
     return failed[0]
 
 
 class AllowlistTest(unittest.TestCase):
-    def test_broker_paths_are_only_offers_1_and_4(self) -> None:
+    def test_broker_paths_are_leaves_on_offers_1_and_4(self) -> None:
         paths = broker_paths()
         self.assertTrue(paths)
         for path in paths:
@@ -40,21 +42,64 @@ class AllowlistTest(unittest.TestCase):
                 path,
             )
             self.assertNotIn("[*]", path)
+            self.assertFalse(path.endswith(".tags"))
+            self.assertNotEqual(path, "$.board.offers")
 
-    def test_known_offer_diffs_are_allowed(self) -> None:
-        errors = [f"{path}: 'left' != 'right'" for path in broker_paths()]
-        self.assertEqual(report_failed(errors), 0)
+    def test_container_pattern_does_not_hide_an_offer_mutation(self) -> None:
+        left = {"board": {"offers": [{"id": "kept", "reward_silver": 10}]}}
+        right = {"board": {"offers": [{"id": "mutated", "reward_silver": 99}]}}
+        errors = check.close(left, right, "$")
+        pattern = "$.board.offers"
+        self.assertIn(pattern, check.container_patterns(left, right, [pattern]))
+        allowed, unexpected, _missing = check.partition(errors, [pattern])
+        self.assertEqual(allowed, [])
+        self.assertTrue(any(check.error_path(line) == "$.board.offers[0].id" for line in unexpected))
+        self.assertFalse(check.path_matches("$.board.offers[0].id", pattern))
+        self.assertFalse(check.path_matches("$.log[0].command", "$.log"))
 
     def test_offers_0_change_fails(self) -> None:
         errors = [f"{path}: 'left' != 'right'" for path in broker_paths()]
         errors.append("$.board.offers[0].id: 'ret_spice_restock' != 'other'")
         self.assertEqual(report_failed(errors), 1)
 
-    def test_offers_2_and_3_changes_fail(self) -> None:
-        for index in (2, 3):
-            errors = [f"{path}: 'left' != 'right'" for path in broker_paths()]
-            errors.append(f"$.board.offers[{index}].reward_silver: 1 != 2")
-            self.assertEqual(report_failed(errors), 1, index)
+    def test_trailing_index_does_not_cross_a_field(self) -> None:
+        self.assertTrue(check.path_matches("$.board.offers[1].tags[2]", "$.board.offers[1].tags[2]"))
+        self.assertTrue(check.path_matches("$.board.offers[1].tags[2][0]", "$.board.offers[1].tags[2]"))
+        self.assertFalse(check.path_matches("$.board.offers[1].tags[2].name", "$.board.offers[1].tags[2]"))
+        self.assertFalse(check.path_matches("$.board.offers[10].id", "$.board.offers[1]"))
+
+    def test_enemy_crew_pin_rejects_99(self) -> None:
+        entries = check.load_divergences()
+        pinned = next(
+            spec
+            for entry in check.listed(entries, "capture_prize.txt", "oracle")
+            for spec in entry["paths"]
+            if spec["path"].endswith("enemy_crew")
+        )
+        self.assertEqual(pinned["python"], 5)
+        self.assertEqual(pinned["rust"], 0)
+        spec = {"path": "$.enemy_crew", "python": pinned["python"], "rust": pinned["rust"]}
+        fake = [{
+            "script": "capture_prize.txt",
+            "check": "oracle",
+            "summary": "pin",
+            "rust": "r",
+            "python": "p",
+            "paths": [spec],
+        }]
+        failed = [0]
+        with contextlib.redirect_stdout(io.StringIO()):
+            check.report(
+                "capture_prize.txt",
+                "oracle",
+                ["$.enemy_crew: 5 != 99"],
+                fake,
+                failed,
+                {"enemy_crew": 5},
+                {"enemy_crew": 99},
+            )
+        self.assertEqual(failed[0], 1)
+        self.assertFalse(check.values_equal(99, pinned["rust"]))
 
 
 class ErrorPathTest(unittest.TestCase):
@@ -71,36 +116,60 @@ class ErrorPathTest(unittest.TestCase):
         self.assertNotEqual(check.error_path(line), "$.board.offers[0].id")
         self.assertFalse(check.error_path(line).startswith("$"))
 
-    def test_dollar_in_an_allowlisted_value_stays_allowlisted(self) -> None:
-        errors = [f"{path}: 'pay $1' != 'pay $2'" for path in broker_paths()]
-        self.assertEqual(report_failed(errors), 0)
-
 
 class WriteGoldenTest(unittest.TestCase):
-    def test_write_golden_keeps_source(self) -> None:
-        oracle = {
-            "_source": "should-not-replace",
-            "seed": 4,
-            "board": {"offers": []},
-            "log": [],
-        }
-        existing = {
-            "_source": "python-oracle",
-            "_note": "Python oracle snapshot",
-            "seed": 0,
-            "board": {"offers": [1]},
-        }
-        written = check.golden_to_write(oracle, existing)
-        self.assertEqual(written["_source"], "python-oracle")
-        self.assertEqual(written["_note"], "Python oracle snapshot")
-        self.assertEqual(written["seed"], 4)
-        self.assertNotIn("board", written)
-        self.assertEqual(list(written)[:2], ["_source", "_note"])
+    def test_unchanged_snapshot_keeps_source_and_bytes(self) -> None:
+        existing = (
+            '{\n'
+            '  "_source": "python-oracle",\n'
+            '  "_note": "keep the note",\n'
+            '  "seed": 4,\n'
+            '  "captain": {\n'
+            '    "name": "Ada"\n'
+            '  }\n'
+            '}\n'
+        )
+        oracle = {"seed": 4, "captain": {"name": "Ada"}, "board": {"offers": []}, "ledger": {}}
+        self.assertEqual(check.golden_text(oracle, existing), existing)
+        self.assertIn('"_source": "python-oracle"', check.golden_text(oracle, existing))
+        self.assertIn('"_note": "keep the note"', check.golden_text(oracle, existing))
 
-    def test_write_golden_does_not_invent_source(self) -> None:
-        written = check.golden_to_write({"seed": 1, "ledger": {}}, None)
-        self.assertNotIn("_source", written)
-        self.assertEqual(written, {"seed": 1})
+    def test_changed_snapshot_still_keeps_source(self) -> None:
+        existing = (
+            '{\n'
+            '  "_source": "python-oracle",\n'
+            '  "_note": "keep the note",\n'
+            '  "seed": 4\n'
+            '}\n'
+        )
+        oracle = {"seed": 5, "board": []}
+        rendered = check.golden_text(oracle, existing)
+        parsed = json.loads(rendered)
+        self.assertEqual(parsed["_source"], "python-oracle")
+        self.assertEqual(parsed["_note"], "keep the note")
+        self.assertEqual(parsed["seed"], 5)
+        self.assertNotIn("board", parsed)
+
+    def test_rewrite_matches_committed_golden_bytes(self) -> None:
+        try:
+            import portlight  # noqa: F401
+        except ImportError:
+            self.skipTest("Python game is not importable")
+        if not os.path.exists(check.rust_bin()):
+            self.skipTest("portlight binary is missing")
+        capture = os.path.join(check.GOLDEN, "capture_prize.json")
+        for name in check.scripts():
+            script = os.path.join(check.SCRIPTS, name)
+            oracle = check.run_oracle(script, os.path.join("/tmp", "pl-golden-bytes"))
+            path = os.path.join(check.GOLDEN, name.replace(".txt", ".json"))
+            with open(path, encoding="utf-8") as fh:
+                existing = fh.read()
+            rendered = check.golden_text(oracle, existing)
+            self.assertEqual(rendered, existing, name)
+        with open(capture, encoding="utf-8") as fh:
+            text = fh.read()
+        self.assertIn('"_source": "python-oracle"', text)
+        self.assertIn('"_note":', text)
 
 
 if __name__ == "__main__":
