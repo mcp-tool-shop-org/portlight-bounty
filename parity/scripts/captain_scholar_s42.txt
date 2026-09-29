@@ -1,0 +1,14 @@
+# scholar seed 42: price, fee, and an 8-day sail from home.
+new scholar Ada 42
+buy grain 5
+sell grain 2
+depart jade_port
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+sell grain 3

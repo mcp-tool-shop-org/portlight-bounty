@@ -1,0 +1,12 @@
+# Wages drain the silver. The depot closes and the grain is seized.
+new merchant Ada 7 porto_novo
+buy_infrastructure warehouse depot
+buy grain 5
+deposit grain 5
+buy_ship swift_cutter
+advance
+advance
+advance
+advance
+advance
+advance

@@ -1,0 +1,6 @@
+# Local broker, Mediterranean trade charter, then repay half the draw.
+new merchant Ada 3 porto_novo
+buy_infrastructure broker Mediterranean local
+buy_infrastructure license med_trade_charter
+take_credit merchant_line 100
+repay_credit 50

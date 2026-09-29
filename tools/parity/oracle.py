@@ -20,6 +20,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
 import random
 import shlex
 import sys
@@ -541,7 +542,7 @@ def begin_game(state, name: str, captain_type: CaptainType, seed: int, port: str
     state["world"] = world
     state["rng"] = random.Random(world.seed)
     state["trade_seq"] = 0
-    state["ledger"] = ReceiptLedger()
+    state["ledger"] = ReceiptLedger(run_id=f"run-{world.seed}")
     state["board"] = ContractBoard()
     state["infra"] = InfrastructureState()
     state["campaign"] = CampaignState()
@@ -915,6 +916,14 @@ def dispatch(state, tokens: list[str], entry: dict) -> None:
         except ValueError as exc:
             raise ScriptError(f"Invalid number: {tokens[1]}") from exc
         state["world"].captain.wanted_level = level
+    elif cmd == "save":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: save <slot>")
+        do_save(state, tokens[1])
+    elif cmd == "load":
+        if len(tokens) != 2:
+            raise ScriptError("Usage: load <slot>")
+        do_load(state, tokens[1])
     else:
         raise ScriptError(f"Unknown command: {cmd}")
 
@@ -2462,6 +2471,11 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             "pending_duel": None,
             "ports": [],
             "victory": [],
+            "board": empty_board_view(),
+            "captain_memories": [],
+            "active_bounties": [],
+            "deferred_fees": [],
+            "ledger": empty_ledger_view(),
             "log": log,
         }
     ship = world.captain.ship
@@ -2645,6 +2659,13 @@ def snapshot(state: dict, log: list[dict]) -> dict:
             logged = snap.pop("log")
             snap["narrative"] = narrative
             snap["log"] = logged
+    logged = snap.pop("log")
+    snap["board"] = board_view(state)
+    snap["captain_memories"] = memory_view(world)
+    snap["active_bounties"] = list(world.captain.active_bounties)
+    snap["deferred_fees"] = fee_view(world)
+    snap["ledger"] = ledger_view(state)
+    snap["log"] = logged
     return snap
 
 
@@ -3032,7 +3053,328 @@ def victory_view(paths) -> list:
     ]
 
 
-def run(script: str) -> dict:
+def as_text(value) -> str:
+    if value is None:
+        return ""
+    if hasattr(value, "value"):
+        return str(value.value)
+    return str(value)
+
+
+def opt_text(value):
+    if value is None:
+        return None
+    text = as_text(value)
+    return text or None
+
+
+def empty_board_view() -> dict:
+    return {
+        "offers": [],
+        "active": [],
+        "breaches": [],
+        "last_refresh_day": 0,
+        "max_offers": 5,
+    }
+
+
+def empty_ledger_view() -> dict:
+    return {
+        "run_id": "",
+        "total_buys": 0,
+        "total_sells": 0,
+        "net_profit": 0,
+        "receipts": [],
+    }
+
+
+def offer_view(offer) -> dict:
+    return {
+        "id": offer.id,
+        "template_id": offer.template_id,
+        "family": as_text(offer.family),
+        "title": offer.title,
+        "description": offer.description,
+        "issuer_port_id": offer.issuer_port_id,
+        "destination_port_id": offer.destination_port_id,
+        "good_id": offer.good_id,
+        "quantity": offer.quantity,
+        "created_day": offer.created_day,
+        "deadline_day": offer.deadline_day,
+        "reward_silver": offer.reward_silver,
+        "bonus_reward": offer.bonus_reward,
+        "required_trust_tier": as_text(offer.required_trust_tier),
+        "required_standing": offer.required_standing,
+        "heat_ceiling": offer.heat_ceiling,
+        "inspection_modifier": offer.inspection_modifier,
+        "source_region": opt_text(offer.source_region),
+        "source_port": opt_text(offer.source_port),
+        "offer_reason": offer.offer_reason,
+        "tags": [as_text(tag) for tag in offer.tags],
+        "acceptance_window": offer.acceptance_window,
+    }
+
+
+def active_view(contract) -> dict:
+    return {
+        "offer_id": contract.offer_id,
+        "template_id": contract.template_id,
+        "family": as_text(contract.family),
+        "title": contract.title,
+        "accepted_day": contract.accepted_day,
+        "deadline_day": contract.deadline_day,
+        "destination_port_id": contract.destination_port_id,
+        "good_id": contract.good_id,
+        "required_quantity": contract.required_quantity,
+        "delivered_quantity": contract.delivered_quantity,
+        "reward_silver": contract.reward_silver,
+        "bonus_reward": contract.bonus_reward,
+        "source_region": opt_text(contract.source_region),
+        "source_port": opt_text(contract.source_port),
+        "inspection_modifier": contract.inspection_modifier,
+        "status": as_text(contract.status),
+    }
+
+
+def board_view(state: dict) -> dict:
+    board = state.get("board")
+    world = state.get("world")
+    if board is None or world is None:
+        return empty_board_view()
+    breaches = []
+    for row in getattr(world.captain, "breach_records", []) or []:
+        if isinstance(row, dict):
+            family = row.get("family", "")
+            breaches.append({
+                "contract_id": row.get("contract_id", ""),
+                "day": row.get("day", 0),
+                "port_id": row.get("port_id", ""),
+                "family": as_text(family),
+            })
+        else:
+            breaches.append({
+                "contract_id": row.contract_id,
+                "day": row.day,
+                "port_id": row.port_id,
+                "family": as_text(row.family),
+            })
+    return {
+        "offers": [offer_view(offer) for offer in board.offers],
+        "active": [active_view(contract) for contract in board.active],
+        "breaches": breaches,
+        "last_refresh_day": board.last_refresh_day,
+        "max_offers": board.max_offers,
+    }
+
+
+def memory_view(world) -> list:
+    raw = getattr(world.pirates, "captain_memories", None) or {}
+    if isinstance(raw, dict):
+        memories = list(raw.values())
+    else:
+        memories = list(raw)
+    rows = []
+    for memory in memories:
+        rel = memory.relationship
+        rows.append({
+            "captain_id": memory.captain_id,
+            "encounters": [
+                {
+                    "day": item.day,
+                    "region": item.region,
+                    "outcome": item.outcome,
+                    "player_spared": item.player_spared,
+                    "player_used_firearm": item.player_used_firearm,
+                    "crew_killed": item.crew_killed,
+                    "respect_delta": item.respect_delta,
+                    "fear_delta": item.fear_delta,
+                    "grudge_delta": item.grudge_delta,
+                    "familiarity_delta": item.familiarity_delta,
+                }
+                for item in memory.encounters
+            ],
+            "relationship": {
+                "respect": rel.respect,
+                "fear": rel.fear,
+                "grudge": rel.grudge,
+                "familiarity": rel.familiarity,
+            },
+            "last_seen_day": memory.last_seen_day,
+            "last_seen_region": memory.last_seen_region,
+            "times_spared": memory.times_spared,
+            "times_defeated_by_player": memory.times_defeated_by_player,
+            "times_defeated_player": memory.times_defeated_player,
+            "player_sank_their_ship": memory.player_sank_their_ship,
+        })
+    return rows
+
+
+def fee_view(world) -> list:
+    rows = []
+    for fee in world.captain.deferred_fees:
+        if isinstance(fee, dict):
+            rows.append({
+                "type": fee.get("type", ""),
+                "amount": fee.get("amount", 0),
+                "day": fee.get("day", 0),
+            })
+        else:
+            rows.append({
+                "type": fee.fee_type,
+                "amount": fee.amount,
+                "day": fee.day,
+            })
+    return rows
+
+
+def ledger_view(state: dict) -> dict:
+    ledger = state.get("ledger")
+    if ledger is None:
+        return empty_ledger_view()
+    receipts = []
+    for receipt in ledger.receipts:
+        receipts.append({
+            "receipt_id": receipt.receipt_id,
+            "captain_name": receipt.captain_name,
+            "port_id": receipt.port_id,
+            "good_id": receipt.good_id,
+            "action": as_text(receipt.action),
+            "quantity": receipt.quantity,
+            "unit_price": receipt.unit_price,
+            "total_price": receipt.total_price,
+            "day": receipt.day,
+            "stock_before": receipt.stock_before,
+            "stock_after": receipt.stock_after,
+        })
+    return {
+        "run_id": ledger.run_id,
+        "total_buys": ledger.total_buys,
+        "total_sells": ledger.total_sells,
+        "net_profit": ledger.net_profit,
+        "receipts": receipts,
+    }
+
+
+def save_root() -> str:
+    return os.environ.get("PORTLIGHT_SAVE_ROOT") or ""
+
+
+def project_history(state: dict) -> None:
+    """Copy harness encounter counters onto the world before a save.
+
+    The live snapshot reads `state["history"]`. `save_game` writes
+    `world.pirates`. Projecting keeps a slot aligned with that snapshot.
+    """
+    world = state.get("world")
+    history = state.get("history")
+    if world is None or not history:
+        return
+    from portlight.engine.models import PirateEncounterRecord
+
+    world.pirates.encounters = [
+        PirateEncounterRecord(
+            captain_id=row["captain_id"],
+            faction_id=row["faction_id"],
+            day=row["day"],
+            outcome=row["outcome"],
+            region=row["region"],
+        )
+        for row in history.get("encounters") or []
+    ]
+    world.pirates.duels_won = history.get("duels_won", 0)
+    world.pirates.duels_lost = history.get("duels_lost", 0)
+    world.pirates.naval_victories = history.get("naval_victories", 0)
+    world.pirates.naval_defeats = history.get("naval_defeats", 0)
+
+
+def history_from_world(world) -> dict:
+    pirates = world.pirates
+    return {
+        "encounters": [
+            {
+                "captain_id": row.captain_id,
+                "faction_id": row.faction_id,
+                "day": row.day,
+                "outcome": row.outcome,
+                "region": row.region,
+            }
+            for row in pirates.encounters
+        ],
+        "duels_won": pirates.duels_won,
+        "duels_lost": pirates.duels_lost,
+        "naval_victories": pirates.naval_victories,
+        "naval_defeats": pirates.naval_defeats,
+        "fleet": [],
+    }
+
+
+def reprice_loaded(state: dict) -> None:
+    from portlight.content.goods import GOODS
+    from portlight.engine.captain_identity import CAPTAIN_TEMPLATES, CaptainType
+    from portlight.engine.economy import recalculate_prices
+
+    world = state["world"]
+    try:
+        pricing = CAPTAIN_TEMPLATES[CaptainType(world.captain.captain_type)].pricing
+    except (ValueError, KeyError):
+        pricing = CAPTAIN_TEMPLATES[CaptainType.MERCHANT].pricing
+    for port in world.ports.values():
+        recalculate_prices(port, GOODS, pricing)
+
+
+def do_save(state: dict, slot: str) -> None:
+    if state.get("world") is None:
+        raise ScriptError("No active game")
+    from pathlib import Path
+
+    from portlight.engine.save import save_game
+
+    root = save_root()
+    if not root:
+        raise ScriptError("PORTLIGHT_SAVE_ROOT is not set")
+    project_history(state)
+    state["world"].captain.silver = max(0, state["world"].captain.silver)
+    save_game(
+        state["world"],
+        state["ledger"],
+        state["board"],
+        state["infra"],
+        state["campaign"],
+        state.get("narrative"),
+        Path(root),
+        slot=slot,
+    )
+
+
+def do_load(state: dict, slot: str) -> None:
+    from pathlib import Path
+
+    from portlight.engine.save import load_game
+
+    root = save_root()
+    if not root:
+        raise ScriptError("PORTLIGHT_SAVE_ROOT is not set")
+    loaded = load_game(Path(root), slot=slot)
+    if loaded is None:
+        raise ScriptError(f"No save in slot {slot}")
+    world, ledger, board, infra, campaign, narrative = loaded
+    state["world"] = world
+    state["ledger"] = ledger
+    state["board"] = board
+    state["infra"] = infra
+    state["campaign"] = campaign
+    state["narrative"] = narrative
+    state["trade_seq"] = len(ledger.receipts)
+    state["rng"] = random.Random(world.seed + world.day)
+    state["encounter"] = None
+    state["player_combat"] = None
+    state["opponent_combat"] = None
+    state["pending_victory"] = False
+    state["history"] = history_from_world(world)
+    reprice_loaded(state)
+
+
+def execute_script(script: str) -> tuple[dict, list]:
     state: dict = {
         "world": None,
         "rng": None,
@@ -3056,16 +3398,49 @@ def run(script: str) -> dict:
             log.append(entry)
             break
         log.append(entry)
+    return state, log
+
+
+def run(script: str) -> dict:
+    state, log = execute_script(script)
     return snapshot(state, log)
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: oracle.py <script>", file=sys.stderr)
+    args = sys.argv[1:]
+    save_dir = None
+    slot = "default"
+    script_path = None
+    index = 0
+    while index < len(args):
+        if args[index] == "--save-dir":
+            index += 1
+            if index >= len(args):
+                print("Usage: oracle.py <script> [--save-dir DIR --slot NAME]", file=sys.stderr)
+                return 2
+            save_dir = args[index]
+        elif args[index] == "--slot":
+            index += 1
+            if index >= len(args):
+                print("Usage: oracle.py <script> [--save-dir DIR --slot NAME]", file=sys.stderr)
+                return 2
+            slot = args[index]
+        elif script_path is None and not args[index].startswith("-"):
+            script_path = args[index]
+        else:
+            print("Usage: oracle.py <script> [--save-dir DIR --slot NAME]", file=sys.stderr)
+            return 2
+        index += 1
+    if script_path is None:
+        print("Usage: oracle.py <script> [--save-dir DIR --slot NAME]", file=sys.stderr)
         return 2
-    with open(sys.argv[1], encoding="utf-8") as fh:
+    with open(script_path, encoding="utf-8") as fh:
         script = fh.read()
-    json.dump(run(script), sys.stdout, indent=2)
+    state, log = execute_script(script)
+    if save_dir and state.get("world") is not None:
+        os.environ["PORTLIGHT_SAVE_ROOT"] = save_dir
+        do_save(state, slot)
+    json.dump(snapshot(state, log), sys.stdout, indent=2)
     sys.stdout.write("\n")
     return 0
 

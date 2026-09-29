@@ -1,0 +1,14 @@
+# dockhand seed 42: price, fee, and an 8-day sail from home.
+new dockhand Ada 42
+buy grain 5
+sell grain 2
+depart monsoon_reach
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+sell grain 3

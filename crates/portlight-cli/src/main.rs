@@ -8,7 +8,7 @@ use std::fs;
 use std::io::{self, Read};
 use std::process::ExitCode;
 
-use portlight_sim::{new_game, run_script};
+use portlight_sim::{load_snapshot, new_game, run_and_save, run_script};
 
 fn main() -> ExitCode {
     let mut args = env::args().skip(1);
@@ -22,6 +22,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         "script" => script_cmd(&args.collect::<Vec<_>>()),
+        "load" => load_cmd(&args.collect::<Vec<_>>()),
         "new" => new_cmd(&args.collect::<Vec<_>>()),
         other => {
             eprintln!("Unknown command: {other}");
@@ -38,8 +39,9 @@ portlight — trade simulation CLI
 
 Usage:
   portlight new --captain merchant --name Ada --seed 42 [--json]
-  portlight script <file>
+  portlight script <file> [--save-dir DIR --slot NAME]
   portlight script -          read the script from stdin
+  portlight load <dir> <slot> print the snapshot of a version-12 slot
 
 Script commands:
   new <captain_type> <name> <seed> [port]
@@ -66,8 +68,38 @@ Script commands:
 }
 
 fn script_cmd(args: &[String]) -> ExitCode {
-    let Some(path) = args.first() else {
-        eprintln!("Usage: portlight script <file>");
+    let mut file: Option<String> = None;
+    let mut save_dir: Option<String> = None;
+    let mut slot = "default".to_string();
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--save-dir" => {
+                index += 1;
+                let Some(dir) = args.get(index) else {
+                    eprintln!("Usage: portlight script <file> [--save-dir DIR --slot NAME]");
+                    return ExitCode::from(2);
+                };
+                save_dir = Some(dir.clone());
+            }
+            "--slot" => {
+                index += 1;
+                let Some(name) = args.get(index) else {
+                    eprintln!("Usage: portlight script <file> [--save-dir DIR --slot NAME]");
+                    return ExitCode::from(2);
+                };
+                slot = name.clone();
+            }
+            other if file.is_none() && !other.starts_with('-') => file = Some(other.to_string()),
+            _ => {
+                eprintln!("Usage: portlight script <file> [--save-dir DIR --slot NAME]");
+                return ExitCode::from(2);
+            }
+        }
+        index += 1;
+    }
+    let Some(path) = file else {
+        eprintln!("Usage: portlight script <file> [--save-dir DIR --slot NAME]");
         return ExitCode::from(2);
     };
     let text = if path == "-" {
@@ -78,7 +110,7 @@ fn script_cmd(args: &[String]) -> ExitCode {
         }
         buf
     } else {
-        match fs::read_to_string(path) {
+        match fs::read_to_string(&path) {
             Ok(text) => text,
             Err(err) => {
                 eprintln!("Failed to read {path}: {err}");
@@ -86,7 +118,17 @@ fn script_cmd(args: &[String]) -> ExitCode {
             }
         }
     };
-    let snap = run_script(&text);
+    let snap = if let Some(dir) = save_dir {
+        match run_and_save(&text, std::path::Path::new(&dir), &slot) {
+            Ok(snap) => snap,
+            Err(err) => {
+                eprintln!("{err}");
+                return ExitCode::from(1);
+            }
+        }
+    } else {
+        run_script(&text)
+    };
     match serde_json::to_string_pretty(&snap) {
         Ok(json) => println!("{json}"),
         Err(err) => {
@@ -98,6 +140,33 @@ fn script_cmd(args: &[String]) -> ExitCode {
         ExitCode::from(1)
     } else {
         ExitCode::SUCCESS
+    }
+}
+
+fn load_cmd(args: &[String]) -> ExitCode {
+    if args.len() != 2 {
+        eprintln!("Usage: portlight load <dir> <slot>");
+        return ExitCode::from(2);
+    }
+    match load_snapshot(std::path::Path::new(&args[0]), &args[1]) {
+        Ok(Some(snap)) => match serde_json::to_string_pretty(&snap) {
+            Ok(json) => {
+                println!("{json}");
+                ExitCode::SUCCESS
+            }
+            Err(err) => {
+                eprintln!("Failed to encode snapshot: {err}");
+                ExitCode::from(1)
+            }
+        },
+        Ok(None) => {
+            eprintln!("No save in slot {}", args[1]);
+            ExitCode::from(1)
+        }
+        Err(err) => {
+            eprintln!("{err}");
+            ExitCode::from(1)
+        }
     }
 }
 

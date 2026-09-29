@@ -1,0 +1,14 @@
+# navigator seed 42: price, fee, and an 8-day sail from home.
+new navigator Ada 42
+buy grain 5
+sell grain 2
+depart corsairs_rest
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+sell grain 3

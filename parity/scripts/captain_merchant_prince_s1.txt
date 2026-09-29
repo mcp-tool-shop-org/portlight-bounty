@@ -1,0 +1,14 @@
+# merchant_prince seed 1: price, fee, and an 8-day sail from home.
+new merchant_prince Ada 1
+buy grain 5
+sell grain 2
+depart silva_bay
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+sell grain 3

@@ -1,0 +1,14 @@
+# Depot grain, sail to Silva Bay and back, then withdraw it at Porto Novo.
+new merchant Ada 7 porto_novo
+buy_infrastructure warehouse depot
+buy grain 10
+deposit grain 5
+depart silva_bay
+advance
+advance
+advance
+depart porto_novo
+advance
+advance
+advance
+withdraw grain 5

@@ -70,6 +70,9 @@ fn snap(session: &Session) -> Value {
         session.books(),
         session.infrastructure(),
         session.narrative(),
+        session.board(),
+        session.receipts(),
+        session.run_id(),
         Vec::new(),
     ))
     .unwrap()

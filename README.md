@@ -22,7 +22,7 @@ cargo run -p portlight-cli -- script parity/scripts/voyage.txt
 cargo test --locked --workspace --exclude portlight-godot
 ```
 
-Script commands, in `script.rs` order: `new`, `buy`, `sell`, `depart`, `advance`, `arrival_narrative`, `evaluate_consequences`, `accept_contract`, `complete_contract`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `deposit`, `withdraw`, `repay_credit`, `hire`, `provision`, `work`, `duel`, `resolve_duel`, `encounter`, `naval`, `board`, `fight`, `capture`, `train`, `recruit`, `skill`, `remember`, `agency`, `spare`, `take_all`, `gear`, `buy_ship`, `upgrade`, `form_convoy`, `repair_fleet`, `repair`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `abandon_contract`, `transfer`, `maintain`, `hunt`, `bounty`, `wanted`.
+Script commands, in `script.rs` order: `new`, `buy`, `sell`, `depart`, `advance`, `arrival_narrative`, `evaluate_consequences`, `accept_contract`, `complete_contract`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `deposit`, `withdraw`, `repay_credit`, `save`, `load`, `hire`, `provision`, `work`, `duel`, `resolve_duel`, `encounter`, `naval`, `board`, `fight`, `capture`, `train`, `recruit`, `skill`, `remember`, `agency`, `spare`, `take_all`, `gear`, `buy_ship`, `upgrade`, `form_convoy`, `repair_fleet`, `repair`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `abandon_contract`, `transfer`, `maintain`, `hunt`, `bounty`, `wanted`.
 
 `godot` 0.5.5 needs Rust 1.94 or newer. The sim pin in `rust-toolchain.toml` is 1.98.1, and the sim CI job excludes `portlight-godot`. The Godot CI job installs stable, then sets `RUSTUP_TOOLCHAIN=stable` for the build. That variable overrides `rust-toolchain.toml`. The job still downloads Godot 4.7.2, runs clippy and `cargo test -p portlight-godot`, runs the headless import and `--smoke`, and compares fresh Xvfb frames to `docs/screenshots`. Headless Godot cannot draw, so that comparison is not a headless capture. Build the extension locally with `cargo build -p portlight-godot`.
 
@@ -90,14 +90,40 @@ The seam scene validates the layout before it writes. An illegal layout (pilings
 - `boarding.txt`
 - `bounty_board.txt`
 - `bounty_claim.txt`
+- `bounty_claim_sail.txt`
 - `bounty_hunter_voyage.txt`
 - `bounty_max.txt`
 - `bounty_not_defeated.txt`
 - `bounty_not_hunting.txt`
 - `bounty_unknown.txt`
+- `broker_board.txt`
 - `buy_broker.txt`
 - `buy_insurance.txt`
 - `buy_warehouse.txt`
+- `captain_bounty_hunter_s1.txt`
+- `captain_bounty_hunter_s42.txt`
+- `captain_corsair_s1.txt`
+- `captain_corsair_s42.txt`
+- `captain_dockhand_s1.txt`
+- `captain_dockhand_s42.txt`
+- `captain_merchant_prince_s1.txt`
+- `captain_merchant_prince_s42.txt`
+- `captain_merchant_s1.txt`
+- `captain_merchant_s42.txt`
+- `captain_navigator_s1.txt`
+- `captain_navigator_s42.txt`
+- `captain_privateer_s1.txt`
+- `captain_privateer_s42.txt`
+- `captain_scholar_s1.txt`
+- `captain_scholar_s42.txt`
+- `captain_smuggler_s1.txt`
+- `captain_smuggler_s42.txt`
+- `capture_decline.txt`
+- `capture_fleet_full.txt`
+- `capture_prize.txt`
+- `capture_spare_prefix.txt`
+- `capture_too_few.txt`
+- `capture_too_many.txt`
 - `cargo_loss.txt`
 - `consequences.txt`
 - `contraband_sell.txt`
@@ -105,7 +131,25 @@ The seam scene validates the layout before it writes. An illegal layout (pilings
 - `contract_arrival_rng.txt`
 - `contract_complete.txt`
 - `contract_expire.txt`
+- `credit_default.txt`
 - `crew_minimum.txt`
+- `custom_captain.txt`
+- `custom_mentor_port.txt`
+- `custom_points_total.txt`
+- `custom_port_region.txt`
+- `custom_reputation_max.txt`
+- `custom_reputation_negative.txt`
+- `custom_sailing_max.txt`
+- `custom_sailing_negative.txt`
+- `custom_shadow_max.txt`
+- `custom_shadow_negative.txt`
+- `custom_trade_max.txt`
+- `custom_trade_negative.txt`
+- `custom_unknown_bloc.txt`
+- `custom_unknown_faction.txt`
+- `custom_unknown_mentor.txt`
+- `custom_unknown_port.txt`
+- `custom_unknown_region.txt`
 - `dock_current_ship.txt`
 - `dock_work.txt`
 - `dry_dock_named.txt`
@@ -143,6 +187,8 @@ The seam scene validates the layout before it writes. An illegal layout (pilings
 - `hunt_sea_success.txt`
 - `injury_heal.txt`
 - `inspection_rep.txt`
+- `insurance_claim.txt`
+- `license_repay.txt`
 - `maintain.txt`
 - `maintain_blacksmith.txt`
 - `milestone_reached.txt`
@@ -158,6 +204,7 @@ The seam scene validates the layout before it writes. An illegal layout (pilings
 - `rename_ship.txt`
 - `repair_fleet.txt`
 - `repair_ship.txt`
+- `save_reload.txt`
 - `sea_captain_agency.txt`
 - `sea_culture.txt`
 - `sell_fleet_ship.txt`
@@ -171,6 +218,8 @@ The seam scene validates the layout before it writes. An illegal layout (pilings
 - `victory_spare.txt`
 - `victory_takeall.txt`
 - `voyage.txt`
+- `warehouse_deposit.txt`
+- `warehouse_seizure.txt`
 - `work_at_sea.txt`
 
 To regenerate the goldens from the Python checkout:
