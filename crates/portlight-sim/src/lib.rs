@@ -61,7 +61,7 @@ pub use custom_captain::{
 pub use duel::{DuelOutcome, DuelRound};
 pub use error::SimError;
 pub use model::{MAP_GRID_HEIGHT, MAP_GRID_WIDTH};
-pub use script::run_script;
+pub use script::{load_snapshot, run_and_save, run_script};
 pub use session::{Session, Turn};
 pub use snapshot::Snapshot;
 pub use voyage::{

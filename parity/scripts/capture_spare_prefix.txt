@@ -1,0 +1,20 @@
+# The victory_spare prefix, stopped before spare, then capture.
+# The fight is a personal duel, not capture_available, so capture is refused.
+new privateer Ada 4
+encounter fight raj_the_quiet
+naval broadside
+naval broadside
+naval rake
+naval evade
+naval close
+naval close
+board
+fight thrust
+fight slash
+fight parry
+fight dodge
+fight thrust
+fight thrust
+fight thrust
+fight thrust
+capture 0

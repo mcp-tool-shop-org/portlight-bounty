@@ -1,0 +1,12 @@
+# merchant_prince_s1: buy and sell grain at home, sail to the home neighbour,
+# resolve a pirate duel when one stops the day, then sell at arrival.
+new merchant_prince Ada 1
+buy grain 5
+sell grain 2
+depart silva_bay
+advance
+advance
+advance
+advance
+buy timber 1
+sell timber 1

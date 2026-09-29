@@ -1,0 +1,11 @@
+# scholar_s42: buy and sell grain at home, sail to the home neighbour,
+# resolve a pirate duel when one stops the day, then sell at arrival.
+new scholar Ada 42
+buy grain 5
+sell grain 2
+depart jade_port
+advance
+advance
+advance
+resolve_duel
+sell grain 3

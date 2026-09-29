@@ -1,0 +1,11 @@
+# privateer_s1: buy and sell grain at home, sail to the home neighbour,
+# resolve a pirate duel when one stops the day, then sell at arrival.
+new privateer Ada 1
+buy grain 5
+sell grain 2
+depart thornport
+advance
+advance
+advance
+buy tea 1
+sell tea 1

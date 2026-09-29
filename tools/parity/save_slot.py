@@ -20,7 +20,7 @@ from portlight.engine.captain_identity import CAPTAIN_TEMPLATES, CaptainType
 from portlight.engine.economy import recalculate_prices
 from portlight.engine.save import load_game
 
-from oracle import snapshot
+from oracle import history_from_world, snapshot
 
 
 def pricing_for(captain_type: str):
@@ -52,6 +52,7 @@ def main() -> int:
         "infra": infra,
         "campaign": campaign,
         "narrative": narrative,
+        "history": history_from_world(world),
     }
     json.dump(snapshot(state, []), sys.stdout, indent=2)
     sys.stdout.write("\n")

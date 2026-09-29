@@ -21,6 +21,8 @@ jobs:
         run: cargo test --locked --workspace --exclude portlight-godot
       - name: Manifest gate fixtures
         run: python3 -m pip install --target /tmp/portlight-pytest 'pytest==9.1.1' && PYTHONPATH=/tmp/portlight-pytest python3 tools/test_build_manifest_gates.py
+      - name: Parity allowlist
+        run: python3 tools/parity/test_check.py
 
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.
@@ -43,6 +45,8 @@ jobs:
         run: cargo build --locked -p portlight-cli
       - name: Live Python oracle
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
+      - name: Parity allowlist and golden bytes
+        run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/test_check.py
       - name: Victory fixtures
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/victory_cases.py --check
       - name: Roster and custom-captain options

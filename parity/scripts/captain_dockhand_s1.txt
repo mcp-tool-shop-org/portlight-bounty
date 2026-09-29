@@ -1,0 +1,11 @@
+# dockhand_s1: buy and sell grain at home, sail to the home neighbour,
+# resolve a pirate duel when one stops the day, then sell at arrival.
+new dockhand Ada 1
+buy grain 5
+sell grain 2
+depart monsoon_reach
+advance
+advance
+advance
+advance
+sell grain 3

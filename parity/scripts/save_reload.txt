@@ -1,0 +1,6 @@
+# Save, buy more grain, then load. The slot keeps the first purchase.
+new merchant Ada 1 porto_novo
+buy grain 2
+save alpha
+buy grain 3
+load alpha

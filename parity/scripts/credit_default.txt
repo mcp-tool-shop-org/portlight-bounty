@@ -1,0 +1,16 @@
+# Draw the merchant line, spend the silver, and miss the first payment.
+new merchant Ada 11 porto_novo
+take_credit merchant_line 100
+buy_ship swift_cutter
+buy grain 25
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance
+advance

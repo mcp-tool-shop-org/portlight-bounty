@@ -361,6 +361,16 @@ impl Session {
         self.trade_seq
     }
 
+    /// Receipts in ledger order. `trade_seq` is this length after a load.
+    pub fn receipts(&self) -> &[TradeReceipt] {
+        &self.receipts
+    }
+
+    /// `run-{seed}`, matching `GameSession.new`.
+    pub fn run_id(&self) -> &str {
+        &self.run_id
+    }
+
     /// Ledger and the contract/infrastructure records victory reads.
     pub fn books(&self) -> &HouseBooks {
         &self.books

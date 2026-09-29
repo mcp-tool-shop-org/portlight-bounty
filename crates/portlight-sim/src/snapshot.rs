@@ -9,9 +9,10 @@ use crate::content;
 use crate::duel::{DuelOutcome, DuelRound};
 use crate::economy::TradeReceipt;
 use crate::model::{
-    ActiveContract, ActiveFestival, ActivePolicy, BrokerOffice, Captain, ContractOutcome,
-    CreditState, CulturalState, InfrastructureRecord, InsuranceClaim, JournalEntry, NarrativeState,
-    OwnedLicense, Standing, Voyage, WarehouseLease, World,
+    ActiveContract, ActiveFestival, ActivePolicy, BreachRecord, BrokerOffice, Captain,
+    CaptainMemory, Contract, ContractBoard, ContractOutcome, CreditState, CulturalState,
+    DeferredFee, InfrastructureRecord, InsuranceClaim, JournalEntry, NarrativeState, OwnedLicense,
+    Standing, Voyage, WarehouseLease, World,
 };
 use crate::session::EncounterStep;
 use crate::voyage::VoyageEvent;
@@ -34,7 +35,35 @@ pub struct Snapshot {
     pub culture: Option<CultureSnap>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub narrative: Option<NarrativeSnap>,
+    /// Live contract board. Omitted unless `PORTLIGHT_WIDE_SNAPSHOT=1`, so the
+    /// committed goldens keep the narrow shape.
+    #[serde(skip_serializing_if = "omit_unless_wide")]
+    pub board: BoardSnap,
+    #[serde(skip_serializing_if = "omit_unless_wide")]
+    pub captain_memories: Vec<MemorySnap>,
+    #[serde(skip_serializing_if = "omit_unless_wide")]
+    pub active_bounties: Vec<String>,
+    #[serde(skip_serializing_if = "omit_unless_wide")]
+    pub deferred_fees: Vec<FeeSnap>,
+    #[serde(skip_serializing_if = "omit_unless_wide")]
+    pub ledger: LedgerSnap,
     pub log: Vec<LogEntry>,
+}
+
+/// `PORTLIGHT_WIDE_SNAPSHOT=1` adds the board, memories, bounties, deferred
+/// fees, and ledger to the JSON. Cargo golden tests, including
+/// `save_parity::snap`, clear the variable before they serialize, so a
+/// developer shell cannot widen that comparison. CI does not set it. Golden
+/// files stay the narrow shape.
+fn omit_unless_wide<T>(_: &T) -> bool {
+    !wide_snapshot()
+}
+
+pub fn wide_snapshot() -> bool {
+    matches!(
+        std::env::var("PORTLIGHT_WIDE_SNAPSHOT").ok().as_deref(),
+        Some("1")
+    )
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -1027,12 +1056,146 @@ pub struct CreditSnap {
     pub active: bool,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct BoardSnap {
+    pub offers: Vec<OfferSnap>,
+    pub active: Vec<ActiveSnap>,
+    pub breaches: Vec<BreachSnap>,
+    pub last_refresh_day: i64,
+    pub max_offers: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OfferSnap {
+    pub id: String,
+    pub template_id: String,
+    pub family: String,
+    pub title: String,
+    pub description: String,
+    pub issuer_port_id: String,
+    pub destination_port_id: String,
+    pub good_id: String,
+    pub quantity: i64,
+    pub created_day: i64,
+    pub deadline_day: i64,
+    pub reward_silver: i64,
+    pub bonus_reward: i64,
+    pub required_trust_tier: String,
+    pub required_standing: i64,
+    pub heat_ceiling: Option<i64>,
+    pub inspection_modifier: f64,
+    pub source_region: Option<String>,
+    pub source_port: Option<String>,
+    pub offer_reason: String,
+    pub tags: Vec<String>,
+    pub acceptance_window: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ActiveSnap {
+    pub offer_id: String,
+    pub template_id: String,
+    pub family: String,
+    pub title: String,
+    pub accepted_day: i64,
+    pub deadline_day: i64,
+    pub destination_port_id: String,
+    pub good_id: String,
+    pub required_quantity: i64,
+    pub delivered_quantity: i64,
+    pub reward_silver: i64,
+    pub bonus_reward: i64,
+    pub source_region: Option<String>,
+    pub source_port: Option<String>,
+    pub inspection_modifier: f64,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct BreachSnap {
+    pub contract_id: String,
+    pub day: i64,
+    pub port_id: String,
+    pub family: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MemorySnap {
+    pub captain_id: String,
+    pub encounters: Vec<MemoryEncounterSnap>,
+    pub relationship: RelationshipSnap,
+    pub last_seen_day: i64,
+    pub last_seen_region: String,
+    pub times_spared: i64,
+    pub times_defeated_by_player: i64,
+    pub times_defeated_player: i64,
+    pub player_sank_their_ship: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MemoryEncounterSnap {
+    pub day: i64,
+    pub region: String,
+    pub outcome: String,
+    pub player_spared: bool,
+    pub player_used_firearm: bool,
+    pub crew_killed: i64,
+    pub respect_delta: i64,
+    pub fear_delta: i64,
+    pub grudge_delta: i64,
+    pub familiarity_delta: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct RelationshipSnap {
+    pub respect: i64,
+    pub fear: i64,
+    pub grudge: i64,
+    pub familiarity: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FeeSnap {
+    #[serde(rename = "type")]
+    pub fee_type: String,
+    pub amount: i64,
+    pub day: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LedgerSnap {
+    pub run_id: String,
+    pub total_buys: i64,
+    pub total_sells: i64,
+    pub net_profit: i64,
+    pub receipts: Vec<LedgerReceiptSnap>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LedgerReceiptSnap {
+    pub receipt_id: String,
+    pub captain_name: String,
+    pub port_id: String,
+    pub good_id: String,
+    pub action: String,
+    pub quantity: i64,
+    pub unit_price: i64,
+    pub total_price: i64,
+    pub day: i64,
+    pub stock_before: i64,
+    pub stock_after: i64,
+}
+
+#[allow(clippy::too_many_arguments)]
 pub fn capture(
     world: &World,
     trade_seq: u64,
     books: &HouseBooks,
     infra: &InfrastructureRecord,
     narrative: &NarrativeState,
+    board: &ContractBoard,
+    receipts: &[TradeReceipt],
+    run_id: &str,
     log: Vec<LogEntry>,
 ) -> Snapshot {
     Snapshot {
@@ -1084,7 +1247,166 @@ pub fn capture(
                     .unwrap_or_default(),
             })
             .collect(),
+        board: board_snap(board),
+        captain_memories: world.captain_memories.iter().map(memory_snap).collect(),
+        active_bounties: world.captain.active_bounties.clone(),
+        deferred_fees: world.captain.deferred_fees.iter().map(fee_snap).collect(),
+        ledger: ledger_snap(books, receipts, run_id),
         log,
+    }
+}
+
+fn board_snap(board: &ContractBoard) -> BoardSnap {
+    BoardSnap {
+        offers: board.offers.iter().map(offer_snap).collect(),
+        active: board.active.iter().map(active_snap).collect(),
+        breaches: board.breaches.iter().map(breach_snap).collect(),
+        last_refresh_day: board.last_refresh_day,
+        max_offers: board.max_offers,
+    }
+}
+
+fn offer_snap(offer: &Contract) -> OfferSnap {
+    OfferSnap {
+        id: offer.id.clone(),
+        template_id: offer.template_id.clone(),
+        family: offer.family.clone(),
+        title: offer.title.clone(),
+        description: offer.description.clone(),
+        issuer_port_id: offer.issuer_port_id.clone(),
+        destination_port_id: offer.destination_port_id.clone(),
+        good_id: offer.good_id.clone(),
+        quantity: offer.quantity,
+        created_day: offer.created_day,
+        deadline_day: offer.deadline_day,
+        reward_silver: offer.reward_silver,
+        bonus_reward: offer.bonus_reward,
+        required_trust_tier: offer.required_trust_tier.clone(),
+        required_standing: offer.required_standing,
+        heat_ceiling: offer.heat_ceiling,
+        inspection_modifier: offer.inspection_modifier,
+        source_region: offer.source_region.clone(),
+        source_port: offer.source_port.clone(),
+        offer_reason: offer.offer_reason.clone(),
+        tags: offer.tags.clone(),
+        acceptance_window: offer.acceptance_window,
+    }
+}
+
+fn active_snap(contract: &ActiveContract) -> ActiveSnap {
+    ActiveSnap {
+        offer_id: contract.offer_id.clone(),
+        template_id: contract.template_id.clone(),
+        family: contract.family.clone(),
+        title: contract.title.clone(),
+        accepted_day: contract.accepted_day,
+        deadline_day: contract.deadline_day,
+        destination_port_id: contract.destination_port_id.clone(),
+        good_id: contract.good_id.clone(),
+        required_quantity: contract.required_quantity,
+        delivered_quantity: contract.delivered_quantity,
+        reward_silver: contract.reward_silver,
+        bonus_reward: contract.bonus_reward,
+        source_region: contract.source_region.clone(),
+        source_port: contract.source_port.clone(),
+        inspection_modifier: contract.inspection_modifier,
+        status: contract.status.clone(),
+    }
+}
+
+fn breach_snap(breach: &BreachRecord) -> BreachSnap {
+    BreachSnap {
+        contract_id: breach.contract_id.clone(),
+        day: breach.day,
+        port_id: breach.port_id.clone(),
+        family: breach.family.clone(),
+    }
+}
+
+fn memory_snap(memory: &CaptainMemory) -> MemorySnap {
+    MemorySnap {
+        captain_id: memory.captain_id.clone(),
+        encounters: memory
+            .encounters
+            .iter()
+            .map(|row| MemoryEncounterSnap {
+                day: row.day,
+                region: row.region.clone(),
+                outcome: row.outcome.clone(),
+                player_spared: row.player_spared,
+                player_used_firearm: row.player_used_firearm,
+                crew_killed: row.crew_killed,
+                respect_delta: row.respect_delta,
+                fear_delta: row.fear_delta,
+                grudge_delta: row.grudge_delta,
+                familiarity_delta: row.familiarity_delta,
+            })
+            .collect(),
+        relationship: RelationshipSnap {
+            respect: memory.relationship.respect,
+            fear: memory.relationship.fear,
+            grudge: memory.relationship.grudge,
+            familiarity: memory.relationship.familiarity,
+        },
+        last_seen_day: memory.last_seen_day,
+        last_seen_region: memory.last_seen_region.clone(),
+        times_spared: memory.times_spared,
+        times_defeated_by_player: memory.times_defeated_by_player,
+        times_defeated_player: memory.times_defeated_player,
+        player_sank_their_ship: memory.player_sank_their_ship,
+    }
+}
+
+fn fee_snap(fee: &DeferredFee) -> FeeSnap {
+    FeeSnap {
+        fee_type: fee.fee_type.clone(),
+        amount: fee.amount,
+        day: fee.day,
+    }
+}
+
+fn ledger_snap(books: &HouseBooks, receipts: &[TradeReceipt], run_id: &str) -> LedgerSnap {
+    LedgerSnap {
+        run_id: run_id.to_string(),
+        total_buys: books.total_buys,
+        total_sells: books.total_sells,
+        net_profit: books.net_profit,
+        receipts: receipts
+            .iter()
+            .map(|receipt| LedgerReceiptSnap {
+                receipt_id: receipt.receipt_id.clone(),
+                captain_name: receipt.captain_name.clone(),
+                port_id: receipt.port_id.clone(),
+                good_id: receipt.good_id.clone(),
+                action: receipt.action.to_string(),
+                quantity: receipt.quantity,
+                unit_price: receipt.unit_price,
+                total_price: receipt.total_price,
+                day: receipt.day,
+                stock_before: receipt.stock_before,
+                stock_after: receipt.stock_after,
+            })
+            .collect(),
+    }
+}
+
+fn empty_board() -> BoardSnap {
+    BoardSnap {
+        offers: Vec::new(),
+        active: Vec::new(),
+        breaches: Vec::new(),
+        last_refresh_day: 0,
+        max_offers: 5,
+    }
+}
+
+fn empty_ledger() -> LedgerSnap {
+    LedgerSnap {
+        run_id: String::new(),
+        total_buys: 0,
+        total_sells: 0,
+        net_profit: 0,
+        receipts: Vec::new(),
     }
 }
 
@@ -1311,6 +1633,11 @@ pub fn empty(log: Vec<LogEntry>) -> Snapshot {
         milestones: Vec::new(),
         culture: None,
         narrative: None,
+        board: empty_board(),
+        captain_memories: Vec::new(),
+        active_bounties: Vec::new(),
+        deferred_fees: Vec::new(),
+        ledger: empty_ledger(),
         log,
     }
 }

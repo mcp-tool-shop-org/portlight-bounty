@@ -3,12 +3,46 @@
 //! The commands are a thin wrapper: each one calls the same public method a
 //! front end would call. Parity goldens therefore cover the stepwise API.
 
+use std::cell::{Cell, RefCell};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard};
+
 use crate::custom_captain;
 use crate::error::SimError;
 use crate::session::Session;
 use crate::snapshot::{self, LogEntry, Snapshot};
 
 pub fn run_script(script: &str) -> Snapshot {
+    let (session, log) = execute(script);
+    finish(session.as_ref(), log)
+}
+
+/// Run `script`, then write a version-12 slot when a game is active.
+///
+/// The snapshot is the state after `Session::save`, which clamps silver at
+/// zero. The log is the script log and does not gain a save row.
+pub fn run_and_save(script: &str, base: &Path, slot: &str) -> Result<Snapshot, SimError> {
+    let (mut session, log) = execute(script);
+    if let Some(session) = session.as_mut() {
+        session.save(base, slot)?;
+    }
+    Ok(finish(session.as_ref(), log))
+}
+
+/// Snapshot a slot the way `Session::load` restores it. `Ok(None)` means the
+/// file is missing or corrupt.
+pub fn load_snapshot(base: &Path, slot: &str) -> Result<Option<Snapshot>, SimError> {
+    let Some(session) = Session::load(base, slot)? else {
+        return Ok(None);
+    };
+    Ok(Some(finish(Some(&session), Vec::new())))
+}
+
+fn execute(script: &str) -> (Option<Session>, Vec<LogEntry>) {
+    // The `save` verb's default directory is removed when this run ends.
+    // `PORTLIGHT_SAVE_ROOT` belongs to the caller and is left in place.
+    let _save_dir = SaveScope::begin();
     let mut session: Option<Session> = None;
     let mut log = Vec::new();
     for line in script.lines() {
@@ -27,6 +61,10 @@ pub fn run_script(script: &str) -> Snapshot {
             }
         }
     }
+    (session, log)
+}
+
+fn finish(session: Option<&Session>, log: Vec<LogEntry>) -> Snapshot {
     match session {
         Some(session) => snapshot::capture(
             session.world(),
@@ -34,6 +72,9 @@ pub fn run_script(script: &str) -> Snapshot {
             session.books(),
             session.infrastructure(),
             session.narrative(),
+            session.board(),
+            session.receipts(),
+            session.run_id(),
             log,
         ),
         None => snapshot::empty(log),
@@ -196,6 +237,24 @@ fn dispatch(
             }
             let amount = parse_qty(&tokens[1])?;
             session.repay_credit(amount)
+        }
+        "save" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: save <slot>".into()));
+            }
+            session.save(save_root(), &tokens[1])?;
+            Ok(())
+        }
+        "load" => {
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: load <slot>".into()));
+            }
+            let Some(loaded) = Session::load(save_root(), &tokens[1])? else {
+                return Err(SimError::Sentence(format!("No save in slot {}", tokens[1])));
+            };
+            *session = Some(loaded);
+            Ok(())
         }
         "hire" => {
             let session = active(session)?;
@@ -556,6 +615,97 @@ fn active(session: &mut Option<Session>) -> Result<&mut Session, SimError> {
     session.as_mut().ok_or(SimError::NoActiveGame)
 }
 
+thread_local! {
+    static SAVE_ROOT: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+    static SAVE_ENV_GUARD: RefCell<Option<MutexGuard<'static, ()>>> = const { RefCell::new(None) };
+    static SAVE_ENV_DEPTH: Cell<u32> = const { Cell::new(0) };
+}
+
+static SAVE_SEQ: AtomicU64 = AtomicU64::new(0);
+static SAVE_ENV: Mutex<()> = Mutex::new(());
+
+/// Serializes `PORTLIGHT_SAVE_ROOT` across threads. Reentrant on one thread so
+/// `save` can read the variable while a test holds the lock.
+struct SaveEnvLock;
+
+impl SaveEnvLock {
+    fn acquire() -> Self {
+        SAVE_ENV_DEPTH.with(|depth| {
+            if depth.get() == 0 {
+                let guard = SAVE_ENV.lock().unwrap_or_else(|err| err.into_inner());
+                SAVE_ENV_GUARD.with(|slot| *slot.borrow_mut() = Some(guard));
+            }
+            depth.set(depth.get() + 1);
+        });
+        Self
+    }
+}
+
+impl Drop for SaveEnvLock {
+    fn drop(&mut self) {
+        SAVE_ENV_DEPTH.with(|depth| {
+            let next = depth.get().saturating_sub(1);
+            depth.set(next);
+            if next == 0 {
+                SAVE_ENV_GUARD.with(|slot| {
+                    slot.borrow_mut().take();
+                });
+            }
+        });
+    }
+}
+
+/// Removes the temp directory created for a script's `save` verb.
+struct SaveScope {
+    owned: Option<PathBuf>,
+}
+
+impl SaveScope {
+    fn begin() -> Self {
+        let _lock = SaveEnvLock::acquire();
+        if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
+            if !dir.is_empty() {
+                return Self { owned: None };
+            }
+        }
+        let dir = std::env::temp_dir().join(format!(
+            "portlight-script-{}-{}",
+            std::process::id(),
+            SAVE_SEQ.fetch_add(1, Ordering::Relaxed)
+        ));
+        SAVE_ROOT.with(|slot| *slot.borrow_mut() = Some(dir.clone()));
+        Self { owned: Some(dir) }
+    }
+}
+
+impl Drop for SaveScope {
+    fn drop(&mut self) {
+        if let Some(dir) = self.owned.take() {
+            let _ = std::fs::remove_dir_all(&dir);
+            SAVE_ROOT.with(|slot| {
+                if slot.borrow().as_ref() == Some(&dir) {
+                    *slot.borrow_mut() = None;
+                }
+            });
+        }
+    }
+}
+
+/// `PORTLIGHT_SAVE_ROOT`, or the temp directory owned by the current [`SaveScope`].
+fn save_root() -> PathBuf {
+    let _lock = SaveEnvLock::acquire();
+    if let Ok(dir) = std::env::var("PORTLIGHT_SAVE_ROOT") {
+        if !dir.is_empty() {
+            return PathBuf::from(dir);
+        }
+    }
+    SAVE_ROOT.with(|slot| {
+        slot.borrow()
+            .clone()
+            .expect("save verb ran outside a script")
+    })
+}
+
 fn parse_encounter_target(token: Option<&str>) -> Result<(Option<String>, Option<i64>), SimError> {
     let Some(token) = token else {
         return Ok((None, None));
@@ -621,6 +771,44 @@ mod tests {
         assert_eq!(snap.log.len(), 2);
         assert_eq!(snap.log[1].error.as_deref(), Some("Unknown command: fly"));
         assert_eq!(snap.captain.silver, 550);
+    }
+
+    #[test]
+    fn save_verb_removes_its_temp_dir() {
+        let _lock = SaveEnvLock::acquire();
+        let previous = std::env::var("PORTLIGHT_SAVE_ROOT").ok();
+        struct Restore(Option<String>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                match self.0.take() {
+                    Some(dir) => std::env::set_var("PORTLIGHT_SAVE_ROOT", dir),
+                    None => std::env::remove_var("PORTLIGHT_SAVE_ROOT"),
+                }
+            }
+        }
+        let _restore = Restore(previous);
+        std::env::remove_var("PORTLIGHT_SAVE_ROOT");
+        let slot = format!("parity-save-{}", std::process::id());
+        let snap = run_script(&format!("new merchant Ada 1\nsave {slot}\nload {slot}\n"));
+        let leaked = std::fs::read_dir(std::env::temp_dir())
+            .unwrap()
+            .flatten()
+            .any(|entry| {
+                entry
+                    .path()
+                    .join("saves")
+                    .join(format!("{slot}.json"))
+                    .is_file()
+            });
+        assert!(
+            snap.log.iter().all(|entry| entry.error.is_none()),
+            "{:?}",
+            snap.log
+                .iter()
+                .filter_map(|entry| entry.error.as_ref())
+                .collect::<Vec<_>>()
+        );
+        assert!(!leaked, "save verb left {slot} in the temp directory");
     }
 
     #[test]

@@ -1,0 +1,7 @@
+# Hull cover, then the seed-1 storm on the way to Silva Bay.
+new merchant Ada 1 porto_novo
+buy_insurance hull_basic
+depart silva_bay
+advance
+advance
+advance

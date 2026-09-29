@@ -3,6 +3,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process;
+use std::sync::Mutex;
 
 use portlight_sim::campaign::{CompletedContract, VictoryRecord};
 use portlight_sim::model::{
@@ -63,13 +64,21 @@ fn close(left: &Value, right: &Value, path: &str) {
     }
 }
 
+static SNAP_ENV: Mutex<()> = Mutex::new(());
+
 fn snap(session: &Session) -> Value {
+    let _guard = SNAP_ENV.lock().unwrap_or_else(|err| err.into_inner());
+    // Golden JSON is the narrow shape. A developer shell may have exported this.
+    std::env::remove_var("PORTLIGHT_WIDE_SNAPSHOT");
     serde_json::to_value(snapshot::capture(
         session.world(),
         session.trade_seq(),
         session.books(),
         session.infrastructure(),
         session.narrative(),
+        session.board(),
+        session.receipts(),
+        session.run_id(),
         Vec::new(),
     ))
     .unwrap()
