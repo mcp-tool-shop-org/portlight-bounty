@@ -132,17 +132,22 @@ jobs:
             echo "galleon capture did not write /tmp/galleon1.png"
             exit 1
           fi
-          # Default encounter-screen captures go to /tmp, and the frame check
-          # follows the capture mode. A flat rejection exits non-zero.
+          # An explicit directory requests the five frames. The path is /tmp.
+          # Phase lines are the script, not the filenames.
           run_godot /tmp/godot-encounter-frames.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_ENCOUNTER_DIR=/tmp \
             godot --display-driver x11 --rendering-driver opengl3 --path godot -- --encounter-screen
+          if ! grep -q 'encounter phase boarding' /tmp/godot-encounter-frames.log; then
+            echo "encounter capture did not advance past naval"
+            exit 1
+          fi
           if ! grep -q 'portlight encounter smoke ok' /tmp/godot-encounter-frames.log; then
             echo "encounter frame capture did not report ok"
             exit 1
           fi
           if [ ! -f /tmp/encounter-approach.png ]; then
-            echo "encounter capture did not default to /tmp/encounter-approach.png"
+            echo "encounter capture did not write /tmp/encounter-approach.png"
             exit 1
           fi
           # The seam capture validates the layout before it writes. An illegal

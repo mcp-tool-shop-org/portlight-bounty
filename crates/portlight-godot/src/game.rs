@@ -115,6 +115,16 @@ impl ShotPhase {
         }
     }
 
+    fn label(self) -> &'static str {
+        match self {
+            Self::Approach => "approach",
+            Self::Naval => "naval",
+            Self::Boarding => "boarding",
+            Self::Personal => "personal fight",
+            Self::Outcome => "outcome",
+        }
+    }
+
     fn screen(self) -> ScreenPhase {
         match self {
             Self::Approach => ScreenPhase::Approach,
@@ -182,6 +192,9 @@ struct PortlightGame {
     /// Capture path only. Draws `royal_man_of_war` in the player plate slot
     /// and shows that template's hull and crew on the card.
     galleon_frame: bool,
+    /// A rejected screenshot. Kept off [`Self::smoke_ok`] so a failed frame
+    /// does not stop the boarding script.
+    capture_failed: bool,
 }
 
 #[godot_api]
@@ -220,6 +233,7 @@ impl IControl for PortlightGame {
             encounter_shot_dir: None,
             encounter_shot: None,
             galleon_frame: false,
+            capture_failed: false,
         }
     }
 
@@ -236,22 +250,24 @@ impl IControl for PortlightGame {
         self.start_game();
         if user_arg("--encounter-screen") {
             self.smoke = true;
-            // Headless smoke must not read the viewport. A display capture
-            // defaults to /tmp. Docs is only an explicit PORTLIGHT_SHOT or
-            // PORTLIGHT_ENCOUNTER_DIR.
-            if headless_runtime() && !encounter_dir_set() {
-                self.run_encounter_screen();
-                self.capture_frames = 2;
-            } else {
+            // The five frames are opt-in. A default `/tmp` path is not a
+            // request, and headless smoke never reads the viewport.
+            if encounter_frames_requested() && !headless_runtime() {
                 self.encounter_shot_dir = Some(encounter_shot_dir());
                 self.begin_encounter_shots();
                 self.capture_frames = 4;
+            } else {
+                self.run_encounter_screen();
+                self.capture_frames = 2;
             }
         } else if user_arg("--encounter-galleon") {
             self.smoke = true;
             self.galleon_frame = true;
             if self.shot_path.is_none() {
-                self.shot_path = Some(tmp_shot_path("encounter-galleon.png"));
+                self.shot_path = Some(art_shot_path("encounter-galleon.png"));
+            }
+            if headless_runtime() {
+                self.shot_path = None;
             }
             self.prepare_scripted_voyage();
             self.open_scripted_approach();
@@ -307,9 +323,13 @@ impl IControl for PortlightGame {
             // `--encounter-galleon` is still on the encounter screen. The
             // multi-frame shot saves its own files before this, then the
             // encounter has closed, so a trailing PORTLIGHT_SHOT is a chart.
-            if !self.save_shot(&path, self.galleon_frame) {
+            // Headless has no viewport texture, so it never takes this path.
+            if !headless_runtime() && !self.save_shot(&path, self.galleon_frame) {
                 self.smoke_ok = false;
             }
+        }
+        if self.capture_failed {
+            self.smoke_ok = false;
         }
         if !self.smoke {
             return;
@@ -1906,10 +1926,10 @@ impl PortlightGame {
         let Some(dir) = self.encounter_shot_dir.clone() else {
             return false;
         };
-        self.expect_phase(phase.screen(), phase.file_name());
+        self.expect_phase(phase.screen(), phase.label());
         let path = format!("{dir}/{}", phase.file_name());
         if !self.save_shot(&path, true) {
-            self.smoke_ok = false;
+            self.capture_failed = true;
         }
         match phase {
             ShotPhase::Approach => {
@@ -2293,9 +2313,15 @@ fn encounter_dir_set() -> bool {
         .is_some_and(|path| !path.is_empty())
 }
 
-/// Directory for the five encounter frames. Default `/tmp`.
-/// `PORTLIGHT_ENCOUNTER_DIR` is the only other path, the directory form of
-/// an explicit shot path. `--art-docs` does not write these files.
+/// The five encounter frames are written only when this is set. The `/tmp`
+/// default is the directory those frames use, not a reason to capture.
+fn encounter_frames_requested() -> bool {
+    encounter_dir_set() || docs_capture()
+}
+
+/// Directory for the five encounter frames, once a capture was requested.
+/// `PORTLIGHT_ENCOUNTER_DIR` wins. `--art-docs` or `PORTLIGHT_ART_DOCS`
+/// writes `docs/screenshots`. Otherwise `/tmp`.
 fn encounter_shot_dir() -> String {
     if let Some(dir) = std::env::var("PORTLIGHT_ENCOUNTER_DIR")
         .ok()
@@ -2303,7 +2329,11 @@ fn encounter_shot_dir() -> String {
     {
         return resolve_repo_path(&dir);
     }
-    "/tmp".to_string()
+    if docs_capture() {
+        resolve_repo_path("docs/screenshots")
+    } else {
+        "/tmp".to_string()
+    }
 }
 
 fn headless_runtime() -> bool {
