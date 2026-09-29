@@ -24,7 +24,11 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      MANDATORY Verifier gate (B1): grok-bot-verifier/PB-002/quay_flag_painterly_results.json
                      (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
                      ("Result: **3/3 PASS**", ends "✅ Builder may land")
-                     B2: that results JSON must not have a _STUB key, and the retrieval doc must contain its sha256
+                     B2: that results JSON must not have a _STUB key (any case), and the retrieval doc must contain its sha256
+                     The results file is read once: those bytes are parsed and hashed.
+                     Inventory ids must equal the expected plate set (quay_flag and harbour).
+                     A FAIL result line, a duplicate row id, or an unexpected row id refuses the build.
+                     A results file that is not a JSON object is a problem, not a traceback.
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
 
@@ -141,13 +145,106 @@ def load_json(p):
     return json.load(open(p, encoding="utf-8")) if os.path.isfile(p) else None
 
 
+def read_file_bytes(p):
+    """Read a file once. None when it is missing."""
+    if not os.path.isfile(p):
+        return None
+    with open(p, "rb") as fh:
+        return fh.read()
+
+
+def sha256_bytes(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def parse_json_object(raw, label, problems):
+    """Parse bytes already read. A missing file is the caller's message.
+    Invalid JSON or a non-object top level is a problem, not a traceback.
+    """
+    if raw is None:
+        return None
+    try:
+        obj = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        problems.append(f"{label} is not valid JSON ({exc.msg})")
+        return None
+    if not isinstance(obj, dict):
+        problems.append(f"{label} is not a JSON object")
+        return None
+    return obj
+
+
 def json_has_key(obj, key):
-    """True if key occurs anywhere in a JSON object or array."""
+    """True if a key equal to `key`, ignoring case, occurs anywhere."""
     if isinstance(obj, dict):
-        return key in obj or any(json_has_key(v, key) for v in obj.values())
+        want = key.lower()
+        return any(isinstance(k, str) and k.lower() == want for k in obj) or any(
+            json_has_key(v, key) for v in obj.values()
+        )
     if isinstance(obj, list):
         return any(json_has_key(v, key) for v in obj)
     return False
+
+
+def fail_result_lines(text):
+    """Lines that report a FAIL result. A summary such as '0 FAIL' is not one."""
+    return [line.strip() for line in text.splitlines() if "**FAIL**" in line]
+
+
+def require_no_fail_results(text, label, problems):
+    lines = fail_result_lines(text)
+    if lines:
+        problems.append(f"{label} has a FAIL result line: {lines[0]}")
+
+
+def bind_inventory(obj, expected, label, problems):
+    """id -> sha256. The id set must equal `expected`. Duplicate ids are an error."""
+    if obj is None:
+        return {}
+    inv = obj.get("inventory")
+    if not isinstance(inv, list):
+        problems.append(f"{label} inventory is not a list")
+        return {}
+    mapping = {}
+    for row in inv:
+        if not isinstance(row, dict) or "id" not in row:
+            problems.append(f"{label} inventory entry missing id")
+            continue
+        aid = row["id"]
+        if aid in mapping:
+            problems.append(f"{label} duplicate inventory id {aid}")
+        mapping[aid] = row.get("sha256")
+    if set(mapping) != set(expected):
+        problems.append(
+            f"{label} inventory ids {sorted(set(mapping))} != {sorted(expected)}"
+        )
+    return mapping
+
+
+def index_rows(obj, expected, label, problems):
+    """id -> row. Duplicate ids and ids outside `expected` are errors.
+    The last row is kept so a later pass check still sees a row; the duplicate
+    is already a problem, so fail-then-pass does not land.
+    """
+    if obj is None:
+        return {}
+    rows = obj.get("rows", [])
+    if not isinstance(rows, list):
+        problems.append(f"{label} rows is not a list")
+        return {}
+    expected_set = set(expected)
+    mapping = {}
+    for row in rows:
+        if not isinstance(row, dict) or "id" not in row:
+            problems.append(f"{label} row missing id")
+            continue
+        aid = row["id"]
+        if aid in mapping:
+            problems.append(f"{label} duplicate row id {aid}")
+        if aid not in expected_set:
+            problems.append(f"{label} unexpected row id {aid}")
+        mapping[aid] = row
+    return mapping
 
 
 def walk_strings(o):
@@ -220,16 +317,31 @@ def main():
     # ================= ships =================
     if "ships" in groups:
         retr = open(RETR_SHIPS, encoding="utf-8").read()
+        require_no_fail_results(retr, "retrieval-ships.md", problems)
         m = re.search(r"\*\*Result:\s*(\d+)\s+PASS,\s*(\d+)\s+FAIL\*\*", retr)
         n_rows = len(re.findall(r"\|\s*\*\*PASS\*\*\s*\|", retr))
         if not m or m.groups() != ("36", "0") or n_rows != 36:
             problems.append(f"retrieval-ships.md not 36 PASS/0 FAIL (summary={m.groups() if m else None}, rows={n_rows})")
         if not re.search(r"## Addendum D .*?\*\*Result: PASS\. All 36 ids are will-use", gate, re.S):
             problems.append("art-gate.md Addendum D PASS not found")
-        vj = load_json(VJ_SHIPS)
-        vinv = {r["id"]: r["sha256"] for r in vj["inventory"]} if vj else {}
-        if not vj:
+        vraw = read_file_bytes(VJ_SHIPS)
+        vj = parse_json_object(vraw, "ships_results.json", problems)
+        if vraw is None:
             problems.append("verifier ships_results.json missing")
+        if vj is None:
+            vinv = {}
+        else:
+            inv = vj.get("inventory")
+            if not isinstance(inv, list):
+                problems.append("ships inventory is not a list")
+                vinv = {}
+            else:
+                vinv = {}
+                for row in inv:
+                    if not isinstance(row, dict) or "id" not in row:
+                        problems.append("ships inventory entry missing id")
+                        continue
+                    vinv[row["id"]] = row.get("sha256")
         spec_mesh_prefix = dict(re.findall(r"\|\s*`(ship_[a-z_]+)`\s*\|.*?\|\s*`([0-9a-f]{12})`\s*\|", spec))
         if len(spec_mesh_prefix) != 4:
             problems.append(f"asset-spec §7a mesh sha prefixes not found (got {spec_mesh_prefix})")
@@ -289,6 +401,7 @@ def main():
     # ================= harbour =================
     if "harbour" in groups:
         rh = open(RETR_HARB, encoding="utf-8").read()
+        require_no_fail_results(rh, "retrieval-harbour.md", problems)
         mh = re.search(r"\*\*ANDON v0\.1\.1:\s*(\d+)\s+PASS,\s*(\d+)\s+FAIL\.\*\*", rh)
         n_rows = len(re.findall(r"\|\s*\*\*PASS\*\* \(exit 0\)\s*\|", rh))
         if not mh or mh.groups() != ("30", "0") or n_rows != 30:
@@ -297,10 +410,12 @@ def main():
             problems.append("art-gate.md Addendum E PASS not found")
         if not re.search(r"AMENDED 05:25 ET \(Addendum E\.1\)\.\*\*.*?still \*\*Pass\*\*", gate, re.S):
             problems.append("art-gate.md Addendum E.1 Pass not found")
-        hj = load_json(VJ_HARB)
-        hinv = {r["id"]: r["sha256"] for r in hj["inventory"]} if hj else {}
-        hpass = {r["id"]: r.get("pass") for r in hj.get("rows", [])} if hj else {}
-        if not hj: problems.append("verifier harbour_andon_results.json missing")
+        hraw = read_file_bytes(VJ_HARB)
+        hj = parse_json_object(hraw, "harbour_andon_results.json", problems)
+        if hraw is None:
+            problems.append("verifier harbour_andon_results.json missing")
+        hinv = bind_inventory(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
+        hrows = index_rows(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
         rows = [r for r in rows_all if r["phase"] == "P0" and r["view"] == "harbour" and r["status"].startswith("LOCKED") and r["id"] not in EXP_QUAY_FLAG]
         if sorted(r["id"] for r in rows) != sorted(EXP_HARB):
             problems.append("csv harbour P0 ids != expected 30")
@@ -316,8 +431,9 @@ def main():
             if not os.path.isfile(p): problems.append(f"missing landed file {rel}"); continue
             w, h = png_size(p); digest = sha256(p)
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
-            if hinv and hinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier harbour inventory")
-            if hpass and hpass.get(aid) is not True: problems.append(f"{aid}: Verifier harbour row not pass")
+            if hj is not None and hinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier harbour inventory")
+            if hj is not None and (not isinstance(hrows.get(aid), dict) or hrows[aid].get("pass") is not True):
+                problems.append(f"{aid}: Verifier harbour row missing or not pass")
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
             fp, fp_raw = csv_field(r["footprint"], aid, "footprint", parse_wh, nulls, na)
@@ -362,6 +478,7 @@ def main():
     # ================= chart =================
     if "chart" in groups:
         rc = open(RETR_CHART, encoding="utf-8").read()
+        require_no_fail_results(rc, "retrieval-chart.md", problems)
         mc = re.search(r"\*\*Chart profile \(SIMULATED\):\s*(\d+)\s+PASS,\s*(\d+)\s+FAIL\.\*\*", rc)
         if not mc or mc.groups() != ("4", "0"):
             problems.append(f"retrieval-chart.md not 4 PASS/0 FAIL (got {mc.groups() if mc else None})")
@@ -370,8 +487,10 @@ def main():
         gate_f = re.search(r"## Addendum F \(([^)]*)\).*?\*\*Chart set: PASS\. All 4 are will-use\*\*", gate, re.S)
         if not gate_f:
             problems.append("art-gate.md Addendum F chart PASS not found")
-        cj = load_json(VJ_CHART)
-        if not cj: problems.append("verifier chart_retrieval_results.json missing")
+        craw = read_file_bytes(VJ_CHART)
+        cj = parse_json_object(craw, "chart_retrieval_results.json", problems)
+        if craw is None:
+            problems.append("verifier chart_retrieval_results.json missing")
         rows = [r for r in rows_all if r["view"] == "chart" and r["id"] in EXP_CHART and r["status"].startswith("LOCKED")]
         if sorted(r["id"] for r in rows) != sorted(EXP_CHART):
             problems.append(f"csv chart ids != expected 4: {[r['id'] for r in rows]}")
@@ -384,7 +503,7 @@ def main():
             if not os.path.isfile(p): problems.append(f"missing landed file {rel}"); continue
             w, h = png_size(p); digest = sha256(p)
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
-            if cj:
+            if cj is not None:
                 cv = cj.get(aid) or {}
                 if cv.get("sha256") != digest: problems.append(f"{aid}: sha256 differs from Verifier chart results")
                 if not (cv.get("sim") or {}).get("pass"): problems.append(f"{aid}: Verifier chart sim not pass")
@@ -445,18 +564,21 @@ def main():
             problems.append("art-gate.md Addendum V.2 (painterly v5p) PASS not found")
         if not re.search(r"## Addendum U\.4 [^\n]*placement", gate):
             problems.append("art-gate.md Addendum U.4 (placement) not found")
-        qj = load_json(VJ_QUAY_FLAG)
-        if not qj: problems.append("verifier quay_flag_painterly_results.json missing")
-        elif json_has_key(qj, "_STUB"):
+        qraw = read_file_bytes(VJ_QUAY_FLAG)
+        qj = parse_json_object(qraw, "quay_flag_painterly_results.json", problems)
+        if qraw is None:
+            problems.append("verifier quay_flag_painterly_results.json missing")
+        elif qj is not None and json_has_key(qj, "_STUB"):
             problems.append("verifier quay_flag_painterly_results.json has a _STUB key")
-        qinv = {r["id"]: r["sha256"] for r in qj["inventory"]} if qj else {}
-        qrows = {r["id"]: r for r in qj.get("rows", [])} if qj else {}
+        qinv = bind_inventory(qj, EXP_QUAY_FLAG, "quay_flag", problems) if qj is not None else {}
+        qrows = index_rows(qj, EXP_QUAY_FLAG, "quay_flag", problems) if qj is not None else {}
         for q in EXP_QUAY_FLAG:
             qr = qrows.get(q)
             if not qr or qr.get("pass") is not True or qr.get("exit") != 0:
                 problems.append(f"{q}: Verifier quay_flag row missing or not pass/exit 0")
         rq = open(RETR_QUAY_FLAG, encoding="utf-8").read() if os.path.isfile(RETR_QUAY_FLAG) else ""
-        if os.path.isfile(VJ_QUAY_FLAG) and sha256(VJ_QUAY_FLAG) not in rq:
+        require_no_fail_results(rq, "retrieval-quay_flag_painterly.md", problems)
+        if qraw is not None and sha256_bytes(qraw) not in rq:
             problems.append("retrieval-quay_flag_painterly.md does not contain the sha256 of quay_flag_painterly_results.json")
         if not re.search(r"Result: \*\*3/3 PASS\*\*", rq):
             problems.append("retrieval-quay_flag_painterly.md missing or not 'Result: **3/3 PASS**'")
@@ -474,7 +596,7 @@ def main():
             if not os.path.isfile(p): problems.append(f"missing landed file {rel}"); continue
             w, h = png_size(p); digest = sha256(p)
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
-            if qinv and qinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier quay_flag inventory")
+            if qj is not None and qinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier quay_flag inventory")
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
             fp, fp_raw = csv_field(r["footprint"], aid, "footprint", parse_wh, nulls, na)

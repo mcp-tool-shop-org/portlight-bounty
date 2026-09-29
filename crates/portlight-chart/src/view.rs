@@ -21,8 +21,10 @@ pub const FIRST_PLAYABLE_NAME: &str = "Ada";
 pub const FIRST_PLAYABLE_CAPTAIN: &str = "merchant";
 pub const FIRST_PLAYABLE_SEED: i128 = 1;
 
-/// Viewport the Godot chart camera fits. The market panel sits beside it.
-pub const CHART_VIEW_W: f32 = 900.0;
+/// Viewport the Godot chart camera fits. The market panel and the row gap
+/// sit beside it, so this is the SubViewport width (1280 - 420 - 4), not the
+/// old 900 px frame. Water cover and the 1.0-or-0.72 fit both use it.
+pub const CHART_VIEW_W: f32 = 856.0;
 pub const CHART_VIEW_H: f32 = 720.0;
 
 /// One ship has one sort point. It is not a grid occupant.
@@ -1024,7 +1026,8 @@ mod tests {
             .gallery
             .push(docked_sloop_marker(port.map_x, port.map_y));
         // Chart area inside the 1280×720 window, beside the 420 px panel.
-        for (view_w, view_h) in [(856.0, 720.0), (CHART_VIEW_W, CHART_VIEW_H)] {
+        // 900 is the old frame width; both still fit the Grain Road plates.
+        for (view_w, view_h) in [(CHART_VIEW_W, CHART_VIEW_H), (900.0, 720.0)] {
             let frame = art_frame(&chart, view_w, view_h);
             assert_eq!(frame.zoom, CHART_ZOOM_FULL, "{view_w}x{view_h}");
             let half_w = view_w / frame.zoom / 2.0;

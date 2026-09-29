@@ -64,10 +64,12 @@ Python and the stage-1 goldens agree. A later UI calls `sail_lanes` and `Session
 - `standing_delta` is returned on a duel outcome and is not written onto reputation.
 - The navigator's storm resistance and the quartermaster's sell bonus exist in Python and are never called. The +0.5 sea-day speed and the 10% wage discount are already applied. Leave the uncalled pair uncalled.
 
+### In the Godot view
+- The encounter screen offers negotiate, flee, naval combat, and boarding through `Session`. The chart still shows the voyage-event stance duel.
+- Chart ship-class plates and the water-variant fix are done. `ship_draw` draws each class from the MANIFEST. Cutter, brigantine, and galleon plates are drawn for those classes, and `man_of_war` uses the galleon plates and keeps the class name.
+
 ### Not started
-- Godot encounter screen (in progress). Negotiate, flee, naval combat, and boarding are merged in the sim and are not yet offered by the Godot view. The chart still shows the voyage-event stance duel.
 - Godot screens for new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Those systems are merged in the sim and are not yet offered by the Godot view.
-- Chart ship-class plates and the water-variant fix (in progress). `ship_asset` draws a plate for each ship class. Cutter, brigantine, and galleon plates are drawn for those classes, and `man_of_war` uses the galleon placeholder. `water_tiles` already calls `chart_water_id`.
 - `engine/custom_captain.py` and the invariant tests from `stress/`
 
 ### Deprioritized
@@ -91,7 +93,7 @@ The Python source is ~46k lines under `src/portlight/` at commit `9b02494`. Belo
 | `engine/contracts.py` | `contracts.rs` + `session.rs` | Contract generation, acceptance, completion, expiry, contract board RNG (`seed + 7919`) | Merged in the sim, not yet offered by the Godot view. #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2` | High |
 | `engine/combat.py` | `combat.rs` | Personal fight after boarding: shoot, throw, dodge, styles. Does not replace `duel.rs` | Merged in the sim, not yet offered by the Godot view. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db` | High |
 | `engine/naval.py` | `naval.rs` | Naval rounds, cannon fire, maneuvering, sinking, prize capture. A failed flee enters here | Merged in the sim, not yet offered by the Godot view. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db` | High |
-| `engine/encounter.py` | `encounter.rs` | Approach is negotiate / flee / fight. Failed flee is `resolve_flee`, then naval. Not the stance duel | Merged in the sim, not yet offered by the Godot view. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db`. The Godot encounter screen is in progress. | High |
+| `engine/encounter.py` | `encounter.rs` | Approach is negotiate / flee / fight. Failed flee is `resolve_flee`, then naval. Not the stance duel | Merged in the sim. The Godot encounter screen calls `Session`. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db`. | High |
 | `engine/hunting.py` | `hunting.rs` | Bounty hunting mechanics, patrol behavior, wanted level escalation | Merged in the sim, not yet offered by the Godot view. #11 `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b` | Medium |
 | `engine/loot.py` | `loot.rs` | Loot tables, prize goods generation, contraband handling | Merged in the sim, not yet offered by the Godot view. #8 `b2e4aba76d4c22cb1713004d8a71df257be87800` | Medium |
 | `engine/infrastructure.py` | `infrastructure.rs` | Brokers, warehouses, shipyards, dry docks, port facilities purchase/rent | Merged in the sim, not yet offered by the Godot view. #7 `33e2e2b93883fa94a4fec986aa8ade376f6bdfb2` | High |
@@ -319,7 +321,7 @@ Merged in the sim, not yet offered by the Godot view. #3 `1adb966351c7936fb635af
 - [x] New golden scripts: `contract_accept.txt`, `contract_complete.txt`, `contract_expire.txt`
 
 ### Area 2: Interactive Encounter & Combat
-Merged in the sim, not yet offered by the Godot view. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db`. The Godot encounter screen is in progress.
+Merged in the sim. The Godot encounter screen calls `Session`. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db`.
 - [x] `MeleeWeaponDef`, `RangedWeaponDef`, `ArmorDef`, `FightingStyleDef` in `content.rs`
 - [x] `Weapon`, `Armor`, `FightingStyle` in `model.rs`
 - [x] `duel.rs` stays as it is. That is the voyage-event stance fight (`thrust` / `slash` / `parry`) and the five-stance auto-resolve.
