@@ -68,6 +68,40 @@ pub fn seam_interior_vertex() -> (i32, i32) {
     harbour_anchor(1, 1)
 }
 
+/// Zoom-1 review crop of the quay block, in view pixels `(x, y, w, h)`.
+/// [`quay_paving_crop`] maps this same world window to other zooms.
+pub const QUAY_PAVING_CROP_Z100: (i32, i32, i32, i32) = (340, 160, 360, 340);
+
+/// View crop of the quay close-up at `zoom`. Zoom `1` is
+/// [`QUAY_PAVING_CROP_Z100`]. Zoom `0.72` is the committed
+/// `quay-paving-z072.png` box `(424, 216, 259, 245)`.
+pub fn quay_paving_crop(zoom: f32) -> (i32, i32, i32, i32) {
+    let (x, y, w, h) = QUAY_PAVING_CROP_Z100;
+    let (cx, cy) = seam_camera_center();
+    let world = |vx: i32, vy: i32| -> (f32, f32) {
+        (
+            (vx as f32 - 640.0) + cx as f32,
+            (vy as f32 - 360.0) + cy as f32,
+        )
+    };
+    let (wx, wy) = world(x, y);
+    let (wr, wb) = world(x + w, y + h);
+    let view = |wx: f32, wy: f32| -> (f32, f32) {
+        (
+            (wx - cx as f32) * zoom + 640.0,
+            (wy - cy as f32) * zoom + 360.0,
+        )
+    };
+    let (vx, vy) = view(wx, wy);
+    let (vr, vb) = view(wr, wb);
+    (
+        vx.round() as i32,
+        vy.round() as i32,
+        (vr - vx).round() as i32,
+        (vb - vy).round() as i32,
+    )
+}
+
 /// Centre of the quay, pier, and pilings, not of the padded water.
 /// Expanding water must not move the camera.
 pub fn seam_camera_center() -> (i32, i32) {
@@ -236,6 +270,16 @@ mod tests {
             placer.contains("quay.add_child"),
             "paving is a child of the quay block and draws after it"
         );
+        assert!(
+            scene.contains("quay-paving-z100.png"),
+            "the seam capture writes the zoom-1 quay close-up"
+        );
+        assert!(
+            scene.contains("quay-paving-z072.png"),
+            "the seam capture writes the zoom-0.72 quay close-up"
+        );
+        assert_eq!(quay_paving_crop(1.0), QUAY_PAVING_CROP_Z100);
+        assert_eq!(quay_paving_crop(0.72), (424, 216, 259, 245));
         assert!(
             !placer.contains("set_z_index(tile"),
             "works are not given a z per id"

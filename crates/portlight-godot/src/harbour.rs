@@ -96,3 +96,92 @@ fn sprite_for(tile: &HarbourTile) -> Option<Gd<Sprite2D>> {
     sprite.set_offset(Vector2::new(-tile.anchor_x as f32, -tile.anchor_y as f32));
     Some(sprite)
 }
+
+#[cfg(test)]
+mod tests {
+    use portlight_chart::{harbour_seam, HarbourLayer, WorkKind};
+
+    /// Godot z and add order for one cell: the block, then its paving child,
+    /// then a front prop. Paving is not a root layer under the blocks.
+    #[test]
+    fn block_is_below_paving_is_below_props() {
+        let tiles = harbour_seam().expect("legal seam");
+        let block_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("block");
+        let paving_at = tiles
+            .iter()
+            .position(|tile| tile.layer == HarbourLayer::Land)
+            .expect("paving");
+        let prop_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Pier))
+            .expect("prop");
+        assert!(
+            block_at < paving_at && paving_at < prop_at,
+            "the tile list is block, then paving, then props"
+        );
+
+        let body = include_str!("harbour.rs")
+            .split_once("pub fn place_harbour")
+            .expect("placer")
+            .1
+            .split_once("fn sprite_for")
+            .expect("sprite_for")
+            .0;
+
+        let water_z = body.find("water.set_z_index(0)").expect("water z 0");
+        let works_z = body.find("works.set_z_index(1)").expect("works z 1");
+        let land_z = body.find("land.set_z_index(0)").expect("land z 0");
+        assert!(
+            water_z < works_z,
+            "water stays under the works band that holds blocks and props"
+        );
+
+        let add_water = body.find("root.add_child(&water)").expect("add water");
+        let add_works = body.find("root.add_child(&works)").expect("add works");
+        assert!(
+            add_water < add_works,
+            "the root adds water, then the works node"
+        );
+        assert!(
+            !body.contains("root.add_child(&land)"),
+            "paving is not its own layer under the blocks"
+        );
+
+        // The loop follows the tile list. The block sprite joins Works, then
+        // the paving node is a child of that sprite, so the block texture
+        // draws first. Relative z 0 keeps the flag in the block's band; a
+        // higher z would cover front props. Works y-sort draws a higher
+        // footprint after that group.
+        let works_add = body
+            .find("works.add_child(&sprite)")
+            .expect("block and props join works");
+        let quay_add = body
+            .find("quay.add_child(&land)")
+            .expect("paving is a child of the block");
+        let y_sort = body
+            .find("works.set_y_sort_enabled(true)")
+            .expect("works y-sort");
+        assert!(works_add < quay_add, "the block is added before its paving");
+        assert!(
+            land_z < quay_add,
+            "paving z is set before it is parented on the block"
+        );
+        assert!(
+            y_sort < works_add,
+            "props on the works node y-sort above the block and its flag"
+        );
+        assert!(
+            body.contains("sprite.set_y_sort_enabled(false)"),
+            "a work sprite must not y-sort its paving child back behind the block"
+        );
+        assert!(body.contains("for tile in tiles"));
+        let per_tile_z = ["set_z_index(", "tile"].concat();
+        assert!(
+            !body.contains(&per_tile_z),
+            "sprites are not given a z per id"
+        );
+    }
+}
