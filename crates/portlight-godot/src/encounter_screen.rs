@@ -106,15 +106,15 @@ pub(crate) fn fill_parent(root: &mut Gd<PanelContainer>) {
     root.set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
 }
 
-struct SideColumn {
-    column: Gd<VBoxContainer>,
-    plate: Gd<TextureRect>,
-    panel: Gd<PanelContainer>,
-    caption: Gd<Label>,
-    placeholder: Gd<PanelContainer>,
+pub(crate) struct SideColumn {
+    pub column: Gd<VBoxContainer>,
+    pub plate: Gd<TextureRect>,
+    pub panel: Gd<PanelContainer>,
+    pub caption: Gd<Label>,
+    pub placeholder: Gd<PanelContainer>,
 }
 
-fn side_column() -> SideColumn {
+pub(crate) fn side_column() -> SideColumn {
     let mut column = VBoxContainer::new_alloc();
     column.set_name("ShipPlateColumn");
     column.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
