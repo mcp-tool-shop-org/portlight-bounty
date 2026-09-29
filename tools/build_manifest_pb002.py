@@ -16,10 +16,14 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      gates: Addendum F (PASS), retrieval-chart.md 4 PASS/0 FAIL + "Builder may land";
                      renderer <- <id>.render.json; andon gate of record <- <id>.andon.json
                      sha vs source and vs grok-bot-verifier/PB-002/chart/chart_retrieval_results.json
-  quay_flag (3, P0)  ids quay_flag_a..c (procedural quay stone, art-gate Addendum U.3 PASS)
+  quay_flag (3, P0)  ids quay_flag_a..c: painterly v5p quay stone (procedural v5 base + Salt Road img2img brushwork),
+                     art-gate Addendum V.2 PASS; placement per Addendum U.4 (asset-list rows unchanged)
                      canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv; source ground/<id>.png;
-                     <id>.andon.json must be v0.1.1 pass (kind ground); renderer <- <id>.render.json (procedural, no Blender);
-                     Verifier inventory grok-bot-verifier/PB-002/quay_flag_results.json checked when present
+                     <id>.andon.json must be v0.1.1 pass (kind ground); renderer <- <id>.render.json
+                     (must carry base_square, source_square and brushwork{seed, graph_sha256});
+                     MANDATORY Verifier gate (B1): grok-bot-verifier/PB-002/quay_flag_painterly_results.json
+                     (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
+                     ("Result: **3/3 PASS**", ends "✅ Builder may land")
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
 
@@ -45,7 +49,7 @@ GATE = os.path.join(OUTBOX, "art-gate.md")
 RETR_SHIPS = os.path.join(OUTBOX, "retrieval-ships.md")
 RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
 RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
-RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag.md")
+RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag_painterly.md")
 VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
 VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
 VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
@@ -61,7 +65,7 @@ EXP_HARB = (["water_a", "water_b", "water_c"] + [f"quay_{i:04b}" for i in range(
 EXP_CHART = ["chart_water_a", "chart_water_b", "chart_water_c", "chart_port_marker"]
 EXP_QUAY_FLAG = ["quay_flag_a", "quay_flag_b", "quay_flag_c"]
 QUAY_FLAG_SRC = os.path.join(PLATES, "ground")
-VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_results.json")
+VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_painterly_results.json")
 R11_MIP_ON = {"chart_water_a", "chart_water_b", "chart_water_c"}
 R11_SRC = "asset-spec Rev 4 R11"
 
@@ -424,13 +428,15 @@ def main():
         chart_e.sort(key=lambda e: corder[e["id"]])
         entries += chart_e; counts["chart"] = len(chart_e)
 
-    # ================= quay_flag (procedural quay stone ground, Addendum U.3) =================
+    # ================= quay_flag (painterly v5p quay stone ground, Addendum V.2) =================
     if "quay_flag" in groups:
-        gate_u3 = re.search(r"## Addendum U\.3 [^\n]*\n.*?Verdict: PASS for the procedural quay stone", gate, re.S)
-        if not gate_u3:
-            problems.append("art-gate.md Addendum U.3 PASS not found")
+        gate_v2 = re.search(r"## Addendum V\.2 [^\n]*painterly v5p[^\n]*PASS[^\n]*\n", gate)
+        if not gate_v2:
+            problems.append("art-gate.md Addendum V.2 (painterly v5p) PASS not found")
+        if not re.search(r"## Addendum U\.4 [^\n]*placement", gate):
+            problems.append("art-gate.md Addendum U.4 (placement) not found")
         qj = load_json(VJ_QUAY_FLAG)
-        if not qj: problems.append("verifier quay_flag_results.json missing")
+        if not qj: problems.append("verifier quay_flag_painterly_results.json missing")
         qinv = {r["id"]: r["sha256"] for r in qj["inventory"]} if qj else {}
         qrows = {r["id"]: r for r in qj.get("rows", [])} if qj else {}
         for q in EXP_QUAY_FLAG:
@@ -439,9 +445,9 @@ def main():
                 problems.append(f"{q}: Verifier quay_flag row missing or not pass/exit 0")
         rq = open(RETR_QUAY_FLAG, encoding="utf-8").read() if os.path.isfile(RETR_QUAY_FLAG) else ""
         if not re.search(r"Result: \*\*3/3 PASS\*\*", rq):
-            problems.append("retrieval-quay_flag.md missing or not 'Result: **3/3 PASS**'")
+            problems.append("retrieval-quay_flag_painterly.md missing or not 'Result: **3/3 PASS**'")
         if not re.search(r"✅ Builder may land\s*$", rq):
-            problems.append("retrieval-quay_flag.md does not end with '✅ Builder may land'")
+            problems.append("retrieval-quay_flag_painterly.md does not end with '✅ Builder may land'")
         rows = [r for r in rows_all if r["id"] in EXP_QUAY_FLAG and r["status"].startswith("LOCKED")]
         if sorted(r["id"] for r in rows) != sorted(EXP_QUAY_FLAG):
             problems.append(f"csv quay_flag ids != expected 3: {[r['id'] for r in rows]}")
@@ -468,6 +474,9 @@ def main():
             rj = load_json(base + ".render.json") or {}
             if not rj: problems.append(f"{aid}: .render.json missing")
             if rj.get("source_square", {}).get("sha256") is None: problems.append(f"{aid}: .render.json has no source_square sha256")
+            bw = rj.get("brushwork") or {}
+            if (rj.get("base_square") or {}).get("sha256") is None: problems.append(f"{aid}: .render.json has no base_square sha256")
+            if bw.get("seed") is None or not bw.get("graph_sha256"): problems.append(f"{aid}: .render.json brushwork seed/graph_sha256 missing")
             cross_check_sidecar_mip(aid, rj.get("mipmaps"), ".render.json", problems)
             qf_e.append({
                 "id": aid, "group": "quay_flag", "subgroup": "flag",
@@ -481,17 +490,19 @@ def main():
                 "import": import_settings(aid, src, problems),
                 "provenance": {
                     "mesh": None,
-                    "renderer": {"name": "procedural", "version": None, "engine": rj.get("engine"), "samples": None,
+                    "renderer": {"name": "procedural base + img2img brushwork", "version": None, "engine": rj.get("engine"), "samples": None,
                                  "supersample": rj.get("supersample"), "scene_kind": rj.get("kind"),
                                  "camera_euler_deg": rj.get("camera_euler_deg"), "ortho_scale": rj.get("ortho_scale"),
                                  "px_per_bu": rj.get("px_per_bu"), "sun_euler_deg": rj.get("sun_euler_deg"),
                                  "generator": (rj.get("generator") or {}).get("script"), "variant_rng": (rj.get("generator") or {}).get("variant_rng"),
+                                 "base_square_sha256": (rj.get("base_square") or {}).get("sha256"),
                                  "source_square_sha256": (rj.get("source_square") or {}).get("sha256"),
-                                 "summary": "procedural numpy/PIL, 2:1 projection + diamond_clip --feather 8"},
+                                 "brushwork": {k: bw.get(k) for k in ("model", "lora", "lora_strength", "seed", "denoise", "method", "graph", "graph_sha256")},
+                                 "summary": "procedural v5 square -> Salt Road img2img brushwork (seed 1500) [b/c: a's border re-pasted, v5p] -> 2:1 projection + diamond_clip --feather 8"},
                     "andon": {"version": andon.get("andon_version") if andon else None,
                               "kind": andon.get("kind") if andon else None, "pass": andon.get("pass") if andon else None},
-                    "gate": {"art_director": "art-gate.md Addendum U.3 (2026-09-29): PASS, procedural quay stone variants a/b/c",
-                             "verifier": ("grok-bot-verifier/PB-002/quay_flag_results.json" if qj else None)},
+                    "gate": {"art_director": "art-gate.md Addendum V.2 (2026-09-29): PASS, painterly v5p quay stone a/b/c; placement Addendum U.4",
+                             "verifier": ("grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS" if qj else None)},
                     "render_sidecar": srel(base + ".render.json"),
                     "source_path": srel(src)}})
         qorder = {e: i for i, e in enumerate(EXP_QUAY_FLAG)}
@@ -522,12 +533,12 @@ def main():
         "path_convention": {"entry.path": "relative to the bundle root (this MANIFEST's directory)",
                             "provenance.*": "relative to the studio workspace root"},
         "sources": {"asset_list": "outbox-PB-002/asset-list.csv", "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.3" if "quay_flag" in groups else ""),
-                    "verifier": [f"outbox-PB-002/retrieval-{g}.md" for g in ("ships", "harbour", "chart") if g in groups]},
+                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" if "quay_flag" in groups else ""),
+                    "verifier": [f"outbox-PB-002/retrieval-{g}.md" for g in ("ships", "harbour", "chart", "quay_flag_painterly") if g.split("_painterly")[0] in groups]},
         "layout": {"ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec §7g)",
                    "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec §4 Output)",
                    "chart": "chart/<id>.png (asset-spec §4 Output)",
-                   **({"quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum U.3)"} if "quay_flag" in groups else {})},
+                   **({"quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum V.2)"} if "quay_flag" in groups else {})},
         "import_policy": {"rule": "asset-spec Rev 4 R11: Lossless, fix_alpha_border on, premult off, VRAM off; mipmaps ON for chart_water_a..c only",
                           "summary": imp_summary},
         "px_per_bu": {"chart": 90.51, "harbour": 181.019, **({"quay_flag": 181.019} if "quay_flag" in groups else {})},
