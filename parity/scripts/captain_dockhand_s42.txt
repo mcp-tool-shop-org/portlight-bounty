@@ -1,4 +1,5 @@
-# dockhand seed 42: price, fee, and an 8-day sail from home.
+# dockhand_s42: buy and sell grain at home, sail to the home neighbour,
+# resolve a pirate duel when one stops the day, then sell at arrival.
 new dockhand Ada 42
 buy grain 5
 sell grain 2
@@ -6,9 +7,6 @@ depart monsoon_reach
 advance
 advance
 advance
-advance
-advance
-advance
-advance
+resolve_duel
 advance
 sell grain 3

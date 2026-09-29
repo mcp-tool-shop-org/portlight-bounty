@@ -1,10 +1,27 @@
 {
-  "note": "Live parity checks that are known Rust-versus-Python divergences. CI prints this list and does not fail the named script on that check. The sim is not changed to clear them. Gap 1 (contract-board board_effects) is the broker_board gamesession row and gets its own fix later. An entry whose difference stops reproducing fails the job, so this list stays exact.",
+  "note": "Live parity checks that are known Rust-versus-Python divergences. Each entry names the JSON paths that may differ. Any other difference in that script fails the job. A listed path that stops differing fails the job, so this list stays exact. CI prints the list. Gap 1 (contract-board board_effects) is the broker_board gamesession row and gets its own fix later. The sim is not changed to clear these.",
   "entries": [
     {
       "script": "broker_board.txt",
       "check": "gamesession",
-      "summary": "After a Mediterranean broker is owned, arrival refreshes the contract board. GameSession passes compute_board_effects (board_quality_bonus 1.3 from the local broker). Rust Session::refresh_contract_board and the oracle refresh_board both call generate_offers with empty infrastructure effects, so the offer ids differ.",
+      "summary": "After a Mediterranean broker is owned, arrival refreshes the contract board. GameSession passes compute_board_effects (board_quality_bonus 1.3 from the local broker). Rust Session::refresh_contract_board and the oracle refresh_board both call generate_offers with empty infrastructure effects, so some offer fields differ. Only those board-offer fields are allowed.",
+      "paths": [
+        "$.board.offers[*].id",
+        "$.board.offers[*].template_id",
+        "$.board.offers[*].title",
+        "$.board.offers[*].description",
+        "$.board.offers[*].destination_port_id",
+        "$.board.offers[*].good_id",
+        "$.board.offers[*].quantity",
+        "$.board.offers[*].deadline_day",
+        "$.board.offers[*].reward_silver",
+        "$.board.offers[*].bonus_reward",
+        "$.board.offers[*].required_standing",
+        "$.board.offers[*].heat_ceiling",
+        "$.board.offers[*].inspection_modifier",
+        "$.board.offers[*].offer_reason",
+        "$.board.offers[*].tags"
+      ],
       "rust": "crates/portlight-sim/src/session.rs:2749-2771",
       "oracle": "tools/parity/oracle.py:218-239",
       "python": "src/portlight/app/session.py:1597-1613"
@@ -12,7 +29,15 @@
     {
       "script": "capture_prize.txt",
       "check": "oracle",
-      "summary": "A successful prize capture agrees on fleet, crew, and cargo. The capture log row does not. Rust clear_encounter runs before blank_step, so that row's enemy id, name, strength, boarding progress, and enemy crew are empty. The oracle builds the row from the encounter first, so those fields still name the sunk band.",
+      "summary": "A successful prize capture agrees on fleet, crew, and cargo. The capture log row does not. Rust clear_encounter runs before blank_step, so that row's enemy id, name, strength, boarding progress, boarding_threshold (2 vs 0), and enemy crew are empty. The oracle builds the row from the encounter first, so those fields still name the sunk band. The golden file is that Python snapshot; these paths are the only ones allowed to differ from Rust.",
+      "paths": [
+        "$.log[118].encounter.enemy_captain_id",
+        "$.log[118].encounter.enemy_captain_name",
+        "$.log[118].encounter.enemy_strength",
+        "$.log[118].encounter.boarding_progress",
+        "$.log[118].encounter.boarding_threshold",
+        "$.log[118].encounter.enemy_crew"
+      ],
       "rust": "crates/portlight-sim/src/session.rs:1252-1253",
       "oracle": "tools/parity/oracle.py:1407-1413",
       "python": "src/portlight/app/session.py:186-213"

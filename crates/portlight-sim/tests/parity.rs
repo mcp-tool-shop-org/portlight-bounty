@@ -1,7 +1,7 @@
 //! Compares scripted runs with golden snapshots produced by the Python oracle.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use portlight_sim::run_script;
 use serde_json::Value;
@@ -10,43 +10,117 @@ fn parity_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../parity")
 }
 
-fn close(left: &Value, right: &Value, path: &str) {
+fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
     match (left, right) {
         (Value::Number(a), Value::Number(b)) => {
             let af = a.as_f64().expect("left number");
             let bf = b.as_f64().expect("right number");
             let diff = (af - bf).abs();
-            assert!(
-                diff <= 1e-6 || diff <= 1e-9 * af.abs().max(bf.abs()),
-                "{path}: {af} != {bf}"
-            );
+            if !(diff <= 1e-6 || diff <= 1e-9 * af.abs().max(bf.abs())) {
+                errors.push(format!("{path}: {af} != {bf}"));
+            }
         }
-        (Value::String(a), Value::String(b)) => assert_eq!(a, b, "{path}"),
-        (Value::Bool(a), Value::Bool(b)) => assert_eq!(a, b, "{path}"),
+        (Value::String(a), Value::String(b)) => {
+            if a != b {
+                errors.push(format!("{path}: {a:?} != {b:?}"));
+            }
+        }
+        (Value::Bool(a), Value::Bool(b)) => {
+            if a != b {
+                errors.push(format!("{path}: {a} != {b}"));
+            }
+        }
         (Value::Null, Value::Null) => {}
         (Value::Array(a), Value::Array(b)) => {
-            assert_eq!(a.len(), b.len(), "{path} length");
+            if a.len() != b.len() {
+                errors.push(format!("{path}: length {} != {}", a.len(), b.len()));
+                return;
+            }
             for (i, (x, y)) in a.iter().zip(b).enumerate() {
-                close(x, y, &format!("{path}[{i}]"));
+                close(x, y, &format!("{path}[{i}]"), errors);
             }
         }
         (Value::Object(a), Value::Object(b)) => {
-            assert_eq!(
-                a.len(),
-                b.len(),
-                "{path} keys {:?} vs {:?}",
-                a.keys().collect::<Vec<_>>(),
-                b.keys().collect::<Vec<_>>()
-            );
+            if a.len() != b.len() {
+                errors.push(format!("{path}: keys differ"));
+                return;
+            }
             for (key, value) in a {
                 let Some(other) = b.get(key) else {
-                    panic!("{path} missing {key}");
+                    errors.push(format!("{path}: missing {key}"));
+                    return;
                 };
-                close(value, other, &format!("{path}.{key}"));
+                close(value, other, &format!("{path}.{key}"), errors);
             }
         }
-        _ => panic!("{path}: type mismatch {left} vs {right}"),
+        _ => errors.push(format!("{path}: type mismatch {left} vs {right}")),
     }
+}
+
+fn path_matches(path: &str, pattern: &str) -> bool {
+    fn consume(path: &str, pattern: &str) -> bool {
+        if pattern.is_empty() {
+            // A listed field also covers an index under it (`tags[1]`).
+            return path.is_empty() || path.starts_with('[');
+        }
+        if let Some(rest) = pattern.strip_prefix("[*]") {
+            let Some(stripped) = path.strip_prefix('[') else {
+                return false;
+            };
+            let Some(end) = stripped.find(']') else {
+                return false;
+            };
+            if !stripped[..end].chars().all(|ch| ch.is_ascii_digit()) {
+                return false;
+            }
+            return consume(&stripped[end + 1..], rest);
+        }
+        let next = pattern.find("[*]").unwrap_or(pattern.len());
+        if !path.starts_with(&pattern[..next]) {
+            return false;
+        }
+        consume(&path[next..], &pattern[next..])
+    }
+    consume(path, pattern)
+}
+
+fn assert_close(left: &Value, right: &Value, path: &str) {
+    let mut errors = Vec::new();
+    close(left, right, path, &mut errors);
+    assert!(errors.is_empty(), "{path}: {errors:?}");
+}
+
+fn oracle_paths(root: &Path, script: &str) -> Vec<String> {
+    let text = fs::read_to_string(root.join("expected_divergences.json")).unwrap_or_default();
+    if text.is_empty() {
+        return Vec::new();
+    }
+    let data: Value = serde_json::from_str(&text).expect("expected_divergences.json");
+    let mut paths = Vec::new();
+    for entry in data
+        .get("entries")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        if entry.get("script").and_then(Value::as_str) != Some(script) {
+            continue;
+        }
+        if entry.get("check").and_then(Value::as_str) != Some("oracle") {
+            continue;
+        }
+        for path in entry
+            .get("paths")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(path) = path.as_str() {
+                paths.push(path.to_string());
+            }
+        }
+    }
+    paths
 }
 
 #[test]
@@ -67,9 +141,45 @@ fn golden_scripts_match_python() {
             .unwrap_or_else(|_| {
                 panic!("missing golden for {stem}; run tools/parity/check.py --write-golden")
             });
-        let golden: Value = serde_json::from_str(&golden_text).expect("golden json");
+        let mut golden: Value = serde_json::from_str(&golden_text).expect("golden json");
+        let python_golden = golden.get("_source").and_then(Value::as_str) == Some("python-oracle");
+        if let Value::Object(map) = &mut golden {
+            map.retain(|key, _| !key.starts_with('_'));
+        }
         let got = serde_json::to_value(run_script(&script)).expect("snapshot");
-        close(&golden, &got, stem);
+        let mut errors = Vec::new();
+        close(&golden, &got, "$", &mut errors);
+        if python_golden {
+            let patterns = oracle_paths(&root, &format!("{stem}.txt"));
+            let unexpected: Vec<_> = errors
+                .iter()
+                .filter(|line| {
+                    let path = line.split(": ").next().unwrap_or(line);
+                    !patterns.iter().any(|pattern| path_matches(path, pattern))
+                })
+                .cloned()
+                .collect();
+            assert!(
+                unexpected.is_empty(),
+                "{stem} python golden differs outside the allowlist: {unexpected:?}"
+            );
+            let missing: Vec<_> = patterns
+                .iter()
+                .filter(|pattern| {
+                    !errors.iter().any(|line| {
+                        let path = line.split(": ").next().unwrap_or(line);
+                        path_matches(path, pattern)
+                    })
+                })
+                .cloned()
+                .collect();
+            assert!(
+                missing.is_empty(),
+                "{stem} python golden no longer differs on {missing:?}"
+            );
+        } else {
+            assert!(errors.is_empty(), "{stem}: {errors:?}");
+        }
     }
 }
 
@@ -320,7 +430,7 @@ fn area3_goldens_cover_training_recruiting_skill_and_milestone() {
         )
         .expect("golden json");
         let got = serde_json::to_value(run_script(&script)).expect("snapshot");
-        close(&golden, &got, stem);
+        assert_close(&golden, &got, stem);
     }
     let train = load_golden("train_crew");
     assert!(train["captain"]["learned_styles"]
@@ -363,7 +473,7 @@ fn sea_captain_agency_golden_records_the_ambush() {
     let script = fs::read_to_string(root.join("scripts/sea_captain_agency.txt")).unwrap();
     let golden = load_golden("sea_captain_agency");
     let got = serde_json::to_value(run_script(&script)).expect("snapshot");
-    close(&golden, &got, "sea_captain_agency");
+    assert_close(&golden, &got, "sea_captain_agency");
     let calls: Vec<_> = golden["log"]
         .as_array()
         .unwrap()

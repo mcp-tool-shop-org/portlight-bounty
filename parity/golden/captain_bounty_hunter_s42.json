@@ -1,24 +1,15 @@
 {
   "seed": 42,
-  "day": 4,
-  "trade_seq": 2,
+  "day": 5,
+  "trade_seq": 3,
   "captain": {
     "name": "Ada",
     "captain_type": "bounty_hunter",
-    "silver": 367,
-    "provisions": 27,
-    "day": 4,
+    "silver": 422,
+    "provisions": 26,
+    "day": 5,
     "wanted_level": 0,
-    "cargo": [
-      {
-        "good_id": "grain",
-        "quantity": 3,
-        "cost_basis": 39,
-        "acquired_port": "crosswind_isle",
-        "acquired_region": "East Indies",
-        "acquired_day": 1
-      }
-    ],
+    "cargo": [],
     "ship": {
       "template_id": "swift_cutter",
       "name": "Swift Cutter",
@@ -28,7 +19,7 @@
       "speed": 9.0,
       "crew": 5,
       "crew_max": 12,
-      "morale": 53,
+      "morale": 59,
       "cannons": 2,
       "sailors": 5,
       "gunners": 0,
@@ -39,7 +30,7 @@
     },
     "standing": {
       "regional": {
-        "East Indies": 0,
+        "East Indies": 2,
         "Mediterranean": 3,
         "North Atlantic": 8,
         "South Seas": 0,
@@ -52,45 +43,59 @@
         "South Seas": 0,
         "West Africa": 0
       },
-      "commercial_trust": 3,
+      "commercial_trust": 4,
       "port_standing": [
         {
           "port_id": "crosswind_isle",
           "value": 1
+        },
+        {
+          "port_id": "monsoon_reach",
+          "value": 3
         }
       ],
       "underworld": {},
-      "incidents": []
-    }
+      "incidents": [
+        {
+          "day": 5,
+          "port_id": "monsoon_reach",
+          "region": "East Indies",
+          "incident_type": "trade",
+          "description": "Profitable grain trade (+150% margin)",
+          "heat_delta": 0,
+          "standing_delta": 1,
+          "trust_delta": 1
+        }
+      ]
+    },
+    "encounters": [
+      {
+        "captain_id": "raj_the_quiet",
+        "faction_id": "monsoon_syndicate",
+        "day": 4,
+        "outcome": "duel_loss",
+        "region": "East Indies"
+      }
+    ],
+    "duels_lost": 1
   },
   "voyage": {
     "origin_id": "crosswind_isle",
     "destination_id": "monsoon_reach",
     "distance": 24,
-    "progress": 20,
-    "days_elapsed": 3,
-    "status": "at_sea",
+    "progress": 28,
+    "days_elapsed": 4,
+    "status": "in_port",
     "recent_events": [
-      "nothing",
-      "storm",
-      "A fleet of sampans crosses your path — fishermen, traders, and families living on the water. The East Indies floats.",
       "Incense drifts from a temple on a passing island. In the East Indies, even the air worships. The crew breathes deep and something in them quiets.",
       "pirates",
       "Sampans and junks crowd the channels — trade resuming, routes reopening, the archipelago reconnecting after the monsoon divided it. The sea is full of purpose.",
       "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
-      "The light in the East Indies is different from anywhere else — softer, greener, filtered through atmospheric moisture that hasn't quite dried. It makes everything look like a painting of itself.",
-      "Your crew becomes more formal in Eastern waters. They bow instead of waving. The culture seeps in.",
-      "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months."
+      "nothing",
+      "Your crew becomes more formal in Eastern waters. They bow instead of waving. The culture seeps in."
     ]
   },
-  "pending_duel": {
-    "captain_id": "raj_the_quiet",
-    "captain_name": "Raj the Quiet",
-    "faction_id": "monsoon_syndicate",
-    "personality": "defensive",
-    "strength": 5,
-    "region": "East Indies"
-  },
+  "pending_duel": null,
   "ports": [
     {
       "id": "porto_novo",
@@ -906,10 +911,10 @@
         },
         {
           "good_id": "grain",
-          "stock": 6,
-          "buy_price": 38,
-          "sell_price": 30,
-          "flood_penalty": 0.0
+          "stock": 9,
+          "buy_price": 25,
+          "sell_price": 19,
+          "flood_penalty": 0.09
         },
         {
           "good_id": "porcelain",
@@ -1459,8 +1464,53 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 367",
-          "action": "Earn 1633 more silver"
+          "detail": "Silver: 422",
+          "action": "Earn 1578 more silver"
+        }
+      ]
+    },
+    {
+      "path_id": "oceanic_reach",
+      "name": "Oceanic Reach",
+      "candidate_strength": 4.0,
+      "completion_day": 0,
+      "completion_summary": "",
+      "requirements": [
+        {
+          "description": "East Indies Access Charter",
+          "status": "missing",
+          "detail": "",
+          "action": "Acquire the East Indies Access Charter"
+        },
+        {
+          "description": "East Indies commercial foothold (broker or warehouse)",
+          "status": "missing",
+          "detail": "EI broker: no, EI warehouse: no",
+          "action": "Open a broker office or warehouse in the East Indies"
+        },
+        {
+          "description": "East Indies standing >= 15",
+          "status": "missing",
+          "detail": "EI standing: 2",
+          "action": "Build East Indies standing from 2 to 15"
+        },
+        {
+          "description": "Long-haul ship capability (Brigantine or Galleon)",
+          "status": "missing",
+          "detail": "Ship: cutter",
+          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
+        },
+        {
+          "description": "5+ contracts completed",
+          "status": "missing",
+          "detail": "Completed: 0",
+          "action": "Complete 5 more contracts"
+        },
+        {
+          "description": "2000+ silver",
+          "status": "missing",
+          "detail": "Silver: 422",
+          "action": "Earn 1578 more silver"
         }
       ]
     },
@@ -1492,65 +1542,20 @@
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -39, heat: 0",
+          "detail": "Profit: 51, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 367",
-          "action": "Accumulate 1133 more silver"
+          "detail": "Silver: 422",
+          "action": "Accumulate 1078 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 2, max heat: 0",
+          "detail": "Trades: 3, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
-        }
-      ]
-    },
-    {
-      "path_id": "oceanic_reach",
-      "name": "Oceanic Reach",
-      "candidate_strength": 0.0,
-      "completion_day": 0,
-      "completion_summary": "",
-      "requirements": [
-        {
-          "description": "East Indies Access Charter",
-          "status": "missing",
-          "detail": "",
-          "action": "Acquire the East Indies Access Charter"
-        },
-        {
-          "description": "East Indies commercial foothold (broker or warehouse)",
-          "status": "missing",
-          "detail": "EI broker: no, EI warehouse: no",
-          "action": "Open a broker office or warehouse in the East Indies"
-        },
-        {
-          "description": "East Indies standing >= 15",
-          "status": "missing",
-          "detail": "EI standing: 0",
-          "action": "Build East Indies standing from 0 to 15"
-        },
-        {
-          "description": "Long-haul ship capability (Brigantine or Galleon)",
-          "status": "missing",
-          "detail": "Ship: cutter",
-          "action": "Upgrade to a Brigantine or Galleon for long-haul routes"
-        },
-        {
-          "description": "5+ contracts completed",
-          "status": "missing",
-          "detail": "Completed: 0",
-          "action": "Complete 5 more contracts"
-        },
-        {
-          "description": "2000+ silver",
-          "status": "missing",
-          "detail": "Silver: 367",
-          "action": "Earn 1633 more silver"
         }
       ]
     },
@@ -1588,8 +1593,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 367",
-          "action": "Earn 2633 more silver"
+          "detail": "Silver: 422",
+          "action": "Earn 2578 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1608,6 +1613,20 @@
       "family": "integrated_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "monsoon_reach",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "East Indies"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
   "narrative": {
     "fired": [
       "first_trade",
@@ -1615,7 +1634,8 @@
       "east_indies_arrival",
       "first_voyage",
       "survived_storm",
-      "survived_pirates"
+      "survived_pirates",
+      "first_profit"
     ],
     "journal": [
       {
@@ -1652,6 +1672,12 @@
         "beat_id": "survived_pirates",
         "day": 4,
         "port_id": "",
+        "region": ""
+      },
+      {
+        "beat_id": "first_profit",
+        "day": 5,
+        "port_id": "monsoon_reach",
         "region": ""
       }
     ]
@@ -1807,50 +1833,73 @@
       "shocks": []
     },
     {
+      "command": "resolve_duel",
+      "error": null,
+      "receipt": null,
+      "events": [],
+      "shocks": [],
+      "duel": {
+        "opponent_id": "raj_the_quiet",
+        "opponent_name": "Raj the Quiet",
+        "player_won": false,
+        "draw": false,
+        "silver_delta": -30,
+        "standing_delta": -2,
+        "rounds": [
+          {
+            "player_stance": "slash",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 2,
+            "damage_to_player": 0,
+            "flavor": "A wide arc catches them mid-parry. The cut connects."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          },
+          {
+            "player_stance": "slash",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Blades cross in a shower of sparks. Matched power."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You lunge forward, but their parry turns your blade aside."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both hold their ground, blades locked. A test of strength."
+          }
+        ]
+      }
+    },
+    {
       "command": "advance",
       "error": null,
       "receipt": null,
       "events": [
         {
           "event_type": "nothing",
-          "message": "The light in the East Indies is different from anywhere else — softer, greener, filtered through atmospheric moisture that hasn't quite dried. It makes everything look like a painting of itself.",
+          "message": "An uneventful day at sea.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "[weather]"
-        }
-      ],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [
+          "flavor": ""
+        },
         {
           "event_type": "nothing",
           "message": "Your crew becomes more formal in Eastern waters. They bow instead of waving. The culture seeps in.",
@@ -1864,22 +1913,32 @@
         },
         {
           "event_type": "nothing",
-          "message": "Jade-green water and islands scattered like emeralds. The post-monsoon sea is calm, grateful, almost apologetic for what it did last season. The crew sails with their guard down for the first time in months.",
+          "message": "[bold]You arrive at Monsoon Reach.[/bold]\n\nThe port is blooming. Literally — flowers on the docks, garlands on the warehouses, the scent of jasmine mixing with salt air. Spring arrivals in the East Indies feel like being invited to a celebration of survival.\n\nThe harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts — the monsoon demands it.\n\n[bold]Harbor Master Ravi:[/bold] \"Welcome. The wind is from the southeast today — good for arrivals, not for departures. You'll berth at the headland. The monks will post tomorrow's forecast at dawn.\"\n\n[dim]Landmark: The Wind Temple — a pagoda on the headland where monks track the monsoon.[/dim]\n[dim]Custom: Captains consult the monks before sailing. Their wind forecasts are uncannily accurate.[/dim]",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "[weather]"
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
     },
     {
       "command": "sell grain 3",
-      "error": "Not docked at a port",
-      "receipt": null,
+      "error": null,
+      "receipt": {
+        "receipt_id": "1170e7d8f171d59f",
+        "action": "sell",
+        "good_id": "grain",
+        "quantity": 3,
+        "unit_price": 30,
+        "total_price": 90,
+        "stock_before": 6,
+        "stock_after": 9,
+        "day": 5
+      },
       "events": [],
       "shocks": []
     }

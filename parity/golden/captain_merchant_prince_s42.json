@@ -1,24 +1,15 @@
 {
   "seed": 42,
-  "day": 2,
-  "trade_seq": 2,
+  "day": 5,
+  "trade_seq": 3,
   "captain": {
     "name": "Ada",
     "captain_type": "merchant_prince",
-    "silver": 601,
+    "silver": 607,
     "provisions": 29,
-    "day": 2,
+    "day": 5,
     "wanted_level": 0,
-    "cargo": [
-      {
-        "good_id": "grain",
-        "quantity": 3,
-        "cost_basis": 117,
-        "acquired_port": "al_manar",
-        "acquired_region": "Mediterranean",
-        "acquired_day": 1
-      }
-    ],
+    "cargo": [],
     "ship": {
       "template_id": "coastal_sloop",
       "name": "Coastal Sloop",
@@ -28,7 +19,7 @@
       "speed": 8.0,
       "crew": 3,
       "crew_max": 8,
-      "morale": 51,
+      "morale": 59,
       "cannons": 0,
       "sailors": 3,
       "gunners": 0,
@@ -40,7 +31,7 @@
     "standing": {
       "regional": {
         "East Indies": 5,
-        "Mediterranean": 12,
+        "Mediterranean": 14,
         "North Atlantic": 0,
         "South Seas": 0,
         "West Africa": 0
@@ -52,41 +43,59 @@
         "South Seas": 0,
         "West Africa": 0
       },
-      "commercial_trust": 18,
+      "commercial_trust": 19,
       "port_standing": [
         {
           "port_id": "al_manar",
           "value": 1
+        },
+        {
+          "port_id": "silva_bay",
+          "value": 3
         }
       ],
       "underworld": {},
-      "incidents": []
-    }
+      "incidents": [
+        {
+          "day": 5,
+          "port_id": "silva_bay",
+          "region": "Mediterranean",
+          "incident_type": "trade",
+          "description": "Profitable grain trade (+33% margin)",
+          "heat_delta": 0,
+          "standing_delta": 1,
+          "trust_delta": 1
+        }
+      ]
+    },
+    "encounters": [
+      {
+        "captain_id": "scarlet_ana",
+        "faction_id": "crimson_tide",
+        "day": 2,
+        "outcome": "duel_loss",
+        "region": "Mediterranean"
+      }
+    ],
+    "duels_lost": 1
   },
   "voyage": {
     "origin_id": "al_manar",
     "destination_id": "silva_bay",
     "distance": 20,
-    "progress": 7,
-    "days_elapsed": 1,
-    "status": "at_sea",
+    "progress": 25,
+    "days_elapsed": 4,
+    "status": "in_port",
     "recent_events": [
-      "pirates",
-      "A merchant galley passes flying the Exchange Alliance flag. Orderly, clean, professional. The Mediterranean way.",
-      "Everything is new. The crew leans over the rail watching the wake. Even the seagulls are fascinating. This won't last, but right now, the world is enormous.",
-      "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
-      "The sky is the Mediterranean's trademark blue — the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+      "calm_seas",
+      "The coast is never far. Villages, harbors, lighthouses — civilization lines every shore.",
+      "nothing",
+      "Your crew discusses grain prices — the universal conversation on Mediterranean routes.",
+      "flotsam",
       "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible — civilization lining every shore."
     ]
   },
-  "pending_duel": {
-    "captain_id": "scarlet_ana",
-    "captain_name": "Scarlet Ana",
-    "faction_id": "crimson_tide",
-    "personality": "balanced",
-    "strength": 6,
-    "region": "Mediterranean"
-  },
+  "pending_duel": null,
   "ports": [
     {
       "id": "porto_novo",
@@ -236,10 +245,10 @@
         },
         {
           "good_id": "grain",
-          "stock": 15,
-          "buy_price": 15,
-          "sell_price": 16,
-          "flood_penalty": 0.0
+          "stock": 18,
+          "buy_price": 13,
+          "sell_price": 13,
+          "flood_penalty": 0.049999999999999996
         },
         {
           "good_id": "cotton",
@@ -1455,8 +1464,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 601",
-          "action": "Earn 1399 more silver"
+          "detail": "Silver: 607",
+          "action": "Earn 1393 more silver"
         }
       ]
     },
@@ -1500,8 +1509,8 @@
         {
           "description": "2000+ silver",
           "status": "missing",
-          "detail": "Silver: 601",
-          "action": "Earn 1399 more silver"
+          "detail": "Silver: 607",
+          "action": "Earn 1393 more silver"
         }
       ]
     },
@@ -1533,19 +1542,19 @@
         {
           "description": "Profitable under pressure (profit >= 2000)",
           "status": "missing",
-          "detail": "Profit: -117, heat: 0",
+          "detail": "Profit: -69, heat: 0",
           "action": "Build profitability while maintaining shadow operations"
         },
         {
           "description": "1500+ silver on hand",
           "status": "missing",
-          "detail": "Silver: 601",
-          "action": "Accumulate 899 more silver"
+          "detail": "Silver: 607",
+          "action": "Accumulate 893 more silver"
         },
         {
           "description": "Trade volume under heat (8+ trades)",
           "status": "missing",
-          "detail": "Trades: 2, max heat: 0",
+          "detail": "Trades: 3, max heat: 0",
           "action": "Complete more trades while operating under customs pressure"
         }
       ]
@@ -1584,8 +1593,8 @@
         {
           "description": "3000+ silver",
           "status": "missing",
-          "detail": "Silver: 601",
-          "action": "Earn 2399 more silver"
+          "detail": "Silver: 607",
+          "action": "Earn 2393 more silver"
         },
         {
           "description": "3+ active licenses",
@@ -1616,6 +1625,20 @@
       "family": "lawful_house"
     }
   ],
+  "culture": {
+    "port_visits": [
+      {
+        "port_id": "silva_bay",
+        "visits": 1
+      }
+    ],
+    "regions_entered": [
+      "Mediterranean"
+    ],
+    "cultural_encounters": 0,
+    "festivals_visited": 0,
+    "active_festivals": []
+  },
   "narrative": {
     "fired": [
       "first_trade",
@@ -1745,18 +1768,56 @@
       "shocks": []
     },
     {
-      "command": "advance",
+      "command": "resolve_duel",
       "error": null,
       "receipt": null,
       "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
+      "shocks": [],
+      "duel": {
+        "opponent_id": "scarlet_ana",
+        "opponent_name": "Scarlet Ana",
+        "player_won": false,
+        "draw": false,
+        "silver_delta": -33,
+        "standing_delta": -2,
+        "rounds": [
+          {
+            "player_stance": "parry",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You brace for a thrust that never comes — the slash catches your side."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "thrust",
+            "damage_to_opponent": 1,
+            "damage_to_player": 1,
+            "flavor": "Both blades extend. Steel rings against steel. Neither gives ground."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 0,
+            "damage_to_player": 2,
+            "flavor": "You brace for a thrust that never comes — the slash catches your side."
+          },
+          {
+            "player_stance": "thrust",
+            "opponent_stance": "parry",
+            "damage_to_opponent": 0,
+            "damage_to_player": 2,
+            "flavor": "You lunge forward, but their parry turns your blade aside."
+          },
+          {
+            "player_stance": "parry",
+            "opponent_stance": "slash",
+            "damage_to_opponent": 0,
+            "damage_to_player": 3,
+            "flavor": "You brace for a thrust that never comes — the slash catches your side."
+          }
+        ]
+      }
     },
     {
       "command": "advance",
@@ -1764,8 +1825,19 @@
       "receipt": null,
       "events": [
         {
+          "event_type": "calm_seas",
+          "message": "Calm seas. Good for rest, bad for progress.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 0.6,
+          "cargo_lost": [],
+          "flavor": ""
+        },
+        {
           "event_type": "nothing",
-          "message": "A warm wind from the south carries the smell of olive groves and baking stone. The crew works with their sleeves rolled up, savoring the warmth after winter's grey.",
+          "message": "The coast is never far. Villages, harbors, lighthouses — civilization lines every shore.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
@@ -1784,14 +1856,25 @@
       "events": [
         {
           "event_type": "nothing",
-          "message": "The sky is the Mediterranean's trademark blue — the blue that painters have tried to capture for centuries and never quite matched. Your sails look white against it, clean and proud.",
+          "message": "An uneventful day at sea.",
           "hull_delta": 0,
           "provision_delta": 0,
           "silver_delta": 0,
           "crew_delta": 0,
           "speed_modifier": 1.0,
           "cargo_lost": [],
-          "flavor": "[weather]"
+          "flavor": ""
+        },
+        {
+          "event_type": "nothing",
+          "message": "Your crew discusses grain prices — the universal conversation on Mediterranean routes.",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[crew]"
         }
       ],
       "shocks": []
@@ -1800,14 +1883,18 @@
       "command": "advance",
       "error": null,
       "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
       "events": [
+        {
+          "event_type": "flotsam",
+          "message": "Floating wreckage yields salvageable supplies. (+3 provisions)",
+          "hull_delta": 0,
+          "provision_delta": 3,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": ""
+        },
         {
           "event_type": "nothing",
           "message": "Sunlight turns the water into hammered copper. Schools of fish dart beneath the hull, silver flashes in blue-green water. The coast is always visible — civilization lining every shore.",
@@ -1818,21 +1905,35 @@
           "speed_modifier": 1.0,
           "cargo_lost": [],
           "flavor": "[weather]"
+        },
+        {
+          "event_type": "nothing",
+          "message": "[bold]You arrive at Silva Bay.[/bold]\n\nThe port appears through a golden haze — sun-warmed stone, terracotta roofs, and the sound of harbor life carrying across calm water. Spring arrivals in the Mediterranean feel like coming home, even when you've never been here before.\n\nSawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish.\n\n[bold]Nuno Ferreira:[/bold] \"Berth's over there. Tie up properly — I don't want you drifting into the slipways. Timber loading happens at dawn, so don't sleep late.\"\n\n[dim]Landmark: The Master Shipyard — where the finest hulls in the Mediterranean take shape.[/dim]\n[dim]Custom: Touching another captain's ship without permission is grounds for a duel.[/dim]",
+          "hull_delta": 0,
+          "provision_delta": 0,
+          "silver_delta": 0,
+          "crew_delta": 0,
+          "speed_modifier": 1.0,
+          "cargo_lost": [],
+          "flavor": "[arrival]"
         }
       ],
       "shocks": []
     },
     {
-      "command": "advance",
-      "error": null,
-      "receipt": null,
-      "events": [],
-      "shocks": []
-    },
-    {
       "command": "sell grain 3",
-      "error": "Not docked at a port",
-      "receipt": null,
+      "error": null,
+      "receipt": {
+        "receipt_id": "4416edb45f995163",
+        "action": "sell",
+        "good_id": "grain",
+        "quantity": 3,
+        "unit_price": 16,
+        "total_price": 48,
+        "stock_before": 15,
+        "stock_after": 18,
+        "day": 5
+      },
       "events": [],
       "shocks": []
     }

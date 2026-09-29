@@ -207,9 +207,11 @@ def load_divergences() -> list[dict]:
     data = load_json(DIVERGENCES)
     entries = data.get("entries", [])
     for entry in entries:
-        for key in ("script", "check", "summary", "rust", "python"):
+        for key in ("script", "check", "summary", "rust", "python", "paths"):
             if key not in entry:
                 raise SystemExit(f"{DIVERGENCES} entry missing {key}: {entry}")
+        if not entry["paths"]:
+            raise SystemExit(f"{DIVERGENCES} entry has no paths: {entry['script']}")
     return entries
 
 
@@ -220,6 +222,7 @@ def print_divergence_list(entries: list[dict]) -> None:
         return
     for entry in entries:
         print(f"  {entry['script']} [{entry['check']}]: {entry['summary']}")
+        print(f"    paths {', '.join(entry['paths'])}")
         print(f"    rust {entry['rust']}")
         print(f"    python {entry['python']}")
         if entry.get("oracle"):
@@ -230,27 +233,82 @@ def listed(entries: list[dict], name: str, check: str) -> list[dict]:
     return [entry for entry in entries if entry["script"] == name and entry["check"] == check]
 
 
+def error_path(line: str) -> str:
+    """The JSON path at the start of a close() line, after any round-trip prefix."""
+    text = line
+    marker = " $"
+    if marker in text:
+        text = text[text.index(marker) + 1 :]
+    if text.startswith("$"):
+        return text.split(": ", 1)[0]
+    return text
+
+
+def path_matches(path: str, pattern: str) -> bool:
+    """`[*]` matches one `[n]`. A pattern also covers a deeper index of that field (`tags[1]`)."""
+    import re
+
+    body = []
+    i = 0
+    while i < len(pattern):
+        if pattern.startswith("[*]", i):
+            body.append(r"\[\d+\]")
+            i += 3
+        else:
+            body.append(re.escape(pattern[i]))
+            i += 1
+    compiled = "".join(body)
+    return re.fullmatch(compiled, path) is not None or re.match(compiled + r"\[", path) is not None
+
+
+def partition(errors: list[str], patterns: list[str]) -> tuple[list[str], list[str], list[str]]:
+    allowed = [line for line in errors if any(path_matches(error_path(line), pat) for pat in patterns)]
+    unexpected = [line for line in errors if line not in allowed]
+    missing = [
+        pat
+        for pat in patterns
+        if not any(path_matches(error_path(line), pat) for line in allowed)
+    ]
+    return allowed, unexpected, missing
+
+
+def drop_meta(snap: dict) -> dict:
+    """Golden files may carry `_source` / `_note`. Those are not snapshot fields."""
+    return {key: value for key, value in snap.items() if not key.startswith("_")}
+
+
 def report(name: str, check: str, errors: list[str], entries: list[dict], failed: list[int]) -> None:
     known = listed(entries, name, check)
-    if errors and known:
-        print(f"{name}: expected {check} divergence ({len(errors)} differences)")
-        for line in errors[:12]:
+    patterns: list[str] = []
+    for entry in known:
+        patterns.extend(entry["paths"])
+    allowed, unexpected, missing = partition(errors, patterns)
+    if unexpected:
+        failed[0] += 1
+        label = f"{check} mismatch"
+        if allowed:
+            label += f" ({len(unexpected)} outside the allowlist, {len(allowed)} allowed)"
+        else:
+            label += f" ({len(unexpected)} differences)"
+        print(f"{name}: {label}")
+        for line in unexpected[:30]:
+            print("   ", line)
+        return
+    if known and (not allowed or missing):
+        failed[0] += 1
+        print(f"{name}: expected {check} divergence did not reproduce")
+        if missing:
+            print(f"    paths that did not differ: {', '.join(missing)}")
+        return
+    if known:
+        print(f"{name}: expected {check} divergence ({len(allowed)} allowlisted differences)")
+        for line in allowed[:12]:
             print("   ", line)
         for entry in known:
             print(f"    rust {entry['rust']}")
             print(f"    python {entry['python']}")
             if entry.get("oracle"):
                 print(f"    oracle {entry['oracle']}")
-        return
-    if errors:
-        failed[0] += 1
-        print(f"{name}: {check} mismatch ({len(errors)} differences)")
-        for line in errors[:30]:
-            print("   ", line)
-        return
-    if known:
-        failed[0] += 1
-        print(f"{name}: expected {check} divergence did not reproduce")
         return
     print(f"{name}: {check} matches")
 
@@ -314,6 +372,13 @@ def main() -> int:
         if entry["script"] not in known_scripts:
             raise SystemExit(f"expected divergence names missing script {entry['script']}")
     failed = [0]
+    counts = {
+        "oracle": 0,
+        "gamesession_run": 0,
+        "gamesession_skipped": 0,
+        "roundtrip_run": 0,
+        "roundtrip_skipped": 0,
+    }
     if args.require_oracle:
         try:
             import portlight  # noqa: F401
@@ -336,15 +401,18 @@ def main() -> int:
                 args.golden_only = True
             else:
                 oracle = run_oracle(script_path, os.path.join(save_root, "oracle"))
+                counts["oracle"] += 1
                 report(name, "oracle", close(oracle, rust, "$"), entries, failed)
                 session = run_session(script_path, os.path.join(save_root, "session"))
                 if session is None:
+                    counts["gamesession_skipped"] += 1
                     if listed(entries, name, "gamesession"):
                         failed[0] += 1
                         print(f"{name}: expected gamesession divergence but the runner skipped the script")
                     else:
                         print(f"{name}: gamesession skipped")
                 else:
+                    counts["gamesession_run"] += 1
                     report(
                         name,
                         "gamesession",
@@ -353,13 +421,17 @@ def main() -> int:
                         failed,
                     )
                 if has_session(rust) and not args.skip_roundtrip:
+                    counts["roundtrip_run"] += 1
                     report(name, "roundtrip", roundtrip_errors(name, script_path), entries, failed)
                 elif not has_session(rust):
+                    counts["roundtrip_skipped"] += 1
                     if listed(entries, name, "roundtrip"):
                         failed[0] += 1
                         print(f"{name}: expected roundtrip divergence but there is no session")
                     else:
                         print(f"{name}: roundtrip skipped (no session)")
+                elif args.skip_roundtrip:
+                    counts["roundtrip_skipped"] += 1
                 if args.write_golden:
                     with open(golden_path, "w", encoding="utf-8") as fh:
                         json.dump(narrow(oracle), fh, indent=2)
@@ -367,8 +439,14 @@ def main() -> int:
                     print(f"  wrote {golden_path}")
         if os.path.exists(golden_path):
             golden = load_json(golden_path)
-            errors = close(golden, narrow(rust), "$")
-            if errors:
+            python_golden = golden.get("_source") == "python-oracle"
+            errors = close(drop_meta(golden), narrow(rust), "$")
+            if python_golden:
+                # The file is the Python snapshot. The oracle allowlist names
+                # the fields where Rust is known to differ; anything else fails.
+                print(f"{name}: golden is the Python oracle snapshot")
+                report(name, "oracle", errors, entries, failed)
+            elif errors:
                 failed[0] += 1
                 print(f"{name}: golden != rust ({len(errors)} differences)")
                 for line in errors[:20]:
@@ -378,6 +456,10 @@ def main() -> int:
         elif args.golden_only:
             failed[0] += 1
             print(f"{name}: missing golden {golden_path}")
+    print(
+        "counts: oracle {oracle}, gamesession run {gamesession_run} skipped {gamesession_skipped}, "
+        "roundtrip run {roundtrip_run} skipped {roundtrip_skipped}".format(**counts)
+    )
     print_divergence_list(entries)
     return 1 if failed[0] else 0
 
