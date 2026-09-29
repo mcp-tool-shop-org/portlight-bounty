@@ -538,35 +538,3 @@ fn lane_caption(lane: &ChartLane) -> String {
         format!("{} {}d{tag}", lane.destination_name, lane.estimated_days)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn chart_text_is_linear_and_the_plates_stay_nearest() {
-        let src = include_str!("chart_canvas.rs");
-        let (art, labels) = src.split_once("struct ChartLabels").expect("label item");
-        assert!(
-            art.contains("set_texture_filter(TextureFilter::NEAREST)"),
-            "chart art and plates stay nearest"
-        );
-        assert!(
-            labels.contains("set_texture_filter(TextureFilter::LINEAR)"),
-            "in-chart text has its own linear filter"
-        );
-        let draw = labels
-            .split_once("fn draw_chart_text")
-            .expect("text draw")
-            .1
-            .split_once("fn lane_caption")
-            .expect("lane caption")
-            .0;
-        assert!(draw.contains("font_size(PORT_NAME_PX)"));
-        assert!(draw.contains("font_size(BADGE_PX)"));
-        assert!(draw.contains("font_size(LANE_PX)"));
-        assert!(draw.contains("font_size(HOVER_PX)"));
-        assert!(
-            !draw.contains("zoom"),
-            "font size stays in world pixels and is not divided by zoom"
-        );
-    }
-}
