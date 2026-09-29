@@ -45,11 +45,12 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      cell of a table row that is FAIL or FAIL (exit N) for any N. A header is not
                      required. A counted summary such as 0 FAIL does not contain **FAIL**. Prose
                      that only mentions FAIL does not.
-                     The stock v0.1.1 exemption covers only FAIL (exit 1) on a documented id
-                     (water_a..c / chart_water_a..c and port_marker / chart_port_marker, in the
-                     spelling the marked doc uses). The mark must sit on that row or on one other
-                     line. Exit 2, a bare FAIL, and an undocumented id are not exempt. Bold **FAIL**
-                     is never exempt.
+                     The stock v0.1.1 exemption applies only in retrieval-chart.md, and only to
+                     FAIL (exit 1) on a documented id (water_a..c / chart_water_a..c and
+                     port_marker / chart_port_marker, in the spelling that doc uses). The same
+                     row in retrieval-harbour.md is not exempt: water_a/b/c there are harbour
+                     tiles. The mark must sit on that row or on one other line. Exit 2, a bare
+                     FAIL, and an undocumented id are not exempt. Bold **FAIL** is never exempt.
                      A duplicate row id or an unexpected row id also refuses the build.
                      A results file that is not a JSON object is a problem, not a traceback.
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
@@ -300,7 +301,11 @@ def _is_documented_stock_id(cell):
 
 
 def _stock_exit1_exempt(line, doc, kind, number):
-    """Only FAIL (exit 1) on a documented stock id, marked on one line."""
+    """Only FAIL (exit 1) on a documented stock id, marked on one line.
+
+    Callers apply this only while reading retrieval-chart.md. Harbour tiles
+    named water_a/b/c are not chart rows.
+    """
     if kind != "exit" or number != 1:
         return False
     if not any(_is_documented_stock_id(cell) for cell in _table_cells(line)):
@@ -321,17 +326,18 @@ def _line_verdict_token_is_fail(line):
     return token.lower() == "fail"
 
 
-def fail_result_lines(text):
+def fail_result_lines(text, label=""):
     """Lines that report a real FAIL verdict.
 
     A counted summary such as '0 FAIL' is not one: it does not contain **FAIL**.
     Neither is prose that merely mentions FAIL. Any line containing **FAIL**
     (any case) is a verdict and is not stock-exempt. Any cell of a table row
     counts when it is FAIL or FAIL (exit N), with or without a Verdict/Result
-    header. Only FAIL (exit 1) on a documented stock id (water_a..c or
-    port_marker, in the doc's spelling) is exempt, and only when that row or
-    one single line of the doc marks the stock v0.1.1 canvas-size failure.
+    header. Only retrieval-chart.md may exempt FAIL (exit 1) on a documented
+    stock id (water_a..c or port_marker, in that doc's spelling), and only when
+    that row or one single line marks the stock v0.1.1 canvas-size failure.
     """
+    stock_exempt = os.path.basename(str(label)) == "retrieval-chart.md"
     raw_lines = text.splitlines()
     found = []
     for raw in raw_lines:
@@ -350,14 +356,15 @@ def fail_result_lines(text):
             continue
         verdicts = [item for item in (_cell_verdict(cell) for cell in _table_cells(line)) if item]
         if verdicts and not all(
-            _stock_exit1_exempt(line, text, kind, number) for kind, number in verdicts
+            stock_exempt and _stock_exit1_exempt(line, text, kind, number)
+            for kind, number in verdicts
         ):
             found.append(line)
     return found
 
 
 def require_no_fail_results(text, label, problems):
-    lines = fail_result_lines(text)
+    lines = fail_result_lines(text, label)
     if lines:
         problems.append(f"{label} has a FAIL result line: {lines[0]}")
 

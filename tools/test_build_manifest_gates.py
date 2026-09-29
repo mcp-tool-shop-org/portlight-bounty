@@ -193,14 +193,24 @@ def test_gate_helpers():
         ],
         "no Verdict header",
     )
+    chart_mark = "Documented stock v0.1.1 canvas-size failure.\n"
     check(
         "marked headerless exit 1 on a documented id is exempt",
         mod.fail_result_lines(
-            "Documented stock v0.1.1 canvas-size failure.\n"
-            "| chart_water_a | FAIL (exit 1) |\n"
-            "| port_marker | FAIL (exit 1) |\n"
+            chart_mark
+            + "| chart_water_a | FAIL (exit 1) |\n"
+            + "| port_marker | FAIL (exit 1) |\n",
+            "retrieval-chart.md",
         ) == [],
         "documented ids",
+    )
+    check(
+        "harbour stock mark does not exempt water_a",
+        mod.fail_result_lines(
+            chart_mark + "| water_a | FAIL (exit 1) |\n",
+            "retrieval-harbour.md",
+        ) == ["| water_a | FAIL (exit 1) |"],
+        "harbour tile",
     )
     check(
         "exit 2 on chart_water_a is not exempt",
@@ -240,7 +250,8 @@ def test_gate_helpers():
     check(
         "doc-marked stock canvas FAIL (exit 1) is exempt",
         mod.fail_result_lines(
-            "Documented stock v0.1.1 canvas-size failure.\n" + unmarked_exit
+            "Documented stock v0.1.1 canvas-size failure.\n" + unmarked_exit,
+            "retrieval-chart.md",
         ) == [],
         "stock v0.1.1",
     )
@@ -1099,6 +1110,21 @@ def test_ships_exit_n_verdict_in_retrieval_doc_fails(studio, tmp_path):
     assert "FAIL (exit 2)" in out
 
 
+def test_harbour_stock_marked_water_a_fails(studio, tmp_path):
+    """Harbour water_a is a tile. A stock mark there does not exempt FAIL (exit 1)."""
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    harbour = os.path.join(copy, "outbox-PB-002", "retrieval-harbour.md")
+    insert_middle(harbour, "Documented stock v0.1.1 canvas-size failure.")
+    insert_middle(harbour, "| water_a | FAIL (exit 1) |")
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "retrieval-harbour.md has a FAIL result line: | water_a | FAIL (exit 1) |" in out
+    chart = open(os.path.join(studio, "outbox-PB-002", "retrieval-chart.md"), encoding="utf-8").read()
+    assert "| water_a..c | FAIL (exit 1) |" in chart
+    assert "| chart_port_marker | FAIL (exit 1) |" in chart
+    assert mod.fail_result_lines(chart, "retrieval-chart.md") == []
+
+
 def test_chart_water_exit_2_is_not_stock_exempt(studio, tmp_path):
     copy = clone_studio(studio, str(tmp_path / "copy"))
     insert_middle(
@@ -1167,15 +1193,18 @@ def test_prose_fail_mentions_are_not_verdicts():
     ]
     assert mod.fail_result_lines(
         "Documented stock v0.1.1 canvas-size failure.\n"
-        "| chart_water_a | FAIL (exit 1) |\n"
+        "| chart_water_a | FAIL (exit 1) |\n",
+        "retrieval-chart.md",
     ) == []
     assert mod.fail_result_lines(
         "Documented stock v0.1.1 canvas-size failure.\n"
-        "| chart_water_a | FAIL (exit 2) |\n"
+        "| chart_water_a | FAIL (exit 2) |\n",
+        "retrieval-chart.md",
     ) == ["| chart_water_a | FAIL (exit 2) |"]
     assert mod.fail_result_lines(
         "Documented stock v0.1.1 canvas-size failure.\n"
-        "| chart_new | FAIL (exit 1) |\n"
+        "| chart_new | FAIL (exit 1) |\n",
+        "retrieval-chart.md",
     ) == ["| chart_new | FAIL (exit 1) |"]
     unmarked = (
         "| id | Result |\n"
@@ -1188,7 +1217,11 @@ def test_prose_fail_mentions_are_not_verdicts():
         "| chart_port_marker | FAIL (exit 1) |",
     ]
     marked = "Documented stock v0.1.1 canvas-size failure.\n" + unmarked
-    assert mod.fail_result_lines(marked) == []
+    assert mod.fail_result_lines(marked, "retrieval-chart.md") == []
+    assert mod.fail_result_lines(marked, "retrieval-harbour.md") == [
+        "| water_a..c | FAIL (exit 1) |",
+        "| chart_port_marker | FAIL (exit 1) |",
+    ]
     bare_fail_in_marked_doc = (
         "Documented stock v0.1.1 canvas-size failure.\n"
         "| id | Result |\n"
@@ -1201,7 +1234,7 @@ def test_prose_fail_mentions_are_not_verdicts():
         "| --- | --- | --- |\n"
         "| chart_port_marker | FAIL (exit 1) | documented stock v0.1.1 canvas-size failure |\n"
     )
-    assert mod.fail_result_lines(row_mark) == []
+    assert mod.fail_result_lines(row_mark, "retrieval-chart.md") == []
 
 
 def test_clean_fixture_main_exits_0_and_check_matches(studio):
