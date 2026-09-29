@@ -26,7 +26,9 @@ pub use project::{
     Facing, Frame, ScreenRect, CELL_HEIGHT, CELL_WIDTH, CHART_ZOOM_FULL, CHART_ZOOM_STEP,
     DOCKED_OFFSET_X, DOCKED_OFFSET_Y, HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y,
 };
-pub use seam::{harbour_seam, seam_camera_center, seam_interior_vertex};
+pub use seam::{
+    harbour_seam, quay_paving_crop, seam_camera_center, seam_interior_vertex, QUAY_PAVING_CROP_Z100,
+};
 pub use view::{
     art_frame, docked_sloop_marker, hover_at, lane_inspect, press_port, project_chart, ActiveLeg,
     ChartLane, ChartModel, ChartPort, PortPress, Rgba, ShipMarker, WaterTile, CHART_VIEW_H,

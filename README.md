@@ -79,7 +79,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
   res://scenes/harbour_seam.tscn
 ```
 
-The seam scene validates the layout before it writes. An illegal layout (pilings on a pier cell, or a pier on a quay cell) prints the fault, exits non-zero, and does not save a PNG. A blank or mostly flat frame fails the same check as `PORTLIGHT_SHOT` and also exits non-zero.
+The seam scene validates the layout before it writes. An illegal layout (pilings on a pier cell, or a pier on a quay cell) prints the fault, exits non-zero, and does not save a PNG. A blank or mostly flat frame fails the same check as `PORTLIGHT_SHOT` and also exits non-zero. The same run writes the quay close-ups `quay-paving-z100.png` and `quay-paving-z072.png`. The zoom-1 crop is view pixels `(340, 160, 360, 340)`. Zoom 0.72 uses that same world window, `(424, 216, 259, 245)`. CI byte-compares both against `docs/screenshots`, with the full seam frames and the vertex crop.
 
 ## Parity
 

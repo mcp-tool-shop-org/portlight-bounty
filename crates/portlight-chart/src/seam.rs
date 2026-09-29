@@ -68,6 +68,40 @@ pub fn seam_interior_vertex() -> (i32, i32) {
     harbour_anchor(1, 1)
 }
 
+/// Zoom-1 review crop of the quay block, in view pixels `(x, y, w, h)`.
+/// [`quay_paving_crop`] maps this same world window to other zooms.
+pub const QUAY_PAVING_CROP_Z100: (i32, i32, i32, i32) = (340, 160, 360, 340);
+
+/// View crop of the quay close-up at `zoom`. Zoom `1` is
+/// [`QUAY_PAVING_CROP_Z100`]. Zoom `0.72` is the committed
+/// `quay-paving-z072.png` box `(424, 216, 259, 245)`.
+pub fn quay_paving_crop(zoom: f32) -> (i32, i32, i32, i32) {
+    let (x, y, w, h) = QUAY_PAVING_CROP_Z100;
+    let (cx, cy) = seam_camera_center();
+    let world = |vx: i32, vy: i32| -> (f32, f32) {
+        (
+            (vx as f32 - 640.0) + cx as f32,
+            (vy as f32 - 360.0) + cy as f32,
+        )
+    };
+    let (wx, wy) = world(x, y);
+    let (wr, wb) = world(x + w, y + h);
+    let view = |wx: f32, wy: f32| -> (f32, f32) {
+        (
+            (wx - cx as f32) * zoom + 640.0,
+            (wy - cy as f32) * zoom + 360.0,
+        )
+    };
+    let (vx, vy) = view(wx, wy);
+    let (vr, vb) = view(wr, wb);
+    (
+        vx.round() as i32,
+        vy.round() as i32,
+        (vr - vx).round() as i32,
+        (vb - vy).round() as i32,
+    )
+}
+
 /// Centre of the quay, pier, and pilings, not of the padded water.
 /// Expanding water must not move the camera.
 pub fn seam_camera_center() -> (i32, i32) {
@@ -225,6 +259,28 @@ mod tests {
             "works share one y-sort node"
         );
         assert!(
+            placer.contains("set_name(\"Land\")"),
+            "quay paving uses the Land ground layer"
+        );
+        assert!(
+            placer.contains("land.set_z_index(0)"),
+            "paving keeps the block's z, so a higher z cannot cover front props"
+        );
+        assert!(
+            placer.contains("quay.add_child"),
+            "paving is a child of the quay block and draws after it"
+        );
+        assert!(
+            scene.contains("quay-paving-z100.png"),
+            "the seam capture writes the zoom-1 quay close-up"
+        );
+        assert!(
+            scene.contains("quay-paving-z072.png"),
+            "the seam capture writes the zoom-0.72 quay close-up"
+        );
+        assert_eq!(quay_paving_crop(1.0), QUAY_PAVING_CROP_Z100);
+        assert_eq!(quay_paving_crop(0.72), (424, 216, 259, 245));
+        assert!(
             !placer.contains("set_z_index(tile"),
             "works are not given a z per id"
         );
@@ -270,12 +326,14 @@ mod tests {
             );
             assert_eq!(sy, (tile.col + tile.row) * 64);
             assert_eq!(tile.screen_x, sx);
-            assert_eq!(
-                tile.screen_y,
-                sy + HARBOUR_CELL_H / 2 - WATER_DATUM_Y,
-                "datum applies to {}",
-                tile.path
-            );
+            let ground_y = sy + HARBOUR_CELL_H / 2;
+            let screen_y = if tile.layer == HarbourLayer::Land {
+                // U.4 layer offset is 0,0. Sea datum stays on water and works.
+                ground_y
+            } else {
+                ground_y - WATER_DATUM_Y
+            };
+            assert_eq!(tile.screen_y, screen_y, "placement for {}", tile.path);
         }
 
         let (cx, cy) = grid_to_screen(4, 2, CELL_WIDTH, CELL_HEIGHT);
@@ -302,6 +360,30 @@ mod tests {
             .iter()
             .find(|tile| tile.path.contains("quay_1111"))
             .expect("quay");
+        let paving = tiles
+            .iter()
+            .find(|tile| {
+                tile.layer == HarbourLayer::Land && tile.col == quay.col && tile.row == quay.row
+            })
+            .expect("quay paving");
+        assert!(paving.path.contains("quay_flag_"));
+        assert!(paving.kind.is_none());
+        let paving_at = tiles
+            .iter()
+            .position(|tile| tile.layer == HarbourLayer::Land)
+            .expect("paving");
+        let quay_list_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("quay block");
+        let prop_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Pier))
+            .expect("pier");
+        assert!(
+            quay_list_at < paving_at && paving_at < prop_at,
+            "draw order is quay block, then paving, then props"
+        );
         let pier = tiles
             .iter()
             .find(|tile| tile.path.contains("structures/pier_"))

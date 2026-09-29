@@ -1,9 +1,15 @@
 //! Harbour placement shared by every harbour scene, including the seam plate.
 //!
-//! Water is one layer and does not Y-sort. Raised works (quay, pier, pilings,
-//! and later buildings) sort by the footprint-bottom anchor. On this grid
-//! that anchor's screen Y is `col + row`, so a front cell sorts after a back
-//! cell. The same cell breaks the tie by kind: pilings, then pier, then quay.
+//! Water is one layer and does not Y-sort. Quay paving is land ground on the
+//! cells that hold a quay block: art-gate U.4 places it on layer Land at
+//! offset `0,0` with y-sort origin `0`. That is the footprint bottom with no
+//! sea datum, so the flag diamond registers on the quay block's top face.
+//! Draw order on that cell is the block, then the paving, then any later
+//! prop. Raised works (quay, pier, pilings, and later buildings) sort by
+//! the footprint-bottom anchor. On this grid that anchor's screen Y is
+//! `col + row`, so a front cell sorts after a back cell. The same cell breaks
+//! the tie by kind: pilings, then pier, then quay. Paving is inserted after
+//! the last quay block of its cell, so a front prop still draws after the flag.
 
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{grid_to_screen, ScreenRect, HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y};
@@ -15,7 +21,7 @@ const WATER_HALF_W: f32 = 128.0;
 #[cfg(test)]
 const WATER_HALF_H: f32 = 64.0;
 
-/// What a raised plate is. The rank is the tie-break inside one cell.
+/// What a raised plate is. The rank is the tie-break inside one cell, among works.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkKind {
     Pilings,
@@ -57,6 +63,8 @@ impl std::fmt::Display for HarbourFault {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HarbourLayer {
     Water,
+    /// Quay paving ground. U.4 land anchor, drawn after the quay block.
+    Land,
     Work,
 }
 
@@ -135,6 +143,33 @@ pub fn harbour_water_tile(col: i32, row: i32) -> HarbourTile {
     }
 }
 
+/// Quay paving for one cell. The plate is the manifest `quay_flag_*` entry
+/// for [`crate::assets::quay_flag_variant`]. Screen position is the footprint
+/// bottom plus that entry's layer offset (U.4 is `0,0`, so no sea datum).
+pub fn harbour_quay_paving_tile(col: i32, row: i32) -> HarbourTile {
+    let plate = crate::assets::quay_flag_plate(col, row);
+    assert_eq!(
+        plate.layer, "Land",
+        "quay paving stays on the land ground layer"
+    );
+    // U.4 y-sort origin is the footprint anchor, so the sprite is not shifted.
+    assert_eq!(plate.y_sort, 0, "quay paving y-sort origin");
+    let (sx, sy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
+    HarbourTile {
+        col,
+        row,
+        path: plate.res_path,
+        anchor_x: plate.anchor_x,
+        anchor_y: plate.anchor_y,
+        canvas_w: plate.canvas_w,
+        canvas_h: plate.canvas_h,
+        screen_x: sx + plate.offset_x,
+        screen_y: sy + HARBOUR_CELL_H / 2 + plate.offset_y,
+        layer: HarbourLayer::Land,
+        kind: None,
+    }
+}
+
 pub fn harbour_work_tile(col: i32, row: i32, kind: WorkKind, path: &'static str) -> HarbourTile {
     let (screen_x, screen_y) = harbour_anchor(col, row);
     HarbourTile {
@@ -198,7 +233,8 @@ pub fn sort_works(works: &mut [HarbourTile]) {
     });
 }
 
-/// Water first, then works in draw order. Refuses an illegal work layout.
+/// Water, then each quay block, the paving on that cell, then later props.
+/// Refuses an illegal work layout. Flat cells with no quay block get no paving.
 pub fn build_harbour(
     water: Vec<HarbourTile>,
     mut works: Vec<HarbourTile>,
@@ -206,7 +242,18 @@ pub fn build_harbour(
     validate_harbour(&works)?;
     sort_works(&mut works);
     let mut tiles = water;
-    tiles.extend(works);
+    for (i, work) in works.iter().enumerate() {
+        tiles.push(*work);
+        if work.kind != Some(WorkKind::Quay) {
+            continue;
+        }
+        let again = works[i + 1..].iter().any(|other| {
+            other.kind == Some(WorkKind::Quay) && other.col == work.col && other.row == work.row
+        });
+        if !again {
+            tiles.push(harbour_quay_paving_tile(work.col, work.row));
+        }
+    }
     Ok(tiles)
 }
 
@@ -290,6 +337,119 @@ mod tests {
             .collect();
         assert_eq!((works[0].col, works[0].row), (1, 2));
         assert_eq!((works[1].col, works[1].row), (0, 3));
+    }
+
+    #[test]
+    fn quay_paving_pins_cells_and_uses_every_flag() {
+        // Literals pin the mix. A later edit that reshuffles the hash fails here.
+        assert_eq!(crate::assets::quay_flag_variant(0, 1), 2);
+        assert_eq!(crate::assets::quay_flag_variant(1, 0), 1);
+        assert_eq!(crate::assets::quay_flag_variant(1, 2), 0);
+        assert_eq!(crate::assets::quay_flag_variant(2, 3), 1);
+        assert_eq!(crate::assets::quay_flag_variant(-1, 4), 1);
+        let pinned_again = crate::assets::quay_flag_variant(0, 1);
+        assert_eq!(pinned_again, 2);
+
+        let mut seen = [false; 3];
+        let mut differs_from_stripe = false;
+        for row in 0..8 {
+            let mut row_seen = [false; 3];
+            for col in 0..8 {
+                let variant = crate::assets::quay_flag_variant(col, row);
+                assert!(variant < 3);
+                seen[variant as usize] = true;
+                row_seen[variant as usize] = true;
+                differs_from_stripe |= variant != (col + row).rem_euclid(3) as u8;
+                let tile = harbour_quay_paving_tile(col, row);
+                let letter = match variant {
+                    0 => "quay_flag_a.png",
+                    1 => "quay_flag_b.png",
+                    _ => "quay_flag_c.png",
+                };
+                assert!(
+                    tile.path.ends_with(letter),
+                    "({col}, {row}) -> {} wanted {letter}",
+                    tile.path
+                );
+                assert_eq!(tile.layer, HarbourLayer::Land);
+                assert!(tile.kind.is_none());
+            }
+            assert!(
+                row_seen.iter().filter(|on| **on).count() >= 2,
+                "row {row} is a single variant"
+            );
+        }
+        assert_eq!(seen, [true, true, true]);
+        assert!(differs_from_stripe);
+
+        for start in 0..5 {
+            for diagonal in [
+                (0..8 - start)
+                    .map(|step| (step, step + start))
+                    .collect::<Vec<_>>(),
+                (0..8 - start)
+                    .map(|step| (step + start, step))
+                    .collect::<Vec<_>>(),
+            ] {
+                let mut kinds = [false; 3];
+                for (col, row) in diagonal {
+                    kinds[crate::assets::quay_flag_variant(col, row) as usize] = true;
+                }
+                assert!(
+                    kinds.iter().filter(|on| **on).count() >= 2,
+                    "diagonal from {start} is a single variant"
+                );
+            }
+        }
+        let mut anti = [false; 3];
+        for col in 0..8 {
+            anti[crate::assets::quay_flag_variant(col, 7 - col) as usize] = true;
+        }
+        assert!(
+            anti.iter().filter(|on| **on).count() >= 2,
+            "anti-diagonal is a single variant"
+        );
+
+        let seam = harbour_quay_paving_tile(0, 1);
+        let plate = crate::assets::quay_flag_plate(0, 1);
+        assert_eq!(plate.layer, "Land");
+        assert_eq!((plate.offset_x, plate.offset_y), (0, 0));
+        assert_eq!(plate.y_sort, 0);
+        assert_eq!(seam.path, plate.res_path);
+        assert!(seam.path.ends_with("ground/quay_flag_c.png"));
+        assert!(!seam.path.contains("quay_1111"));
+        let (sx, sy) = grid_to_screen(0, 1, HARBOUR_CELL_W, HARBOUR_CELL_H);
+        assert_eq!(seam.screen_x, sx);
+        assert_eq!(seam.screen_y, sy + HARBOUR_CELL_H / 2);
+        assert_ne!(seam.screen_y, harbour_anchor(0, 1).1);
+        assert_eq!(
+            (seam.anchor_x, seam.anchor_y),
+            (plate.anchor_x, plate.anchor_y)
+        );
+        assert_eq!((seam.canvas_w, seam.canvas_h), (256, 128));
+
+        let built =
+            build_harbour(Vec::new(), vec![quay(0, 1), quay(0, 1), pier(0, 2)]).expect("legal");
+        let paving: Vec<_> = built
+            .iter()
+            .filter(|tile| tile.layer == HarbourLayer::Land)
+            .collect();
+        assert_eq!(paving.len(), 1, "one plate per quay cell");
+        assert_eq!((paving[0].col, paving[0].row), (0, 1));
+        let paving_at = built
+            .iter()
+            .position(|tile| tile.layer == HarbourLayer::Land)
+            .expect("paving");
+        let block_at = built
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("block");
+        let prop_at = built
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Pier))
+            .expect("pier");
+        assert!(block_at < paving_at);
+        assert!(paving_at < prop_at);
     }
 
     #[test]
