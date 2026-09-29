@@ -230,13 +230,11 @@ mod tests {
         );
         assert!(
             placer.contains("land.set_z_index(0)"),
-            "land stays on the ground band, under works"
+            "paving keeps the block's z, so a higher z cannot cover front props"
         );
-        let land_at = placer.find("HarbourLayer::Land").expect("land arm");
-        let work_at = placer.find("HarbourLayer::Work").expect("work arm");
         assert!(
-            land_at < work_at,
-            "paving is parented before quay blocks and props"
+            placer.contains("quay.add_child"),
+            "paving is a child of the quay block and draws after it"
         );
         assert!(
             !placer.contains("set_z_index(tile"),
@@ -334,9 +332,13 @@ mod tests {
             .iter()
             .position(|tile| tile.kind == Some(WorkKind::Quay))
             .expect("quay block");
+        let prop_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Pier))
+            .expect("pier");
         assert!(
-            paving_at < quay_list_at,
-            "paving draws before the quay block"
+            quay_list_at < paving_at && paving_at < prop_at,
+            "draw order is quay block, then paving, then props"
         );
         let pier = tiles
             .iter()

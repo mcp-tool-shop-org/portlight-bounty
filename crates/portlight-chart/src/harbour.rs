@@ -3,11 +3,13 @@
 //! Water is one layer and does not Y-sort. Quay paving is land ground on the
 //! cells that hold a quay block: art-gate U.4 places it on layer Land at
 //! offset `0,0` with y-sort origin `0`. That is the footprint bottom with no
-//! sea datum, drawn before raised works so the paving stays under quay blocks
-//! and props. Raised works (quay, pier, pilings, and later buildings) sort by
+//! sea datum, so the flag diamond registers on the quay block's top face.
+//! Draw order on that cell is the block, then the paving, then any later
+//! prop. Raised works (quay, pier, pilings, and later buildings) sort by
 //! the footprint-bottom anchor. On this grid that anchor's screen Y is
 //! `col + row`, so a front cell sorts after a back cell. The same cell breaks
-//! the tie by kind: pilings, then pier, then quay.
+//! the tie by kind: pilings, then pier, then quay. Paving is inserted after
+//! the last quay block of its cell, so a front prop still draws after the flag.
 
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{grid_to_screen, ScreenRect, HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y};
@@ -19,7 +21,7 @@ const WATER_HALF_W: f32 = 128.0;
 #[cfg(test)]
 const WATER_HALF_H: f32 = 64.0;
 
-/// What a raised plate is. The rank is the tie-break inside one cell.
+/// What a raised plate is. The rank is the tie-break inside one cell, among works.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkKind {
     Pilings,
@@ -61,7 +63,7 @@ impl std::fmt::Display for HarbourFault {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HarbourLayer {
     Water,
-    /// Quay paving ground. Same band as other ground, under raised works.
+    /// Quay paving ground. U.4 land anchor, drawn after the quay block.
     Land,
     Work,
 }
@@ -231,35 +233,27 @@ pub fn sort_works(works: &mut [HarbourTile]) {
     });
 }
 
-/// One paving plate per quay cell, in the order the quay blocks were given.
-fn quay_paving_for(works: &[HarbourTile]) -> Vec<HarbourTile> {
-    let mut seen = Vec::new();
-    let mut land = Vec::new();
-    for work in works {
-        if work.kind != Some(WorkKind::Quay) {
-            continue;
-        }
-        let cell = (work.col, work.row);
-        if seen.contains(&cell) {
-            continue;
-        }
-        seen.push(cell);
-        land.push(harbour_quay_paving_tile(work.col, work.row));
-    }
-    land
-}
-
-/// Water, then quay paving, then works in draw order. Refuses an illegal work layout.
+/// Water, then each quay block, the paving on that cell, then later props.
+/// Refuses an illegal work layout. Flat cells with no quay block get no paving.
 pub fn build_harbour(
     water: Vec<HarbourTile>,
     mut works: Vec<HarbourTile>,
 ) -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
     validate_harbour(&works)?;
-    let land = quay_paving_for(&works);
     sort_works(&mut works);
     let mut tiles = water;
-    tiles.extend(land);
-    tiles.extend(works);
+    for (i, work) in works.iter().enumerate() {
+        tiles.push(*work);
+        if work.kind != Some(WorkKind::Quay) {
+            continue;
+        }
+        let again = works[i + 1..].iter().any(|other| {
+            other.kind == Some(WorkKind::Quay) && other.col == work.col && other.row == work.row
+        });
+        if !again {
+            tiles.push(harbour_quay_paving_tile(work.col, work.row));
+        }
+    }
     Ok(tiles)
 }
 
@@ -454,7 +448,7 @@ mod tests {
             .iter()
             .position(|tile| tile.kind == Some(WorkKind::Pier))
             .expect("pier");
-        assert!(paving_at < block_at);
+        assert!(block_at < paving_at);
         assert!(paving_at < prop_at);
     }
 
