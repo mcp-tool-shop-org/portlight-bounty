@@ -702,7 +702,7 @@ pub(crate) fn newgame_copy(page: NewgamePage) -> (&'static str, &'static str) {
         ),
         NewgamePage::Load => (
             "Load game",
-            "Each slot lists the captain and the day stored in the save.",
+            "Each slot lists the captain and the day stored in the save. A loaded custom captain keeps the name, type, silver, and day. The save does not store the point-buy template, so prices and voyage modifiers come back as a merchant's.",
         ),
         NewgamePage::Saved | NewgamePage::Hidden => ("", ""),
     }
@@ -1277,6 +1277,9 @@ mod tests {
             let (title, card) = newgame_copy(page);
             assert!(title.is_ascii() && card.is_ascii(), "{title} / {card}");
         }
+        assert!(newgame_copy(NewgamePage::Load)
+            .1
+            .contains("come back as a merchant"));
         assert_eq!(save_confirm_title(true), "Game saved.");
         assert!(save_confirm_title(false).is_ascii());
         let row = portlight_sim::save::SaveSlotSummary {
