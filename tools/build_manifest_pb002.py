@@ -13,9 +13,10 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      A row passes when `pass` is true. `exit`, if present, must be 0. A missing
                      `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
                      A verdict of FAIL, a false top-level `gate` or `gates` value, or a non-empty
-                     `fails` list refuses the row. `gates` is a dict of booleans. Nested info
-                     such as info.G5_would_pass false does not. Real rows look like
-                     {"pass": true, "v011_exit": 1, "gates": {...}} with no `exit` key.
+                     `fails` value refuses the row. A non-empty string or dict counts, not only
+                     a list. Null and an empty list, string, or dict do not. `gates` is a dict
+                     of booleans. Nested info such as info.G5_would_pass false does not. Real
+                     rows look like {"pass": true, "v011_exit": 1, "gates": {...}} with no `exit` key.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -458,13 +459,26 @@ def _contains_false(value):
     return False
 
 
+def _fails_refuses(fails):
+    """True when a present fails value is non-empty.
+
+    Null and an empty list, string, or dict pass. A non-empty list, string, or
+    dict refuses the row, as does any other non-empty value.
+    """
+    if fails is None:
+        return False
+    if isinstance(fails, (list, str, dict)):
+        return len(fails) > 0
+    return bool(fails)
+
+
 def ship_row_failure(row):
     """Why a ships verifier row refuses the build, or None when it may land.
 
     A row passes when `pass` is true. `exit`, if present, must be 0. A missing
     `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
     `verdict` FAIL, a false top-level `gate` or `gates` value, or a non-empty
-    `fails` list refuses the row. Only those top-level keys are read. Real rows
+    `fails` value refuses the row. Only those top-level keys are read. Real rows
     carry info.G5_would_pass false, and that nested false does not refuse the row.
     """
     if not isinstance(row, dict):
@@ -481,7 +495,7 @@ def ship_row_failure(row):
         if present and _contains_false(gate):
             return "false gate"
     present, fails = _row_field(row, "fails")
-    if present and isinstance(fails, list) and fails:
+    if present and _fails_refuses(fails):
         return "non-empty fails"
     return None
 

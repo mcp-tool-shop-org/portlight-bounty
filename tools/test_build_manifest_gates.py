@@ -365,6 +365,22 @@ def test_gate_helpers():
         mod.ship_row_failure({**stock, "fails": ["canvas"]}) == "non-empty fails",
         "fails",
     )
+    check(
+        "non-empty fails string refuses the row",
+        mod.ship_row_failure({**stock, "fails": "canvas"}) == "non-empty fails",
+        "fails string",
+    )
+    check(
+        "non-empty fails dict refuses the row",
+        mod.ship_row_failure({**stock, "fails": {"reason": "canvas"}}) == "non-empty fails",
+        "fails dict",
+    )
+    for empty in (None, [], "", {}):
+        check(
+            f"empty fails {empty!r} passes",
+            mod.ship_row_failure({**stock, "fails": empty}) is None,
+            repr(empty),
+        )
     benign = {**stock, "verdict": "PASS", "gate": True, "fails": [], "stubborn_note": "keep"}
     check("benign ships fields still pass", mod.ship_row_failure(benign) is None, repr(benign))
     check("stubborn_note is not a stub key", not mod.json_has_stub_key({"stubborn_note": "keep"}), "token")
@@ -896,6 +912,24 @@ def test_ships_nonempty_fails_list_fails(studio, tmp_path):
     status, out = run_main(main_argv(copy))
     assert status == 1
     assert "non-empty fails" in out
+
+
+@pytest.mark.parametrize("fails", ["canvas", {"reason": "canvas"}])
+def test_ships_nonlist_fails_fails(studio, tmp_path, fails):
+    """A non-empty fails string or dict refuses the row, same as a non-empty list."""
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("fails", fails))
+    status, out = run_main(main_argv(copy))
+    assert status == 1
+    assert "non-empty fails" in out
+
+
+@pytest.mark.parametrize("fails", [None, [], "", {}])
+def test_ships_empty_fails_passes(studio, tmp_path, fails):
+    copy = clone_studio(studio, str(tmp_path / "copy"))
+    mutate_results(copy, "ships", lambda body: body["rows"][0].__setitem__("fails", fails))
+    status, out = run_main(main_argv(copy))
+    assert status == 0, out
 
 
 def test_ships_exit_n_verdict_in_retrieval_doc_fails(studio, tmp_path):
