@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """build_manifest_pb002.py - derive MANIFEST.json for the portlight-bounty PB-002 landing bundle.
 
-    python3 tools/build_manifest_pb002.py --out-dir landing-next --version 0.3.0 [--check]
+    python3 tools/build_manifest_pb002.py --out-dir landing-next --version 0.3.0 [--check] [--studio DIR]
     (--out-dir is relative to pb-002-plates/ unless absolute; default "landing")
 
 Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + outbox docs:
@@ -9,6 +9,14 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
   ships (36, P1)     ids/anchor/LOA/mesh      <- asset-list.csv; canvas <- PNG; sha256 computed
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
                      sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
+                     ships inventory must equal the 36 ids (empty fails). A missing row refuses the build.
+                     A row passes when `pass` is true. `exit`, if present, must be 0. A missing
+                     `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
+                     A verdict of FAIL, a false top-level `gate` or `gates` value, or a non-empty
+                     `fails` value refuses the row. A non-empty string or dict counts, not only
+                     a list. Null and an empty list, string, or dict do not. `gates` is a dict
+                     of booleans. Nested info such as info.G5_would_pass false does not. Real
+                     rows look like {"pass": true, "v011_exit": 1, "gates": {...}} with no `exit` key.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -24,10 +32,20 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      MANDATORY Verifier gate (B1): grok-bot-verifier/PB-002/quay_flag_painterly_results.json
                      (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
                      ("Result: **3/3 PASS**", ends "✅ Builder may land")
-                     B2: that results JSON must not have a _STUB key (any case), and the retrieval doc must contain its sha256
+                     B2: every gate input (ships, harbour, chart, quay_flag results JSON) refuses a key
+                     whose tokens include stub (any case, any depth), including _STUB, _stub, and stub.
+                     A key such as stubborn_note is not a stub marker.
+                     The quay retrieval doc must contain its results sha256.
                      The results file is read once: those bytes are parsed and hashed.
-                     Inventory ids must equal the expected plate set (quay_flag and harbour).
-                     A FAIL result line, a duplicate row id, or an unexpected row id refuses the build.
+                     Inventory ids must equal the expected plate set (quay_flag, harbour, and ships).
+                     A real FAIL verdict refuses the build: any line containing **FAIL**, a line
+                     whose verdict token is exactly FAIL (a plain line, or Verdict:/Result:), or a
+                     Verdict/Result cell that is FAIL or FAIL (exit N) for any N. A counted summary
+                     such as 0 FAIL does not contain **FAIL**. Prose that only mentions FAIL does not.
+                     A verdict-column FAIL (exit N) is exempt only when that same row, or one single
+                     line of the doc, marks it as the documented stock v0.1.1 canvas-size failure.
+                     Terms spread across lines do not mark it. Bold **FAIL** is never exempt.
+                     A duplicate row id or an unexpected row id also refuses the build.
                      A results file that is not a JSON object is a problem, not a traceback.
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
@@ -44,23 +62,8 @@ csv "-" = not applicable by spec -> null + raw csv string kept; empty/unparseabl
 from __future__ import annotations
 import argparse, csv, hashlib, json, os, re, struct, sys
 
-STUDIO = "/workspace/studio"          # read-side only; never emitted
-PLATES = os.path.join(STUDIO, "pb-002-plates")
-OUTBOX = os.path.join(STUDIO, "outbox-PB-002")
-VERIFIER = os.path.join(STUDIO, "grok-bot-verifier", "PB-002")
-CSV = os.path.join(OUTBOX, "asset-list.csv")
-SPEC = os.path.join(OUTBOX, "asset-spec.md")
-GATE = os.path.join(OUTBOX, "art-gate.md")
-RETR_SHIPS = os.path.join(OUTBOX, "retrieval-ships.md")
-RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
-RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
-RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag_painterly.md")
-VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
-VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
-VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
-SHIP_SRC = os.path.join(PLATES, "ships")
+DEFAULT_STUDIO = "/workspace/studio"  # read-side only; never emitted
 HARB_SRC_DIRS = ["ground", "quay", "pier", "props"]
-CHART_SRC = os.path.join(PLATES, "chart")
 CLASSES = ["sloop", "cutter", "brigantine", "galleon"]
 FRAMES = [f"f{k}" for k in range(8)] + ["wake"]
 EXP_HARB = (["water_a", "water_b", "water_c"] + [f"quay_{i:04b}" for i in range(1, 16)]
@@ -69,10 +72,37 @@ EXP_HARB = (["water_a", "water_b", "water_c"] + [f"quay_{i:04b}" for i in range(
                "pier_pilings_1x1"])
 EXP_CHART = ["chart_water_a", "chart_water_b", "chart_water_c", "chart_port_marker"]
 EXP_QUAY_FLAG = ["quay_flag_a", "quay_flag_b", "quay_flag_c"]
-QUAY_FLAG_SRC = os.path.join(PLATES, "ground")
-VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_painterly_results.json")
 R11_MIP_ON = {"chart_water_a", "chart_water_b", "chart_water_c"}
 R11_SRC = "asset-spec Rev 4 R11"
+
+
+def bind_studio(studio):
+    """Point every gate input at `studio`. The default root is DEFAULT_STUDIO."""
+    global STUDIO, PLATES, OUTBOX, VERIFIER, CSV, SPEC, GATE
+    global RETR_SHIPS, RETR_HARB, RETR_CHART, RETR_QUAY_FLAG
+    global VJ_SHIPS, VJ_HARB, VJ_CHART, SHIP_SRC, CHART_SRC
+    global QUAY_FLAG_SRC, VJ_QUAY_FLAG
+    STUDIO = studio
+    PLATES = os.path.join(STUDIO, "pb-002-plates")
+    OUTBOX = os.path.join(STUDIO, "outbox-PB-002")
+    VERIFIER = os.path.join(STUDIO, "grok-bot-verifier", "PB-002")
+    CSV = os.path.join(OUTBOX, "asset-list.csv")
+    SPEC = os.path.join(OUTBOX, "asset-spec.md")
+    GATE = os.path.join(OUTBOX, "art-gate.md")
+    RETR_SHIPS = os.path.join(OUTBOX, "retrieval-ships.md")
+    RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
+    RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
+    RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag_painterly.md")
+    VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
+    VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
+    VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
+    SHIP_SRC = os.path.join(PLATES, "ships")
+    CHART_SRC = os.path.join(PLATES, "chart")
+    QUAY_FLAG_SRC = os.path.join(PLATES, "ground")
+    VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_painterly_results.json")
+
+
+bind_studio(DEFAULT_STUDIO)
 
 
 # ---------------------------------------------------------------- helpers
@@ -175,10 +205,10 @@ def parse_json_object(raw, label, problems):
 
 
 def json_has_key(obj, key):
-    """True if a key equal to `key`, ignoring case, occurs anywhere."""
+    """True if any string key contains `key`, ignoring case, at any depth."""
     if isinstance(obj, dict):
-        want = key.lower()
-        return any(isinstance(k, str) and k.lower() == want for k in obj) or any(
+        needle = key.lower()
+        return any(isinstance(k, str) and needle in k.lower() for k in obj) or any(
             json_has_key(v, key) for v in obj.values()
         )
     if isinstance(obj, list):
@@ -186,9 +216,164 @@ def json_has_key(obj, key):
     return False
 
 
+def _key_has_stub_token(key):
+    """True when `stub` is its own token. stubborn_note does not match."""
+    return any(part.lower() == "stub" for part in re.findall(r"[A-Za-z0-9]+", key))
+
+
+def json_has_stub_key(obj):
+    """True if any key has a stub token, ignoring case, at any depth."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if isinstance(key, str) and _key_has_stub_token(key):
+                return True
+            if json_has_stub_key(value):
+                return True
+        return False
+    if isinstance(obj, list):
+        return any(json_has_stub_key(value) for value in obj)
+    return False
+
+
+def reject_stub_keys(obj, label, problems):
+    """Quay and harbour results, and every other gate input, refuse a stub key."""
+    if obj is not None and json_has_stub_key(obj):
+        problems.append(f"{label} has a stub key")
+
+
+def _bare_cell(text):
+    return re.sub(r"[*_`]", "", text).strip()
+
+
+def _table_cells(line):
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _is_table_row(line):
+    stripped = line.strip()
+    return stripped.startswith("|") and stripped.endswith("|") and stripped.count("|") >= 2
+
+
+def _is_separator_row(line):
+    if not _is_table_row(line):
+        return False
+    cells = _table_cells(line)
+    return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell.replace(" ", "")) for cell in cells)
+
+
+def _is_verdict_header(cell):
+    return _bare_cell(cell).lower() in {"verdict", "result"}
+
+
+def _marks_stock_v011_canvas(text):
+    """True when one line marks the documented stock v0.1.1 canvas-size failure.
+
+    Every term has to sit on that same line. A newline means the terms were
+    spread, so the mark does not count.
+    """
+    if not text or "\n" in text or "\r" in text:
+        return False
+    if re.search(r"(?i)stock\s+v0\.1\.1\s+canvas(?:[-\s](?:size|scale)|scale)", text):
+        return True
+    return (
+        re.search(r"(?i)v0\.1\.1", text) is not None
+        and re.search(r"(?i)canvas(?:-size|\s+size|\s+scale)", text) is not None
+        and re.search(r"(?i)stock|expected|documented", text) is not None
+    )
+
+
+def _verdict_cell_kind(cell):
+    """'fail' or 'exit' when a verdict cell is a FAIL, else None.
+
+    FAIL (exit N) is a verdict for any N. It must not pass only because it is
+    not the bare token FAIL.
+    """
+    bare = _bare_cell(cell)
+    if bare == "FAIL":
+        return "fail"
+    if re.fullmatch(r"FAIL\s*\(exit\s*\d+\)", bare):
+        return "exit"
+    return None
+
+
+def _stock_canvas_exempt(line, doc, kind):
+    """A verdict-column FAIL (exit N) is exempt only from a single-line mark.
+
+    The mark is this row, or one other line of the doc. Terms spread across
+    lines do not exempt the row. A bare FAIL is exempt only when its own row
+    carries the mark. Bold **FAIL** never reaches this helper.
+    """
+    if _marks_stock_v011_canvas(line):
+        return True
+    if kind != "exit":
+        return False
+    return any(_marks_stock_v011_canvas(ln) for ln in doc.splitlines())
+
+
+def _line_verdict_token_is_fail(line):
+    """A plain FAIL / **FAIL** line, or Verdict:/Result: whose token is exactly that."""
+    if re.fullmatch(r"\**\s*FAIL\s*\**", line):
+        return True
+    labelled = re.match(r"(?i)^(?:\**\s*)?(?:verdict|result)\s*:\s*(.*?)\s*$", line)
+    if not labelled:
+        return False
+    token = _bare_cell(labelled.group(1)).rstrip(".")
+    return token == "FAIL"
+
+
+def _verdict_columns(header):
+    return [i for i, cell in enumerate(header) if _is_verdict_header(cell)]
+
+
 def fail_result_lines(text):
-    """Lines that report a FAIL result. A summary such as '0 FAIL' is not one."""
-    return [line.strip() for line in text.splitlines() if "**FAIL**" in line]
+    """Lines that report a real FAIL verdict.
+
+    A counted summary such as '0 FAIL' is not one: it does not contain **FAIL**.
+    Neither is prose that merely mentions FAIL. Any line containing **FAIL**
+    is a verdict and is not stock-exempt. A Verdict or Result cell counts when
+    it is FAIL or FAIL (exit N) for any N. An exit-N cell is exempt only when
+    that row, or one single line of the doc, marks the documented stock v0.1.1
+    canvas-size failure.
+    """
+    raw_lines = text.splitlines()
+    header_for = {}
+    current = None
+    for index, raw in enumerate(raw_lines):
+        line = raw.strip()
+        if _is_separator_row(line) and index > 0 and _is_table_row(raw_lines[index - 1]):
+            current = _table_cells(raw_lines[index - 1])
+            continue
+        if current is not None and _is_table_row(line) and not _is_separator_row(line):
+            header_for[index] = current
+        elif line and not _is_table_row(line):
+            current = None
+    found = []
+    for index, raw in enumerate(raw_lines):
+        line = raw.strip()
+        if not line:
+            continue
+        # Main refuses any line that contains the bold token **FAIL**.
+        # **Result: 36 PASS, 0 FAIL** does not contain that token.
+        if "**FAIL**" in line:
+            found.append(line)
+            continue
+        if _line_verdict_token_is_fail(line):
+            found.append(line)
+            continue
+        header = header_for.get(index)
+        if not header:
+            continue
+        cells = _table_cells(line)
+        kinds = [
+            kind
+            for column in _verdict_columns(header)
+            if column < len(cells)
+            for kind in (_verdict_cell_kind(cells[column]),)
+            if kind
+        ]
+        if kinds and not all(_stock_canvas_exempt(line, text, kind) for kind in kinds):
+            found.append(line)
+    return found
 
 
 def require_no_fail_results(text, label, problems):
@@ -247,6 +432,74 @@ def index_rows(obj, expected, label, problems):
     return mapping
 
 
+def _row_field(row, name):
+    """(present, value) for a key equal to `name`, ignoring case."""
+    for key, value in row.items():
+        if isinstance(key, str) and key.lower() == name:
+            return True, value
+    return False, None
+
+
+def _text_verdict_fail(value):
+    if not isinstance(value, str):
+        return False
+    if "**FAIL**" in value:
+        return True
+    bare = _bare_cell(value).rstrip(".")
+    return bare == "FAIL" or re.fullmatch(r"FAIL\s*\(exit\s*\d+\)", bare) is not None
+
+
+def _contains_false(value):
+    if value is False:
+        return True
+    if isinstance(value, dict):
+        return any(_contains_false(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_false(item) for item in value)
+    return False
+
+
+def _fails_refuses(fails):
+    """True when a present fails value is non-empty.
+
+    Null and an empty list, string, or dict pass. A non-empty list, string, or
+    dict refuses the row, as does any other non-empty value.
+    """
+    if fails is None:
+        return False
+    if isinstance(fails, (list, str, dict)):
+        return len(fails) > 0
+    return bool(fails)
+
+
+def ship_row_failure(row):
+    """Why a ships verifier row refuses the build, or None when it may land.
+
+    A row passes when `pass` is true. `exit`, if present, must be 0. A missing
+    `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
+    `verdict` FAIL, a false top-level `gate` or `gates` value, or a non-empty
+    `fails` value refuses the row. Only those top-level keys are read. Real rows
+    carry info.G5_would_pass false, and that nested false does not refuse the row.
+    """
+    if not isinstance(row, dict):
+        return "missing"
+    if row.get("pass") is not True:
+        return "not pass"
+    if "exit" in row and row.get("exit") != 0:
+        return "nonzero exit"
+    present, verdict = _row_field(row, "verdict")
+    if present and _text_verdict_fail(verdict):
+        return "verdict FAIL"
+    for name in ("gate", "gates"):
+        present, gate = _row_field(row, name)
+        if present and _contains_false(gate):
+            return "false gate"
+    present, fails = _row_field(row, "fails")
+    if present and _fails_refuses(fails):
+        return "non-empty fails"
+    return None
+
+
 def walk_strings(o):
     if isinstance(o, str):
         yield o
@@ -291,13 +544,15 @@ def cross_check_sidecar_mip(aid, val, where, problems):
 
 
 # ---------------------------------------------------------------- main
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", default="0.1.0")
     ap.add_argument("--out-dir", default="landing", help="bundle dir (relative to pb-002-plates/ unless absolute)")
     ap.add_argument("--groups", default="ships,harbour,chart,quay_flag")
     ap.add_argument("--check", action="store_true")
-    a = ap.parse_args()
+    ap.add_argument("--studio", default=DEFAULT_STUDIO, help="studio root holding plates, outbox, and verifier inputs")
+    a = ap.parse_args(argv)
+    bind_studio(a.studio)
     OUT = a.out_dir if os.path.isabs(a.out_dir) else os.path.join(PLATES, a.out_dir)
     groups = set(a.groups.split(","))
     problems, nulls, na = [], [], []
@@ -325,29 +580,19 @@ def main():
             problems.append(f"retrieval-ships.md not 36 PASS/0 FAIL (summary={m.groups() if m else None}, rows={n_rows})")
         if not re.search(r"## Addendum D .*?\*\*Result: PASS\. All 36 ids are will-use", gate, re.S):
             problems.append("art-gate.md Addendum D PASS not found")
+        expected = [f"ship_{c}_{f}" for c in CLASSES for f in FRAMES]
         vraw = read_file_bytes(VJ_SHIPS)
         vj = parse_json_object(vraw, "ships_results.json", problems)
         if vraw is None:
             problems.append("verifier ships_results.json missing")
-        if vj is None:
-            vinv = {}
-        else:
-            inv = vj.get("inventory")
-            if not isinstance(inv, list):
-                problems.append("ships inventory is not a list")
-                vinv = {}
-            else:
-                vinv = {}
-                for row in inv:
-                    if not isinstance(row, dict) or "id" not in row:
-                        problems.append("ships inventory entry missing id")
-                        continue
-                    vinv[row["id"]] = row.get("sha256")
+        # Empty inventory is a set mismatch. Rows are read and must pass.
+        vinv = bind_inventory(vj, expected, "ships", problems) if vj is not None else {}
+        vrows = index_rows(vj, expected, "ships", problems) if vj is not None else {}
+        reject_stub_keys(vj, "ships_results.json", problems)
         spec_mesh_prefix = dict(re.findall(r"\|\s*`(ship_[a-z_]+)`\s*\|.*?\|\s*`([0-9a-f]{12})`\s*\|", spec))
         if len(spec_mesh_prefix) != 4:
             problems.append(f"asset-spec §7a mesh sha prefixes not found (got {spec_mesh_prefix})")
         rows = [r for r in rows_all if r["id"].startswith("ship_") and r["status"].startswith("LOCKED")]
-        expected = [f"ship_{c}_{f}" for c in CLASSES for f in FRAMES]
         if sorted(r["id"] for r in rows) != sorted(expected):
             problems.append("csv LOCKED ship ids != expected 36")
         mesh_cache, side_cache, ship_e = {}, {}, []
@@ -363,7 +608,11 @@ def main():
                 problems.append(f"missing landed file {rel}"); continue
             w, h = png_size(p); digest = sha256(p)
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
-            if vinv and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
+            if vj is not None and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
+            ship_row = vrows.get(aid)
+            ship_failure = ship_row_failure(ship_row) if vj is not None else None
+            if ship_failure:
+                problems.append(f"{aid}: Verifier ships row {ship_failure}")
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
             loa, _ = csv_field(r["hull_len_px"], aid, "LOA", parse_int, nulls, na)
@@ -417,6 +666,7 @@ def main():
             problems.append("verifier harbour_andon_results.json missing")
         hinv = bind_inventory(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
         hrows = index_rows(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
+        reject_stub_keys(hj, "harbour_andon_results.json", problems)
         rows = [r for r in rows_all if r["phase"] == "P0" and r["view"] == "harbour" and r["status"].startswith("LOCKED") and r["id"] not in EXP_QUAY_FLAG]
         if sorted(r["id"] for r in rows) != sorted(EXP_HARB):
             problems.append("csv harbour P0 ids != expected 30")
@@ -492,6 +742,7 @@ def main():
         cj = parse_json_object(craw, "chart_retrieval_results.json", problems)
         if craw is None:
             problems.append("verifier chart_retrieval_results.json missing")
+        reject_stub_keys(cj, "chart_retrieval_results.json", problems)
         rows = [r for r in rows_all if r["view"] == "chart" and r["id"] in EXP_CHART and r["status"].startswith("LOCKED")]
         if sorted(r["id"] for r in rows) != sorted(EXP_CHART):
             problems.append(f"csv chart ids != expected 4: {[r['id'] for r in rows]}")
@@ -583,8 +834,7 @@ def main():
         qj = parse_json_object(qraw, "quay_flag_painterly_results.json", problems)
         if qraw is None:
             problems.append("verifier quay_flag_painterly_results.json missing")
-        elif qj is not None and json_has_key(qj, "_STUB"):
-            problems.append("verifier quay_flag_painterly_results.json has a _STUB key")
+        reject_stub_keys(qj, "quay_flag_painterly_results.json", problems)
         qinv = bind_inventory(qj, EXP_QUAY_FLAG, "quay_flag", problems) if qj is not None else {}
         qrows = index_rows(qj, EXP_QUAY_FLAG, "quay_flag", problems) if qj is not None else {}
         for q in EXP_QUAY_FLAG:
