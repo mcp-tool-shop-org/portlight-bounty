@@ -2,15 +2,23 @@
 """Negative cases for the build_manifest verifier gates.
 
 The studio bundle is not required. These fixtures call the same helpers
-`build_manifest_pb002.py` uses. A passing real run still emits MANIFEST.json
-only when `problems` stays empty; none of these cases do.
+`build_manifest_pb002.py` uses, and main() runs end to end on a temporary
+studio fixture. A passing real run still emits MANIFEST.json only when
+`problems` stays empty.
 """
 from __future__ import annotations
 
+import csv
 import hashlib
 import importlib.util
+import io
+import json
 import os
+import shutil
+import struct
 import sys
+import tempfile
+import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = importlib.util.spec_from_file_location(
@@ -135,12 +143,18 @@ problems = []
 mod.require_no_fail_results(doc, "retrieval-quay_flag_painterly.md", problems)
 check("PASS doc with a FAIL result line", bool(problems), joined(problems))
 
-summary = "**Result: 36 PASS, 0 FAIL**\n| **PASS** |\n**ANDON v0.1.1: 30 PASS, 0 FAIL.**\n"
+summary = "**Result: 36 PASS, 0 FAIL**\n| **PASS** |\n| notes | 0 FAIL |\n**ANDON v0.1.1: 30 PASS, 0 FAIL.**\n"
 check(
     "zero-FAIL summary is not a FAIL result",
     mod.fail_result_lines(summary) == [],
     "no FAIL result line",
 )
+
+# 1. A plain FAIL token, and a markdown cell "| FAIL |", are verdict rows.
+for sample in ("FAIL", "| FAIL |", "| quay_flag_a | FAIL |", "| **FAIL** |"):
+    problems = []
+    mod.require_no_fail_results(sample + "\n", "retrieval.md", problems)
+    check(f"negative: FAIL verdict {sample!r}", bool(problems), joined(problems))
 
 # Duplicate row id, fail then pass. Last row would pass; the duplicate must not.
 dup_rows = [
@@ -189,6 +203,23 @@ for key in ("_STUB", "_stub", "_Stub"):
     )
 check("STUB without underscore is not _STUB", not mod.json_has_key({"STUB": 1}, "_STUB"), "ignored")
 check("_STUB value is not a key", not mod.json_has_key({"note": "_STUB"}, "_STUB"), "ignored")
+check(
+    "negative: key containing _STUB",
+    mod.json_has_key({"harbour_STUB_marker": True}, "_STUB"),
+    "matched",
+)
+check(
+    "negative: nested harbour stub key",
+    mod.json_has_key({"rows": [{"id": "water_a", "meta": {"pre_stub_note": 1}}]}, "_STUB"),
+    "matched",
+)
+problems = []
+mod.reject_stub_keys(
+    {"inventory": [], "harbour_STUB_marker": True},
+    "harbour_andon_results.json",
+    problems,
+)
+check("negative: harbour stub key is a gate problem", bool(problems), joined(problems))
 
 raw = b'{"_STUB": true, "inventory": []}\n'
 digest = mod.sha256_bytes(raw)
@@ -226,7 +257,354 @@ for raw_bad, needle in (
         joined(problems),
     )
 
+# ---------------------------------------------------------------- main() fixture
+COLUMNS = [
+    "id", "status", "phase", "view", "canvas", "anchor_px", "hull_len_px",
+    "mesh_source", "rot_z_f0..f7", "hull", "footprint", "layer",
+    "layer_offset_px", "texture_origin", "y_sort_origin", "andon_kind",
+]
+
+
+def tiny_png():
+    """2x2 PNG. png_size only needs a valid signature and IHDR."""
+    ihdr = struct.pack(">IIBBBBB", 2, 2, 8, 2, 0, 0, 0)
+
+    def chunk(tag, data):
+        crc = zlib.crc32(tag + data) & 0xFFFFFFFF
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", crc)
+
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IEND", b"")
+
+
+def ensure_parent(path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+
+def write_bytes(path, data):
+    ensure_parent(path)
+    with open(path, "wb") as fh:
+        fh.write(data)
+
+
+def write_text(path, text):
+    ensure_parent(path)
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
+
+
+def write_json(path, obj):
+    raw = (json.dumps(obj, indent=2) + "\n").encode("utf-8")
+    write_bytes(path, raw)
+    return raw
+
+
+def plate_row(**over):
+    item = {column: "" for column in COLUMNS}
+    item.update(over)
+    return item
+
+
+def ship_ids():
+    return [f"ship_{cls}_{frame}" for cls in mod.CLASSES for frame in mod.FRAMES]
+
+
+def harbour_source_dir(aid):
+    if aid.startswith("water_"):
+        return "ground"
+    if aid == "pier_pilings_1x1":
+        return "props"
+    return "quay"
+
+
+def harbour_landed(aid):
+    if aid.startswith("water_"):
+        return f"ground/{aid}.png"
+    if aid == "pier_pilings_1x1":
+        return f"props/{aid}/beauty.png"
+    return f"structures/{aid}/beauty.png"
+
+
+def build_fixture(studio):
+    """A complete studio small enough for main() and shaped like the real gates."""
+    png = tiny_png()
+    png_sha = hashlib.sha256(png).hexdigest()
+    mesh = b"plate-mesh"
+    prefix = hashlib.sha256(mesh).hexdigest()[:12]
+    plates = os.path.join(studio, "pb-002-plates")
+    outbox = os.path.join(studio, "outbox-PB-002")
+    verifier = os.path.join(studio, "grok-bot-verifier", "PB-002")
+    landing = os.path.join(plates, "landing")
+    rows = []
+
+    mesh_paths = {}
+    for cls in mod.CLASSES:
+        mesh_path = os.path.join(studio, "meshes", f"ship_{cls}.glb")
+        write_bytes(mesh_path, mesh)
+        mesh_paths[cls] = mesh_path
+    for aid in ship_ids():
+        base = aid.rsplit("_", 1)[0]
+        cls = base.split("_", 1)[1]
+        write_bytes(os.path.join(plates, "ships", base, f"{aid}.png"), png)
+        write_bytes(os.path.join(landing, "chart", "ships", base, f"{aid}.png"), png)
+        item = plate_row(
+            id=aid, status="LOCKED", phase="P1", view="ships", canvas="2x2",
+            anchor_px="1,1", hull_len_px="40", mesh_source=mesh_paths[cls], hull="hull",
+        )
+        item["rot_z_f0..f7"] = "0"
+        rows.append(item)
+    write_json(
+        os.path.join(verifier, "ships_results.json"),
+        {
+            "inventory": [{"id": aid, "sha256": png_sha} for aid in ship_ids()],
+            "rows": [{"id": aid, "pass": True} for aid in ship_ids()],
+        },
+    )
+    write_text(
+        os.path.join(outbox, "retrieval-ships.md"),
+        "**Result: 36 PASS, 0 FAIL**\n"
+        + "".join(f"| {aid} | **PASS** |\n" for aid in ship_ids()),
+    )
+
+    for aid in mod.EXP_HARB:
+        src = os.path.join(plates, harbour_source_dir(aid), f"{aid}.png")
+        write_bytes(src, png)
+        write_bytes(os.path.join(landing, harbour_landed(aid)), png)
+        write_json(os.path.splitext(src)[0] + ".andon.json", {"andon_version": "0.1.1", "pass": True, "kind": "ground"})
+        write_json(os.path.splitext(src)[0] + ".render.json", {"blender": "5.2", "engine": "eevee"})
+        rows.append(plate_row(
+            id=aid, status="LOCKED", phase="P0", view="harbour", canvas="2x2",
+            anchor_px="0,0", footprint="1x1", layer="ground", layer_offset_px="0,0",
+            texture_origin="-", y_sort_origin="-", andon_kind="ground",
+        ))
+    write_json(
+        os.path.join(verifier, "harbour_andon_results.json"),
+        {
+            "inventory": [{"id": aid, "sha256": png_sha} for aid in mod.EXP_HARB],
+            "rows": [{"id": aid, "pass": True} for aid in mod.EXP_HARB],
+        },
+    )
+    write_text(
+        os.path.join(outbox, "retrieval-harbour.md"),
+        "**ANDON v0.1.1: 30 PASS, 0 FAIL.**\n"
+        + "".join(f"| {aid} | **PASS** (exit 0) |\n" for aid in mod.EXP_HARB),
+    )
+
+    chart_obj = {}
+    for aid in mod.EXP_CHART:
+        src = os.path.join(plates, "chart", f"{aid}.png")
+        write_bytes(src, png)
+        write_bytes(os.path.join(landing, "chart", f"{aid}.png"), png)
+        write_json(
+            os.path.splitext(src)[0] + ".andon.json",
+            {"andon_gate_of_record": {"pass": True, "exit_code": 0}},
+        )
+        write_json(os.path.splitext(src)[0] + ".render.json", {"blender": "5.2", "post": {"resize": "none"}})
+        chart_obj[aid] = {"sha256": png_sha, "sim": {"pass": True}}
+        rows.append(plate_row(
+            id=aid, status="LOCKED", phase="P0", view="chart", canvas="2x2",
+            anchor_px="1,1", footprint="1x1", layer="chart", layer_offset_px="0,0",
+            texture_origin="-", y_sort_origin="0", andon_kind="chart",
+        ))
+    write_json(os.path.join(verifier, "chart", "chart_retrieval_results.json"), chart_obj)
+    write_text(
+        os.path.join(outbox, "retrieval-chart.md"),
+        "**Chart profile (SIMULATED): 4 PASS, 0 FAIL.**\n✅ Builder may land\n",
+    )
+
+    quay_ids = list(mod.EXP_QUAY_FLAG)
+    for aid in quay_ids:
+        src = os.path.join(plates, "ground", f"{aid}.png")
+        write_bytes(src, png)
+        write_bytes(os.path.join(landing, "ground", f"{aid}.png"), png)
+        write_json(
+            os.path.splitext(src)[0] + ".andon.json",
+            {"andon_version": "0.1.1", "pass": True, "kind": "ground"},
+        )
+        write_json(
+            os.path.splitext(src)[0] + ".render.json",
+            {
+                "source_square": {"sha256": "abc"},
+                "base_square": {"sha256": "def"},
+                "brushwork": {"seed": 1500, "graph_sha256": "ghi"},
+            },
+        )
+        rows.append(plate_row(
+            id=aid, status="LOCKED", phase="P0", view="harbour", canvas="2x2",
+            anchor_px="0,0", footprint="1x1", layer="ground", layer_offset_px="0,0",
+            texture_origin="-", y_sort_origin="-", andon_kind="ground",
+        ))
+    quay_raw = write_json(
+        os.path.join(verifier, "quay_flag_painterly_results.json"),
+        {
+            "inventory": [{"id": aid, "sha256": png_sha} for aid in quay_ids],
+            "rows": [{"id": aid, "pass": True, "exit": 0} for aid in quay_ids],
+        },
+    )
+    write_text(
+        os.path.join(outbox, "retrieval-quay_flag_painterly.md"),
+        "Result: **3/3 PASS**\n"
+        + hashlib.sha256(quay_raw).hexdigest()
+        + "\n✅ Builder may land\n",
+    )
+
+    spec_rows = "\n".join(f"| `ship_{cls}` | hull | `{prefix}` |" for cls in mod.CLASSES)
+    write_text(
+        os.path.join(outbox, "asset-spec.md"),
+        "Seat: Game Designer · Rev 4\n\n"
+        "| R11 | Mipmaps ON for `chart_water_a..c` only; Fix Alpha Border ON everywhere |\n\n"
+        + spec_rows
+        + "\n",
+    )
+    write_text(
+        os.path.join(outbox, "art-gate.md"),
+        "## Addendum D (05:15 ET)\n"
+        "**Result: PASS. All 36 ids are will-use.**\n\n"
+        "## Addendum E (05:20 ET)\n"
+        "**Result: PASS. All 30 are will-use.**\n\n"
+        "AMENDED 05:25 ET (Addendum E.1).** The seams are still **Pass**.\n\n"
+        "## Addendum F (06:00 ET)\n"
+        "**Chart set: PASS. All 4 are will-use**\n\n"
+        "## Addendum U.4 placement\n"
+        "## Addendum V.2 painterly v5p PASS\n",
+    )
+    csv_path = os.path.join(outbox, "asset-list.csv")
+    ensure_parent(csv_path)
+    with open(csv_path, "w", encoding="utf-8", newline="\n") as fh:
+        writer = csv.DictWriter(fh, fieldnames=COLUMNS, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def run_main(argv):
+    buf = io.StringIO()
+    old = sys.stdout
+    sys.stdout = buf
+    status = 0
+    try:
+        try:
+            mod.main(argv)
+        except SystemExit as exc:
+            code = exc.code
+            if isinstance(code, str):
+                buf.write(code + "\n")
+                status = 1
+            elif code not in (None, 0):
+                status = code
+    finally:
+        sys.stdout = old
+    return status, buf.getvalue()
+
+
+def main_argv(studio, *extra):
+    return ["--studio", studio, "--version", "9.9.9", *extra]
+
+
+def clip(text, needle):
+    hits = [line.strip() for line in text.splitlines() if needle in line]
+    return hits[0] if hits else text[-400:]
+
+
+def cloned(studio, name):
+    dest = os.path.join(os.path.dirname(studio), name)
+    shutil.copytree(studio, dest)
+    # Mesh paths in the csv are absolute and must stay inside this studio.
+    csv_path = os.path.join(dest, "outbox-PB-002", "asset-list.csv")
+    write_text(csv_path, open(csv_path, encoding="utf-8").read().replace(studio, dest))
+    return dest
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    studio = os.path.join(tmp, "studio")
+    build_fixture(studio)
+    status, out = run_main(main_argv(studio))
+    check(
+        "main() fixture passes",
+        status == 0 and "73 entries" in out and "PROBLEMS:" not in out,
+        "73 entries",
+    )
+    status, out = run_main(main_argv(studio, "--check"))
+    check(
+        "main() fixture --check",
+        status == 0 and "MATCHES" in out and "problems=0" in out,
+        "MATCHES problems=0",
+    )
+
+    verdict = cloned(studio, "fail-verdict")
+    retr = os.path.join(verdict, "outbox-PB-002", "retrieval-quay_flag_painterly.md")
+    write_text(
+        retr,
+        open(retr, encoding="utf-8").read().replace(
+            "✅ Builder may land",
+            "FAIL\n| quay_flag_a | FAIL |\n✅ Builder may land",
+        ),
+    )
+    status, out = run_main(main_argv(verdict))
+    check(
+        "main() fixture failing verdict",
+        status != 0 and "FAIL result" in out,
+        clip(out, "FAIL result"),
+    )
+
+    # 2. A non-exact _STUB key in every gate input, including harbour, fails main().
+    stub_files = {
+        "ships_results.json": os.path.join("grok-bot-verifier", "PB-002", "ships_results.json"),
+        "harbour_andon_results.json": os.path.join("grok-bot-verifier", "PB-002", "harbour_andon_results.json"),
+        "chart_retrieval_results.json": os.path.join("grok-bot-verifier", "PB-002", "chart", "chart_retrieval_results.json"),
+        "quay_flag_painterly_results.json": os.path.join("grok-bot-verifier", "PB-002", "quay_flag_painterly_results.json"),
+    }
+    for label, rel in stub_files.items():
+        stubbed = cloned(studio, "stub-" + label)
+        path = os.path.join(stubbed, rel)
+        body = json.loads(open(path, encoding="utf-8").read())
+        body["gate_STUB_marker"] = True
+        raw = write_json(path, body)
+        if label == "quay_flag_painterly_results.json":
+            quay_doc = os.path.join(stubbed, "outbox-PB-002", "retrieval-quay_flag_painterly.md")
+            text = open(quay_doc, encoding="utf-8").read()
+            old_sha = hashlib.sha256(open(os.path.join(studio, rel), "rb").read()).hexdigest()
+            write_text(quay_doc, text.replace(old_sha, hashlib.sha256(raw).hexdigest()))
+        status, out = run_main(main_argv(stubbed))
+        needle = f"{label} has a key containing _STUB"
+        check(
+            f"negative: {label} key containing _STUB",
+            status != 0 and needle in out,
+            clip(out, needle),
+        )
+
+    # 3. Ships must read rows, and an empty inventory must fail.
+    empty = cloned(studio, "ships-empty")
+    ships_path = os.path.join(empty, "grok-bot-verifier", "PB-002", "ships_results.json")
+    ships_body = json.loads(open(ships_path, encoding="utf-8").read())
+    ships_body["inventory"] = []
+    write_json(ships_path, ships_body)
+    status, out = run_main(main_argv(empty))
+    check(
+        "negative: ships empty inventory",
+        status != 0 and "ships inventory ids" in out,
+        clip(out, "ships inventory ids"),
+    )
+
+    bad_row = cloned(studio, "ships-row")
+    ships_path = os.path.join(bad_row, "grok-bot-verifier", "PB-002", "ships_results.json")
+    ships_body = json.loads(open(ships_path, encoding="utf-8").read())
+    ships_body["rows"][0]["pass"] = False
+    write_json(ships_path, ships_body)
+    status, out = run_main(main_argv(bad_row))
+    check(
+        "negative: ships row not pass",
+        status != 0 and "Verifier ships row missing or not pass" in out,
+        clip(out, "Verifier ships row missing or not pass"),
+    )
+
+committed = os.path.join(HERE, "..", "godot", "assets", "landing", "MANIFEST.json")
+committed_sha = hashlib.sha256(open(committed, "rb").read()).hexdigest()
+check(
+    "committed MANIFEST sha unchanged",
+    committed_sha == "562bb5e7a5fbb9fc9d5319754ece3ea45b2e9ea4d2a4940b4280cb2c446da8f8",
+    committed_sha,
+)
+
 if failures:
     print(f"{len(failures)} case(s) did not fail closed")
     sys.exit(1)
-print("all gate fixtures failed closed; studio inputs were not used")
+print("all gate fixtures failed closed")

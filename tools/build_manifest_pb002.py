@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """build_manifest_pb002.py - derive MANIFEST.json for the portlight-bounty PB-002 landing bundle.
 
-    python3 tools/build_manifest_pb002.py --out-dir landing-next --version 0.3.0 [--check]
+    python3 tools/build_manifest_pb002.py --out-dir landing-next --version 0.3.0 [--check] [--studio DIR]
     (--out-dir is relative to pb-002-plates/ unless absolute; default "landing")
 
 Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + outbox docs:
@@ -9,6 +9,7 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
   ships (36, P1)     ids/anchor/LOA/mesh      <- asset-list.csv; canvas <- PNG; sha256 computed
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
                      sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
+                     ships inventory must equal the 36 ids (empty inventory fails) and every row must pass
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -24,10 +25,12 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      MANDATORY Verifier gate (B1): grok-bot-verifier/PB-002/quay_flag_painterly_results.json
                      (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
                      ("Result: **3/3 PASS**", ends "✅ Builder may land")
-                     B2: that results JSON must not have a _STUB key (any case), and the retrieval doc must contain its sha256
+                     B2: every gate input (ships, harbour, chart, quay_flag results JSON) refuses a key
+                     containing _STUB (any case). The quay retrieval doc must contain its results sha256.
                      The results file is read once: those bytes are parsed and hashed.
-                     Inventory ids must equal the expected plate set (quay_flag and harbour).
-                     A FAIL result line, a duplicate row id, or an unexpected row id refuses the build.
+                     Inventory ids must equal the expected plate set (quay_flag, harbour, and ships).
+                     A FAIL verdict row (plain FAIL, or a markdown | FAIL | cell), a duplicate row id,
+                     or an unexpected row id refuses the build. A counted summary such as "0 FAIL" does not.
                      A results file that is not a JSON object is a problem, not a traceback.
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
@@ -44,23 +47,8 @@ csv "-" = not applicable by spec -> null + raw csv string kept; empty/unparseabl
 from __future__ import annotations
 import argparse, csv, hashlib, json, os, re, struct, sys
 
-STUDIO = "/workspace/studio"          # read-side only; never emitted
-PLATES = os.path.join(STUDIO, "pb-002-plates")
-OUTBOX = os.path.join(STUDIO, "outbox-PB-002")
-VERIFIER = os.path.join(STUDIO, "grok-bot-verifier", "PB-002")
-CSV = os.path.join(OUTBOX, "asset-list.csv")
-SPEC = os.path.join(OUTBOX, "asset-spec.md")
-GATE = os.path.join(OUTBOX, "art-gate.md")
-RETR_SHIPS = os.path.join(OUTBOX, "retrieval-ships.md")
-RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
-RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
-RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag_painterly.md")
-VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
-VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
-VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
-SHIP_SRC = os.path.join(PLATES, "ships")
+DEFAULT_STUDIO = "/workspace/studio"  # read-side only; never emitted
 HARB_SRC_DIRS = ["ground", "quay", "pier", "props"]
-CHART_SRC = os.path.join(PLATES, "chart")
 CLASSES = ["sloop", "cutter", "brigantine", "galleon"]
 FRAMES = [f"f{k}" for k in range(8)] + ["wake"]
 EXP_HARB = (["water_a", "water_b", "water_c"] + [f"quay_{i:04b}" for i in range(1, 16)]
@@ -69,10 +57,37 @@ EXP_HARB = (["water_a", "water_b", "water_c"] + [f"quay_{i:04b}" for i in range(
                "pier_pilings_1x1"])
 EXP_CHART = ["chart_water_a", "chart_water_b", "chart_water_c", "chart_port_marker"]
 EXP_QUAY_FLAG = ["quay_flag_a", "quay_flag_b", "quay_flag_c"]
-QUAY_FLAG_SRC = os.path.join(PLATES, "ground")
-VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_painterly_results.json")
 R11_MIP_ON = {"chart_water_a", "chart_water_b", "chart_water_c"}
 R11_SRC = "asset-spec Rev 4 R11"
+
+
+def bind_studio(studio):
+    """Point every gate input at `studio`. The default root is DEFAULT_STUDIO."""
+    global STUDIO, PLATES, OUTBOX, VERIFIER, CSV, SPEC, GATE
+    global RETR_SHIPS, RETR_HARB, RETR_CHART, RETR_QUAY_FLAG
+    global VJ_SHIPS, VJ_HARB, VJ_CHART, SHIP_SRC, CHART_SRC
+    global QUAY_FLAG_SRC, VJ_QUAY_FLAG
+    STUDIO = studio
+    PLATES = os.path.join(STUDIO, "pb-002-plates")
+    OUTBOX = os.path.join(STUDIO, "outbox-PB-002")
+    VERIFIER = os.path.join(STUDIO, "grok-bot-verifier", "PB-002")
+    CSV = os.path.join(OUTBOX, "asset-list.csv")
+    SPEC = os.path.join(OUTBOX, "asset-spec.md")
+    GATE = os.path.join(OUTBOX, "art-gate.md")
+    RETR_SHIPS = os.path.join(OUTBOX, "retrieval-ships.md")
+    RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
+    RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
+    RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag_painterly.md")
+    VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
+    VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
+    VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
+    SHIP_SRC = os.path.join(PLATES, "ships")
+    CHART_SRC = os.path.join(PLATES, "chart")
+    QUAY_FLAG_SRC = os.path.join(PLATES, "ground")
+    VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_painterly_results.json")
+
+
+bind_studio(DEFAULT_STUDIO)
 
 
 # ---------------------------------------------------------------- helpers
@@ -175,10 +190,10 @@ def parse_json_object(raw, label, problems):
 
 
 def json_has_key(obj, key):
-    """True if a key equal to `key`, ignoring case, occurs anywhere."""
+    """True if any string key contains `key`, ignoring case, at any depth."""
     if isinstance(obj, dict):
-        want = key.lower()
-        return any(isinstance(k, str) and k.lower() == want for k in obj) or any(
+        needle = key.lower()
+        return any(isinstance(k, str) and needle in k.lower() for k in obj) or any(
             json_has_key(v, key) for v in obj.values()
         )
     if isinstance(obj, list):
@@ -186,9 +201,35 @@ def json_has_key(obj, key):
     return False
 
 
+def reject_stub_keys(obj, label, problems):
+    """Every gate input refuses a key that contains _STUB, at any depth and case."""
+    if obj is not None and json_has_key(obj, "_STUB"):
+        problems.append(f"{label} has a key containing _STUB")
+
+
+def _bare_cell(text):
+    return re.sub(r"[*_`]", "", text).strip()
+
+
 def fail_result_lines(text):
-    """Lines that report a FAIL result. A summary such as '0 FAIL' is not one."""
-    return [line.strip() for line in text.splitlines() if "**FAIL**" in line]
+    """Lines that report a FAIL verdict row.
+
+    A counted summary such as '0 FAIL' or '36 PASS, 0 FAIL' is not a verdict.
+    A plain FAIL token is, and so is a markdown cell whose text is FAIL
+    (`| FAIL |`, `| **FAIL** |`).
+    """
+    found = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if any(_bare_cell(cell) == "FAIL" for cell in line.split("|")):
+            found.append(line)
+            continue
+        bare = re.sub(r"\b\d+\s+FAIL\b", "", _bare_cell(line))
+        if re.search(r"\bFAIL\b", bare):
+            found.append(line)
+    return found
 
 
 def require_no_fail_results(text, label, problems):
@@ -291,13 +332,15 @@ def cross_check_sidecar_mip(aid, val, where, problems):
 
 
 # ---------------------------------------------------------------- main
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", default="0.1.0")
     ap.add_argument("--out-dir", default="landing", help="bundle dir (relative to pb-002-plates/ unless absolute)")
     ap.add_argument("--groups", default="ships,harbour,chart,quay_flag")
     ap.add_argument("--check", action="store_true")
-    a = ap.parse_args()
+    ap.add_argument("--studio", default=DEFAULT_STUDIO, help="studio root holding plates, outbox, and verifier inputs")
+    a = ap.parse_args(argv)
+    bind_studio(a.studio)
     OUT = a.out_dir if os.path.isabs(a.out_dir) else os.path.join(PLATES, a.out_dir)
     groups = set(a.groups.split(","))
     problems, nulls, na = [], [], []
@@ -325,29 +368,19 @@ def main():
             problems.append(f"retrieval-ships.md not 36 PASS/0 FAIL (summary={m.groups() if m else None}, rows={n_rows})")
         if not re.search(r"## Addendum D .*?\*\*Result: PASS\. All 36 ids are will-use", gate, re.S):
             problems.append("art-gate.md Addendum D PASS not found")
+        expected = [f"ship_{c}_{f}" for c in CLASSES for f in FRAMES]
         vraw = read_file_bytes(VJ_SHIPS)
         vj = parse_json_object(vraw, "ships_results.json", problems)
         if vraw is None:
             problems.append("verifier ships_results.json missing")
-        if vj is None:
-            vinv = {}
-        else:
-            inv = vj.get("inventory")
-            if not isinstance(inv, list):
-                problems.append("ships inventory is not a list")
-                vinv = {}
-            else:
-                vinv = {}
-                for row in inv:
-                    if not isinstance(row, dict) or "id" not in row:
-                        problems.append("ships inventory entry missing id")
-                        continue
-                    vinv[row["id"]] = row.get("sha256")
+        # Empty inventory is a set mismatch. Rows are read and must pass.
+        vinv = bind_inventory(vj, expected, "ships", problems) if vj is not None else {}
+        vrows = index_rows(vj, expected, "ships", problems) if vj is not None else {}
+        reject_stub_keys(vj, "ships_results.json", problems)
         spec_mesh_prefix = dict(re.findall(r"\|\s*`(ship_[a-z_]+)`\s*\|.*?\|\s*`([0-9a-f]{12})`\s*\|", spec))
         if len(spec_mesh_prefix) != 4:
             problems.append(f"asset-spec §7a mesh sha prefixes not found (got {spec_mesh_prefix})")
         rows = [r for r in rows_all if r["id"].startswith("ship_") and r["status"].startswith("LOCKED")]
-        expected = [f"ship_{c}_{f}" for c in CLASSES for f in FRAMES]
         if sorted(r["id"] for r in rows) != sorted(expected):
             problems.append("csv LOCKED ship ids != expected 36")
         mesh_cache, side_cache, ship_e = {}, {}, []
@@ -363,7 +396,9 @@ def main():
                 problems.append(f"missing landed file {rel}"); continue
             w, h = png_size(p); digest = sha256(p)
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
-            if vinv and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
+            if vj is not None and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
+            if vj is not None and (not isinstance(vrows.get(aid), dict) or vrows[aid].get("pass") is not True):
+                problems.append(f"{aid}: Verifier ships row missing or not pass")
             if r["canvas"].strip() != f"{w}x{h}": problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
             anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
             loa, _ = csv_field(r["hull_len_px"], aid, "LOA", parse_int, nulls, na)
@@ -417,6 +452,7 @@ def main():
             problems.append("verifier harbour_andon_results.json missing")
         hinv = bind_inventory(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
         hrows = index_rows(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
+        reject_stub_keys(hj, "harbour_andon_results.json", problems)
         rows = [r for r in rows_all if r["phase"] == "P0" and r["view"] == "harbour" and r["status"].startswith("LOCKED") and r["id"] not in EXP_QUAY_FLAG]
         if sorted(r["id"] for r in rows) != sorted(EXP_HARB):
             problems.append("csv harbour P0 ids != expected 30")
@@ -492,6 +528,7 @@ def main():
         cj = parse_json_object(craw, "chart_retrieval_results.json", problems)
         if craw is None:
             problems.append("verifier chart_retrieval_results.json missing")
+        reject_stub_keys(cj, "chart_retrieval_results.json", problems)
         rows = [r for r in rows_all if r["view"] == "chart" and r["id"] in EXP_CHART and r["status"].startswith("LOCKED")]
         if sorted(r["id"] for r in rows) != sorted(EXP_CHART):
             problems.append(f"csv chart ids != expected 4: {[r['id'] for r in rows]}")
@@ -583,8 +620,7 @@ def main():
         qj = parse_json_object(qraw, "quay_flag_painterly_results.json", problems)
         if qraw is None:
             problems.append("verifier quay_flag_painterly_results.json missing")
-        elif qj is not None and json_has_key(qj, "_STUB"):
-            problems.append("verifier quay_flag_painterly_results.json has a _STUB key")
+        reject_stub_keys(qj, "quay_flag_painterly_results.json", problems)
         qinv = bind_inventory(qj, EXP_QUAY_FLAG, "quay_flag", problems) if qj is not None else {}
         qrows = index_rows(qj, EXP_QUAY_FLAG, "quay_flag", problems) if qj is not None else {}
         for q in EXP_QUAY_FLAG:
