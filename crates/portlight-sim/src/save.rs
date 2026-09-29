@@ -99,6 +99,140 @@ pub fn save_filename(slot: &str) -> String {
     format!("{safe}.json")
 }
 
+/// One row of `list_save_slots`: the file stem, the captain name, and the day.
+///
+/// This is a peek. It does not migrate the file and it does not build a session.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SaveSlotSummary {
+    pub slot: String,
+    pub captain: String,
+    pub day: i64,
+}
+
+/// `list_save_slots` (`app/session.py`). Reads `saves/*.json` for slot, captain,
+/// and day. Unreadable files are skipped. `portlight_save.json` is the legacy
+/// default slot when `default.json` is absent. A top-level `day` of 0 falls
+/// through to `captain.day`, matching Python's `or`.
+pub fn list_save_slots(base: &Path) -> Vec<SaveSlotSummary> {
+    let dir = base.join(SAVE_DIR);
+    if !dir.is_dir() {
+        return Vec::new();
+    }
+    let default_path = dir.join(save_filename(DEFAULT_SLOT));
+    let mut paths: Vec<PathBuf> = match fs::read_dir(&dir) {
+        Ok(entries) => entries
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .collect(),
+        Err(_) => return Vec::new(),
+    };
+    paths.sort();
+    let mut rows = Vec::new();
+    let mut seen = std::collections::BTreeSet::new();
+    for path in paths {
+        if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
+            continue;
+        }
+        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        let Some(raw_stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
+            continue;
+        };
+        let stem = if file_name == SAVE_FILE {
+            if default_path.exists() {
+                continue;
+            }
+            DEFAULT_SLOT.to_string()
+        } else {
+            raw_stem.to_string()
+        };
+        if !seen.insert(stem.clone()) {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(data) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        let Some(map) = data.as_object() else {
+            continue;
+        };
+        let Some((captain, day)) = peek_slot(map) else {
+            continue;
+        };
+        rows.push(SaveSlotSummary {
+            slot: stem,
+            captain,
+            day,
+        });
+    }
+    rows
+}
+
+/// Captain name and day from a raw save object. `None` means the day field
+/// cannot be read as an integer, so the caller skips the file.
+fn peek_slot(data: &Map<String, Value>) -> Option<(String, i64)> {
+    let captain_map = match data.get("captain") {
+        Some(Value::Object(map)) if !map.is_empty() => Some(map),
+        _ => None,
+    };
+    let captain = captain_map
+        .map(|map| peek_name(map.get("name")))
+        .unwrap_or_default();
+    let from_captain = match captain_map {
+        Some(map) => peek_int(map.get("day"))?,
+        None => 0,
+    };
+    let day = if json_truthy(data.get("day")) {
+        peek_int(data.get("day"))?
+    } else {
+        from_captain
+    };
+    Some((captain, day))
+}
+
+fn peek_name(value: Option<&Value>) -> String {
+    match value {
+        Some(Value::String(text)) if !text.is_empty() => text.clone(),
+        _ => String::new(),
+    }
+}
+
+/// Python `int(value or 0)` for a JSON day. `None` when the value is present
+/// and not a whole number.
+fn peek_int(value: Option<&Value>) -> Option<i64> {
+    match value {
+        None | Some(Value::Null) => Some(0),
+        Some(Value::Bool(flag)) => Some(i64::from(*flag)),
+        Some(Value::Number(number)) => number
+            .as_i64()
+            .or_else(|| number.as_f64().map(|float| float as i64)),
+        Some(Value::String(text)) => {
+            if text.is_empty() {
+                Some(0)
+            } else {
+                text.parse().ok()
+            }
+        }
+        _ => None,
+    }
+}
+
+fn json_truthy(value: Option<&Value>) -> bool {
+    match value {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(flag)) => *flag,
+        Some(Value::Number(number)) => {
+            number.as_i64().is_some_and(|int| int != 0)
+                || number.as_f64().is_some_and(|float| float != 0.0)
+        }
+        Some(Value::String(text)) => !text.is_empty(),
+        Some(Value::Array(items)) => !items.is_empty(),
+        Some(Value::Object(map)) => !map.is_empty(),
+    }
+}
+
 /// Bring a save object up to version 12. Already-current files are unchanged.
 pub fn migrate_save(data: &mut Value) -> Result<(), SimError> {
     migrate_inner(data).map_err(|err| match err {
@@ -3390,5 +3524,58 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(root.join("v1.migrated.json")).unwrap())
                 .unwrap();
         assert_eq!(data, expected);
+    }
+
+    #[test]
+    fn list_save_slots_peeks_captain_and_day_and_skips_junk() {
+        let dir = std::env::temp_dir().join(format!(
+            "portlight-slots-{}-{}",
+            std::process::id(),
+            line!()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join(SAVE_DIR)).unwrap();
+        let saves = dir.join(SAVE_DIR);
+        fs::write(
+            saves.join("zeta.json"),
+            r#"{"day":4,"captain":{"name":"Ada","day":9}}"#,
+        )
+        .unwrap();
+        fs::write(
+            saves.join("alpha.json"),
+            r#"{"captain":{"name":"Bea","day":2}}"#,
+        )
+        .unwrap();
+        fs::write(saves.join("bad.json"), "not-json").unwrap();
+        fs::write(saves.join("list.json"), "[1, 2]").unwrap();
+        fs::write(
+            saves.join(SAVE_FILE),
+            r#"{"day":0,"captain":{"name":"Legacy","day":8}}"#,
+        )
+        .unwrap();
+        let rows = list_save_slots(&dir);
+        let labeled: Vec<_> = rows
+            .iter()
+            .map(|row| (row.slot.as_str(), row.captain.as_str(), row.day))
+            .collect();
+        assert_eq!(
+            labeled,
+            vec![
+                ("alpha", "Bea", 2),
+                ("default", "Legacy", 8),
+                ("zeta", "Ada", 4),
+            ]
+        );
+        fs::write(
+            saves.join("default.json"),
+            r#"{"day":1,"captain":{"name":"Held"}}"#,
+        )
+        .unwrap();
+        let rows = list_save_slots(&dir);
+        assert!(rows
+            .iter()
+            .any(|row| row.slot == "default" && row.captain == "Held"));
+        assert!(rows.iter().all(|row| row.captain != "Legacy"));
+        let _ = fs::remove_dir_all(&dir);
     }
 }

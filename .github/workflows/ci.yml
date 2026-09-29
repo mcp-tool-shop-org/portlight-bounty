@@ -123,7 +123,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -171,6 +171,22 @@ jobs:
             godot --headless --path godot -- --encounter-screen
           if ! grep -q 'portlight encounter smoke ok' /tmp/godot-encounter-smoke.log; then
             echo "encounter smoke did not report ok"
+            exit 1
+          fi
+          rm -f /tmp/hs-newgame.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-newgame-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-newgame.png \
+            godot --headless --path godot -- --newgame-screen
+          if [ -f /tmp/hs-newgame.png ]; then
+            echo "headless newgame PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-newgame.log \
+            godot --headless --path godot -- --art-docs --newgame-screen
+          run_godot /tmp/godot-newgame-smoke.log \
+            godot --headless --path godot -- --newgame-screen
+          if ! grep -q 'portlight newgame smoke ok' /tmp/godot-newgame-smoke.log; then
+            echo "newgame smoke did not report ok"
             exit 1
           fi
           run_godot /tmp/godot-gl-smoke.log \
