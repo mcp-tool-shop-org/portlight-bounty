@@ -9,8 +9,14 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
   ships (36, P1)     ids/anchor/LOA/mesh      <- asset-list.csv; canvas <- PNG; sha256 computed
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
                      sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
-                     ships inventory must equal the 36 ids (empty fails). A missing row, a row that
-                     is not pass, a row with no exit key, or a nonzero exit refuses the build.
+                     ships inventory must equal the 36 ids (empty fails). A missing row refuses the build.
+                     Real ships_results.json rows have no `exit` key; they carry `v011_exit`
+                     (1 for the expected stock v0.1.1 canvas-size failure). Either exit field
+                     satisfies the gate. It fails when neither field is present, or when the
+                     row's own `pass` or `verdict` says it failed. That stock exit of 1 is not
+                     a plate failure when the row records it as expected (`v011_exit` 1, or
+                     `expected` true). A nonzero `exit` that is not that expected stock result
+                     still refuses the build.
   harbour (30, P0)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum E + E.1, retrieval-harbour.md 30 PASS/0 FAIL (v0.1.1); renderer <- <id>.render.json
                      sha vs source and vs harbour_andon_results.json; <id>.andon.json must be v0.1.1 pass
@@ -366,6 +372,60 @@ def index_rows(obj, expected, label, problems):
     return mapping
 
 
+def _token_says_fail(value):
+    if value is False:
+        return True
+    if not isinstance(value, str):
+        return False
+    token = re.sub(r"[*_`]", "", value).strip().rstrip(".")
+    return token.upper() == "FAIL"
+
+
+def _pass_says_fail(row):
+    """True when the row's own pass field says the plate failed. Absent does not."""
+    if "pass" not in row:
+        return False
+    value = row.get("pass")
+    if value is True:
+        return False
+    if isinstance(value, str) and re.sub(r"[*_`]", "", value).strip().rstrip(".").upper() == "PASS":
+        return False
+    return True
+
+
+def _stock_v011_exit_expected(row):
+    """The documented stock v0.1.1 canvas-size exit 1, recorded as expected.
+
+    Real ships_results.json rows carry that as `v011_exit` == 1 and have no
+    `exit` key. `expected: true` is the same record on a row that also has `exit`.
+    """
+    if row.get("expected") is True:
+        return True
+    return row.get("v011_exit") == 1
+
+
+def ship_row_failure(row):
+    """Why a ships verifier row refuses the build, or None when it may land.
+
+    Recognises `exit` and `v011_exit`. Fails when the row is missing, when
+    neither exit field is present, or when `pass` / `verdict` says it failed.
+    A stock v0.1.1 exit of 1 is not a failure when the row records it as expected.
+    """
+    if not isinstance(row, dict):
+        return "missing"
+    has_exit = "exit" in row
+    has_v011 = "v011_exit" in row
+    if not has_exit and not has_v011:
+        return "missing exit"
+    if _pass_says_fail(row) or _token_says_fail(row.get("verdict")):
+        return "not pass"
+    if has_exit and row.get("exit") != 0 and not _stock_v011_exit_expected(row):
+        return "nonzero exit"
+    if has_v011 and row.get("v011_exit") not in (0, 1) and row.get("expected") is not True:
+        return "nonzero exit"
+    return None
+
+
 def walk_strings(o):
     if isinstance(o, str):
         yield o
@@ -476,12 +536,8 @@ def main(argv=None):
             if sha256(src) != digest: problems.append(f"{aid}: landed bytes differ from source")
             if vj is not None and vinv.get(aid) != digest: problems.append(f"{aid}: sha256 differs from Verifier inventory")
             ship_row = vrows.get(aid)
-            if vj is not None and (
-                not isinstance(ship_row, dict)
-                or ship_row.get("pass") is not True
-                or "exit" not in ship_row
-                or ship_row.get("exit") != 0
-            ):
+            ship_failure = ship_row_failure(ship_row) if vj is not None else None
+            if ship_failure:
                 problems.append(
                     f"{aid}: Verifier ships row missing, not pass, missing exit, or nonzero exit"
                 )
