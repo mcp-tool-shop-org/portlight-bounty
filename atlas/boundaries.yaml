@@ -1,0 +1,42 @@
+summary: ""
+boundaries:
+  - name: .github
+    globs:
+      - .github/**
+    role: config
+  - name: docs
+    globs:
+      - docs/**
+    role: data
+  - name: godot
+    globs:
+      - godot/**
+    role: code
+  - name: parity
+    globs:
+      - parity/**
+    role: data
+  - name: portlight-chart
+    globs:
+      - crates/portlight-chart/**
+    role: code
+  - name: portlight-cli
+    globs:
+      - crates/portlight-cli/**
+    role: code
+  - name: portlight-godot
+    globs:
+      - crates/portlight-godot/**
+    role: code
+  - name: portlight-sim
+    globs:
+      - crates/portlight-sim/**
+    role: code
+  - name: root
+    globs:
+      - "*"
+    role: config
+  - name: tools
+    globs:
+      - tools/**
+    role: code
