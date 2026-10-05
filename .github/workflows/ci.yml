@@ -146,7 +146,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -242,6 +242,22 @@ jobs:
             godot --headless --path godot -- --shipyard-screen
           if ! grep -q 'portlight shipyard smoke ok' /tmp/godot-shipyard-smoke.log; then
             echo "shipyard smoke did not report ok"
+            exit 1
+          fi
+          rm -f /tmp/hs-journal.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-journal-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-journal.png \
+            godot --headless --path godot -- --journal-screen
+          if [ -f /tmp/hs-journal.png ]; then
+            echo "headless journal PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-journal.log \
+            godot --headless --path godot -- --art-docs --journal-screen
+          run_godot /tmp/godot-journal-smoke.log \
+            godot --headless --path godot -- --journal-screen
+          if ! grep -q 'portlight journal smoke ok' /tmp/godot-journal-smoke.log; then
+            echo "journal smoke did not report ok"
             exit 1
           fi
           run_godot /tmp/godot-gl-smoke.log \
@@ -401,6 +417,23 @@ jobs:
               exit 1
             fi
           done
+          # Journal frames are 1280x720, same window as the chart. The three
+          # shots scroll one overlay: chronicle, victory requirements, memories.
+          mkdir -p /tmp/journal-shots
+          run_godot /tmp/godot-journal-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/journal-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --journal-screen
+          if ! grep -q 'portlight journal smoke ok' /tmp/godot-journal-frames.log; then
+            echo "journal frame capture did not report ok"
+            exit 1
+          fi
+          for name in journal-chronicle.png journal-victory.png journal-memories.png; do
+            if [ ! -f "/tmp/journal-shots/${name}" ]; then
+              echo "journal capture did not write /tmp/journal-shots/${name}"
+              exit 1
+            fi
+          done
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -425,6 +458,9 @@ jobs:
           cmp_committed shipyard-flagship.png /tmp/shipyard-shots/shipyard-flagship.png
           cmp_committed shipyard-yard.png /tmp/shipyard-shots/shipyard-yard.png
           cmp_committed shipyard-fleet.png /tmp/shipyard-shots/shipyard-fleet.png
+          cmp_committed journal-chronicle.png /tmp/journal-shots/journal-chronicle.png
+          cmp_committed journal-victory.png /tmp/journal-shots/journal-victory.png
+          cmp_committed journal-memories.png /tmp/journal-shots/journal-memories.png
           cmp_committed encounter-galleon.png /tmp/galleon1.png
           cmp_committed encounter-approach.png /tmp/encounter-approach.png
           cmp_committed encounter-naval.png /tmp/encounter-naval.png
