@@ -68,9 +68,11 @@ The art-director frame (docked sloop at Porto Novo, Swift Cutter under sail at f
 
 `--newgame-screen` starts a custom captain, saves a version-12 slot, lists it, and loads it. The reload check is the name, the type, the silver, and the day. It does not capture. The last line is `portlight newgame smoke ok`. `PORTLIGHT_SHOT` or `--art-docs` / `PORTLIGHT_ART_DOCS` writes `newgame-title.png`, `newgame-captains.png`, `newgame-custom.png`, `newgame-load.png`, and `newgame-save.png` (1280×800). `PORTLIGHT_SHOT` names the directory when it is a folder, or the parent of a `.png` path. `--art-docs` writes `docs/screenshots`. An explicit capture under headless exits 1 and prints `portlight newgame smoke FAILED`.
 
+`--contracts-screen` opens the docked contract board, accepts one offer, tries to complete it before delivery, abandons it after confirm, and closes back to the chart. The last line is `portlight contracts smoke ok`. It does not capture unless `PORTLIGHT_SHOT` or `--art-docs` / `PORTLIGHT_ART_DOCS` is set. Those write `contracts-board.png`, `contracts-active.png`, and `contracts-empty.png` (1280×720) in the same directory rule as the new-game frames. An explicit capture under headless exits 1 and prints `portlight contracts smoke FAILED`. The chart button is on the docked port row, so `chart-1280.png` includes it.
+
 `--encounter-galleon` writes `/tmp/encounter-galleon.png` unless `PORTLIGHT_SHOT` or `--art-docs` names another path, with `royal_man_of_war` in the player plate slot (caption `Man-of-war`) and that template's hull and crew on the card. The encounter frame check follows the capture mode, not the filename, so `PORTLIGHT_SHOT=/tmp/galleon1.png` is still an encounter frame.
 
-User flags: `--smoke`, `--art`, `--art-docs`, `--encounter-screen`, `--encounter-galleon`, `--newgame-screen`, `--encounter`, `--duel`, `--resolve`, `--work`. Environment: `PORTLIGHT_SMOKE`, `PORTLIGHT_SHOT`, `PORTLIGHT_ART_DOCS`, `PORTLIGHT_ENCOUNTER_DIR`, `PORTLIGHT_SEAM_DIR`, `PORTLIGHT_SEAM_ILLEGAL` (`1` is pilings on a pier cell, `2` is a pier on a quay cell). The harbour seam plate:
+User flags: `--smoke`, `--art`, `--art-docs`, `--encounter-screen`, `--encounter-galleon`, `--newgame-screen`, `--contracts-screen`, `--encounter`, `--duel`, `--resolve`, `--work`. Environment: `PORTLIGHT_SMOKE`, `PORTLIGHT_SHOT`, `PORTLIGHT_ART_DOCS`, `PORTLIGHT_ENCOUNTER_DIR`, `PORTLIGHT_SEAM_DIR`, `PORTLIGHT_SEAM_ILLEGAL` (`1` is pilings on a pier cell, `2` is a pier on a quay cell). The harbour seam plate:
 
 ```
 xvfb-run -a -s "-screen 0 1280x720x24" \
