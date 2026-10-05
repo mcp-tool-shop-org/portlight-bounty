@@ -216,16 +216,22 @@ def attach_contracts(entry: dict, rows: list[dict]) -> None:
 
 
 def refresh_board(state, port) -> None:
-    """GameSession._refresh_board with empty infrastructure effects."""
+    """GameSession._refresh_board.
+
+    Offer weights use compute_board_effects on state["infra"] and port.region.
+    """
     world = state["world"]
     board = state["board"]
     if board.last_refresh_day == world.day:
         return
     from portlight.content.contracts import TEMPLATES
+    from portlight.content.infrastructure import LICENSE_CATALOG
+    from portlight.engine.infrastructure import compute_board_effects
     from portlight.engine.voyage import ship_class_rank
 
     ship = world.captain.ship
     rank = ship_class_rank(ship.template_id) if ship else 0
+    effects = compute_board_effects(state["infra"], port.region, LICENSE_CATALOG)
     board.offers = generate_offers(
         TEMPLATES,
         world,
@@ -235,6 +241,7 @@ def refresh_board(state, port) -> None:
         state["rng"],
         player_ship_rank=rank,
         max_offers=board.max_offers,
+        board_effects=effects,
     )
     board.last_refresh_day = world.day
 

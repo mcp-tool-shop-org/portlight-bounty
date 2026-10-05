@@ -1,5 +1,5 @@
-# Own a Mediterranean local broker, then arrive. GameSession refreshes the
-# board with board_effects. Rust and the oracle still pass empty effects.
+# Own a Mediterranean local broker, then arrive. The board refresh weights
+# offers with compute_board_effects for that office (board_quality_bonus 1.3).
 new merchant Ada 3 porto_novo
 buy_infrastructure broker Mediterranean local
 depart silva_bay

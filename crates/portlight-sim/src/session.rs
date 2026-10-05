@@ -28,7 +28,8 @@
 //! `complete_contract` does not pay again. Callers do not use
 //! [`Session::books_mut`] for that. The new-game board is drawn from
 //! `Random(seed + 7919)` and then the session RNG is restored. Arrival and
-//! later in-port refreshes draw the session stream. Milestone evaluation runs
+//! later in-port refreshes draw the session stream and weight offers with
+//! [`infrastructure::board_effects`]. Milestone evaluation runs
 //! at the end of [`Session::advance`], in the same place as
 //! `GameSession._evaluate_campaign`, before victory closure.
 //!
@@ -2763,7 +2764,8 @@ impl Session {
 
     /// `GameSession._refresh_board`. Draws `self.rng`, the session stream.
     ///
-    /// Arrival and a later in-port view both use this. Only
+    /// Offer weights use [`infrastructure::board_effects`] for the port's
+    /// region. Arrival and a later in-port view both use this. Only
     /// [`Session::refresh_new_game_board`] substitutes `Random(seed + 7919)`.
     fn refresh_contract_board(&mut self) {
         let Some(port_id) = current_port_id(&self.world).map(str::to_string) else {
@@ -2782,8 +2784,23 @@ impl Session {
             .unwrap_or(0);
         let max_offers = self.board.max_offers;
         let offers = {
-            let Session { world, rng, .. } = self;
-            contracts::generate_offers(world, &port_id, &captain_type, Some(rank), max_offers, rng)
+            let Session {
+                world, rng, infra, ..
+            } = self;
+            let region = world
+                .port(&port_id)
+                .map(|port| port.region.clone())
+                .unwrap_or_default();
+            let effects = infrastructure::board_effects(infra, &region);
+            contracts::generate_offers(
+                world,
+                &port_id,
+                &captain_type,
+                Some(rank),
+                max_offers,
+                rng,
+                &effects,
+            )
         };
         self.board.offers = offers;
         self.board.last_refresh_day = self.world.day;
@@ -3564,6 +3581,12 @@ mod tests {
         let rank =
             content::ship_class_rank(&session.world.captain.ship.as_ref().unwrap().template_id);
         session.available_contracts();
+        let region = session
+            .world
+            .port(&port_id)
+            .map(|port| port.region.clone())
+            .unwrap_or_default();
+        let effects = infrastructure::board_effects(&session.infra, &region);
         let _ = contracts::generate_offers(
             &session.world,
             &port_id,
@@ -3571,9 +3594,98 @@ mod tests {
             Some(rank),
             session.board.max_offers,
             &mut replay,
+            &effects,
         );
         assert_eq!(session.board.offers.len(), 5);
         assert_eq!(session.rng.random(), replay.random());
+    }
+
+    fn arrival_offer_ids(buy_broker: bool) -> Vec<String> {
+        let mut session = Session::new("Ada", "merchant", 3, Some("porto_novo")).unwrap();
+        if buy_broker {
+            session
+                .buy_infrastructure("broker", &["Mediterranean", "local"])
+                .unwrap();
+        }
+        session.depart("silva_bay").unwrap();
+        for _ in 0..3 {
+            session.advance().unwrap();
+        }
+        assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+        assert_eq!(session.world.voyage.destination_id, "silva_bay");
+        session
+            .board
+            .offers
+            .iter()
+            .map(|offer| offer.id.clone())
+            .collect()
+    }
+
+    #[test]
+    fn mediterranean_broker_changes_the_arrival_board() {
+        let plain = arrival_offer_ids(false);
+        let brokered = arrival_offer_ids(true);
+        assert_eq!(
+            plain,
+            [
+                "bfa1f5a6baa9",
+                "7a9217a2e769",
+                "128577f008e6",
+                "bd08f50eca37",
+                "92f22cc4b019",
+            ]
+        );
+        assert_eq!(
+            brokered,
+            [
+                "bfa1f5a6baa9",
+                "f32e94d6ebd1",
+                "128577f008e6",
+                "bd08f50eca37",
+                "7c0f91e17b16",
+            ]
+        );
+    }
+
+    #[test]
+    fn docked_broker_refresh_uses_board_effects() {
+        fn redraw(buy_broker: bool) -> Vec<String> {
+            let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+            if buy_broker {
+                session
+                    .buy_infrastructure("broker", &["Mediterranean", "local"])
+                    .unwrap();
+            }
+            session.world.day += 1;
+            session
+                .available_contracts()
+                .into_iter()
+                .map(|offer| offer.template_id)
+                .collect()
+        }
+        let plain = redraw(false);
+        let brokered = redraw(true);
+        assert_ne!(plain, brokered);
+        assert_eq!(
+            plain,
+            [
+                "circ_indies_loop",
+                "smug_fence_the_take",
+                "short_tea_crisis",
+                "proc_iron_forge",
+                "smug_opium_run",
+            ]
+        );
+        assert_eq!(
+            brokered,
+            [
+                "circ_indies_loop",
+                "proc_iron_forge",
+                "ret_spice_restock",
+                "smug_faction_supply",
+                "smug_fence_the_take",
+            ]
+        );
     }
 
     #[test]
