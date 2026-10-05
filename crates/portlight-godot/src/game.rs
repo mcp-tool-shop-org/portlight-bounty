@@ -442,8 +442,6 @@ struct PortlightGame {
     market_button: Option<Gd<Button>>,
     work_button: Option<Gd<Button>>,
     port_row: Option<Gd<HBoxContainer>>,
-    /// Docked Hunt control. Its own row so the market buttons stay one line.
-    port_hunt_row: Option<Gd<HBoxContainer>>,
     /// At-sea Hunt control, on the Next day row. Hidden while docked.
     sea_hunt_button: Option<Gd<Button>>,
     port_note: Option<Gd<Label>>,
@@ -605,7 +603,6 @@ impl IControl for PortlightGame {
             market_button: None,
             work_button: None,
             port_row: None,
-            port_hunt_row: None,
             sea_hunt_button: None,
             port_note: None,
             encounter_box: None,
@@ -1103,8 +1100,8 @@ impl PortlightGame {
         let journal = action_button("Journal", game_id, Action::OpenJournal);
         buttons.add_child(&journal);
         self.journal_button = Some(journal);
-        // At sea this sits beside Next day. Hidden in port; docked Hunt is
-        // the row under the market buttons.
+        // At sea this sits beside Next day, same control as New game and Save.
+        // Hidden in port; docked Hunt is on the port row.
         let mut sea_hunt = action_button("Hunt", game_id, Action::OpenHunt);
         sea_hunt.set_visible(false);
         buttons.add_child(&sea_hunt);
@@ -1116,7 +1113,7 @@ impl PortlightGame {
         port_row.set_name("PortRow");
         // Gaps of 1 px, plus the scrollbar, grow the panel past 420 and
         // slide the chrome. Zero separation keeps Hide market through
-        // Harbour and Crew on one line inside the panel.
+        // Harbour, Crew, and Hunt on one line inside the panel.
         port_row.add_theme_constant_override("separation", 0);
         let market = port_row_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
@@ -1138,15 +1135,12 @@ impl PortlightGame {
         self.shipyard_button = Some(shipyard);
         port_row.add_child(&port_row_button("Harbour", game_id, Action::OpenHarbour));
         port_row.add_child(&port_row_button("Crew", game_id, Action::OpenCrew));
+        // Same port-row control as Harbour and Crew. On this line, so the
+        // lanes below do not move.
+        port_row.add_child(&port_row_button("Hunt", game_id, Action::OpenHunt));
         port_row.set_visible(false);
         column.add_child(&port_row);
         self.port_row = Some(port_row);
-        // Own row. The four port buttons already fill the panel width.
-        let mut port_hunt_row = HBoxContainer::new_alloc();
-        port_hunt_row.add_child(&action_button("Hunt", game_id, Action::OpenHunt));
-        port_hunt_row.set_visible(false);
-        column.add_child(&port_hunt_row);
-        self.port_hunt_row = Some(port_hunt_row);
         let mut port_note = body_label("", 12, MUTED);
         port_note.set_autowrap_mode(AutowrapMode::WORD_SMART);
         port_note.set_visible(false);
@@ -5055,9 +5049,6 @@ impl PortlightGame {
         if let Some(row) = self.port_row.as_mut() {
             row.set_visible(docked);
         }
-        if let Some(row) = self.port_hunt_row.as_mut() {
-            row.set_visible(docked);
-        }
         if let Some(button) = self.sea_hunt_button.as_mut() {
             button.set_visible(!docked && self.session.is_some());
         }
@@ -7927,9 +7918,9 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 /// Chart port-row control. Same theme fill as [`action_button`].
 ///
 /// The face is 10 px with no horizontal padding so Market, Contracts, Hire,
-/// Provisions, Work, Shipyard, Harbour, and Crew stay on one line inside the
-/// panel. An 11 px face fits seven labels; the eighth grows the panel and
-/// slides the chrome. The minimum height stays 31 px, so the button band
+/// Provisions, Work, Shipyard, Harbour, Crew, and Hunt stay on one line
+/// inside the panel. An 11 px face fits seven labels; more grow the panel and
+/// slide the chrome. The minimum height stays 31 px, so the button band
 /// stays y 257-287.
 fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = action_button(text, game, action);
