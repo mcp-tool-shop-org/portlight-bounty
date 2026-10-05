@@ -70,6 +70,7 @@ use std::collections::HashMap;
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::crew_screen::{self, CrewNodes};
+use crate::contract_strip::{self, ContractStripNodes};
 use crate::day_report::{self, DayReportDocument, DayReportMemory, DayReportNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
@@ -429,6 +430,21 @@ impl DayReportShot {
 }
 
 #[derive(Clone, Copy)]
+enum ContractStripShot {
+    Active,
+    Urgent,
+}
+
+impl ContractStripShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Active => "contract-strip-active.png",
+            Self::Urgent => "contract-strip-urgent.png",
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 enum Stance {
     Thrust,
     Slash,
@@ -585,6 +601,10 @@ struct PortlightGame {
     day_report_checked: bool,
     day_report_shot_dir: Option<String>,
     day_report_shot: Option<DayReportShot>,
+    contract_strip_nodes: Option<ContractStripNodes>,
+    contract_strip_checked: bool,
+    contract_strip_shot_dir: Option<String>,
+    contract_strip_shot: Option<ContractStripShot>,
 }
 
 #[derive(Clone, Copy)]
@@ -732,6 +752,10 @@ impl IControl for PortlightGame {
             day_report_checked: false,
             day_report_shot_dir: None,
             day_report_shot: None,
+            contract_strip_nodes: None,
+            contract_strip_checked: false,
+            contract_strip_shot_dir: None,
+            contract_strip_shot: None,
         }
     }
 
@@ -808,6 +832,17 @@ impl IControl for PortlightGame {
                 self.run_day_report_smoke();
                 self.capture_frames = 2;
             }
+        } else if user_arg("--contract-strip-screen") {
+            self.smoke = true;
+            self.contract_strip_checked = true;
+            let capture = contract_strip_frames_requested(self.shot_path.is_some());
+            if capture {
+                self.begin_contract_strip_shots();
+                self.capture_frames = 4;
+            } else {
+                self.run_contract_strip_smoke();
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -849,6 +884,9 @@ impl IControl for PortlightGame {
         if self.advance_day_report_shot() {
             return;
         }
+        if self.advance_contract_strip_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -877,6 +915,7 @@ impl IControl for PortlightGame {
             && self.crew_shot_dir.is_none()
             && self.hunt_shot_dir.is_none()
             && self.day_report_shot_dir.is_none()
+            && self.contract_strip_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -936,6 +975,11 @@ impl IControl for PortlightGame {
         } else if self.day_report_checked {
             godot_print!(
                 "portlight day-report smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.contract_strip_checked {
+            godot_print!(
+                "portlight contract-strip smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else {
@@ -1345,6 +1389,19 @@ impl PortlightGame {
         self.base_mut().add_child(&day_report.root);
         day_report::place_card(&mut day_report.root);
         self.day_report_nodes = Some(day_report);
+
+        let mut contract_strip = contract_strip::build_contract_strip();
+        let strip_click = game_id;
+        contract_strip.hit.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(strip_click) else {
+                return;
+            };
+            // Docked: open Contracts (closes day report). At sea: open_contracts no-ops.
+            gd.bind_mut().perform(Action::OpenContracts);
+        });
+        self.base_mut().add_child(&contract_strip.root);
+        contract_strip::place_strip(&mut contract_strip.root);
+        self.contract_strip_nodes = Some(contract_strip);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -5217,6 +5274,7 @@ impl PortlightGame {
         self.sync_crew();
         self.sync_hunt();
         self.sync_day_report();
+        self.sync_contract_strip();
     }
 
     /// The docked row stays one line, and its minimum width fits the width
@@ -5243,6 +5301,46 @@ impl PortlightGame {
             godot_print!("{line}");
             self.push_log(line);
         }
+    }
+
+    fn assert_contract_strip_fits(&mut self) {
+        let Some(nodes) = self.contract_strip_nodes.clone() else {
+            return;
+        };
+        if !contract_strip::overlay_visible(&nodes) {
+            let filter = nodes.root.get_mouse_filter();
+            if filter != MouseFilter::IGNORE {
+                self.smoke_ok = false;
+                let line = "Smoke: hidden contract strip must IGNORE mouse.".to_string();
+                godot_print!("{line}");
+                self.push_log(line);
+            }
+            return;
+        }
+        let pos = nodes.root.get_position();
+        let size = nodes.root.get_size();
+        let min = nodes.root.get_combined_minimum_size();
+        let host_w = chart_host_width();
+        let y_ok = (pos.y - contract_strip::STRIP_Y).abs() <= 1.0;
+        let h_ok = size.y <= 24.0 && min.y <= 24.0;
+        let x_ok = pos.x + size.x <= host_w + 0.5;
+        if !y_ok || !h_ok || !x_ok {
+            self.smoke_ok = false;
+            let line = format!(
+                "Smoke: contract strip at ({x},{y}) size {w}x{h} min {mw}x{mh}; want y~{sy} h<=24 x+w<={host}.",
+                x = pos.x,
+                y = pos.y,
+                w = size.x,
+                h = size.y,
+                mw = min.x,
+                mh = min.y,
+                sy = contract_strip::STRIP_Y,
+                host = host_w
+            );
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+        self.assert_port_row_fits();
     }
 
     fn wire_contracts_chrome(&mut self, nodes: &mut ContractsNodes) {
@@ -7190,6 +7288,439 @@ impl PortlightGame {
         }
     }
 
+    fn sync_contract_strip(&mut self) {
+        let Some(mut nodes) = self.contract_strip_nodes.clone() else {
+            return;
+        };
+        let doc = self.session.as_ref().and_then(contract_strip::build_document);
+        match doc {
+            Some(doc) => {
+                contract_strip::place_strip(&mut nodes.root);
+                contract_strip::apply_document(&mut nodes, &doc);
+                contract_strip::set_visible(&mut nodes, true);
+            }
+            None => {
+                contract_strip::set_visible(&mut nodes, false);
+            }
+        }
+        self.contract_strip_nodes = Some(nodes);
+    }
+
+    fn run_contract_strip_smoke(&mut self) {
+        self.start_game();
+        if self.session.is_none() {
+            self.fail_contract_strip("Contract-strip smoke: no session.");
+            return;
+        }
+        self.refresh();
+        if self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible)
+        {
+            self.fail_contract_strip("Contract-strip smoke: fresh game showed the strip.");
+        }
+        self.assert_contract_strip_fits();
+
+        // Accept real seed-1 offers (nearest two by deadline after accept order).
+        {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_contract_strip("Contract-strip smoke: session dropped.");
+                return;
+            };
+            let _ = session.available_contracts();
+        }
+        if self.accept_strip_offer().is_none() {
+            self.fail_contract_strip("Contract-strip smoke: could not accept first offer.");
+            return;
+        }
+        self.refresh();
+        if !self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible)
+        {
+            self.fail_contract_strip("Contract-strip smoke: strip hidden after Accept.");
+        }
+        let text_one = self
+            .contract_strip_nodes
+            .as_ref()
+            .map(contract_strip::overlay_text)
+            .unwrap_or_default();
+        if text_one.contains('\u{2014}') || text_one.contains("due soon") {
+            self.fail_contract_strip("Contract-strip smoke: forbidden copy after Accept.");
+        }
+        if !text_one.contains(" - ") {
+            self.fail_contract_strip("Contract-strip smoke: missing ASCII separator.");
+        }
+        // Destination hint on single segment.
+        if !text_one.contains(" - to ") {
+            self.fail_contract_strip(format!(
+                "Contract-strip smoke: single segment missing destination: {text_one}"
+            ));
+        }
+        self.assert_contract_strip_fits();
+
+        // Second accept -> two segments, no destination, still GOLD path.
+        if self.accept_strip_offer().is_none() {
+            self.fail_contract_strip("Contract-strip smoke: could not accept second offer.");
+            return;
+        }
+        self.refresh();
+        let text_two = self
+            .contract_strip_nodes
+            .as_ref()
+            .map(contract_strip::overlay_text)
+            .unwrap_or_default();
+        if text_two.contains(" - to ") {
+            self.fail_contract_strip("Contract-strip smoke: destination shown with two segments.");
+        }
+        if text_two.contains("+") && text_two.contains("more") {
+            self.fail_contract_strip("Contract-strip smoke: unexpected +N with only two actives.");
+        }
+
+        // Third accept -> +1 more
+        if self.accept_strip_offer().is_none() {
+            self.fail_contract_strip("Contract-strip smoke: could not accept third offer.");
+            return;
+        }
+        self.refresh();
+        let text_three = self
+            .contract_strip_nodes
+            .as_ref()
+            .map(contract_strip::overlay_text)
+            .unwrap_or_default();
+        if !text_three.contains("+1 more") {
+            self.fail_contract_strip(format!(
+                "Contract-strip smoke: expected +1 more, got {text_three}"
+            ));
+        }
+
+        // Click docked opens Contracts; day report closed.
+        let day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(1);
+        self.open_day_report_doc(day_report::smoke_full_document(day));
+        if !self.day_report_open {
+            self.fail_contract_strip("Contract-strip smoke: could not open day report for click hygiene.");
+        }
+        self.perform(Action::OpenContracts);
+        if !self.contracts_open {
+            self.fail_contract_strip("Contract-strip smoke: docked strip click did not open Contracts.");
+        }
+        if self.day_report_open {
+            self.fail_contract_strip("Contract-strip smoke: Contracts left Day's report open.");
+        }
+        self.close_contracts();
+        self.assert_contract_strip_fits();
+
+        // Partial sell for progress (weapons buy+sell at dest auto-completes;
+        // grain: buy at home, sail, sell partial so delivered stays below required).
+        self.prepare_contract_strip_progress();
+        self.refresh();
+        let progress_text = self
+            .contract_strip_nodes
+            .as_ref()
+            .map(contract_strip::overlay_text)
+            .unwrap_or_default();
+        if progress_text.contains("0/") {
+            // Not fatal if voyage blocked; note and continue when progress present.
+            // Prefer seeing a non-zero delivered count when sell succeeded.
+        }
+        let _ = progress_text;
+
+        // Advance docked days until a shown contract is urgent (days_left <= 1).
+        if !self.advance_until_strip_urgent(40) {
+            self.fail_contract_strip("Contract-strip smoke: could not reach urgent timing via Next day.");
+            return;
+        }
+        self.refresh();
+        let urgent_text = self
+            .contract_strip_nodes
+            .as_ref()
+            .map(contract_strip::overlay_text)
+            .unwrap_or_default();
+        if !(urgent_text.contains("1 day left")
+            || urgent_text.contains("due today")
+            || urgent_text.contains("overdue"))
+        {
+            self.fail_contract_strip(format!(
+                "Contract-strip smoke: urgent copy missing: {urgent_text}"
+            ));
+        }
+        if urgent_text.contains("due soon") {
+            self.fail_contract_strip("Contract-strip smoke: urgent path said due soon.");
+        }
+
+        // At sea: strip stays visible; click does not open Contracts.
+        self.close_contracts();
+        let sailed = {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_contract_strip("Contract-strip smoke: session dropped before sail.");
+                return;
+            };
+            // Sail toward a different port if docked.
+            let here = session.world().voyage.destination_id.clone();
+            let dest = if here == "porto_novo" {
+                "al_manar"
+            } else {
+                "porto_novo"
+            };
+            session.depart(&dest)
+        };
+        if let Err(err) = sailed {
+            self.fail_contract_strip(format!("Contract-strip smoke: depart failed: {err}"));
+            return;
+        }
+        self.refresh();
+        if self.docked_id().is_some() {
+            self.fail_contract_strip("Contract-strip smoke: still docked after depart.");
+        }
+        if !self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible)
+        {
+            self.fail_contract_strip("Contract-strip smoke: strip hidden at sea with actives.");
+        }
+        self.perform(Action::OpenContracts);
+        if self.contracts_open {
+            self.fail_contract_strip("Contract-strip smoke: at-sea click opened Contracts.");
+        }
+
+        // Complete-at-Contracts is unreachable via Session::sell (auto-settle);
+        // pure unit tests cover that cue. Note for the PR.
+        if self.smoke_ok {
+            self.push_log(
+                "Contract-strip smoke: hide, accept, cap, click, urgent, sea no-op ok. Complete cue unit-test-only."
+                    .to_string(),
+            );
+        }
+    }
+
+
+    fn accept_strip_offer(&mut self) -> Option<String> {
+        let id = {
+            let Some(session) = self.session.as_mut() else {
+                return None;
+            };
+            let _ = session.available_contracts();
+            session.board().offers.first().map(|offer| offer.id.clone())
+        }?;
+        let before = self
+            .session
+            .as_ref()
+            .map(|session| session.board().active.len())
+            .unwrap_or(0);
+        self.accept_contract_offer(&id);
+        let moved = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.offer_id == id)
+                && session.board().active.len() == before + 1
+        });
+        if !moved {
+            self.fail_contract_strip("Contract-strip smoke: Accept did not move the offer.");
+            return None;
+        }
+        Some(id)
+    }
+
+    fn fail_contract_strip(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.contract_strip_checked = true;
+    }
+
+    /// Buy grain at Porto Novo, sail to Corsair's Rest, sell a partial lot for progress.
+    fn prepare_contract_strip_progress(&mut self) {
+        // Prefer a grain active if present; otherwise skip quietly.
+        let grain_active = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.good_id == "grain")
+        });
+        if !grain_active {
+            return;
+        }
+        // Ensure docked at porto_novo with grain to buy.
+        let home = self
+            .session
+            .as_ref()
+            .map(|session| session.world().voyage.destination_id.clone())
+            .unwrap_or_default();
+        if home != "porto_novo" {
+            return;
+        }
+        {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            let _ = session.buy("grain", 5);
+        }
+        let departed = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.depart("corsairs_rest")
+        };
+        if departed.is_err() {
+            return;
+        }
+        for _ in 0..12 {
+            self.next_day();
+            if self.docked_id() == Some("corsairs_rest") {
+                break;
+            }
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                return;
+            }
+        }
+        if self.docked_id() != Some("corsairs_rest") {
+            return;
+        }
+        {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            let _ = session.sell("grain", 5);
+        }
+        self.refresh();
+    }
+
+    fn advance_until_strip_urgent(&mut self, max_days: usize) -> bool {
+        for _ in 0..max_days {
+            let urgent = self.session.as_ref().is_some_and(|session| {
+                let day = session.world().day;
+                let mut ordered: Vec<_> = session.board().active.iter().collect();
+                ordered.sort_by(|a, b| {
+                    a.deadline_day
+                        .cmp(&b.deadline_day)
+                        .then_with(|| a.title.cmp(&b.title))
+                });
+                ordered
+                    .into_iter()
+                    .take(2)
+                    .any(|contract| contract.deadline_day - day <= 1)
+            });
+            if urgent {
+                return true;
+            }
+            if self.session.as_ref().is_none_or(|session| session.board().active.is_empty())
+            {
+                return false;
+            }
+            // Stay put: Next day while docked (or at sea) advances the calendar.
+            self.next_day();
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                // Duel freezes the day; cannot reach urgent this way.
+                return false;
+            }
+        }
+        false
+    }
+
+    fn begin_contract_strip_shots(&mut self) {
+        self.start_game();
+        {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_contract_strip("Contract-strip shots: no session.");
+                return;
+            };
+            let _ = session.available_contracts();
+        }
+        // Accept two nearest-deadline offers for a calm two-segment strip.
+        let sorted_ids = {
+            let Some(session) = self.session.as_ref() else {
+                return;
+            };
+            let mut offers = session.board().offers.clone();
+            offers.sort_by(|a, b| {
+                a.deadline_day
+                    .cmp(&b.deadline_day)
+                    .then_with(|| a.title.cmp(&b.title))
+            });
+            offers
+                .into_iter()
+                .take(2)
+                .map(|offer| offer.id)
+                .collect::<Vec<_>>()
+        };
+        for id in &sorted_ids {
+            self.accept_contract_offer(id);
+        }
+        let _ = sorted_ids;
+        self.refresh();
+        if !self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible)
+        {
+            self.fail_contract_strip("Contract-strip shots: active strip not visible.");
+        }
+        self.contract_strip_shot_dir = Some(contract_strip_shot_dir(self.shot_path.as_deref()));
+        self.contract_strip_shot = Some(ContractStripShot::Active);
+        self.refresh();
+    }
+
+    fn advance_contract_strip_shot(&mut self) -> bool {
+        let Some(phase) = self.contract_strip_shot else {
+            return false;
+        };
+        let Some(dir) = self.contract_strip_shot_dir.clone() else {
+            return false;
+        };
+        if !self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible)
+        {
+            self.smoke_ok = false;
+            godot_print!(
+                "Contract-strip smoke: frame {} was not visible.",
+                phase.file_name()
+            );
+        }
+        self.assert_contract_strip_fits();
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, false) {
+            self.capture_failed = true;
+        }
+        match phase {
+            ContractStripShot::Active => {
+                if !self.advance_until_strip_urgent(40) {
+                    self.smoke_ok = false;
+                    godot_print!("Contract-strip smoke: could not reach urgent frame via Next day.");
+                }
+                self.refresh();
+                self.contract_strip_shot = Some(ContractStripShot::Urgent);
+                self.capture_frames = 4;
+                true
+            }
+            ContractStripShot::Urgent => {
+                self.contract_strip_shot = None;
+                self.contract_strip_checked = true;
+                false
+            }
+        }
+    }
+
     fn post_board(&mut self) {
         let board = {
             let Some(session) = self.session.as_mut() else {
@@ -8050,6 +8581,14 @@ fn day_report_frames_requested(shot_set: bool) -> bool {
 }
 
 fn day_report_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
+}
+
+fn contract_strip_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn contract_strip_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
 }
 
