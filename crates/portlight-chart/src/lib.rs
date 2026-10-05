@@ -18,7 +18,7 @@ mod view;
 pub use assets::{
     asset, plates_for_class, ship_asset, ship_draw, Asset, AssetFamily, ShipDraw, ASSETS,
 };
-pub use harbour::{harbour_anchor, HarbourLayer, HarbourTile, WorkKind};
+pub use harbour::{harbour_anchor, harbour_prop_tile, HarbourLayer, HarbourTile, WorkKind};
 pub use placeholder::write_asset_files;
 pub use project::{
     chart_to_screen, chart_to_screen_f, chart_to_uv, facing_from_chart_delta, facing_from_uv,

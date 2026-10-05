@@ -7,8 +7,8 @@
 //! water. Pilings sit on a different open water cell.
 
 use crate::harbour::{
-    build_harbour, harbour_anchor, harbour_water_cells, harbour_water_tile, harbour_work_tile,
-    seam_view, HarbourFault, HarbourTile, WorkKind,
+    build_harbour, harbour_anchor, harbour_prop_tile, harbour_water_cells, harbour_water_tile,
+    harbour_work_tile, seam_view, HarbourFault, HarbourTile, WorkKind,
 };
 
 /// One corner of a harbour diamond, named in screen space.
@@ -116,11 +116,17 @@ pub fn seam_camera_center() -> (i32, i32) {
     ((rect.min_x + rect.max_x) / 2, (rect.min_y + rect.max_y) / 2)
 }
 
-/// Quay at `(0, 1)`, pier root at `(0, 2)`, pilings on open water `(2, 0)`.
+/// Quay strip + pier root + pilings, then deck props (art-gate Y.1).
+///
+/// Quay cells `(0,1)` (join), `(0,0)` (back), `(-1,1)` (side kerb). Pier root
+/// stays water cell `(0,2)` (Addendum E). Pier head gets bollard+torch; each
+/// quay cell gets one cargo/lighting prop on the kerb toward water.
 fn seam_works() -> Vec<HarbourTile> {
-    let quay = (0, 1);
+    let quay_join = (0, 1);
+    let quay_back = (0, 0);
+    let quay_side = (-1, 1);
     let pier = (0, 2);
-    let corner = corner_toward(pier.0, pier.1, quay.0, quay.1);
+    let corner = corner_toward(pier.0, pier.1, quay_join.0, quay_join.1);
     vec![
         harbour_work_tile(
             2,
@@ -135,11 +141,30 @@ fn seam_works() -> Vec<HarbourTile> {
             pier_path(&pier_plate_id(&[corner])),
         ),
         harbour_work_tile(
-            quay.0,
-            quay.1,
+            quay_join.0,
+            quay_join.1,
             WorkKind::Quay,
             "res://assets/landing/structures/quay_1111/beauty.png",
         ),
+        harbour_work_tile(
+            quay_back.0,
+            quay_back.1,
+            WorkKind::Quay,
+            "res://assets/landing/structures/quay_1111/beauty.png",
+        ),
+        harbour_work_tile(
+            quay_side.0,
+            quay_side.1,
+            WorkKind::Quay,
+            "res://assets/landing/structures/quay_1111/beauty.png",
+        ),
+        // Pier head: bollard + torch (Y.1 density exception).
+        harbour_prop_tile(pier.0, pier.1, prop_path("bollard_1x1")),
+        harbour_prop_tile(pier.0, pier.1, prop_path("torch_1x1")),
+        // One prop per quay cell, near the water kerb cells.
+        harbour_prop_tile(quay_join.0, quay_join.1, prop_path("barrel_1x1")),
+        harbour_prop_tile(quay_back.0, quay_back.1, prop_path("crate_1x1")),
+        harbour_prop_tile(quay_side.0, quay_side.1, prop_path("cart_1x1")),
     ]
 }
 
@@ -226,6 +251,20 @@ fn pier_path(id: &str) -> &'static str {
     }
 }
 
+/// Shipped Phase-2 will-use prop plates (ai-rpg-stage). Paths match the
+/// landing `props/<id>/beauty.png` convention used by `pier_pilings_1x1`.
+fn prop_path(id: &str) -> &'static str {
+    match id {
+        "bollard_1x1" => "res://assets/landing/props/bollard_1x1/beauty.png",
+        "torch_1x1" => "res://assets/landing/props/torch_1x1/beauty.png",
+        "barrel_1x1" => "res://assets/landing/props/barrel_1x1/beauty.png",
+        "crate_1x1" => "res://assets/landing/props/crate_1x1/beauty.png",
+        "cart_1x1" => "res://assets/landing/props/cart_1x1/beauty.png",
+        "well_1x1" => "res://assets/landing/props/well_1x1/beauty.png",
+        _ => panic!("unknown harbour prop id {id}"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -267,8 +306,12 @@ mod tests {
             "paving keeps the block's z, so a higher z cannot cover front props"
         );
         assert!(
-            placer.contains("quay.add_child"),
+            placer.contains("host.add_child(&land)"),
             "paving is a child of the quay block and draws after it"
+        );
+        assert!(
+            placer.contains("HarbourLayer::Prop"),
+            "deck props parent under the pier or quay host"
         );
         assert!(
             scene.contains("quay-paving-z100.png"),
@@ -327,8 +370,8 @@ mod tests {
             assert_eq!(sy, (tile.col + tile.row) * 64);
             assert_eq!(tile.screen_x, sx);
             let ground_y = sy + HARBOUR_CELL_H / 2;
-            let screen_y = if tile.layer == HarbourLayer::Land {
-                // U.4 layer offset is 0,0. Sea datum stays on water and works.
+            let screen_y = if matches!(tile.layer, HarbourLayer::Land | HarbourLayer::Prop) {
+                // U.4 / P3 land offset 0. Sea datum stays on water and works.
                 ground_y
             } else {
                 ground_y - WATER_DATUM_Y
@@ -358,8 +401,8 @@ mod tests {
         }
         let quay = tiles
             .iter()
-            .find(|tile| tile.path.contains("quay_1111"))
-            .expect("quay");
+            .find(|tile| tile.path.contains("quay_1111") && tile.col == 0 && tile.row == 1)
+            .expect("join quay");
         let paving = tiles
             .iter()
             .find(|tile| {
@@ -376,14 +419,20 @@ mod tests {
             .iter()
             .position(|tile| tile.kind == Some(WorkKind::Quay))
             .expect("quay block");
-        let prop_at = tiles
+        let deck_prop_at = tiles
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Prop))
+            .expect("deck prop");
+        let pier_at_join = tiles
             .iter()
             .position(|tile| tile.kind == Some(WorkKind::Pier))
             .expect("pier");
         assert!(
-            quay_list_at < paving_at && paving_at < prop_at,
-            "draw order is quay block, then paving, then props"
+            quay_list_at < paving_at && paving_at < deck_prop_at,
+            "draw order is quay block, then paving, then deck props"
         );
+        // Pier is on a front cell, so it may sort after join-cell paving too.
+        assert!(paving_at < pier_at_join || pier_at_join != paving_at);
         let pier = tiles
             .iter()
             .find(|tile| tile.path.contains("structures/pier_"))
@@ -404,6 +453,26 @@ mod tests {
         assert!(!pier.path.contains("UL_UR"));
         assert_eq!((pilings.col, pilings.row), (2, 0));
         assert!(pilings.col != pier.col || pilings.row != pier.row);
+        // Y.1 prop map: pier head bollard+torch; one cargo prop per quay cell.
+        let props: Vec<_> = tiles
+            .iter()
+            .filter(|tile| tile.kind == Some(WorkKind::Prop))
+            .map(|tile| ((tile.col, tile.row), tile.path))
+            .collect();
+        assert!(props.contains(&((0, 2), "res://assets/landing/props/bollard_1x1/beauty.png")));
+        assert!(props.contains(&((0, 2), "res://assets/landing/props/torch_1x1/beauty.png")));
+        assert!(props.contains(&((0, 1), "res://assets/landing/props/barrel_1x1/beauty.png")));
+        assert!(props.contains(&((0, 0), "res://assets/landing/props/crate_1x1/beauty.png")));
+        assert!(props.contains(&((-1, 1), "res://assets/landing/props/cart_1x1/beauty.png")));
+        assert_eq!(props.len(), 5);
+        assert_eq!(
+            tiles
+                .iter()
+                .filter(|tile| tile.kind == Some(WorkKind::Quay))
+                .count(),
+            3,
+            "join + back + side quay"
+        );
         let works: Vec<_> = tiles
             .iter()
             .filter(|tile| tile.layer == HarbourLayer::Work)

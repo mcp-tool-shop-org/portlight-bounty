@@ -53,11 +53,20 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      FAIL, and an undocumented id are not exempt. Bold **FAIL** is never exempt.
                      A duplicate row id or an unexpected row id also refuses the build.
                      A results file that is not a JSON object is a problem, not a traceback.
+  harbour_props (5, Y.1.a)  ids bollard_1x1, torch_1x1, barrel_1x1, crate_1x1, cart_1x1:
+                     Phase-2 will-use deck/quay props (art-gate Addendum Y.1.a PASS amend); Land offset 0
+                     canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv; source props/<id>/beauty.png;
+                     landed path props/<id>/beauty.png; <id> beauty.andon.json must be v0.1.1 prop pass;
+                     renderer <- beauty.render.json; sha256 must equal Y.1.a lock table (hardcoded) and source bytes
+                     MANDATORY Verifier gate: grok-bot-verifier/PB-002/harbour_props_results.json
+                     (5 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-harbour_props.md
+                     ("Result: **5/5 PASS**", ends "✅ Builder may land"); results sha256 must appear in the doc
+                     B2 stub-key refusal applies to harbour_props_results.json like other gate inputs
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
                      asset-spec Rev 4 R11 (recorded as source). A sidecar/.import that contradicts R11 aborts.
 
 Layout (asset-spec Rev 4 §4 Output and §7g): chart/ships/ship_<class>/<id>.png, ground/water_*.png,
-structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png, chart/<id>.png.
+structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png, props/<harbour_prop id>/beauty.png, chart/<id>.png.
 Sidecars and .import files are NOT copied into the bundle (Coordinator ruling); their values are carried here.
 
 Emitted paths: entry `path` is relative to the bundle root; provenance paths are relative to the studio
@@ -78,6 +87,15 @@ EXP_HARB = (["water_a", "water_b", "water_c"] + [f"quay_{i:04b}" for i in range(
                "pier_pilings_1x1"])
 EXP_CHART = ["chart_water_a", "chart_water_b", "chart_water_c", "chart_port_marker"]
 EXP_QUAY_FLAG = ["quay_flag_a", "quay_flag_b", "quay_flag_c"]
+EXP_HARBOUR_PROPS = ["bollard_1x1", "torch_1x1", "barrel_1x1", "crate_1x1", "cart_1x1"]
+# art-gate-harbour-placement.md Addendum Y.1.a beauty sha256 locks (must match landed + source)
+HARBOUR_PROP_SHA256 = {
+    "bollard_1x1": "9ed994925f8ff489c3ec73d6aa9464d16332978cf4e8014f4c1f83a606d57af9",
+    "torch_1x1": "9b47c0a242aac8434f87a59aaff30e91aeb16d83bdf234d0b6dfdef0fe124441",
+    "barrel_1x1": "d9b98a098a2b3bcbdabbcec0d015c4198e19a8fa017ab01dac26a6e45f20690a",
+    "crate_1x1": "8d7161050c8185e489a18677e1951edee0262674e663895d21980b44854f13f6",
+    "cart_1x1": "df4b6553025bdb11dcdbbbc42627e9155259a942600543f62675de6a7452b7c9",
+}
 R11_MIP_ON = {"chart_water_a", "chart_water_b", "chart_water_c"}
 R11_SRC = "asset-spec Rev 4 R11"
 
@@ -85,9 +103,9 @@ R11_SRC = "asset-spec Rev 4 R11"
 def bind_studio(studio):
     """Point every gate input at `studio`. The default root is DEFAULT_STUDIO."""
     global STUDIO, PLATES, OUTBOX, VERIFIER, CSV, SPEC, GATE
-    global RETR_SHIPS, RETR_HARB, RETR_CHART, RETR_QUAY_FLAG
+    global RETR_SHIPS, RETR_HARB, RETR_CHART, RETR_QUAY_FLAG, RETR_HARBOUR_PROPS
     global VJ_SHIPS, VJ_HARB, VJ_CHART, SHIP_SRC, CHART_SRC
-    global QUAY_FLAG_SRC, VJ_QUAY_FLAG
+    global QUAY_FLAG_SRC, VJ_QUAY_FLAG, HARBOUR_PROPS_SRC, VJ_HARBOUR_PROPS
     STUDIO = studio
     PLATES = os.path.join(STUDIO, "pb-002-plates")
     OUTBOX = os.path.join(STUDIO, "outbox-PB-002")
@@ -99,6 +117,7 @@ def bind_studio(studio):
     RETR_HARB = os.path.join(OUTBOX, "retrieval-harbour.md")
     RETR_CHART = os.path.join(OUTBOX, "retrieval-chart.md")
     RETR_QUAY_FLAG = os.path.join(OUTBOX, "retrieval-quay_flag_painterly.md")
+    RETR_HARBOUR_PROPS = os.path.join(OUTBOX, "retrieval-harbour_props.md")
     VJ_SHIPS = os.path.join(VERIFIER, "ships_results.json")
     VJ_HARB = os.path.join(VERIFIER, "harbour_andon_results.json")
     VJ_CHART = os.path.join(VERIFIER, "chart", "chart_retrieval_results.json")
@@ -106,6 +125,8 @@ def bind_studio(studio):
     CHART_SRC = os.path.join(PLATES, "chart")
     QUAY_FLAG_SRC = os.path.join(PLATES, "ground")
     VJ_QUAY_FLAG = os.path.join(VERIFIER, "quay_flag_painterly_results.json")
+    HARBOUR_PROPS_SRC = os.path.join(PLATES, "props")
+    VJ_HARBOUR_PROPS = os.path.join(VERIFIER, "harbour_props_results.json")
 
 
 bind_studio(DEFAULT_STUDIO)
@@ -543,7 +564,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", default="0.1.0")
     ap.add_argument("--out-dir", default="landing", help="bundle dir (relative to pb-002-plates/ unless absolute)")
-    ap.add_argument("--groups", default="ships,harbour,chart,quay_flag")
+    ap.add_argument("--groups", default="ships,harbour,chart,quay_flag,harbour_props")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--studio", default=DEFAULT_STUDIO, help="studio root holding plates, outbox, and verifier inputs")
     a = ap.parse_args(argv)
@@ -662,7 +683,7 @@ def main(argv=None):
         hinv = bind_inventory(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
         hrows = index_rows(hj, EXP_HARB, "harbour", problems) if hj is not None else {}
         reject_stub_keys(hj, "harbour_andon_results.json", problems)
-        rows = [r for r in rows_all if r["phase"] == "P0" and r["view"] == "harbour" and r["status"].startswith("LOCKED") and r["id"] not in EXP_QUAY_FLAG]
+        rows = [r for r in rows_all if r["phase"] == "P0" and r["view"] == "harbour" and r["status"].startswith("LOCKED") and r["id"] not in EXP_QUAY_FLAG and r["id"] not in EXP_HARBOUR_PROPS]
         if sorted(r["id"] for r in rows) != sorted(EXP_HARB):
             problems.append("csv harbour P0 ids != expected 30")
         harb_e = []
@@ -906,6 +927,93 @@ def main(argv=None):
         qf_e.sort(key=lambda e: qorder[e["id"]])
         entries += qf_e; counts["quay_flag"] = len(qf_e)
 
+    # ================= harbour_props (Y.1.a deck/quay props) =================
+    if "harbour_props" in groups:
+        if not re.search(r"## Addendum Y\.1\.a\b.*?PASS amend", gate, re.S):
+            problems.append("art-gate.md Addendum Y.1.a PASS amend not found")
+        hpraw = read_file_bytes(VJ_HARBOUR_PROPS)
+        hpj = parse_json_object(hpraw, "harbour_props_results.json", problems)
+        if hpraw is None:
+            problems.append("verifier harbour_props_results.json missing")
+        reject_stub_keys(hpj, "harbour_props_results.json", problems)
+        hpinv = bind_inventory(hpj, EXP_HARBOUR_PROPS, "harbour_props", problems) if hpj is not None else {}
+        hprows = index_rows(hpj, EXP_HARBOUR_PROPS, "harbour_props", problems) if hpj is not None else {}
+        for hid in EXP_HARBOUR_PROPS:
+            hr = hprows.get(hid)
+            if not hr or hr.get("pass") is not True or hr.get("exit") != 0:
+                problems.append(f"{hid}: Verifier harbour_props row missing or not pass/exit 0")
+        rhp = open(RETR_HARBOUR_PROPS, encoding="utf-8").read() if os.path.isfile(RETR_HARBOUR_PROPS) else ""
+        require_no_fail_results(rhp, "retrieval-harbour_props.md", problems)
+        if hpraw is not None and sha256_bytes(hpraw) not in rhp:
+            problems.append("retrieval-harbour_props.md does not contain the sha256 of harbour_props_results.json")
+        if not re.search(r"Result: \*\*5/5 PASS\*\*", rhp):
+            problems.append("retrieval-harbour_props.md missing or not 'Result: **5/5 PASS**'")
+        if not re.search(r"✅ Builder may land\s*$", rhp):
+            problems.append("retrieval-harbour_props.md does not end with '✅ Builder may land'")
+        rows = [r for r in rows_all if r["id"] in EXP_HARBOUR_PROPS and r["status"].startswith("LOCKED")]
+        if sorted(r["id"] for r in rows) != sorted(EXP_HARBOUR_PROPS):
+            problems.append(f"csv harbour_props ids != expected 5: {[r['id'] for r in rows]}")
+        hp_e = []
+        for r in rows:
+            aid = r["id"]
+            rel = f"props/{aid}/beauty.png"
+            src_png = os.path.join(HARBOUR_PROPS_SRC, aid, "beauty.png")
+            p = os.path.join(OUT, rel)
+            if not os.path.isfile(src_png):
+                problems.append(f"{aid}: source missing"); continue
+            if not os.path.isfile(p):
+                problems.append(f"missing landed file {rel}"); continue
+            w, h = png_size(p); digest = sha256(p)
+            if sha256(src_png) != digest:
+                problems.append(f"{aid}: landed bytes differ from source")
+            lock = HARBOUR_PROP_SHA256.get(aid)
+            if lock and digest != lock:
+                problems.append(f"{aid}: sha256 differs from Y.1.a lock")
+            if hpj is not None and hpinv.get(aid) != digest:
+                problems.append(f"{aid}: sha256 differs from Verifier harbour_props inventory")
+            if r["canvas"].strip() != f"{w}x{h}":
+                problems.append(f"{aid}: canvas {w}x{h} != csv {r['canvas']}")
+            anchor, _ = csv_field(r["anchor_px"], aid, "anchor", parse_xy, nulls, na)
+            fp, fp_raw = csv_field(r["footprint"], aid, "footprint", parse_wh, nulls, na)
+            lo, _ = csv_field(r["layer_offset_px"], aid, "layer_offset_px", parse_xy, nulls, na)
+            to, to_raw = csv_field(r["texture_origin"], aid, "texture_origin", parse_xy, nulls, na)
+            ys, ys_raw = csv_field(r["y_sort_origin"], aid, "y_sort_origin", parse_int, nulls, na)
+            base = os.path.splitext(src_png)[0]
+            andon = load_json(base + ".andon.json")
+            if not andon or andon.get("andon_version") != "0.1.1" or andon.get("pass") is not True or andon.get("kind") != "prop":
+                problems.append(f"{aid}: source .andon.json missing / not v0.1.1 prop pass")
+            rj = load_json(base + ".render.json") or {}
+            if not rj:
+                problems.append(f"{aid}: .render.json missing")
+            cross_check_sidecar_mip(aid, rj.get("mipmaps"), ".render.json", problems)
+            hp_e.append({
+                "id": aid, "group": "harbour_props", "subgroup": "prop",
+                "path": rel, "canvas": [w, h], "canvas_str": f"{w}x{h}", "anchor": anchor, "LOA": None,
+                "footprint": fp, "layer": r["layer"].strip() or None, "layer_offset_px": lo,
+                "texture_origin": to, "texture_origin_csv": to_raw if to is None else None,
+                "y_sort_origin": ys, "y_sort_origin_csv": ys_raw if ys is None else None,
+                "andon_kind": r["andon_kind"].strip() or None,
+                "view": r["view"], "phase": r["phase"], "status": r["status"],
+                "sha256": digest, "bytes": os.path.getsize(p),
+                "import": import_settings(aid, src_png, problems),
+                "provenance": {
+                    "mesh": None,
+                    "renderer": {"name": "Blender", "version": rj.get("blender"), "engine": rj.get("engine"),
+                                 "samples": rj.get("samples"), "scene_kind": rj.get("scene") or rj.get("kind"),
+                                 "camera_euler_deg": rj.get("camera_euler_deg"), "ortho_scale": rj.get("ortho_scale"),
+                                 "px_per_bu": rj.get("px_per_bu"), "sun_euler_deg": rj.get("sun_euler_deg"),
+                                 "summary": "Blender EEVEE prop plate (Y.1.a vendor; no remake)"},
+                    "andon": {"version": andon.get("andon_version") if andon else None,
+                              "kind": andon.get("kind") if andon else None, "pass": andon.get("pass") if andon else None},
+                    "gate": {"art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
+                             "verifier": ("grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS" if hpj else None),
+                             "y1a_sha_lock": lock},
+                    "render_sidecar": srel(base + ".render.json"),
+                    "source_path": srel(src_png)}})
+        hporder = {e: i for i, e in enumerate(EXP_HARBOUR_PROPS)}
+        hp_e.sort(key=lambda e: hporder[e["id"]])
+        entries += hp_e; counts["harbour_props"] = len(hp_e)
+
     # ================= extra-file audit =================
     allowed = {os.path.join(OUT, e["path"]) for e in entries} | {os.path.join(OUT, "MANIFEST.json")}
     for dp, _, fns in os.walk(OUT):
@@ -930,15 +1038,16 @@ def main(argv=None):
         "path_convention": {"entry.path": "relative to the bundle root (this MANIFEST's directory)",
                             "provenance.*": "relative to the studio workspace root"},
         "sources": {"asset_list": "outbox-PB-002/asset-list.csv", "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" + ("" if qgate["addendum"] == "V.2" else ", " + qgate["addendum"]) if "quay_flag" in groups else ""),
-                    "verifier": [f"outbox-PB-002/retrieval-{g}.md" for g in ("ships", "harbour", "chart", "quay_flag_painterly") if g.split("_painterly")[0] in groups]},
+                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" + ("" if qgate["addendum"] == "V.2" else ", " + qgate["addendum"]) if "quay_flag" in groups else "") + (", Y.1.a" if "harbour_props" in groups else ""),
+                    "verifier": [f"outbox-PB-002/retrieval-{g}.md" for g in ("ships", "harbour", "chart", "quay_flag_painterly", "harbour_props") if (g.split("_painterly")[0] in groups or g in groups)]},
         "layout": {"ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec §7g)",
                    "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec §4 Output)",
                    "chart": "chart/<id>.png (asset-spec §4 Output)",
-                   **({"quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum " + qgate["addendum"] + ")"} if "quay_flag" in groups else {})},
+                   **({"quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum " + qgate["addendum"] + ")"} if "quay_flag" in groups else {}),
+                   **({"harbour_props": "props/<id>/beauty.png (art-gate Addendum Y.1.a)"} if "harbour_props" in groups else {})},
         "import_policy": {"rule": "asset-spec Rev 4 R11: Lossless, fix_alpha_border on, premult off, VRAM off; mipmaps ON for chart_water_a..c only",
                           "summary": imp_summary},
-        "px_per_bu": {"chart": 90.51, "harbour": 181.019, **({"quay_flag": 181.019} if "quay_flag" in groups else {})},
+        "px_per_bu": {"chart": 90.51, "harbour": 181.019, **({"quay_flag": 181.019} if "quay_flag" in groups else {}), **({"harbour_props": 181.019} if "harbour_props" in groups else {})},
         "counts": counts,
         "count": len(entries),
         "entries": entries,

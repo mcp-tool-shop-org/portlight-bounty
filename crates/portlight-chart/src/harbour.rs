@@ -8,8 +8,9 @@
 //! prop. Raised works (quay, pier, pilings, and later buildings) sort by
 //! the footprint-bottom anchor. On this grid that anchor's screen Y is
 //! `col + row`, so a front cell sorts after a back cell. The same cell breaks
-//! the tie by kind: pilings, then pier, then quay. Paving is inserted after
-//! the last quay block of its cell, so a front prop still draws after the flag.
+//! the tie by kind: pilings, then pier, then quay, then props. Paving is
+//! inserted after the last quay block of its cell, so a deck prop still draws
+//! after the flag.
 
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{grid_to_screen, ScreenRect, HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y};
@@ -27,15 +28,19 @@ pub enum WorkKind {
     Pilings,
     Pier,
     Quay,
+    /// Deck dressing (bollard, torch, barrel, …). Draws after paving on the cell.
+    Prop,
 }
 
 impl WorkKind {
     /// Lower draws first. Pilings stay under a pier or quay that shares the cell.
+    /// Props are last so they sit above the flag and the structure top.
     pub fn tie_rank(self) -> u8 {
         match self {
             Self::Pilings => 0,
             Self::Pier => 1,
             Self::Quay => 2,
+            Self::Prop => 3,
         }
     }
 }
@@ -47,6 +52,9 @@ pub enum HarbourFault {
     PilingsOnPier { col: i32, row: i32 },
     /// A pier root has to be water, not the quay cell.
     PierOnQuay { col: i32, row: i32 },
+    /// More than one prop on a cell that is not a pier head, or a pier-head
+    /// pair that is not bollard+torch (art-gate Y.1 density cap).
+    PropDensity { col: i32, row: i32, count: usize },
     /// `quay_flag_*` is not art-gate U.4: layer Land, offset 0,0, y-sort 0.
     QuayFlagPlacement {
         id: &'static str,
@@ -64,6 +72,9 @@ impl std::fmt::Display for HarbourFault {
                 write!(f, "pilings on a pier cell ({col}, {row})")
             }
             Self::PierOnQuay { col, row } => write!(f, "pier on a quay cell ({col}, {row})"),
+            Self::PropDensity { col, row, count } => {
+                write!(f, "prop density {count} on cell ({col}, {row})")
+            }
             Self::QuayFlagPlacement {
                 id,
                 layer,
@@ -85,6 +96,10 @@ pub enum HarbourLayer {
     /// Quay paving ground. U.4 land anchor, drawn after the quay block.
     Land,
     Work,
+    /// Deck prop at land offset 0 (art-gate P3 / Y.1). Parented under the
+    /// pier or quay on the cell so Y-sort matches the structure and the prop
+    /// draws after paving.
+    Prop,
 }
 
 /// One placed plate. `screen` is where the texture anchor lands.
@@ -219,7 +234,27 @@ pub fn harbour_work_tile(col: i32, row: i32, kind: WorkKind, path: &'static str)
     }
 }
 
-/// Reject pilings co-placed with a pier, and a pier co-placed with a quay.
+/// Deck prop at land offset 0 (no sea datum). Same foot anchor as SeaWorks
+/// props (128, 255 on a 256×256 plate). Art-gate P3 / Y.1.
+pub fn harbour_prop_tile(col: i32, row: i32, path: &'static str) -> HarbourTile {
+    let (sx, sy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
+    HarbourTile {
+        col,
+        row,
+        path,
+        anchor_x: 128,
+        anchor_y: 255,
+        canvas_w: 256,
+        canvas_h: 256,
+        screen_x: sx,
+        screen_y: sy + HARBOUR_CELL_H / 2,
+        layer: HarbourLayer::Prop,
+        kind: Some(WorkKind::Prop),
+    }
+}
+
+/// Reject pilings co-placed with a pier, a pier co-placed with a quay, and
+/// over-dense props (Y.1: one prop per cell, or bollard+torch on a pier head).
 pub fn validate_harbour(works: &[HarbourTile]) -> Result<(), Vec<HarbourFault>> {
     let mut faults = Vec::new();
     let mut cells: Vec<((i32, i32), Vec<WorkKind>)> = Vec::new();
@@ -236,15 +271,61 @@ pub fn validate_harbour(works: &[HarbourTile]) -> Result<(), Vec<HarbourFault>> 
             cells.push(((work.col, work.row), vec![kind]));
         }
     }
-    for ((col, row), kinds) in cells {
+    for ((col, row), kinds) in &cells {
         let pier = kinds.contains(&WorkKind::Pier);
         let pilings = kinds.contains(&WorkKind::Pilings);
         let quay = kinds.contains(&WorkKind::Quay);
         if pier && pilings {
-            faults.push(HarbourFault::PilingsOnPier { col, row });
+            faults.push(HarbourFault::PilingsOnPier {
+                col: *col,
+                row: *row,
+            });
         }
         if pier && quay {
-            faults.push(HarbourFault::PierOnQuay { col, row });
+            faults.push(HarbourFault::PierOnQuay {
+                col: *col,
+                row: *row,
+            });
+        }
+    }
+    // Prop density: paths on Prop tiles, one per cell unless pier head
+    // bollard+torch.
+    let mut prop_cells: Vec<((i32, i32), Vec<&'static str>)> = Vec::new();
+    for work in works {
+        if work.kind != Some(WorkKind::Prop) {
+            continue;
+        }
+        let id = prop_id_from_path(work.path);
+        if let Some((_, ids)) = prop_cells
+            .iter_mut()
+            .find(|(cell, _)| *cell == (work.col, work.row))
+        {
+            ids.push(id);
+        } else {
+            prop_cells.push(((work.col, work.row), vec![id]));
+        }
+    }
+    for ((col, row), ids) in prop_cells {
+        let pier = cells
+            .iter()
+            .find(|(cell, _)| *cell == (col, row))
+            .map(|(_, kinds)| kinds.contains(&WorkKind::Pier))
+            .unwrap_or(false);
+        let ok = match (pier, ids.len()) {
+            (_, 0 | 1) => true,
+            (true, 2) => {
+                let mut sorted = ids.clone();
+                sorted.sort_unstable();
+                sorted == ["bollard_1x1", "torch_1x1"]
+            }
+            _ => false,
+        };
+        if !ok {
+            faults.push(HarbourFault::PropDensity {
+                col,
+                row,
+                count: ids.len(),
+            });
         }
     }
     if faults.is_empty() {
@@ -252,6 +333,13 @@ pub fn validate_harbour(works: &[HarbourTile]) -> Result<(), Vec<HarbourFault>> 
     } else {
         Err(faults)
     }
+}
+
+/// Manifest id from a `…/props/<id>/beauty.png` path (or the last path segment).
+fn prop_id_from_path(path: &'static str) -> &'static str {
+    // res://assets/landing/props/bollard_1x1/beauty.png -> bollard_1x1
+    let rest = path.rsplit_once("/props/").map(|(_, r)| r).unwrap_or(path);
+    rest.split_once('/').map(|(id, _)| id).unwrap_or(rest)
 }
 
 /// Back to front. `sort_by` is stable, so equal depth and kind keep input order.
@@ -581,5 +669,86 @@ mod tests {
         assert!(validate_harbour(&[pilings(2, 0), pier(0, 2), quay(0, 1)]).is_ok());
         assert_eq!(on_pier[0].to_string(), "pilings on a pier cell (0, 2)");
         assert_eq!(on_quay[0].to_string(), "pier on a quay cell (0, 1)");
+    }
+
+    fn prop(col: i32, row: i32, path: &'static str) -> HarbourTile {
+        harbour_prop_tile(col, row, path)
+    }
+
+    #[test]
+    fn deck_props_use_land_offset_zero() {
+        let tile = harbour_prop_tile(0, 2, "res://assets/landing/props/bollard_1x1/beauty.png");
+        let (sx, sy) = grid_to_screen(0, 2, HARBOUR_CELL_W, HARBOUR_CELL_H);
+        assert_eq!(tile.layer, HarbourLayer::Prop);
+        assert_eq!(tile.kind, Some(WorkKind::Prop));
+        assert_eq!(tile.screen_x, sx);
+        assert_eq!(tile.screen_y, sy + HARBOUR_CELL_H / 2);
+        assert_ne!(tile.screen_y, harbour_anchor(0, 2).1);
+        assert_eq!((tile.anchor_x, tile.anchor_y), (128, 255));
+    }
+
+    #[test]
+    fn build_order_is_block_paving_then_prop() {
+        let built = build_harbour(
+            Vec::new(),
+            vec![
+                quay(0, 1),
+                prop(0, 1, "res://assets/landing/props/barrel_1x1/beauty.png"),
+                pier(0, 2),
+            ],
+        )
+        .expect("legal");
+        let block_at = built
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .expect("block");
+        let paving_at = built
+            .iter()
+            .position(|tile| tile.layer == HarbourLayer::Land)
+            .expect("paving");
+        let prop_at = built
+            .iter()
+            .position(|tile| tile.kind == Some(WorkKind::Prop))
+            .expect("prop");
+        assert!(block_at < paving_at && paving_at < prop_at);
+    }
+
+    #[test]
+    fn pier_head_allows_bollard_and_torch_only() {
+        let ok = validate_harbour(&[
+            pier(0, 2),
+            prop(0, 2, "res://assets/landing/props/bollard_1x1/beauty.png"),
+            prop(0, 2, "res://assets/landing/props/torch_1x1/beauty.png"),
+        ]);
+        assert!(ok.is_ok());
+        let too_many = validate_harbour(&[
+            pier(0, 2),
+            prop(0, 2, "res://assets/landing/props/bollard_1x1/beauty.png"),
+            prop(0, 2, "res://assets/landing/props/torch_1x1/beauty.png"),
+            prop(0, 2, "res://assets/landing/props/barrel_1x1/beauty.png"),
+        ])
+        .unwrap_err();
+        assert_eq!(
+            too_many,
+            vec![HarbourFault::PropDensity {
+                col: 0,
+                row: 2,
+                count: 3
+            }]
+        );
+        let not_pair = validate_harbour(&[
+            quay(0, 1),
+            prop(0, 1, "res://assets/landing/props/barrel_1x1/beauty.png"),
+            prop(0, 1, "res://assets/landing/props/crate_1x1/beauty.png"),
+        ])
+        .unwrap_err();
+        assert_eq!(
+            not_pair,
+            vec![HarbourFault::PropDensity {
+                col: 0,
+                row: 1,
+                count: 2
+            }]
+        );
     }
 }

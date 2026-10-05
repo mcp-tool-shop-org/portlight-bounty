@@ -39,6 +39,7 @@ mod = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mod)
 
 QUAY = list(mod.EXP_QUAY_FLAG)
+HPROPS = list(mod.EXP_HARBOUR_PROPS)
 failures = []
 
 
@@ -105,6 +106,38 @@ def test_gate_helpers():
     problems = []
     mod.bind_inventory(quay_object(QUAY + ["quay_flag_d"]), QUAY, "quay_flag", problems)
     check("quay extra inventory id", any("inventory ids" in p for p in problems), joined(problems))
+
+    # harbour_props inventory/row gates (mirror quay_flag)
+    def hp_object(inventory_ids=None, rows=None):
+        ids = HPROPS if inventory_ids is None else inventory_ids
+        body_rows = rows if rows is not None else [
+            {"id": aid, "pass": True, "exit": 0} for aid in HPROPS
+        ]
+        return {
+            "inventory": [{"id": aid, "sha256": "abc"} for aid in ids],
+            "rows": body_rows,
+        }
+
+    problems = []
+    hp_inv = mod.bind_inventory(hp_object(), HPROPS, "harbour_props", problems)
+    hp_rows = mod.index_rows(hp_object(), HPROPS, "harbour_props", problems)
+    for aid in HPROPS:
+        row = hp_rows.get(aid)
+        if not row or row.get("pass") is not True or row.get("exit") != 0:
+            problems.append(f"{aid}: Verifier harbour_props row missing or not pass/exit 0")
+    mod.require_no_fail_results(
+        "Result: **5/5 PASS**\n✅ Builder may land\n",
+        "retrieval-harbour_props.md",
+        problems,
+    )
+    check(
+        "happy harbour_props object",
+        not problems and set(hp_inv) == set(HPROPS),
+        joined(problems) if problems else "no problems",
+    )
+    problems = []
+    mod.bind_inventory({"inventory": []}, HPROPS, "harbour_props", problems)
+    check("harbour_props empty inventory", any("inventory ids" in p for p in problems), joined(problems))
 
     problems = []
     dup_inv = quay_object()
@@ -715,6 +748,40 @@ def build_fixture(studio):
         "✅ Builder may land\n",
     )
 
+    hp_ids = list(mod.EXP_HARBOUR_PROPS)
+    for aid in hp_ids:
+        src_png = os.path.join(plates, "props", aid, "beauty.png")
+        write_bytes(src_png, png)
+        write_bytes(os.path.join(landing, "props", aid, "beauty.png"), png)
+        write_json(
+            os.path.splitext(src_png)[0] + ".andon.json",
+            {"andon_version": "0.1.1", "pass": True, "kind": "prop"},
+        )
+        write_json(
+            os.path.splitext(src_png)[0] + ".render.json",
+            {"blender": "5.2", "engine": "eevee", "scene": "prop", "sun_euler_deg": [0, 0, 0]},
+        )
+        # Fixture PNGs are tiny; override Y.1.a locks so sha-lock matches fixture bytes.
+        mod.HARBOUR_PROP_SHA256[aid] = png_sha
+        rows.append(plate_row(
+            id=aid, status="LOCKED", phase="P2", view="harbour", canvas="2x2",
+            anchor_px="1,1", footprint="1x1", layer="Land", layer_offset_px="0,0",
+            texture_origin="-", y_sort_origin="0", andon_kind="prop",
+        ))
+    hp_raw = write_json(
+        os.path.join(verifier, "harbour_props_results.json"),
+        {
+            "inventory": [{"id": aid, "sha256": png_sha} for aid in hp_ids],
+            "rows": [{"id": aid, "pass": True, "exit": 0} for aid in hp_ids],
+        },
+    )
+    write_text(
+        os.path.join(outbox, "retrieval-harbour_props.md"),
+        "Result: **5/5 PASS**\n"
+        + hashlib.sha256(hp_raw).hexdigest()
+        + "\n✅ Builder may land\n",
+    )
+
     spec_rows = "\n".join(f"| `ship_{cls}` | hull | `{prefix}` |" for cls in mod.CLASSES)
     write_text(
         os.path.join(outbox, "asset-spec.md"),
@@ -733,7 +800,9 @@ def build_fixture(studio):
         "## Addendum F (06:00 ET)\n"
         "**Chart set: PASS. All 4 are will-use**\n\n"
         "## Addendum U.4 placement\n"
-        "## Addendum V.2 painterly v5p PASS\n",
+        "## Addendum V.2 painterly v5p PASS\n"
+        "## Addendum Y.1.a — harbour props MANIFEST vendor\n"
+        "**PASS amend.** Five Phase-2 will-use props.\n",
     )
     csv_path = os.path.join(outbox, "asset-list.csv")
     ensure_parent(csv_path)
@@ -774,12 +843,14 @@ RETRIEVAL_DOCS = (
     "retrieval-harbour.md",
     "retrieval-chart.md",
     "retrieval-quay_flag_painterly.md",
+    "retrieval-harbour_props.md",
 )
 RESULT_FILES = {
     "quay": os.path.join("grok-bot-verifier", "PB-002", "quay_flag_painterly_results.json"),
     "harbour": os.path.join("grok-bot-verifier", "PB-002", "harbour_andon_results.json"),
     "ships": os.path.join("grok-bot-verifier", "PB-002", "ships_results.json"),
     "chart": os.path.join("grok-bot-verifier", "PB-002", "chart", "chart_retrieval_results.json"),
+    "harbour_props": os.path.join("grok-bot-verifier", "PB-002", "harbour_props_results.json"),
 }
 
 
@@ -1241,7 +1312,7 @@ def test_clean_fixture_main_exits_0_and_check_matches(studio):
     status, out = run_main(main_argv(studio))
     assert status == 0, out
     assert "PROBLEMS:" not in out
-    assert "73 entries" in out
+    assert "78 entries" in out
     status, out = run_main(main_argv(studio, "--check"))
     assert status == 0, out
     assert "MATCHES" in out
