@@ -600,7 +600,7 @@ fn card_from_catalog(row: &CatalogRow) -> BountyCard {
 
 fn offer_text(card: &BountyCard) -> String {
     format!(
-        "{}\n{} · {} · {} · {} silver\n{}",
+        "{}\n{} | {} | {} | {} silver\n{}",
         card.captain_name,
         card.region,
         card.faction_id,
@@ -615,7 +615,7 @@ fn active_text(card: &BountyCard, defeats: i64) -> String {
         return format!("{}\nDefeated {defeats}.", card.captain_name);
     }
     format!(
-        "{}\n{} silver · {} · defeated {defeats}",
+        "{}\n{} silver | {} | defeated {defeats}",
         card.captain_name, card.reward, card.difficulty
     )
 }
