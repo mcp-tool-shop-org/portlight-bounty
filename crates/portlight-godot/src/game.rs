@@ -56,6 +56,7 @@ use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
+use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
     buy_confirm_line, buy_result_line, captain_button_label, capture_frame_rejected,
@@ -139,6 +140,9 @@ enum Action {
     ShipyardArm(ShipyardArm),
     ShipyardConfirm,
     ShipyardCancel,
+    OpenJournal,
+    CloseJournal,
+    ToggleBeat(String),
 }
 
 #[derive(Clone)]
@@ -219,6 +223,31 @@ enum DraftEdit {
     Name,
     Title,
     Story,
+}
+
+#[derive(Clone, Copy)]
+enum JournalShot {
+    Chronicle,
+    Victory,
+    Memories,
+}
+
+impl JournalShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Chronicle => "journal-chronicle.png",
+            Self::Victory => "journal-victory.png",
+            Self::Memories => "journal-memories.png",
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Chronicle => "chronicle",
+            Self::Victory => "victory",
+            Self::Memories => "memories",
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -373,6 +402,19 @@ struct PortlightGame {
     shipyard_scroll: Option<ShipyardSection>,
     /// Day when `--shipyard-screen` opened. The script must not move it.
     shipyard_day: i64,
+    journal_nodes: Option<JournalNodes>,
+    journal_open: bool,
+    /// Body was filled for the current open. A refresh does not rebuild it,
+    /// so a scroll position survives. Opening, or expanding a beat, clears it.
+    journal_filled: bool,
+    journal_expanded: Vec<String>,
+    journal_button: Option<Gd<Button>>,
+    journal_checked: bool,
+    journal_shot_dir: Option<String>,
+    journal_shot: Option<JournalShot>,
+    /// At-sea button check runs after the journal frames, so the shots stay
+    /// on the docked early voyage.
+    journal_sea_pending: bool,
 }
 
 #[godot_api]
@@ -450,6 +492,15 @@ impl IControl for PortlightGame {
             shipyard_shot: None,
             shipyard_scroll: None,
             shipyard_day: 0,
+            journal_nodes: None,
+            journal_open: false,
+            journal_filled: false,
+            journal_expanded: Vec::new(),
+            journal_button: None,
+            journal_checked: false,
+            journal_shot_dir: None,
+            journal_shot: None,
+            journal_sea_pending: false,
         }
     }
 
@@ -492,6 +543,19 @@ impl IControl for PortlightGame {
                 self.run_shipyard_actions();
                 self.capture_frames = 2;
             }
+        } else if user_arg("--journal-screen") {
+            self.smoke = true;
+            self.start_game();
+            let capture = newgame_frames_requested(self.shot_path.is_some());
+            self.run_journal_checks();
+            if capture {
+                self.begin_journal_shots();
+                self.journal_sea_pending = true;
+                self.capture_frames = 4;
+            } else {
+                self.journal_sea_check();
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -527,15 +591,23 @@ impl IControl for PortlightGame {
         if self.advance_contracts_shot() {
             return;
         }
+        if self.advance_journal_shot() {
+            return;
+        }
+        if self.journal_sea_pending {
+            self.journal_sea_pending = false;
+            self.journal_sea_check();
+        }
         // Measure after layout. Headless `--smoke` has no shot and skips this:
         // the Xvfb capture is the run that has to see real label sizes.
         if self.smoke && self.shot_path.is_some() && self.market_open {
             self.assert_panel_labels();
         }
-        // A new-game, contracts, or shipyard sequence already wrote its own frames.
+        // A new-game, contracts, shipyard, or journal sequence already wrote its own frames.
         if self.newgame_shot_dir.is_none()
             && self.contracts_shot_dir.is_none()
             && self.shipyard_shot_dir.is_none()
+            && self.journal_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -557,7 +629,12 @@ impl IControl for PortlightGame {
             return;
         }
         let code = if self.smoke_ok { 0 } else { 1 };
-        if self.shipyard_checked {
+        if self.journal_checked {
+            godot_print!(
+                "portlight journal smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.shipyard_checked {
             godot_print!(
                 "portlight shipyard smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
@@ -747,6 +824,9 @@ impl PortlightGame {
         let save = action_button("Save", game_id, Action::SaveGame);
         buttons.add_child(&save);
         self.save_button = Some(save);
+        let journal = action_button("Journal", game_id, Action::OpenJournal);
+        buttons.add_child(&journal);
+        self.journal_button = Some(journal);
         column.add_child(&buttons);
 
         // One line. A wrap would push the lanes, the market, and the log.
@@ -866,6 +946,18 @@ impl PortlightGame {
             gd.bind_mut().perform(Action::CloseShipyard);
         });
         self.shipyard_nodes = Some(shipyard);
+
+        let mut journal = journal_screen::build_journal_screen();
+        let close_id = game_id;
+        journal.close.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(close_id) else {
+                return;
+            };
+            gd.bind_mut().perform(Action::CloseJournal);
+        });
+        self.base_mut().add_child(&journal.root);
+        journal_screen::fill_parent(&mut journal.root);
+        self.journal_nodes = Some(journal);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1263,6 +1355,264 @@ impl PortlightGame {
         });
         self.capture_frames = 4;
         true
+    }
+
+    fn open_journal(&mut self) {
+        if self.session.is_none() {
+            return;
+        }
+        self.journal_open = true;
+        self.journal_filled = false;
+        self.refresh();
+        self.scroll_journal_to(0);
+    }
+
+    fn close_journal(&mut self) {
+        self.journal_open = false;
+        self.refresh();
+    }
+
+    fn toggle_beat(&mut self, id: &str) {
+        if !self.journal_open {
+            return;
+        }
+        if let Some(index) = self.journal_expanded.iter().position(|have| have == id) {
+            self.journal_expanded.remove(index);
+        } else {
+            self.journal_expanded.push(id.to_string());
+        }
+        self.journal_filled = false;
+        self.refresh();
+    }
+
+    fn sync_journal(&mut self) {
+        let open = self.journal_open;
+        let Some(mut nodes) = self.journal_nodes.clone() else {
+            return;
+        };
+        journal_screen::set_open(&mut nodes, open);
+        if !open {
+            return;
+        }
+        let template_id = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| ship.template_id.clone())
+            .unwrap_or_default();
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &template_id,
+        );
+        if self.journal_filled {
+            return;
+        }
+        let game_id = self.instance_id();
+        let kept_scroll = nodes.scroll.get_v_scroll();
+        let Some(session) = self.session.as_ref() else {
+            return;
+        };
+        let doc =
+            journal_screen::journal_document(session, &self.log_lines, &self.journal_expanded);
+        journal_screen::apply_document(&mut nodes, &doc, |id, label| {
+            encounter_button(label, game_id, Action::ToggleBeat(id.to_string()))
+        });
+        nodes.scroll.set_v_scroll(kept_scroll);
+        self.journal_filled = true;
+    }
+
+    fn scroll_journal_to(&mut self, y: i32) {
+        if let Some(nodes) = self.journal_nodes.as_mut() {
+            nodes.scroll.set_v_scroll(y.max(0));
+        }
+    }
+
+    fn scroll_journal_anchor(&mut self, anchor: &str) {
+        let Some(mut nodes) = self.journal_nodes.clone() else {
+            return;
+        };
+        let section = match anchor {
+            "victory" => nodes.victory.clone(),
+            "memories" => nodes.memories.clone(),
+            _ => nodes.chronicle.clone(),
+        };
+        journal_screen::scroll_to(&mut nodes.scroll, &section);
+    }
+
+    fn voyage_stamp(&self) -> Option<(i64, i64, VoyageStatus)> {
+        self.session.as_ref().map(|session| {
+            let world = session.world();
+            (world.day, world.voyage.progress, world.voyage.status)
+        })
+    }
+
+    fn run_journal_checks(&mut self) {
+        self.journal_checked = true;
+        let enabled = self
+            .journal_button
+            .as_ref()
+            .is_some_and(|button| !button.is_disabled());
+        if !enabled {
+            self.fail_journal("Journal smoke: Journal button unavailable in port.");
+        }
+        let before = self.voyage_stamp();
+        self.open_journal();
+        if self.voyage_stamp() != before {
+            self.fail_journal("Journal smoke: opening the journal changed the voyage.");
+        }
+        let expected = self
+            .session
+            .as_ref()
+            .map(|session| {
+                let doc = journal_screen::journal_document(
+                    session,
+                    &self.log_lines,
+                    &self.journal_expanded,
+                );
+                journal_screen::document_lines(&doc)
+            })
+            .unwrap_or_default();
+        let shown = self
+            .journal_nodes
+            .as_ref()
+            .map(|nodes| journal_screen::overlay_text(&nodes.root))
+            .unwrap_or_default();
+        if !shown.is_ascii() {
+            self.fail_journal("Journal smoke: overlay text is not ASCII.");
+        }
+        for line in &expected {
+            if !shown.contains(line.as_str()) {
+                self.fail_journal(format!("Journal smoke: missing {line}"));
+            }
+        }
+        if shown.contains("Ledger:") {
+            self.fail_journal("Journal smoke: ledger was merged into the journal.");
+        }
+        if !shown.contains("Close") {
+            self.fail_journal("Journal smoke: Close is missing.");
+        }
+        self.close_journal();
+    }
+
+    fn journal_sea_check(&mut self) {
+        let before_day = self.session.as_ref().map(|session| session.world().day);
+        let departed = {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_journal("Journal smoke: no session.");
+                return;
+            };
+            session.depart("al_manar")
+        };
+        if let Err(err) = departed {
+            self.fail_journal(format!("Journal smoke: could not leave port: {err}"));
+            return;
+        }
+        self.refresh();
+        let enabled = self
+            .journal_button
+            .as_ref()
+            .is_some_and(|button| !button.is_disabled() && button.is_visible());
+        if !enabled {
+            self.fail_journal("Journal smoke: Journal button unavailable at sea.");
+        }
+        let at_sea = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().voyage.status == VoyageStatus::AtSea);
+        if !at_sea {
+            self.fail_journal("Journal smoke: expected to be at sea.");
+        }
+        let underway = self.voyage_stamp();
+        self.open_journal();
+        let notice = self
+            .journal_nodes
+            .as_ref()
+            .map(|nodes| nodes.notice.get_text().to_string())
+            .unwrap_or_default();
+        if !notice.contains("At sea") {
+            self.fail_journal(format!("Journal smoke: notice was not at sea: {notice}"));
+        }
+        if self.voyage_stamp() != underway {
+            self.fail_journal("Journal smoke: opening the journal changed the voyage.");
+        }
+        if before_day != self.session.as_ref().map(|session| session.world().day) {
+            self.fail_journal("Journal smoke: the day moved.");
+        }
+        self.close_journal();
+    }
+
+    fn fail_journal(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.journal_checked = true;
+    }
+
+    fn begin_journal_shots(&mut self) {
+        self.journal_shot_dir = Some(newgame_shot_dir(self.shot_path.as_deref()));
+        self.journal_shot = Some(JournalShot::Chronicle);
+        self.journal_open = true;
+        self.journal_filled = false;
+        self.journal_expanded.clear();
+        self.refresh();
+        self.scroll_journal_to(0);
+    }
+
+    fn advance_journal_shot(&mut self) -> bool {
+        let Some(phase) = self.journal_shot else {
+            return false;
+        };
+        let Some(dir) = self.journal_shot_dir.clone() else {
+            return false;
+        };
+        if !self.journal_open {
+            self.fail_journal("Journal smoke: overlay was closed before the frame.");
+        }
+        if !headless_runtime() && !self.journal_frame_ready(phase) {
+            self.fail_journal(format!("Journal smoke: {} was not in view.", phase.label()));
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        match phase {
+            JournalShot::Chronicle => {
+                self.scroll_journal_anchor("victory");
+                self.journal_shot = Some(JournalShot::Victory);
+            }
+            JournalShot::Victory => {
+                self.scroll_journal_anchor("memories");
+                self.journal_shot = Some(JournalShot::Memories);
+            }
+            JournalShot::Memories => {
+                self.close_journal();
+                self.journal_shot = None;
+                if self.journal_sea_pending {
+                    self.capture_frames = 2;
+                    return true;
+                }
+                return false;
+            }
+        }
+        self.capture_frames = 4;
+        true
+    }
+
+    fn journal_frame_ready(&mut self, phase: JournalShot) -> bool {
+        let Some(nodes) = self.journal_nodes.as_ref() else {
+            return false;
+        };
+        let (anchor, needle) = match phase {
+            JournalShot::Chronicle => (&nodes.chronicle, "No chronicle entries yet."),
+            JournalShot::Victory => (&nodes.victory, "["),
+            JournalShot::Memories => (&nodes.memories, "No captains remembered yet."),
+        };
+        journal_screen::section_visible(&nodes.scroll, anchor)
+            && journal_screen::line_visible(&nodes.scroll, anchor, needle)
     }
 
     fn resize_newgame_window(&mut self) {
@@ -2509,6 +2859,9 @@ impl PortlightGame {
             Action::ShipyardArm(arm) => self.arm_shipyard(arm),
             Action::ShipyardConfirm => self.confirm_shipyard(),
             Action::ShipyardCancel => self.cancel_shipyard(),
+            Action::OpenJournal => self.open_journal(),
+            Action::CloseJournal => self.close_journal(),
+            Action::ToggleBeat(id) => self.toggle_beat(&id),
         }
     }
 
@@ -2877,6 +3230,10 @@ impl PortlightGame {
         if let Some(button) = self.save_button.as_mut() {
             button.set_disabled(self.session.is_none());
         }
+        if let Some(button) = self.journal_button.as_mut() {
+            // Chronicle is not pier-only. The button stays up at sea.
+            button.set_disabled(self.session.is_none());
+        }
         let status_text = self.status_text();
         if let Some(label) = self.status.as_mut() {
             label.set_text(&status_text);
@@ -2895,6 +3252,7 @@ impl PortlightGame {
         self.sync_newgame();
         self.sync_contracts();
         self.sync_shipyard();
+        self.sync_journal();
     }
 
     fn wire_contracts_chrome(&mut self, nodes: &mut ContractsNodes) {
