@@ -1,12 +1,36 @@
 name: CI
 
+# On 2026-10-05, while the repo was private, a bare `push:` + `pull_request:`
+# with no concurrency used 1,500 Actions minutes in one day: every PR commit
+# ran the full suite twice (once per event), and 12 pushes to one branch in
+# two minutes each ran to the end. The org's included private quota is
+# 2,000 minutes a month. The triggers below are the guard; keep them.
+#
+# - push runs only on main. A feature branch is covered by its PR.
+# - Docs-only changes do not run CI. Nothing here reads docs/ or *.md.
+#   No check is required on main today. If one is made required, drop
+#   paths-ignore from pull_request, or a docs-only PR can never merge.
 on:
   push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+# A newer commit on the same PR or on main cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -17,6 +41,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy
@@ -33,6 +58,7 @@ jobs:
   # source commit. Goldens alone still run in the test job.
   oracle:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -43,6 +69,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -63,11 +90,13 @@ jobs:
 
   godot:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - uses: Swatinem/rust-cache@v2
       - name: Clippy (portlight-godot)
         env:
           RUSTUP_TOOLCHAIN: stable
