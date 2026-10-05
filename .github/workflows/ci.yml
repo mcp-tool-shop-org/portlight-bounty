@@ -324,6 +324,22 @@ jobs:
             echo "day-report smoke did not report ok"
             exit 1
           fi
+          rm -f /tmp/hs-contract-strip.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-contract-strip-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-contract-strip.png \
+            godot --headless --path godot -- --contract-strip-screen
+          if [ -f /tmp/hs-contract-strip.png ]; then
+            echo "headless contract-strip PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-contract-strip.log \
+            godot --headless --path godot -- --art-docs --contract-strip-screen
+          run_godot /tmp/godot-contract-strip-smoke.log \
+            godot --headless --path godot -- --contract-strip-screen
+          if ! grep -q 'portlight contract-strip smoke ok' /tmp/godot-contract-strip-smoke.log; then
+            echo "contract-strip smoke did not report ok"
+            exit 1
+          fi
           run_godot /tmp/godot-gl-smoke.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
@@ -560,6 +576,21 @@ jobs:
               exit 1
             fi
           done
+          mkdir -p /tmp/contract-strip-shots
+          run_godot /tmp/godot-contract-strip-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/contract-strip-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --contract-strip-screen
+          if ! grep -q 'portlight contract-strip smoke ok' /tmp/godot-contract-strip-frames.log; then
+            echo "contract-strip frame capture did not report ok"
+            exit 1
+          fi
+          for name in contract-strip-active.png contract-strip-urgent.png; do
+            if [ ! -f "/tmp/contract-strip-shots/${name}" ]; then
+              echo "contract-strip capture did not write /tmp/contract-strip-shots/${name}"
+              exit 1
+            fi
+          done
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -588,6 +619,8 @@ jobs:
           cmp_committed hunt-active.png /tmp/hunt-shots/hunt-active.png
           cmp_committed day-report-full.png /tmp/day-report-shots/day-report-full.png
           cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
+          cmp_committed contract-strip-active.png /tmp/contract-strip-shots/contract-strip-active.png
+          cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
           cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png

@@ -2,6 +2,7 @@
 //! draws [`portlight_chart::ChartModel`] and forwards button presses.
 
 mod chart_canvas;
+mod contract_strip;
 mod contracts_screen;
 mod crew_screen;
 mod day_report;
