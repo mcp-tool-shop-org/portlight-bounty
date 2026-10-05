@@ -6,9 +6,10 @@
 //! the flag diamond meets the quay block's top face. A separate ground node
 //! at a lower z would paint that diamond before the block and hide it, so
 //! each paving plate is a child of its quay sprite: Godot draws the block,
-//! then the child, and a front prop on the works Y-sort still draws after
-//! that group. The child's position is only the delta from the block anchor
-//! to the U.4 screen point; the plate offset stays the manifest anchor.
+//! then the child, and deck props (Y.1) are further children of that pier or
+//! quay so they draw after the flag. The child's position is only the delta
+//! from the block anchor to the land-offset screen point; the plate offset
+//! stays the manifest anchor.
 //! Every raised work is a child of one `y_sort_enabled` node, positioned on
 //! the footprint-bottom anchor, so Godot orders cells by footprint depth
 //! (`col + row`). Equal Y keeps tree order, which is the builder's tie-break
@@ -31,9 +32,10 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
     works.set_z_index(1);
     works.set_y_sort_enabled(true);
 
-    // Quay sprites in list order. Paving follows its block and is parented
-    // there, so the flag draws after the block and before later props.
-    let mut quays: Vec<((i32, i32), Gd<Sprite2D>)> = Vec::new();
+    // Structure sprites in list order. Paving and deck props parent under
+    // the pier/quay on the cell so the flag draws after the block and deck
+    // props draw after the flag (art-gate W / Y.1).
+    let mut structures: Vec<((i32, i32), Gd<Sprite2D>)> = Vec::new();
 
     let mut ok = true;
     for tile in tiles {
@@ -48,13 +50,13 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
                 // the sprite would lift the land diamond (higher on screen)
                 // back behind the block.
                 sprite.set_y_sort_enabled(false);
-                if tile.kind == Some(WorkKind::Quay) {
-                    quays.push(((tile.col, tile.row), sprite.clone()));
+                if matches!(tile.kind, Some(WorkKind::Quay) | Some(WorkKind::Pier)) {
+                    structures.push(((tile.col, tile.row), sprite.clone()));
                 }
                 works.add_child(&sprite);
             }
             HarbourLayer::Land => {
-                let Some((_, quay)) = quays
+                let Some((_, host)) = structures
                     .iter()
                     .rev()
                     .find(|(cell, _)| *cell == (tile.col, tile.row))
@@ -68,15 +70,35 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
                 // paint the flag over front props as well as the top face.
                 land.set_z_index(0);
                 land.set_y_sort_enabled(false);
-                let quay_pos = quay.get_position();
+                let host_pos = host.get_position();
                 land.set_position(Vector2::new(
-                    tile.screen_x as f32 - quay_pos.x,
-                    tile.screen_y as f32 - quay_pos.y,
+                    tile.screen_x as f32 - host_pos.x,
+                    tile.screen_y as f32 - host_pos.y,
                 ));
                 sprite.set_position(Vector2::ZERO);
                 land.add_child(&sprite);
-                let mut quay = quay.clone();
-                quay.add_child(&land);
+                let mut host = host.clone();
+                host.add_child(&land);
+            }
+            HarbourLayer::Prop => {
+                let Some((_, host)) = structures
+                    .iter()
+                    .rev()
+                    .find(|(cell, _)| *cell == (tile.col, tile.row))
+                else {
+                    ok = false;
+                    continue;
+                };
+                // Land offset 0 relative to the SeaWorks host (same delta as
+                // paving). Added after Land in tile order so props win.
+                let host_pos = host.get_position();
+                sprite.set_position(Vector2::new(
+                    tile.screen_x as f32 - host_pos.x,
+                    tile.screen_y as f32 - host_pos.y,
+                ));
+                sprite.set_y_sort_enabled(false);
+                let mut host = host.clone();
+                host.add_child(&sprite);
             }
         }
     }
@@ -116,7 +138,7 @@ mod tests {
             .expect("paving");
         let prop_at = tiles
             .iter()
-            .position(|tile| tile.kind == Some(WorkKind::Pier))
+            .position(|tile| tile.kind == Some(WorkKind::Prop))
             .expect("prop");
         assert!(
             block_at < paving_at && paving_at < prop_at,
@@ -159,7 +181,7 @@ mod tests {
             .find("works.add_child(&sprite)")
             .expect("block and props join works");
         let quay_add = body
-            .find("quay.add_child(&land)")
+            .find("host.add_child(&land)")
             .expect("paving is a child of the block");
         let y_sort = body
             .find("works.set_y_sort_enabled(true)")

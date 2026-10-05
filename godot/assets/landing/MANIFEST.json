@@ -2,7 +2,7 @@
   "manifest": "portlight-bounty PB-002 landing bundle",
   "consumer": "portlight-bounty",
   "task": "PB-002",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "generator": "pb-002-plates/tools/build_manifest_pb002.py",
   "path_convention": {
     "entry.path": "relative to the bundle root (this MANIFEST's directory)",
@@ -11,24 +11,26 @@
   "sources": {
     "asset_list": "outbox-PB-002/asset-list.csv",
     "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F, U.4, V.2, W.3",
+    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F, U.4, V.2, W.3, Y.1.a",
     "verifier": [
       "outbox-PB-002/retrieval-ships.md",
       "outbox-PB-002/retrieval-harbour.md",
       "outbox-PB-002/retrieval-chart.md",
-      "outbox-PB-002/retrieval-quay_flag_painterly.md"
+      "outbox-PB-002/retrieval-quay_flag_painterly.md",
+      "outbox-PB-002/retrieval-harbour_props.md"
     ]
   },
   "layout": {
     "ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec \u00a77g)",
     "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec \u00a74 Output)",
     "chart": "chart/<id>.png (asset-spec \u00a74 Output)",
-    "quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum W.3)"
+    "quay_flag": "ground/quay_flag_{a,b,c}.png (art-gate Addendum W.3)",
+    "harbour_props": "props/<id>/beauty.png (art-gate Addendum Y.1.a)"
   },
   "import_policy": {
     "rule": "asset-spec Rev 4 R11: Lossless, fix_alpha_border on, premult off, VRAM off; mipmaps ON for chart_water_a..c only",
     "summary": {
-      "mipmaps=off fix_alpha_border=on source=asset-spec Rev 4 R11": 69,
+      "mipmaps=off fix_alpha_border=on source=asset-spec Rev 4 R11": 74,
       "mipmaps=on fix_alpha_border=on source=import file": 3,
       "mipmaps=off fix_alpha_border=on source=import file": 1
     }
@@ -36,15 +38,17 @@
   "px_per_bu": {
     "chart": 90.51,
     "harbour": 181.019,
-    "quay_flag": 181.019
+    "quay_flag": 181.019,
+    "harbour_props": 181.019
   },
   "counts": {
     "ships": 36,
     "harbour": 30,
     "chart": 4,
-    "quay_flag": 3
+    "quay_flag": 3,
+    "harbour_props": 5
   },
-  "count": 73,
+  "count": 78,
   "entries": [
     {
       "id": "ship_sloop_f0",
@@ -5079,6 +5083,384 @@
         },
         "render_sidecar": "pb-002-plates/ground/quay_flag_c.render.json",
         "source_path": "pb-002-plates/ground/quay_flag_c.png"
+      }
+    },
+    {
+      "id": "bollard_1x1",
+      "group": "harbour_props",
+      "subgroup": "prop",
+      "path": "props/bollard_1x1/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "prop",
+      "view": "harbour",
+      "phase": "P2",
+      "status": "LOCKED",
+      "sha256": "9ed994925f8ff489c3ec73d6aa9464d16332978cf4e8014f4c1f83a606d57af9",
+      "bytes": 25319,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.0 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": null,
+          "scene_kind": "prop",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender EEVEE prop plate (Y.1.a vendor; no remake)"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "prop",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
+          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "y1a_sha_lock": "9ed994925f8ff489c3ec73d6aa9464d16332978cf4e8014f4c1f83a606d57af9"
+        },
+        "render_sidecar": "pb-002-plates/props/bollard_1x1/beauty.render.json",
+        "source_path": "pb-002-plates/props/bollard_1x1/beauty.png"
+      }
+    },
+    {
+      "id": "torch_1x1",
+      "group": "harbour_props",
+      "subgroup": "prop",
+      "path": "props/torch_1x1/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "prop",
+      "view": "harbour",
+      "phase": "P2",
+      "status": "LOCKED",
+      "sha256": "9b47c0a242aac8434f87a59aaff30e91aeb16d83bdf234d0b6dfdef0fe124441",
+      "bytes": 23821,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.0 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": null,
+          "scene_kind": "prop",
+          "camera_euler_deg": null,
+          "ortho_scale": null,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender EEVEE prop plate (Y.1.a vendor; no remake)"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "prop",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
+          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "y1a_sha_lock": "9b47c0a242aac8434f87a59aaff30e91aeb16d83bdf234d0b6dfdef0fe124441"
+        },
+        "render_sidecar": "pb-002-plates/props/torch_1x1/beauty.render.json",
+        "source_path": "pb-002-plates/props/torch_1x1/beauty.png"
+      }
+    },
+    {
+      "id": "barrel_1x1",
+      "group": "harbour_props",
+      "subgroup": "prop",
+      "path": "props/barrel_1x1/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "prop",
+      "view": "harbour",
+      "phase": "P2",
+      "status": "LOCKED",
+      "sha256": "d9b98a098a2b3bcbdabbcec0d015c4198e19a8fa017ab01dac26a6e45f20690a",
+      "bytes": 35880,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.0 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": null,
+          "scene_kind": "prop",
+          "camera_euler_deg": null,
+          "ortho_scale": null,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender EEVEE prop plate (Y.1.a vendor; no remake)"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "prop",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
+          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "y1a_sha_lock": "d9b98a098a2b3bcbdabbcec0d015c4198e19a8fa017ab01dac26a6e45f20690a"
+        },
+        "render_sidecar": "pb-002-plates/props/barrel_1x1/beauty.render.json",
+        "source_path": "pb-002-plates/props/barrel_1x1/beauty.png"
+      }
+    },
+    {
+      "id": "crate_1x1",
+      "group": "harbour_props",
+      "subgroup": "prop",
+      "path": "props/crate_1x1/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "prop",
+      "view": "harbour",
+      "phase": "P2",
+      "status": "LOCKED",
+      "sha256": "8d7161050c8185e489a18677e1951edee0262674e663895d21980b44854f13f6",
+      "bytes": 39250,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.0 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": null,
+          "scene_kind": "prop",
+          "camera_euler_deg": [
+            60.0,
+            0.0,
+            45.0
+          ],
+          "ortho_scale": 1.41421,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender EEVEE prop plate (Y.1.a vendor; no remake)"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "prop",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
+          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "y1a_sha_lock": "8d7161050c8185e489a18677e1951edee0262674e663895d21980b44854f13f6"
+        },
+        "render_sidecar": "pb-002-plates/props/crate_1x1/beauty.render.json",
+        "source_path": "pb-002-plates/props/crate_1x1/beauty.png"
+      }
+    },
+    {
+      "id": "cart_1x1",
+      "group": "harbour_props",
+      "subgroup": "prop",
+      "path": "props/cart_1x1/beauty.png",
+      "canvas": [
+        256,
+        256
+      ],
+      "canvas_str": "256x256",
+      "anchor": [
+        128,
+        255
+      ],
+      "LOA": null,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "Land",
+      "layer_offset_px": [
+        0,
+        0
+      ],
+      "texture_origin": null,
+      "texture_origin_csv": "-",
+      "y_sort_origin": 0,
+      "y_sort_origin_csv": null,
+      "andon_kind": "prop",
+      "view": "harbour",
+      "phase": "P2",
+      "status": "LOCKED",
+      "sha256": "df4b6553025bdb11dcdbbbc42627e9155259a942600543f62675de6a7452b7c9",
+      "bytes": 36319,
+      "import": {
+        "mipmaps": false,
+        "fix_alpha_border": true,
+        "premult_alpha": false,
+        "compress": "Lossless",
+        "size_limit": null,
+        "source": "asset-spec Rev 4 R11"
+      },
+      "provenance": {
+        "mesh": null,
+        "renderer": {
+          "name": "Blender",
+          "version": "5.2.0 LTS",
+          "engine": "BLENDER_EEVEE",
+          "samples": null,
+          "scene_kind": "prop",
+          "camera_euler_deg": null,
+          "ortho_scale": null,
+          "px_per_bu": 181.019,
+          "sun_euler_deg": [
+            73.376,
+            0.0,
+            -54.926
+          ],
+          "summary": "Blender EEVEE prop plate (Y.1.a vendor; no remake)"
+        },
+        "andon": {
+          "version": "0.1.1",
+          "kind": "prop",
+          "pass": true
+        },
+        "gate": {
+          "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
+          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "y1a_sha_lock": "df4b6553025bdb11dcdbbbc42627e9155259a942600543f62675de6a7452b7c9"
+        },
+        "render_sidecar": "pb-002-plates/props/cart_1x1/beauty.render.json",
+        "source_path": "pb-002-plates/props/cart_1x1/beauty.png"
       }
     }
   ]
