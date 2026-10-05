@@ -490,7 +490,7 @@ jobs:
             echo "crew frame capture did not report ok"
             exit 1
           fi
-          for name in crew-roster.png crew-training.png crew-companions.png; do
+          for name in crew-roster.png crew-provisions.png crew-training.png crew-companions.png; do
             if [ ! -f "/tmp/crew-shots/${name}" ]; then
               echo "crew capture did not write /tmp/crew-shots/${name}"
               exit 1
@@ -515,6 +515,7 @@ jobs:
           cmp_committed harbour-broker.png /tmp/harbour-shots/harbour-broker.png
           cmp_committed harbour-finance.png /tmp/harbour-shots/harbour-finance.png
           cmp_committed crew-roster.png /tmp/crew-shots/crew-roster.png
+          cmp_committed crew-provisions.png /tmp/crew-shots/crew-provisions.png
           cmp_committed crew-training.png /tmp/crew-shots/crew-training.png
           cmp_committed crew-companions.png /tmp/crew-shots/crew-companions.png
           cmp_committed chart-cutter-f7.png /tmp/chart-cutter-f7.png

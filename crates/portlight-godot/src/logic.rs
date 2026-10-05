@@ -1451,13 +1451,25 @@ pub(crate) fn hire_confirm_line(count: i64, name: &str, cost: i64) -> String {
 }
 
 /// Silver and the day advance. `train_crew` calls `Session::advance` once per day.
+/// Session ignores injury gates on this path, so the line does not mention them.
 pub(crate) fn train_confirm_line(name: &str, cost: i64, days: i64) -> String {
     format!("Train {name} for {cost} silver. The calendar will advance {days} days.")
 }
 
-/// Silver and the day advance. `spend_skill_point` calls `Session::advance` once per day.
+/// Silver and the day advance. The button is Learn. The method stays
+/// `spend_skill_point`, which calls `Session::advance` once per day.
 pub(crate) fn skill_confirm_line(level: &str, skill: &str, cost: i64, days: i64) -> String {
-    format!("Train {level} {skill} for {cost} silver. The calendar will advance {days} days.")
+    format!("Learn {level} {skill} for {cost} silver. The calendar will advance {days} days.")
+}
+
+/// What `Session::provision` charges. Chart copy keeps the listed port price.
+pub(crate) fn effective_provision_per_day(
+    listed: i64,
+    standing: &portlight_sim::model::Standing,
+    port_id: &str,
+) -> i64 {
+    let mult = portlight_sim::reputation::service_modifier(standing, port_id);
+    1.max(portlight_sim::util::py_trunc(listed as f64 * mult))
 }
 
 pub(crate) fn recruit_confirm_line(name: &str, cost: i64) -> String {
@@ -1513,10 +1525,8 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
     } else {
         format!("Silver {silver}. Provisions {provisions}. Crew {crew}/{crew_max}.")
     };
-    let mult = portlight_sim::reputation::service_modifier(&world.captain.standing, port_id);
-    let provision_per_day = 1.max(portlight_sim::util::py_trunc(
-        port.provision_cost as f64 * mult,
-    ));
+    let provision_per_day =
+        effective_provision_per_day(port.provision_cost, &world.captain.standing, port_id);
     let provision_text = format!("Stores {provisions}. {provision_per_day} silver a day.");
     let roles = CREW_ROLES
         .iter()
@@ -2826,8 +2836,10 @@ mod tests {
         assert!(train.contains("advance 5 days"));
         let skill_line =
             skill_confirm_line(&skill.level_name, &skill.skill_name, skill.cost, skill.days);
+        assert!(skill_line.starts_with("Learn "));
         assert!(skill_line.contains("advance 3 days"));
         assert!(skill_line.contains("50"));
+        assert!(!train.contains("injur"));
         assert!(!recruit_confirm_line("Iron Marta", 80).contains("advance"));
         assert!(hire_needs_confirm(50));
         assert!(!hire_needs_confirm(20));
@@ -2838,7 +2850,7 @@ mod tests {
 
     #[test]
     fn companions_are_offered_only_at_their_home_port() {
-        let session = Session::new("Ada", "corsair", 1, None).unwrap();
+        let mut session = Session::new("Ada", "corsair", 1, None).unwrap();
         let desk = crew_desk(&session).unwrap();
         let ids: Vec<&str> = desk.offers.iter().map(|offer| offer.id.as_str()).collect();
         assert!(ids.contains(&"red_tomas"));
@@ -2848,6 +2860,26 @@ mod tests {
             .offers
             .iter()
             .all(|offer| offer.text.contains("standing")));
+        let rosa = desk
+            .offers
+            .iter()
+            .find(|offer| offer.id == "rosa_the_fence")
+            .unwrap();
+        assert!(rosa.text.contains("Smuggler"), "{}", rosa.text);
+        assert!(desk.roles.iter().all(|role| role.id != "smuggler"));
+        assert!(matches!(
+            session.hire_crew(1, "smuggler"),
+            Err(portlight_sim::SimError::UnknownRole(_))
+        ));
+        let skill = desk
+            .skills
+            .iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(
+            skill.empty_trainer.as_deref(),
+            Some("No blacksmith trainer at this port.")
+        );
         desk_strings_are_ascii(&desk);
     }
 
@@ -2867,5 +2899,94 @@ mod tests {
         assert!(desk.officers[0].contains("Gunner"));
         assert!(desk.officers[0].contains(" - "));
         desk_strings_are_ascii(&desk);
+    }
+
+    #[test]
+    fn the_desk_prices_provisions_after_standing() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("silva_bay")).unwrap();
+        let desk = crew_desk(&session).unwrap();
+        let listed = session.world().port("silva_bay").unwrap().provision_cost;
+        assert!(listed > 1, "{listed}");
+        assert_eq!(desk.provision_per_day, listed);
+        assert!(!desk.provision_text.contains("listed"));
+        assert!(desk
+            .provision_text
+            .contains(&format!("{listed} silver a day")));
+        let before = session.world().captain.silver;
+        session.provision(1).unwrap();
+        assert_eq!(
+            before - session.world().captain.silver,
+            desk.provision_per_day
+        );
+        let mut standing = portlight_sim::model::Standing {
+            regional: [0; 5],
+            heat: [0; 5],
+            commercial_trust: 0,
+            port_standing: Vec::new(),
+            underworld: Vec::new(),
+            incidents: Vec::new(),
+        };
+        standing.set_port("silva_bay", 30);
+        let discounted = effective_provision_per_day(listed, &standing, "silva_bay");
+        assert!(discounted < listed, "{discounted} vs {listed}");
+        assert_eq!(
+            discounted,
+            1.max(portlight_sim::util::py_trunc(listed as f64 * 0.8))
+        );
+    }
+
+    #[test]
+    fn blacksmith_levels_follow_the_catalog_and_vasquez_stops_at_two() {
+        let catalog = portlight_sim::content::content();
+        let skill = catalog
+            .skills
+            .skills
+            .iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(
+            skill
+                .levels
+                .iter()
+                .map(|level| (level.name.as_str(), level.silver_cost, level.training_days))
+                .collect::<Vec<_>>(),
+            vec![
+                ("Apprentice", 50, 3),
+                ("Journeyman", 150, 5),
+                ("Master", 400, 8),
+            ]
+        );
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let apprentice = crew_desk(&session)
+            .unwrap()
+            .skills
+            .into_iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(apprentice.level_name, "Apprentice");
+        assert_eq!((apprentice.cost, apprentice.days), (50, 3));
+        assert!(apprentice.can_train);
+        assert!(apprentice.text.contains("teaches to 2"));
+        session.spend_skill_point("blacksmith").unwrap();
+        let journeyman = crew_desk(&session)
+            .unwrap()
+            .skills
+            .into_iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(journeyman.level_name, "Journeyman");
+        assert_eq!((journeyman.cost, journeyman.days), (150, 5));
+        assert!(journeyman.can_train);
+        session.spend_skill_point("blacksmith").unwrap();
+        let master = crew_desk(&session)
+            .unwrap()
+            .skills
+            .into_iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(master.level_name, "Master");
+        assert_eq!((master.cost, master.days), (400, 8));
+        assert!(!master.can_train);
+        assert!(master.next_text.contains("Master"));
     }
 }

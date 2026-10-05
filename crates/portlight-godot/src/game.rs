@@ -17,8 +17,9 @@
 //! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
 //! The docked Crew desk calls `hire_crew`, `fire_crew`, `provision`,
 //! `train_crew`, `recruit_companion`, and `spend_skill_point`. Train and
-//! skill spend show the day advance before the call. Chart Hire sailor and
-//! Provisions +5 stay one-shot shortcuts.
+//! Learn show the day advance before the call. Session ignores injury gates
+//! on train, so the desk does not. The provision line is the effective price.
+//! Chart Hire sailor and Provisions +5 stay one-shot shortcuts.
 //!
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
 //! scripted approach uses the encounter screen: `encounter_choice` /
@@ -334,6 +335,7 @@ impl ContractsShot {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum CrewShot {
     Roster,
+    Provisions,
     /// Layout pass after the train confirm is armed. Not a saved frame.
     PrepareTraining,
     Training,
@@ -346,18 +348,23 @@ impl CrewShot {
     fn file_name(self) -> &'static str {
         match self {
             Self::Roster => "crew-roster.png",
+            Self::Provisions => "crew-provisions.png",
             Self::PrepareTraining | Self::Training => "crew-training.png",
             Self::PrepareCompanions | Self::Companions => "crew-companions.png",
         }
     }
 
     fn saves(self) -> bool {
-        matches!(self, Self::Roster | Self::Training | Self::Companions)
+        matches!(
+            self,
+            Self::Roster | Self::Provisions | Self::Training | Self::Companions
+        )
     }
 
     fn section(self) -> &'static str {
         match self {
             Self::Roster => crew_screen::SECTION_ROSTER,
+            Self::Provisions => crew_screen::SECTION_PROVISIONS,
             Self::PrepareTraining | Self::Training => crew_screen::SECTION_TRAINING,
             Self::PrepareCompanions | Self::Companions => crew_screen::SECTION_COMPANIONS,
         }
@@ -4512,16 +4519,18 @@ impl PortlightGame {
         for officer in &desk.officers {
             roster.add_child(&crew_muted(officer));
         }
-        roster.add_child(&crew_subhead("Provisions"));
-        roster.add_child(&crew_copy(&desk.provision_text));
-        let mut provisions = HBoxContainer::new_alloc();
-        provisions.add_theme_constant_override("separation", 8);
+        let mut provisions = crew_section(crew_screen::SECTION_PROVISIONS);
+        provisions.add_child(&crew_subhead("Provisions"));
+        provisions.add_child(&crew_copy(&desk.provision_text));
+        let mut provision_buttons = HBoxContainer::new_alloc();
+        provision_buttons.add_theme_constant_override("separation", 8);
         let mut plus_five = crew_button("Provisions +5", game_id, Action::CrewProvision(5));
         plus_five.set_disabled(locked);
         let mut plus_one = crew_button("Provisions +1", game_id, Action::CrewProvision(1));
         plus_one.set_disabled(locked);
-        provisions.add_child(&plus_five);
-        provisions.add_child(&plus_one);
+        provision_buttons.add_child(&plus_five);
+        provision_buttons.add_child(&plus_one);
+        provisions.add_child(&provision_buttons);
         roster.add_child(&provisions);
         body.add_child(&roster);
 
@@ -4546,8 +4555,7 @@ impl PortlightGame {
                 training.add_child(&crew_muted(&skill.next_text));
             }
             if skill.can_train {
-                let mut train =
-                    crew_button("Train skill", game_id, Action::CrewSkill(skill.id.clone()));
+                let mut train = crew_button("Learn", game_id, Action::CrewSkill(skill.id.clone()));
                 train.set_disabled(locked);
                 training.add_child(&train);
             }
@@ -4623,8 +4631,15 @@ impl PortlightGame {
             self.capture_failed = true;
         }
         if phase == CrewShot::Roster {
-            // The roster frame stays on the idle desk. Arming rebuilds
-            // the body, so the scroll waits until PrepareTraining.
+            // The body is already laid out, so the provisions block can
+            // scroll before the train confirm rebuilds it.
+            self.scroll_crew_section(crew_screen::SECTION_PROVISIONS);
+            self.crew_shot = Some(CrewShot::Provisions);
+            self.capture_frames = 4;
+            return true;
+        }
+        if phase == CrewShot::Provisions {
+            // Arming rebuilds the body, so the training scroll waits.
             self.arm_train("la_destreza");
             self.crew_shot = Some(CrewShot::PrepareTraining);
             self.capture_frames = 4;
@@ -7381,10 +7396,19 @@ fn crew_muted(text: &str) -> Gd<Label> {
 }
 
 fn section_y(body: &Gd<VBoxContainer>, name: &str) -> Option<i32> {
-    for child in body.get_children().iter_shared() {
+    section_offset(&body.clone().upcast::<Node>(), name, 0.0).map(|y| y.round() as i32)
+}
+
+fn section_offset(node: &Gd<Node>, name: &str, origin_y: f32) -> Option<f32> {
+    for child in node.get_children().iter_shared() {
+        let Ok(control) = child.clone().try_cast::<Control>() else {
+            continue;
+        };
         if child.get_name() == name {
-            let control = child.try_cast::<Control>().ok()?;
-            return Some(control.get_position().y.round() as i32);
+            return Some(origin_y + control.get_position().y);
+        }
+        if let Some(found) = section_offset(&child, name, origin_y + control.get_position().y) {
+            return Some(found);
         }
     }
     None
