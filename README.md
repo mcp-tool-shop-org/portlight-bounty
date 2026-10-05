@@ -6,7 +6,7 @@ The simulation crate does not depend on a UI. The Godot project is a view over `
 
 ## Layout
 
-- `crates/portlight-sim` — goods, ports, prices, trade, voyages, victory paths, and `Session` (the turn-by-turn API). Save v12, contracts, encounters, skills and career, infrastructure, credit and insurance, fleet, injuries, weapons and loot, narrative, culture and consequences, the area 7a ship, crew, and contract commands, and hunting and bounty are merged in the sim and are not yet offered by the Godot view.
+- `crates/portlight-sim` — goods, ports, prices, trade, voyages, victory paths, and `Session` (the turn-by-turn API). Save v12, contracts, encounters, skills and career, fleet, injuries, weapons and loot, narrative, culture and consequences, the area 7a ship, crew, and contract commands, and hunting and bounty are merged in the sim and are not yet offered by the Godot view. The Harbour screen offers warehouse, broker, license, credit, and insurance.
 - `crates/portlight-cli` — `portlight` binary
 - `crates/portlight-chart` — dimetric projection, ship facing, and the chart view-model (no Godot)
 - `crates/portlight-godot` — Godot 4.7 gdext extension
@@ -74,9 +74,11 @@ The art-director frame (docked sloop at Porto Novo, Swift Cutter under sail at f
 
 `--journal-screen` opens the read-only journal on a new voyage, checks the chronicle, the four victory paths, milestones, and memories, closes it, then leaves port and opens it again at sea. Opening does not advance the day. The last line is `portlight journal smoke ok`. `PORTLIGHT_SHOT` or `--art-docs` / `PORTLIGHT_ART_DOCS` writes `journal-chronicle.png`, `journal-victory.png`, and `journal-memories.png` (1280×720) into that directory. An explicit capture under headless exits 1 and prints `portlight journal smoke FAILED`.
 
+`--harbour-screen` opens the docked counting-house at Porto Novo, leases a depot, deposits grain, opens a merchant line and draws on it, buys basic hull insurance, and rejects a license that still needs a broker. It does not advance the day for those calls. It then advances until Next day has logged a `Turn.notes` line (interest, a credit payment, a default, or a seizure). Without a capture it also sails, and the Harbour button leaves with the port row. The last line is `portlight harbour smoke ok`. `PORTLIGHT_SHOT` or `--art-docs` / `PORTLIGHT_ART_DOCS` writes `harbour-warehouse.png`, `harbour-broker.png`, and `harbour-finance.png` (1280×720). `PORTLIGHT_SHOT` names the directory when it is a folder, or the parent of a `.png` path. An explicit capture under headless exits 1 and prints `portlight harbour smoke FAILED`.
+
 `--encounter-galleon` writes `/tmp/encounter-galleon.png` unless `PORTLIGHT_SHOT` or `--art-docs` names another path, with `royal_man_of_war` in the player plate slot (caption `Man-of-war`) and that template's hull and crew on the card. The encounter frame check follows the capture mode, not the filename, so `PORTLIGHT_SHOT=/tmp/galleon1.png` is still an encounter frame.
 
-User flags: `--smoke`, `--art`, `--art-docs`, `--encounter-screen`, `--encounter-galleon`, `--newgame-screen`, `--contracts-screen`, `--shipyard-screen`, `--journal-screen`, `--encounter`, `--duel`, `--resolve`, `--work`. Environment: `PORTLIGHT_SMOKE`, `PORTLIGHT_SHOT`, `PORTLIGHT_ART_DOCS`, `PORTLIGHT_ENCOUNTER_DIR`, `PORTLIGHT_SEAM_DIR`, `PORTLIGHT_SEAM_ILLEGAL` (`1` is pilings on a pier cell, `2` is a pier on a quay cell). The harbour seam plate:
+User flags: `--smoke`, `--art`, `--art-docs`, `--encounter-screen`, `--encounter-galleon`, `--newgame-screen`, `--contracts-screen`, `--shipyard-screen`, `--journal-screen`, `--harbour-screen`, `--encounter`, `--duel`, `--resolve`, `--work`. Environment: `PORTLIGHT_SMOKE`, `PORTLIGHT_SHOT`, `PORTLIGHT_ART_DOCS`, `PORTLIGHT_ENCOUNTER_DIR`, `PORTLIGHT_SEAM_DIR`, `PORTLIGHT_SEAM_ILLEGAL` (`1` is pilings on a pier cell, `2` is a pier on a quay cell). The harbour seam plate:
 
 ```
 xvfb-run -a -s "-screen 0 1280x720x24" \
