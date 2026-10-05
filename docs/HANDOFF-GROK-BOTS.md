@@ -31,8 +31,8 @@ The sim crate (`crates/portlight-sim`) must remain UI-free. No terminal, no rata
 - Voyage: depart, advance_day, arrive, event table, inspection reputation
 - Sail-picker lanes with raw speed estimates
 - Duel system (stance + auto-resolve)
-- Four victory paths (`campaign.rs`). Contracts are merged in the sim, so a played game can complete a path. That play is not yet offered by the Godot view.
-- Public `Session` API on `main`: `new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, `resolve_pending_duel`, `sail_lanes`, `victory`, `books`/`books_mut`, `save`/`load`, `board`, `accept_contract`, `complete_contract`, `abandon_contract`, `encounter_choice`, `naval_round`, `resolve_boarding`, `buy_ship`, `install_upgrade`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `repair`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `train_crew`, `recruit_companion`, `spend_skill_point`, `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, `claim_bounty`. The Godot view calls `Session::new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, and `resolve_pending_duel`, and it reads `world`, `books`, and `victory`. The chart reads `sail_lanes`. Methods past `books_mut` are merged in the sim and are not yet offered by the Godot view.
+- Four victory paths (`campaign.rs`). Contracts are merged in the sim, so a played game can complete a path. The docked Contracts screen (#33) offers accept / complete / abandon through `Session`.
+- Public `Session` API on `main`: `new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, `resolve_pending_duel`, `sail_lanes`, `victory`, `books`/`books_mut`, `save`/`load`, `board`, `accept_contract`, `complete_contract`, `abandon_contract`, `encounter_choice`, `naval_round`, `resolve_boarding`, `buy_ship`, `install_upgrade`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `repair`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `train_crew`, `recruit_companion`, `spend_skill_point`, `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, `claim_bounty`. The Godot view calls `Session::new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, and `resolve_pending_duel`, and it reads `world`, `books`, and `victory`. The chart reads `sail_lanes`. The docked Contracts screen also calls `available_contracts` / `board`, `accept_contract`, `complete_contract`, and `abandon_contract` (#33). Other methods past `books_mut` remain merged in the sim; see README for which desks are live.
 - `get_service_modifier` is ported. `provision`, single-ship `repair`, and dry dock apply it.
 - Upgrade bonuses are applied in `ship.rs`. The Godot view does not offer upgrades.
 - Bounty-hunter sea event is ported. `bounty_hunter_voyage.txt` sets wanted level 3.
@@ -69,7 +69,7 @@ Python and the stage-1 goldens agree. A later UI calls `sail_lanes` and `Session
 - Chart ship-class plates and the water-variant fix are done. `ship_draw` draws each class from the MANIFEST. Cutter, brigantine, and galleon plates are drawn for those classes, and `man_of_war` uses the galleon plates and keeps the class name.
 
 ### Not started
-- Godot screens for new game with save and load, contracts, shipyard and fleet, crew and captain, harbour office, narrative log, and hunting and bounty. Those systems are merged in the sim and are not yet offered by the Godot view.
+- Remaining Godot desks beyond the live chart overlays (see README): narrative depth and any sim systems still without a desk. Contracts are offered: docked Contracts screen (#33) over `Session` board (accept / complete / abandon). New game / save / load, shipyard, crew, harbour, and hunt are also on the chart; do not treat them as "not started".
 - `engine/custom_captain.py` and the invariant tests from `stress/`
 
 ### Deprioritized
@@ -90,7 +90,7 @@ The Python source is ~46k lines under `src/portlight/` at commit `9b02494`. Belo
 
 | Python Module | Rust Target | Scope | Status | Complexity |
 |---|---|---|---|---|
-| `engine/contracts.py` | `contracts.rs` + `session.rs` | Contract generation, acceptance, completion, expiry, contract board RNG (`seed + 7919`) | Merged in the sim, not yet offered by the Godot view. #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2` | High |
+| `engine/contracts.py` | `contracts.rs` + `session.rs` | Contract generation, acceptance, completion, expiry, contract board RNG (`seed + 7919`) | Sim #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2`; Godot Contracts desk #33 | High |
 | `engine/combat.py` | `combat.rs` | Personal fight after boarding: shoot, throw, dodge, styles. Does not replace `duel.rs` | Merged in the sim, not yet offered by the Godot view. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db` | High |
 | `engine/naval.py` | `naval.rs` | Naval rounds, cannon fire, maneuvering, sinking, prize capture. A failed flee enters here | Merged in the sim, not yet offered by the Godot view. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db` | High |
 | `engine/encounter.py` | `encounter.rs` | Approach is negotiate / flee / fight. Failed flee is `resolve_flee`, then naval. Not the stance duel | Merged in the sim. The Godot encounter screen calls `Session`. #5 `f970259a023c97dd11925c8bc4bf82300bfcb3db`. | High |
@@ -312,7 +312,7 @@ Inside your own area, do the work in this order:
 ## Specific Deliverables by System Area
 
 ### Area 1: Contracts & Contract Economy
-Merged in the sim, not yet offered by the Godot view. #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2`.
+Sim #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2`; Godot Contracts desk #33.
 - [x] `ContractDef` in `content.rs`, `Contract` in `model.rs`
 - [x] `contracts.rs` with generation, acceptance, completion, expiry
 - [x] Contract board RNG: `PyRandom::from_seed(world.seed + 7919)`
