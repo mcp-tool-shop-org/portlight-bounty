@@ -31,8 +31,8 @@ use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
-    Button, Control, DisplayServer, HBoxContainer, HFlowContainer, IControl, Label, LineEdit, Node,
-    Os, PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer,
+    Button, Control, DisplayServer, HBoxContainer, IControl, Label, LineEdit, Node, Os,
+    PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer,
     VBoxContainer,
 };
 use godot::global::Error;
@@ -251,7 +251,7 @@ struct PortlightGame {
     log_label: Option<Gd<Label>>,
     market_button: Option<Gd<Button>>,
     work_button: Option<Gd<Button>>,
-    port_row: Option<Gd<HFlowContainer>>,
+    port_row: Option<Gd<HBoxContainer>>,
     port_note: Option<Gd<Label>>,
     encounter_box: Option<Gd<VBoxContainer>>,
     encounter_label: Option<Gd<Label>>,
@@ -638,21 +638,23 @@ impl PortlightGame {
         self.save_button = Some(save);
         column.add_child(&buttons);
 
-        // The four older buttons already fill the 420 px panel. A flow wraps
-        // Contracts onto the next line instead of widening the chart.
-        let mut port_row = HFlowContainer::new_alloc();
-        port_row.set_h_size_flags(SizeFlags::EXPAND_FILL);
-        port_row.add_theme_constant_override("h_separation", 4);
-        port_row.add_theme_constant_override("v_separation", 4);
-        let market = action_button("Market", game_id, Action::ToggleMarket);
+        // One line. A wrap would push the lanes and the market down the panel.
+        // Horizontal padding is tighter so Contracts fits beside Market.
+        let mut port_row = HBoxContainer::new_alloc();
+        port_row.add_theme_constant_override("separation", 4);
+        let market = port_row_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
         self.market_button = Some(market);
-        let mut contracts = action_button("Contracts", game_id, Action::OpenContracts);
+        let mut contracts = port_row_button("Contracts", game_id, Action::OpenContracts);
         contracts.set_name("ContractsButton");
         port_row.add_child(&contracts);
-        port_row.add_child(&action_button("Hire sailor", game_id, Action::HireSailor));
-        port_row.add_child(&action_button("Provisions +5", game_id, Action::Provision));
-        let work = action_button("Work", game_id, Action::Work);
+        port_row.add_child(&port_row_button("Hire sailor", game_id, Action::HireSailor));
+        port_row.add_child(&port_row_button(
+            "Provisions +5",
+            game_id,
+            Action::Provision,
+        ));
+        let work = port_row_button("Work", game_id, Action::Work);
         port_row.add_child(&work);
         self.work_button = Some(work);
         port_row.set_visible(false);
@@ -4298,6 +4300,18 @@ fn title_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
     title_label(text, size, color)
+}
+
+/// Chart port-row control. Same theme fill as [`action_button`].
+///
+/// The font is one step smaller so Market, Contracts, Hire, Provisions, and
+/// Work stay on one line. A second line would push the lanes down the panel.
+/// The minimum height stays the default button so the row does not shrink.
+fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
+    let mut button = action_button(text, game, action);
+    button.add_theme_font_size_override("font_size", 12);
+    button.set_custom_minimum_size(Vector2::new(0.0, 31.0));
+    button
 }
 
 fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
