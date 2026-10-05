@@ -41,10 +41,22 @@ func _process(_delta: float) -> void:
 			return
 		_listening = true
 		print("PLAYTEST_BRIDGE_PORT=%d" % _port)
-	if _peer == null and _server.is_connection_available():
-		_peer = _server.take_connection()
-		_peer.set_no_delay(true)
-		_on_connect()
+	if _server.is_connection_available():
+		if _peer == null:
+			_peer = _server.take_connection()
+			_peer.set_no_delay(true)
+			_on_connect()
+		else:
+			# One client. A second connection must fail now, not sit in the
+			# accept backlog until the first peer leaves.
+			var extra := _server.take_connection()
+			extra.set_no_delay(true)
+			var busy := JSON.stringify({
+				"id": 0,
+				"error": {"message": "playtest bridge already has a client"},
+			}) + "\n"
+			extra.put_data(busy.to_utf8_buffer())
+			extra.disconnect_from_host()
 	if _peer == null:
 		return
 	_peer.poll()
@@ -82,6 +94,7 @@ func _game() -> Node:
 func _handle(line: String) -> void:
 	var msg: Variant = JSON.parse_string(line)
 	if typeof(msg) != TYPE_DICTIONARY:
+		_reply_error(0, "request must be one JSON object per line")
 		return
 	var id: int = int(msg.get("id", 0))
 	var method := String(msg.get("method", ""))

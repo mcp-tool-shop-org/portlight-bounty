@@ -84,7 +84,7 @@ When docked-consistency lands on `main`:
 1. Record merge sha / PR number on this file and in `playtest-harness-status.md`.  
 2. Edit `playtest-criteria-draft.md` — trio phase `pending-design-PR` → **live**; paste membership lines from §3; keep ids unchanged.  
 3. Update `playtest-portlight-v0.playtest.json` (or successor) check text if it still says four desks only.  
-4. Graduate optional Escape / `ui.close` in `playtest-rpc-choice-ids.md` to OK if that bridge tracks Escape.  
+4. Escape is the key `escape` / `ui_cancel`, not an id named `ui.close`. Today it only closes Day's report, through `dismiss_cancel`. When docked-consistency changes that one function, note it in `playtest-rpc-choice-ids.md`. That file is the reconstruction from the code, not a recovered contract.  
 5. Ping Coordinator: docked-consistency criteria live (still no `ai-playtest run` unless Mike GPU cleared).  
 6. Do **not** invent Deliver / seed picker / Harbour gating checks.
 

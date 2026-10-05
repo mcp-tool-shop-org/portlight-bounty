@@ -124,3 +124,17 @@ The probe did not press Hire, did not open Contracts, Sail, Day's report, Journa
 3. **DEFECTS** — file and function, or "none".
 4. **THE FIRST PROBE TO ADD** — assertions only, no model, no product score. Prefer extending `playtest/probe-bridge.mjs` over a new harness verb.
 5. **WHAT STAYS RED** — the soft pair, the known-fail trio, the armed strip, and a seed-1 encounter skip.
+
+## Disposition
+
+The return is applied on this branch, with two corrections from the code.
+
+Escape closes Day's report. The probe asserts that. It does not assert that Escape leaves the report open.
+
+An encounter is stepped with the dismiss it offers. Stance ids are recorded when they are present. They are not required on a choice or naval screen.
+
+The observation's `text` is unchanged. Day-report and journal bodies are not copied into the transcript. That waits on a nod, because it changes what a seat reads.
+
+Seed 1 measured on the probe: the first accept id is not fulfilled by selling grain at Al-Manar, so `contracts.complete.<id>` stays off the board and the press is the offered-check. The Grain Road cargo event removes up to three units, so one `chart.buy.grain` leaves an empty hold and the sell is refused. The probe buys four. That is a recorded fact, not a product score.
+
+`docs/playtest/playtest-rpc-choice-ids.md` is the reconstruction. The hire log spells the silver change with `->`.

@@ -4344,6 +4344,7 @@ impl PortlightGame {
         emergency_button.set_text("Emergency loan");
         harbour_screen::style_danger_button(&mut emergency_button);
         let action = Action::HarbourEmergency;
+        stamp_playtest_id(&mut emergency_button, &action_playtest_id(&action));
         emergency_button.signals().pressed().connect(move || {
             let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game_id) else {
                 return;
