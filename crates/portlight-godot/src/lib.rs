@@ -14,6 +14,7 @@ mod hunt_screen;
 mod journal_screen;
 mod logic;
 mod newgame_screen;
+mod playtest;
 mod seam;
 mod shipyard_screen;
 

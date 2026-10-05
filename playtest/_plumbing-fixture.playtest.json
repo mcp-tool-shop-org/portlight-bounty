@@ -1,0 +1,46 @@
+{
+  "name": "Portlight harness plumbing (fixture echo — NO model run; OpenRouter off; GPU/RunPod later)",
+  "game": {
+    "command": "node",
+    "args": [
+      "../ai-playtest/test/fixtures/echo-game.mjs"
+    ],
+    "promptPatterns": [
+      "What do you do\\?\\s*$",
+      "Character name:\\s*$"
+    ],
+    "promptQuietMs": 300,
+    "idleQuietMs": 3000,
+    "screenTimeoutMs": 30000,
+    "quitInputs": [
+      "quit"
+    ]
+  },
+  "seats": [
+    {
+      "id": "pending-local",
+      "family": "local",
+      "model": "llama3.1:8b",
+      "provider": "ollama"
+    }
+  ],
+  "setup": [
+    {
+      "match": "Character name:\\s*$",
+      "answer": "Wanderer"
+    }
+  ],
+  "turns": 6,
+  "persona": "PLUMBING ONLY. Do not run seats until Mike clears GPU or RunPod is up. OpenRouter forbidden.",
+  "criteria": [
+    {
+      "id": "reacts",
+      "check": "The game responds to the players specific input rather than repeating the same text."
+    },
+    {
+      "id": "changes",
+      "check": "Something in the world state visibly changes over the session."
+    }
+  ],
+  "runsDir": "runs"
+}
