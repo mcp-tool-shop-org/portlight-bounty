@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 
 use crate::content::{self, class_rank, ContractDef};
 use crate::error::SimError;
+use crate::infrastructure::BoardEffects;
 use crate::model::{
     ActiveContract, BreachRecord, Captain, Contract, ContractBoard, ContractOutcome, Port, World,
 };
@@ -25,6 +26,11 @@ const STATUS_ACCEPTED: &str = "accepted";
 
 /// `generate_offers`. `player_ship_rank` `None` allows the Python multi-hop
 /// fallback. The session always passes a rank, including `0` with no ship.
+///
+/// `board_effects` is [`crate::infrastructure::board_effects`] for the issuer's
+/// region. A caller with no infrastructure passes [`BoardEffects::default`],
+/// the Python multipliers `1.0`, `1.0`, `1.0`, and `0.0`.
+#[allow(clippy::too_many_arguments)]
 pub fn generate_offers(
     world: &World,
     issuer_port_id: &str,
@@ -32,6 +38,7 @@ pub fn generate_offers(
     player_ship_rank: Option<i64>,
     max_offers: i64,
     rng: &mut PyRandom,
+    board_effects: &BoardEffects,
 ) -> Vec<Contract> {
     let Some(issuer_index) = world
         .ports
@@ -45,11 +52,10 @@ pub fn generate_offers(
     let region = world.ports[issuer_index].region.clone();
     let region_standing = world.captain.standing.regional_of(&region);
     let region_heat = world.captain.standing.heat_of(&region);
-    // No infrastructure is ported, so board effects stay at the Python defaults.
-    let quality_mult = 1.0;
-    let premium_mult = 1.0;
-    let lawful_mult = 1.0;
-    let luxury_access = 0.0;
+    let quality_mult = board_effects.board_quality_bonus;
+    let premium_mult = board_effects.premium_offer_mult;
+    let lawful_mult = board_effects.lawful_board_mult;
+    let luxury_access = board_effects.luxury_access;
 
     let mut eligible = Vec::new();
     for (index, template) in templates.iter().enumerate() {
@@ -722,6 +728,8 @@ fn py_shuffle<T>(items: &mut [T], rng: &mut PyRandom) {
 mod tests {
     use super::*;
     use crate::content::ship_class_rank;
+    use crate::infrastructure::{self, BoardEffects};
+    use crate::model::{BrokerOffice, InfrastructureRecord, OwnedLicense};
     use crate::world::new_game;
 
     fn board_rng(seed: i128) -> PyRandom {
@@ -739,6 +747,7 @@ mod tests {
             Some(rank),
             5,
             &mut rng,
+            &BoardEffects::default(),
         );
         (world, offers)
     }
@@ -941,5 +950,162 @@ mod tests {
             inspection_modifier: 0.0,
             status: STATUS_ACCEPTED.into(),
         }
+    }
+
+    fn porto_world() -> World {
+        new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap()
+    }
+
+    fn template_ids(world: &World, effects: &BoardEffects, seed: i128) -> Vec<String> {
+        let rank = ship_class_rank(&world.captain.ship.as_ref().unwrap().template_id);
+        let mut rng = PyRandom::from_seed(seed);
+        generate_offers(
+            world,
+            &world.voyage.destination_id,
+            &world.captain.captain_type,
+            Some(rank),
+            5,
+            &mut rng,
+            effects,
+        )
+        .into_iter()
+        .map(|offer| offer.template_id)
+        .collect()
+    }
+
+    fn license(id: &str) -> InfrastructureRecord {
+        let mut record = InfrastructureRecord::default();
+        record.licenses.push(OwnedLicense {
+            license_id: id.to_string(),
+            purchased_day: 0,
+            upkeep_paid_through: 0,
+            active: true,
+        });
+        record
+    }
+
+    fn broker(region: &str, tier: &str) -> InfrastructureRecord {
+        let mut record = InfrastructureRecord::default();
+        record.brokers.push(BrokerOffice {
+            region: region.to_string(),
+            tier: tier.to_string(),
+            opened_day: 0,
+            upkeep_paid_through: 0,
+            active: true,
+        });
+        record
+    }
+
+    #[test]
+    fn default_board_effects_keep_the_unmodified_draw() {
+        let world = porto_world();
+        let plain = template_ids(&world, &BoardEffects::default(), 0);
+        let empty = template_ids(
+            &world,
+            &infrastructure::board_effects(&InfrastructureRecord::default(), "Mediterranean"),
+            0,
+        );
+        assert_eq!(plain, empty);
+        assert_eq!(
+            plain,
+            [
+                "smug_powder_delivery",
+                "smug_faction_supply",
+                "circ_indies_loop",
+                "lux_porcelain_estate",
+                "ret_spice_restock",
+            ]
+        );
+    }
+
+    #[test]
+    fn lawful_charter_reweights_a_fixed_draw() {
+        let world = porto_world();
+        let effects = infrastructure::board_effects(&license("med_trade_charter"), "Mediterranean");
+        assert_eq!(effects.lawful_board_mult, 1.4);
+        assert_eq!(effects.premium_offer_mult, 1.0);
+        assert_eq!(effects.luxury_access, 0.0);
+        assert_eq!(effects.board_quality_bonus, 1.0);
+        let elsewhere =
+            infrastructure::board_effects(&license("med_trade_charter"), "North Atlantic");
+        assert_eq!(elsewhere, BoardEffects::default());
+        let drawn = template_ids(&world, &effects, 1);
+        assert_ne!(drawn, template_ids(&world, &BoardEffects::default(), 1));
+        assert_eq!(
+            drawn,
+            [
+                "circ_indies_loop",
+                "smug_fence_the_take",
+                "ret_spice_restock",
+                "smug_powder_delivery",
+                "lux_porcelain_estate",
+            ]
+        );
+    }
+
+    #[test]
+    fn luxury_permit_takes_the_luxury_weight_path() {
+        let world = porto_world();
+        let effects =
+            infrastructure::board_effects(&license("luxury_goods_permit"), "Mediterranean");
+        assert_eq!(effects.luxury_access, 1.0);
+        assert_eq!(effects.premium_offer_mult, 1.3);
+        let premium_only = BoardEffects {
+            premium_offer_mult: 1.3,
+            ..BoardEffects::default()
+        };
+        let permitted = template_ids(&world, &effects, 0);
+        assert_ne!(permitted, template_ids(&world, &premium_only, 0));
+        assert_eq!(
+            permitted,
+            [
+                "smug_opium_run",
+                "smug_faction_supply",
+                "lux_porcelain_estate",
+                "ret_spice_restock",
+                "smug_fence_the_take",
+            ]
+        );
+    }
+
+    #[test]
+    fn local_broker_quality_bonus_reweights_premium_templates() {
+        let world = porto_world();
+        let effects =
+            infrastructure::board_effects(&broker("Mediterranean", "local"), "Mediterranean");
+        assert_eq!(effects.board_quality_bonus, 1.3);
+        assert_eq!(effects.premium_offer_mult, 1.0);
+        assert_eq!(effects.luxury_access, 0.0);
+        assert_eq!(effects.lawful_board_mult, 1.0);
+        let other_region =
+            infrastructure::board_effects(&broker("North Atlantic", "local"), "Mediterranean");
+        assert_eq!(other_region.board_quality_bonus, 1.0);
+        let premium = BoardEffects {
+            premium_offer_mult: 1.5,
+            ..BoardEffects::default()
+        };
+        let brokered = template_ids(&world, &effects, 1);
+        assert_ne!(brokered, template_ids(&world, &BoardEffects::default(), 1));
+        assert_ne!(brokered, template_ids(&world, &premium, 1));
+        assert_eq!(
+            brokered,
+            [
+                "circ_indies_loop",
+                "proc_iron_forge",
+                "ret_spice_restock",
+                "smug_faction_supply",
+                "smug_fence_the_take",
+            ]
+        );
+        assert_eq!(
+            template_ids(&world, &premium, 1),
+            [
+                "circ_indies_loop",
+                "proc_iron_forge",
+                "ret_spice_restock",
+                "smug_fence_the_take",
+                "ret_cotton_return",
+            ]
+        );
     }
 }
