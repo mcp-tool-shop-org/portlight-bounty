@@ -757,6 +757,356 @@ pub(crate) fn cycle_index(len: usize, index: usize, delta: i32) -> usize {
     (index + delta).rem_euclid(len) as usize
 }
 
+/// Shipyard overlay copy. Built from `Session::world` and the embedded catalog.
+/// `None` when the captain is not docked or has no flagship.
+pub(crate) const NO_FLEET_HERE: &str = "No other ships docked at this port.";
+pub(crate) const NO_SHIPYARD_BODY: &str =
+    "This port has no shipyard. Repair, rename, dock, and board still work.";
+pub(crate) const FLEET_FULL_BUY: &str =
+    "Fleet is full. Buying will sell your current flagship for 40% of list price.";
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ShipyardModel {
+    pub port_name: String,
+    pub has_shipyard: bool,
+    pub gate_notice: String,
+    pub silver: i64,
+    pub fleet_label: String,
+    pub buying_sells_flagship: bool,
+    pub flagship: FlagshipCard,
+    pub offers: Vec<HullOffer>,
+    pub upgrades: Vec<UpgradeOffer>,
+    pub slots_notice: String,
+    pub fleet: Vec<FleetCard>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct FlagshipCard {
+    pub template_id: String,
+    pub name: String,
+    pub class_label: String,
+    pub hull: i64,
+    pub hull_max: i64,
+    pub upgrades_used: i64,
+    pub upgrade_slots: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct HullOffer {
+    pub id: String,
+    pub name: String,
+    pub class_label: String,
+    pub price: i64,
+    pub cargo: i64,
+    pub speed: String,
+    pub hull: i64,
+    pub cannons: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct UpgradeOffer {
+    pub id: String,
+    pub name: String,
+    pub price: i64,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct FleetCard {
+    pub name: String,
+    pub template_id: String,
+    pub class_label: String,
+    pub hull: i64,
+    pub hull_max: i64,
+    pub cargo: bool,
+}
+
+pub(crate) fn shipyard_model(session: &Session) -> Option<ShipyardModel> {
+    let world = session.world();
+    if world.voyage.status != portlight_sim::model::VoyageStatus::InPort {
+        return None;
+    }
+    let port = world.port(&world.voyage.destination_id)?;
+    let ship = world.captain.ship.as_ref()?;
+    let port_name = ascii_label(&port.name, &port.id).to_string();
+    let has_shipyard = port.has_feature("shipyard");
+    let trust = world.captain.standing.commercial_trust;
+    let fleet_len = world.captain.fleet.len();
+    let catalog = portlight_sim::content::content();
+    let class_name = catalog
+        .ship(&ship.template_id)
+        .map(|template| template.ship_class.as_str())
+        .unwrap_or("");
+    let installed: Vec<&str> = ship
+        .upgrades
+        .iter()
+        .map(|upgrade| upgrade.upgrade_id.as_str())
+        .collect();
+    let slots_full = ship.upgrades.len() as i64 >= ship.upgrade_slots;
+    let fleet = world
+        .captain
+        .fleet
+        .iter()
+        .filter(|owned| owned.docked_port_id == port.id)
+        .map(|owned| {
+            let class_name = catalog
+                .ship(&owned.ship.template_id)
+                .map(|template| template.ship_class.as_str())
+                .unwrap_or("");
+            FleetCard {
+                name: ascii_label(&owned.ship.name, &owned.ship.template_id).to_string(),
+                template_id: owned.ship.template_id.clone(),
+                class_label: class_label(class_name),
+                hull: owned.ship.hull,
+                hull_max: owned.ship.hull_max,
+                cargo: !owned.cargo.is_empty(),
+            }
+        })
+        .collect();
+    Some(ShipyardModel {
+        gate_notice: if has_shipyard {
+            String::new()
+        } else {
+            shipyard_gate_sentence(&port_name)
+        },
+        port_name,
+        has_shipyard,
+        silver: world.captain.silver,
+        fleet_label: fleet_label(fleet_len, trust),
+        buying_sells_flagship: buying_sells_flagship(fleet_len, trust),
+        flagship: FlagshipCard {
+            template_id: ship.template_id.clone(),
+            name: ascii_label(&ship.name, &ship.template_id).to_string(),
+            class_label: class_label(class_name),
+            hull: ship.hull,
+            hull_max: ship.hull_max,
+            upgrades_used: ship.upgrades.len() as i64,
+            upgrade_slots: ship.upgrade_slots,
+        },
+        offers: catalog
+            .ships
+            .iter()
+            .filter(|template| template.id != ship.template_id)
+            .map(|template| HullOffer {
+                id: template.id.clone(),
+                name: ascii_label(&template.name, &template.id).to_string(),
+                class_label: class_label(&template.ship_class),
+                price: template.price,
+                cargo: template.cargo_capacity,
+                speed: format_amount(template.speed),
+                hull: template.hull_max,
+                cannons: template.cannons,
+            })
+            .collect(),
+        upgrades: catalog
+            .upgrades
+            .iter()
+            .filter(|upgrade| !installed.contains(&upgrade.id.as_str()))
+            .map(|upgrade| UpgradeOffer {
+                id: upgrade.id.clone(),
+                name: ascii_label(&upgrade.name, &upgrade.id).to_string(),
+                price: upgrade.price,
+                summary: upgrade_summary(upgrade),
+            })
+            .collect(),
+        slots_notice: if slots_full {
+            slots_full_sentence(ship.upgrade_slots)
+        } else {
+            String::new()
+        },
+        fleet,
+    })
+}
+
+/// Flagship counts as one. Trust bands match `naval::max_fleet_size`.
+pub(crate) fn fleet_label(fleet_len: usize, commercial_trust: i64) -> String {
+    let now = fleet_len as i64 + 1;
+    let cap = portlight_sim::naval::max_fleet_size(commercial_trust);
+    format!("Fleet {now}/{cap}")
+}
+
+/// `buy_ship` parks the old hull while `fleet.len() + 1` is under the cap.
+pub(crate) fn buying_sells_flagship(fleet_len: usize, commercial_trust: i64) -> bool {
+    let count = fleet_len as i64 + 1;
+    count >= portlight_sim::naval::max_fleet_size(commercial_trust)
+}
+
+pub(crate) fn shipyard_gate_sentence(port_name: &str) -> String {
+    format!("{port_name} has no shipyard")
+}
+
+/// Same sentence `Session::install_upgrade` returns when every slot is taken.
+pub(crate) fn slots_full_sentence(slots: i64) -> String {
+    format!("No upgrade slots remaining ({slots}/{slots} used)")
+}
+
+pub(crate) fn class_label(class_name: &str) -> String {
+    match class_name {
+        "sloop" => "Sloop".to_string(),
+        "cutter" => "Cutter".to_string(),
+        "brigantine" => "Brigantine".to_string(),
+        "galleon" => "Galleon".to_string(),
+        "man_of_war" => "Man-of-war".to_string(),
+        "" => "Ship".to_string(),
+        other => {
+            let mut chars = other.chars();
+            match chars.next() {
+                Some(first) => format!("{}{}", first.to_ascii_uppercase(), chars.as_str()),
+                None => "Ship".to_string(),
+            }
+        }
+    }
+}
+
+pub(crate) fn upgrade_summary(def: &portlight_sim::content::UpgradeDef) -> String {
+    let mut parts = Vec::new();
+    if def.speed_bonus != 0.0 {
+        parts.push(format!("speed +{}", format_amount(def.speed_bonus)));
+    }
+    if def.speed_penalty != 0.0 {
+        parts.push(format!("speed -{}", format_amount(def.speed_penalty)));
+    }
+    if def.hull_max_bonus != 0 {
+        parts.push(format!("hull +{}", def.hull_max_bonus));
+    }
+    if def.cargo_bonus != 0 {
+        parts.push(format!("cargo +{}", def.cargo_bonus));
+    }
+    if def.cannon_bonus != 0 {
+        parts.push(format!("cannons +{}", def.cannon_bonus));
+    }
+    if def.maneuver_bonus != 0.0 {
+        parts.push(format!("maneuver +{}", format_amount(def.maneuver_bonus)));
+    }
+    if def.storm_resist_bonus != 0.0 {
+        parts.push(format!("storm +{}", format_amount(def.storm_resist_bonus)));
+    }
+    if def.crew_max_bonus != 0 {
+        parts.push(format!("crew +{}", def.crew_max_bonus));
+    }
+    if !def.special.is_empty() {
+        let words = def.special.replace('_', " ");
+        if words.is_ascii() {
+            parts.push(words);
+        }
+    }
+    if parts.is_empty() {
+        "Fitted upgrade".to_string()
+    } else {
+        parts.join(", ")
+    }
+}
+
+fn format_amount(value: f64) -> String {
+    if (value - value.round()).abs() < 0.000_001 {
+        format!("{}", value.round() as i64)
+    } else {
+        format!("{value:.2}")
+            .trim_end_matches('0')
+            .trim_end_matches('.')
+            .to_string()
+    }
+}
+
+impl FlagshipCard {
+    pub(crate) fn lines(&self, silver: i64, fleet_label: &str) -> Vec<String> {
+        vec![
+            self.name.clone(),
+            self.class_label.clone(),
+            format!("Hull {}/{}", self.hull, self.hull_max),
+            format!("Upgrades {}/{}", self.upgrades_used, self.upgrade_slots),
+            format!("Silver {silver}"),
+            fleet_label.to_string(),
+        ]
+    }
+}
+
+impl HullOffer {
+    pub(crate) fn line(&self) -> String {
+        format!(
+            "{}  {}  {} silver  cargo {}  speed {}  hull {}  cannons {}",
+            self.name,
+            self.class_label,
+            self.price,
+            self.cargo,
+            self.speed,
+            self.hull,
+            self.cannons
+        )
+    }
+}
+
+impl UpgradeOffer {
+    pub(crate) fn line(&self) -> String {
+        format!("{}  {} silver  {}", self.name, self.price, self.summary)
+    }
+}
+
+impl FleetCard {
+    pub(crate) fn line(&self) -> String {
+        format!(
+            "{}  {}  hull {}/{}  cargo {}",
+            self.name,
+            self.class_label,
+            self.hull,
+            self.hull_max,
+            if self.cargo { "yes" } else { "no" }
+        )
+    }
+}
+
+pub(crate) fn buy_confirm_line(offer: &HullOffer, sells_flagship: bool) -> String {
+    let ask = format!("Buy {} for {} silver?", offer.name, offer.price);
+    if sells_flagship {
+        format!("{FLEET_FULL_BUY} {ask}")
+    } else {
+        ask
+    }
+}
+
+pub(crate) fn install_confirm_line(name: &str, price: i64) -> String {
+    format!("Install {name} for {price} silver?")
+}
+
+pub(crate) fn sell_confirm_line(name: &str) -> String {
+    format!("Sell {name}? A shipyard pays 30% of list price, scaled by hull.")
+}
+
+pub(crate) fn dock_confirm_line() -> &'static str {
+    "Dock the flagship here. The first hull already docked at this port becomes the flagship."
+}
+
+pub(crate) fn board_confirm_line(name: &str) -> String {
+    format!("Board {name}? It becomes the flagship, and the current flagship docks here.")
+}
+
+/// `fleet_grew` is the fleet length after `buy_ship` compared with before.
+pub(crate) fn buy_result_line(bought: &str, previous_name: &str, fleet_grew: bool) -> String {
+    if fleet_grew {
+        format!("Bought {bought}. {previous_name} is docked here.")
+    } else {
+        format!("Bought {bought}. {previous_name} was sold.")
+    }
+}
+
+/// Session sentences stay intact when they are ASCII. An em dash becomes `-`.
+pub(crate) fn ui_sentence(text: &str) -> String {
+    text.chars()
+        .map(|ch| match ch {
+            '\u{2014}' | '\u{2013}' => '-',
+            '\u{2018}' | '\u{2019}' => '\'',
+            '\u{201c}' | '\u{201d}' => '"',
+            other if other.is_ascii() => other,
+            _ => ' ',
+        })
+        .collect()
+}
+
+/// Ink overlay at the chart window size. Same plate and button fills as encounter.
+pub(crate) fn shipyard_frame_rejected(width: i32, height: i32, samples: &[[u8; 3]]) -> bool {
+    encounter_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, samples)
+}
+
 #[cfg(test)]
 mod tests {
     use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
@@ -1320,6 +1670,108 @@ mod tests {
         assert!(portlight_sim::validate_spec(&spec).is_empty());
         draft.name = "  ".to_string();
         assert_eq!(draft.spec().name, "Captain");
+    }
+
+    #[test]
+    fn shipyard_at_porto_novo_lists_other_hulls_and_hides_the_flagship() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let model = shipyard_model(&session).unwrap();
+        assert_eq!(model.port_name, "Porto Novo");
+        assert!(model.has_shipyard);
+        assert!(model.gate_notice.is_empty());
+        assert_eq!(model.flagship.template_id, "coastal_sloop");
+        assert_eq!(model.flagship.class_label, "Sloop");
+        assert_eq!(model.fleet_label, "Fleet 1/3");
+        assert!(!model.buying_sells_flagship);
+        assert!(model.fleet.is_empty());
+        assert!(model.slots_notice.is_empty());
+        assert_eq!(model.offers.len(), 4);
+        assert!(model.offers.iter().all(|offer| offer.id != "coastal_sloop"));
+        assert_eq!(model.upgrades.len(), 18);
+        let cutter = model
+            .offers
+            .iter()
+            .find(|offer| offer.id == "swift_cutter")
+            .unwrap();
+        assert_eq!(
+            cutter.line(),
+            "Swift Cutter  Cutter  450 silver  cargo 50  speed 9  hull 70  cannons 2"
+        );
+        let man = model
+            .offers
+            .iter()
+            .find(|offer| offer.id == "royal_man_of_war")
+            .unwrap();
+        assert_eq!(man.class_label, "Man-of-war");
+        let strapping = model
+            .upgrades
+            .iter()
+            .find(|upgrade| upgrade.id == "iron_strapping")
+            .unwrap();
+        assert_eq!(strapping.summary, "hull +15");
+        let nest = model
+            .upgrades
+            .iter()
+            .find(|upgrade| upgrade.id == "crows_nest")
+            .unwrap();
+        assert_eq!(nest.summary, "maneuver +0.05, danger reduction");
+        for line in model.flagship.lines(model.silver, &model.fleet_label) {
+            assert!(line.is_ascii(), "{line}");
+        }
+        assert!(model.offers.iter().all(|offer| offer.line().is_ascii()));
+        assert!(model
+            .upgrades
+            .iter()
+            .all(|upgrade| upgrade.line().is_ascii()));
+        assert_eq!(
+            buy_confirm_line(cutter, false),
+            "Buy Swift Cutter for 450 silver?"
+        );
+        assert!(buy_confirm_line(cutter, true).starts_with(FLEET_FULL_BUY));
+        assert_eq!(
+            buy_result_line("Swift Cutter", "Coastal Sloop", true),
+            "Bought Swift Cutter. Coastal Sloop is docked here."
+        );
+        assert_eq!(
+            buy_result_line("Swift Cutter", "Coastal Sloop", false),
+            "Bought Swift Cutter. Coastal Sloop was sold."
+        );
+        assert_eq!(NO_FLEET_HERE, "No other ships docked at this port.");
+        assert!(NO_SHIPYARD_BODY.is_ascii());
+        assert_eq!(
+            shipyard_gate_sentence("Al-Manar"),
+            "Al-Manar has no shipyard"
+        );
+        assert_eq!(
+            slots_full_sentence(2),
+            "No upgrade slots remaining (2/2 used)"
+        );
+        assert_eq!(fleet_label(0, 10), "Fleet 1/2");
+        assert_eq!(fleet_label(0, 11), "Fleet 1/3");
+        assert_eq!(fleet_label(0, 26), "Fleet 1/5");
+        assert!(!buying_sells_flagship(0, 15));
+        assert!(buying_sells_flagship(2, 15));
+        assert_eq!(
+            ui_sentence("Ship has cargo \u{2014} transfer it first"),
+            "Ship has cargo - transfer it first"
+        );
+    }
+
+    #[test]
+    fn shipyard_model_is_absent_at_sea() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.depart("al_manar").unwrap();
+        assert!(shipyard_model(&session).is_none());
+    }
+
+    #[test]
+    fn a_shipyard_frame_needs_the_plate_and_a_button_at_1280x720() {
+        let mut samples = vec![[20, 28, 41]; 200];
+        assert!(shipyard_frame_rejected(1280, 720, &samples));
+        samples.extend(std::iter::repeat_n([184, 148, 92], 4));
+        samples.extend(std::iter::repeat_n([140, 107, 61], 2));
+        assert!(!shipyard_frame_rejected(1280, 720, &samples));
+        assert!(shipyard_frame_rejected(1280, 800, &samples));
     }
 
     #[test]

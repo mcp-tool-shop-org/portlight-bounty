@@ -55,7 +55,25 @@
     }
   ],
   "changes": {
-    "first": true
+    "fileCounts": {
+      "added": 1,
+      "changed": 7,
+      "moved": 0,
+      "parts": 4,
+      "removed": 0
+    },
+    "items": [
+      {
+        "kind": "counts",
+        "sentence": "Nothing structural changed since 2026-10-01; 1 file added and 7 changed content.",
+        "subjects": []
+      }
+    ],
+    "since": {
+      "commit": "4d0324c5d91ca87723d03f8307b407739d9f0b14",
+      "generatedAt": "2026-10-01T02:58:02.452Z"
+    },
+    "unchanged": true
   },
   "changesTogether": [
     {
@@ -135,13 +153,13 @@
     }
   ],
   "changesTogetherNote": [
-    "Confidence is low: fewer than 30 qualifying commits in the window, and fewer than 20 source files reach 10 revisions.",
+    "Confidence is low: fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions.",
     "Window: 180 days; a pair counts from 3 shared commits, since the window holds fewer than 30 qualifying commits."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "4d0324c5d91ca87723d03f8307b407739d9f0b14",
+  "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26",
   "defaultBranch": "main",
-  "derived": "10 parts, mostly Rust (64 files) and Python (12). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
+  "derived": "10 parts, mostly Rust (65 files) and Python (12). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
     {
       "checks": [
@@ -180,7 +198,7 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 9
+          "files": 10
         },
         {
           "boundary": "portlight-sim",
@@ -399,14 +417,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-01T02:58:02.452Z",
+  "generatedAt": "2026-10-05T15:17:17.957Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "1 write and 13 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
     "7 writes and 14 reads go to a path their caller passes, not to this repository.",
     "1 write and 1 read go to a temporary directory, not to this repository.",
-    "Statistics confidence is low: fewer than 30 qualifying commits in the window, and fewer than 20 source files reach 10 revisions."
+    "Statistics confidence is low: fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions."
   ],
   "mainDoor": ".github/workflows/ci.yml",
   "partLabels": {
