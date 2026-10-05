@@ -13,13 +13,16 @@ use godot::prelude::*;
 use portlight_chart::Asset;
 
 use crate::logic::{
-    encounter_plate, ui_plate_panel, PORTRAIT_PLACEHOLDER, UI_PLATE_PAD, UI_PLATE_SCALE,
+    encounter_plate, ui_plate_panel, DeltaSpan, DeltaTone, PORTRAIT_PLACEHOLDER, UI_PLATE_PAD,
+    UI_PLATE_SCALE,
 };
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
 const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
+/// Chart danger tone (`game.rs` voyage encounter label). Player loss on the delta line.
+const DANGER: Color = Color::from_rgb(0.93, 0.55, 0.42);
 const PARCHMENT: Color = Color::from_rgb(0.72, 0.58, 0.36);
 const PLACEHOLDER_FILL: Color = Color::from_rgb(0.32, 0.24, 0.18);
 /// Untinted. A plate in a panel is not recoloured.
@@ -29,6 +32,8 @@ pub(crate) struct EncounterNodes {
     pub root: Gd<PanelContainer>,
     pub title: Gd<Label>,
     pub card: Gd<Label>,
+    /// Signed-delta line between the card and the log. Hidden when empty.
+    pub delta: Gd<HBoxContainer>,
     pub log: Gd<Label>,
     pub actions: Gd<VBoxContainer>,
     pub crew: Gd<Label>,
@@ -73,6 +78,16 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     let mut card = text_label("", 18, CREAM);
     card.set_autowrap_mode(AutowrapMode::WORD_SMART);
     column.add_child(&card);
+    // In the column flow, between the card and the log. Not a floating overlay.
+    // Hidden until a resolve has a non-zero delta, so an empty line adds no gap.
+    let mut delta = HBoxContainer::new_alloc();
+    delta.set_name("DeltaLine");
+    delta.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    delta.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+    delta.add_theme_constant_override("separation", 0);
+    delta.set_mouse_filter(MouseFilter::IGNORE);
+    delta.set_visible(false);
+    column.add_child(&delta);
     let mut log = text_label("", 16, CREAM);
     log.set_autowrap_mode(AutowrapMode::WORD_SMART);
     log.set_v_size_flags(SizeFlags::EXPAND_FILL);
@@ -91,6 +106,7 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
         root,
         title,
         card,
+        delta,
         log,
         actions,
         crew,
@@ -104,6 +120,32 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
 /// Full-rect overlay. Call after the node has a parent.
 pub(crate) fn fill_parent(root: &mut Gd<PanelContainer>) {
     root.set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
+}
+
+/// Replace the delta row. One clause per label, 18 px, so player loss and
+/// enemy loss can use different colours on the same line. An empty step hides
+/// the row. The line stays until the next resolve replaces these spans.
+pub(crate) fn set_delta_line(row: &mut Gd<HBoxContainer>, spans: &[DeltaSpan]) {
+    let children = row.get_children();
+    for mut child in children.iter_shared() {
+        row.remove_child(&child);
+        child.queue_free();
+    }
+    if spans.is_empty() {
+        row.set_visible(false);
+        return;
+    }
+    row.set_visible(true);
+    for span in spans {
+        let color = match span.tone {
+            DeltaTone::PlayerLoss => DANGER,
+            DeltaTone::EnemyLoss => GOLD,
+            DeltaTone::Neutral => CREAM,
+        };
+        let mut label = text_label(&span.text, 18, color);
+        label.set_mouse_filter(MouseFilter::IGNORE);
+        row.add_child(&label);
+    }
 }
 
 pub(crate) struct SideColumn {

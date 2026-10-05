@@ -4705,6 +4705,7 @@ impl PortlightGame {
         };
         nodes.title.set_text(view.title);
         nodes.card.set_text(&view.card);
+        encounter_screen::set_delta_line(&mut nodes.delta, &view.delta);
         nodes.log.set_text(&view.log);
         let show_crew = view
             .actions

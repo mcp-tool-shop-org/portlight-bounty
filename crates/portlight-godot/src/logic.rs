@@ -290,6 +290,16 @@ pub(crate) struct EncounterFacts {
     pub enemy_crew: Option<i64>,
     pub player_hp: i64,
     pub opponent_hp: i64,
+    /// Signed hull, crew, and HP changes from the last resolved step.
+    /// Zero means that side did not change. HP is the negation of
+    /// `damage_to_player` / `damage_to_opponent` (those amounts are not signed).
+    /// Stamina stays on the step; this line does not show it.
+    pub player_hull_delta: i64,
+    pub enemy_hull_delta: i64,
+    pub player_crew_delta: i64,
+    pub enemy_crew_delta: i64,
+    pub player_hp_delta: i64,
+    pub opponent_hp_delta: i64,
     pub log: String,
     pub pending_victory: bool,
     pub at_sea: bool,
@@ -305,9 +315,29 @@ pub(crate) struct EncounterView {
     pub title: &'static str,
     pub card: String,
     pub log: String,
+    /// One signed-delta line for the last resolve. Empty when every delta is zero.
+    /// Clauses are separate spans so player loss and enemy loss can take
+    /// different colours. Concatenate [`DeltaSpan::text`] for the line.
+    pub delta: Vec<DeltaSpan>,
     pub actions: Vec<ScreenAction>,
     /// Always set. The portrait slot is [`PORTRAIT_PLACEHOLDER`].
     pub portrait_placeholder: bool,
+}
+
+/// Whose loss a clause names. A gain, a label, or a separator is [`DeltaTone::Neutral`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DeltaTone {
+    /// Player hull, crew, or HP went down. Chart danger tone.
+    PlayerLoss,
+    /// Enemy hull, crew, or opponent HP went down. Gold.
+    EnemyLoss,
+    Neutral,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DeltaSpan {
+    pub text: String,
+    pub tone: DeltaTone,
 }
 
 pub(crate) fn action_caption(action: &ScreenAction) -> String {
@@ -396,6 +426,13 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     facts.player_crew = step.player_crew;
     facts.player_hp = step.player_hp;
     facts.opponent_hp = step.opponent_hp;
+    facts.player_hull_delta = step.player_hull_delta;
+    facts.enemy_hull_delta = step.enemy_hull_delta;
+    facts.player_crew_delta = step.player_crew_delta;
+    facts.enemy_crew_delta = step.enemy_crew_delta;
+    // Damage amounts are non-negative. The line shows them as signed HP changes.
+    facts.player_hp_delta = -step.damage_to_player;
+    facts.opponent_hp_delta = -step.damage_to_opponent;
     facts.naval_actions = input.naval_actions.to_vec();
     facts.combat_actions = input.combat_actions.to_vec();
     facts
@@ -459,6 +496,7 @@ fn view(phase: ScreenPhase, facts: &EncounterFacts, actions: Vec<ScreenAction>) 
         title: phase_title(phase),
         card: card_text(facts, phase),
         log: facts.log.clone(),
+        delta: delta_spans(facts),
         actions,
         portrait_placeholder: true,
     }
@@ -472,6 +510,106 @@ fn phase_title(phase: ScreenPhase) -> &'static str {
         ScreenPhase::Personal => "Personal fight",
         ScreenPhase::Outcome => "Outcome",
     }
+}
+
+fn delta_span(text: impl Into<String>, tone: DeltaTone) -> DeltaSpan {
+    DeltaSpan {
+        text: text.into(),
+        tone,
+    }
+}
+
+/// ASCII `+` / `-` only. Zero is omitted by the caller, so it is not formatted.
+fn signed_delta(value: i64) -> String {
+    if value > 0 {
+        format!("+{value}")
+    } else {
+        format!("{value}")
+    }
+}
+
+fn delta_tone(value: i64, player: bool) -> DeltaTone {
+    if value >= 0 {
+        DeltaTone::Neutral
+    } else if player {
+        DeltaTone::PlayerLoss
+    } else {
+        DeltaTone::EnemyLoss
+    }
+}
+
+fn push_clause(spans: &mut Vec<DeltaSpan>, any: &mut bool) {
+    if *any {
+        spans.push(delta_span(" | ", DeltaTone::Neutral));
+    }
+    *any = true;
+}
+
+fn push_party(spans: &mut Vec<DeltaSpan>, parts: Vec<DeltaSpan>) {
+    for (index, part) in parts.into_iter().enumerate() {
+        if index > 0 {
+            spans.push(delta_span(", ", DeltaTone::Neutral));
+        }
+        spans.push(part);
+    }
+}
+
+/// One ASCII line from the step deltas already stored on `facts`.
+/// Zero values are dropped. Hull clauses use ` | `; crew and HP list each side.
+fn delta_spans(facts: &EncounterFacts) -> Vec<DeltaSpan> {
+    let mut spans = Vec::new();
+    let mut any = false;
+    if facts.player_hull_delta != 0 {
+        push_clause(&mut spans, &mut any);
+        spans.push(delta_span(
+            format!("Your hull {}", signed_delta(facts.player_hull_delta)),
+            delta_tone(facts.player_hull_delta, true),
+        ));
+    }
+    if facts.enemy_hull_delta != 0 {
+        push_clause(&mut spans, &mut any);
+        spans.push(delta_span(
+            format!("Enemy hull {}", signed_delta(facts.enemy_hull_delta)),
+            delta_tone(facts.enemy_hull_delta, false),
+        ));
+    }
+    let mut crew = Vec::new();
+    if facts.player_crew_delta != 0 {
+        crew.push(delta_span(
+            format!("you {}", signed_delta(facts.player_crew_delta)),
+            delta_tone(facts.player_crew_delta, true),
+        ));
+    }
+    if facts.enemy_crew_delta != 0 {
+        crew.push(delta_span(
+            format!("enemy {}", signed_delta(facts.enemy_crew_delta)),
+            delta_tone(facts.enemy_crew_delta, false),
+        ));
+    }
+    if !crew.is_empty() {
+        push_clause(&mut spans, &mut any);
+        spans.push(delta_span("Crew: ", DeltaTone::Neutral));
+        push_party(&mut spans, crew);
+    }
+    let mut hp = Vec::new();
+    if facts.player_hp_delta != 0 {
+        hp.push(delta_span(
+            format!("you {}", signed_delta(facts.player_hp_delta)),
+            delta_tone(facts.player_hp_delta, true),
+        ));
+    }
+    if facts.opponent_hp_delta != 0 {
+        hp.push(delta_span(
+            format!("opponent {}", signed_delta(facts.opponent_hp_delta)),
+            delta_tone(facts.opponent_hp_delta, false),
+        ));
+    }
+    if !hp.is_empty() {
+        push_clause(&mut spans, &mut any);
+        spans.push(delta_span("HP: ", DeltaTone::Neutral));
+        push_party(&mut spans, hp);
+    }
+    spans
 }
 
 fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
@@ -542,6 +680,12 @@ fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) 
         enemy_crew: None,
         player_hp: 0,
         opponent_hp: 0,
+        player_hull_delta: 0,
+        enemy_hull_delta: 0,
+        player_crew_delta: 0,
+        enemy_crew_delta: 0,
+        player_hp_delta: 0,
+        opponent_hp_delta: 0,
         log: String::new(),
         pending_victory: false,
         at_sea,
@@ -1218,8 +1362,9 @@ mod tests {
 
     use super::{
         action_list_from_error, at_sea, encounter_plate, facts_for_catalog_captain,
-        facts_from_step, player_ship, present, stance_duel_visible, template_player_ship,
-        ui_plate_panel, EncounterFacts, ScreenAction, ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER,
+        facts_from_agency, facts_from_step, player_ship, present, signed_delta,
+        stance_duel_visible, template_player_ship, ui_plate_panel, DeltaSpan, DeltaTone,
+        EncounterFacts, ScreenAction, ScreenPhase, StepInput, PORTRAIT_PLACEHOLDER,
         SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
         SCRIPTED_NAVAL, SCRIPTED_SEED,
     };
@@ -1348,6 +1493,7 @@ mod tests {
         assert!(view.card.contains("Strength 5"));
         assert!(view.card.contains("Your hull"));
         assert!(!view.card.contains("Enemy hull"));
+        assert!(view.delta.is_empty());
         assert_eq!(
             view.actions,
             vec![
@@ -1356,6 +1502,239 @@ mod tests {
                 ScreenAction::Choice("fight"),
             ]
         );
+    }
+
+    fn delta_text(spans: &[DeltaSpan]) -> String {
+        spans.iter().map(|span| span.text.as_str()).collect()
+    }
+
+    fn cleared_deltas(
+        step: &portlight_sim::session::EncounterStep,
+    ) -> portlight_sim::session::EncounterStep {
+        let mut step = step.clone();
+        step.player_hull_delta = 0;
+        step.enemy_hull_delta = 0;
+        step.player_crew_delta = 0;
+        step.enemy_crew_delta = 0;
+        step.damage_to_player = 0;
+        step.damage_to_opponent = 0;
+        step.hull_damage = 0;
+        step
+    }
+
+    fn line_for(
+        session: &Session,
+        step: &portlight_sim::session::EncounterStep,
+    ) -> (String, Vec<DeltaSpan>) {
+        let facts = adopt(session, step, None, &[], &[]);
+        let view = present(&facts).unwrap();
+        let text = delta_text(&view.delta);
+        (text, view.delta)
+    }
+
+    fn assert_line_matches_step(step: &portlight_sim::session::EncounterStep, text: &str) {
+        assert!(text.is_ascii(), "{text}");
+        assert!(
+            text.chars().all(|c| {
+                c.is_ascii_alphanumeric() || matches!(c, ' ' | '+' | '-' | '|' | ':' | ',')
+            }),
+            "{text}"
+        );
+        assert!(!text.contains('/'), "{text}");
+        if step.player_hull_delta != 0 {
+            assert!(text.contains(&format!(
+                "Your hull {}",
+                signed_delta(step.player_hull_delta)
+            )));
+        } else {
+            assert!(!text.contains("Your hull"), "{text}");
+        }
+        if step.enemy_hull_delta != 0 {
+            assert!(text.contains(&format!(
+                "Enemy hull {}",
+                signed_delta(step.enemy_hull_delta)
+            )));
+        } else {
+            assert!(!text.contains("Enemy hull"), "{text}");
+        }
+        if step.player_crew_delta != 0 || step.enemy_crew_delta != 0 {
+            assert!(text.contains("Crew:"), "{text}");
+        } else {
+            assert!(!text.contains("Crew:"), "{text}");
+        }
+        if step.damage_to_player != 0 || step.damage_to_opponent != 0 {
+            assert!(text.contains("HP:"), "{text}");
+        } else {
+            assert!(!text.contains("HP:"), "{text}");
+        }
+        if step.damage_to_player != 0 {
+            assert!(text.contains(&format!("you {}", signed_delta(-step.damage_to_player))));
+        }
+        if step.damage_to_opponent != 0 {
+            assert!(text.contains(&format!(
+                "opponent {}",
+                signed_delta(-step.damage_to_opponent)
+            )));
+        }
+    }
+
+    #[test]
+    fn one_ascii_signed_delta_line_drops_zeros() {
+        let mut session = scripted_session();
+        let base = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        assert_eq!(line_for(&session, &base).0, "");
+
+        let mut step = cleared_deltas(&base);
+        step.player_hull_delta = -4;
+        step.enemy_hull_delta = -12;
+        let (hull, spans) = line_for(&session, &step);
+        assert_eq!(hull, "Your hull -4 | Enemy hull -12");
+        assert_eq!(spans[0].tone, DeltaTone::PlayerLoss);
+        assert_eq!(spans[1].tone, DeltaTone::Neutral);
+        assert_eq!(spans[2].tone, DeltaTone::EnemyLoss);
+
+        step = cleared_deltas(&base);
+        step.player_crew_delta = -1;
+        step.enemy_crew_delta = -2;
+        let (crew, spans) = line_for(&session, &step);
+        assert_eq!(crew, "Crew: you -1, enemy -2");
+        assert_eq!(spans[0].tone, DeltaTone::Neutral);
+        assert_eq!(spans[1].tone, DeltaTone::PlayerLoss);
+        assert_eq!(spans[3].tone, DeltaTone::EnemyLoss);
+
+        step = cleared_deltas(&base);
+        step.damage_to_player = 3;
+        step.damage_to_opponent = 5;
+        let (hp, spans) = line_for(&session, &step);
+        assert_eq!(hp, "HP: you -3, opponent -5");
+        assert_eq!(spans[1].text, "you -3");
+        assert_eq!(spans[1].tone, DeltaTone::PlayerLoss);
+        assert_eq!(spans[3].text, "opponent -5");
+        assert_eq!(spans[3].tone, DeltaTone::EnemyLoss);
+
+        step = cleared_deltas(&base);
+        step.player_hull_delta = -4;
+        step.enemy_hull_delta = -12;
+        step.player_crew_delta = -1;
+        step.enemy_crew_delta = -2;
+        step.damage_to_player = 3;
+        step.damage_to_opponent = 5;
+        assert_eq!(
+            line_for(&session, &step).0,
+            "Your hull -4 | Enemy hull -12 | Crew: you -1, enemy -2 | HP: you -3, opponent -5"
+        );
+
+        step = cleared_deltas(&base);
+        step.player_hull_delta = 2;
+        step.enemy_crew_delta = -2;
+        let (gain, spans) = line_for(&session, &step);
+        assert_eq!(gain, "Your hull +2 | Crew: enemy -2");
+        assert_eq!(spans[0].tone, DeltaTone::Neutral);
+        assert_eq!(spans[3].tone, DeltaTone::EnemyLoss);
+
+        step = cleared_deltas(&base);
+        step.enemy_hull_delta = -12;
+        assert_eq!(line_for(&session, &step).0, "Enemy hull -12");
+
+        // Flee reports hull_damage in the log. It is not a delta field.
+        step = cleared_deltas(&base);
+        step.hull_damage = 4;
+        step.message = "A parting shot catches your hull for 4 damage.".to_string();
+        let facts = adopt(&session, &step, None, &[], &[]);
+        let view = present(&facts).unwrap();
+        assert!(view.delta.is_empty());
+        assert!(view.log.contains('4'));
+    }
+
+    #[test]
+    fn scripted_and_bounty_resolves_share_the_delta_line() {
+        let mut session = scripted_session();
+        let approach =
+            facts_for_catalog_captain(SCRIPTED_CAPTAIN, player_ship(&session), true).unwrap();
+        assert!(present(&approach).unwrap().delta.is_empty());
+
+        let step = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        let naval_actions = probe_naval(&mut session);
+        let mut facts = adopt(&session, &step, Some(&approach), &naval_actions, &[]);
+        assert!(
+            present(&facts).unwrap().delta.is_empty(),
+            "opening the naval phase is not a hull resolve"
+        );
+
+        let mut saw_naval_delta = false;
+        for action in SCRIPTED_NAVAL {
+            let step = session.naval_round(action).unwrap();
+            let actions = if step.phase == "naval" {
+                probe_naval(&mut session)
+            } else {
+                Vec::new()
+            };
+            facts = adopt(&session, &step, Some(&facts), &actions, &[]);
+            let text = delta_text(&present(&facts).unwrap().delta);
+            assert_line_matches_step(&step, &text);
+            if !text.is_empty() {
+                saw_naval_delta = true;
+            }
+            if step.phase == "boarding" {
+                break;
+            }
+        }
+        assert!(
+            saw_naval_delta,
+            "a scripted naval resolve should show a signed hull or crew delta"
+        );
+
+        let step = session.resolve_boarding().unwrap();
+        let combat_actions = probe_fight(&mut session);
+        facts = adopt(&session, &step, Some(&facts), &[], &combat_actions);
+        let boarded = delta_text(&present(&facts).unwrap().delta);
+        assert_line_matches_step(&step, &boarded);
+        assert!(
+            boarded.is_empty(),
+            "boarding crew loss is not an EncounterStep delta: {boarded}"
+        );
+
+        let mut last_fight = String::new();
+        for action in SCRIPTED_FIGHT {
+            let step = session.fight(action).unwrap();
+            let actions = if step.phase == "duel" {
+                probe_fight(&mut session)
+            } else {
+                Vec::new()
+            };
+            facts = adopt(&session, &step, Some(&facts), &[], &actions);
+            last_fight = delta_text(&present(&facts).unwrap().delta);
+            assert_line_matches_step(&step, &last_fight);
+        }
+        assert!(
+            last_fight.contains("HP:"),
+            "the last personal-fight resolve should show HP: {last_fight}"
+        );
+
+        let mut bounty =
+            Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None).unwrap();
+        bounty.accept_bounty(SCRIPTED_CAPTAIN).unwrap();
+        let state = bounty.hunt_bounty(SCRIPTED_CAPTAIN).unwrap();
+        let agency = facts_from_agency(&state, player_ship(&bounty), "", at_sea(&bounty));
+        assert!(present(&agency).unwrap().delta.is_empty());
+        assert!(agency.enemy_hull_max.is_some());
+        let step = bounty.encounter_choice("fight").unwrap();
+        let naval_actions = probe_naval(&mut bounty);
+        let facts = adopt(&bounty, &step, Some(&agency), &naval_actions, &[]);
+        assert!(present(&facts).unwrap().delta.is_empty());
+        let step = bounty.naval_round("broadside").unwrap();
+        let facts = adopt(&bounty, &step, Some(&facts), &[], &[]);
+        let text = delta_text(&present(&facts).unwrap().delta);
+        assert_line_matches_step(&step, &text);
+        assert!(
+            !text.is_empty(),
+            "bounty broadside should show the same delta line"
+        );
+        assert_eq!(text, line_for(&bounty, &step).0);
     }
 
     #[test]
