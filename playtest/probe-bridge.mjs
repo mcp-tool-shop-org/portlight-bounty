@@ -3,11 +3,16 @@
 // From the repo root:
 //   node playtest/probe-bridge.mjs
 //
-// Expects a debug portlight_godot.dll already built. Prints the editor version
-// (this rig is 4.7 stable; CI is 4.7.2). Hello, Title, captains, the line Ada,
-// Merchant, then a scripted spine: contracts, grain, Hire, sail to Al-Manar,
-// journal open and close. Reset must return to Title. The last line names
-// what was asserted. It is not a product score.
+// Expects a debug portlight_godot library already built and `godot` on PATH.
+// Prints the editor version (CI is 4.7.2). Spine: hello, second client
+// refused, bad line answered, Title, captains, the line Ada, Merchant (chart
+// shows Ada docked and Hire). Then Contracts open and close, read the board
+// cards, accept the cheapest run the market stocks, buy the order plus a
+// margin, Hire, sail to the destination while the strip counts down, and
+// sell there. The sale is the delivery: the contract leaves Active, silver
+// goes up, and the strip clears. Complete is not offered (R10), so that
+// press is the offered-check. Journal open and close, then reset to Title.
+// The last line names what was asserted. It is not a product score.
 
 import { spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
@@ -181,8 +186,53 @@ async function clearOverlays(socket, result, notes) {
   throw new Error('an overlay did not clear');
 }
 
+function strip(result) {
+  return String(result?.state?.contract_strip ?? '');
+}
+
+function board(result) {
+  const rows = result?.state?.contract_board;
+  return Array.isArray(rows) ? rows : [];
+}
+
+function activeRows(result) {
+  const rows = result?.state?.contracts_active;
+  return Array.isArray(rows) ? rows : [];
+}
+
+function slug(name) {
+  return name.trim().toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '_');
+}
+
+// Board detail reads "Porcelain x5 to Al-Manar   400 silver + 70 bonus".
+function cardTerms(card) {
+  const found = String(card?.detail ?? '').match(/^(.+?) x(\d+) to (.+?)\s{2,}(\d+) silver/);
+  if (!found) return null;
+  const quantity = Number(found[2]);
+  return {
+    good: slug(found[1]),
+    quantity,
+    destination: found[3].trim(),
+    port: slug(found[3]),
+    perUnit: Number(found[4]) / Math.max(quantity, 1),
+  };
+}
+
+// The first `N days left` (or due today / overdue) in the strip.
+function stripTiming(text) {
+  const found = text.match(/(\d+ days? left|due today|overdue)/);
+  return found ? found[1] : '';
+}
+
+async function closeContracts(socket, result) {
+  return String(result?.state?.screen) === 'contracts'
+    ? choose(socket, 'chart.contracts.close')
+    : result;
+}
+
 async function voyage(socket, chart) {
   const notes = {};
+  assert(strip(chart) === '', 'a fresh game showed the contract strip', chart);
   assert(ids(chart).includes('chart.contracts.open'), 'docked chart did not offer contracts', chart);
   const opened = await choose(socket, 'chart.contracts.open');
   assert(String(opened?.state?.screen) === 'contracts', 'contracts did not open', opened);
@@ -190,29 +240,60 @@ async function voyage(socket, chart) {
   const closed = await choose(socket, 'chart.contracts.close');
   assert(String(closed?.state?.screen) === 'chart', 'contracts did not return to the chart', closed);
   assert(!openDesks(closed).includes('contracts'), 'contracts stayed open', closed);
+  assert(board(closed).length === 0, 'board cards were reported with the desk closed', closed);
 
+  // What the market sells here decides which card can be delivered.
+  const market = await choose(socket, 'chart.market');
+  const buyable = new Set(ids(market)
+    .filter((id) => id.startsWith('chart.buy.'))
+    .map((id) => id.slice('chart.buy.'.length)));
+  await choose(socket, 'chart.market');
+
+  // Read the cards. Take a run this market stocks to a port the chart can
+  // sail to, cheapest goods first (lowest reward per unit), so the hold can
+  // be paid for. Seed 1 Merchant picks grain to Corsair's Rest.
   const again = await choose(socket, 'chart.contracts.open');
-  const acceptId = ids(again).find((id) => id.startsWith('contracts.accept.'));
-  assert(acceptId, 'contracts offered no accept', again);
+  const cards = board(again);
+  assert(cards.length > 0, 'contracts showed no board cards', again);
+  assert(/^Board:$/m.test(String(again?.text ?? '')), 'board cards were not in the text', again);
+  for (const card of cards) {
+    assert(card.title && card.detail, `board card ${card.id} had no title or detail`, again);
+  }
+  const pick = cards
+    .map((card) => ({ card, terms: cardTerms(card) }))
+    .filter(({ card, terms }) => terms
+      && buyable.has(terms.good)
+      && ids(again).includes(`chart.sail.${terms.port}`)
+      && card.actions.includes(`contracts.accept.${card.id}`))
+    .sort((a, b) => a.terms.perUnit - b.terms.perUnit)[0];
+  assert(pick, `no card for goods sold here (${[...buyable].join(', ')})`, again);
+  const { card, terms } = pick;
+  const acceptId = `contracts.accept.${card.id}`;
   const accepted = await choose(socket, acceptId);
   assert(!ids(accepted).includes(acceptId), `${acceptId} was still offered after accept`, accepted);
-  const desk = String(accepted?.state?.screen) === 'contracts'
-    ? await choose(socket, 'chart.contracts.close')
-    : accepted;
+  assert(!board(accepted).some((row) => row.id === card.id), 'accepted card stayed on the board', accepted);
+  const row = activeRows(accepted).find((active) => active.id === card.id);
+  assert(row, 'accepted contract was not an active row', accepted);
+  assert(row.detail.includes(`0/${terms.quantity}`), `active row did not show 0/${terms.quantity}`, accepted);
+  assert(strip(accepted).includes(card.title), 'strip did not name the accepted contract', accepted);
+  const desk = await closeContracts(socket, accepted);
   assert(String(desk?.state?.screen) === 'chart', 'chart was not back after accept', desk);
+  assert(/^Contract strip: /m.test(String(desk?.text ?? '')), 'strip was not in the chart text', desk);
+  const stripAtAccept = strip(desk);
 
+  // Rough seas take 1-3 units per event, so carry a margin over the order.
   const silverBefore = Number(desk?.state?.silver);
-  const market = await choose(socket, 'chart.market');
-  assert(ids(market).includes('chart.buy.grain'), 'market did not offer grain', market);
-  // One press buys one unit. This seed's cargo-damage event removes up to
-  // three, which empties a one-unit hold before the Al-Manar sale.
-  let bought = await choose(socket, 'chart.buy.grain');
-  assert(Number(bought?.state?.silver) < silverBefore, 'buying grain did not spend silver', bought);
-  for (let extra = 0; extra < 3; extra += 1) {
+  const shop = await choose(socket, 'chart.market');
+  const buyId = `chart.buy.${terms.good}`;
+  assert(ids(shop).includes(buyId), `market did not offer ${terms.good}`, shop);
+  let bought = shop;
+  const want = terms.quantity + 3;
+  for (let unit = 0; unit < want; unit += 1) {
     const before = Number(bought?.state?.silver);
-    bought = await choose(socket, 'chart.buy.grain');
-    assert(Number(bought?.state?.silver) < before, 'further grain buy did not spend silver', bought);
+    bought = await choose(socket, buyId);
+    assert(Number(bought?.state?.silver) < before, `buying ${terms.good} did not spend silver`, bought);
   }
+  assert(Number(bought?.state?.silver) < silverBefore, 'buying did not spend silver', bought);
 
   const beforeHire = String(bought?.text ?? '');
   const hired = await choose(socket, 'chart.hire');
@@ -226,72 +307,72 @@ async function voyage(socket, chart) {
   );
   assert(hiredText !== beforeHire, 'hire returned the same observation', hired);
 
-  const sailed = await choose(socket, 'chart.sail.al_manar');
-  assert(/Departed for Al-Manar/.test(String(sailed?.text ?? '')), 'depart log missing', sailed);
+  const sailed = await choose(socket, `chart.sail.${terms.port}`);
+  assert(
+    String(sailed?.text ?? '').includes(`Departed for ${terms.destination}`),
+    'depart log missing',
+    sailed,
+  );
   assert(String(sailed?.state?.docked ?? '') === '', 'sail left the ship docked', sailed);
+  assert(strip(sailed) !== '', 'strip hid at sea', sailed);
 
   const startDay = Number(chart?.state?.day);
   let here = sailed;
-  for (let step = 0; step < 40 && String(here?.state?.docked) !== 'al_manar'; step += 1) {
+  for (let step = 0; step < 40 && String(here?.state?.docked) !== terms.port; step += 1) {
     here = await clearOverlays(socket, here, notes);
-    if (String(here?.state?.docked) === 'al_manar') break;
+    if (String(here?.state?.docked) === terms.port) break;
     assert(String(here?.state?.screen) === 'chart', 'expected the chart while under way', here);
     assert(ids(here).includes('chart.next_day'), 'next day was not offered', here);
     here = await choose(socket, 'chart.next_day');
+    if (/Rough seas damaged/.test(String(here?.text ?? ''))) notes.roughSeas = true;
   }
   here = await clearOverlays(socket, here, notes);
-  assert(String(here?.state?.docked) === 'al_manar', 'did not dock at Al-Manar', here);
+  assert(String(here?.state?.docked) === terms.port, `did not dock at ${terms.destination}`, here);
   assert(Number(here?.state?.day) > startDay, 'the day counter did not advance', here);
-  assert(/Docked at Al-Manar/.test(String(here?.text ?? '')), 'arrival text missing', here);
-
-  if (!ids(here).includes('chart.sell.grain')) {
-    here = await choose(socket, 'chart.market');
-  }
-  assert(ids(here).includes('chart.sell.grain'), 'Al-Manar market did not offer grain', here);
-  const silverAtPort = Number(here?.state?.silver);
-  const sold = await choose(socket, 'chart.sell.grain');
-  const soldText = String(sold?.text ?? '');
-  const grainLine = soldText.split('\n').find((line) => /grain/i.test(line)) ?? '';
+  assert(String(here?.text ?? '').includes(`Docked at ${terms.destination}`), 'arrival text missing', here);
+  const stripAtArrival = strip(here);
+  assert(stripAtArrival.includes(card.title), 'strip lost the contract on the way', here);
   assert(
-    Number(sold?.state?.silver) !== silverAtPort,
-    `selling grain did not move silver (${silverAtPort} -> ${sold?.state?.silver}); ${grainLine}; encounter ${notes.encounter ?? 'none'}`,
-    sold,
+    stripTiming(stripAtArrival) !== stripTiming(stripAtAccept),
+    `strip countdown did not move (${stripTiming(stripAtAccept)} -> ${stripTiming(stripAtArrival)})`,
+    here,
   );
 
-  // Seed 1's first offer is not fulfilled by a grain sale at Al-Manar.
-  // When complete is absent, the press is the offered-check. When it is
-  // present, the second press is the idempotency guard.
-  const completing = await choose(socket, 'chart.contracts.open');
-  const completeId = `contracts.complete.${acceptId.slice('contracts.accept.'.length)}`;
-  let afterComplete;
-  let completeNote;
-  if (ids(completing).includes(completeId)) {
-    const completed = await choose(socket, completeId);
-    assert(!ids(completed).includes(completeId), `${completeId} was still offered`, completed);
-    let idempotent = false;
-    try {
-      await choose(socket, completeId);
-    } catch (error) {
-      idempotent = /not on screen/.test(error instanceof Error ? error.message : '');
-    }
-    assert(idempotent, 'a second complete was not an offered-check miss', completed);
-    afterComplete = String(completed?.state?.screen) === 'contracts'
-      ? await choose(socket, 'chart.contracts.close')
-      : completed;
-    completeNote = 'complete idempotent';
-  } else {
-    let missed = false;
-    try {
-      await choose(socket, completeId);
-    } catch (error) {
-      missed = /not on screen/.test(error instanceof Error ? error.message : '');
-    }
-    assert(missed, `${completeId} was absent but the press was not an offered-check miss`, completing);
-    afterComplete = String(completing?.state?.screen) === 'contracts'
-      ? await choose(socket, 'chart.contracts.close')
-      : completing;
-    completeNote = 'complete not offered';
+  // Delivery is the sale. One press sells one unit; the sale that fills the
+  // order settles it, so the strip clears without a Complete press.
+  if (!ids(here).includes(`chart.sell.${terms.good}`)) {
+    here = await choose(socket, 'chart.market');
   }
+  const sellId = `chart.sell.${terms.good}`;
+  assert(ids(here).includes(sellId), `${terms.destination} market did not offer ${terms.good}`, here);
+  const silverAtPort = Number(here?.state?.silver);
+  let sold = here;
+  for (let unit = 0; unit < want && strip(sold) !== ''; unit += 1) {
+    sold = await choose(socket, sellId);
+    assert(
+      !/Only have 0 units/.test(String(sold?.text ?? '').split('\n').slice(-1)[0] ?? ''),
+      `hold ran out before ${terms.quantity} ${terms.good} were delivered; encounter ${notes.encounter ?? 'none'}`,
+      sold,
+    );
+  }
+  assert(strip(sold) === '', 'strip did not clear after delivering the order', sold);
+  assert(!/^Contract strip: /m.test(String(sold?.text ?? '')), 'strip line stayed in the text', sold);
+  assert(Number(sold?.state?.silver) > silverAtPort, `silver did not go up (${silverAtPort} -> ${sold?.state?.silver})`, sold);
+
+  // R10: the sale settled it, so Complete is not offered. The press is the
+  // offered-check.
+  const desk2 = await choose(socket, 'chart.contracts.open');
+  assert(!activeRows(desk2).some((active) => active.id === card.id), 'delivered contract stayed active', desk2);
+  const completeId = `contracts.complete.${card.id}`;
+  assert(!ids(desk2).includes(completeId), `${completeId} was offered after the sale settled it`, desk2);
+  let missed = false;
+  try {
+    await choose(socket, completeId);
+  } catch (error) {
+    missed = /not on screen/.test(error instanceof Error ? error.message : '');
+  }
+  assert(missed, `${completeId} press was not an offered-check miss`, desk2);
+  const afterComplete = await closeContracts(socket, desk2);
   assert(String(afterComplete?.state?.screen) === 'chart', 'chart was not back after contracts', afterComplete);
 
   const journal = await choose(socket, 'chart.journal.open');
@@ -299,8 +380,17 @@ async function voyage(socket, chart) {
   const back = await choose(socket, 'chart.journal.close');
   assert(String(back?.state?.screen) === 'chart', 'journal did not close', back);
 
-  const parts = ['contracts', 'grain', 'hire', 'sail Al-Manar', completeNote, 'journal'];
-  if (/Rough seas damaged/.test(soldText)) parts.push('rough seas');
+  const parts = [
+    `board ${cards.length} cards`,
+    `accept ${terms.good} x${terms.quantity}`,
+    'hire',
+    `sail ${terms.destination}`,
+    `strip ${stripTiming(stripAtAccept)} -> ${stripTiming(stripAtArrival)}`,
+    `sell delivers (silver ${silverAtPort} -> ${sold?.state?.silver}, strip clear, not active)`,
+    'complete not offered',
+    'journal',
+  ];
+  if (notes.roughSeas) parts.push('rough seas');
   if (notes.encounter) parts.push(`encounter ${notes.encounter}`);
   if (notes.dayReport) parts.push(notes.dayReport);
   if (notes.stance) parts.push('stances offered');
