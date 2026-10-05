@@ -7477,7 +7477,7 @@ impl PortlightGame {
             } else {
                 "porto_novo"
             };
-            session.depart(&dest)
+            session.depart(dest)
         };
         if let Err(err) = sailed {
             self.fail_contract_strip(format!("Contract-strip smoke: depart failed: {err}"));
@@ -7511,9 +7511,7 @@ impl PortlightGame {
 
     fn accept_strip_offer(&mut self) -> Option<String> {
         let id = {
-            let Some(session) = self.session.as_mut() else {
-                return None;
-            };
+            let session = self.session.as_mut()?;
             let _ = session.available_contracts();
             session.board().offers.first().map(|offer| offer.id.clone())
         }?;

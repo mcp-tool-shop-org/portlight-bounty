@@ -317,7 +317,7 @@ mod tests {
             test_contract("Apple run", 10, 0, 5, "al_manar"),
             test_contract("Grain run", 5, 0, 5, "al_manar"),
         ];
-        let doc = build_document_from_active(&active, 1, &world).unwrap();
+        let doc = build_document_from_active(&active, 1, world).unwrap();
         assert_eq!(
             doc.segments[0].text.split(" - ").next().unwrap(),
             "Grain run"
@@ -339,7 +339,7 @@ mod tests {
             test_contract("C", 7, 1, 5, "al_manar"),
             test_contract("D", 8, 1, 5, "al_manar"),
         ];
-        let doc = build_document_from_active(&active, 1, &world).unwrap();
+        let doc = build_document_from_active(&active, 1, world).unwrap();
         assert_eq!(doc.segments.len(), 3);
         assert_eq!(doc.segments[2].text, "+2 more");
         assert!(doc.segments[2].more);
@@ -358,7 +358,7 @@ mod tests {
         ];
         for (deadline, timing) in cases {
             let active = vec![test_contract("Grain run", deadline, 3, 10, "al_manar")];
-            let doc = build_document_from_active(&active, 1, &world).unwrap();
+            let doc = build_document_from_active(&active, 1, world).unwrap();
             let text = doc.joined_text();
             assert!(text.contains(timing), "{text} missing {timing}");
             assert!(!text.contains("due soon"));
@@ -373,7 +373,7 @@ mod tests {
         let session = Session::new("Ada", "merchant", 1, None).unwrap();
         let world = session.world();
         let active = vec![test_contract("Spice charter", 10, 10, 10, "al_manar")];
-        let doc = build_document_from_active(&active, 1, &world).unwrap();
+        let doc = build_document_from_active(&active, 1, world).unwrap();
         let text = doc.joined_text();
         assert!(text.contains("Complete at Contracts"));
         assert!(!text.contains("ready to Complete"));
@@ -388,7 +388,7 @@ mod tests {
             test_contract("Calm", 10, 0, 5, "al_manar"),
             test_contract("Hot", 2, 0, 5, "porto_novo"),
         ];
-        let doc = build_document_from_active(&active, 1, &world).unwrap();
+        let doc = build_document_from_active(&active, 1, world).unwrap();
         // Hot (deadline 2) sorts first; urgent. Calm is not.
         assert!(doc.segments[0].urgent);
         assert!(!doc.segments[1].urgent);
@@ -400,7 +400,7 @@ mod tests {
         let session = Session::new("Ada", "merchant", 1, None).unwrap();
         let world = session.world();
         let one = vec![test_contract("Grain run", 5, 3, 10, "al_manar")];
-        let doc = build_document_from_active(&one, 1, &world).unwrap();
+        let doc = build_document_from_active(&one, 1, world).unwrap();
         assert!(
             doc.joined_text().contains(" - to "),
             "single segment should include destination: {}",
@@ -411,7 +411,7 @@ mod tests {
             test_contract("Grain run", 5, 3, 10, "al_manar"),
             test_contract("Spice charter", 8, 1, 10, "porto_novo"),
         ];
-        let doc2 = build_document_from_active(&two, 1, &world).unwrap();
+        let doc2 = build_document_from_active(&two, 1, world).unwrap();
         assert!(
             !doc2.joined_text().contains(" - to "),
             "two segments omit destination: {}",
@@ -423,7 +423,7 @@ mod tests {
             test_contract("B", 6, 0, 5, "al_manar"),
             test_contract("C", 7, 0, 5, "al_manar"),
         ];
-        let doc3 = build_document_from_active(&three, 1, &world).unwrap();
+        let doc3 = build_document_from_active(&three, 1, world).unwrap();
         assert!(doc3.joined_text().contains("+1 more"));
         assert!(!doc3.joined_text().contains(" - to "));
     }
