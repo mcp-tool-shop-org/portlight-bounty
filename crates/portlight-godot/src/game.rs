@@ -7210,8 +7210,9 @@ impl PortlightGame {
         if text.contains('\u{2014}') || text.contains("due soon") {
             self.fail_day_report("Day-report smoke: forbidden copy on full card.");
         }
-        if !text.contains("Week: ") || !text.contains("Next: ") {
-            self.fail_day_report("Day-report smoke: full card missing Captain's week footer.");
+        // R1 yield: full 4-section body hides the footer (budget overflow).
+        if text.contains("Week: ") || text.contains("Next: ") {
+            self.fail_day_report("Day-report smoke: full card should yield Captain's week footer.");
         }
         self.assert_day_report_fits("full");
         self.close_day_report();
@@ -7228,9 +7229,11 @@ impl PortlightGame {
         if !deadline_text.contains("1 day left") || !deadline_text.contains("ready to Complete") {
             self.fail_day_report("Day-report smoke: deadline card missing Complete cue.");
         }
-        if deadline_text.contains("Week: ") || !deadline_text.contains("Next: Contract 1 day left")
-        {
-            self.fail_day_report("Day-report smoke: deadline footer should be Next only.");
+        // R1: Next without Week never — warm-up deadline carries no footer.
+        if deadline_text.contains("Week: ") || deadline_text.contains("Next: ") {
+            self.fail_day_report(
+                "Day-report smoke: deadline card should yield footer (Next without Week never).",
+            );
         }
         self.assert_day_report_fits("deadline");
         self.close_day_report();
@@ -7315,10 +7318,36 @@ impl PortlightGame {
             return false;
         }
         self.next_day();
-        let footer = self.day_report_footer_now();
-        if !self.day_report_open || !footer.contains("Week: ") || !footer.contains("bounty +1") {
+        // Ride-along data must carry Week; presentation may yield when the body
+        // overflows the footer budget (this warm day often has many Prices).
+        let doc_week = self
+            .day_report_doc
+            .as_ref()
+            .and_then(|doc| doc.footer.week.clone());
+        if !self.day_report_open
+            || doc_week
+                .as_deref()
+                .is_none_or(|w| !w.contains("Week: ") || !w.contains("bounty +1"))
+        {
             self.fail_day_report(format!(
-                "Day-report week: notable warm day missing Week line: {footer:?}"
+                "Day-report week: notable warm day missing Week data: {doc_week:?}"
+            ));
+            return false;
+        }
+        let footer = self.day_report_footer_now();
+        let yielded = self
+            .day_report_doc
+            .as_ref()
+            .is_some_and(|doc| !day_report::footer_should_show(&doc.footer, &doc.sections));
+        if yielded {
+            if !footer.is_empty() {
+                self.fail_day_report(format!(
+                    "Day-report week: warm day yielded but footer still visible: {footer:?}"
+                ));
+            }
+        } else if !footer.contains("Week: ") || !footer.contains("bounty +1") {
+            self.fail_day_report(format!(
+                "Day-report week: warm day missing visible Week line: {footer:?}"
             ));
             return false;
         }

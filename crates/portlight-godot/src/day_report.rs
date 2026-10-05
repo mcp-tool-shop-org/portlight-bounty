@@ -5,7 +5,8 @@
 //!
 //! Captain's week: a ride-along footer (Week deltas + one Next hint) below the
 //! scroll. It never opens the card, is not a [`DayReportLine`], and does not
-//! count toward [`LINE_CAP`].
+//! count toward [`LINE_CAP`]. The footer yields when the body would scroll at
+//! the shrunk height (all-or-nothing; Next never appears without Week).
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -44,6 +45,10 @@ pub(crate) const FOOTER_SCROLL_SHRINK: f32 = 48.0;
 pub(crate) const FOOTER_MAX_LINES: usize = 2;
 const FOOTER_FONT: i32 = 14;
 const FOOTER_SEP: i32 = 4;
+/// Deterministic body budget for footer yield (headless-reliable). Heads +
+/// body lines; a line over [`FOOTER_WRAP_CHARS`] counts as 2.
+pub(crate) const FOOTER_BODY_BUDGET: usize = 6;
+pub(crate) const FOOTER_WRAP_CHARS: usize = 60;
 
 /// Captain's week rolling window (Godot memory only, never saved).
 pub(crate) const WEEK_N: usize = 5;
@@ -281,16 +286,55 @@ pub(crate) fn apply_document(nodes: &mut DayReportNodes, doc: &DayReportDocument
         }
         nodes.body.add_child(&box_node);
     }
-    apply_footer(nodes, &doc.footer);
+    apply_footer(nodes, &doc.footer, &doc.sections);
 }
 
-fn apply_footer(nodes: &mut DayReportNodes, footer: &DayReportFooter) {
-    clear_children(&mut nodes.footer);
-    let lines = footer.lines();
-    for text in lines.iter().take(FOOTER_MAX_LINES) {
-        nodes.footer.add_child(&footer_label(text));
+/// Body cost for footer yield: one per rendered section head, plus one per line
+/// (two when the line is longer than [`FOOTER_WRAP_CHARS`]). Empty sections
+/// contribute nothing (they are not drawn).
+pub(crate) fn footer_body_cost(sections: &[DayReportSection]) -> usize {
+    sections
+        .iter()
+        .filter(|section| !section.lines.is_empty())
+        .map(|section| {
+            1 + section
+                .lines
+                .iter()
+                .map(|line| {
+                    if line.text.chars().count() > FOOTER_WRAP_CHARS {
+                        2
+                    } else {
+                        1
+                    }
+                })
+                .sum::<usize>()
+        })
+        .sum()
+}
+
+/// Show the footer only when Week is present and the body fits under the shrunk
+/// scroll. Yield is presentation-only and all-or-nothing: Next never appears
+/// without Week, and a yield hides both rows while keeping scroll at
+/// [`SCROLL_MIN_H`].
+pub(crate) fn footer_should_show(footer: &DayReportFooter, sections: &[DayReportSection]) -> bool {
+    if footer.week.is_none() || footer.lines().is_empty() {
+        return false;
     }
-    let shown = !lines.is_empty();
+    footer_body_cost(sections) <= FOOTER_BODY_BUDGET
+}
+
+fn apply_footer(
+    nodes: &mut DayReportNodes,
+    footer: &DayReportFooter,
+    sections: &[DayReportSection],
+) {
+    clear_children(&mut nodes.footer);
+    let shown = footer_should_show(footer, sections);
+    if shown {
+        for text in footer.lines().iter().take(FOOTER_MAX_LINES) {
+            nodes.footer.add_child(&footer_label(text));
+        }
+    }
     nodes.footer.set_visible(shown);
     let scroll_h = if shown {
         SCROLL_MIN_H - FOOTER_SCROLL_SHRINK
@@ -493,9 +537,14 @@ pub(crate) struct NextFacts {
     /// `deadline_day - day` for each active contract.
     pub contract_days_left: Vec<i64>,
     pub claimable: bool,
-    /// Any captain injury with `heal_remaining.is_some()`.
+    /// Any captain injury still asking the player to act: healing and untreated.
     pub captain_wounded: bool,
     pub provisions: i64,
+}
+
+/// Advice rung predicate (§12.7): healing wound that is not yet treated.
+fn untreated_healing(injury: &Injury) -> bool {
+    injury.heal_remaining.is_some() && !injury.treated
 }
 
 pub(crate) fn next_facts(session: &Session) -> NextFacts {
@@ -509,10 +558,7 @@ pub(crate) fn next_facts(session: &Session) -> NextFacts {
             .map(|contract| contract.deadline_day - day)
             .collect(),
         claimable: !claimable_ids(session).is_empty(),
-        captain_wounded: session
-            .injuries()
-            .iter()
-            .any(|injury| injury.heal_remaining.is_some()),
+        captain_wounded: session.injuries().iter().any(untreated_healing),
         provisions: world.captain.provisions,
     }
 }
@@ -1763,5 +1809,171 @@ mod tests {
             deadline.footer.next.as_deref(),
             Some("Next: Contract 1 day left - open Contracts.")
         );
+    }
+
+    /// R1: full 4-section body yields the footer; a small Week body keeps it.
+    /// Next without Week never shows (deadline warm-up is Next-only data).
+    #[test]
+    fn footer_yields_when_body_overflows_budget() {
+        let full = smoke_full_document(3);
+        assert!(
+            footer_body_cost(&full.sections) > FOOTER_BODY_BUDGET,
+            "full smoke body must exceed budget (got {})",
+            footer_body_cost(&full.sections)
+        );
+        assert!(
+            !footer_should_show(&full.footer, &full.sections),
+            "full 4-section document must yield the footer"
+        );
+
+        let deadline = smoke_deadline_document(4);
+        assert!(
+            deadline.footer.week.is_none() && deadline.footer.next.is_some(),
+            "deadline smoke still carries Next-only data"
+        );
+        assert!(
+            !footer_should_show(&deadline.footer, &deadline.sections),
+            "Next without Week never shows"
+        );
+
+        // Footer-shown case: two heads + three short rows = 5 <= 6.
+        let week_body = vec![
+            DayReportSection {
+                id: "deadlines",
+                title: "Deadlines",
+                lines: vec![line("Spice charter - 3 days left.", true)],
+            },
+            DayReportSection {
+                id: "bounties",
+                title: "Bounties",
+                lines: vec![
+                    line("Bounty accepted: Scarlet Ana.", true),
+                    line("Bounty accepted: Raj the Quiet.", true),
+                ],
+            },
+        ];
+        assert_eq!(footer_body_cost(&week_body), 5);
+        let week_footer = DayReportFooter {
+            week: Some("Week: -19 silver - crew 3 to 4 - bounty +1".into()),
+            next: Some("Next: Contract 3 days left - open Contracts.".into()),
+        };
+        assert!(
+            footer_should_show(&week_footer, &week_body),
+            "compact Week body must keep the footer"
+        );
+        // Long body line counts as 2.
+        let long = DayReportSection {
+            id: "deadlines",
+            title: "Deadlines",
+            lines: vec![line(
+                "Spice charter - 1 day left - 10/10 - ready to Complete at Contracts",
+                true,
+            )],
+        };
+        assert_eq!(footer_body_cost(&[long]), 3);
+    }
+
+    /// R3: treated healing wound skips Captain wounded and falls through.
+    #[test]
+    fn treated_wound_skips_captain_wounded_rung() {
+        let untreated = Injury {
+            injury_id: "cut_hand".into(),
+            acquired_day: 1,
+            heal_remaining: Some(8),
+            treated: false,
+        };
+        let treated = Injury {
+            injury_id: "cut_hand".into(),
+            acquired_day: 1,
+            heal_remaining: Some(4),
+            treated: true,
+        };
+        let permanent = Injury {
+            injury_id: "blinded_eye".into(),
+            acquired_day: 1,
+            heal_remaining: None,
+            treated: false,
+        };
+        assert!(untreated_healing(&untreated));
+        assert!(!untreated_healing(&treated));
+        assert!(!untreated_healing(&permanent));
+
+        let session = session_with_wound(true, STORES_LOW);
+        let facts = next_facts(&session);
+        assert!(
+            !facts.captain_wounded,
+            "treated healing wound must not set captain_wounded"
+        );
+        assert_eq!(facts.provisions, STORES_LOW);
+        assert_eq!(
+            next_line(&facts).as_deref(),
+            Some("Next: Stores low - restock in port."),
+            "treated wound falls through to Stores low"
+        );
+
+        let stocked = session_with_wound(true, STORES_LOW + 1);
+        assert_eq!(
+            next_line(&next_facts(&stocked)),
+            None,
+            "treated wound with stocked provisions omits Next"
+        );
+
+        let open = session_with_wound(false, STORES_LOW);
+        let open_facts = next_facts(&open);
+        assert!(open_facts.captain_wounded);
+        assert_eq!(
+            next_line(&open_facts).as_deref(),
+            Some("Next: Captain wounded - heal in port."),
+            "untreated healing still takes the wound rung over Stores"
+        );
+
+        // Week open_wounds stays heal_remaining.is_some() (treated or not).
+        assert_eq!(week_sample(&session).open_wounds, 1);
+        assert_eq!(week_sample(&open).open_wounds, 1);
+    }
+
+    /// Inject one cut_hand wound via save/load (Godot crate has no world_mut).
+    fn session_with_wound(treated: bool, provisions: i64) -> Session {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "portlight-day-report-wound-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        session.save(&dir, "wound").unwrap();
+        let path = dir.join("saves").join("wound.json");
+        let mut raw = std::fs::read_to_string(&path).unwrap();
+        let treated_json = if treated { "true" } else { "false" };
+        let injury = format!(
+            r#"{{"injury_id":"cut_hand","acquired_day":1,"heal_remaining":8,"treated":{treated_json}}}"#
+        );
+        let from = "\"injuries\": []";
+        let to = format!("\"injuries\": [{injury}]");
+        assert!(
+            raw.contains(from),
+            "fresh save should have empty injuries array"
+        );
+        raw = raw.replacen(from, &to, 1);
+        // Force provisions for Stores-low fallthrough.
+        let prov_from = format!("\"provisions\": {}", session.world().captain.provisions);
+        let prov_to = format!("\"provisions\": {provisions}");
+        assert!(
+            raw.contains(&prov_from),
+            "save missing provisions field {prov_from}"
+        );
+        raw = raw.replacen(&prov_from, &prov_to, 1);
+        std::fs::write(&path, &raw).unwrap();
+        let loaded = Session::load(&dir, "wound")
+            .unwrap()
+            .expect("reloaded wound session");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(loaded.injuries().len(), 1);
+        assert_eq!(loaded.injuries()[0].treated, treated);
+        assert_eq!(loaded.world().captain.provisions, provisions);
+        loaded
     }
 }
