@@ -62,7 +62,7 @@ pub use duel::{DuelOutcome, DuelRound};
 pub use error::SimError;
 pub use model::{MAP_GRID_HEIGHT, MAP_GRID_WIDTH};
 pub use script::{load_snapshot, run_and_save, run_script};
-pub use session::{Session, Turn};
+pub use session::{Session, Turn, VictoryReceipt};
 pub use snapshot::Snapshot;
 pub use voyage::{
     estimate_sail_days, sail_lanes, EventType, LaneSuitability, SailLane, VoyageEvent,

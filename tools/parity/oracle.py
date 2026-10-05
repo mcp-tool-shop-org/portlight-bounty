@@ -437,7 +437,7 @@ def do_advance(state, entry: dict) -> None:
                 contract_id=outcome.contract_id,
             )
     notes = apply_upkeep(state)
-    heal_injuries(state)
+    notes.extend(heal_injuries(state))
     if world.voyage.status != VoyageStatus.AT_SEA:
         shocks = tick_markets(world.ports, days=1, rng=rng)
         world.day += 1
@@ -1434,23 +1434,76 @@ def resolved_player_ship(ship):
     return resolved_ship(ship, UPGRADES)
 
 
-def heal_injuries(state) -> None:
-    """GameSession.advance: in port, or at sea with a surgeon's bay."""
+def _injury_catalog_name(injury_id: str) -> str | None:
+    from portlight.content.injuries import INJURIES
+
+    row = INJURIES.get(injury_id)
+    if row is None:
+        return None
+    return row.name
+
+
+def _same_wound(before, after) -> bool:
+    if before[0] != after.injury_id or before[1] != after.acquired_day:
+        return False
+    old = before[2]
+    new = after.heal_remaining
+    if old is None and new is None:
+        return True
+    if old is None or new is None:
+        return False
+    return new <= old
+
+
+def _heal_notes(before, after) -> list[str]:
+    """Catalog lines for wounds that closed or lost days. Permanent wounds stay quiet."""
+    notes: list[str] = []
+    after_index = 0
+    for injury_id, acquired_day, old in before:
+        matched = after_index < len(after) and _same_wound(
+            (injury_id, acquired_day, old), after[after_index]
+        )
+        if matched:
+            remaining = after[after_index].heal_remaining
+            after_index += 1
+            if old is not None and remaining is not None and remaining < old:
+                name = _injury_catalog_name(injury_id)
+                if name:
+                    notes.append(f"Healing: {name} ({remaining} days left).")
+        elif old is not None:
+            name = _injury_catalog_name(injury_id)
+            if name:
+                notes.append(f"Healed: {name}.")
+    return notes
+
+
+def heal_injuries(state) -> list[str]:
+    """GameSession.advance: in port, or at sea with a surgeon's bay.
+
+    Returns the same catalog heal lines Session puts on Turn.notes. The
+    captain's wounds change exactly as heal_injury_tick did before.
+    """
     world = state["world"]
     if not world.captain.injuries:
-        return
+        return []
     in_port = world.voyage.status != VoyageStatus.AT_SEA
     ship = world.captain.ship
     bay = False
     if ship is not None:
         bay = any(getattr(inst, "upgrade_id", "") == "surgeons_bay" for inst in ship.upgrades)
     if not (in_port or bay):
-        return
+        return []
     from portlight.engine.injuries import heal_injury_tick
+
+    before = [
+        (injury.injury_id, injury.acquired_day, injury.heal_remaining)
+        for injury in world.captain.injuries
+    ]
     medicines = any(item.good_id == "medicines" for item in world.captain.cargo)
     world.captain.injuries = heal_injury_tick(
         world.captain.injuries, days=1, in_port=True, has_medicines=medicines,
     )
+    return _heal_notes(before, world.captain.injuries)
 
 
 def ensure_combatants(state) -> None:

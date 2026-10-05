@@ -19,7 +19,10 @@
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
 //! scripted approach uses the encounter screen: `encounter_choice` /
 //! `encounter_choice_with`, `naval_round`, `resolve_boarding`, `fight`,
-//! `spare`, `capture`, and `take_all`. The voyage stance duel stays
+//! `spare`, `capture`, and `take_all`. Spare and take-all log the
+//! [`portlight_sim::VictoryReceipt`] on the chart and on the outcome card.
+//! Next day logs `Turn` events, shocks, and notes, including injury healing.
+//! The voyage stance duel stays
 //! `Session::duel` and `Session::resolve_pending_duel` on the chart panel.
 //! That panel is hidden while the encounter screen is open and shown again
 //! when the screen closes if a duel is still pending. The screen does not
@@ -67,9 +70,9 @@ use crate::logic::{
     frame_mostly_flat, frame_samples, install_confirm_line, layout_fits_window, newgame_copy,
     newgame_frame_rejected, player_ship, present, save_confirm_title, save_slot_label,
     sell_confirm_line, session_text, shipyard_frame_rejected, shipyard_model, stance_duel_visible,
-    template_player_ship, ui_sentence, CustomDraft, EncounterFacts, NewgamePage, PointPool,
-    ScreenAction, ScreenPhase, ShipyardModel, StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
-    NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
+    template_player_ship, ui_sentence, victory_receipt_lines, CustomDraft, EncounterFacts,
+    NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel, StepInput, NEWGAME_SHOT_H,
+    NEWGAME_SHOT_W, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
     SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
     SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
@@ -5421,12 +5424,19 @@ impl PortlightGame {
             }
         };
         match result {
-            Ok(()) => {
+            Ok(receipt) => {
+                let lines = victory_receipt_lines(&receipt);
+                for line in &lines {
+                    self.push_log(line.clone());
+                }
                 if let Some(facts) = self.encounter.as_mut() {
                     facts.pending_victory = false;
                     facts.phase = "resolved".to_string();
                     facts.on_session = false;
                     facts.kind = "resolved".to_string();
+                    if !lines.is_empty() {
+                        facts.log = lines.join("\n");
+                    }
                 }
             }
             Err(err) => self.note_session_error(err),

@@ -5,6 +5,7 @@ use crate::model::{Captain, Companion};
 use crate::pyrand::PyRandom;
 use crate::util::py_trunc;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DepartureEvent {
     pub companion_id: String,
     pub companion_name: String,
