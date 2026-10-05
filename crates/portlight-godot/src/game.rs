@@ -50,10 +50,10 @@ use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
     AudioStream, AudioStreamPlayer, Button, Control, DisplayServer, HBoxContainer, IControl,
-    InputEvent, InputEventKey, Label, LineEdit, Node, Os, PanelContainer, ScrollContainer,
-    StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
+    InputEvent, Label, LineEdit, Node, Os, PanelContainer, ScrollContainer, StyleBoxFlat,
+    SubViewport, SubViewportContainer, VBoxContainer,
 };
-use godot::global::{Error, Key};
+use godot::global::Error;
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
@@ -955,13 +955,8 @@ impl IControl for PortlightGame {
     }
 
     fn unhandled_key_input(&mut self, event: Gd<InputEvent>) {
-        let Ok(key) = event.try_cast::<InputEventKey>() else {
-            return;
-        };
-        if !key.is_pressed() || key.is_echo() {
-            return;
-        }
-        if key.get_keycode() != Key::ESCAPE {
+        // Docked-consistency: dismiss via InputMap action ui_cancel (Escape), not a raw keycode.
+        if !event.is_action_pressed("ui_cancel") {
             return;
         }
         if self.day_report_open {

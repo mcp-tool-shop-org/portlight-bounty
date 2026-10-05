@@ -275,10 +275,7 @@ fn deadline_lines(
             let port = port_label(world, &contract.destination_port_id);
             format!("sell {need} more {good} at {port}")
         } else {
-            format!(
-                "ready to Complete ({}/{}) at Contracts",
-                contract.delivered_quantity, contract.required_quantity
-            )
+            "ready to Complete at Contracts".to_string()
         };
         lines.push(DayReportLine {
             text: format!("{title} - {timing} - {progress} - {cue}"),
@@ -288,10 +285,12 @@ fn deadline_lines(
     lines
 }
 
-/// `{n} days left` / `1 day left` / `overdue` - never `due soon` (§13.1).
+/// `{n} days left` / `1 day left` / `due today` / `overdue` - never `due soon` (§13.1).
 pub(crate) fn deadline_timing(days_left: i64) -> String {
     if days_left < 0 {
         "overdue".to_string()
+    } else if days_left == 0 {
+        "due today".to_string()
     } else if days_left == 1 {
         "1 day left".to_string()
     } else {
@@ -350,7 +349,7 @@ pub(crate) fn heal_days_left(remaining: i64) -> String {
     }
 }
 
-fn price_lines(session: &Session, before: &HashMap<String, i64>) -> Vec<DayReportLine> {
+pub(crate) fn price_lines(session: &Session, before: &HashMap<String, i64>) -> Vec<DayReportLine> {
     let world = session.world();
     if world.voyage.status != VoyageStatus::InPort {
         return Vec::new();
@@ -396,7 +395,7 @@ fn price_lines(session: &Session, before: &HashMap<String, i64>) -> Vec<DayRepor
         .collect()
 }
 
-fn bounty_lines(
+pub(crate) fn bounty_lines(
     session: &Session,
     memory: &mut DayReportMemory,
     arrival_day: bool,
@@ -558,8 +557,9 @@ fn text_label(text: &str, size: i32, color: Color, wrap: bool) -> Gd<Label> {
 
 fn clear_children(node: &mut Gd<VBoxContainer>) {
     let children = node.get_children();
-    for child in children.iter_shared() {
+    for mut child in children.iter_shared() {
         node.remove_child(&child);
+        child.queue_free();
     }
 }
 
@@ -641,8 +641,9 @@ mod tests {
         assert_eq!(deadline_timing(3), "3 days left");
         assert_eq!(deadline_timing(2), "2 days left");
         assert_eq!(deadline_timing(1), "1 day left");
-        assert_eq!(deadline_timing(0), "0 days left");
+        assert_eq!(deadline_timing(0), "due today");
         assert_eq!(deadline_timing(-1), "overdue");
+        assert!(!deadline_timing(0).contains("due soon"));
         assert!(!deadline_timing(2).contains("due soon"));
     }
 
@@ -653,12 +654,21 @@ mod tests {
     }
 
     #[test]
-    fn prices_empty_when_undocked_memory() {
-        // Pure helper: at-sea snapshot is empty; price_lines with empty before yields empty.
-        let before: HashMap<String, i64> = HashMap::new();
-        assert!(before.is_empty());
-        let moves: Vec<DayReportLine> = Vec::new();
-        assert!(moves.is_empty());
+    fn prices_empty_when_undocked() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        assert_eq!(session.world().voyage.status, VoyageStatus::InPort);
+        let docked = snapshot_docked_prices(&session);
+        assert!(!docked.is_empty(), "docked pier should expose sell prices");
+        session.depart("al_manar").unwrap();
+        assert_eq!(session.world().voyage.status, VoyageStatus::AtSea);
+        assert!(
+            snapshot_docked_prices(&session).is_empty(),
+            "at-sea snapshot must be empty (§13.2)"
+        );
+        assert!(
+            price_lines(&session, &docked).is_empty(),
+            "price_lines at sea must be empty even with prior memory"
+        );
     }
 
     #[test]
@@ -743,17 +753,109 @@ mod tests {
         assert!(sections.is_empty());
     }
 
+    /// Build a session with an active bounty that is already defeated (claimable).
+    /// Uses save/load so we do not need a Session world_mut API (Godot-only crate).
+    fn session_with_claimable(id: &str) -> Session {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.accept_bounty(id).unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "portlight-day-report-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        session.save(&dir, "claim").unwrap();
+        let path = dir.join("saves").join("claim.json");
+        let mut raw = std::fs::read_to_string(&path).unwrap();
+        let memory = format!(
+            r#"
+    "captain_memories": {{
+      "{id}": {{
+        "captain_id": "{id}",
+        "relationship": {{
+          "respect": 0,
+          "fear": 0,
+          "grudge": 0,
+          "familiarity": 0
+        }},
+        "encounters": [],
+        "last_seen_day": 1,
+        "last_seen_region": "",
+        "times_spared": 0,
+        "times_defeated_by_player": 1,
+        "times_defeated_player": 0,
+        "player_sank_their_ship": false
+      }}
+    }},"#
+        );
+        let marker = "\"pirate_state\": {";
+        let Some(idx) = raw.find(marker) else {
+            panic!("save missing pirate_state object");
+        };
+        let insert_at = idx + marker.len();
+        raw.insert_str(insert_at, &memory);
+        std::fs::write(&path, &raw).unwrap();
+        let loaded = Session::load(&dir, "claim")
+            .unwrap()
+            .expect("reloaded claimable session");
+        let _ = std::fs::remove_dir_all(&dir);
+        loaded
+    }
+
     #[test]
     fn claimable_first_day_is_notable_repeat_is_not() {
-        let mut seen = HashSet::new();
-        let id = "raj_the_quiet".to_string();
-        let first = !seen.contains(&id);
-        assert!(first);
-        seen.insert(id.clone());
-        let second = !seen.contains(&id);
-        assert!(!second);
-        let arrival_retrigger = true;
-        assert!(second || arrival_retrigger);
+        let session = session_with_claimable("raj_the_quiet");
+        assert!(
+            claimable_ids(&session)
+                .iter()
+                .any(|id| id == "raj_the_quiet"),
+            "production claimable_ids should see defeated active bounty"
+        );
+        let known: Vec<portlight_sim::bounty::BountyTarget> = Vec::new();
+        let mut memory = DayReportMemory::default();
+
+        let first = bounty_lines(&session, &mut memory, false, &known);
+        let claim = first
+            .iter()
+            .find(|line| line.text.contains("Claim ready:"))
+            .expect("first day should list claimable via bounty_lines");
+        assert!(claim.notable, "first claimable day must be notable");
+        assert!(memory.claimable_seen.contains("raj_the_quiet"));
+
+        let second = bounty_lines(&session, &mut memory, false, &known);
+        let claim2 = second
+            .iter()
+            .find(|line| line.text.contains("Claim ready:"))
+            .expect("ride-along still lists claimable");
+        assert!(!claim2.notable, "repeat docked day is not notable");
+
+        let arrival = bounty_lines(&session, &mut memory, true, &known);
+        let claim3 = arrival
+            .iter()
+            .find(|line| line.text.contains("Claim ready:"))
+            .expect("arrival day still lists claimable");
+        assert!(claim3.notable, "arrival re-triggers notable");
+
+        // Also exercise build_document on the production path.
+        let mut memory2 = DayReportMemory::default();
+        let doc = build_document(
+            &session,
+            &[],
+            &[],
+            &HashMap::new(),
+            &mut memory2,
+            false,
+            &known,
+        );
+        assert!(doc.has_notable());
+        assert!(doc
+            .sections
+            .iter()
+            .flat_map(|s| s.lines.iter())
+            .any(|l| l.text.contains("Claim ready:")));
     }
 
     #[test]

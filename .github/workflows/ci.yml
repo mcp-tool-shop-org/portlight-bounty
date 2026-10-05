@@ -146,7 +146,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
