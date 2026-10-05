@@ -898,8 +898,9 @@ pub(crate) fn parse_positive(text: &str) -> Result<i64, &'static str> {
     }
 }
 
+/// Gold subhead, same as Contracts, Shipyard, Journal, Crew, and Hunt.
 pub(crate) fn section_label(text: &str) -> Gd<Label> {
-    let mut label = text_label(text, 18, CREAM);
+    let mut label = text_label(text, 18, GOLD);
     label.set_autowrap_mode(AutowrapMode::WORD_SMART);
     label
 }

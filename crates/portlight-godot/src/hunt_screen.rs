@@ -31,6 +31,10 @@ pub(crate) const FORAGE_BUTTON: &str = "Forage";
 pub(crate) const HUNT_TARGET_BUTTON: &str = "Hunt target";
 pub(crate) const CLAIM_BUTTON: &str = "Claim";
 pub(crate) const EMPTY_BOARD: &str = "No bounties on the board.";
+/// Eyebrow above the gold title. The title is location only, like the
+/// sibling desks; docked status sits here.
+pub(crate) const EYEBROW_DOCKED: &str = "Hunt - Docked";
+pub(crate) const EYEBROW_AT_SEA: &str = "Hunt";
 
 /// Display row. Mirrors `PIRATE_BOUNTIES` in `portlight-sim` so an active id
 /// still has a name after the ephemeral board is replaced. Not a sim API.
@@ -162,6 +166,7 @@ pub(crate) struct HuntDesk {
 #[derive(Clone)]
 pub(crate) struct HuntNodes {
     pub root: Gd<PanelContainer>,
+    pub eyebrow: Gd<Label>,
     pub title: Gd<Label>,
     pub notice: Gd<Label>,
     pub scroll: Gd<godot::classes::ScrollContainer>,
@@ -190,6 +195,7 @@ pub(crate) struct ActiveRow {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct HuntModel {
+    pub eyebrow: String,
     pub title: String,
     pub notice: String,
     pub forage_status: String,
@@ -233,7 +239,8 @@ pub(crate) fn build_hunt_screen() -> HuntNodes {
     column.add_theme_constant_override("separation", 10);
     row.add_child(&column);
 
-    column.add_child(&text_label("Hunt", 14, MUTED));
+    let eyebrow = text_label(EYEBROW_AT_SEA, 14, MUTED);
+    column.add_child(&eyebrow);
     let title = text_label("At sea", 28, GOLD);
     column.add_child(&title);
     let mut notice = text_label("", 16, CREAM);
@@ -266,6 +273,7 @@ pub(crate) fn build_hunt_screen() -> HuntNodes {
 
     HuntNodes {
         root,
+        eyebrow,
         title,
         notice,
         scroll,
@@ -410,10 +418,14 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
         )
     };
     let morale = world.captain.ship.as_ref().map(|ship| ship.morale);
-    let title = if at_sea {
-        "At sea".to_string()
+    // Location only, matching the sibling desks. Docked status is the eyebrow.
+    let (eyebrow, title) = if at_sea {
+        (EYEBROW_AT_SEA, "At sea".to_string())
     } else {
-        format!("Docked - {}", port_name.as_deref().unwrap_or("port"))
+        (
+            EYEBROW_DOCKED,
+            port_name.clone().unwrap_or_else(|| "port".to_string()),
+        )
     };
     let active_ids = world.captain.active_bounties.clone();
     let claimed_ids = world.captain.claimed_bounties.clone();
@@ -456,6 +468,7 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
         })
         .collect();
     HuntModel {
+        eyebrow: eyebrow.to_string(),
         title,
         notice: desk.notice.clone(),
         forage_status: forage_status(at_sea, port_name.as_deref(), morale),
@@ -639,7 +652,8 @@ fn section(title: &str) -> Gd<VBoxContainer> {
     column.set_name(section_name(title));
     column.set_h_size_flags(SizeFlags::EXPAND_FILL);
     column.add_theme_constant_override("separation", 6);
-    column.add_child(&text_label(title, 16, CREAM));
+    // Gold subhead, same as Contracts, Shipyard, Journal, and Crew.
+    column.add_child(&text_label(title, 16, GOLD));
     column
 }
 
@@ -674,12 +688,21 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
     label
 }
 
+/// Drops non-ASCII for the default font, then collapses the run of spaces a
+/// dropped dash leaves behind ("shellfish \u{2014} not" -> "shellfish not").
+/// Display only; the sim string is unchanged.
 fn ascii_text(text: &str) -> String {
     if text.is_ascii() {
-        text.to_string()
-    } else {
-        text.chars().filter(|ch| ch.is_ascii()).collect()
+        return text.to_string();
     }
+    let mut out = String::with_capacity(text.len());
+    for ch in text.chars().filter(|ch| ch.is_ascii()) {
+        if ch == ' ' && out.ends_with(' ') {
+            continue;
+        }
+        out.push(ch);
+    }
+    out
 }
 
 #[cfg(test)]
@@ -730,6 +753,27 @@ mod tests {
         assert!(!notice.to_lowercase().contains("hunt bounty"));
         assert_eq!(FORAGE_BUTTON, "Forage");
         assert!(!FORAGE_BUTTON.to_lowercase().contains("bounty"));
+    }
+
+    #[test]
+    fn ascii_filter_collapses_the_gap_a_dash_leaves() {
+        assert_eq!(
+            ascii_text("Shore birds and shellfish \u{2014} not glamorous."),
+            "Shore birds and shellfish not glamorous."
+        );
+        assert_eq!(ascii_text("Plain  ascii stays."), "Plain  ascii stays.");
+        let sample = HuntResult {
+            success: true,
+            provisions_gained: 4,
+            pelts_gained: 1,
+            silver_gained: 0,
+            morale_cost: 0,
+            crew_lost: 0,
+            hull_damage: 0,
+            flavor: "Shore birds and shellfish \u{2014} not glamorous.".into(),
+            danger_text: String::new(),
+        };
+        assert!(!forage_notice(&sample).contains("  "));
     }
 
     #[test]
@@ -800,7 +844,9 @@ mod tests {
             "Target not yet defeated. Find and defeat them at sea."
         );
         let model = hunt_model(&session, &desk);
-        assert!(model.title.starts_with("Docked - "));
+        assert_eq!(model.title, "Porto Novo");
+        assert_eq!(model.eyebrow, EYEBROW_DOCKED);
+        assert!(!model.title.contains("Docked"));
         assert_eq!(model.active.len(), 1);
         assert!(!model.active[0].claim_enabled);
         assert!(model
