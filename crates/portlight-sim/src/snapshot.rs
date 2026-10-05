@@ -433,7 +433,7 @@ pub struct LogEntry {
     /// `tick_sea_captain_agency` result, when that command ran.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agency: Option<AgencyLog>,
-    /// Infrastructure and credit messages from this day.
+    /// Infrastructure, credit, and injury-heal messages from this day.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub notes: Vec<String>,
     /// `GameSession.hunt` result, when that command succeeded.

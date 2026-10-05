@@ -8,7 +8,7 @@ use godot::classes::Image;
 use godot::prelude::*;
 use portlight_chart::{plates_for_class, ship_draw, Facing, ShipDraw};
 use portlight_sim::encounter::EncounterState;
-use portlight_sim::session::{EncounterStep, Session};
+use portlight_sim::session::{EncounterStep, Session, VictoryReceipt};
 use portlight_sim::SimError;
 
 /// Playable window in `godot/project.godot`.
@@ -524,6 +524,51 @@ fn view(phase: ScreenPhase, facts: &EncounterFacts, actions: Vec<ScreenAction>) 
         delta: delta_spans(facts),
         actions,
         portrait_placeholder: true,
+    }
+}
+
+/// ASCII receipt. Flavor and departure text are copied from the receipt.
+pub(crate) fn victory_receipt_lines(receipt: &VictoryReceipt) -> Vec<String> {
+    let mut lines = Vec::new();
+    let header = if receipt.spared {
+        format!("Spared {}.", receipt.enemy_captain_name)
+    } else {
+        format!("Took all from {}.", receipt.enemy_captain_name)
+    };
+    push_receipt_line(&mut lines, header);
+    push_receipt_line(&mut lines, format!("+{} silver.", receipt.silver_delta));
+    for message in &receipt.loot_messages {
+        push_receipt_line(&mut lines, message.clone());
+    }
+    if receipt.standing_delta != 0 {
+        let signed = if receipt.standing_delta > 0 {
+            format!("+{}", receipt.standing_delta)
+        } else {
+            receipt.standing_delta.to_string()
+        };
+        push_receipt_line(
+            &mut lines,
+            format!("Underworld standing {} {signed}.", receipt.faction_id),
+        );
+    }
+    for (_, _, flavor) in &receipt.reactions {
+        push_receipt_line(&mut lines, flavor.clone());
+    }
+    for departure in &receipt.departures {
+        push_receipt_line(
+            &mut lines,
+            format!(
+                "{} leaves. {}",
+                departure.companion_name, departure.departure_line
+            ),
+        );
+    }
+    lines
+}
+
+fn push_receipt_line(lines: &mut Vec<String>, line: String) {
+    if !line.is_empty() {
+        lines.push(line);
     }
 }
 
@@ -1279,6 +1324,7 @@ pub(crate) fn shipyard_frame_rejected(width: i32, height: i32, samples: &[[u8; 3
 #[cfg(test)]
 mod tests {
     use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
+    use portlight_sim::session::VictoryReceipt;
 
     use super::*;
 
@@ -1945,7 +1991,12 @@ mod tests {
         assert_eq!(outcome.log, facts.log);
         assert!(!outcome.log.is_empty());
         let silver = session.world().captain.silver;
-        session.spare().unwrap();
+        let receipt = session.spare().unwrap();
+        let lines = victory_receipt_lines(&receipt);
+        assert!(lines.iter().any(|line| line.starts_with("Spared ")));
+        assert!(lines
+            .iter()
+            .any(|line| line == &format!("+{} silver.", receipt.silver_delta)));
         assert!(!session.pending_victory());
         assert!(session.world().captain.silver > silver);
         facts.pending_victory = false;
@@ -2228,5 +2279,67 @@ mod tests {
         assert!(!newgame_frame_rejected(1280, 800, &samples));
         assert!(newgame_frame_rejected(1280, 720, &samples));
         assert!(newgame_frame_rejected(1280, 800, &[]));
+    }
+
+    #[test]
+    fn receipt_lines_copy_loot_flavor_and_departure_text() {
+        let receipt = VictoryReceipt {
+            spared: false,
+            silver_delta: 55,
+            loot: Vec::new(),
+            loot_messages: vec!["+12 silver".to_string(), "Found: Cutlass".to_string()],
+            standing_delta: 2,
+            faction_id: "iron_wolves".to_string(),
+            enemy_captain_id: "raj_the_quiet".to_string(),
+            enemy_captain_name: "Raj the Quiet".to_string(),
+            reactions: vec![(
+                "red_tomas".to_string(),
+                1,
+                "Red Tomas approves. (+1 morale)".to_string(),
+            )],
+            departures: vec![portlight_sim::companion::DepartureEvent {
+                companion_id: "dr_amara".to_string(),
+                companion_name: "Dr. Amara".to_string(),
+                reason: "Morale collapsed".to_string(),
+                departure_line: "I cannot stay.".to_string(),
+            }],
+        };
+        assert_eq!(
+            victory_receipt_lines(&receipt),
+            vec![
+                "Took all from Raj the Quiet.".to_string(),
+                "+55 silver.".to_string(),
+                "+12 silver".to_string(),
+                "Found: Cutlass".to_string(),
+                "Underworld standing iron_wolves +2.".to_string(),
+                "Red Tomas approves. (+1 morale)".to_string(),
+                "Dr. Amara leaves. I cannot stay.".to_string(),
+            ]
+        );
+        let mut quiet = receipt;
+        quiet.standing_delta = 0;
+        quiet.reactions.clear();
+        quiet.departures.clear();
+        quiet.loot_messages.clear();
+        quiet.spared = true;
+        assert_eq!(
+            victory_receipt_lines(&quiet),
+            vec![
+                "Spared Raj the Quiet.".to_string(),
+                "+55 silver.".to_string(),
+            ]
+        );
+        let shocks = vec!["Shortage: silk scarce at Coral Throne".to_string()];
+        let notes = vec![
+            "Healing: Gunshot Wound (29 days left).".to_string(),
+            String::new(),
+        ];
+        assert_eq!(
+            day_log_lines(&[], &shocks, &notes, None),
+            vec![
+                "Shortage: silk scarce at Coral Throne".to_string(),
+                "Healing: Gunshot Wound (29 days left).".to_string(),
+            ]
+        );
     }
 }

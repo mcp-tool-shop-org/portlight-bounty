@@ -37,7 +37,7 @@
           "rust": 0
         }
       ],
-      "rust": "crates/portlight-sim/src/session.rs:1271-1272",
+      "rust": "crates/portlight-sim/src/session.rs:1306-1307",
       "oracle": "tools/parity/oracle.py:1407-1413",
       "python": "src/portlight/app/session.py:186-213"
     }

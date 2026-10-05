@@ -43,6 +43,9 @@
 //! [`Session::board`] is the contract board. The script command for the deck
 //! melee is still `board`.
 //! `advance` does not auto-resolve, matching `auto_resolve_duels = False`.
+//! [`Session::spare`] and [`Session::take_all`] return a [`VictoryReceipt`]:
+//! the purse, loot lines, standing change, and the companion flavors and
+//! departures those calls already applied.
 
 use std::path::{Path, PathBuf};
 
@@ -66,7 +69,7 @@ use crate::loot;
 use crate::memory;
 use crate::model::{
     ActiveContract, Armor, CargoItem, Consequence, Contract, ContractBoard, ContractOutcome,
-    InfrastructureRecord, InstalledUpgrade, NarrativeState, Officer, PendingDuel,
+    InfrastructureRecord, Injury, InstalledUpgrade, NarrativeState, Officer, PendingDuel,
     PirateEncounterRecord, VoyageStatus, Weapon, World,
 };
 use crate::naval::{self, NavalRound};
@@ -89,8 +92,28 @@ pub struct Turn {
     pub shocks: Vec<String>,
     /// Contracts that expired on this day. Empty when nothing lapsed.
     pub contracts: Vec<ContractOutcome>,
-    /// Infrastructure and credit messages from this day.
+    /// Infrastructure, credit, and injury-heal messages from this day.
     pub notes: Vec<String>,
+}
+
+/// Silver, loot, standing, and companion lines from [`Session::spare`] or
+/// [`Session::take_all`].
+///
+/// The duel purse is `silver_delta`. Loot silver is only in `loot` and
+/// `loot_messages`. Companion lines are the flavors and departure text the
+/// sim already produced.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VictoryReceipt {
+    pub spared: bool,
+    pub silver_delta: i64,
+    pub loot: Vec<loot::LootDrop>,
+    pub loot_messages: Vec<String>,
+    pub standing_delta: i64,
+    pub faction_id: String,
+    pub enemy_captain_id: String,
+    pub enemy_captain_name: String,
+    pub reactions: Vec<(String, i64, String)>,
+    pub departures: Vec<companion::DepartureEvent>,
 }
 
 /// A sale, plus any contracts that sale completed.
@@ -1017,13 +1040,24 @@ impl Session {
     }
 
     /// Mercy after a personal-combat win. Less silver, more underworld standing.
-    pub fn spare(&mut self) -> Result<(), SimError> {
+    ///
+    /// The receipt is the purse, standing change, and companion lines this
+    /// call already applied. Spare rolls no loot.
+    pub fn spare(&mut self) -> Result<VictoryReceipt, SimError> {
         self.finalize_victory(true)
     }
 
     /// Take the defeated captain's silver and loot.
-    pub fn take_all(&mut self) -> Result<(), SimError> {
+    ///
+    /// The receipt includes the purse, `apply_loot` messages, standing change,
+    /// and companion lines. Loot silver is not folded into `silver_delta`.
+    pub fn take_all(&mut self) -> Result<VictoryReceipt, SimError> {
         self.finalize_victory(false)
+    }
+
+    /// Wounds on the captain. Healing stays inside [`Session::advance`].
+    pub fn injuries(&self) -> &[Injury] {
+        &self.world.captain.injuries
     }
 
     /// Mark fleet hulls at the current port as in transit. `depart` calls this.
@@ -1605,7 +1639,7 @@ impl Session {
         }
     }
 
-    fn finalize_victory(&mut self, spared: bool) -> Result<(), SimError> {
+    fn finalize_victory(&mut self, spared: bool) -> Result<VictoryReceipt, SimError> {
         if !self.pending_victory || self.encounter.is_none() {
             if self.encounter.as_ref().map(|enc| enc.phase.as_str()) == Some("capture_available") {
                 return Err(SimError::Sentence(
@@ -1638,7 +1672,7 @@ impl Session {
             false,
             crew_killed,
         );
-        record_duel_standing(
+        let standing_delta = record_duel_standing(
             &mut self.world.captain.standing,
             &enc.enemy_faction_id,
             true,
@@ -1665,20 +1699,35 @@ impl Session {
                 );
             }
         }
-        if !spared {
+        let (loot, loot_messages) = if spared {
+            (Vec::new(), Vec::new())
+        } else {
             let drops = loot::roll_loot(
                 enc.enemy_strength,
                 Some(&enc.enemy_captain_id),
                 &mut self.rng,
                 2,
             );
-            loot::apply_loot(&mut self.world.captain, &drops);
-        }
+            let messages = loot::apply_loot(&mut self.world.captain, &drops);
+            (drops, messages)
+        };
         let trigger = if spared { "spared_enemy" } else { "took_all" };
-        companion::apply_morale_trigger(&mut self.world.captain, trigger);
-        companion::check_departures(&mut self.world.captain);
+        let reactions = companion::apply_morale_trigger(&mut self.world.captain, trigger);
+        let departures = companion::check_departures(&mut self.world.captain);
+        let receipt = VictoryReceipt {
+            spared,
+            silver_delta: silver_gain,
+            loot,
+            loot_messages,
+            standing_delta,
+            faction_id: enc.enemy_faction_id,
+            enemy_captain_id: enc.enemy_captain_id,
+            enemy_captain_name: enc.enemy_captain_name,
+            reactions,
+            departures,
+        };
         self.clear_encounter();
-        Ok(())
+        Ok(receipt)
     }
 
     fn blank_step(&self, kind: &str) -> EncounterStep {
@@ -1985,10 +2034,12 @@ impl Session {
     /// One session day. In port this ticks markets. At sea this sails.
     ///
     /// Order matches `GameSession.advance`: reputation, contract expiry and
-    /// the contract-failure claim, infrastructure upkeep, credit, then the
-    /// in-port day or the sea day. A pending duel returns no events and does
-    /// not spend the day. Call [`Session::duel`] or
-    /// [`Session::resolve_pending_duel`] first.
+    /// the contract-failure claim, infrastructure upkeep, credit, injury
+    /// healing, then the in-port day or the sea day. A heal tick in port, or
+    /// at sea with a surgeon's bay, appends catalog `Healed:` / `Healing:`
+    /// lines to [`Turn::notes`]. A day with nothing to heal adds none. A
+    /// pending duel returns no events and does not spend the day. Call
+    /// [`Session::duel`] or [`Session::resolve_pending_duel`] first.
     pub fn advance(&mut self) -> Result<Turn, SimError> {
         reputation::tick_reputation(&mut self.world.captain.standing);
         // Same position as GameSession.advance: after the reputation tick,
@@ -1997,7 +2048,7 @@ impl Session {
         let contracts = self.expire_contracts();
         self.file_contract_claims(&contracts);
         let mut notes = self.tick_upkeep();
-        self.heal_injuries();
+        notes.extend(self.heal_injuries());
         let sailed = self.world.voyage.status == VoyageStatus::AtSea;
         let mut turn = if !sailed {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
@@ -2505,9 +2556,9 @@ impl Session {
             .unwrap_or_else(|| "Mediterranean".to_string())
     }
 
-    fn heal_injuries(&mut self) {
+    fn heal_injuries(&mut self) -> Vec<String> {
         if self.world.captain.injuries.is_empty() {
-            return;
+            return Vec::new();
         }
         let in_port = self.world.voyage.status != VoyageStatus::AtSea;
         let bay = self.world.captain.ship.as_ref().is_some_and(|ship| {
@@ -2516,16 +2567,19 @@ impl Session {
                 .any(|upgrade| upgrade.upgrade_id == "surgeons_bay")
         });
         if !(in_port || bay) {
-            return;
+            return Vec::new();
         }
+        let before = self.world.captain.injuries.clone();
         let medicines = self
             .world
             .captain
             .cargo
             .iter()
             .any(|item| item.good_id == "medicines");
-        self.world.captain.injuries =
-            injuries::heal_injury_tick(&self.world.captain.injuries, 1, true, medicines);
+        let after = injuries::heal_injury_tick(&before, 1, true, medicines);
+        let notes = heal_notes(&before, &after);
+        self.world.captain.injuries = after;
+        notes
     }
 
     /// Buy a hull at a shipyard. The old hull joins the fleet until
@@ -2973,6 +3027,51 @@ impl Session {
         memory::record_encounter(memory, day, &region, outcome, false, false, 0);
         Ok(())
     }
+}
+
+fn injury_catalog_name(injury_id: &str) -> Option<String> {
+    content::content()
+        .injury(injury_id)
+        .map(|def| def.name.clone())
+}
+
+fn same_wound(before: &Injury, after: &Injury) -> bool {
+    if before.injury_id != after.injury_id || before.acquired_day != after.acquired_day {
+        return false;
+    }
+    match (before.heal_remaining, after.heal_remaining) {
+        (None, None) => true,
+        (Some(old), Some(new)) => new <= old,
+        _ => false,
+    }
+}
+
+/// Catalog lines for wounds that closed or lost days. Permanent wounds and
+/// unchanged wounds stay quiet.
+fn heal_notes(before: &[Injury], after: &[Injury]) -> Vec<String> {
+    let mut notes = Vec::new();
+    let mut after_index = 0;
+    for injury in before {
+        let matched = after
+            .get(after_index)
+            .is_some_and(|next| same_wound(injury, next));
+        if matched {
+            let next = &after[after_index];
+            after_index += 1;
+            if let (Some(old), Some(remaining)) = (injury.heal_remaining, next.heal_remaining) {
+                if remaining < old {
+                    if let Some(name) = injury_catalog_name(&injury.injury_id) {
+                        notes.push(format!("Healing: {name} ({remaining} days left)."));
+                    }
+                }
+            }
+        } else if injury.heal_remaining.is_some() {
+            if let Some(name) = injury_catalog_name(&injury.injury_id) {
+                notes.push(format!("Healed: {name}."));
+            }
+        }
+    }
+    notes
 }
 
 struct ShopEntry {
@@ -4419,5 +4518,227 @@ mod tests {
         assert_eq!(loaded.world.captain.silver, silver);
         assert_eq!(loaded.world.day, day);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn seat_companion(session: &mut Session, id: &str, role: &str, personality: &str, morale: i64) {
+        session
+            .world
+            .captain
+            .party
+            .companions
+            .push(crate::model::Companion {
+                companion_id: id.to_string(),
+                role_id: role.to_string(),
+                morale,
+                joined_day: session.world.day,
+                personality: personality.to_string(),
+            });
+    }
+
+    fn win_raj_duel(session: &mut Session) {
+        session
+            .encounter_choice_with("fight", Some("raj_the_quiet"), None)
+            .unwrap();
+        for action in ["broadside", "broadside", "rake", "evade", "close", "close"] {
+            session.naval_round(action).unwrap();
+        }
+        session.resolve_boarding().unwrap();
+        for action in [
+            "thrust", "slash", "parry", "dodge", "thrust", "thrust", "thrust", "thrust",
+        ] {
+            session.fight(action).unwrap();
+        }
+        assert!(session.pending_victory());
+    }
+
+    #[test]
+    fn spare_without_a_win_keeps_the_sentence() {
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        assert_eq!(
+            session.spare().unwrap_err().to_string(),
+            "No defeated opponent to spare. Win a duel first."
+        );
+        assert_eq!(
+            session.take_all().unwrap_err().to_string(),
+            "No defeated opponent. Win a duel first."
+        );
+    }
+
+    #[test]
+    fn spare_receipt_keeps_the_purse_standing_and_reaction() {
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        seat_companion(&mut session, "red_tomas", "marine", "pragmatic", 70);
+        let silver_before = session.world.captain.silver;
+        win_raj_duel(&mut session);
+        let strength = session.encounter.as_ref().unwrap().enemy_strength;
+        let faction = session.encounter.as_ref().unwrap().enemy_faction_id.clone();
+        let receipt = session.spare().unwrap();
+        assert!(receipt.spared);
+        assert!(receipt.loot.is_empty());
+        assert!(receipt.loot_messages.is_empty());
+        assert_eq!(receipt.silver_delta, 20 + strength * 3);
+        assert_eq!(receipt.standing_delta, 5);
+        assert_eq!(receipt.faction_id, faction);
+        assert_eq!(
+            session.world.captain.silver,
+            silver_before + receipt.silver_delta
+        );
+        assert_eq!(
+            receipt.reactions,
+            vec![(
+                "red_tomas".to_string(),
+                2,
+                "Red Tomas approves. (+2 morale)".to_string(),
+            )]
+        );
+        assert!(receipt.departures.is_empty());
+        assert_eq!(session.world.captain.party.companions.len(), 1);
+        assert!(!session.pending_victory());
+    }
+
+    #[test]
+    fn take_all_receipt_matches_apply_loot() {
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        win_raj_duel(&mut session);
+        let strength = session.encounter.as_ref().unwrap().enemy_strength;
+        let before = session.world.captain.clone();
+        let receipt = session.take_all().unwrap();
+        assert!(!receipt.spared);
+        assert_eq!(receipt.silver_delta, 20 + strength * 7);
+        assert_eq!(receipt.standing_delta, 2);
+        let mut probe = before;
+        let messages = loot::apply_loot(&mut probe, &receipt.loot);
+        assert_eq!(receipt.loot_messages, messages);
+        probe.silver += receipt.silver_delta;
+        assert_eq!(session.world.captain.silver, probe.silver);
+        assert!(!receipt.loot.is_empty());
+        assert!(!session.pending_victory());
+    }
+
+    #[test]
+    fn low_morale_companion_departs_on_the_receipt() {
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        seat_companion(&mut session, "dr_amara", "surgeon", "gentle", 0);
+        win_raj_duel(&mut session);
+        let receipt = session.spare().unwrap();
+        let line = content::content()
+            .companion("dr_amara")
+            .unwrap()
+            .departure_line
+            .clone();
+        assert_eq!(receipt.departures.len(), 1);
+        assert_eq!(receipt.departures[0].companion_id, "dr_amara");
+        assert_eq!(receipt.departures[0].companion_name, "Dr. Amara");
+        assert_eq!(receipt.departures[0].departure_line, line);
+        assert!(session.world.captain.party.companions.is_empty());
+        assert_eq!(session.world.captain.party.departed, vec!["dr_amara"]);
+        assert!(receipt
+            .reactions
+            .iter()
+            .any(|(id, _, flavor)| id == "dr_amara" && flavor.contains("approves")));
+    }
+
+    #[test]
+    fn injuries_accessor_is_the_captain_slice() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        assert!(session.injuries().is_empty());
+        session
+            .world
+            .captain
+            .injuries
+            .push(injuries::create_injury("cut_hand", 1));
+        assert_eq!(session.injuries().len(), 1);
+        assert_eq!(session.injuries()[0].injury_id, "cut_hand");
+        assert_eq!(session.injuries()[0].heal_remaining, Some(10));
+    }
+
+    #[test]
+    fn port_advance_notes_healing_and_sea_advance_stays_quiet() {
+        let mut healing = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let mut quiet = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        healing
+            .world
+            .captain
+            .injuries
+            .push(injuries::create_injury("cut_hand", healing.world.day));
+        let healed = healing.advance().unwrap();
+        let plain = quiet.advance().unwrap();
+        assert_eq!(healing.world.day, quiet.world.day);
+        assert_eq!(healing.world.captain.silver, quiet.world.captain.silver);
+        assert_eq!(
+            healing.world.captain.provisions,
+            quiet.world.captain.provisions
+        );
+        assert_eq!(healing.injuries()[0].heal_remaining, Some(9));
+        let mut expected = plain.notes.clone();
+        expected.push("Healing: Cut Hand (9 days left).".to_string());
+        assert_eq!(healed.notes, expected);
+
+        healing.world.captain.injuries[0].heal_remaining = Some(1);
+        healing.world.captain.injuries.push(Injury {
+            injury_id: "blinded_eye".to_string(),
+            acquired_day: healing.world.day,
+            heal_remaining: None,
+            treated: false,
+        });
+        let closed = healing.advance().unwrap();
+        assert!(closed.notes.iter().any(|note| note == "Healed: Cut Hand."));
+        assert!(closed
+            .notes
+            .iter()
+            .all(|note| !note.contains("Blinded Eye")));
+        assert_eq!(healing.injuries().len(), 1);
+        assert_eq!(healing.injuries()[0].injury_id, "blinded_eye");
+
+        let mut at_sea = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        at_sea.depart("silva_bay").unwrap();
+        assert_eq!(at_sea.world.voyage.status, VoyageStatus::AtSea);
+        at_sea
+            .world
+            .captain
+            .injuries
+            .push(injuries::create_injury("cut_hand", at_sea.world.day));
+        let sea_day = at_sea.advance().unwrap();
+        assert_eq!(at_sea.world.voyage.status, VoyageStatus::AtSea);
+        assert!(sea_day
+            .notes
+            .iter()
+            .all(|note| { !note.starts_with("Healed:") && !note.starts_with("Healing:") }));
+        assert_eq!(at_sea.injuries()[0].heal_remaining, Some(10));
+
+        at_sea
+            .world
+            .captain
+            .ship
+            .as_mut()
+            .unwrap()
+            .upgrades
+            .push(InstalledUpgrade {
+                upgrade_id: "surgeons_bay".to_string(),
+                installed_day: at_sea.world.day,
+            });
+        let bay_day = at_sea.advance().unwrap();
+        assert!(bay_day
+            .notes
+            .iter()
+            .any(|note| note == "Healing: Cut Hand (9 days left)."));
+        assert_eq!(at_sea.injuries()[0].heal_remaining, Some(9));
+    }
+
+    #[test]
+    fn heal_notes_do_not_pair_a_closed_wound_with_its_twin() {
+        let mut closed = injuries::create_injury("cut_hand", 1);
+        closed.heal_remaining = Some(1);
+        let mut twin = injuries::create_injury("cut_hand", 1);
+        twin.heal_remaining = Some(10);
+        let mut survived = twin.clone();
+        survived.heal_remaining = Some(9);
+        assert_eq!(
+            super::heal_notes(&[closed, twin], &[survived]),
+            vec![
+                "Healed: Cut Hand.".to_string(),
+                "Healing: Cut Hand (9 days left).".to_string(),
+            ]
+        );
     }
 }

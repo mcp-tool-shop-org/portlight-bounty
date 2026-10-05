@@ -384,11 +384,13 @@ fn dispatch(
         }
         "spare" => {
             let session = active(session)?;
-            session.spare()
+            session.spare()?;
+            Ok(())
         }
         "take_all" => {
             let session = active(session)?;
-            session.take_all()
+            session.take_all()?;
+            Ok(())
         }
         "gear" => {
             let session = active(session)?;
