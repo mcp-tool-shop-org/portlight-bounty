@@ -49,11 +49,11 @@ use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
-    AudioStream, AudioStreamPlayer, Button, Control, DisplayServer, HBoxContainer, IControl, Label,
-    LineEdit, Node, Os, PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport,
-    SubViewportContainer, VBoxContainer,
+    AudioStream, AudioStreamPlayer, Button, Control, DisplayServer, HBoxContainer, IControl,
+    InputEvent, InputEventKey, Label, LineEdit, Node, Os, PanelContainer, ScrollContainer,
+    StyleBoxFlat, SubViewport, SubViewportContainer, VBoxContainer,
 };
-use godot::global::Error;
+use godot::global::{Error, Key};
 use godot::obj::InstanceId;
 use godot::prelude::*;
 use portlight_chart::{
@@ -70,6 +70,7 @@ use std::collections::HashMap;
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::crew_screen::{self, CrewNodes};
+use crate::day_report::{self, DayReportDocument, DayReportMemory, DayReportNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
 use crate::hunt_screen::{self, HuntAction, HuntConfirm, HuntDesk};
@@ -172,6 +173,7 @@ enum Action {
     ShipyardCancel,
     OpenJournal,
     CloseJournal,
+    CloseDayReport,
     ToggleBeat(String),
     OpenHarbour,
     CloseHarbour,
@@ -412,6 +414,21 @@ impl HuntShot {
 }
 
 #[derive(Clone, Copy)]
+enum DayReportShot {
+    Full,
+    Deadline,
+}
+
+impl DayReportShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Full => "day-report-full.png",
+            Self::Deadline => "day-report-deadline.png",
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 enum Stance {
     Thrust,
     Slash,
@@ -561,6 +578,13 @@ struct PortlightGame {
     hunt_shot: Option<HuntShot>,
     /// The section is scrolled after layout, then the frame waits one draw.
     hunt_scrolled: bool,
+    day_report_nodes: Option<DayReportNodes>,
+    day_report_open: bool,
+    day_report_doc: Option<DayReportDocument>,
+    day_report_memory: DayReportMemory,
+    day_report_checked: bool,
+    day_report_shot_dir: Option<String>,
+    day_report_shot: Option<DayReportShot>,
 }
 
 #[derive(Clone, Copy)]
@@ -701,6 +725,13 @@ impl IControl for PortlightGame {
             hunt_shot_dir: None,
             hunt_shot: None,
             hunt_scrolled: false,
+            day_report_nodes: None,
+            day_report_open: false,
+            day_report_doc: None,
+            day_report_memory: DayReportMemory::default(),
+            day_report_checked: false,
+            day_report_shot_dir: None,
+            day_report_shot: None,
         }
     }
 
@@ -766,6 +797,17 @@ impl IControl for PortlightGame {
             } else {
                 self.capture_frames = 2;
             }
+        } else if user_arg("--day-report-screen") {
+            self.smoke = true;
+            self.day_report_checked = true;
+            let capture = day_report_frames_requested(self.shot_path.is_some());
+            if capture {
+                self.begin_day_report_shots();
+                self.capture_frames = 4;
+            } else {
+                self.run_day_report_smoke();
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -804,6 +846,9 @@ impl IControl for PortlightGame {
         if self.advance_hunt_shot() {
             return;
         }
+        if self.advance_day_report_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -831,6 +876,7 @@ impl IControl for PortlightGame {
             && self.harbour_shot_dir.is_none()
             && self.crew_shot_dir.is_none()
             && self.hunt_shot_dir.is_none()
+            && self.day_report_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -887,6 +933,11 @@ impl IControl for PortlightGame {
                 "portlight hunt smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
+        } else if self.day_report_checked {
+            godot_print!(
+                "portlight day-report smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
         } else {
             if self.encounter_checked {
                 godot_print!(
@@ -901,6 +952,24 @@ impl IControl for PortlightGame {
         }
         let mut tree = self.base().get_tree();
         tree.quit_ex().exit_code(code).done();
+    }
+
+    fn unhandled_key_input(&mut self, event: Gd<InputEvent>) {
+        let Ok(key) = event.try_cast::<InputEventKey>() else {
+            return;
+        };
+        if !key.is_pressed() || key.is_echo() {
+            return;
+        }
+        if key.get_keycode() != Key::ESCAPE {
+            return;
+        }
+        if self.day_report_open {
+            self.close_day_report();
+            if let Some(mut viewport) = self.base().get_viewport() {
+                viewport.set_input_as_handled();
+            }
+        }
     }
 }
 
@@ -1267,6 +1336,18 @@ impl PortlightGame {
         self.base_mut().add_child(&hunt.root);
         hunt_screen::fill_parent(&mut hunt.root);
         self.hunt_nodes = Some(hunt);
+
+        let mut day_report = day_report::build_day_report_screen();
+        let close_day = game_id;
+        day_report.close.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(close_day) else {
+                return;
+            };
+            gd.bind_mut().perform(Action::CloseDayReport);
+        });
+        self.base_mut().add_child(&day_report.root);
+        day_report::place_card(&mut day_report.root);
+        self.day_report_nodes = Some(day_report);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1280,6 +1361,9 @@ impl PortlightGame {
         self.stances.clear();
         self.hunt_open = false;
         self.hunt_desk = HuntDesk::default();
+        self.day_report_open = false;
+        self.day_report_doc = None;
+        self.day_report_memory = DayReportMemory::default();
         self.encounter = None;
         match Session::new(
             FIRST_PLAYABLE_NAME,
@@ -1675,6 +1759,7 @@ impl PortlightGame {
         if self.session.is_none() {
             return;
         }
+        self.close_day_report();
         self.journal_open = true;
         self.journal_filled = false;
         self.refresh();
@@ -2282,6 +2367,7 @@ impl PortlightGame {
             self.push_log("Shipyard opens from a dock.".to_string());
             return;
         }
+        self.close_day_report();
         self.shipyard_open = true;
         self.play_sfx("sfx_ui_port_open");
         self.shipyard_confirm = None;
@@ -3489,6 +3575,7 @@ impl PortlightGame {
             Action::ShipyardCancel => self.cancel_shipyard(),
             Action::OpenJournal => self.open_journal(),
             Action::CloseJournal => self.close_journal(),
+            Action::CloseDayReport => self.close_day_report(),
             Action::ToggleBeat(id) => self.toggle_beat(&id),
             Action::OpenHarbour => self.open_harbour(),
             Action::CloseHarbour => self.close_harbour(),
@@ -3582,6 +3669,17 @@ impl PortlightGame {
             .as_ref()
             .map(|session| (session.world().day, at_sea(session)))
             .unwrap_or((0, false));
+        let prices_before = self
+            .session
+            .as_ref()
+            .map(day_report::snapshot_docked_prices)
+            .unwrap_or_default();
+        let injuries_before = self
+            .session
+            .as_ref()
+            .map(|session| session.injuries().to_vec())
+            .unwrap_or_default();
+        let mut turn_contracts = Vec::new();
         let notes = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -3592,6 +3690,7 @@ impl PortlightGame {
                     vec![err.to_string()]
                 }
                 Ok(turn) => {
+                    turn_contracts = turn.contracts.clone();
                     let events: Vec<String> = turn
                         .events
                         .iter()
@@ -3635,6 +3734,19 @@ impl PortlightGame {
         }
         for note in notes {
             self.push_log(note);
+        }
+        if !failed {
+            let arrival_day = sailed
+                && self
+                    .session
+                    .as_ref()
+                    .is_some_and(|session| session.world().voyage.status == VoyageStatus::InPort);
+            self.show_day_report_after_advance(
+                &turn_contracts,
+                &injuries_before,
+                &prices_before,
+                arrival_day,
+            );
         }
         if let Some((state, log)) = opened {
             if !log.is_empty() {
@@ -3782,6 +3894,7 @@ impl PortlightGame {
         if self.docked_id().is_none() {
             return;
         }
+        self.close_day_report();
         self.harbour_open = true;
         self.harbour_pending = None;
         self.harbour_notice.clear();
@@ -4234,6 +4347,7 @@ impl PortlightGame {
         if self.docked_id().is_none() {
             return;
         }
+        self.close_day_report();
         self.crew_open = true;
         self.crew_pending = None;
         self.crew_notice.clear();
@@ -5097,6 +5211,7 @@ impl PortlightGame {
         self.sync_harbour();
         self.sync_crew();
         self.sync_hunt();
+        self.sync_day_report();
     }
 
     /// The docked row stays one line, and its minimum width fits the width
@@ -5149,6 +5264,7 @@ impl PortlightGame {
         if self.docked_id().is_none() {
             return;
         }
+        self.close_day_report();
         {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -6254,6 +6370,7 @@ impl PortlightGame {
     }
 
     fn open_agency(&mut self, state: EncounterState, log: String) {
+        self.close_day_report();
         let (ship, sailing) = self
             .session
             .as_ref()
@@ -6830,6 +6947,7 @@ impl PortlightGame {
         if self.session.is_none() {
             return;
         }
+        self.close_day_report();
         self.hunt_open = true;
         self.hunt_desk.confirm = None;
         self.hunt_desk.notice.clear();
@@ -6840,6 +6958,226 @@ impl PortlightGame {
         self.hunt_open = false;
         self.hunt_desk.confirm = None;
         self.refresh();
+    }
+
+    fn show_day_report_after_advance(
+        &mut self,
+        turn_contracts: &[portlight_sim::model::ContractOutcome],
+        injuries_before: &[portlight_sim::model::Injury],
+        prices_before: &std::collections::HashMap<String, i64>,
+        arrival_day: bool,
+    ) {
+        let Some(session) = self.session.as_ref() else {
+            return;
+        };
+        let mut memory = std::mem::take(&mut self.day_report_memory);
+        let doc = day_report::build_document(
+            session,
+            turn_contracts,
+            injuries_before,
+            prices_before,
+            &mut memory,
+            arrival_day,
+            &self.hunt_desk.known,
+        );
+        self.day_report_memory = memory;
+        self.day_report_memory.price_memory = day_report::snapshot_docked_prices(session);
+        if doc.has_notable() {
+            self.day_report_doc = Some(doc);
+            self.day_report_open = true;
+        } else {
+            self.day_report_doc = None;
+            self.day_report_open = false;
+        }
+    }
+
+    fn open_day_report_doc(&mut self, doc: DayReportDocument) {
+        self.day_report_doc = Some(doc);
+        self.day_report_open = true;
+        self.refresh();
+    }
+
+    fn close_day_report(&mut self) {
+        if !self.day_report_open && self.day_report_doc.is_none() {
+            return;
+        }
+        self.day_report_open = false;
+        self.refresh();
+    }
+
+    fn sync_day_report(&mut self) {
+        let open = self.day_report_open;
+        let Some(mut nodes) = self.day_report_nodes.clone() else {
+            return;
+        };
+        day_report::set_open(&mut nodes, open);
+        if !open {
+            return;
+        }
+        day_report::place_card(&mut nodes.root);
+        if let Some(doc) = self.day_report_doc.clone() {
+            day_report::apply_document(&mut nodes, &doc);
+        }
+    }
+
+    fn run_day_report_smoke(&mut self) {
+        self.start_game();
+        if self.session.is_none() {
+            self.fail_day_report("Day-report smoke: no session.");
+            return;
+        }
+        let day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(1);
+        let full = day_report::smoke_full_document(day);
+        self.open_day_report_doc(full);
+        if !self.day_report_open
+            || self
+                .day_report_nodes
+                .as_ref()
+                .is_none_or(|nodes| !day_report::overlay_visible(nodes))
+        {
+            self.fail_day_report("Day-report smoke: forced full card was not visible.");
+        }
+        let text = self
+            .day_report_nodes
+            .as_ref()
+            .map(day_report::overlay_text)
+            .unwrap_or_default();
+        if !text.contains("Deadlines") || !text.contains("Claim ready") {
+            self.fail_day_report("Day-report smoke: full card missing expected sections.");
+        }
+        if text.contains('\u{2014}') || text.contains("due soon") {
+            self.fail_day_report("Day-report smoke: forbidden copy on full card.");
+        }
+        self.close_day_report();
+        if self.day_report_open {
+            self.fail_day_report("Day-report smoke: Close left the card up.");
+        }
+        let deadline = day_report::smoke_deadline_document(day);
+        self.open_day_report_doc(deadline);
+        let deadline_text = self
+            .day_report_nodes
+            .as_ref()
+            .map(day_report::overlay_text)
+            .unwrap_or_default();
+        if !deadline_text.contains("1 day left") || !deadline_text.contains("ready to Complete") {
+            self.fail_day_report("Day-report smoke: deadline card missing Complete cue.");
+        }
+        self.close_day_report();
+        // Opening Hunt must close the report.
+        self.open_day_report_doc(day_report::smoke_full_document(day));
+        self.open_hunt();
+        if self.day_report_open {
+            self.fail_day_report("Day-report smoke: Hunt left the report open.");
+        }
+        self.close_hunt();
+        // Quiet day at sea: Prices stay empty (§13.2); no deadline/heal/claimable.
+        let departed = {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_day_report("Day-report smoke: session dropped before quiet day.");
+                return;
+            };
+            session.depart("al_manar")
+        };
+        if let Err(err) = departed {
+            self.fail_day_report(format!(
+                "Day-report smoke: could not sail for quiet day: {err}"
+            ));
+            return;
+        }
+        self.next_day();
+        if self.day_report_open {
+            self.fail_day_report("Day-report smoke: quiet Next day still showed the card.");
+        }
+        if self.smoke_ok {
+            self.push_log(
+                "Day-report smoke: full, deadline, overlay-close, quiet hide.".to_string(),
+            );
+        }
+    }
+
+    fn fail_day_report(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.day_report_checked = true;
+    }
+
+    fn begin_day_report_shots(&mut self) {
+        self.start_game();
+        let day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(1);
+        self.open_day_report_doc(day_report::smoke_full_document(day));
+        self.day_report_shot_dir = Some(day_report_shot_dir(self.shot_path.as_deref()));
+        self.day_report_shot = Some(DayReportShot::Full);
+        self.refresh();
+    }
+
+    fn advance_day_report_shot(&mut self) -> bool {
+        let Some(phase) = self.day_report_shot else {
+            return false;
+        };
+        let Some(dir) = self.day_report_shot_dir.clone() else {
+            return false;
+        };
+        if !self.day_report_open
+            || self
+                .day_report_nodes
+                .as_ref()
+                .is_none_or(|nodes| !day_report::overlay_visible(nodes))
+        {
+            self.smoke_ok = false;
+            godot_print!(
+                "Day-report smoke: frame {} was not visible.",
+                phase.file_name()
+            );
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        // Compact card over the chart: use the chart flat-frame check, not the
+        // encounter plate/button ink gate (no side plate on this panel).
+        if !self.save_shot(&path, false) {
+            self.capture_failed = true;
+        }
+        match phase {
+            DayReportShot::Full => {
+                let day = self
+                    .session
+                    .as_ref()
+                    .map(|session| session.world().day)
+                    .unwrap_or(1);
+                self.open_day_report_doc(day_report::smoke_deadline_document(day));
+                self.day_report_shot = Some(DayReportShot::Deadline);
+                self.capture_frames = 4;
+                true
+            }
+            DayReportShot::Deadline => {
+                self.close_day_report();
+                // Quiet-day hide is a smoke assertion, not a committed frame (§13.5).
+                let departed = self
+                    .session
+                    .as_mut()
+                    .map(|session| session.depart("al_manar"));
+                if departed.transpose().is_err() {
+                    self.smoke_ok = false;
+                    godot_print!("Day-report smoke: could not sail for quiet-day check.");
+                }
+                self.next_day();
+                if self.day_report_open {
+                    self.smoke_ok = false;
+                    godot_print!("Day-report smoke: quiet day left the card visible.");
+                }
+                self.day_report_shot = None;
+                self.day_report_checked = true;
+                false
+            }
+        }
     }
 
     fn post_board(&mut self) {
@@ -7694,6 +8032,14 @@ fn crew_frames_requested(shot_set: bool) -> bool {
 
 fn hunt_frames_requested(shot_set: bool) -> bool {
     shot_set || docs_capture()
+}
+
+fn day_report_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn day_report_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
 }
 
 fn hunt_shot_dir(shot: Option<&str>) -> String {

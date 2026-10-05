@@ -475,6 +475,10 @@ pub(crate) fn display_name(id: &str, known: &[BountyTarget]) -> String {
     resolve_card(id, known).captain_name
 }
 
+pub(crate) fn reward_for(id: &str, known: &[BountyTarget]) -> i64 {
+    resolve_card(id, known).reward
+}
+
 pub(crate) fn rebuild_body(
     body: &mut Gd<VBoxContainer>,
     model: &HuntModel,
