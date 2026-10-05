@@ -331,10 +331,14 @@ impl ContractsShot {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum CrewShot {
     Roster,
+    /// Layout pass after the train confirm is armed. Not a saved frame.
+    PrepareTraining,
     Training,
+    /// Layout pass after the confirm is cleared. Not a saved frame.
+    PrepareCompanions,
     Companions,
 }
 
@@ -342,16 +346,20 @@ impl CrewShot {
     fn file_name(self) -> &'static str {
         match self {
             Self::Roster => "crew-roster.png",
-            Self::Training => "crew-training.png",
-            Self::Companions => "crew-companions.png",
+            Self::PrepareTraining | Self::Training => "crew-training.png",
+            Self::PrepareCompanions | Self::Companions => "crew-companions.png",
         }
+    }
+
+    fn saves(self) -> bool {
+        matches!(self, Self::Roster | Self::Training | Self::Companions)
     }
 
     fn section(self) -> &'static str {
         match self {
             Self::Roster => crew_screen::SECTION_ROSTER,
-            Self::Training => crew_screen::SECTION_TRAINING,
-            Self::Companions => crew_screen::SECTION_COMPANIONS,
+            Self::PrepareTraining | Self::Training => crew_screen::SECTION_TRAINING,
+            Self::PrepareCompanions | Self::Companions => crew_screen::SECTION_COMPANIONS,
         }
     }
 }
@@ -4589,6 +4597,17 @@ impl PortlightGame {
         let Some(dir) = self.crew_shot_dir.clone() else {
             return false;
         };
+        // Rebuilding the body invalidates section positions until the next
+        // layout. Prepare phases only scroll, after that layout has run.
+        if !phase.saves() {
+            self.scroll_crew_section(phase.section());
+            self.crew_shot = Some(match phase {
+                CrewShot::PrepareTraining => CrewShot::Training,
+                _ => CrewShot::Companions,
+            });
+            self.capture_frames = 4;
+            return true;
+        }
         if !self.crew_section_at_top(phase.section()) {
             self.capture_failed = true;
             godot_print!(
@@ -4596,29 +4615,81 @@ impl PortlightGame {
                 phase.file_name()
             );
         }
+        if phase == CrewShot::Training && !self.training_warning_visible() {
+            self.capture_failed = true;
+        }
         let path = format!("{dir}/{}", phase.file_name());
         if !self.save_shot(&path, true) {
             self.capture_failed = true;
         }
-        match phase {
-            CrewShot::Roster => {
-                self.scroll_crew_section(crew_screen::SECTION_TRAINING);
-                self.crew_shot = Some(CrewShot::Training);
-                self.capture_frames = 4;
-                true
-            }
-            CrewShot::Training => {
-                self.scroll_crew_section(crew_screen::SECTION_COMPANIONS);
-                self.crew_shot = Some(CrewShot::Companions);
-                self.capture_frames = 4;
-                true
-            }
-            CrewShot::Companions => {
-                self.crew_shot = None;
-                self.run_crew_actions();
-                false
-            }
+        if phase == CrewShot::Roster {
+            // The roster frame stays on the idle desk. Arming rebuilds
+            // the body, so the scroll waits until PrepareTraining.
+            self.arm_train("la_destreza");
+            self.crew_shot = Some(CrewShot::PrepareTraining);
+            self.capture_frames = 4;
+            return true;
         }
+        if phase == CrewShot::Training {
+            // Drop the confirm without writing "Cancelled." Companions
+            // is the idle desk again, and the action pass arms its own.
+            self.crew_pending = None;
+            self.crew_notice.clear();
+            self.refresh();
+            self.crew_shot = Some(CrewShot::PrepareCompanions);
+            self.capture_frames = 4;
+            return true;
+        }
+        self.crew_shot = None;
+        self.run_crew_actions();
+        false
+    }
+
+    /// The training frame has to show the day-advance line in the notice bar,
+    /// fully inside the window, with every wrapped line tall enough to read.
+    fn training_warning_visible(&mut self) -> bool {
+        let Some(nodes) = self.crew_nodes.clone() else {
+            godot_print!("Crew smoke: no crew desk for the training warning.");
+            return false;
+        };
+        let text = nodes.notice.get_text().to_string();
+        if !text.contains("advance") || !text.contains("days") {
+            godot_print!("Crew smoke: notice bar missing the day-advance warning: {text:?}");
+            return false;
+        }
+        if !nodes.confirm.is_visible() {
+            godot_print!("Crew smoke: the train confirm was hidden.");
+            return false;
+        }
+        let notice_ok = self.warning_label_visible("notice", &nodes.notice);
+        let confirm_ok = self.warning_label_visible("confirm", &nodes.confirm_label);
+        notice_ok && confirm_ok
+    }
+
+    fn warning_label_visible(&mut self, kind: &str, label: &Gd<Label>) -> bool {
+        let text = label.get_text().to_string();
+        let rect = label.get_global_rect();
+        let pos = rect.position;
+        let size = rect.size;
+        let inside = pos.x >= -0.5
+            && pos.y >= -0.5
+            && pos.x + size.x <= WINDOW_W + 0.5
+            && pos.y + size.y <= WINDOW_H + 0.5;
+        let lines = label.get_line_count();
+        let line_h = label.get_line_height();
+        let covered = lines >= 1 && line_h > 0 && size.y + 1.0 >= (lines * line_h) as f32;
+        let visible_lines = label.get_visible_line_count();
+        if !text.contains("advance") || !inside || !covered || visible_lines < lines {
+            godot_print!(
+                "Crew smoke: {kind} warning clipped text={text:?} pos=({}, {}) size=({}, {}) lines={lines} visible={visible_lines} line_h={line_h}",
+                pos.x,
+                pos.y,
+                size.x,
+                size.y,
+                );
+            return false;
+        }
+        true
     }
 
     fn scroll_crew_section(&mut self, name: &str) {
