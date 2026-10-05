@@ -1036,9 +1036,15 @@ impl PortlightGame {
         // One 31 px line. A wrap would push the lanes, the market, and the log.
         let mut port_row = HBoxContainer::new_alloc();
         port_row.set_name("PortRow");
+<<<<<<< HEAD
         // Gaps of 1 px, plus the scrollbar, grow the panel past 420 and
         // slide the chrome. Zero separation keeps Hide market through
         // Harbour and Crew on one line inside the panel.
+=======
+        // Six gaps of 1 px, plus the scrollbar, grow the panel past 420 and
+        // slide the chrome. Zero separation keeps Hide market through Crew
+        // on one line inside the panel.
+>>>>>>> ec227dd (Recapture the one-line port row on the Journal chart.)
         port_row.add_theme_constant_override("separation", 0);
         let market = port_row_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
