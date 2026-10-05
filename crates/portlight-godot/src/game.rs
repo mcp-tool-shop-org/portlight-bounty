@@ -1100,7 +1100,7 @@ impl PortlightGame {
         let journal = action_button("Journal", game_id, Action::OpenJournal);
         buttons.add_child(&journal);
         self.journal_button = Some(journal);
-        // At sea this sits beside Next day, same control as New game and Save.
+        // At sea this sits beside Journal, same control as New game and Save.
         // Hidden in port; docked Hunt is on the port row.
         let mut sea_hunt = action_button("Hunt", game_id, Action::OpenHunt);
         sea_hunt.set_visible(false);
