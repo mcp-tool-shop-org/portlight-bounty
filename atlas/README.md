@@ -1,14 +1,14 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-01 from commit 4d0324c by Atlas 1.24.0.
+Mapped at 2026-10-05 from commit 2d3d8b3 by Atlas 1.24.0.
 
 ## What this is
 
-10 parts, mostly Rust (64 files) and Python (12). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
+10 parts, mostly Rust (65 files) and Python (12). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since the last map
+## What changed since 2026-10-01 (4d0324c)
 
-This is the first map.
+Nothing structural changed since 2026-10-01; 1 file added and 7 changed content.
 
 ## What comes in
 
@@ -51,7 +51,7 @@ This is the first map.
 - **crates/portlight-sim/src/session.rs** and **tools/parity/oracle.py** changed together in 7 of 9 commits, though neither part imports the other.
 - **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/save.rs** changed together in 6 of 8 commits, inside the portlight-sim part.
 
-Confidence is low: fewer than 30 qualifying commits in the window, and fewer than 20 source files reach 10 revisions.
+Confidence is low: fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions.
 
 Window: 180 days; a pair counts from 3 shared commits, since the window holds fewer than 30 qualifying commits.
 
@@ -96,6 +96,6 @@ Read those in order to follow one run of gen_placeholders end to end. This path 
 - 1 write goes to places this repository does not track, so it is not listed as generated.
 - 7 writes and 14 reads go to a path their caller passes, not to this repository.
 - 1 write and 1 read go to a temporary directory, not to this repository.
-- Statistics confidence is low: fewer than 30 qualifying commits in the window, and fewer than 20 source files reach 10 revisions.
+- Statistics confidence is low: fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions.
 
 Regenerate with `npx --yes @dogfood-lab/atlas map`.

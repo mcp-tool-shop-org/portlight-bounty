@@ -9,6 +9,7 @@ mod harbour;
 mod logic;
 mod newgame_screen;
 mod seam;
+mod shipyard_screen;
 
 use godot::prelude::*;
 

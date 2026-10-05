@@ -293,14 +293,18 @@ pub(crate) fn style_encounter_button(button: &mut Gd<Button>) {
     let normal = encounter_button_fill(Color::from_rgb(0.55, 0.42, 0.24));
     let hover = encounter_button_fill(Color::from_rgb(0.68, 0.52, 0.30));
     let pressed = encounter_button_fill(Color::from_rgb(0.40, 0.30, 0.16));
+    let disabled = encounter_button_fill(Color::from_rgb(0.32, 0.26, 0.16));
     button.add_theme_stylebox_override("normal", &normal);
     button.add_theme_stylebox_override("hover", &hover);
     button.add_theme_stylebox_override("pressed", &pressed);
     button.add_theme_stylebox_override("focus", &hover);
+    button.add_theme_stylebox_override("disabled", &disabled);
+    button.add_theme_stylebox_override("hover_disabled", &disabled);
     button.add_theme_color_override("font_color", CREAM);
     button.add_theme_color_override("font_hover_color", INK);
     button.add_theme_color_override("font_pressed_color", GOLD);
     button.add_theme_color_override("font_focus_color", INK);
+    button.add_theme_color_override("font_disabled_color", MUTED);
 }
 
 fn encounter_button_fill(fill: Color) -> Gd<StyleBoxFlat> {
