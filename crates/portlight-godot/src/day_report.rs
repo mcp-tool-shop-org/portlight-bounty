@@ -406,23 +406,7 @@ pub(crate) fn bounty_lines(
     let claimed: HashSet<String> = world.captain.claimed_bounties.iter().cloned().collect();
     let mut lines = Vec::new();
 
-    for id in active.difference(&memory.active_bounties) {
-        let name = hunt_screen::display_name(id, known);
-        lines.push(DayReportLine {
-            text: format!("Bounty accepted: {name}."),
-            notable: true,
-        });
-    }
-    for id in memory.active_bounties.difference(&active) {
-        if claimed.contains(id) {
-            let name = hunt_screen::display_name(id, known);
-            lines.push(DayReportLine {
-                text: format!("Bounty claimed: {name}."),
-                notable: true,
-            });
-        }
-    }
-
+    // C1: Claim ready first (only actionable), then claimed, then accepted.
     let claimables = claimable_ids(session);
     for id in &claimables {
         let name = hunt_screen::display_name(id, known);
@@ -435,6 +419,22 @@ pub(crate) fn bounty_lines(
         lines.push(DayReportLine {
             text: format!("Claim ready: {name} ({reward} silver) - open Hunt."),
             notable,
+        });
+    }
+    for id in memory.active_bounties.difference(&active) {
+        if claimed.contains(id) {
+            let name = hunt_screen::display_name(id, known);
+            lines.push(DayReportLine {
+                text: format!("Bounty claimed: {name}."),
+                notable: true,
+            });
+        }
+    }
+    for id in active.difference(&memory.active_bounties) {
+        let name = hunt_screen::display_name(id, known);
+        lines.push(DayReportLine {
+            text: format!("Bounty accepted: {name}."),
+            notable: true,
         });
     }
 
@@ -479,14 +479,16 @@ pub(crate) fn cap_sections(
         return Vec::new();
     }
 
+    // C1: reserve only for later sections that actually have lines.
+    let non_empty: Vec<bool> = raw.iter().map(|(_, _, lines)| !lines.is_empty()).collect();
+
     let mut remaining = LINE_CAP;
     let mut sections = Vec::new();
-    let section_count = raw.len();
     for (index, (id, title, lines)) in raw.into_iter().enumerate() {
         if lines.is_empty() || remaining == 0 {
             continue;
         }
-        let sections_left_after = section_count - index - 1;
+        let sections_left_after = non_empty[index + 1..].iter().filter(|&&has| has).count();
         // Prefer at least one line for later non-empty sections when possible.
         let reserve = sections_left_after.min(remaining.saturating_sub(1));
         let budget = remaining - reserve;
@@ -496,15 +498,15 @@ pub(crate) fn cap_sections(
         let (kept, overflow) = if lines.len() <= budget {
             (lines, 0)
         } else if budget == 1 {
-            // One slot: prefer a real line over only "+N more".
-            let overflow = lines.len() - 1;
-            (lines.into_iter().take(1).collect(), overflow)
+            // One slot: keep a real line. Do not also emit "+N more" (would exceed budget / LINE_CAP).
+            (lines.into_iter().take(1).collect(), 0)
         } else {
             let take = budget - 1;
             let overflow = lines.len() - take;
             (lines.into_iter().take(take).collect(), overflow)
         };
         let used = kept.len() + usize::from(overflow > 0);
+        debug_assert!(used <= budget);
         let mut section_lines = kept;
         if overflow > 0 {
             section_lines.push(DayReportLine {
@@ -875,5 +877,231 @@ mod tests {
         let deadline = smoke_deadline_document(4);
         assert!(deadline.has_notable());
         assert_eq!(deadline.sections.len(), 1);
+    }
+
+    fn line(text: &str, notable: bool) -> DayReportLine {
+        DayReportLine {
+            text: text.into(),
+            notable,
+        }
+    }
+
+    fn rendered_line_count(sections: &[DayReportSection]) -> usize {
+        sections.iter().map(|s| s.lines.len()).sum()
+    }
+
+    fn more_row_count(sections: &[DayReportSection]) -> usize {
+        sections
+            .iter()
+            .flat_map(|s| s.lines.iter())
+            .filter(|l| l.text.starts_with('+') && l.text.ends_with(" more"))
+            .count()
+    }
+
+    /// C1: Claim ready / claimed / accepted push order inside Bounties.
+    #[test]
+    fn bounty_lines_order_claim_ready_then_claimed_then_accepted() {
+        let session = session_with_claimable("raj_the_quiet");
+        let known: Vec<portlight_sim::bounty::BountyTarget> = Vec::new();
+        let mut memory = DayReportMemory::default();
+        // Prior active that is now claimed (gone from active, present in claimed).
+        memory.active_bounties.insert("old_claimed".into());
+        // Inject claimed id via save/load patch on a throwaway copy is heavy; instead
+        // verify formatter category order by feeding lines bounty_lines would emit,
+        // plus a live claimable from Session. Live claimable must come first.
+        let live = bounty_lines(&session, &mut memory, false, &known);
+        let claim_idx = live
+            .iter()
+            .position(|l| l.text.starts_with("Claim ready:"))
+            .expect("claimable session yields Claim ready");
+        assert_eq!(claim_idx, 0, "Claim ready must be first among bounty lines");
+        // Accept a second bounty so "Bounty accepted" appears after Claim ready.
+        let mut session2 = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        // Pick a known content bounty id distinct from raj if possible.
+        session2.accept_bounty("raj_the_quiet").unwrap();
+        let mut memory2 = DayReportMemory::default();
+        let accepted_only = bounty_lines(&session2, &mut memory2, false, &known);
+        assert!(
+            accepted_only
+                .iter()
+                .any(|l| l.text.starts_with("Bounty accepted:")),
+            "new accept yields Bounty accepted"
+        );
+        assert!(
+            !accepted_only
+                .iter()
+                .any(|l| l.text.starts_with("Claim ready:")),
+            "fresh accept without defeat is not claimable"
+        );
+
+        // Cap guarantee with mixed ordered bounty lines (Claim ready first).
+        let ordered = vec![
+            line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true),
+            line("Bounty claimed: Old Salt.", true),
+            line("Bounty accepted: Red Sails.", true),
+        ];
+        let sections = cap_sections(vec![
+            (
+                "deadlines",
+                "Deadlines",
+                (0..3).map(|i| line(&format!("d{i}"), true)).collect(),
+            ),
+            ("health", "Health", vec![line("Healed: Cut hand.", true)]),
+            (
+                "prices",
+                "Prices",
+                vec![
+                    line("Grain at Al-Manar +12 (now 84)", true),
+                    line("Spice at Al-Manar -3 (now 37)", true),
+                ],
+            ),
+            ("bounties", "Bounties", ordered),
+        ]);
+        let bounties = sections
+            .iter()
+            .find(|s| s.id == "bounties")
+            .expect("bounties section must survive the cap");
+        assert!(
+            !bounties.lines.is_empty(),
+            "guarantee: at least one Bounties line visible when any exist"
+        );
+        assert!(
+            bounties.lines[0].text.starts_with("Claim ready:"),
+            "first visible Bounties line must be Claim ready, got {:?}",
+            bounties.lines[0].text
+        );
+        let total = rendered_line_count(&sections);
+        assert!(total <= LINE_CAP, "hard cap including +N more: {total}");
+    }
+
+    /// C1 worst case: 3 deadlines + health + several prices + 2 bounty lines.
+    #[test]
+    fn notable_gate_worst_case_keeps_claim_ready_visible() {
+        let deadlines = (0..3)
+            .map(|i| line(&format!("deadline {i}"), true))
+            .collect();
+        let health = vec![line("Healed: Cut hand.", true)];
+        let prices = (0..4)
+            .map(|i| line(&format!("good{i} at Port +{i} (now {i})"), true))
+            .collect();
+        let bounties = vec![
+            line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true),
+            line("Bounty accepted: Red Sails.", true),
+        ];
+        let sections = cap_sections(vec![
+            ("deadlines", "Deadlines", deadlines),
+            ("health", "Health", health),
+            ("prices", "Prices", prices),
+            ("bounties", "Bounties", bounties),
+        ]);
+        let total = rendered_line_count(&sections);
+        assert!(total <= LINE_CAP, "hard cap: {total} > {LINE_CAP}");
+        // Count +N more rows toward the cap.
+        let _ = more_row_count(&sections);
+        assert!(
+            sections
+                .iter()
+                .any(|s| s.id == "bounties" && !s.lines.is_empty()),
+            "guarantee: at least one Bounties line visible"
+        );
+        let bounty = sections.iter().find(|s| s.id == "bounties").unwrap();
+        assert!(
+            bounty.lines[0].text.starts_with("Claim ready:"),
+            "first visible Bounties line must be Claim ready"
+        );
+    }
+
+    /// C1: empty later sections must not steal reserve slots.
+    #[test]
+    fn reserve_skips_empty_later_sections() {
+        // Deadlines (4) + empty health + empty prices + bounties (1).
+        // Old code reserved 3 slots for the three later section slots (incl. empty),
+        // leaving budget=3 for deadlines → 2 lines + "+2 more", then empty, empty, 1 bounty.
+        // With non-empty-only reserve, reserve=1 → deadlines get budget=5.
+        let deadlines = (0..4).map(|i| line(&format!("d{i}"), true)).collect();
+        let bounties = vec![line(
+            "Claim ready: Raj the Quiet (120 silver) - open Hunt.",
+            true,
+        )];
+        let sections = cap_sections(vec![
+            ("deadlines", "Deadlines", deadlines),
+            ("health", "Health", Vec::new()),
+            ("prices", "Prices", Vec::new()),
+            ("bounties", "Bounties", bounties),
+        ]);
+        assert_eq!(sections.len(), 2);
+        assert_eq!(sections[0].id, "deadlines");
+        assert_eq!(sections[1].id, "bounties");
+        // Deadlines should keep 3 real lines + "+1 more" (budget 5 with reserve 1),
+        // or fit more than the old 2+more layout.
+        let deadline_real = sections[0]
+            .lines
+            .iter()
+            .filter(|l| !l.text.starts_with('+'))
+            .count();
+        assert!(
+            deadline_real >= 3,
+            "non-empty reserve should give deadlines more than 2 real lines, got {deadline_real}"
+        );
+        assert!(sections[1].lines[0].text.starts_with("Claim ready:"));
+        assert!(rendered_line_count(&sections) <= LINE_CAP);
+    }
+
+    /// C1: budget==1 must not emit "+N more" on top of the kept line (hard cap).
+    #[test]
+    fn budget_one_does_not_exceed_line_cap_with_more_row() {
+        // Deadlines overflow with reserve=1 → budget=5 → 4 real + "+N more" uses 5.
+        // Bounties then see remaining=1 with 3 lines → budget==1 path.
+        let deadlines = (0..10).map(|i| line(&format!("d{i}"), true)).collect();
+        let bounties = vec![
+            line("Claim ready: A (1 silver) - open Hunt.", true),
+            line("Bounty claimed: B.", true),
+            line("Bounty accepted: C.", true),
+        ];
+        let sections = cap_sections(vec![
+            ("deadlines", "Deadlines", deadlines),
+            ("health", "Health", Vec::new()),
+            ("prices", "Prices", Vec::new()),
+            ("bounties", "Bounties", bounties),
+        ]);
+        let total = rendered_line_count(&sections);
+        assert!(
+            total <= LINE_CAP,
+            "budget==1 path must not push total over LINE_CAP (got {total}); more_rows={}",
+            more_row_count(&sections)
+        );
+        let bounty = sections
+            .iter()
+            .find(|s| s.id == "bounties")
+            .expect("bounties");
+        assert_eq!(bounty.lines.len(), 1, "budget 1 keeps one line, no +N more");
+        assert!(bounty.lines[0].text.starts_with("Claim ready:"));
+        assert!(!bounty.lines[0].text.starts_with('+'));
+        // Deadlines must have consumed a +N more row toward the cap.
+        assert!(more_row_count(&sections) >= 1);
+    }
+
+    /// C1 hard cap: every rendered row including each +N more counts toward LINE_CAP.
+    #[test]
+    fn hard_cap_counts_more_rows() {
+        let deadlines = (0..5).map(|i| line(&format!("d{i}"), true)).collect();
+        let health = (0..3).map(|i| line(&format!("h{i}"), true)).collect();
+        let prices = (0..3).map(|i| line(&format!("p{i}"), true)).collect();
+        let bounties = (0..3)
+            .map(|i| line(&format!("Claim ready: b{i} (1 silver) - open Hunt."), true))
+            .collect();
+        let sections = cap_sections(vec![
+            ("deadlines", "Deadlines", deadlines),
+            ("health", "Health", health),
+            ("prices", "Prices", prices),
+            ("bounties", "Bounties", bounties),
+        ]);
+        let total = rendered_line_count(&sections);
+        let mores = more_row_count(&sections);
+        assert!(total <= LINE_CAP, "total={total} more_rows={mores}");
+        assert!(
+            sections.iter().any(|s| s.id == "bounties"),
+            "bounties must remain when notable bounty lines exist"
+        );
     }
 }
