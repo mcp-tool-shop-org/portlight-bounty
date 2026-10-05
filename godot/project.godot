@@ -29,3 +29,7 @@ textures/canvas_textures/default_texture_filter=0
 [audio]
 
 buses/default_bus_layout="res://default_bus_layout.tres"
+
+[autoload]
+
+PlaytestBridge="*res://playtest_bridge.gd"

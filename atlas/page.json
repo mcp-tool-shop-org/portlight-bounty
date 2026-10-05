@@ -56,30 +56,98 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 1,
-      "changed": 7,
+      "added": 58,
+      "changed": 37,
       "moved": 0,
-      "parts": 4,
+      "parts": 9,
       "removed": 0
     },
     "items": [
       {
+        "kind": "door",
+        "sentence": "CI now also runs crates/portlight-godot/src/contracts_screen.rs, crates/portlight-godot/src/day_report.rs, crates/portlight-godot/src/harbour_screen.rs and 3 more.",
+        "subjects": [
+          ".github/workflows/ci.yml",
+          "crates/portlight-godot/src/contracts_screen.rs",
+          "crates/portlight-godot/src/day_report.rs",
+          "crates/portlight-godot/src/harbour_screen.rs",
+          "crates/portlight-godot/src/hunt_screen.rs",
+          "crates/portlight-godot/src/journal_screen.rs",
+          "crates/portlight-godot/src/playtest.rs"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "godot/ is now also read by docs/playtest/playtest-bridge-consult-brief.md.",
+        "subjects": [
+          "godot/",
+          "docs/playtest/playtest-bridge-consult-brief.md"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "godot/assets/landing/props/barrel_1x1/beauty.png is now read by godot/assets/landing/MANIFEST.json.",
+        "subjects": [
+          "godot/assets/landing/props/barrel_1x1/beauty.png",
+          "godot/assets/landing/MANIFEST.json"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "godot/assets/landing/props/bollard_1x1/beauty.png is now read by godot/assets/landing/MANIFEST.json.",
+        "subjects": [
+          "godot/assets/landing/props/bollard_1x1/beauty.png",
+          "godot/assets/landing/MANIFEST.json"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "And 3 more new writers and readers of places.",
+        "subjects": []
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "playtest/README.md is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "playtest/README.md"
+        ]
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "playtest/_plumbing-fixture.playtest.json is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "playtest/_plumbing-fixture.playtest.json"
+        ]
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "playtest/portlight-godot.playtest.json is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "playtest/portlight-godot.playtest.json"
+        ]
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "And 1 more new file that belongs to no part.",
+        "subjects": []
+      },
+      {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-10-01; 1 file added and 7 changed content.",
+        "sentence": "58 files added and 37 changed content, across 9 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "4d0324c5d91ca87723d03f8307b407739d9f0b14",
-      "generatedAt": "2026-10-01T02:58:02.452Z"
+      "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26",
+      "generatedAt": "2026-10-05T15:17:17.957Z"
     },
-    "unchanged": true
+    "unchanged": false
   },
   "changesTogether": [
     {
-      "a": "crates/portlight-sim/src/script.rs",
+      "a": "crates/portlight-sim/src/session.rs",
       "b": "tools/parity/oracle.py",
-      "either": 7,
+      "either": 11,
       "partLabels": [
         "portlight-sim",
         "tools"
@@ -89,40 +157,10 @@
         "tools"
       ],
       "relation": "none",
-      "shared": 6
+      "shared": 9
     },
     {
-      "a": "crates/portlight-sim/src/lib.rs",
-      "b": "crates/portlight-sim/src/model.rs",
-      "either": 6,
-      "partLabels": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "parts": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "relation": "inside",
-      "shared": 5
-    },
-    {
-      "a": "crates/portlight-sim/src/model.rs",
-      "b": "crates/portlight-sim/src/script.rs",
-      "either": 6,
-      "partLabels": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "parts": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "relation": "inside",
-      "shared": 5
-    },
-    {
-      "a": "crates/portlight-sim/src/session.rs",
+      "a": "crates/portlight-sim/src/script.rs",
       "b": "tools/parity/oracle.py",
       "either": 9,
       "partLabels": [
@@ -138,7 +176,7 @@
     },
     {
       "a": "crates/portlight-sim/src/lib.rs",
-      "b": "crates/portlight-sim/src/save.rs",
+      "b": "crates/portlight-sim/src/script.rs",
       "either": 8,
       "partLabels": [
         "portlight-sim",
@@ -150,16 +188,46 @@
       ],
       "relation": "inside",
       "shared": 6
+    },
+    {
+      "a": "crates/portlight-sim/src/lib.rs",
+      "b": "crates/portlight-sim/src/model.rs",
+      "either": 7,
+      "partLabels": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "parts": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "relation": "inside",
+      "shared": 5
+    },
+    {
+      "a": "crates/portlight-sim/src/lib.rs",
+      "b": "crates/portlight-sim/src/snapshot.rs",
+      "either": 7,
+      "partLabels": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "parts": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "relation": "inside",
+      "shared": 5
     }
   ],
   "changesTogetherNote": [
-    "Confidence is low: fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions.",
-    "Window: 180 days; a pair counts from 3 shared commits, since the window holds fewer than 30 qualifying commits."
+    "Confidence is low: fewer than 25 source files reach 10 revisions in the window.",
+    "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26",
+  "commit": "a28530431382b01f707f47d251824a750659c6e9",
   "defaultBranch": "main",
-  "derived": "10 parts, mostly Rust (65 files) and Python (12). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
+  "derived": "10 parts, mostly Rust (72 files), Python (12), GDScript (1) and JavaScript (1). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
     {
       "checks": [
@@ -198,7 +266,7 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 10
+          "files": 17
         },
         {
           "boundary": "portlight-sim",
@@ -228,9 +296,15 @@
         "crates/portlight-chart/src/project.rs",
         "crates/portlight-chart/src/seam.rs",
         "crates/portlight-chart/src/view.rs",
+        "crates/portlight-godot/src/contracts_screen.rs",
+        "crates/portlight-godot/src/day_report.rs",
         "crates/portlight-godot/src/encounter_screen.rs",
         "crates/portlight-godot/src/harbour.rs",
+        "crates/portlight-godot/src/harbour_screen.rs",
+        "crates/portlight-godot/src/hunt_screen.rs",
+        "crates/portlight-godot/src/journal_screen.rs",
         "crates/portlight-godot/src/logic.rs",
+        "crates/portlight-godot/src/playtest.rs",
         "crates/portlight-godot/tests/",
         "crates/portlight-sim/src/bounty.rs",
         "crates/portlight-sim/src/campaign.rs",
@@ -265,14 +339,15 @@
         "crates/portlight-sim/src/world.rs",
         "crates/portlight-sim/tests/"
       ],
-      "runsCount": 52,
-      "runsMore": 51,
+      "runsCount": 58,
+      "runsMore": 57,
       "sends": [],
       "stages": [],
       "triggers": [
         "on a pull request",
         "on a push"
-      ]
+      ],
+      "untracked": "portlight-newgame-smoke/, which is not tracked"
     },
     {
       "builtFrom": "crates/portlight-chart",
@@ -417,14 +492,15 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-05T15:17:17.957Z",
+  "generatedAt": "2026-10-05T20:29:39.557Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
-    "1 write and 13 reads use paths built at run time and are not named here.",
+    "1 write and 14 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
-    "7 writes and 14 reads go to a path their caller passes, not to this repository.",
+    "7 writes and 15 reads go to a path their caller passes, not to this repository.",
     "1 write and 1 read go to a temporary directory, not to this repository.",
-    "Statistics confidence is low: fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions."
+    "4 files belong to no part: playtest/README.md, playtest/_plumbing-fixture.playtest.json, playtest/portlight-godot.playtest.json and 1 more.",
+    "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",
   "partLabels": {
@@ -481,11 +557,12 @@
   "startReason": "This path follows gen_placeholders (a command built from crates/portlight-chart, which nothing ships) from its entry, since CI runs only tests, scripts that import no code here and checks.",
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 47,
+  "testFiles": 53,
   "testedBy": {
+    "godot": 0,
     "portlight-chart": 7,
     "portlight-cli": 0,
-    "portlight-godot": 3,
+    "portlight-godot": 9,
     "portlight-sim": 34,
     "tools": 2
   },
@@ -498,6 +575,11 @@
   "unreadFiles": 0,
   "unreadNote": [],
   "untested": [
+    {
+      "part": "godot",
+      "partLabel": "godot",
+      "testedBy": 0
+    },
     {
       "part": "portlight-cli",
       "partLabel": "portlight-cli",

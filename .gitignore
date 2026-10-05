@@ -2,6 +2,8 @@
 # Interactive chart saves. Session writes <cwd>/saves, which is the repo root
 # when Godot is launched from this checkout. Fixtures live under parity/.
 /saves/
+# ai-playtest seat transcripts. The config lives in playtest/; the runs do not.
+/playtest/runs/
 **/*.rs.bk
 .DS_Store
 __pycache__/

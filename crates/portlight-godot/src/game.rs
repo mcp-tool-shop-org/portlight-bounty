@@ -93,6 +93,7 @@ use crate::logic::{
     SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::newgame_screen::{self, NewgameNodes};
+use crate::playtest::{action_playtest_id, hunt_playtest_id, parse_playtest_id, PlaytestCommand};
 use crate::shipyard_screen::{self, ShipyardNodes};
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -109,7 +110,7 @@ struct MarketRow {
 }
 
 #[derive(Clone)]
-enum Action {
+pub(crate) enum Action {
     NewGame,
     SaveGame,
     OpenCaptains,
@@ -190,7 +191,7 @@ enum Action {
 }
 
 #[derive(Clone)]
-enum ShipyardArm {
+pub(crate) enum ShipyardArm {
     Buy(String),
     Install(String),
     Sell(String),
@@ -445,14 +446,14 @@ impl ContractStripShot {
 }
 
 #[derive(Clone, Copy)]
-enum Stance {
+pub(crate) enum Stance {
     Thrust,
     Slash,
     Parry,
 }
 
 impl Stance {
-    fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Thrust => "thrust",
             Self::Slash => "slash",
@@ -1000,15 +1001,12 @@ impl IControl for PortlightGame {
 
     fn unhandled_key_input(&mut self, event: Gd<InputEvent>) {
         // Docked-consistency: dismiss via InputMap action ui_cancel (Escape), not a raw keycode.
+        // Today that closes Day's report only. The playtest `key` path calls the same function,
+        // so Escape stays the known-fail until docked-consistency changes this one place.
         if !event.is_action_pressed("ui_cancel") {
             return;
         }
-        if self.day_report_open {
-            self.close_day_report();
-            if let Some(mut viewport) = self.base().get_viewport() {
-                viewport.set_input_as_handled();
-            }
-        }
+        self.dismiss_cancel();
     }
 }
 
@@ -1334,6 +1332,10 @@ impl PortlightGame {
         let mut shipyard = shipyard_screen::build_shipyard_screen();
         self.base_mut().add_child(&shipyard.root);
         encounter_screen::fill_parent(&mut shipyard.root);
+        stamp_playtest_id(
+            &mut shipyard.close,
+            &action_playtest_id(&Action::CloseShipyard),
+        );
         let close = shipyard.close.clone();
         let close_game = game_id;
         close.signals().pressed().connect(move || {
@@ -1345,6 +1347,10 @@ impl PortlightGame {
         self.shipyard_nodes = Some(shipyard);
 
         let mut journal = journal_screen::build_journal_screen();
+        stamp_playtest_id(
+            &mut journal.close,
+            &action_playtest_id(&Action::CloseJournal),
+        );
         let close_id = game_id;
         journal.close.signals().pressed().connect(move || {
             let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(close_id) else {
@@ -1379,6 +1385,10 @@ impl PortlightGame {
         self.hunt_nodes = Some(hunt);
 
         let mut day_report = day_report::build_day_report_screen();
+        stamp_playtest_id(
+            &mut day_report.close,
+            &action_playtest_id(&Action::CloseDayReport),
+        );
         let close_day = game_id;
         day_report.close.signals().pressed().connect(move || {
             let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(close_day) else {
@@ -4334,6 +4344,7 @@ impl PortlightGame {
         emergency_button.set_text("Emergency loan");
         harbour_screen::style_danger_button(&mut emergency_button);
         let action = Action::HarbourEmergency;
+        stamp_playtest_id(&mut emergency_button, &action_playtest_id(&action));
         emergency_button.signals().pressed().connect(move || {
             let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game_id) else {
                 return;
@@ -8771,6 +8782,351 @@ impl PortlightGame {
     }
 }
 
+#[godot_api]
+impl PortlightGame {
+    /// What a playtest client can see and press. `perform` is synchronous, so
+    /// the bridge does not wait on a frame.
+    #[func]
+    fn playtest_observation(&self) -> VarDictionary {
+        self.playtest_observation_dict()
+    }
+
+    /// Empty string means the action was applied. A message means it was not.
+    #[func]
+    fn playtest_apply(&mut self, action: VarDictionary) -> GString {
+        self.playtest_apply_dict(&action)
+    }
+
+    /// Fresh title. The next seat must not inherit a voyage or "Back to the chart".
+    #[func]
+    fn playtest_reset(&mut self) {
+        self.playtest_reset_to_title();
+    }
+
+    #[func]
+    fn playtest_ready(&self) -> bool {
+        true
+    }
+}
+
+impl PortlightGame {
+    fn dismiss_cancel(&mut self) {
+        if self.day_report_open {
+            self.close_day_report();
+            if let Some(mut viewport) = self.base().get_viewport() {
+                viewport.set_input_as_handled();
+            }
+        }
+    }
+
+    fn playtest_reset_to_title(&mut self) {
+        // Drop field handles before refresh frees the widgets they point at.
+        self.name_edit = None;
+        self.title_edit = None;
+        self.story_edit = None;
+        self.rename_edit = None;
+        self.session = None;
+        self.log_lines.clear();
+        self.market_open = false;
+        self.armed_sail = None;
+        self.stances.clear();
+        self.encounter = None;
+        self.capture_crew = 0;
+        self.hunt_open = false;
+        self.hunt_desk = HuntDesk::default();
+        self.day_report_open = false;
+        self.day_report_doc = None;
+        self.day_report_memory = DayReportMemory::default();
+        self.contracts_open = false;
+        self.contracts_notice.clear();
+        self.contracts_confirm = None;
+        self.shipyard_open = false;
+        self.shipyard_notice.clear();
+        self.shipyard_confirm = None;
+        self.shipyard_shown = None;
+        self.rename_draft.clear();
+        self.journal_open = false;
+        self.journal_filled = false;
+        self.journal_expanded.clear();
+        self.harbour_open = false;
+        self.harbour_notice.clear();
+        self.harbour_pending = None;
+        self.crew_open = false;
+        self.crew_notice.clear();
+        self.crew_pending = None;
+        self.draft = CustomDraft::default();
+        self.newgame_notice.clear();
+        self.open_newgame(NewgamePage::Title);
+    }
+
+    fn playtest_apply_dict(&mut self, action: &VarDictionary) -> GString {
+        match dict_string(action, "kind").as_str() {
+            "choose" => {
+                let id = dict_string(action, "id");
+                if id.is_empty() {
+                    return GString::from("choose needs an id");
+                }
+                self.playtest_choose(&id)
+            }
+            "line" => self.playtest_set_line(&dict_string(action, "line")),
+            "key" => self.playtest_key(&dict_string(action, "key")),
+            "call" => GString::from("call is not a Portlight action"),
+            other => GString::from(format!("unknown action kind '{other}'").as_str()),
+        }
+    }
+
+    fn playtest_choose(&mut self, id: &str) -> GString {
+        let root = self.to_gd().upcast::<Node>();
+        if !offered_choices(&root)
+            .iter()
+            .any(|(offered, _)| offered == id)
+        {
+            return GString::from(format!("'{id}' is not on screen").as_str());
+        }
+        match parse_playtest_id(id) {
+            Some(PlaytestCommand::Action(action)) => self.perform(action),
+            Some(PlaytestCommand::Hunt(action)) => self.perform_hunt(action),
+            None => return GString::from(format!("'{id}' is not a known action").as_str()),
+        }
+        GString::new()
+    }
+
+    fn playtest_set_line(&mut self, line: &str) -> GString {
+        // `read_draft_fields` copies the LineEdit over `draft.name` on the next
+        // menu action, so both have to move together.
+        let Some(edit) = self.name_edit.as_mut() else {
+            return GString::from("no line field is on screen");
+        };
+        if !edit.is_visible_in_tree() {
+            return GString::from("no line field is on screen");
+        }
+        edit.set_text(line);
+        self.draft.name = line.to_string();
+        GString::new()
+    }
+
+    fn playtest_key(&mut self, key: &str) -> GString {
+        let normalized = key.trim().to_ascii_lowercase();
+        if normalized == "escape" || normalized == "ui_cancel" {
+            // A no-op is success. The next observation shows the overlay still open.
+            self.dismiss_cancel();
+            return GString::new();
+        }
+        GString::from("that key does nothing here")
+    }
+
+    fn playtest_observation_dict(&self) -> VarDictionary {
+        let root = self.to_gd().upcast::<Node>();
+        let choices = offered_choices(&root);
+        let text = self.playtest_text(&choices);
+        let mut options = VarArray::new();
+        for (id, label) in &choices {
+            options.push(&vdict! { "id" => id.as_str(), "label" => label.as_str() });
+        }
+        let mut actions = VarDictionary::new();
+        actions.set("kind", "choice");
+        actions.set("options", &options);
+        let mut open = VarArray::new();
+        for name in self.open_desks() {
+            open.push(name);
+        }
+        let (captain, day, silver, docked, place) = self.playtest_facts();
+        let hire = choices.iter().any(|(id, _)| id == "chart.hire");
+        let mut state = VarDictionary::new();
+        state.set("screen", self.playtest_screen());
+        state.set("captain", captain.as_str());
+        state.set("day", day);
+        state.set("silver", silver);
+        state.set("docked", docked.as_str());
+        state.set("place", place.as_str());
+        state.set("open", &open);
+        state.set("hire_on_screen", hire);
+        let mut result = VarDictionary::new();
+        result.set("text", text.as_str());
+        result.set("state", &state);
+        result.set("actions", &actions);
+        result.set("done", false);
+        result
+    }
+
+    fn playtest_text(&self, choices: &[(String, String)]) -> String {
+        let mut lines = Vec::new();
+        lines.push(format!("Screen: {}", self.playtest_screen()));
+        lines.push(self.status_text());
+        for notice in self.visible_notices() {
+            lines.push(notice);
+        }
+        lines.push("Actions:".to_string());
+        for (id, label) in choices {
+            lines.push(format!("{id} — {label}"));
+        }
+        if !self.log_lines.is_empty() {
+            lines.push("Log:".to_string());
+            lines.extend(self.log_lines.iter().cloned());
+        }
+        lines.join("\n")
+    }
+
+    fn visible_notices(&self) -> Vec<String> {
+        let mut lines = Vec::new();
+        if !self.newgame_notice.is_empty() {
+            lines.push(self.newgame_notice.clone());
+        }
+        if self.contracts_open && !self.contracts_notice.is_empty() {
+            lines.push(self.contracts_notice.clone());
+        }
+        if self.shipyard_open && !self.shipyard_notice.is_empty() {
+            lines.push(self.shipyard_notice.clone());
+        }
+        if self.harbour_open && !self.harbour_notice.is_empty() {
+            lines.push(self.harbour_notice.clone());
+        }
+        if self.crew_open && !self.crew_notice.is_empty() {
+            lines.push(self.crew_notice.clone());
+        }
+        if self.hunt_open && !self.hunt_desk.notice.is_empty() {
+            lines.push(self.hunt_desk.notice.clone());
+        }
+        lines
+    }
+
+    fn playtest_screen(&self) -> &'static str {
+        if self.day_report_open {
+            return "day-report";
+        }
+        if self.encounter.as_ref().and_then(present).is_some() {
+            return "encounter";
+        }
+        if self.hunt_open {
+            return "hunt";
+        }
+        if self.crew_open {
+            return "crew";
+        }
+        if self.contracts_open {
+            return "contracts";
+        }
+        if self.shipyard_open {
+            return "shipyard";
+        }
+        if self.harbour_open {
+            return "harbour";
+        }
+        if self.journal_open {
+            return "journal";
+        }
+        match self.newgame_page {
+            NewgamePage::Title => "title",
+            NewgamePage::Captains => "captains",
+            NewgamePage::Custom => "custom",
+            NewgamePage::Load => "load",
+            NewgamePage::Saved => "saved",
+            NewgamePage::Hidden => "chart",
+        }
+    }
+
+    fn open_desks(&self) -> Vec<&'static str> {
+        let mut open = Vec::new();
+        if self.day_report_open {
+            open.push("day-report");
+        }
+        if self.encounter.as_ref().and_then(present).is_some() {
+            open.push("encounter");
+        }
+        if self.hunt_open {
+            open.push("hunt");
+        }
+        if self.crew_open {
+            open.push("crew");
+        }
+        if self.contracts_open {
+            open.push("contracts");
+        }
+        if self.shipyard_open {
+            open.push("shipyard");
+        }
+        if self.harbour_open {
+            open.push("harbour");
+        }
+        if self.journal_open {
+            open.push("journal");
+        }
+        open
+    }
+
+    fn playtest_facts(&self) -> (String, i64, i64, String, String) {
+        let Some(session) = self.session.as_ref() else {
+            return (String::new(), 0, 0, String::new(), String::new());
+        };
+        let world = session.world();
+        let docked = docked_port_id(session).unwrap_or("").to_string();
+        let place = if docked.is_empty() {
+            match world.voyage.status {
+                VoyageStatus::AtSea => format!(
+                    "{} -> {}",
+                    port_name(world, &world.voyage.origin_id),
+                    port_name(world, &world.voyage.destination_id)
+                ),
+                VoyageStatus::Arrived | VoyageStatus::InPort => {
+                    port_name(world, &world.voyage.destination_id)
+                }
+            }
+        } else {
+            port_name(world, &docked)
+        };
+        (
+            world.captain.name.clone(),
+            world.day,
+            world.captain.silver,
+            docked,
+            place,
+        )
+    }
+}
+
+fn dict_string(dict: &VarDictionary, key: &str) -> String {
+    let Some(value) = dict.get(key) else {
+        return String::new();
+    };
+    value
+        .try_to::<GString>()
+        .map(|text| text.to_string())
+        .unwrap_or_default()
+}
+
+fn offered_choices(root: &Gd<Node>) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    walk_playtest_buttons(root, &mut |button| {
+        if !button.is_visible_in_tree() || button.is_disabled() || !button.has_meta("playtest_id") {
+            return;
+        }
+        let Ok(id) = button.get_meta("playtest_id").try_to::<GString>() else {
+            return;
+        };
+        let id = id.to_string();
+        if id.is_empty() || !seen.insert(id.clone()) {
+            return;
+        }
+        out.push((id, button.get_text().to_string()));
+    });
+    out
+}
+
+fn walk_playtest_buttons(node: &Gd<Node>, visit: &mut dyn FnMut(&Gd<Button>)) {
+    if let Ok(button) = node.clone().try_cast::<Button>() {
+        visit(&button);
+    }
+    for child in node.get_children().iter_shared() {
+        walk_playtest_buttons(&child, visit);
+    }
+}
+
+fn stamp_playtest_id(button: &mut Gd<Button>, id: &str) {
+    let value = id.to_variant();
+    button.set_meta("playtest_id", &value);
+}
+
 fn headless_runtime() -> bool {
     // `--headless` is an engine argument, so it is not in the user-arg list.
     // The dummy display server has no viewport texture. A capture there logs
@@ -8874,6 +9230,7 @@ fn hunt_button(game: InstanceId, text: &str, action: HuntAction) -> Gd<Button> {
     button.set_text(text);
     encounter_screen::style_encounter_button(&mut button);
     button.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    stamp_playtest_id(&mut button, &hunt_playtest_id(&action));
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
             return;
@@ -8888,6 +9245,7 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     button.set_text(text);
     button.add_theme_color_override("font_color", CREAM);
     button.add_theme_color_override("font_hover_color", GOLD);
+    stamp_playtest_id(&mut button, &action_playtest_id(&action));
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
@@ -8903,6 +9261,7 @@ fn crew_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = Button::new_alloc();
     button.set_text(text);
     crew_screen::style_crew_button(&mut button);
+    stamp_playtest_id(&mut button, &action_playtest_id(&action));
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
@@ -8962,6 +9321,7 @@ fn encounter_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> 
     let mut button = Button::new_alloc();
     button.set_text(text);
     encounter_screen::style_encounter_button(&mut button);
+    stamp_playtest_id(&mut button, &action_playtest_id(&action));
     let action_for_click = action;
     button.signals().pressed().connect(move || {
         let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {

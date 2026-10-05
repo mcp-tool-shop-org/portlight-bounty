@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "21ff8e3fda7c3cbe3790816c2ce87b47a2269c755ca8d8276464f0ce7d7260fa",
+          "hash": "78742ad7cc386a73b4d848a6c5e4c5a3a0a7839376d8015ffcf2662515eeb0db",
           "path": ".github/workflows/ci.yml"
         }
       ],
@@ -40,16 +40,100 @@
           "path": "docs/HANDOFF-GROK-BOTS.md"
         },
         {
-          "hash": "663d766203204b5e47fd2e90afb628b848fc06e4cb93cfd4a2b9ec8854d00ec8",
+          "hash": "efffbde47842819738dc3b1b6451f225fe42e27cce319ff5a7da6a1b75f07e10",
           "path": "docs/PORTING-PLAN.md"
         },
         {
-          "hash": "2fd0b172cf6a3d96e1945c04364bf3cb9f8c5a4f883202ec7a39a3fd2097efa7",
+          "hash": "3f017abae64d01b8841e94013f35ac16ad65a866fd5a6c1581d3497c436ef44c",
+          "path": "docs/playtest/README.md"
+        },
+        {
+          "hash": "9b51512142772771f7ca2b6108ac3d4401abf0117c65bf6d6e96c6b924e7a802",
+          "path": "docs/playtest/fix-a-acceptance-player.md"
+        },
+        {
+          "hash": "b6de0268605e1a86ca621277b722a8ab2c6ab0075dc928b3d3f20343fa575fc8",
+          "path": "docs/playtest/playtest-bridge-consult-brief.md"
+        },
+        {
+          "hash": "9fed8b0ef1e0293f15e52cd79e9faf1049c65a04b7bf2a71d7eee2762fb57c02",
+          "path": "docs/playtest/playtest-contract-strip-criteria-STUB.md"
+        },
+        {
+          "hash": "655300ad7321d945df3cbab1bcbdd6ac621ff0bf121ca15760e7f5345a1bb2ac",
+          "path": "docs/playtest/playtest-criteria-draft.md"
+        },
+        {
+          "hash": "d2b073a3c490b3ea1e5182764aa0a21e35540cf50ba6315d05fbfd6305c06e57",
+          "path": "docs/playtest/playtest-escape-undock-criteria.md"
+        },
+        {
+          "hash": "a8894e099d8fc5a7b861ce5bd3c159553b7862ff3de7e6f6380caff7bfa40226",
+          "path": "docs/playtest/playtest-harness-status.md"
+        },
+        {
+          "hash": "1827f2eaf5632d10e8ae3bf6be98fd91154cf3f0fa7ee188d55ec5ae19d0b92f",
+          "path": "docs/playtest/playtest-mike-runbook.md"
+        },
+        {
+          "hash": "b11a969d51b48e7cef4c8cd95816201176c0b99a608c1539c310bc572d79ed29",
+          "path": "docs/playtest/playtest-pier-after-fix-a-STUB.md"
+        },
+        {
+          "hash": "e9ef5f7e29734d073549f9819c94bc08f207d607c83b672661d9acafd87dd698",
+          "path": "docs/playtest/playtest-plan-portable-for-mike.md"
+        },
+        {
+          "hash": "114b1feb54cf9e4ba47227acfa1f3089f0d0f7f14e04b8769afa8ab2fa2d9ade",
+          "path": "docs/playtest/playtest-portlight-v0.playtest.json"
+        },
+        {
+          "hash": "95aaba6a2e2fcbe2d1bcbeba83f0cb2593b227b4ec0a555cec99f8c65ca62f6e",
+          "path": "docs/playtest/playtest-seats-README.md"
+        },
+        {
+          "hash": "2c27c177aa46e69dbc86d60a6544f52281c93350a459fc7a13fedd8a8863af8d",
           "path": "docs/screenshots/chart-1280.png"
         },
         {
-          "hash": "e9cd8329c21d6e5837e486def6b32911e2f766e6b77d706b7fd157f180b3c101",
+          "hash": "2a183255860d9d6602f32e663ed574a5aa02ce45ab107183a6749b818c055917",
           "path": "docs/screenshots/chart-cutter-f7.png"
+        },
+        {
+          "hash": "b8a091ce57514077a2e0770a34c975ced8ed71650ca645d1c50c8897d20b67a7",
+          "path": "docs/screenshots/contracts-active.png"
+        },
+        {
+          "hash": "87d74263928fccc16d8fed9ac7d6b0930f89628664890e65c3f908c7d5080089",
+          "path": "docs/screenshots/contracts-board.png"
+        },
+        {
+          "hash": "a02a75b9191f5d1274d69a0089376c70a24a5bb7aab7d715df995a18799c3380",
+          "path": "docs/screenshots/contracts-empty.png"
+        },
+        {
+          "hash": "2c2ca15ac921a4ebee8b56a1b5c12380fd986d9ed151387bd62ba1be1dec27cc",
+          "path": "docs/screenshots/crew-companions.png"
+        },
+        {
+          "hash": "89d6ef87557d017cb82f4da2cb461baa44add1b71ac900a4a3744974dc959a4e",
+          "path": "docs/screenshots/crew-provisions.png"
+        },
+        {
+          "hash": "8efa1a0faeb9ecba4ae57b15a18d5268f26dd73d3b81178349f007fc7b06dd78",
+          "path": "docs/screenshots/crew-roster.png"
+        },
+        {
+          "hash": "fe5e106a46d2565935a16343bf0e69aec4acab8b8090046224d765153048d7fc",
+          "path": "docs/screenshots/crew-training.png"
+        },
+        {
+          "hash": "36a1d38ba1c3724a6bdbc1b7b24625171c4dc1aad53ae55480e6ddfc45ad8311",
+          "path": "docs/screenshots/day-report-deadline.png"
+        },
+        {
+          "hash": "06d9537e2924022f93d9e90e67fe16d0b20eebb3e8fa01fde49863cefac2ff66",
+          "path": "docs/screenshots/day-report-full.png"
         },
         {
           "hash": "884fd99d3add3c3df98b1018d32a66ce258e340c32cb137532387c168986b950",
@@ -72,20 +156,64 @@
           "path": "docs/screenshots/encounter-naval.png"
         },
         {
-          "hash": "ec1d3b4f6f23c5a05f7e995a940b953680fc09ee86bb5a4ccc62a1c1acdf5075",
+          "hash": "8127c3a5ef392e7c8aeb62431f117e29abf9e4b88fd590552fe942a2f9885d44",
           "path": "docs/screenshots/encounter-outcome.png"
+        },
+        {
+          "hash": "4dcdb8e4c69897118340cbdf2170c5f136c085585ce99105b3e2b3f36782b52d",
+          "path": "docs/screenshots/flat-deck-z072.png"
+        },
+        {
+          "hash": "a5d0ea771401629db32a78365d671606cb086677de2451679e12e2c482b26daa",
+          "path": "docs/screenshots/flat-deck-z100.png"
+        },
+        {
+          "hash": "ccc4ace09dc04cb3db15506d8309b6e7bd75d6e4ff4352347b13dfaa9764a5c4",
+          "path": "docs/screenshots/harbour-broker.png"
+        },
+        {
+          "hash": "e80a6cc18748268dd034f014ff9f5724fab7ce54af2b0943d1a06afe0f5a9715",
+          "path": "docs/screenshots/harbour-finance.png"
         },
         {
           "hash": "cd767ceb7b4040c96cf977e5d5b65d874fe75246bae13f2b3cb3786b110c8117",
           "path": "docs/screenshots/harbour-seam-vertex-crop.png"
         },
         {
-          "hash": "e2a0df8c95a384aeae0ee4b79901ac25223c596950493ff6f39ef025b31440c0",
+          "hash": "bb4487a93ce93973244c8c1117b2623a6c7ad54383c53379107f7c16bad54877",
           "path": "docs/screenshots/harbour-seam-z072.png"
         },
         {
-          "hash": "58a335d79c631b876c0319f8931b55bdc1f7de685ded59f3808c32eaffef141a",
+          "hash": "3bde307eecb4b758bb5e9294f8db2ea90a6bbe731056c54cec5ec76d9ff14f9c",
           "path": "docs/screenshots/harbour-seam-z100.png"
+        },
+        {
+          "hash": "18e868a02c914f11ce43bbbaa01a570c14c6bd19820044167e517b9d879a90a9",
+          "path": "docs/screenshots/harbour-warehouse.png"
+        },
+        {
+          "hash": "c4687b0edb1139c6c356a91d6bf7957b74259fca232dd0af5007d3d2e3935dd6",
+          "path": "docs/screenshots/hunt-active.png"
+        },
+        {
+          "hash": "05ba539a1b8f0b020e35af42e3864dd5ad0933ca725c0d2909379710da853522",
+          "path": "docs/screenshots/hunt-board.png"
+        },
+        {
+          "hash": "0dd0a92f7883c35e6377bbd4ad9cd68bac96f8b48fe25a05352c1a98fb8ac5ae",
+          "path": "docs/screenshots/hunt-forage.png"
+        },
+        {
+          "hash": "0738a29c647a02a0446be564a8a29b641e1822d09c0ca106367de2e759ae3f0d",
+          "path": "docs/screenshots/journal-chronicle.png"
+        },
+        {
+          "hash": "685585217726d595ffddb68a828c75696d4d226ec08626677e40a163300a6f8f",
+          "path": "docs/screenshots/journal-memories.png"
+        },
+        {
+          "hash": "6eab3af6f3df5cc9defda0505cae09df6227d933d099afd87cacc4944ca21dc8",
+          "path": "docs/screenshots/journal-victory.png"
         },
         {
           "hash": "bbad62767808ab40354d917bc15c5cc5a0b20e75afefbdab141bcfdeb7c72092",
@@ -100,7 +228,7 @@
           "path": "docs/screenshots/newgame-load.png"
         },
         {
-          "hash": "5398978a8fe5319d6d3d710645027a8b29f7e04fe5bcb7b02f827714b50663db",
+          "hash": "dbf0a36df45bd56e1fa23fa3ba6f6fc03553f2dfd197019057d1551785996a9e",
           "path": "docs/screenshots/newgame-save.png"
         },
         {
@@ -108,12 +236,24 @@
           "path": "docs/screenshots/newgame-title.png"
         },
         {
-          "hash": "228559f668ba8927e1c5009bffcfe60603249e8a1e00704e1e827a8b62637a82",
+          "hash": "0a6848f4bf651294851f05b3cc5aeb474906ef3ecbd7d2da8114702b57388da7",
           "path": "docs/screenshots/quay-paving-z072.png"
         },
         {
-          "hash": "6d8dfe49da773a6461febbac501fb9afe4899de720a021165d2f7aa8cac4a749",
+          "hash": "933fbc41f3f89bd3bde92468e0451422ad71bc5e008a4739ebbeca6fc3373960",
           "path": "docs/screenshots/quay-paving-z100.png"
+        },
+        {
+          "hash": "bb9d3f4b2f4f9d5a0d52dd9eaf5df6ad77c4cb4a6f3726796a737106041df9db",
+          "path": "docs/screenshots/shipyard-flagship.png"
+        },
+        {
+          "hash": "d464b93f5c9120cd736875353316428f04bd1afe2eff6ed87ef575a176870a6b",
+          "path": "docs/screenshots/shipyard-fleet.png"
+        },
+        {
+          "hash": "772cffa61a749116e18e19552429818f58c3be026dc5757e841c0d026f86f22a",
+          "path": "docs/screenshots/shipyard-yard.png"
         }
       ],
       "globs": [
@@ -132,6 +272,7 @@
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
       "entryPoints": [
+        "godot/playtest_bridge.gd",
         "godot/scenes/main.tscn"
       ],
       "externals": 0,
@@ -153,7 +294,7 @@
           "path": "godot/assets/catalog/locked-ids.csv"
         },
         {
-          "hash": "8df9409212ce88e22353cc9cc0babf20e75899283053a9161ec1ebd6c4693197",
+          "hash": "c990b4c050fa7a6d0cd0998c0b46241f7ba086b8ef527f6882ad671bc0be8bdb",
           "path": "godot/assets/landing/MANIFEST.json"
         },
         {
@@ -525,12 +666,52 @@
           "path": "godot/assets/landing/ground/water_c.png.import"
         },
         {
+          "hash": "d9b98a098a2b3bcbdabbcec0d015c4198e19a8fa017ab01dac26a6e45f20690a",
+          "path": "godot/assets/landing/props/barrel_1x1/beauty.png"
+        },
+        {
+          "hash": "3a770cb2e849cd06f9dc9401d53538d76cb950713564498a70ac4c09522ee39b",
+          "path": "godot/assets/landing/props/barrel_1x1/beauty.png.import"
+        },
+        {
+          "hash": "9ed994925f8ff489c3ec73d6aa9464d16332978cf4e8014f4c1f83a606d57af9",
+          "path": "godot/assets/landing/props/bollard_1x1/beauty.png"
+        },
+        {
+          "hash": "c64ca41a7e63e88d9cdfe301acad40f1ef4d22754fa741d39a5df9fc31c780fd",
+          "path": "godot/assets/landing/props/bollard_1x1/beauty.png.import"
+        },
+        {
+          "hash": "df4b6553025bdb11dcdbbbc42627e9155259a942600543f62675de6a7452b7c9",
+          "path": "godot/assets/landing/props/cart_1x1/beauty.png"
+        },
+        {
+          "hash": "133c609edf53fac89e3b728fe59206f94af3abf4e18d6d2df8adff1e22c8fdcc",
+          "path": "godot/assets/landing/props/cart_1x1/beauty.png.import"
+        },
+        {
+          "hash": "8d7161050c8185e489a18677e1951edee0262674e663895d21980b44854f13f6",
+          "path": "godot/assets/landing/props/crate_1x1/beauty.png"
+        },
+        {
+          "hash": "7d3e688f77ff5b0841d37f6cd1c6744b8511b4d21504e7dadf15dc8dea324c64",
+          "path": "godot/assets/landing/props/crate_1x1/beauty.png.import"
+        },
+        {
           "hash": "68054e395a9e4863507280ebaf1206de3a3e967abbe1945c89e3af4f842343c8",
           "path": "godot/assets/landing/props/pier_pilings_1x1/beauty.png"
         },
         {
           "hash": "e5f304cba92b099c043ad07cc19a5fd1192b02f27d86354bb9175c20483e50d6",
           "path": "godot/assets/landing/props/pier_pilings_1x1/beauty.png.import"
+        },
+        {
+          "hash": "9b47c0a242aac8434f87a59aaff30e91aeb16d83bdf234d0b6dfdef0fe124441",
+          "path": "godot/assets/landing/props/torch_1x1/beauty.png"
+        },
+        {
+          "hash": "7299bc3560ab787f7883ec3799c1c463bbb485c3734c29f104f585c2ed383ea3",
+          "path": "godot/assets/landing/props/torch_1x1/beauty.png.import"
         },
         {
           "hash": "ccf00951acdc6662043503cf5ee1454f8ab90042ba2b19f9734d2261d0db676b",
@@ -741,6 +922,10 @@
           "path": "godot/assets/landing/structures/quay_1111/beauty.png.import"
         },
         {
+          "hash": "05a47aae4c043b4bc56c5addf6958620e9adfaa7052ffe674ce17f4813e8f452",
+          "path": "godot/default_bus_layout.tres"
+        },
+        {
           "hash": "a09ca281d08528e7737807afc5425964f0c47241b33583f4393cef6556f63ed3",
           "path": "godot/icon.svg"
         },
@@ -749,11 +934,15 @@
           "path": "godot/icon.svg.import"
         },
         {
+          "hash": "1396bbc511e7181938598ea04db86f807b1fefc014cd9ff3f1a931317f1009f0",
+          "path": "godot/playtest_bridge.gd"
+        },
+        {
           "hash": "8a804141444af736c3060a50b47bb689c8d191261b07514f689f84636efe0b16",
           "path": "godot/portlight.gdextension"
         },
         {
-          "hash": "118f1d7f98d729bf5dc379685054107973d661725c0e05f48b13e85e4a70a447",
+          "hash": "1015fc693b6d89a9abac29aeb99b5477cbfc4cb85045458dcae58446fdefc586",
           "path": "godot/project.godot"
         },
         {
@@ -784,7 +973,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "ebd43218e51cc6d7e60450340e64c7d1fedd3e740fbcb9b529ad7f0f619632c7",
+          "hash": "9e78a89d0d1ea58d235c9b0840b79093b94b579ff314d6f8fc5374b3ad3730a6",
           "path": "parity/expected_divergences.json"
         },
         {
@@ -1288,7 +1477,7 @@
           "path": "parity/golden/hunt_sea_success.json"
         },
         {
-          "hash": "e98199628e615ed45a843061d19a6bbcf74b8b54b680d50a9535ea08e1b1a220",
+          "hash": "141363f21ceb7bf4b94d653fedb71fbb397efd329b0f3eda36755e3577da2e79",
           "path": "parity/golden/injury_heal.json"
         },
         {
@@ -1532,7 +1721,7 @@
           "path": "parity/scripts/bounty_unknown.txt"
         },
         {
-          "hash": "262de5ccbe8d99d060e2c04618a36f6061688f34457858d069d7c85ad134c3ce",
+          "hash": "0d90444940920ee8fb94da7a4b5b16334d411966ccc1197d6a4e258164721d4f",
           "path": "parity/scripts/broker_board.txt"
         },
         {
@@ -2131,8 +2320,11 @@
         {
           "exports": [
             "build_harbour",
+            "build_harbour_with_deck",
+            "flat_deck_back_edges",
             "harbour_anchor",
             "harbour_cell_f",
+            "harbour_prop_tile",
             "harbour_quay_paving_tile",
             "harbour_water_cells",
             "harbour_water_covers",
@@ -2140,21 +2332,32 @@
             "harbour_work_tile",
             "seam_view",
             "sort_works",
+            "validate_flat_deck",
             "validate_harbour"
           ],
           "failurePaths": [
             {
               "in": "quay_flag_u4",
               "kind": "err",
-              "line": 196
+              "line": 248
             },
             {
               "in": "validate_harbour",
               "kind": "err",
-              "line": 253
+              "line": 371
+            },
+            {
+              "in": "validate_flat_deck",
+              "kind": "err",
+              "line": 453
+            },
+            {
+              "in": "build_harbour_with_deck",
+              "kind": "err",
+              "line": 496
             }
           ],
-          "hash": "b2e7f215deabc9d597066d5bd586c56e46671b786e2d3ee9db4d5d9817dd1f3b",
+          "hash": "c287886d009e0957087e7b2cad32f3c11d7b9022f8093b6411dcc5dc2ce273b5",
           "importOrder": [
             "crates/portlight-chart/src/cover.rs",
             "crates/portlight-chart/src/project.rs",
@@ -2169,12 +2372,12 @@
           "testsInside": true
         },
         {
-          "hash": "0a8faaad19e3af303cebb7fe40ed8574afbd37232fd4af31acaf2fe71709b4c1",
+          "hash": "6ae67b4eff09635dfa5d15dae2e5d3c0059f84d29ce361e8f2e30230e341aa8b",
           "path": "crates/portlight-chart/src/landing.rs",
           "testsInside": true
         },
         {
-          "hash": "ac9611a8c90e482e6e43c8cb4aaeee0c518508e8b21e36d64a32aedbad306d84",
+          "hash": "8e0b7bd596a8d6b0b60d8bebc8c48572d7792ea2ea6ff12321b71a36969b7e56",
           "importsFiles": [
             "crates/portlight-chart/src/assets.rs",
             "crates/portlight-chart/src/cover.rs",
@@ -2225,13 +2428,16 @@
         {
           "exports": [
             "corner_toward",
+            "flat_deck_crop",
             "harbour_seam",
             "pier_plate_id",
             "quay_paving_crop",
             "seam_camera_center",
+            "seam_deck_blocks",
+            "seam_flat_deck",
             "seam_interior_vertex"
           ],
-          "hash": "636c7b50aab0b9f1aeabf0c04364903e062efacf7f65e80f3f133cb9853852cd",
+          "hash": "674fe3017a0267a255ee2ff8fa392c5aacdeb312335ae06379f345a26aa8e9fb",
           "importsFiles": [
             "crates/portlight-chart/src/harbour.rs",
             "crates/portlight-chart/src/project.rs"
@@ -2498,14 +2704,100 @@
         },
         {
           "exports": [
+            "abandon_prompt",
+            "ascii_sentence",
+            "body_line",
+            "build_contracts_screen",
+            "can_complete",
+            "days_left_text",
+            "meta_color",
+            "outcome_notice",
+            "progress_text",
+            "recent_line",
+            "requirement_text",
+            "reward_text",
+            "section_label"
+          ],
+          "hash": "795aee83bc4375dedf156b81f230878fe8945efb6b240f7e905c7c665f197900",
+          "importOrder": [
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-sim/src/lib.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-sim/src/model.rs"
+          ],
+          "path": "crates/portlight-godot/src/contracts_screen.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
+            "build_crew_screen",
+            "fill_parent",
+            "style_crew_button"
+          ],
+          "hash": "f0c795fc5e50e16f7a6e9e2e9ddb4b5affbc8c0ad48b350be6738c3e4dffd875",
+          "importsFiles": [
+            "crates/portlight-godot/src/encounter_screen.rs"
+          ],
+          "path": "crates/portlight-godot/src/crew_screen.rs"
+        },
+        {
+          "exports": [
+            "apply_document",
+            "bounty_lines",
+            "build_day_report_screen",
+            "build_document",
+            "cap_sections",
+            "claimable_ids",
+            "deadline_timing",
+            "heal_days_left",
+            "overlay_text",
+            "overlay_visible",
+            "place_card",
+            "price_lines",
+            "set_open",
+            "smoke_deadline_document",
+            "smoke_full_document",
+            "snapshot_docked_prices"
+          ],
+          "hash": "7f38448787a5dd209824757f791c3938c316b39f83911533922d45475bc58e56",
+          "importOrder": [
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/bounty.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/bounty.rs",
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs"
+          ],
+          "path": "crates/portlight-godot/src/day_report.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
             "build_encounter_screen",
             "fill_parent",
             "placeholder_minimum_size",
+            "set_delta_line",
             "set_ship_plate",
             "side_column",
             "style_encounter_button"
           ],
-          "hash": "53253c68eb0dc3ff00a689cba768950fbec6dba1e821ac7e5ca3a03ff834b87d",
+          "hash": "ed7aa0de93138242550da5dd8acdcc9db62a5ce91cce0153cec1ac6db5192d40",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/logic.rs"
@@ -2518,220 +2810,350 @@
             {
               "in": "start_game",
               "kind": "match-err",
-              "line": 813
+              "line": 1386
             },
             {
               "in": "start_captain",
               "kind": "match-err",
-              "line": 959
+              "line": 1532
             },
             {
               "in": "begin_custom",
               "kind": "match-err",
-              "line": 968
+              "line": 1541
             },
             {
               "in": "load_slot",
               "kind": "match-err",
-              "line": 1010
+              "line": 1585
             },
             {
               "in": "save_current_game",
               "kind": "match-err",
-              "line": 1035
+              "line": 1610
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1058
+              "line": 1633
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1065
+              "line": 1640
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1100
+              "line": 1675
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1113
+              "line": 1688
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1118
+              "line": 1693
+            },
+            {
+              "in": "journal_sea_check",
+              "kind": "match-err",
+              "line": 1915
             },
             {
               "in": "shipyard_repair",
               "kind": "match-err",
-              "line": 1512
+              "line": 2404
             },
             {
               "in": "shipyard_rename",
               "kind": "match-err",
-              "line": 1537
+              "line": 2429
             },
             {
               "in": "buy_hull",
               "kind": "match-err",
-              "line": 1628
+              "line": 2520
             },
             {
               "in": "install_hull_upgrade",
               "kind": "match-err",
-              "line": 1645
+              "line": 2537
             },
             {
               "in": "sell_docked_hull",
               "kind": "match-err",
-              "line": 1658
+              "line": 2550
             },
             {
               "in": "dock_flagship",
               "kind": "match-err",
-              "line": 1671
+              "line": 2563
             },
             {
               "in": "board_docked_hull",
               "kind": "match-err",
-              "line": 1684
+              "line": 2576
+            },
+            {
+              "in": "run_harbour_smoke",
+              "kind": "match-err",
+              "line": 3173
             },
             {
               "in": "run_art",
               "kind": "match-err",
-              "line": 2194
+              "line": 3328
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 2332
+              "line": 3466
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 2339
+              "line": 3473
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 2343
+              "line": 3477
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 2351
+              "line": 3485
             },
             {
               "in": "sail",
               "kind": "match-err",
-              "line": 2444
+              "line": 3623
             },
             {
               "in": "next_day",
               "kind": "match-err",
-              "line": 2504
+              "line": 3695
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 2565
-            },
-            {
-              "in": "trade",
-              "kind": "err",
-              "line": 2565
-            },
-            {
-              "in": "trade",
-              "kind": "match-err",
-              "line": 2570
+              "line": 3775
             },
             {
               "in": "trade",
               "kind": "err",
-              "line": 2570
+              "line": 3775
             },
             {
               "in": "trade",
-              "kind": "match-err",
-              "line": 2580
-            },
-            {
-              "in": "work_docks",
-              "kind": "match-err",
-              "line": 2599
-            },
-            {
-              "in": "hire_sailor",
-              "kind": "match-err",
-              "line": 2641
-            },
-            {
-              "in": "buy_provisions",
-              "kind": "match-err",
-              "line": 2679
-            },
-            {
-              "in": "finish_duel_result",
-              "kind": "match-err",
-              "line": 2730
-            },
-            {
-              "in": "finish_victory",
-              "kind": "match-err",
-              "line": 3369
-            },
-            {
-              "in": "open_bounty_hunt",
-              "kind": "match-err",
-              "line": 3401
-            },
-            {
-              "in": "ingest",
-              "kind": "match-err",
-              "line": 3414
-            },
-            {
-              "in": "adopt_step",
-              "kind": "match-err",
-              "line": 3449
-            },
-            {
-              "in": "adopt_step",
-              "kind": "match-err",
-              "line": 3457
-            },
-            {
-              "in": "probe_naval",
-              "kind": "match-err",
-              "line": 3482
-            },
-            {
-              "in": "prepare_scripted_voyage",
-              "kind": "match-err",
-              "line": 3663
-            },
-            {
-              "in": "prepare_scripted_voyage",
-              "kind": "match-err",
-              "line": 3669
-            },
-            {
-              "in": "run_bounty_encounter",
               "kind": "match-err",
               "line": 3780
             },
             {
+              "in": "trade",
+              "kind": "err",
+              "line": 3780
+            },
+            {
+              "in": "trade",
+              "kind": "match-err",
+              "line": 3791
+            },
+            {
+              "in": "work_docks",
+              "kind": "match-err",
+              "line": 3810
+            },
+            {
+              "in": "hire_sailor",
+              "kind": "match-err",
+              "line": 3852
+            },
+            {
+              "in": "buy_provisions",
+              "kind": "match-err",
+              "line": 3890
+            },
+            {
+              "in": "apply_harbour",
+              "kind": "match-err",
+              "line": 3981
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "match-err",
+              "line": 3991
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "match-err",
+              "line": 4005
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "match-err",
+              "line": 4014
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "match-err",
+              "line": 4028
+            },
+            {
+              "in": "repay_from_field",
+              "kind": "match-err",
+              "line": 4037
+            },
+            {
+              "in": "repay_credit",
+              "kind": "match-err",
+              "line": 4064
+            },
+            {
+              "in": "draw_from_field",
+              "kind": "match-err",
+              "line": 4073
+            },
+            {
+              "in": "emergency_from_field",
+              "kind": "match-err",
+              "line": 4093
+            },
+            {
+              "in": "apply_hire",
+              "kind": "match-err",
+              "line": 4409
+            },
+            {
+              "in": "crew_fire",
+              "kind": "match-err",
+              "line": 4430
+            },
+            {
+              "in": "crew_provision",
+              "kind": "match-err",
+              "line": 4461
+            },
+            {
+              "in": "apply_train",
+              "kind": "match-err",
+              "line": 4569
+            },
+            {
+              "in": "apply_skill",
+              "kind": "match-err",
+              "line": 4592
+            },
+            {
+              "in": "apply_recruit",
+              "kind": "match-err",
+              "line": 4609
+            },
+            {
+              "in": "finish_duel_result",
+              "kind": "match-err",
+              "line": 5136
+            },
+            {
+              "in": "accept_contract_offer",
+              "kind": "match-err",
+              "line": 5331
+            },
+            {
+              "in": "complete_contract_offer",
+              "kind": "match-err",
+              "line": 5348
+            },
+            {
+              "in": "confirm_abandon",
+              "kind": "match-err",
+              "line": 5386
+            },
+            {
+              "in": "finish_victory",
+              "kind": "match-err",
+              "line": 6528
+            },
+            {
+              "in": "open_bounty_hunt",
+              "kind": "match-err",
+              "line": 6560
+            },
+            {
+              "in": "ingest",
+              "kind": "match-err",
+              "line": 6573
+            },
+            {
+              "in": "adopt_step",
+              "kind": "match-err",
+              "line": 6608
+            },
+            {
+              "in": "adopt_step",
+              "kind": "match-err",
+              "line": 6616
+            },
+            {
+              "in": "probe_naval",
+              "kind": "match-err",
+              "line": 6641
+            },
+            {
+              "in": "run_hunt_smoke",
+              "kind": "match-err",
+              "line": 6840
+            },
+            {
+              "in": "run_day_report_smoke",
+              "kind": "match-err",
+              "line": 7105
+            },
+            {
+              "in": "forage_day",
+              "kind": "match-err",
+              "line": 7228
+            },
+            {
+              "in": "accept_listed",
+              "kind": "match-err",
+              "line": 7255
+            },
+            {
+              "in": "pursue_bounty",
+              "kind": "match-err",
+              "line": 7297
+            },
+            {
+              "in": "claim_listed",
+              "kind": "match-err",
+              "line": 7313
+            },
+            {
+              "in": "prepare_scripted_voyage",
+              "kind": "match-err",
+              "line": 7562
+            },
+            {
+              "in": "prepare_scripted_voyage",
+              "kind": "match-err",
+              "line": 7568
+            },
+            {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 3795
+              "line": 7679
+            },
+            {
+              "in": "run_bounty_encounter",
+              "kind": "match-err",
+              "line": 7694
             }
           ],
-          "hash": "34f277f1f1ddd884ec2c634bbc1b80c1b54a94777ab7f1a759a60f3f9f02e811",
+          "hash": "0fb5f6392019c4774ef0125eddb9f9bd7f6241f2f3c9512913487b76ba608ccd",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -2741,18 +3163,33 @@
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-godot/src/chart_canvas.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/crew_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/harbour_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/journal_screen.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
+            "crates/portlight-godot/src/playtest.rs",
             "crates/portlight-godot/src/shipyard_screen.rs",
+            "crates/portlight-sim/src/skills.rs",
             "crates/portlight-sim/src/custom_captain.rs"
           ],
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/chart_canvas.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/crew_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/harbour_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/journal_screen.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
+            "crates/portlight-godot/src/playtest.rs",
             "crates/portlight-godot/src/shipyard_screen.rs",
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/custom_captain.rs",
@@ -2760,7 +3197,8 @@
             "crates/portlight-sim/src/encounter.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/model.rs",
-            "crates/portlight-sim/src/session.rs"
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-sim/src/skills.rs"
           ],
           "path": "crates/portlight-godot/src/game.rs"
         },
@@ -2768,7 +3206,7 @@
           "exports": [
             "place_harbour"
           ],
-          "hash": "5e8d8773979e6c910622ac3ecfd1e5c580e38e8ba6ffa3f5973d9d852e004958",
+          "hash": "1e6ee72115a28914a71da157b3f1b25814e1593caa427bb2e36e6953ef115d02",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs"
           ],
@@ -2776,14 +3214,144 @@
           "testsInside": true
         },
         {
-          "hash": "3849ce1aa67e26ba0c83f61c1c42cfd0be74f03a1ccc2eeeec77dbabaf6d4498",
+          "exports": [
+            "ascii_copy",
+            "build_harbour_screen",
+            "confirm_prompt",
+            "cream_label",
+            "harbour_model",
+            "infrastructure_kind",
+            "muted_label",
+            "parse_positive",
+            "section_label",
+            "style_danger_button"
+          ],
+          "failurePaths": [
+            {
+              "in": "parse_positive",
+              "kind": "err",
+              "line": 897
+            }
+          ],
+          "hash": "aa08508da846bdae8f44d6bf8aa67f68fc214e9ea5cfefae349ae3d261245ba6",
+          "importOrder": [
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/economy.rs",
+            "crates/portlight-sim/src/infrastructure.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-sim/src/util.rs",
+            "crates/portlight-godot/src/logic.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/economy.rs",
+            "crates/portlight-sim/src/infrastructure.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/util.rs"
+          ],
+          "path": "crates/portlight-godot/src/harbour_screen.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
+            "accept_enabled",
+            "build_hunt_screen",
+            "card_from_target",
+            "catalog_card",
+            "claim_confirm_text",
+            "claim_enabled",
+            "claim_notice",
+            "clear_box",
+            "clear_row",
+            "display_name",
+            "fill_parent",
+            "forage_enabled",
+            "forage_notice",
+            "forage_status",
+            "hunt_confirm_text",
+            "hunt_model",
+            "rebuild_body",
+            "remember",
+            "reward_for",
+            "scroll_to",
+            "show_hunt",
+            "wanted_copy"
+          ],
+          "hash": "91fb88719186b1c265cb6408102813b751d8c8ba82b9d22f0fe14bcf90e6b1fb",
+          "importOrder": [
+            "crates/portlight-sim/src/bounty.rs",
+            "crates/portlight-sim/src/hunting.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/bounty.rs",
+            "crates/portlight-sim/src/hunting.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-sim/src/model.rs"
+          ],
+          "path": "crates/portlight-godot/src/hunt_screen.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
+            "apply_document",
+            "beat_title",
+            "build_journal_screen",
+            "document_lines",
+            "fill_parent",
+            "journal_document",
+            "line_visible",
+            "overlay_text",
+            "scroll_to",
+            "section_visible",
+            "set_open"
+          ],
+          "hash": "cefee47639e2e4c35973fca8e1d1cf3248fce23f871924c268857f8127c9698d",
+          "importOrder": [
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-sim/src/campaign.rs",
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-sim/src/lib.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-sim/src/campaign.rs",
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs"
+          ],
+          "path": "crates/portlight-godot/src/journal_screen.rs",
+          "testsInside": true
+        },
+        {
+          "hash": "9caf905f49e3fe550daba7d4acceb0c1942d36f5ffef6b024cf726ab335179f4",
           "importsFiles": [
             "crates/portlight-godot/src/chart_canvas.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/crew_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/game.rs",
             "crates/portlight-godot/src/harbour.rs",
+            "crates/portlight-godot/src/harbour_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/journal_screen.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
+            "crates/portlight-godot/src/playtest.rs",
             "crates/portlight-godot/src/seam.rs",
             "crates/portlight-godot/src/shipyard_screen.rs"
           ],
@@ -2803,9 +3371,12 @@
             "capture_frame_rejected",
             "chart_host_width",
             "class_label",
+            "crew_desk",
             "cycle_index",
+            "day_log_lines",
             "dock_confirm_line",
             "duel_button_enabled",
+            "effective_provision_per_day",
             "encounter_frame_rejected",
             "encounter_plate",
             "facts_for_catalog_captain",
@@ -2814,12 +3385,15 @@
             "fleet_label",
             "frame_mostly_flat",
             "frame_samples",
+            "hire_confirm_line",
+            "hire_needs_confirm",
             "install_confirm_line",
             "layout_fits_window",
             "newgame_copy",
             "newgame_frame_rejected",
             "player_ship",
             "present",
+            "recruit_confirm_line",
             "save_confirm_title",
             "save_slot_label",
             "seam_exit_code",
@@ -2828,15 +3402,18 @@
             "shipyard_frame_rejected",
             "shipyard_gate_sentence",
             "shipyard_model",
+            "skill_confirm_line",
             "slots_full_sentence",
             "split_session_actions",
             "stance_duel_visible",
             "template_player_ship",
+            "train_confirm_line",
             "ui_plate_panel",
             "ui_sentence",
-            "upgrade_summary"
+            "upgrade_summary",
+            "victory_receipt_lines"
           ],
-          "hash": "b1dfa87167d49eb347367d29cdd09a4dae2aa3f5482702de10b0156252389c7d",
+          "hash": "523216be41680c3a752a3b9d2f6f171926d3f647889bd7fffed05f3286c6f39e",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/encounter.rs",
@@ -2846,18 +3423,30 @@
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/save.rs",
             "crates/portlight-sim/src/custom_captain.rs",
-            "crates/portlight-sim/src/naval.rs"
+            "crates/portlight-sim/src/naval.rs",
+            "crates/portlight-sim/src/reputation.rs",
+            "crates/portlight-sim/src/util.rs",
+            "crates/portlight-sim/src/ship.rs",
+            "crates/portlight-sim/src/training.rs",
+            "crates/portlight-sim/src/skills.rs",
+            "crates/portlight-sim/src/companion.rs"
           ],
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
+            "crates/portlight-sim/src/companion.rs",
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/custom_captain.rs",
             "crates/portlight-sim/src/encounter.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/naval.rs",
+            "crates/portlight-sim/src/reputation.rs",
             "crates/portlight-sim/src/save.rs",
-            "crates/portlight-sim/src/session.rs"
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-sim/src/ship.rs",
+            "crates/portlight-sim/src/skills.rs",
+            "crates/portlight-sim/src/training.rs",
+            "crates/portlight-sim/src/util.rs"
           ],
           "path": "crates/portlight-godot/src/logic.rs",
           "testsInside": true
@@ -2877,14 +3466,30 @@
           "path": "crates/portlight-godot/src/newgame_screen.rs"
         },
         {
+          "exports": [
+            "action_playtest_id",
+            "hunt_playtest_id",
+            "parse_playtest_id"
+          ],
+          "hash": "e76b1aa82d9a9ae9dbcf888f7f001c6e7ba87bdce64706579ef60b35f5169768",
+          "importsFiles": [
+            "crates/portlight-godot/src/game.rs",
+            "crates/portlight-godot/src/harbour_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/logic.rs"
+          ],
+          "path": "crates/portlight-godot/src/playtest.rs",
+          "testsInside": true
+        },
+        {
           "failurePaths": [
             {
               "in": "ready",
               "kind": "match-err",
-              "line": 52
+              "line": 57
             }
           ],
-          "hash": "82fe41b69a40e8e1916a0d1bcdbccf205aa3c8a8427797564f99b1f9d94226f1",
+          "hash": "c002ddaa41131d81f403cfaa2413f7bd9f15c8eed1d1c0e4ec6016820ffc07ec",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/harbour.rs",
@@ -2918,7 +3523,7 @@
       "testRunners": [
         "cargo test"
       ],
-      "testedBy": 3,
+      "testedBy": 9,
       "testedInside": true,
       "unresolvedSites": 0
     },
@@ -3078,7 +3683,7 @@
             "recruit",
             "roll_interception"
           ],
-          "hash": "8f7a0ffb7ae85cdc4416dbe6f4801c1509995b7c79562107cce8b24e5e97fcb2",
+          "hash": "b1729a36a8c23c2a1f9df01038121d935325a0e0762e487076b12bc301c8d15f",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/model.rs",
@@ -3146,23 +3751,24 @@
             {
               "in": "accept_offer",
               "kind": "err",
-              "line": 224
+              "line": 230
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 324
+              "line": 330
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 327
+              "line": 333
             }
           ],
-          "hash": "2212968af76a0861a3149d8180c275a5828ce48154ad88bf43db91ad2320246c",
+          "hash": "8c534af9ec98e18c582e43fc14d8095ec60eb473b4da2fa52919778aa84952fa",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/error.rs",
+            "crates/portlight-sim/src/infrastructure.rs",
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/pyrand.rs",
             "crates/portlight-sim/src/util.rs",
@@ -3794,7 +4400,7 @@
           "testsInside": true
         },
         {
-          "hash": "b59b0710a40efe21641467823a754d998371c61c5c7a6c56f85662b1f662172a",
+          "hash": "b25a0428be07adb7f0292a5d1b4513e6657ea743f9f671c9eb1f91b4576e3724",
           "importsFiles": [
             "crates/portlight-sim/src/bounty.rs",
             "crates/portlight-sim/src/campaign.rs",
@@ -4231,95 +4837,95 @@
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 396
+              "line": 398
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 403
+              "line": 405
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 410
+              "line": 412
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 425
+              "line": 427
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 437
+              "line": 439
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 447
+              "line": 449
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 454
+              "line": 456
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 461
+              "line": 463
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 468
+              "line": 470
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 477
+              "line": 479
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 488
+              "line": 490
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 498
+              "line": 500
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 505
+              "line": 507
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 531
+              "line": 533
             },
             {
               "in": "dispatch",
               "kind": "err",
-              "line": 537
+              "line": 539
             },
             {
               "in": "dispatch_bounty",
               "kind": "err",
-              "line": 550
+              "line": 552
             },
             {
               "in": "dispatch_bounty",
               "kind": "err",
-              "line": 575
+              "line": 577
             },
             {
               "in": "dispatch_bounty",
               "kind": "err",
-              "line": 599
+              "line": 601
             }
           ],
-          "hash": "35dd6becfa1276555fb1418324c6952bd6cd8fc601dc6f94ccfecc0b83b35486",
+          "hash": "bccdcdacaab81ff8f3fad09d1edcd1fbc5ce4e6cf40daddedaca650a782b8977",
           "importsFiles": [
             "crates/portlight-sim/src/custom_captain.rs",
             "crates/portlight-sim/src/error.rs",
@@ -4355,27 +4961,17 @@
             {
               "in": "new_custom",
               "kind": "err",
-              "line": 208
+              "line": 232
             },
             {
               "in": "buy",
               "kind": "err",
-              "line": 398
+              "line": 422
             },
             {
               "in": "sell",
               "kind": "err",
-              "line": 420
-            },
-            {
-              "in": "hire_crew",
-              "kind": "err",
-              "line": 518
-            },
-            {
-              "in": "hire_crew",
-              "kind": "err",
-              "line": 527
+              "line": 444
             },
             {
               "in": "hire_crew",
@@ -4383,347 +4979,357 @@
               "line": 542
             },
             {
-              "in": "provision",
+              "in": "hire_crew",
               "kind": "err",
-              "line": 573
+              "line": 551
+            },
+            {
+              "in": "hire_crew",
+              "kind": "err",
+              "line": 566
             },
             {
               "in": "provision",
               "kind": "err",
-              "line": 587
+              "line": 597
+            },
+            {
+              "in": "provision",
+              "kind": "err",
+              "line": 611
             },
             {
               "in": "work",
               "kind": "err",
-              "line": 606
+              "line": 630
             },
             {
               "in": "hunt",
               "kind": "err",
-              "line": 624
+              "line": 648
             },
             {
               "in": "duel",
               "kind": "err",
-              "line": 745
+              "line": 769
             },
             {
               "in": "duel",
               "kind": "err",
-              "line": 751
+              "line": 775
             },
             {
               "in": "duel",
               "kind": "err",
-              "line": 756
+              "line": 780
             },
             {
               "in": "resolve_pending_duel",
               "kind": "err",
-              "line": 765
+              "line": 789
             },
             {
               "in": "encounter_choice_with",
               "kind": "err",
-              "line": 836
+              "line": 860
             },
             {
               "in": "encounter_choice_with",
               "kind": "err",
-              "line": 840
+              "line": 864
             },
             {
               "in": "encounter_choice_with",
               "kind": "err",
-              "line": 843
+              "line": 867
             },
             {
               "in": "encounter_choice_with",
-              "kind": "err",
-              "line": 849
-            },
-            {
-              "in": "naval_round",
-              "kind": "err",
-              "line": 862
-            },
-            {
-              "in": "naval_round",
               "kind": "err",
               "line": 873
             },
             {
+              "in": "naval_round",
+              "kind": "err",
+              "line": 886
+            },
+            {
+              "in": "naval_round",
+              "kind": "err",
+              "line": 897
+            },
+            {
               "in": "resolve_boarding",
               "kind": "err",
-              "line": 948
+              "line": 972
             },
             {
               "in": "fight",
               "kind": "err",
-              "line": 973
+              "line": 997
             },
             {
               "in": "fight",
               "kind": "err",
-              "line": 982
+              "line": 1006
             },
             {
               "in": "repair",
               "kind": "err",
-              "line": 1064
+              "line": 1099
             },
             {
               "in": "repair",
               "kind": "err",
-              "line": 1070
+              "line": 1105
             },
             {
               "in": "repair",
               "kind": "err",
-              "line": 1086
+              "line": 1121
             },
             {
               "in": "rename_ship",
               "kind": "err",
-              "line": 1103
+              "line": 1138
             },
             {
               "in": "rename_ship",
               "kind": "err",
-              "line": 1113
+              "line": 1148
             },
             {
               "in": "sell_fleet_ship",
               "kind": "err",
-              "line": 1159
+              "line": 1194
             },
             {
               "in": "fire_crew",
               "kind": "err",
-              "line": 1169
+              "line": 1204
             },
             {
               "in": "fire_crew",
               "kind": "err",
-              "line": 1176
+              "line": 1211
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1208
+              "line": 1243
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1225
+              "line": 1260
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1241
+              "line": 1276
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1254
+              "line": 1289
             },
             {
               "in": "ensure_encounter",
               "kind": "err",
-              "line": 1301
+              "line": 1336
             },
             {
               "in": "ensure_encounter",
               "kind": "err",
-              "line": 1314
+              "line": 1349
             },
             {
               "in": "finalize_victory",
               "kind": "err",
-              "line": 1610
+              "line": 1645
             },
             {
               "in": "finalize_victory",
               "kind": "err",
-              "line": 1614
+              "line": 1649
             },
             {
               "in": "buy_infrastructure",
               "kind": "err",
-              "line": 1840
+              "line": 1890
             },
             {
               "in": "buy_infrastructure",
               "kind": "err",
-              "line": 1846
+              "line": 1896
             },
             {
               "in": "buy_infrastructure",
               "kind": "err",
-              "line": 1853
+              "line": 1903
             },
             {
               "in": "buy_infrastructure",
               "kind": "err",
-              "line": 1858
+              "line": 1908
             },
             {
               "in": "take_credit",
               "kind": "err",
-              "line": 1872
+              "line": 1922
             },
             {
               "in": "take_credit",
               "kind": "err",
-              "line": 1888
+              "line": 1938
             },
             {
               "in": "take_credit",
               "kind": "err",
-              "line": 1901
+              "line": 1951
             },
             {
               "in": "buy_insurance",
               "kind": "err",
-              "line": 1929
+              "line": 1979
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 2197
+              "line": 2249
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 2200
+              "line": 2252
             },
             {
               "in": "lease_warehouse",
               "kind": "err",
-              "line": 2347
+              "line": 2399
             },
             {
               "in": "lease_warehouse",
               "kind": "err",
-              "line": 2361
+              "line": 2413
             },
             {
               "in": "open_broker",
               "kind": "err",
-              "line": 2379
+              "line": 2431
             },
             {
               "in": "purchase_license",
               "kind": "err",
-              "line": 2397
+              "line": 2449
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 2426
+              "line": 2478
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2460
+              "line": 2512
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2472
+              "line": 2524
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2476
+              "line": 2528
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2481
+              "line": 2533
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 2547
+              "line": 2602
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 2561
+              "line": 2616
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 2564
+              "line": 2619
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 2607
+              "line": 2662
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 2615
+              "line": 2670
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 2621
+              "line": 2676
             },
             {
               "in": "remove_upgrade",
               "kind": "err",
-              "line": 2656
+              "line": 2711
             },
             {
               "in": "remove_upgrade",
               "kind": "err",
-              "line": 2667
+              "line": 2722
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 2709
+              "line": 2764
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 2719
+              "line": 2774
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 2726
+              "line": 2781
             },
             {
               "in": "maintain_weapon",
               "kind": "err",
-              "line": 2745
+              "line": 2800
             },
             {
               "in": "train_crew",
               "kind": "err",
-              "line": 2815
+              "line": 2886
             },
             {
               "in": "recruit_companion",
               "kind": "err",
-              "line": 2837
+              "line": 2908
             },
             {
               "in": "spend_skill_point",
               "kind": "err",
-              "line": 2864
+              "line": 2935
             },
             {
               "in": "remember_captain",
               "kind": "err",
-              "line": 2951
+              "line": 3022
             }
           ],
-          "hash": "fef665d40ce06dbc68b264265ad3fa6fe4456bc7f27aef18ac829e78fa4364be",
+          "hash": "59d05fd3914d95f042bc7d51a580b0841eebbef49eef711f59ae538c77166acb",
           "importOrder": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/combat.rs",
@@ -4874,7 +5480,7 @@
             "from_receipt",
             "wide_snapshot"
           ],
-          "hash": "cc289ea86f025df75d5b1befa2365d69da0e3ca29bd9483880420c7dc807e709",
+          "hash": "38661eaa06fe9c40c11816bb253626fdb81c5c9e7aa08f4e301e49ca08232de1",
           "importOrder": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/content.rs",
@@ -5172,7 +5778,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "1841136459257c1babd9e2c395e70ae267c3d8ca19d39cfa2c9975d8a10fa304",
+          "hash": "e3eac4454ac2efafbb4cfb43ab9d751c6868b57a147ee1b8bd62a7ed7ca15534",
           "path": ".gitignore"
         },
         {
@@ -5188,7 +5794,7 @@
           "path": "LICENSE"
         },
         {
-          "hash": "df6346086acf81c6528fc447d9170e46436eb6bf1b1058bd5a4aec9fd6b3159c",
+          "hash": "1a1d35e1dc7e14d388d408ac803bebf07fb3ef9a978ae50b7fc38be6a98dbbb7",
           "path": "README.md"
         },
         {
@@ -5207,7 +5813,7 @@
       "unresolvedSites": 0
     },
     {
-      "dynamicReads": 10,
+      "dynamicReads": 11,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
@@ -5245,20 +5851,20 @@
             {
               "in": "png_size",
               "kind": "raise",
-              "line": 127
+              "line": 148
             },
             {
               "in": "srel",
               "kind": "raise",
-              "line": 137
+              "line": 158
             },
             {
               "in": "parse_json_object",
               "kind": "except",
-              "line": 204
+              "line": 225
             }
           ],
-          "hash": "4404d664f3ceeafd90649871d22af3be30ecc8a648b51a469e50e0106687c249",
+          "hash": "ba9534fbc43add092021c642a5e0d257a6a834bc22dcbd5df2395c16cd585090",
           "path": "tools/build_manifest_pb002.py"
         },
         {
@@ -5635,82 +6241,77 @@
             {
               "in": "do_buy",
               "kind": "raise",
-              "line": 264
+              "line": 271
             },
             {
               "in": "do_buy",
               "kind": "raise",
-              "line": 267
+              "line": 274
             },
             {
               "in": "do_sell",
               "kind": "raise",
-              "line": 278
+              "line": 285
             },
             {
               "in": "do_sell",
               "kind": "raise",
-              "line": 287
+              "line": 294
             },
             {
               "in": "parse_custom",
               "kind": "raise",
-              "line": 565
+              "line": 572
             },
             {
               "in": "parse_custom",
               "kind": "except",
-              "line": 569
+              "line": 576
             },
             {
               "in": "parse_custom",
               "kind": "raise",
-              "line": 570
+              "line": 577
             },
             {
               "in": "parse_custom",
               "kind": "raise",
-              "line": 575
+              "line": 582
             },
             {
               "in": "parse_custom",
               "kind": "raise",
-              "line": 602
-            },
-            {
-              "in": "_custom_points",
-              "kind": "except",
               "line": 609
             },
             {
               "in": "_custom_points",
-              "kind": "raise",
-              "line": 610
+              "kind": "except",
+              "line": 616
             },
             {
-              "in": "dispatch",
+              "in": "_custom_points",
               "kind": "raise",
               "line": 617
             },
             {
               "in": "dispatch",
-              "kind": "except",
-              "line": 620
-            },
-            {
-              "in": "dispatch",
               "kind": "raise",
-              "line": 621
+              "line": 624
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 625
+              "line": 627
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 626
+              "line": 628
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 632
             },
             {
               "in": "dispatch",
@@ -5720,17 +6321,7 @@
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 638
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 641
-            },
-            {
-              "in": "dispatch",
-              "kind": "except",
-              "line": 644
+              "line": 640
             },
             {
               "in": "dispatch",
@@ -5740,22 +6331,27 @@
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 649
+              "line": 648
             },
             {
               "in": "dispatch",
               "kind": "except",
+              "line": 651
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
               "line": 652
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 653
+              "line": 656
             },
             {
               "in": "dispatch",
-              "kind": "raise",
-              "line": 657
+              "kind": "except",
+              "line": 659
             },
             {
               "in": "dispatch",
@@ -5765,42 +6361,47 @@
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 700
+              "line": 664
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 667
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 707
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 703
+              "line": 710
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 704
+              "line": 711
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 709
+              "line": 716
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 712
+              "line": 719
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 713
+              "line": 720
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 717
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 721
+              "line": 724
             },
             {
               "in": "dispatch",
@@ -5810,22 +6411,22 @@
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 734
+              "line": 735
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 741
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 737
+              "line": 744
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 738
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 742
+              "line": 745
             },
             {
               "in": "dispatch",
@@ -5834,253 +6435,248 @@
             },
             {
               "in": "dispatch",
-              "kind": "except",
-              "line": 752
-            },
-            {
-              "in": "dispatch",
               "kind": "raise",
-              "line": 753
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 757
+              "line": 756
             },
             {
               "in": "dispatch",
               "kind": "except",
+              "line": 759
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
               "line": 760
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 761
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 766
+              "line": 764
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 769
+              "line": 767
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 770
+              "line": 768
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 774
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 778
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 782
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 787
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 791
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 795
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 799
+              "line": 773
             },
             {
               "in": "dispatch",
               "kind": "except",
+              "line": 776
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 777
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 781
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 785
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 789
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 794
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 798
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
               "line": 802
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 803
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 807
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 811
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 815
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 819
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 823
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 827
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 831
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 835
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 839
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 843
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 847
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 851
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 855
+              "line": 806
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 860
+              "line": 809
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 861
+              "line": 810
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 865
+              "line": 814
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 870
+              "line": 818
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 874
+              "line": 822
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 878
+              "line": 826
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 882
+              "line": 830
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 834
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 838
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 842
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 846
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 850
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 854
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 858
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 862
             },
             {
               "in": "dispatch",
               "kind": "except",
+              "line": 867
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 868
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 872
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 877
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 881
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
               "line": 885
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 886
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 891
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 895
+              "line": 889
             },
             {
               "in": "dispatch",
               "kind": "except",
+              "line": 892
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 893
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
               "line": 898
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 899
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 903
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 907
-            },
-            {
-              "in": "dispatch",
-              "kind": "raise",
-              "line": 913
+              "line": 902
             },
             {
               "in": "dispatch",
               "kind": "except",
-              "line": 916
+              "line": 905
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 917
+              "line": 906
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 921
+              "line": 910
             },
             {
               "in": "dispatch",
               "kind": "raise",
-              "line": 925
+              "line": 914
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 920
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 923
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 924
             },
             {
               "in": "dispatch",
@@ -6088,681 +6684,691 @@
               "line": 928
             },
             {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 932
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 935
+            },
+            {
               "in": "do_accept",
               "kind": "raise",
-              "line": 934
+              "line": 941
             },
             {
               "in": "do_complete",
               "kind": "raise",
-              "line": 977
+              "line": 984
             },
             {
               "in": "do_complete",
               "kind": "raise",
-              "line": 981
+              "line": 988
             },
             {
               "in": "do_complete",
               "kind": "raise",
-              "line": 983
+              "line": 990
             },
             {
               "in": "do_complete",
               "kind": "raise",
-              "line": 986
+              "line": 993
             },
             {
               "in": "parse_encounter_target",
               "kind": "except",
-              "line": 1008
+              "line": 1015
             },
             {
               "in": "parse_encounter_target",
               "kind": "raise",
-              "line": 1009
+              "line": 1016
             },
             {
               "in": "ensure_encounter",
               "kind": "raise",
-              "line": 1044
+              "line": 1051
             },
             {
               "in": "ensure_encounter",
               "kind": "raise",
-              "line": 1077
+              "line": 1084
             },
             {
               "in": "do_encounter",
               "kind": "raise",
-              "line": 1143
+              "line": 1150
             },
             {
               "in": "do_encounter",
               "kind": "raise",
-              "line": 1147
+              "line": 1154
             },
             {
               "in": "do_encounter",
               "kind": "raise",
-              "line": 1155
+              "line": 1162
             },
             {
               "in": "do_naval",
               "kind": "raise",
-              "line": 1208
+              "line": 1215
             },
             {
               "in": "do_naval",
               "kind": "raise",
-              "line": 1212
+              "line": 1219
             },
             {
               "in": "do_naval",
               "kind": "raise",
-              "line": 1218
+              "line": 1225
             },
             {
               "in": "do_board",
               "kind": "raise",
-              "line": 1301
+              "line": 1308
             },
             {
               "in": "do_fight",
               "kind": "raise",
-              "line": 1325
+              "line": 1332
             },
             {
               "in": "do_fight",
               "kind": "raise",
-              "line": 1333
+              "line": 1340
             },
             {
               "in": "do_capture",
               "kind": "raise",
-              "line": 1366
+              "line": 1373
             },
             {
               "in": "do_capture",
               "kind": "raise",
-              "line": 1381
+              "line": 1388
             },
             {
               "in": "do_capture",
               "kind": "raise",
-              "line": 1387
+              "line": 1394
             },
             {
               "in": "do_capture",
               "kind": "raise",
-              "line": 1391
+              "line": 1398
             },
             {
               "in": "do_spare",
-              "kind": "raise",
-              "line": 1541
-            },
-            {
-              "in": "do_spare",
-              "kind": "raise",
-              "line": 1543
-            },
-            {
-              "in": "do_spare",
-              "kind": "raise",
-              "line": 1544
-            },
-            {
-              "in": "do_buy_ship",
-              "kind": "raise",
-              "line": 1591
-            },
-            {
-              "in": "do_buy_ship",
-              "kind": "raise",
-              "line": 1593
-            },
-            {
-              "in": "do_buy_ship",
-              "kind": "raise",
-              "line": 1596
-            },
-            {
-              "in": "do_buy_ship",
-              "kind": "raise",
-              "line": 1599
-            },
-            {
-              "in": "do_buy_ship",
               "kind": "raise",
               "line": 1601
             },
             {
-              "in": "do_buy_ship",
+              "in": "do_spare",
               "kind": "raise",
               "line": 1603
             },
             {
-              "in": "do_install_upgrade",
+              "in": "do_spare",
               "kind": "raise",
-              "line": 1624
+              "line": 1604
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1651
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1653
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1656
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1659
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1661
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1663
             },
             {
               "in": "do_install_upgrade",
               "kind": "raise",
-              "line": 1626
+              "line": 1684
             },
             {
               "in": "do_install_upgrade",
               "kind": "raise",
-              "line": 1629
+              "line": 1686
             },
             {
               "in": "do_install_upgrade",
               "kind": "raise",
-              "line": 1632
+              "line": 1689
             },
             {
               "in": "do_install_upgrade",
               "kind": "raise",
-              "line": 1634
+              "line": 1692
             },
             {
               "in": "do_install_upgrade",
               "kind": "raise",
-              "line": 1638
+              "line": 1694
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1698
             },
             {
               "in": "do_form_convoy",
               "kind": "raise",
-              "line": 1647
+              "line": 1707
             },
             {
               "in": "do_repair",
               "kind": "raise",
-              "line": 1670
+              "line": 1730
             },
             {
               "in": "do_repair",
               "kind": "raise",
-              "line": 1673
+              "line": 1733
             },
             {
               "in": "do_repair",
               "kind": "raise",
-              "line": 1676
+              "line": 1736
             },
             {
               "in": "do_repair",
-              "kind": "raise",
-              "line": 1678
-            },
-            {
-              "in": "do_repair",
-              "kind": "raise",
-              "line": 1687
-            },
-            {
-              "in": "do_rename_ship",
-              "kind": "raise",
-              "line": 1697
-            },
-            {
-              "in": "do_rename_ship",
-              "kind": "raise",
-              "line": 1702
-            },
-            {
-              "in": "do_rename_ship",
-              "kind": "raise",
-              "line": 1712
-            },
-            {
-              "in": "do_dock_current_ship",
-              "kind": "raise",
-              "line": 1722
-            },
-            {
-              "in": "do_dock_current_ship",
-              "kind": "raise",
-              "line": 1725
-            },
-            {
-              "in": "do_board_fleet_ship",
-              "kind": "raise",
-              "line": 1735
-            },
-            {
-              "in": "do_board_fleet_ship",
               "kind": "raise",
               "line": 1738
             },
             {
-              "in": "do_sell_fleet_ship",
+              "in": "do_repair",
               "kind": "raise",
-              "line": 1748
+              "line": 1747
             },
             {
-              "in": "do_sell_fleet_ship",
+              "in": "do_rename_ship",
               "kind": "raise",
-              "line": 1750
+              "line": 1757
             },
             {
-              "in": "do_sell_fleet_ship",
+              "in": "do_rename_ship",
               "kind": "raise",
-              "line": 1753
+              "line": 1762
             },
             {
-              "in": "do_fire",
+              "in": "do_rename_ship",
               "kind": "raise",
-              "line": 1764
+              "line": 1772
             },
             {
-              "in": "do_fire",
+              "in": "do_dock_current_ship",
               "kind": "raise",
-              "line": 1767
+              "line": 1782
             },
             {
-              "in": "do_fire",
-              "kind": "except",
-              "line": 1770
-            },
-            {
-              "in": "do_fire",
+              "in": "do_dock_current_ship",
               "kind": "raise",
-              "line": 1771
+              "line": 1785
             },
             {
-              "in": "do_fire",
-              "kind": "raise",
-              "line": 1774
-            },
-            {
-              "in": "do_abandon",
+              "in": "do_board_fleet_ship",
               "kind": "raise",
               "line": 1795
             },
             {
-              "in": "do_transfer",
+              "in": "do_board_fleet_ship",
               "kind": "raise",
-              "line": 1812
+              "line": 1798
+            },
+            {
+              "in": "do_sell_fleet_ship",
+              "kind": "raise",
+              "line": 1808
+            },
+            {
+              "in": "do_sell_fleet_ship",
+              "kind": "raise",
+              "line": 1810
+            },
+            {
+              "in": "do_sell_fleet_ship",
+              "kind": "raise",
+              "line": 1813
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1824
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1827
+            },
+            {
+              "in": "do_fire",
+              "kind": "except",
+              "line": 1830
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1831
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1834
+            },
+            {
+              "in": "do_abandon",
+              "kind": "raise",
+              "line": 1855
             },
             {
               "in": "do_transfer",
               "kind": "raise",
-              "line": 1815
+              "line": 1872
+            },
+            {
+              "in": "do_transfer",
+              "kind": "raise",
+              "line": 1875
             },
             {
               "in": "do_gear",
               "kind": "raise",
-              "line": 1825
+              "line": 1885
             },
             {
               "in": "do_gear",
               "kind": "raise",
-              "line": 1828
+              "line": 1888
             },
             {
               "in": "do_gear",
               "kind": "raise",
-              "line": 1839
+              "line": 1899
             },
             {
               "in": "do_maintain",
               "kind": "raise",
-              "line": 1848
+              "line": 1908
             },
             {
               "in": "do_maintain",
               "kind": "raise",
-              "line": 1854
+              "line": 1914
             },
             {
               "in": "do_train",
               "kind": "raise",
-              "line": 1918
+              "line": 1978
             },
             {
               "in": "do_train",
               "kind": "raise",
-              "line": 1923
+              "line": 1983
             },
             {
               "in": "do_skill",
               "kind": "raise",
-              "line": 1939
+              "line": 1999
             },
             {
               "in": "do_skill",
               "kind": "raise",
-              "line": 1948
+              "line": 2008
             },
             {
               "in": "do_remember",
               "kind": "raise",
-              "line": 2001
+              "line": 2061
             },
             {
               "in": "do_recruit",
               "kind": "raise",
-              "line": 2100
+              "line": 2160
             },
             {
               "in": "do_recruit",
               "kind": "raise",
-              "line": 2110
+              "line": 2170
             },
             {
               "in": "do_hire",
               "kind": "raise",
-              "line": 2127
+              "line": 2187
             },
             {
               "in": "do_hire",
               "kind": "raise",
-              "line": 2130
+              "line": 2190
             },
             {
               "in": "do_hire",
               "kind": "raise",
-              "line": 2133
+              "line": 2193
             },
             {
               "in": "do_hire",
               "kind": "except",
-              "line": 2136
+              "line": 2196
             },
             {
               "in": "do_hire",
               "kind": "raise",
-              "line": 2138
+              "line": 2198
             },
             {
               "in": "do_hire",
               "kind": "raise",
-              "line": 2144
+              "line": 2204
             },
             {
               "in": "do_hire",
               "kind": "raise",
-              "line": 2153
+              "line": 2213
             },
             {
               "in": "do_hunt",
               "kind": "raise",
-              "line": 2181
+              "line": 2241
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2256
+              "line": 2316
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2262
+              "line": 2322
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2265
+              "line": 2325
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2270
+              "line": 2330
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2273
+              "line": 2333
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2290
+              "line": 2350
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2293
+              "line": 2353
             },
             {
               "in": "do_bounty",
               "kind": "raise",
-              "line": 2296
+              "line": 2356
             },
             {
               "in": "do_work",
               "kind": "raise",
-              "line": 2305
+              "line": 2365
             },
             {
               "in": "do_provision",
               "kind": "raise",
-              "line": 2314
+              "line": 2374
             },
             {
               "in": "do_provision",
               "kind": "raise",
-              "line": 2317
+              "line": 2377
             },
             {
               "in": "do_provision",
               "kind": "raise",
-              "line": 2321
+              "line": 2381
             },
             {
               "in": "_apply_duel",
               "kind": "raise",
-              "line": 2332
+              "line": 2392
             },
             {
               "in": "_apply_duel",
               "kind": "raise",
-              "line": 2339
+              "line": 2399
             },
             {
               "in": "_apply_duel",
               "kind": "raise",
-              "line": 2342
+              "line": 2402
             },
             {
               "in": "do_resolve_duel",
               "kind": "raise",
-              "line": 2404
+              "line": 2464
             },
             {
               "in": "_engine_result",
               "kind": "raise",
-              "line": 2737
+              "line": 2797
             },
             {
               "in": "do_buy_infrastructure",
               "kind": "raise",
-              "line": 2743
+              "line": 2803
             },
             {
               "in": "do_buy_infrastructure",
               "kind": "raise",
-              "line": 2749
+              "line": 2809
             },
             {
               "in": "do_buy_infrastructure",
               "kind": "raise",
-              "line": 2755
+              "line": 2815
             },
             {
               "in": "do_buy_infrastructure",
               "kind": "raise",
-              "line": 2762
+              "line": 2822
             },
             {
               "in": "do_lease_warehouse",
               "kind": "raise",
-              "line": 2771
+              "line": 2831
             },
             {
               "in": "do_lease_warehouse",
               "kind": "except",
-              "line": 2774
+              "line": 2834
             },
             {
               "in": "do_lease_warehouse",
               "kind": "raise",
-              "line": 2775
+              "line": 2835
             },
             {
               "in": "do_lease_warehouse",
               "kind": "raise",
-              "line": 2778
+              "line": 2838
             },
             {
               "in": "do_open_broker",
               "kind": "except",
-              "line": 2785
+              "line": 2845
             },
             {
               "in": "do_open_broker",
               "kind": "raise",
-              "line": 2786
+              "line": 2846
             },
             {
               "in": "do_open_broker",
               "kind": "raise",
-              "line": 2788
+              "line": 2848
             },
             {
               "in": "do_purchase_license",
               "kind": "raise",
-              "line": 2795
+              "line": 2855
             },
             {
               "in": "_dry_dock_ship",
               "kind": "raise",
-              "line": 2804
+              "line": 2864
             },
             {
               "in": "_dry_dock_ship",
-              "kind": "raise",
-              "line": 2807
-            },
-            {
-              "in": "_dry_dock_ship",
-              "kind": "raise",
-              "line": 2812
-            },
-            {
-              "in": "do_dry_dock",
-              "kind": "raise",
-              "line": 2824
-            },
-            {
-              "in": "do_dry_dock",
-              "kind": "raise",
-              "line": 2826
-            },
-            {
-              "in": "do_dry_dock",
-              "kind": "raise",
-              "line": 2836
-            },
-            {
-              "in": "do_dry_dock",
-              "kind": "raise",
-              "line": 2839
-            },
-            {
-              "in": "do_take_credit",
-              "kind": "except",
-              "line": 2850
-            },
-            {
-              "in": "do_take_credit",
-              "kind": "raise",
-              "line": 2851
-            },
-            {
-              "in": "do_take_credit",
-              "kind": "raise",
-              "line": 2853
-            },
-            {
-              "in": "do_take_credit",
-              "kind": "raise",
-              "line": 2863
-            },
-            {
-              "in": "do_take_credit",
               "kind": "raise",
               "line": 2867
             },
             {
-              "in": "do_take_credit",
+              "in": "_dry_dock_ship",
               "kind": "raise",
-              "line": 2869
+              "line": 2872
             },
             {
-              "in": "do_take_credit",
+              "in": "do_dry_dock",
               "kind": "raise",
-              "line": 2873
+              "line": 2884
             },
             {
-              "in": "do_buy_insurance",
+              "in": "do_dry_dock",
               "kind": "raise",
-              "line": 2879
+              "line": 2886
             },
             {
-              "in": "do_deposit",
+              "in": "do_dry_dock",
+              "kind": "raise",
+              "line": 2896
+            },
+            {
+              "in": "do_dry_dock",
               "kind": "raise",
               "line": 2899
             },
             {
+              "in": "do_take_credit",
+              "kind": "except",
+              "line": 2910
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2911
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2913
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2923
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2927
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2929
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2933
+            },
+            {
+              "in": "do_buy_insurance",
+              "kind": "raise",
+              "line": 2939
+            },
+            {
+              "in": "do_deposit",
+              "kind": "raise",
+              "line": 2959
+            },
+            {
               "in": "do_withdraw",
               "kind": "raise",
-              "line": 2907
+              "line": 2967
             },
             {
               "in": "do_repay_credit",
               "kind": "raise",
-              "line": 2914
+              "line": 2974
             },
             {
               "in": "reprice_loaded",
               "kind": "except",
-              "line": 3319
+              "line": 3379
             },
             {
               "in": "do_save",
               "kind": "raise",
-              "line": 3327
+              "line": 3387
             },
             {
               "in": "do_save",
               "kind": "raise",
-              "line": 3334
+              "line": 3394
             },
             {
               "in": "do_load",
               "kind": "raise",
-              "line": 3356
+              "line": 3416
             },
             {
               "in": "do_load",
               "kind": "raise",
-              "line": 3359
+              "line": 3419
             },
             {
               "in": "execute_script",
               "kind": "except",
-              "line": 3396
+              "line": 3456
             },
             {
               "kind": "raise",
-              "line": 3449
+              "line": 3509
             }
           ],
-          "hash": "75102c35f34fed83895f5d2099624c499a8fed68e91c12808f7e0bdfdc6860d0",
+          "hash": "35bd8f3aa1a6c9250d404f48571cf8f3b495b4ec301d74d0ebe1e8f0358b95b9",
           "path": "tools/parity/oracle.py"
         },
         {
@@ -6992,7 +7598,7 @@
             "broker_paths",
             "report_failed"
           ],
-          "hash": "b8c0f9db277c70d0ce0458fd5ae3d2ac5ca9253be7192eb80b163cbce9c4be9e",
+          "hash": "61e232965eda9c0c15bb1da85a1a817c1e700df82bdd1b84c5226ca92faff028",
           "importsFiles": [
             "tools/parity/check.py"
           ],
@@ -7128,7 +7734,7 @@
             "write_json",
             "write_text"
           ],
-          "hash": "8636fa0e4420c523e1883a8970fc5d310c499d9937ebb22bec45c9d27036fb2e",
+          "hash": "a659f33417733aac1422301590194ab2e2c943891fc4ade01098f124eb79f206",
           "importsFiles": [
             "tools/build_manifest_pb002.py"
           ],
@@ -7137,7 +7743,7 @@
             {
               "calls": [
                 {
-                  "line": 788,
+                  "line": 859,
                   "name": "mktemp",
                   "target": null
                 }
@@ -7150,7 +7756,7 @@
             {
               "calls": [
                 {
-                  "line": 1262,
+                  "line": 1333,
                   "name": "write_bytes",
                   "target": null
                 }
@@ -7163,7 +7769,7 @@
             {
               "calls": [
                 {
-                  "line": 1262,
+                  "line": 1333,
                   "name": "write_bytes",
                   "target": null,
                   "via": "_run_compare"
@@ -7177,7 +7783,7 @@
             {
               "calls": [
                 {
-                  "line": 1262,
+                  "line": 1333,
                   "name": "write_bytes",
                   "target": null,
                   "via": "_run_compare"
@@ -7200,7 +7806,7 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 11,
+          "reads": 12,
           "where": [
             "caller"
           ],
@@ -7214,7 +7820,7 @@
           "writes": 1
         }
       ],
-      "outsideReads": 12,
+      "outsideReads": 13,
       "outsideWrites": 1,
       "role": "code",
       "testRunners": [
@@ -7491,7 +8097,7 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 10
+          "files": 17
         },
         {
           "boundary": "portlight-sim",
@@ -7647,6 +8253,20 @@
         {
           "job": "godot",
           "matched": true,
+          "path": "crates/portlight-godot/src/contracts_screen.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/day_report.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
           "path": "crates/portlight-godot/src/encounter_screen.rs",
           "runKind": "executes",
           "via": "cargo test"
@@ -7655,6 +8275,27 @@
           "job": "godot",
           "matched": true,
           "path": "crates/portlight-godot/src/harbour.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/harbour_screen.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/hunt_screen.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/journal_screen.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -7676,6 +8317,13 @@
           "job": "godot",
           "matched": true,
           "path": "crates/portlight-godot/src/logic.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/playtest.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -7977,7 +8625,7 @@
           "runKind": "executes"
         }
       ],
-      "runsCount": 58,
+      "runsCount": 64,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -8016,7 +8664,7 @@
           "step": "Parity allowlist and golden bytes"
         },
         {
-          "files": 4,
+          "files": 10,
           "job": "godot",
           "runner": "cargo test",
           "step": "Build the GDExtension"
@@ -8038,6 +8686,9 @@
         {
           "event": "push"
         }
+      ],
+      "untrackedLandings": [
+        "portlight-newgame-smoke/"
       ],
       "uses": [
         "actions/checkout",
@@ -8218,8 +8869,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26",
-    "tracked": 579
+    "commit": "a28530431382b01f707f47d251824a750659c6e9",
+    "tracked": 637
   },
   "landings": [
     {
@@ -8395,6 +9046,11 @@
         },
         {
           "by": "docs/BUILD-CHECK-WIN-MAC.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "docs/playtest/playtest-bridge-consult-brief.md",
           "call": "--path",
           "confidence": "text"
         }
@@ -8966,7 +9622,62 @@
           "confidence": "config"
         }
       ],
+      "target": "godot/assets/landing/props/barrel_1x1/beauty.png",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "godot/assets/landing/MANIFEST.json",
+          "call": "configuration",
+          "confidence": "config"
+        }
+      ],
+      "target": "godot/assets/landing/props/bollard_1x1/beauty.png",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "godot/assets/landing/MANIFEST.json",
+          "call": "configuration",
+          "confidence": "config"
+        }
+      ],
+      "target": "godot/assets/landing/props/cart_1x1/beauty.png",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "godot/assets/landing/MANIFEST.json",
+          "call": "configuration",
+          "confidence": "config"
+        }
+      ],
+      "target": "godot/assets/landing/props/crate_1x1/beauty.png",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "godot/assets/landing/MANIFEST.json",
+          "call": "configuration",
+          "confidence": "config"
+        }
+      ],
       "target": "godot/assets/landing/props/pier_pilings_1x1/beauty.png",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "godot/assets/landing/MANIFEST.json",
+          "call": "configuration",
+          "confidence": "config"
+        }
+      ],
+      "target": "godot/assets/landing/props/torch_1x1/beauty.png",
       "writers": []
     },
     {
@@ -9453,6 +10164,34 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 47,
-  "unassigned": []
+  "testFiles": 53,
+  "unassigned": [
+    {
+      "hash": "5fd2ea99604f5e29b8196b758b66afdd9b29b397cf38918e143dedd303a609b1",
+      "path": "playtest/README.md"
+    },
+    {
+      "hash": "6d09b4ce8e0927929defb37966abfa5554155e24023a9872a8b28a0896313efb",
+      "path": "playtest/_plumbing-fixture.playtest.json"
+    },
+    {
+      "hash": "c7206057cd69dc4a4d9de3995370c1dbea5f284ac1cdf1434ed4a28d5ddffc50",
+      "path": "playtest/portlight-godot.playtest.json"
+    },
+    {
+      "failurePaths": [
+        {
+          "in": "assert",
+          "kind": "throw",
+          "line": 110
+        },
+        {
+          "kind": "catch",
+          "line": 149
+        }
+      ],
+      "hash": "40405b862789c54bad43dc76e0d28c28fea61d737cd7b1d43370f62a63b27ab8",
+      "path": "playtest/probe-bridge.mjs"
+    }
+  ]
 }

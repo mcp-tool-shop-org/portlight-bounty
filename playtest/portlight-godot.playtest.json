@@ -1,0 +1,106 @@
+{
+  "name": "Portlight Godot rpc / tip cc2c50e4 — seats dark until GPU clear",
+  "driver": {
+    "kind": "rpc",
+    "port": 7777,
+    "connectTimeoutMs": 60000,
+    "requestTimeoutMs": 30000
+  },
+  "game": {
+    "command": "godot",
+    "args": [
+      "--headless",
+      "--path",
+      "../godot",
+      "--",
+      "--playtest-port=7777"
+    ],
+    "inheritEnv": false,
+    "quitInputs": []
+  },
+  "seats": [
+    {
+      "id": "pending-local",
+      "family": "local",
+      "model": "llama3.1:8b",
+      "provider": "ollama"
+    }
+  ],
+  "turns": 24,
+  "persona": "You are Ada, a new merchant captain starting at Porto Novo. Begin the voyage from the title, find the docked chart, and try the work a first voyage asks for: contracts, a sail, and what the screen puts in front of you. Prefer a button that is listed over guessing a command. When a desk blocks the chart, close it before the next step.",
+  "criteria": [
+    {
+      "id": "responds-to-input",
+      "check": "The game reacts to the player's specific action with a visible state or log change rather than repeating the same screen text unchanged."
+    },
+    {
+      "id": "world-moves",
+      "check": "Across the session, world state visibly advances in at least one of: day counter, docked port, silver, cargo, contract progress, or journal/log entries."
+    },
+    {
+      "id": "never-stuck",
+      "check": "The player is never soft-locked: overlays can close, the chart remains reachable, and Escape or Close is available whenever the UI expects a dismiss."
+    },
+    {
+      "id": "first-goal-after-begin",
+      "check": "After Begin only (Fix A hint 1), the first chart makes one starting verb discernible (open Contracts, buy at Market, or sail) from UI, notice, or log. Soft until Fix A chart-hints PR merges — scored every run but not a product-fail until then; then hard. KNOWN GAP — still soft."
+    },
+    {
+      "id": "identity-clear",
+      "check": "Within 30 seconds of New game → Begin, docked identity (port, day, silver, ship) and victory-path names are visible on the chart."
+    },
+    {
+      "id": "contracts-findable",
+      "check": "From the docked pier, Contracts opens without hunting through unrelated desks or dead ends."
+    },
+    {
+      "id": "next-verb-after-accept",
+      "check": "Immediately after Accept (Fix A hint 2), the next step (load/sail to destination, sell there, then Complete) is obvious from UI, notice, or log — not only from prior knowledge. Soft until Fix A chart-hints PR merges — scored every run but not a product-fail until then; then hard. KNOWN GAP — still soft."
+    },
+    {
+      "id": "maiden-sail-progress",
+      "check": "Sailing Porto Novo to Al-Manar (lane Sail or chart arm) with Next day shows depart, voyage progress, and Docked at Al-Manar."
+    },
+    {
+      "id": "contract-complete-path",
+      "check": "At the contract destination, selling the contract good then opening Contracts shows Complete (or sell already settles the contract); Complete is idempotent when shown."
+    },
+    {
+      "id": "encounter-interrupt",
+      "check": "When an encounter overlay opens, it feels like an intentional interrupt with clear stance choices; signed delta appears on resolve. Preferred product path on tip cc2c50e4: Hunt target on seed 1 (forage + bounty → Hunt → encounter). Seed 1 Grain Road may skip combat (not a fail); Fix B alt remains seed 4 --encounter-screen / encounter_seed4."
+    },
+    {
+      "id": "victory-receipt-payoff",
+      "check": "After Spare or Take all, the #41 victory receipt lines (silver, loot or untouched, standing, companion flavor) read as a reward beat, not a raw log dump."
+    },
+    {
+      "id": "journal-closure",
+      "check": "After at least one voyage beat, Journal opens and the Victory section is readable with requirements vs status, not an empty dead end. Covers Fix A hint 3 (victory → Journal)."
+    },
+    {
+      "id": "escape-closes-overlay",
+      "check": "Escape / ui_cancel closes each member overlay the same as Close (confirm-first): Contracts, Shipyard, Harbour, Journal, Crew, Hunt, Day's report; in encounter, Escape only leaves when Leave/Back is visible. Membership per playtest-escape-undock-criteria.md. Known-fail until docked-consistency PR merges. KNOWN GAP — do not flip live."
+    },
+    {
+      "id": "contracts-close-on-undock",
+      "check": "Leaving port (Sail or Next day away) force-closes Contracts and Crew when left open; Journal and Hunt stay sea-capable (intentional); Day's report sea-capable is not a C2 fail. Membership per playtest-escape-undock-criteria.md. Known-fail until docked-consistency PR merges. KNOWN GAP — do not flip live."
+    },
+    {
+      "id": "one-docked-overlay",
+      "check": "Mutual-exclusion set: Contracts, Shipyard, Harbour, Journal, Crew, Hunt, Day's report — opening any member clears peers; encounter opening clears all members; Market is in-panel toggle (not in set). Membership per playtest-escape-undock-criteria.md. Known-fail until docked-consistency PR merges. KNOWN GAP — do not flip live."
+    },
+    {
+      "id": "day-report-clarity",
+      "check": "After a notable Next day, Day's report shows only content among: up to 3 deadlines with \"days left\" (never \"due soon\"); captain health (captain only); prices for the docked port only; claimable bounty once and again on arrival days. Closes in one action (Close or Escape); other docked desk opening closes it. Never traps the loop: after dismiss, Sail and Next day are immediately usable (covering chart while open is by design). Quiet day = no auto panel; health notable only for Healed and 1-day heal milestone. Fail if remote-port prices, crew health lines, \"due soon\", or >3 deadlines. GD PASS WITH EDITS 2026-10-05 — product-gate."
+    },
+    {
+      "id": "hire-findable",
+      "check": "Docked pier port_row shows Hire; one click performs a single HireSailor with visible crew count or gold change; when unaffordable, visible reason and never a silent no-op. Optional curiosity path (not first-voyage happy-path ordering). If pier-density T2 folds Hire into Crew, rewrite id with fresh GD co-sign. GD PASS WITH EDITS 2026-10-05 — product-gate."
+    },
+    {
+      "id": "contract-strip-glance",
+      "check": "ARMED pending PR #48 merge — not product-fail until merge: Hidden when no active contracts (fresh new game — no empty placeholder). After Accept → strip visible on chart; ASCII ` - ` separators; never `due soon` (reuse Day's report deadline_timing). Cap 2 segments + `+N more` (MUTED); nearest deadline first. Urgency colour: DUE/warning for due today / 1 day left / overdue; else GOLD. Single-segment may show destination `- to {Port}` when it fits; multi-segment drops dest. Docked click → opens Contracts (closes Day's report if open). At sea: strip stays visible; click is no-op. chart-1280.png unchanged (byte-identical). Does not wrap port_row, shift lanes/market/log, or host/clear Fix A hints. GD PASS (no edits) design-signoff-pr48-contract-strip.md — product-gate once #48 merges."
+    }
+  ],
+  "runsDir": "runs"
+}
