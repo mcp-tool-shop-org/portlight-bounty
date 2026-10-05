@@ -14,6 +14,13 @@
 //! the footprint-bottom anchor, so Godot orders cells by footprint depth
 //! (`col + row`). Equal Y keeps tree order, which is the builder's tie-break
 //! (pilings before a pier or quay). Sprites do not get a z of their own.
+//!
+//! Flat deck (Addendum X): a paving plate on a cell that has no quay block
+//! in the list is a `Land` node directly on the works Y-sort, at the same
+//! U.4 screen point. Its Y is the footprint bottom with no sea datum, which
+//! sorts after every work behind it (their anchors carry the `+48` datum) and
+//! before every block or prop in front of it. A paving plate whose cell has
+//! a quay block later in the list is still a missing plate, not a deck.
 
 use godot::classes::canvas_item::TextureFilter;
 use godot::classes::{Node2D, ResourceLoader, Sprite2D, Texture2D};
@@ -36,6 +43,12 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
     // the pier/quay on the cell so the flag draws after the block and deck
     // props draw after the flag (art-gate W / Y.1).
     let mut structures: Vec<((i32, i32), Gd<Sprite2D>)> = Vec::new();
+    // Cells with a quay block anywhere in the list. Paving elsewhere is flat deck.
+    let quay_cells: Vec<(i32, i32)> = tiles
+        .iter()
+        .filter(|tile| tile.kind == Some(WorkKind::Quay))
+        .map(|tile| (tile.col, tile.row))
+        .collect();
 
     let mut ok = true;
     for tile in tiles {
@@ -61,7 +74,21 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
                     .rev()
                     .find(|(cell, _)| *cell == (tile.col, tile.row))
                 else {
-                    ok = false;
+                    if quay_cells.contains(&(tile.col, tile.row)) {
+                        // Paving listed before its own block.
+                        ok = false;
+                        continue;
+                    }
+                    // Flat deck: no block on this cell. Same plate and U.4
+                    // point, sorted with the works by its footprint Y.
+                    let mut deck = Node2D::new_alloc();
+                    deck.set_name("Land");
+                    deck.set_z_index(0);
+                    deck.set_y_sort_enabled(false);
+                    deck.set_position(Vector2::new(tile.screen_x as f32, tile.screen_y as f32));
+                    sprite.set_position(Vector2::ZERO);
+                    deck.add_child(&sprite);
+                    works.add_child(&deck);
                     continue;
                 };
                 let mut land = Node2D::new_alloc();
@@ -130,19 +157,19 @@ mod tests {
         let tiles = harbour_seam().expect("legal seam");
         let block_at = tiles
             .iter()
-            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .position(|tile| tile.kind == Some(WorkKind::Quay) && (tile.col, tile.row) == (0, 1))
             .expect("block");
         let paving_at = tiles
             .iter()
-            .position(|tile| tile.layer == HarbourLayer::Land)
+            .position(|tile| tile.layer == HarbourLayer::Land && (tile.col, tile.row) == (0, 1))
             .expect("paving");
         let prop_at = tiles
             .iter()
-            .position(|tile| tile.kind == Some(WorkKind::Prop))
-            .expect("prop");
+            .position(|tile| tile.kind == Some(WorkKind::Prop) && (tile.col, tile.row) == (0, 1))
+            .expect("join prop");
         assert!(
             block_at < paving_at && paving_at < prop_at,
-            "the tile list is block, then paving, then props"
+            "the join cell lists block, then paving, then its prop"
         );
 
         let body = include_str!("harbour.rs")
@@ -200,6 +227,24 @@ mod tests {
             "a work sprite must not y-sort its paving child back behind the block"
         );
         assert!(body.contains("for tile in tiles"));
+
+        // Flat deck (Addendum X): paving with no block on its cell joins the
+        // works Y-sort itself, z 0, at the U.4 point. Paving whose block comes
+        // later is still a missing plate.
+        let deck_z = body.find("deck.set_z_index(0)").expect("deck z 0");
+        let deck_add = body
+            .find("works.add_child(&deck)")
+            .expect("flat deck joins the works y-sort");
+        assert!(deck_z < deck_add, "deck z is set before it joins works");
+        assert!(y_sort < deck_add);
+        assert!(
+            body.contains("quay_cells.contains(&(tile.col, tile.row))"),
+            "paving before its own block is not treated as flat deck"
+        );
+        assert!(
+            !body.contains("root.add_child(&deck)"),
+            "flat deck is not its own layer under the blocks"
+        );
         let per_tile_z = ["set_z_index(", "tile"].concat();
         assert!(
             !body.contains(&per_tile_z),

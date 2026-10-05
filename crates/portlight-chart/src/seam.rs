@@ -5,11 +5,58 @@
 //! covers the viewport at both capture zooms so no open edge is on screen.
 //! The pier plate is the exact corner set facing the quay, and that cell is
 //! water. Pilings sit on a different open water cell.
+//!
+//! Behind the join quay a quay deck shows flat cells (Addendum X). A kerb of
+//! `quay_1111` blocks runs along row `1` (cols `-7..=-1`, beside the join
+//! quay) and along col `0` (rows `-8..=0`). Behind it every cell with col
+//! `-7..=-1` and row `-8..=0` is flat deck with no block, drawing the locked
+//! `quay_flag_*` plates the same way a block top does. Addendum X.1: the deck
+//! runs past the widest capture view, so no flat back edge meets open water
+//! on camera, and the far kerb ends are off camera too. The camera still
+//! frames the quay, pier, and pilings only, so the deck adds pixels without
+//! moving the rest of the plate.
 
 use crate::harbour::{
-    build_harbour, harbour_anchor, harbour_prop_tile, harbour_water_cells, harbour_water_tile,
-    harbour_work_tile, seam_view, HarbourFault, HarbourTile, WorkKind,
+    build_harbour, build_harbour_with_deck, harbour_anchor, harbour_prop_tile, harbour_water_cells,
+    harbour_water_tile, harbour_work_tile, seam_view, HarbourFault, HarbourTile, WorkKind,
 };
+
+/// Columns of the seam flat deck, inclusive. Col `0` is the kerb.
+pub const SEAM_DECK_COLS: (i32, i32) = (-7, -1);
+
+/// Rows of the seam flat deck, inclusive. Row `1` is the kerb.
+pub const SEAM_DECK_ROWS: (i32, i32) = (-8, 0);
+
+/// Quay blocks that form the kerb in front of the flat deck: row `1` beside
+/// the join quay `(0, 1)`, then col `0`. Each is the locked `quay_1111`
+/// block with its flag on top, like the join quay.
+pub fn seam_deck_blocks() -> Vec<(i32, i32)> {
+    let (col_min, col_max) = SEAM_DECK_COLS;
+    let (row_min, row_max) = SEAM_DECK_ROWS;
+    let mut blocks: Vec<(i32, i32)> = (col_min..=col_max).map(|col| (col, 1)).collect();
+    blocks.extend((row_min..=row_max).map(|row| (0, row)));
+    blocks
+}
+
+/// Flat quay deck cells with no raised block (Addendum X). Both front
+/// neighbours of each are a quay block or another deck cell, and each back
+/// edge is another deck cell or off camera (Addendum X.1).
+pub fn seam_flat_deck() -> Vec<(i32, i32)> {
+    let (col_min, col_max) = SEAM_DECK_COLS;
+    let (row_min, row_max) = SEAM_DECK_ROWS;
+    let mut deck = Vec::new();
+    for row in row_min..=row_max {
+        for col in col_min..=col_max {
+            deck.push((col, row));
+        }
+    }
+    deck
+}
+
+/// Zoom-1 review crop of the flat deck and its kerb, in view pixels
+/// `(x, y, w, h)`. [`flat_deck_crop`] maps this same world window to other
+/// zooms.
+pub const FLAT_DECK_CROP_Z100: (i32, i32, i32, i32) = (224, 72, 432, 352);
 
 /// One corner of a harbour diamond, named in screen space.
 ///
@@ -76,7 +123,18 @@ pub const QUAY_PAVING_CROP_Z100: (i32, i32, i32, i32) = (340, 160, 360, 340);
 /// [`QUAY_PAVING_CROP_Z100`]. Zoom `0.72` is the committed
 /// `quay-paving-z072.png` box `(424, 216, 259, 245)`.
 pub fn quay_paving_crop(zoom: f32) -> (i32, i32, i32, i32) {
-    let (x, y, w, h) = QUAY_PAVING_CROP_Z100;
+    crop_at_zoom(QUAY_PAVING_CROP_Z100, zoom)
+}
+
+/// View crop of the flat deck close-up at `zoom`. Zoom `1` is
+/// [`FLAT_DECK_CROP_Z100`]; other zooms show the same world window.
+pub fn flat_deck_crop(zoom: f32) -> (i32, i32, i32, i32) {
+    crop_at_zoom(FLAT_DECK_CROP_Z100, zoom)
+}
+
+/// A zoom-1 view box mapped to the same world window at `zoom`.
+fn crop_at_zoom(z100: (i32, i32, i32, i32), zoom: f32) -> (i32, i32, i32, i32) {
+    let (x, y, w, h) = z100;
     let (cx, cy) = seam_camera_center();
     let world = |vx: i32, vy: i32| -> (f32, f32) {
         (
@@ -102,12 +160,12 @@ pub fn quay_paving_crop(zoom: f32) -> (i32, i32, i32, i32) {
     )
 }
 
-/// Centre of the quay, pier, and pilings, not of the padded water.
-/// Expanding water must not move the camera.
+/// Centre of the quay, pier, and pilings, not of the padded water or the
+/// flat deck. Expanding water or the deck must not move the camera.
 pub fn seam_camera_center() -> (i32, i32) {
     let (vx, vy) = seam_interior_vertex();
     let mut rect = crate::project::ScreenRect::from_point(vx, vy);
-    for tile in seam_works() {
+    for tile in seam_focus_works() {
         let left = tile.screen_x - tile.anchor_x;
         let top = tile.screen_y - tile.anchor_y;
         rect.include(left, top);
@@ -116,17 +174,44 @@ pub fn seam_camera_center() -> (i32, i32) {
     ((rect.min_x + rect.max_x) / 2, (rect.min_y + rect.max_y) / 2)
 }
 
-/// Quay strip + pier root + pilings, then deck props (art-gate Y.1).
+/// The camera's works, the kerb blocks in front of the flat deck, then deck
+/// props (art-gate Y.1).
 ///
-/// Quay cells `(0,1)` (join), `(0,0)` (back), `(-1,1)` (side kerb). Pier root
-/// stays water cell `(0,2)` (Addendum E). Pier head gets bollard+torch; each
-/// quay cell gets one cargo/lighting prop on the kerb toward water.
+/// The kerb already holds Y.1's back quay `(0,0)` and side kerb `(-1,1)`, so
+/// each block is placed once. Pier root stays water cell `(0,2)` (Addendum
+/// E). The pier head gets bollard+torch; the join, back, and side quays each
+/// get one cargo prop.
 fn seam_works() -> Vec<HarbourTile> {
     let quay_join = (0, 1);
     let quay_back = (0, 0);
     let quay_side = (-1, 1);
     let pier = (0, 2);
-    let corner = corner_toward(pier.0, pier.1, quay_join.0, quay_join.1);
+    let mut works = seam_focus_works();
+    for (col, row) in seam_deck_blocks() {
+        works.push(harbour_work_tile(
+            col,
+            row,
+            WorkKind::Quay,
+            "res://assets/landing/structures/quay_1111/beauty.png",
+        ));
+    }
+    works.extend([
+        // Pier head: bollard + torch (Y.1 density exception).
+        harbour_prop_tile(pier.0, pier.1, prop_path("bollard_1x1")),
+        harbour_prop_tile(pier.0, pier.1, prop_path("torch_1x1")),
+        // One prop per quay cell, near the water kerb cells.
+        harbour_prop_tile(quay_join.0, quay_join.1, prop_path("barrel_1x1")),
+        harbour_prop_tile(quay_back.0, quay_back.1, prop_path("crate_1x1")),
+        harbour_prop_tile(quay_side.0, quay_side.1, prop_path("cart_1x1")),
+    ]);
+    works
+}
+
+/// Quay at `(0, 1)`, pier root at `(0, 2)`, pilings on open water `(2, 0)`.
+fn seam_focus_works() -> Vec<HarbourTile> {
+    let quay = (0, 1);
+    let pier = (0, 2);
+    let corner = corner_toward(pier.0, pier.1, quay.0, quay.1);
     vec![
         harbour_work_tile(
             2,
@@ -141,30 +226,11 @@ fn seam_works() -> Vec<HarbourTile> {
             pier_path(&pier_plate_id(&[corner])),
         ),
         harbour_work_tile(
-            quay_join.0,
-            quay_join.1,
+            quay.0,
+            quay.1,
             WorkKind::Quay,
             "res://assets/landing/structures/quay_1111/beauty.png",
         ),
-        harbour_work_tile(
-            quay_back.0,
-            quay_back.1,
-            WorkKind::Quay,
-            "res://assets/landing/structures/quay_1111/beauty.png",
-        ),
-        harbour_work_tile(
-            quay_side.0,
-            quay_side.1,
-            WorkKind::Quay,
-            "res://assets/landing/structures/quay_1111/beauty.png",
-        ),
-        // Pier head: bollard + torch (Y.1 density exception).
-        harbour_prop_tile(pier.0, pier.1, prop_path("bollard_1x1")),
-        harbour_prop_tile(pier.0, pier.1, prop_path("torch_1x1")),
-        // One prop per quay cell, near the water kerb cells.
-        harbour_prop_tile(quay_join.0, quay_join.1, prop_path("barrel_1x1")),
-        harbour_prop_tile(quay_back.0, quay_back.1, prop_path("crate_1x1")),
-        harbour_prop_tile(quay_side.0, quay_side.1, prop_path("cart_1x1")),
     ]
 }
 
@@ -210,7 +276,8 @@ fn illegal_pier_on_quay_plate() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
     )
 }
 
-/// Water past both capture zooms, then the three works in draw order.
+/// Water past both capture zooms, then the works and the flat deck in draw
+/// order.
 ///
 /// An illegal work layout is [`Err`], not a panic. The seam capture checks
 /// this before it writes a PNG and exits non-zero when it fails.
@@ -238,7 +305,8 @@ pub fn harbour_seam() -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
         .into_iter()
         .map(|(col, row)| harbour_water_tile(col, row))
         .collect();
-    build_harbour(water, seam_works())
+    // The deck's open back edges must sit outside the widest capture view.
+    build_harbour_with_deck(water, seam_works(), &seam_flat_deck(), Some(&view))
 }
 
 fn pier_path(id: &str) -> &'static str {
@@ -269,8 +337,10 @@ fn prop_path(id: &str) -> &'static str {
 mod tests {
     use super::*;
     use crate::harbour::{
-        harbour_water_covers, validate_harbour, HarbourFault, HarbourLayer, WorkKind,
+        flat_deck_back_edges, harbour_water_covers, validate_harbour, HarbourFault, HarbourLayer,
+        WorkKind,
     };
+    use crate::project::ScreenRect;
     use crate::project::{
         grid_to_screen, water_cell_center, CELL_HEIGHT, CELL_WIDTH, HARBOUR_CELL_H, HARBOUR_CELL_W,
         WATER_DATUM_Y,
@@ -323,6 +393,18 @@ mod tests {
         );
         assert_eq!(quay_paving_crop(1.0), QUAY_PAVING_CROP_Z100);
         assert_eq!(quay_paving_crop(0.72), (424, 216, 259, 245));
+        assert!(
+            scene.contains("flat-deck-z100.png"),
+            "the seam capture writes the zoom-1 flat deck close-up"
+        );
+        assert!(
+            scene.contains("flat-deck-z072.png"),
+            "the seam capture writes the zoom-0.72 flat deck close-up"
+        );
+        assert!(
+            scene.contains("flat_deck_crop("),
+            "the flat deck close-up uses the shared crop"
+        );
         assert!(
             !placer.contains("set_z_index(tile"),
             "works are not given a z per id"
@@ -401,7 +483,7 @@ mod tests {
         }
         let quay = tiles
             .iter()
-            .find(|tile| tile.path.contains("quay_1111") && tile.col == 0 && tile.row == 1)
+            .find(|tile| tile.path.contains("quay_1111") && (tile.col, tile.row) == (0, 1))
             .expect("join quay");
         let paving = tiles
             .iter()
@@ -413,23 +495,23 @@ mod tests {
         assert!(paving.kind.is_none());
         let paving_at = tiles
             .iter()
-            .position(|tile| tile.layer == HarbourLayer::Land)
+            .position(|tile| tile.layer == HarbourLayer::Land && (tile.col, tile.row) == (0, 1))
             .expect("paving");
         let quay_list_at = tiles
             .iter()
-            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .position(|tile| tile.kind == Some(WorkKind::Quay) && (tile.col, tile.row) == (0, 1))
             .expect("quay block");
         let deck_prop_at = tiles
             .iter()
-            .position(|tile| tile.kind == Some(WorkKind::Prop))
-            .expect("deck prop");
+            .position(|tile| tile.kind == Some(WorkKind::Prop) && (tile.col, tile.row) == (0, 1))
+            .expect("join deck prop");
         let pier_at_join = tiles
             .iter()
             .position(|tile| tile.kind == Some(WorkKind::Pier))
             .expect("pier");
         assert!(
             quay_list_at < paving_at && paving_at < deck_prop_at,
-            "draw order is quay block, then paving, then deck props"
+            "join cell draw order is quay block, then paving, then its deck prop"
         );
         // Pier is on a front cell, so it may sort after join-cell paving too.
         assert!(paving_at < pier_at_join || pier_at_join != paving_at);
@@ -465,21 +547,33 @@ mod tests {
         assert!(props.contains(&((0, 0), "res://assets/landing/props/crate_1x1/beauty.png")));
         assert!(props.contains(&((-1, 1), "res://assets/landing/props/cart_1x1/beauty.png")));
         assert_eq!(props.len(), 5);
+        // Join quay plus the 16-block kerb (Addendum X.1). Y.1's back `(0,0)`
+        // and side `(-1,1)` quays are kerb cells and are placed once.
         assert_eq!(
             tiles
                 .iter()
                 .filter(|tile| tile.kind == Some(WorkKind::Quay))
                 .count(),
-            3,
-            "join + back + side quay"
+            1 + seam_deck_blocks().len(),
+            "join quay + kerb"
         );
+        for cell in [(0, 1), (0, 0), (-1, 1)] {
+            assert_eq!(
+                tiles
+                    .iter()
+                    .filter(|tile| tile.kind == Some(WorkKind::Quay) && (tile.col, tile.row) == cell)
+                    .count(),
+                1,
+                "one quay block on {cell:?}"
+            );
+        }
         let works: Vec<_> = tiles
             .iter()
             .filter(|tile| tile.layer == HarbourLayer::Work)
             .collect();
         let quay_at = works
             .iter()
-            .position(|tile| tile.kind == Some(WorkKind::Quay))
+            .position(|tile| tile.kind == Some(WorkKind::Quay) && (tile.col, tile.row) == (0, 1))
             .expect("quay");
         let pier_at = works
             .iter()
@@ -509,6 +603,250 @@ mod tests {
             .collect();
         assert!(harbour_water_covers(&cells, &wide));
         assert!(harbour_water_covers(&cells, &tight));
+    }
+
+    #[test]
+    fn seam_flat_deck_cells_carry_the_hashed_flag() {
+        let tiles = harbour_seam().expect("seam layout");
+        // Cell -> flag pins (Addendum X). A hash change or a moved cell fails here.
+        let pins = [
+            ((-2, 0), "quay_flag_a", true),
+            ((-1, 0), "quay_flag_b", true),
+            ((0, 0), "quay_flag_a", false),
+            ((-1, 1), "quay_flag_a", false),
+            ((-2, 1), "quay_flag_a", false),
+            ((0, 1), "quay_flag_c", false),
+        ];
+        for ((col, row), id, flat) in pins {
+            let land: Vec<_> = tiles
+                .iter()
+                .enumerate()
+                .filter(|(_, tile)| {
+                    tile.layer == HarbourLayer::Land && (tile.col, tile.row) == (col, row)
+                })
+                .collect();
+            assert_eq!(land.len(), 1, "one flag on ({col}, {row})");
+            let (at, tile) = land[0];
+            assert!(
+                tile.path.ends_with(&format!("ground/{id}.png")),
+                "({col}, {row})"
+            );
+            let want = crate::harbour::harbour_quay_paving_tile(col, row).expect("U.4");
+            assert_eq!(
+                (
+                    tile.path,
+                    tile.screen_x,
+                    tile.screen_y,
+                    tile.anchor_x,
+                    tile.anchor_y
+                ),
+                (want.path, want.screen_x, want.screen_y, 128, 127)
+            );
+            assert_eq!((tile.canvas_w, tile.canvas_h), (256, 128));
+            let block = tiles
+                .iter()
+                .position(|t| t.kind == Some(WorkKind::Quay) && (t.col, t.row) == (col, row));
+            if flat {
+                assert!(block.is_none(), "flat deck ({col}, {row}) has no block");
+                assert!(
+                    tiles
+                        .iter()
+                        .all(|t| t.kind.is_none() || (t.col, t.row) != (col, row)),
+                    "flat deck ({col}, {row}) holds no work"
+                );
+                for front in [(col + 1, row), (col, row + 1)] {
+                    let quay_front = tiles
+                        .iter()
+                        .any(|t| t.kind == Some(WorkKind::Quay) && (t.col, t.row) == front);
+                    assert!(
+                        quay_front || seam_flat_deck().contains(&front),
+                        "({col}, {row}) front {front:?} is deck height"
+                    );
+                    let front_at = tiles
+                        .iter()
+                        .position(|t| t.layer != HarbourLayer::Water && (t.col, t.row) == front)
+                        .expect("front tile");
+                    assert!(
+                        at < front_at,
+                        "front of ({col}, {row}) draws over the deck edge"
+                    );
+                }
+                for (i, t) in tiles.iter().enumerate() {
+                    if t.kind.is_some() && t.depth() < col + row {
+                        assert!(
+                            i < at,
+                            "back work {:?} draws before deck ({col}, {row})",
+                            (t.col, t.row)
+                        );
+                    }
+                    if t.kind.is_some() && t.depth() >= col + row {
+                        assert!(
+                            i > at,
+                            "work {:?} draws after deck ({col}, {row})",
+                            (t.col, t.row)
+                        );
+                    }
+                }
+            } else {
+                assert_eq!(
+                    block.map(|b| b + 1),
+                    Some(at),
+                    "block ({col}, {row}) then its flag"
+                );
+            }
+        }
+        assert_eq!(
+            tiles
+                .iter()
+                .filter(|t| t.layer == HarbourLayer::Land)
+                .count(),
+            seam_deck_blocks().len() + 1 + seam_flat_deck().len(),
+            "kerb and join block tops plus every flat deck cell"
+        );
+        assert!(tiles.iter().all(|t| !t.path.contains("quay_flat")));
+
+        // The deck does not move the camera or the quay close-up.
+        assert_eq!(seam_camera_center(), (0, 80));
+        assert_eq!(flat_deck_crop(1.0), FLAT_DECK_CROP_Z100);
+        assert_eq!(flat_deck_crop(0.72), (340, 153, 311, 253));
+        let (cx, cy) = seam_camera_center();
+        for zoom in [1.0_f32, 0.72] {
+            let (x, y, w, h) = flat_deck_crop(zoom);
+            assert!(
+                x >= 0 && y >= 0 && x + w <= 1280 && y + h <= 720,
+                "zoom {zoom}"
+            );
+            for (col, row) in [(-1, 0), (-2, 0)] {
+                let tile = crate::harbour::harbour_quay_paving_tile(col, row).expect("U.4");
+                let view = |wx: i32, wy: i32| {
+                    (
+                        ((wx - cx) as f32 * zoom + 640.0).round() as i32,
+                        ((wy - cy) as f32 * zoom + 360.0).round() as i32,
+                    )
+                };
+                let (l, t) = view(tile.screen_x - tile.anchor_x, tile.screen_y - tile.anchor_y);
+                let (r, b) = view(
+                    tile.screen_x - tile.anchor_x + tile.canvas_w,
+                    tile.screen_y - tile.anchor_y + tile.canvas_h,
+                );
+                assert!(
+                    l >= x && t >= y && r <= x + w && b <= y + h,
+                    "flat deck ({col}, {row}) inside the zoom {zoom} close-up"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn seam_flat_deck_has_no_open_back_edge_on_camera() {
+        // Addendum X.1: every flat deck cell is placed like a block top, its
+        // fronts are deck height, and each back edge is deck height or lies
+        // wholly outside the widest capture view (so outside z1 and both
+        // close-ups too).
+        let tiles = harbour_seam().expect("seam layout");
+        let deck = seam_flat_deck();
+        let blocks = seam_deck_blocks();
+        assert_eq!(deck.len(), 63);
+        assert_eq!(blocks.len(), 16);
+        assert_eq!(blocks.iter().filter(|cell| deck.contains(cell)).count(), 0);
+        let quay_cells: Vec<(i32, i32)> = tiles
+            .iter()
+            .filter(|t| t.kind == Some(WorkKind::Quay))
+            .map(|t| (t.col, t.row))
+            .collect();
+        assert_eq!(
+            quay_cells.len(),
+            blocks.len() + 1,
+            "kerb plus the join quay"
+        );
+        let deck_height = |cell: &(i32, i32)| quay_cells.contains(cell) || deck.contains(cell);
+        let center = seam_camera_center();
+        let wide = seam_view(center, 0.72);
+        let tight = seam_view(center, 1.0);
+        let world_crop = |(x, y, w, h): (i32, i32, i32, i32)| ScreenRect {
+            min_x: x - 640 + center.0,
+            min_y: y - 360 + center.1,
+            max_x: x + w - 640 + center.0,
+            max_y: y + h - 360 + center.1,
+        };
+        let frames = [
+            wide,
+            tight,
+            world_crop(FLAT_DECK_CROP_Z100),
+            world_crop(QUAY_PAVING_CROP_Z100),
+        ];
+        let overlap = |a: &ScreenRect, b: &ScreenRect| {
+            a.min_x <= b.max_x && b.min_x <= a.max_x && a.min_y <= b.max_y && b.min_y <= a.max_y
+        };
+        let mut open_off_camera = 0;
+        for &(col, row) in &deck {
+            let land: Vec<_> = tiles
+                .iter()
+                .filter(|t| t.layer == HarbourLayer::Land && (t.col, t.row) == (col, row))
+                .collect();
+            assert_eq!(land.len(), 1, "one flag on flat ({col}, {row})");
+            let want = crate::harbour::harbour_quay_paving_tile(col, row).expect("U.4");
+            assert_eq!(
+                (land[0].path, land[0].screen_x, land[0].screen_y),
+                (want.path, want.screen_x, want.screen_y)
+            );
+            assert!(
+                !quay_cells.contains(&(col, row)),
+                "no block on flat ({col}, {row})"
+            );
+            assert!(deck_height(&(col + 1, row)) && deck_height(&(col, row + 1)));
+            for (neighbour, edge) in flat_deck_back_edges(col, row) {
+                if deck_height(&neighbour) {
+                    continue;
+                }
+                open_off_camera += 1;
+                for frame in &frames {
+                    assert!(
+                        !overlap(&edge, frame),
+                        "flat ({col}, {row}) back edge toward {neighbour:?} is on camera"
+                    );
+                }
+            }
+        }
+        // Outer deck rows and cols are open, all off camera.
+        assert_eq!(open_off_camera, 7 + 9);
+
+        // The kerb ends are off camera too, so no deck edge or block end shows.
+        for (col, row) in [(SEAM_DECK_COLS.0, 1), (0, SEAM_DECK_ROWS.0)] {
+            let block = tiles
+                .iter()
+                .find(|t| t.kind == Some(WorkKind::Quay) && (t.col, t.row) == (col, row))
+                .expect("kerb end");
+            let plate = ScreenRect {
+                min_x: block.screen_x - block.anchor_x,
+                min_y: block.screen_y - block.anchor_y,
+                max_x: block.screen_x - block.anchor_x + block.canvas_w - 1,
+                max_y: block.screen_y - block.anchor_y + block.canvas_h - 1,
+            };
+            assert!(
+                !overlap(&plate, &wide),
+                "kerb end ({col}, {row}) is on camera"
+            );
+        }
+
+        // Without the off-camera allowance the same deck fails the production
+        // rule on exactly its open outer cells.
+        let strict = build_harbour_with_deck(Vec::new(), seam_works(), &deck, None).unwrap_err();
+        assert_eq!(
+            strict.len(),
+            7 + 9 - 1,
+            "the far corner is one cell with two open edges"
+        );
+        assert!(strict
+            .iter()
+            .all(|fault| matches!(fault, HarbourFault::FlatDeckOpenBack { .. })));
+        // A shorter deck shows its back edge on camera and is refused.
+        let short: Vec<_> = deck.iter().copied().filter(|&(_, row)| row >= -2).collect();
+        let refused = build_harbour_with_deck(Vec::new(), seam_works(), &short, Some(&wide))
+            .expect_err("short deck");
+        assert!(refused
+            .iter()
+            .any(|fault| matches!(fault, HarbourFault::FlatDeckOpenBack { .. })));
     }
 
     #[test]

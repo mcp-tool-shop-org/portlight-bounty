@@ -11,6 +11,22 @@
 //! the tie by kind: pilings, then pier, then quay, then props. Paving is
 //! inserted after the last quay block of its cell, so a deck prop still draws
 //! after the flag.
+//!
+//! Flat deck (art-gate Addendum X): a land cell at quay-top height with no
+//! raised block draws the same `quay_flag_*` plate, from the same
+//! [`harbour_quay_paving_tile`] (U.4 values and variant hash unchanged). It is
+//! only legal where both front neighbours (`+col` and `+row`) are a quay
+//! block or another flat deck cell, so the diamond never hangs over water and
+//! never needs a front face of its own. It holds no pilings, pier, or quay.
+//!
+//! Addendum X.1: the flag has no wall face, so a flat deck edge against open
+//! water reads paper-thin at sea level. Each back neighbour (`-col`, `-row`)
+//! must also be deck height, unless the caller passes a compare frame and
+//! that back edge lies wholly outside it (off camera). There is no edge
+//! plate; the fix is more deck or more `quay_*` kerb, never a new plate.
+//! It sorts at its own footprint depth, ahead of every work at that depth or
+//! deeper, so a back block's front face sits under the deck and every front
+//! block and prop draws over it.
 
 use crate::cover::{cells_covering, view_world_rect, WATER_COVER_PAD};
 use crate::project::{grid_to_screen, ScreenRect, HARBOUR_CELL_H, HARBOUR_CELL_W, WATER_DATUM_Y};
@@ -55,6 +71,15 @@ pub enum HarbourFault {
     /// More than one prop on a cell that is not a pier head, or a pier-head
     /// pair that is not bollard+torch (art-gate Y.1 density cap).
     PropDensity { col: i32, row: i32, count: usize },
+    /// A flat deck cell also holds pilings, a pier, or a quay block.
+    FlatDeckOnWork { col: i32, row: i32 },
+    /// A flat deck cell has a front neighbour (`+col` or `+row`) that is not
+    /// deck height, so its flag would hang over water.
+    FlatDeckOpenFront { col: i32, row: i32 },
+    /// A flat deck cell has a back neighbour (`-col` or `-row`) that is not
+    /// deck height, and that edge shows in the compare frame (Addendum X.1:
+    /// no paper-thin deck rim against open water).
+    FlatDeckOpenBack { col: i32, row: i32 },
     /// `quay_flag_*` is not art-gate U.4: layer Land, offset 0,0, y-sort 0.
     QuayFlagPlacement {
         id: &'static str,
@@ -75,6 +100,16 @@ impl std::fmt::Display for HarbourFault {
             Self::PropDensity { col, row, count } => {
                 write!(f, "prop density {count} on cell ({col}, {row})")
             }
+            Self::FlatDeckOnWork { col, row } => {
+                write!(f, "flat deck on a work cell ({col}, {row})")
+            }
+            Self::FlatDeckOpenFront { col, row } => {
+                write!(f, "flat deck ({col}, {row}) has an open front over water")
+            }
+            Self::FlatDeckOpenBack { col, row } => write!(
+                f,
+                "flat deck ({col}, {row}) shows an open back edge against water"
+            ),
             Self::QuayFlagPlacement {
                 id,
                 layer,
@@ -93,7 +128,8 @@ impl std::fmt::Display for HarbourFault {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HarbourLayer {
     Water,
-    /// Quay paving ground. U.4 land anchor, drawn after the quay block.
+    /// Quay paving ground. U.4 land anchor, drawn after the quay block, or
+    /// on its own at footprint depth on a flat deck cell.
     Land,
     Work,
     /// Deck prop at land offset 0 (art-gate P3 / Y.1). Parented under the
@@ -180,6 +216,7 @@ pub fn harbour_water_tile(col: i32, row: i32) -> HarbourTile {
 /// Quay paving for one cell. The plate is the manifest `quay_flag_*` entry
 /// for [`crate::assets::quay_flag_variant`]. Screen position is the footprint
 /// bottom plus that entry's layer offset (U.4 is `0,0`, so no sea datum).
+/// Block tops and flat deck cells both use this one constructor.
 ///
 /// A plate that is not layer Land at offset `0,0` with y-sort `0` returns
 /// an error. That used to panic while the frame was drawn.
@@ -342,6 +379,81 @@ fn prop_id_from_path(path: &'static str) -> &'static str {
     rest.split_once('/').map(|(id, _)| id).unwrap_or(rest)
 }
 
+/// Pixels kept clear around a flat deck back edge when it is judged off camera.
+pub const FLAT_EDGE_PAD_PX: i32 = 2;
+
+/// Screen box of the two back edges of a flat deck diamond, with the
+/// neighbour each one faces. The land diamond spans `gy - 64 ..= gy + 64`
+/// around the grid centre `(gx, gy)`; U.4 puts no sea datum on it.
+pub fn flat_deck_back_edges(col: i32, row: i32) -> [((i32, i32), ScreenRect); 2] {
+    let (gx, gy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
+    let half_w = HARBOUR_CELL_W / 2;
+    let half_h = HARBOUR_CELL_H / 2;
+    let edge = |x0: i32, x1: i32| {
+        let mut rect = ScreenRect::from_point(x0, gy);
+        rect.include(x1, gy - half_h);
+        rect.pad(FLAT_EDGE_PAD_PX, FLAT_EDGE_PAD_PX)
+    };
+    [
+        // Upper-left edge faces `-col`.
+        ((col - 1, row), edge(gx - half_w, gx)),
+        // Upper-right edge faces `-row`.
+        ((col, row - 1), edge(gx, gx + half_w)),
+    ]
+}
+
+fn rects_overlap(a: &ScreenRect, b: &ScreenRect) -> bool {
+    a.min_x <= b.max_x && b.min_x <= a.max_x && a.min_y <= b.max_y && b.min_y <= a.max_y
+}
+
+/// Flat deck cells must not share a cell with pilings, a pier, or a quay block,
+/// and each front neighbour (`+col`, `+row`) must be a quay block or deck.
+/// Each back neighbour (`-col`, `-row`) must be deck height too, unless
+/// `frame` is given and that edge lies wholly outside it (Addendum X.1).
+/// With no frame every back edge counts, which is the production rule.
+pub fn validate_flat_deck(
+    works: &[HarbourTile],
+    deck: &[(i32, i32)],
+    frame: Option<&ScreenRect>,
+) -> Result<(), Vec<HarbourFault>> {
+    let mut faults = Vec::new();
+    let quay_at = |col: i32, row: i32| {
+        works
+            .iter()
+            .any(|work| work.kind == Some(WorkKind::Quay) && (work.col, work.row) == (col, row))
+    };
+    for (i, &(col, row)) in deck.iter().enumerate() {
+        if deck[..i].contains(&(col, row)) {
+            continue;
+        }
+        let on_work = works.iter().any(|work| {
+            (work.col, work.row) == (col, row)
+                && matches!(
+                    work.kind,
+                    Some(WorkKind::Pilings | WorkKind::Pier | WorkKind::Quay)
+                )
+        });
+        if on_work {
+            faults.push(HarbourFault::FlatDeckOnWork { col, row });
+        }
+        let deck_height = |c: i32, r: i32| quay_at(c, r) || deck.contains(&(c, r));
+        if !deck_height(col + 1, row) || !deck_height(col, row + 1) {
+            faults.push(HarbourFault::FlatDeckOpenFront { col, row });
+        }
+        let open_back = flat_deck_back_edges(col, row).iter().any(|((c, r), edge)| {
+            !deck_height(*c, *r) && frame.is_none_or(|frame| rects_overlap(edge, frame))
+        });
+        if open_back {
+            faults.push(HarbourFault::FlatDeckOpenBack { col, row });
+        }
+    }
+    if faults.is_empty() {
+        Ok(())
+    } else {
+        Err(faults)
+    }
+}
+
 /// Back to front. `sort_by` is stable, so equal depth and kind keep input order.
 pub fn sort_works(works: &mut [HarbourTile]) {
     works.sort_by(|a, b| {
@@ -354,15 +466,53 @@ pub fn sort_works(works: &mut [HarbourTile]) {
 }
 
 /// Water, then each quay block, the paving on that cell, then later props.
-/// Refuses an illegal work layout. Flat cells with no quay block get no paving.
+/// Refuses an illegal work layout. No flat deck: see [`build_harbour_with_deck`].
 pub fn build_harbour(
     water: Vec<HarbourTile>,
-    mut works: Vec<HarbourTile>,
+    works: Vec<HarbourTile>,
 ) -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
-    validate_harbour(&works)?;
+    build_harbour_with_deck(water, works, &[], None)
+}
+
+/// [`build_harbour`] plus flat deck cells (Addendum X). Each deck cell gets
+/// the same `quay_flag_*` tile a block top would get, placed ahead of the
+/// first work whose depth is the same or greater. A repeated deck cell is one
+/// plate. Work faults and deck faults are reported together. `frame` is the
+/// widest compare view, used only to let a back edge sit off camera; see
+/// [`validate_flat_deck`].
+pub fn build_harbour_with_deck(
+    water: Vec<HarbourTile>,
+    mut works: Vec<HarbourTile>,
+    deck: &[(i32, i32)],
+    frame: Option<&ScreenRect>,
+) -> Result<Vec<HarbourTile>, Vec<HarbourFault>> {
+    let mut faults = validate_harbour(&works).err().unwrap_or_default();
+    faults.extend(
+        validate_flat_deck(&works, deck, frame)
+            .err()
+            .unwrap_or_default(),
+    );
+    if !faults.is_empty() {
+        return Err(faults);
+    }
     sort_works(&mut works);
+    let mut flat: Vec<(i32, i32)> = Vec::new();
+    for cell in deck {
+        if !flat.contains(cell) {
+            flat.push(*cell);
+        }
+    }
+    flat.sort_by_key(|(col, row)| col + row);
+    let mut flat = flat.into_iter().peekable();
     let mut tiles = water;
     for (i, work) in works.iter().enumerate() {
+        while let Some(&(col, row)) = flat.peek() {
+            if col + row > work.depth() {
+                break;
+            }
+            tiles.push(harbour_quay_paving_tile(col, row).map_err(|fault| vec![fault])?);
+            flat.next();
+        }
         tiles.push(*work);
         if work.kind != Some(WorkKind::Quay) {
             continue;
@@ -373,6 +523,9 @@ pub fn build_harbour(
         if !again {
             tiles.push(harbour_quay_paving_tile(work.col, work.row).map_err(|fault| vec![fault])?);
         }
+    }
+    for (col, row) in flat {
+        tiles.push(harbour_quay_paving_tile(col, row).map_err(|fault| vec![fault])?);
     }
     Ok(tiles)
 }
@@ -597,6 +750,310 @@ mod tests {
             last_block < doubled_paving,
             "paving follows the last quay block on that cell"
         );
+    }
+
+    fn land_at(tiles: &[HarbourTile], col: i32, row: i32) -> Vec<usize> {
+        tiles
+            .iter()
+            .enumerate()
+            .filter(|(_, tile)| {
+                tile.layer == HarbourLayer::Land && (tile.col, tile.row) == (col, row)
+            })
+            .map(|(i, _)| i)
+            .collect()
+    }
+
+    fn work_at(tiles: &[HarbourTile], col: i32, row: i32, kind: WorkKind) -> usize {
+        tiles
+            .iter()
+            .position(|tile| tile.kind == Some(kind) && (tile.col, tile.row) == (col, row))
+            .unwrap_or_else(|| panic!("{kind:?} at ({col}, {row})"))
+    }
+
+    fn placement(tile: &HarbourTile) -> (i32, i32, &'static str, i32, i32, i32, i32, i32, i32) {
+        (
+            tile.col,
+            tile.row,
+            tile.path,
+            tile.anchor_x,
+            tile.anchor_y,
+            tile.canvas_w,
+            tile.canvas_h,
+            tile.screen_x,
+            tile.screen_y,
+        )
+    }
+
+    /// Quay blocks on all four edge neighbours of a cell.
+    fn ring(col: i32, row: i32) -> Vec<HarbourTile> {
+        vec![
+            quay(col + 1, row),
+            quay(col, row + 1),
+            quay(col - 1, row),
+            quay(col, row - 1),
+        ]
+    }
+
+    #[test]
+    fn flat_deck_reuses_the_block_flag_tile() {
+        // Addendum X: same plate, same U.4, same variant hash as a block top.
+        let built =
+            build_harbour_with_deck(Vec::new(), ring(0, 0), &[(0, 0)], None).expect("legal");
+        let flat = land_at(&built, 0, 0);
+        assert_eq!(flat.len(), 1, "one plate on the flat deck cell");
+        let tile = built[flat[0]];
+        let block_top = harbour_quay_paving_tile(0, 0).unwrap_or_else(|fault| panic!("{fault}"));
+        assert_eq!(placement(&tile), placement(&block_top));
+        assert_eq!(tile.layer, HarbourLayer::Land);
+        assert!(tile.kind.is_none());
+        let plate = crate::assets::quay_flag_plate(0, 0);
+        assert_eq!(tile.path, plate.res_path);
+        assert!(tile.path.ends_with("ground/quay_flag_a.png"));
+        assert!(!tile.path.contains("quay_flat"));
+        assert_eq!((tile.anchor_x, tile.anchor_y), (128, 127));
+        assert_eq!((tile.canvas_w, tile.canvas_h), (256, 128));
+        let (sx, sy) = grid_to_screen(0, 0, HARBOUR_CELL_W, HARBOUR_CELL_H);
+        assert_eq!(
+            (tile.screen_x, tile.screen_y),
+            (sx, sy + HARBOUR_CELL_H / 2)
+        );
+        assert_ne!(
+            tile.screen_y,
+            harbour_anchor(0, 0).1,
+            "no sea datum on land"
+        );
+
+        // Every cell of a kerbed deck patch picks the plate the hash picks.
+        let mut works = Vec::new();
+        let mut deck = Vec::new();
+        for i in 0..6 {
+            works.push(quay(i, 6));
+            works.push(quay(6, i));
+            works.push(quay(i, -1));
+            works.push(quay(-1, i));
+        }
+        for row in 0..6 {
+            for col in 0..6 {
+                deck.push((col, row));
+            }
+        }
+        let patch = build_harbour_with_deck(Vec::new(), works, &deck, None).expect("legal patch");
+        let mut seen = [false; 3];
+        for &(col, row) in &deck {
+            let at = land_at(&patch, col, row);
+            assert_eq!(at.len(), 1, "({col}, {row})");
+            let want = harbour_quay_paving_tile(col, row).unwrap_or_else(|fault| panic!("{fault}"));
+            assert_eq!(placement(&patch[at[0]]), placement(&want));
+            seen[crate::assets::quay_flag_variant(col, row) as usize] = true;
+        }
+        assert_eq!(seen, [true, true, true], "flat deck shows a, b and c");
+    }
+
+    #[test]
+    fn flat_deck_sorts_after_back_works_and_before_front_works() {
+        let built = build_harbour_with_deck(
+            Vec::new(),
+            vec![
+                pier(0, 2),
+                quay(1, 0),
+                pilings(1, -1),
+                quay(0, 1),
+                quay(-1, 0),
+                quay(0, -1),
+            ],
+            &[(0, 0)],
+            None,
+        )
+        .expect("legal");
+        let flat = land_at(&built, 0, 0)[0];
+        let back_block = work_at(&built, -1, 0, WorkKind::Quay);
+        let back_paving = land_at(&built, -1, 0)[0];
+        let side = work_at(&built, 1, -1, WorkKind::Pilings);
+        let front_right = work_at(&built, 1, 0, WorkKind::Quay);
+        let front_left = work_at(&built, 0, 1, WorkKind::Quay);
+        let prop = work_at(&built, 0, 2, WorkKind::Pier);
+        assert!(
+            back_block < back_paving && back_paving < flat,
+            "a back block's face sits under the deck"
+        );
+        assert!(flat < side, "same depth: the deck goes first");
+        assert!(
+            flat < front_right && flat < front_left,
+            "front blocks draw over the deck edge"
+        );
+        assert!(flat < prop, "props draw above the deck flag");
+
+        // Raised-block placement is unchanged: each block, then its paving.
+        for (col, row) in [(-1, 0), (0, -1), (1, 0), (0, 1)] {
+            let block = work_at(&built, col, row, WorkKind::Quay);
+            let paving = land_at(&built, col, row);
+            assert_eq!(
+                paving,
+                vec![block + 1],
+                "paving follows block ({col}, {row})"
+            );
+        }
+        assert_eq!(
+            built
+                .iter()
+                .filter(|tile| tile.layer == HarbourLayer::Land)
+                .count(),
+            5,
+            "four block tops and one flat deck"
+        );
+    }
+
+    #[test]
+    fn flat_deck_needs_deck_height_in_front_and_no_work() {
+        let alone = build_harbour_with_deck(Vec::new(), Vec::new(), &[(0, 0)], None).unwrap_err();
+        assert_eq!(
+            alone,
+            vec![
+                HarbourFault::FlatDeckOpenFront { col: 0, row: 0 },
+                HarbourFault::FlatDeckOpenBack { col: 0, row: 0 },
+            ]
+        );
+        let backs = [quay(-1, 0), quay(0, -1)];
+        let half =
+            validate_flat_deck(&[&backs[..], &[quay(0, 1)]].concat(), &[(0, 0)], None).unwrap_err();
+        assert_eq!(
+            half,
+            vec![HarbourFault::FlatDeckOpenFront { col: 0, row: 0 }]
+        );
+        let over_pier = validate_flat_deck(
+            &[&backs[..], &[quay(1, 0), pier(0, 1)]].concat(),
+            &[(0, 0)],
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            over_pier,
+            vec![HarbourFault::FlatDeckOpenFront { col: 0, row: 0 }]
+        );
+        // Deck behind deck, kerbed all round, is legal.
+        assert!(validate_flat_deck(
+            &[
+                quay(2, 0),
+                quay(0, 1),
+                quay(1, 1),
+                quay(-1, 0),
+                quay(0, -1),
+                quay(1, -1),
+            ],
+            &[(0, 0), (1, 0)],
+            None,
+        )
+        .is_ok());
+
+        for work in [quay(0, 0), pier(0, 0), pilings(0, 0)] {
+            let mut works = ring(0, 0);
+            works.push(work);
+            let fault = validate_flat_deck(&works, &[(0, 0)], None).unwrap_err();
+            assert_eq!(fault, vec![HarbourFault::FlatDeckOnWork { col: 0, row: 0 }]);
+        }
+
+        // Work faults come first, then deck faults, in one list.
+        let both =
+            build_harbour_with_deck(Vec::new(), vec![pilings(3, 3), pier(3, 3)], &[(0, 0)], None)
+                .unwrap_err();
+        assert_eq!(
+            both,
+            vec![
+                HarbourFault::PilingsOnPier { col: 3, row: 3 },
+                HarbourFault::FlatDeckOpenFront { col: 0, row: 0 },
+                HarbourFault::FlatDeckOpenBack { col: 0, row: 0 },
+            ]
+        );
+        assert_eq!(
+            HarbourFault::FlatDeckOnWork { col: 0, row: 0 }.to_string(),
+            "flat deck on a work cell (0, 0)"
+        );
+        assert_eq!(
+            alone[0].to_string(),
+            "flat deck (0, 0) has an open front over water"
+        );
+    }
+
+    #[test]
+    fn flat_deck_back_edge_is_deck_height_or_off_frame() {
+        // Addendum X.1: no paper-thin deck rim against open water.
+        let edges = flat_deck_back_edges(0, 0);
+        assert_eq!(edges[0].0, (-1, 0), "upper-left edge faces -col");
+        assert_eq!(edges[1].0, (0, -1), "upper-right edge faces -row");
+        let pad = FLAT_EDGE_PAD_PX;
+        let ul = edges[0].1;
+        let ur = edges[1].1;
+        assert_eq!(
+            (ul.min_x, ul.min_y, ul.max_x, ul.max_y),
+            (-128 - pad, -64 - pad, pad, pad)
+        );
+        assert_eq!(
+            (ur.min_x, ur.min_y, ur.max_x, ur.max_y),
+            (-pad, -64 - pad, 128 + pad, pad)
+        );
+
+        let fronts = vec![quay(1, 0), quay(0, 1)];
+        let open = HarbourFault::FlatDeckOpenBack { col: 0, row: 0 };
+        // Production rule: with no frame every back edge counts.
+        assert_eq!(
+            validate_flat_deck(&fronts, &[(0, 0)], None),
+            Err(vec![open])
+        );
+        // One back kerbed is not enough.
+        let one = [&fronts[..], &[quay(-1, 0)]].concat();
+        assert_eq!(validate_flat_deck(&one, &[(0, 0)], None), Err(vec![open]));
+        // Both backs at deck height: legal with or without a frame.
+        assert!(validate_flat_deck(&ring(0, 0), &[(0, 0)], None).is_ok());
+
+        let rect = |min_x: i32, min_y: i32, max_x: i32, max_y: i32| ScreenRect {
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        };
+        // A frame that sees the cell sees its open back edges.
+        let wide = rect(-500, -500, 500, 500);
+        assert_eq!(
+            validate_flat_deck(&fronts, &[(0, 0)], Some(&wide)),
+            Err(vec![open])
+        );
+        // A frame that touches only the upper-left edge box still fails.
+        let corner = rect(-200, -40, -100, -20);
+        assert_eq!(
+            validate_flat_deck(&fronts, &[(0, 0)], Some(&corner)),
+            Err(vec![open])
+        );
+        // A frame that sees only the lower half of the diamond, clear of
+        // both back edges, passes: the open backs are off camera.
+        let low = rect(-10, 20, 10, 60);
+        assert!(validate_flat_deck(&fronts, &[(0, 0)], Some(&low)).is_ok());
+        let far = rect(5000, 5000, 6000, 6000);
+        assert!(validate_flat_deck(&fronts, &[(0, 0)], Some(&far)).is_ok());
+        // Off camera never excuses a front edge.
+        assert_eq!(
+            validate_flat_deck(&[], &[(0, 0)], Some(&far)),
+            Err(vec![HarbourFault::FlatDeckOpenFront { col: 0, row: 0 }])
+        );
+        assert_eq!(
+            open.to_string(),
+            "flat deck (0, 0) shows an open back edge against water"
+        );
+    }
+
+    #[test]
+    fn a_repeated_deck_cell_is_one_plate_and_no_deck_is_unchanged() {
+        let works = vec![quay(1, 0), quay(0, 1), quay(-1, 0), quay(0, -1), pier(0, 2)];
+        let twice = build_harbour_with_deck(Vec::new(), works.clone(), &[(0, 0), (0, 0)], None)
+            .expect("legal");
+        assert_eq!(land_at(&twice, 0, 0).len(), 1);
+        let plain = build_harbour(Vec::new(), works.clone()).expect("legal");
+        let empty = build_harbour_with_deck(Vec::new(), works, &[], None).expect("legal");
+        assert_eq!(plain.len(), empty.len());
+        for (a, b) in plain.iter().zip(&empty) {
+            assert_eq!(placement(a), placement(b));
+            assert_eq!((a.layer, a.kind), (b.layer, b.kind));
+        }
+        assert_eq!(twice.len(), plain.len() + 1);
     }
 
     #[test]
