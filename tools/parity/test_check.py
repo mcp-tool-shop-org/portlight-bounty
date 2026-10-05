@@ -33,17 +33,10 @@ def report_failed(errors: list[str], left=None, right=None, entries=None) -> int
 
 
 class AllowlistTest(unittest.TestCase):
-    def test_broker_paths_are_leaves_on_offers_1_and_4(self) -> None:
-        paths = broker_paths()
-        self.assertTrue(paths)
-        for path in paths:
-            self.assertTrue(
-                path.startswith("$.board.offers[1].") or path.startswith("$.board.offers[4]."),
-                path,
-            )
-            self.assertNotIn("[*]", path)
-            self.assertFalse(path.endswith(".tags"))
-            self.assertNotEqual(path, "$.board.offers")
+    def test_broker_board_gamesession_allowlist_is_closed(self) -> None:
+        entries = check.load_divergences()
+        self.assertEqual(check.listed(entries, "broker_board.txt", "gamesession"), [])
+        self.assertEqual(check.listed(entries, "broker_board.txt", "oracle"), [])
 
     def test_container_pattern_does_not_hide_an_offer_mutation(self) -> None:
         left = {"board": {"offers": [{"id": "kept", "reward_silver": 10}]}}
