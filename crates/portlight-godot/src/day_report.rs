@@ -2,11 +2,16 @@
 //!
 //! Presentation only. Reads Session facts; never calls mutating Session verbs.
 //! Section order: Deadlines → Health → Prices → Bounties. §13 overrides §§1–12.
+//!
+//! Captain's week: a ride-along footer (Week deltas + one Next hint) below the
+//! scroll. It never opens the card, is not a [`DayReportLine`], and does not
+//! count toward [`LINE_CAP`]. The footer yields when the body would scroll at
+//! the shrunk height (all-or-nothing; Next never appears without Week).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
-use godot::classes::text_server::AutowrapMode;
+use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::{Button, Label, PanelContainer, ScrollContainer, StyleBoxFlat, VBoxContainer};
 use godot::prelude::*;
 use portlight_sim::content;
@@ -32,6 +37,23 @@ const CARD_W: f32 = 520.0;
 const CARD_X: f32 = 170.0;
 const CARD_Y: f32 = 40.0;
 const CARD_H: f32 = 380.0;
+/// Scroll minimum height with no footer.
+const SCROLL_MIN_H: f32 = 220.0;
+/// Captain's week: the scroll may give up at most this much so Close stays inside.
+pub(crate) const FOOTER_SCROLL_SHRINK: f32 = 48.0;
+/// Footer rows: at most Week + Next.
+pub(crate) const FOOTER_MAX_LINES: usize = 2;
+const FOOTER_FONT: i32 = 14;
+const FOOTER_SEP: i32 = 4;
+/// Deterministic body budget for footer yield (headless-reliable). Heads +
+/// body lines; a line over [`FOOTER_WRAP_CHARS`] counts as 2.
+pub(crate) const FOOTER_BODY_BUDGET: usize = 6;
+pub(crate) const FOOTER_WRAP_CHARS: usize = 60;
+
+/// Captain's week rolling window (Godot memory only, never saved).
+pub(crate) const WEEK_N: usize = 5;
+/// GD presentation threshold for `Next: Stores low`.
+pub(crate) const STORES_LOW: i64 = 3;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -40,6 +62,7 @@ pub(crate) struct DayReportNodes {
     pub title: Gd<Label>,
     pub scroll: Gd<ScrollContainer>,
     pub body: Gd<VBoxContainer>,
+    pub footer: Gd<VBoxContainer>,
     pub close: Gd<Button>,
 }
 
@@ -62,6 +85,81 @@ pub(crate) struct DayReportDocument {
     pub day: i64,
     pub title: String,
     pub sections: Vec<DayReportSection>,
+    /// Captain's week ride-along. Never read by [`Self::has_notable`].
+    pub footer: DayReportFooter,
+}
+
+/// Captain's week footer rows. Plain strings, not [`DayReportLine`]s: they never
+/// carry `notable`, never enter [`cap_sections`], and never open the card.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct DayReportFooter {
+    pub week: Option<String>,
+    pub next: Option<String>,
+}
+
+impl DayReportFooter {
+    pub(crate) fn lines(&self) -> Vec<&str> {
+        [self.week.as_deref(), self.next.as_deref()]
+            .into_iter()
+            .flatten()
+            .collect()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.week.is_none() && self.next.is_none()
+    }
+}
+
+/// One post-advance snapshot for Captain's week deltas.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct WeekSample {
+    pub day: i64,
+    pub silver: i64,
+    pub crew: Option<i64>,
+    pub open_wounds: usize,
+    pub active_bounties: usize,
+    pub claimable: usize,
+}
+
+/// Rolling window of at most [`WEEK_N`] samples. Lives in [`DayReportMemory`],
+/// so it resets with it on new game / load. Never saved.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct WeekWindow {
+    samples: VecDeque<WeekSample>,
+}
+
+impl WeekWindow {
+    /// Push after a successful advance. Same `day` replaces the last sample.
+    pub(crate) fn push(&mut self, sample: WeekSample) {
+        if self
+            .samples
+            .back()
+            .is_some_and(|last| last.day == sample.day)
+        {
+            self.samples.pop_back();
+        }
+        self.samples.push_back(sample);
+        while self.samples.len() > WEEK_N {
+            self.samples.pop_front();
+        }
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.samples.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.samples.is_empty()
+    }
+
+    fn ends(&self) -> Option<(&WeekSample, &WeekSample)> {
+        if self.samples.len() < 2 {
+            return None;
+        }
+        Some((self.samples.front()?, self.samples.back()?))
+    }
 }
 
 impl DayReportDocument {
@@ -82,6 +180,8 @@ pub(crate) struct DayReportMemory {
     pub active_bounties: HashSet<String>,
     /// Claimable bounty ids already used as an auto-show trigger (not arrival).
     pub claimable_seen: HashSet<String>,
+    /// Captain's week rolling snapshots (never saved).
+    pub week: WeekWindow,
 }
 
 pub(crate) fn build_day_report_screen() -> DayReportNodes {
@@ -112,7 +212,7 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     scroll.set_name("DayReportScroll");
     scroll.set_h_size_flags(SizeFlags::EXPAND_FILL);
     scroll.set_v_size_flags(SizeFlags::EXPAND_FILL);
-    scroll.set_custom_minimum_size(Vector2::new(CARD_W - 36.0, 220.0));
+    scroll.set_custom_minimum_size(Vector2::new(CARD_W - 36.0, SCROLL_MIN_H));
     scroll.set_horizontal_scroll_mode(godot::classes::scroll_container::ScrollMode::DISABLED);
     let mut body = VBoxContainer::new_alloc();
     body.set_name("DayReportBody");
@@ -121,18 +221,35 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     scroll.add_child(&body);
     column.add_child(&scroll);
 
+    // Captain's week footer: below scroll, above Close. Not a capped section.
+    // Footer and Close share one column slot (sep 4), so a shown footer costs
+    // its rows + 4 px and never more than FOOTER_SCROLL_SHRINK of scroll.
+    let mut foot = VBoxContainer::new_alloc();
+    foot.set_name("DayReportFoot");
+    foot.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    foot.add_theme_constant_override("separation", FOOTER_SEP);
+    column.add_child(&foot);
+
+    let mut footer = VBoxContainer::new_alloc();
+    footer.set_name("DayReportFooter");
+    footer.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    footer.add_theme_constant_override("separation", FOOTER_SEP);
+    footer.set_visible(false);
+    foot.add_child(&footer);
+
     let mut close = Button::new_alloc();
     close.set_name("CloseDayReport");
     close.set_text("Close");
     style_encounter_button(&mut close);
     close.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
-    column.add_child(&close);
+    foot.add_child(&close);
 
     DayReportNodes {
         root,
         title,
         scroll,
         body,
+        footer,
         close,
     }
 }
@@ -169,6 +286,121 @@ pub(crate) fn apply_document(nodes: &mut DayReportNodes, doc: &DayReportDocument
         }
         nodes.body.add_child(&box_node);
     }
+    apply_footer(nodes, &doc.footer, &doc.sections);
+}
+
+/// Body cost for footer yield: one per rendered section head, plus one per line
+/// (two when the line is longer than [`FOOTER_WRAP_CHARS`]). Empty sections
+/// contribute nothing (they are not drawn).
+pub(crate) fn footer_body_cost(sections: &[DayReportSection]) -> usize {
+    sections
+        .iter()
+        .filter(|section| !section.lines.is_empty())
+        .map(|section| {
+            1 + section
+                .lines
+                .iter()
+                .map(|line| {
+                    if line.text.chars().count() > FOOTER_WRAP_CHARS {
+                        2
+                    } else {
+                        1
+                    }
+                })
+                .sum::<usize>()
+        })
+        .sum()
+}
+
+/// Show the footer only when Week is present and the body fits under the shrunk
+/// scroll. Yield is presentation-only and all-or-nothing: Next never appears
+/// without Week, and a yield hides both rows while keeping scroll at
+/// [`SCROLL_MIN_H`].
+pub(crate) fn footer_should_show(footer: &DayReportFooter, sections: &[DayReportSection]) -> bool {
+    if footer.week.is_none() || footer.lines().is_empty() {
+        return false;
+    }
+    footer_body_cost(sections) <= FOOTER_BODY_BUDGET
+}
+
+fn apply_footer(
+    nodes: &mut DayReportNodes,
+    footer: &DayReportFooter,
+    sections: &[DayReportSection],
+) {
+    clear_children(&mut nodes.footer);
+    let shown = footer_should_show(footer, sections);
+    if shown {
+        for text in footer.lines().iter().take(FOOTER_MAX_LINES) {
+            nodes.footer.add_child(&footer_label(text));
+        }
+    }
+    nodes.footer.set_visible(shown);
+    let scroll_h = if shown {
+        SCROLL_MIN_H - FOOTER_SCROLL_SHRINK
+    } else {
+        SCROLL_MIN_H
+    };
+    nodes
+        .scroll
+        .set_custom_minimum_size(Vector2::new(CARD_W - 36.0, scroll_h));
+}
+
+/// One muted row; clipped so a long Week line never widens or heightens the card.
+fn footer_label(text: &str) -> Gd<Label> {
+    let mut label = text_label(text, FOOTER_FONT, MUTED, false);
+    label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    label.set_clip_text(true);
+    label.set_text_overrun_behavior(OverrunBehavior::TRIM_ELLIPSIS);
+    label
+}
+
+/// Open-card fit: size stays `CARD_W` x `CARD_H` (±1), children fit, and Close
+/// sits inside the card. `Some` names what broke.
+pub(crate) fn card_fit_error(nodes: &DayReportNodes) -> Option<String> {
+    let size = nodes.root.get_size();
+    let min = nodes.root.get_combined_minimum_size();
+    let size_ok = (size.x - CARD_W).abs() <= 1.0 && (size.y - CARD_H).abs() <= 1.0;
+    let min_ok = min.x <= CARD_W + 1.0 && min.y <= CARD_H + 1.0;
+    let card = nodes.root.get_global_rect();
+    let close = nodes.close.get_global_rect();
+    let close_ok = close.size.y <= 0.0
+        || (close.position.y >= card.position.y
+            && close.position.y + close.size.y <= card.position.y + card.size.y + 1.0);
+    let scroll_min = nodes.scroll.get_custom_minimum_size().y;
+    let scroll_ok = scroll_min >= SCROLL_MIN_H - FOOTER_SCROLL_SHRINK;
+    let footer_rows = nodes.footer.get_child_count() as usize;
+    // Shown footer: rows + the 4 px slot gap must fit inside the allowed shrink.
+    let footer_h = if nodes.footer.is_visible() {
+        nodes.footer.get_combined_minimum_size().y + FOOTER_SEP as f32
+    } else {
+        0.0
+    };
+    let footer_ok = footer_rows <= FOOTER_MAX_LINES && footer_h <= FOOTER_SCROLL_SHRINK + 0.5;
+    if size_ok && min_ok && close_ok && scroll_ok && footer_ok {
+        return None;
+    }
+    Some(format!(
+        "card {w}x{h} min {mw}x{mh} (want {CARD_W}x{CARD_H}); close y {cy}+{ch} in card y {ky}+{kh}; scroll min {scroll_min}; footer rows {footer_rows} cost {footer_h}",
+        w = size.x,
+        h = size.y,
+        mw = min.x,
+        mh = min.y,
+        cy = close.position.y,
+        ch = close.size.y,
+        ky = card.position.y,
+        kh = card.size.y,
+    ))
+}
+
+/// Footer text only (for smoke assertions).
+pub(crate) fn footer_text(nodes: &DayReportNodes) -> String {
+    let mut parts = Vec::new();
+    collect_text(
+        &nodes.footer.clone().upcast::<godot::classes::Node>(),
+        &mut parts,
+    );
+    parts.join("\n")
 }
 
 pub(crate) fn overlay_visible(nodes: &DayReportNodes) -> bool {
@@ -234,7 +466,131 @@ pub(crate) fn build_document(
         day,
         title: format!("Day {day}"),
         sections,
+        footer: DayReportFooter::default(),
     }
+}
+
+/// Post-advance Captain's week snapshot. Reads only; no Session mutation.
+pub(crate) fn week_sample(session: &Session) -> WeekSample {
+    let world = session.world();
+    WeekSample {
+        day: world.day,
+        silver: world.captain.silver,
+        crew: world.captain.ship.as_ref().map(|ship| ship.crew),
+        open_wounds: session
+            .injuries()
+            .iter()
+            .filter(|injury| injury.heal_remaining.is_some())
+            .count(),
+        active_bounties: world.captain.active_bounties.len(),
+        claimable: claimable_ids(session).len(),
+    }
+}
+
+/// Footer for a card that is already open for a notable document.
+pub(crate) fn build_footer(session: &Session, window: &WeekWindow) -> DayReportFooter {
+    DayReportFooter {
+        week: week_line(window),
+        next: next_line(&next_facts(session)),
+    }
+}
+
+/// `Week: ...` from the oldest to the newest sample. `None` while warming up
+/// (< 2 samples) or when every clause is zero. Zero clauses are omitted.
+pub(crate) fn week_line(window: &WeekWindow) -> Option<String> {
+    let (first, last) = window.ends()?;
+    let mut clauses = Vec::new();
+    let silver = last.silver - first.silver;
+    if silver != 0 {
+        clauses.push(format!("{silver:+} silver"));
+    }
+    if let (Some(old), Some(new)) = (first.crew, last.crew) {
+        if old != new {
+            clauses.push(format!("crew {old} to {new}"));
+        }
+    }
+    let wounds = last.open_wounds as i64 - first.open_wounds as i64;
+    if wounds < 0 {
+        clauses.push(format!("{} healed", -wounds));
+    } else if wounds == 1 {
+        clauses.push("1 wound open".to_string());
+    } else if wounds > 1 {
+        clauses.push(format!("{wounds} wounds open"));
+    }
+    let bounties = last.active_bounties as i64 - first.active_bounties as i64;
+    if bounties != 0 {
+        clauses.push(format!("bounty {bounties:+}"));
+    }
+    let claimable = last.claimable as i64 - first.claimable as i64;
+    if claimable > 0 {
+        clauses.push(format!("{claimable} claimable"));
+    }
+    if clauses.is_empty() {
+        return None;
+    }
+    Some(format!("Week: {}", clauses.join(" - ")))
+}
+
+/// Session facts for the Next ladder (pure, so the order is unit-testable).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct NextFacts {
+    /// `deadline_day - day` for each active contract.
+    pub contract_days_left: Vec<i64>,
+    pub claimable: bool,
+    /// Any captain injury still asking the player to act: healing and untreated.
+    pub captain_wounded: bool,
+    pub provisions: i64,
+}
+
+/// Advice rung predicate (§12.7): healing wound that is not yet treated.
+fn untreated_healing(injury: &Injury) -> bool {
+    injury.heal_remaining.is_some() && !injury.treated
+}
+
+pub(crate) fn next_facts(session: &Session) -> NextFacts {
+    let world = session.world();
+    let day = world.day;
+    NextFacts {
+        contract_days_left: session
+            .board()
+            .active
+            .iter()
+            .map(|contract| contract.deadline_day - day)
+            .collect(),
+        claimable: !claimable_ids(session).is_empty(),
+        captain_wounded: session.injuries().iter().any(untreated_healing),
+        provisions: world.captain.provisions,
+    }
+}
+
+/// First match: overdue, due today, approaching, Claim ready, wounded, Stores low.
+pub(crate) fn next_line(facts: &NextFacts) -> Option<String> {
+    let lefts = &facts.contract_days_left;
+    if lefts.iter().any(|&left| left < 0) {
+        return Some("Next: Contract overdue - open Contracts.".to_string());
+    }
+    if lefts.contains(&0) {
+        return Some("Next: Contract due today - open Contracts.".to_string());
+    }
+    if let Some(left) = lefts
+        .iter()
+        .copied()
+        .filter(|left| (1..=DEADLINE_N).contains(left))
+        .min()
+    {
+        let timing = deadline_timing(left);
+        return Some(format!("Next: Contract {timing} - open Contracts."));
+    }
+    if facts.claimable {
+        return Some("Next: Claim ready - open Hunt.".to_string());
+    }
+    if facts.captain_wounded {
+        return Some("Next: Captain wounded - heal in port.".to_string());
+    }
+    if facts.provisions <= STORES_LOW {
+        return Some("Next: Stores low - restock in port.".to_string());
+    }
+    None
 }
 
 fn deadline_lines(
@@ -616,7 +972,40 @@ pub(crate) fn smoke_full_document(day: i64) -> DayReportDocument {
                 }],
             },
         ],
+        // Forced footer through the real formatters: +340 silver, crew 12 to 14,
+        // 1 healed; the 2-days-left deadline wins the Next ladder over Claim ready.
+        footer: DayReportFooter {
+            week: week_line(&smoke_week_window(
+                day,
+                &[(340, Some(12), 1, 1, 0), (680, Some(14), 0, 1, 0)],
+            )),
+            next: next_line(&NextFacts {
+                contract_days_left: vec![2],
+                claimable: true,
+                captain_wounded: false,
+                provisions: 20,
+            }),
+        },
     }
+}
+
+/// Window ending on `day` from `(silver, crew, open_wounds, active, claimable)`.
+fn smoke_week_window(day: i64, rows: &[(i64, Option<i64>, usize, usize, usize)]) -> WeekWindow {
+    let mut window = WeekWindow::default();
+    let start = day - rows.len() as i64 + 1;
+    for (offset, &(silver, crew, open_wounds, active_bounties, claimable)) in
+        rows.iter().enumerate()
+    {
+        window.push(WeekSample {
+            day: start + offset as i64,
+            silver,
+            crew,
+            open_wounds,
+            active_bounties,
+            claimable,
+        });
+    }
+    window
 }
 
 pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
@@ -631,6 +1020,16 @@ pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
                 notable: true,
             }],
         }],
+        // Warm-up (one sample): Week omitted, Next only.
+        footer: DayReportFooter {
+            week: week_line(&smoke_week_window(day, &[(540, Some(3), 0, 0, 0)])),
+            next: next_line(&NextFacts {
+                contract_days_left: vec![1],
+                claimable: false,
+                captain_wounded: false,
+                provisions: 20,
+            }),
+        },
     }
 }
 
@@ -756,10 +1155,17 @@ mod tests {
     }
 
     /// Build a session with an active bounty that is already defeated (claimable).
-    /// Uses save/load so we do not need a Session world_mut API (Godot-only crate).
     fn session_with_claimable(id: &str) -> Session {
+        session_with_defeated(&[id])
+    }
+
+    /// Accept each bounty and mark it defeated once (claimable).
+    /// Uses save/load so we do not need a Session world_mut API (Godot-only crate).
+    fn session_with_defeated(ids: &[&str]) -> Session {
         let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
-        session.accept_bounty(id).unwrap();
+        for id in ids {
+            session.accept_bounty(id).unwrap();
+        }
         let dir = std::env::temp_dir().join(format!(
             "portlight-day-report-{}-{}",
             std::process::id(),
@@ -772,9 +1178,33 @@ mod tests {
         session.save(&dir, "claim").unwrap();
         let path = dir.join("saves").join("claim.json");
         let mut raw = std::fs::read_to_string(&path).unwrap();
+        let entries = ids
+            .iter()
+            .map(|id| defeated_memory_json(id))
+            .collect::<Vec<_>>()
+            .join(",");
         let memory = format!(
             r#"
-    "captain_memories": {{
+    "captain_memories": {{{entries}
+    }},"#
+        );
+        let marker = "\"pirate_state\": {";
+        let Some(idx) = raw.find(marker) else {
+            panic!("save missing pirate_state object");
+        };
+        let insert_at = idx + marker.len();
+        raw.insert_str(insert_at, &memory);
+        std::fs::write(&path, &raw).unwrap();
+        let loaded = Session::load(&dir, "claim")
+            .unwrap()
+            .expect("reloaded claimable session");
+        let _ = std::fs::remove_dir_all(&dir);
+        loaded
+    }
+
+    fn defeated_memory_json(id: &str) -> String {
+        format!(
+            r#"
       "{id}": {{
         "captain_id": "{id}",
         "relationship": {{
@@ -790,21 +1220,8 @@ mod tests {
         "times_defeated_by_player": 1,
         "times_defeated_player": 0,
         "player_sank_their_ship": false
-      }}
-    }},"#
-        );
-        let marker = "\"pirate_state\": {";
-        let Some(idx) = raw.find(marker) else {
-            panic!("save missing pirate_state object");
-        };
-        let insert_at = idx + marker.len();
-        raw.insert_str(insert_at, &memory);
-        std::fs::write(&path, &raw).unwrap();
-        let loaded = Session::load(&dir, "claim")
-            .unwrap()
-            .expect("reloaded claimable session");
-        let _ = std::fs::remove_dir_all(&dir);
-        loaded
+      }}"#
+        )
     }
 
     #[test]
@@ -901,26 +1318,36 @@ mod tests {
     /// C1: Claim ready / claimed / accepted push order inside Bounties.
     #[test]
     fn bounty_lines_order_claim_ready_then_claimed_then_accepted() {
-        let session = session_with_claimable("raj_the_quiet");
+        // Live Session: raj stays claimable, scarlet_ana is claimed this day,
+        // the_butcher is newly accepted. Memory holds last Next day's actives.
+        let mut session = session_with_defeated(&["raj_the_quiet", "scarlet_ana"]);
+        session.claim_bounty("scarlet_ana").unwrap();
+        session.accept_bounty("the_butcher").unwrap();
         let known: Vec<portlight_sim::bounty::BountyTarget> = Vec::new();
         let mut memory = DayReportMemory::default();
-        // Prior active that is now claimed (gone from active, present in claimed).
-        memory.active_bounties.insert("old_claimed".into());
-        // Inject claimed id via save/load patch on a throwaway copy is heavy; instead
-        // verify formatter category order by feeding lines bounty_lines would emit,
-        // plus a live claimable from Session. Live claimable must come first.
+        memory.active_bounties.insert("raj_the_quiet".into());
+        memory.active_bounties.insert("scarlet_ana".into());
         let live = bounty_lines(&session, &mut memory, false, &known);
-        let claim_idx = live
+        let kinds: Vec<&str> = live
             .iter()
-            .position(|l| l.text.starts_with("Claim ready:"))
-            .expect("claimable session yields Claim ready");
-        assert_eq!(claim_idx, 0, "Claim ready must be first among bounty lines");
-        // Accept a second bounty so "Bounty accepted" appears after Claim ready.
-        let mut session2 = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
-        // Pick a known content bounty id distinct from raj if possible.
-        session2.accept_bounty("raj_the_quiet").unwrap();
-        let mut memory2 = DayReportMemory::default();
-        let accepted_only = bounty_lines(&session2, &mut memory2, false, &known);
+            .map(|l| {
+                ["Claim ready:", "Bounty claimed:", "Bounty accepted:"]
+                    .into_iter()
+                    .find(|prefix| l.text.starts_with(prefix))
+                    .unwrap_or(l.text.as_str())
+            })
+            .collect();
+        assert_eq!(
+            kinds,
+            vec!["Claim ready:", "Bounty claimed:", "Bounty accepted:"],
+            "bounty_lines order: {live:?}"
+        );
+
+        // A fresh accept without a defeat is accepted only, never claimable.
+        let mut fresh = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        fresh.accept_bounty("the_butcher").unwrap();
+        let mut fresh_memory = DayReportMemory::default();
+        let accepted_only = bounty_lines(&fresh, &mut fresh_memory, false, &known);
         assert!(
             accepted_only
                 .iter()
@@ -996,8 +1423,8 @@ mod tests {
         ]);
         let total = rendered_line_count(&sections);
         assert!(total <= LINE_CAP, "hard cap: {total} > {LINE_CAP}");
-        // Count +N more rows toward the cap.
-        let _ = more_row_count(&sections);
+        // Every budget==1 section keeps its one real line and adds no +N more.
+        assert_eq!(more_row_count(&sections), 0, "{sections:?}");
         assert!(
             sections
                 .iter()
@@ -1032,17 +1459,18 @@ mod tests {
         assert_eq!(sections.len(), 2);
         assert_eq!(sections[0].id, "deadlines");
         assert_eq!(sections[1].id, "bounties");
-        // Deadlines should keep 3 real lines + "+1 more" (budget 5 with reserve 1),
-        // or fit more than the old 2+more layout.
+        // Budget 5 with reserve 1: all 4 deadlines fit with no "+N more"
+        // (the old layout kept only 2 real lines + "+2 more").
         let deadline_real = sections[0]
             .lines
             .iter()
             .filter(|l| !l.text.starts_with('+'))
             .count();
-        assert!(
-            deadline_real >= 3,
-            "non-empty reserve should give deadlines more than 2 real lines, got {deadline_real}"
+        assert_eq!(
+            deadline_real, 4,
+            "non-empty reserve should fit all 4 deadlines, got {deadline_real}"
         );
+        assert_eq!(more_row_count(&sections), 0);
         assert!(sections[1].lines[0].text.starts_with("Claim ready:"));
         assert!(rendered_line_count(&sections) <= LINE_CAP);
     }
@@ -1103,5 +1531,449 @@ mod tests {
             sections.iter().any(|s| s.id == "bounties"),
             "bounties must remain when notable bounty lines exist"
         );
+    }
+
+    fn sample(
+        day: i64,
+        silver: i64,
+        crew: Option<i64>,
+        wounds: usize,
+        active: usize,
+    ) -> WeekSample {
+        WeekSample {
+            day,
+            silver,
+            crew,
+            open_wounds: wounds,
+            active_bounties: active,
+            claimable: 0,
+        }
+    }
+
+    fn window(samples: &[WeekSample]) -> WeekWindow {
+        let mut window = WeekWindow::default();
+        for s in samples {
+            window.push(*s);
+        }
+        window
+    }
+
+    /// Captain's week: signed snapshot deltas, zero clauses omitted, ASCII ` - `.
+    #[test]
+    fn week_line_formats_signed_deltas_and_drops_zero_clauses() {
+        let up = window(&[
+            sample(1, 200, Some(12), 1, 0),
+            sample(2, 540, Some(14), 0, 0),
+        ]);
+        assert_eq!(
+            week_line(&up).as_deref(),
+            Some("Week: +340 silver - crew 12 to 14 - 1 healed")
+        );
+        let down = window(&[
+            sample(1, 500, Some(14), 0, 1),
+            sample(3, 420, Some(11), 0, 1),
+        ]);
+        assert_eq!(
+            week_line(&down).as_deref(),
+            Some("Week: -80 silver - crew 14 to 11")
+        );
+        // Zero silver clause dropped, never +0.
+        let wounds = window(&[sample(1, 300, Some(3), 0, 0), sample(2, 300, Some(3), 2, 1)]);
+        assert_eq!(
+            week_line(&wounds).as_deref(),
+            Some("Week: 2 wounds open - bounty +1")
+        );
+        let one = window(&[sample(1, 300, Some(3), 0, 2), sample(2, 300, Some(3), 1, 1)]);
+        assert_eq!(
+            week_line(&one).as_deref(),
+            Some("Week: 1 wound open - bounty -1")
+        );
+        let mut claim = window(&[sample(1, 300, Some(3), 0, 1)]);
+        claim.push(WeekSample {
+            claimable: 1,
+            ..sample(2, 300, Some(3), 0, 1)
+        });
+        assert_eq!(week_line(&claim).as_deref(), Some("Week: 1 claimable"));
+        for text in [&up, &down, &wounds, &one, &claim]
+            .into_iter()
+            .filter_map(week_line)
+        {
+            assert!(text.is_ascii(), "{text}");
+            assert!(!text.contains("+0") && !text.contains("-0"), "{text}");
+            assert!(!text.contains("now "), "deltas only: {text}");
+        }
+    }
+
+    #[test]
+    fn week_line_omitted_while_warming_up_or_flat() {
+        assert_eq!(week_line(&WeekWindow::default()), None);
+        let single = window(&[sample(4, 900, Some(5), 0, 0)]);
+        assert_eq!(week_line(&single), None, "one sample is warm-up");
+        let flat = window(&[sample(4, 900, Some(5), 1, 1), sample(5, 900, Some(5), 1, 1)]);
+        assert_eq!(week_line(&flat), None, "all-zero clauses omit Week");
+    }
+
+    #[test]
+    fn week_window_caps_at_week_n_and_replaces_same_day() {
+        let mut w = WeekWindow::default();
+        assert!(w.is_empty());
+        for day in 1..=8 {
+            w.push(sample(day, day * 10, Some(3), 0, 0));
+        }
+        assert_eq!(w.len(), WEEK_N);
+        // Oldest kept is day 4 (8 - WEEK_N + 1): delta 80 - 40.
+        assert_eq!(week_line(&w).as_deref(), Some("Week: +40 silver"));
+        w.push(sample(8, 100, Some(3), 0, 0));
+        assert_eq!(w.len(), WEEK_N, "same day replaces, does not grow");
+        assert_eq!(week_line(&w).as_deref(), Some("Week: +60 silver"));
+        // DayReportMemory reset clears the window (new game / load).
+        let mut memory = DayReportMemory {
+            week: w,
+            ..DayReportMemory::default()
+        };
+        assert_eq!(memory.week.len(), WEEK_N);
+        memory = DayReportMemory::default();
+        assert!(memory.week.is_empty());
+    }
+
+    #[test]
+    fn next_ladder_first_match_order() {
+        let base = NextFacts {
+            contract_days_left: vec![],
+            claimable: false,
+            captain_wounded: false,
+            provisions: 20,
+        };
+        assert_eq!(next_line(&base), None, "empty ladder omits Next");
+        let all = NextFacts {
+            contract_days_left: vec![9, 2, 0, -1],
+            claimable: true,
+            captain_wounded: true,
+            provisions: 1,
+        };
+        assert_eq!(
+            next_line(&all).as_deref(),
+            Some("Next: Contract overdue - open Contracts.")
+        );
+        let today = NextFacts {
+            contract_days_left: vec![3, 0],
+            ..all.clone()
+        };
+        assert_eq!(
+            next_line(&today).as_deref(),
+            Some("Next: Contract due today - open Contracts.")
+        );
+        let soon = NextFacts {
+            contract_days_left: vec![5, 3, 1],
+            ..all.clone()
+        };
+        assert_eq!(
+            next_line(&soon).as_deref(),
+            Some("Next: Contract 1 day left - open Contracts.")
+        );
+        let three = NextFacts {
+            contract_days_left: vec![3],
+            ..all.clone()
+        };
+        assert_eq!(
+            next_line(&three).as_deref(),
+            Some("Next: Contract 3 days left - open Contracts.")
+        );
+        let far = NextFacts {
+            contract_days_left: vec![DEADLINE_N + 1],
+            ..all.clone()
+        };
+        assert_eq!(
+            next_line(&far).as_deref(),
+            Some("Next: Claim ready - open Hunt.")
+        );
+        let wounded = NextFacts {
+            claimable: false,
+            ..far.clone()
+        };
+        assert_eq!(
+            next_line(&wounded).as_deref(),
+            Some("Next: Captain wounded - heal in port.")
+        );
+        let stores = NextFacts {
+            captain_wounded: false,
+            provisions: STORES_LOW,
+            ..wounded.clone()
+        };
+        assert_eq!(
+            next_line(&stores).as_deref(),
+            Some("Next: Stores low - restock in port.")
+        );
+        let stocked = NextFacts {
+            provisions: STORES_LOW + 1,
+            ..stores.clone()
+        };
+        assert_eq!(next_line(&stocked), None);
+        for facts in [&all, &today, &soon, &three, &far, &wounded, &stores] {
+            let text = next_line(facts).unwrap();
+            assert!(text.is_ascii() && !text.contains("due soon"), "{text}");
+            assert!(text.contains(" - "), "{text}");
+        }
+    }
+
+    /// Footer is ride-along: it never flips `has_notable` and never enters the cap.
+    #[test]
+    fn footer_never_flips_notable_or_counts_toward_cap() {
+        let footer = DayReportFooter {
+            week: Some("Week: +340 silver".into()),
+            next: Some("Next: Claim ready - open Hunt.".into()),
+        };
+        let quiet = DayReportDocument {
+            day: 5,
+            title: "Day 5".into(),
+            sections: cap_sections(vec![(
+                "health",
+                "Health",
+                vec![line("Healing: Bruised ribs (3 days left).", false)],
+            )]),
+            footer: footer.clone(),
+        };
+        assert!(quiet.sections.is_empty());
+        assert!(!quiet.has_notable(), "footer must not open a quiet day");
+
+        let sections = cap_sections(vec![
+            (
+                "deadlines",
+                "Deadlines",
+                (0..5).map(|i| line(&format!("d{i}"), true)).collect(),
+            ),
+            ("health", "Health", vec![line("Healed: Cut hand.", true)]),
+            (
+                "prices",
+                "Prices",
+                (0..3).map(|i| line(&format!("p{i}"), true)).collect(),
+            ),
+            (
+                "bounties",
+                "Bounties",
+                vec![line("Claim ready: A (1 silver) - open Hunt.", true)],
+            ),
+        ]);
+        let doc = DayReportDocument {
+            day: 6,
+            title: "Day 6".into(),
+            sections,
+            footer,
+        };
+        assert!(doc.has_notable());
+        assert!(rendered_line_count(&doc.sections) <= LINE_CAP);
+        assert_eq!(doc.footer.lines().len(), FOOTER_MAX_LINES);
+        assert!(doc
+            .sections
+            .iter()
+            .flat_map(|s| s.lines.iter())
+            .all(|l| !l.text.starts_with("Week:") && !l.text.starts_with("Next:")));
+    }
+
+    #[test]
+    fn week_sample_reads_session_snapshot() {
+        let session = session_with_claimable("raj_the_quiet");
+        let snap = week_sample(&session);
+        let world = session.world();
+        assert_eq!(snap.day, world.day);
+        assert_eq!(snap.silver, world.captain.silver);
+        assert_eq!(snap.crew, world.captain.ship.as_ref().map(|s| s.crew));
+        assert_eq!(snap.active_bounties, 1);
+        assert_eq!(snap.claimable, 1);
+        assert_eq!(snap.open_wounds, 0);
+        let facts = next_facts(&session);
+        assert!(facts.claimable);
+        assert_eq!(
+            next_line(&facts).as_deref(),
+            Some("Next: Claim ready - open Hunt.")
+        );
+        let footer = build_footer(&session, &WeekWindow::default());
+        assert_eq!(footer.week, None, "no window yet");
+        assert!(!footer.is_empty());
+    }
+
+    #[test]
+    fn smoke_footers_follow_formatters() {
+        let full = smoke_full_document(3);
+        assert_eq!(
+            full.footer.week.as_deref(),
+            Some("Week: +340 silver - crew 12 to 14 - 1 healed")
+        );
+        assert_eq!(
+            full.footer.next.as_deref(),
+            Some("Next: Contract 2 days left - open Contracts.")
+        );
+        let deadline = smoke_deadline_document(4);
+        assert_eq!(deadline.footer.week, None, "warm-up omits Week");
+        assert_eq!(
+            deadline.footer.next.as_deref(),
+            Some("Next: Contract 1 day left - open Contracts.")
+        );
+    }
+
+    /// R1: full 4-section body yields the footer; a small Week body keeps it.
+    /// Next without Week never shows (deadline warm-up is Next-only data).
+    #[test]
+    fn footer_yields_when_body_overflows_budget() {
+        let full = smoke_full_document(3);
+        assert!(
+            footer_body_cost(&full.sections) > FOOTER_BODY_BUDGET,
+            "full smoke body must exceed budget (got {})",
+            footer_body_cost(&full.sections)
+        );
+        assert!(
+            !footer_should_show(&full.footer, &full.sections),
+            "full 4-section document must yield the footer"
+        );
+
+        let deadline = smoke_deadline_document(4);
+        assert!(
+            deadline.footer.week.is_none() && deadline.footer.next.is_some(),
+            "deadline smoke still carries Next-only data"
+        );
+        assert!(
+            !footer_should_show(&deadline.footer, &deadline.sections),
+            "Next without Week never shows"
+        );
+
+        // Footer-shown case: two heads + three short rows = 5 <= 6.
+        let week_body = vec![
+            DayReportSection {
+                id: "deadlines",
+                title: "Deadlines",
+                lines: vec![line("Spice charter - 3 days left.", true)],
+            },
+            DayReportSection {
+                id: "bounties",
+                title: "Bounties",
+                lines: vec![
+                    line("Bounty accepted: Scarlet Ana.", true),
+                    line("Bounty accepted: Raj the Quiet.", true),
+                ],
+            },
+        ];
+        assert_eq!(footer_body_cost(&week_body), 5);
+        let week_footer = DayReportFooter {
+            week: Some("Week: -19 silver - crew 3 to 4 - bounty +1".into()),
+            next: Some("Next: Contract 3 days left - open Contracts.".into()),
+        };
+        assert!(
+            footer_should_show(&week_footer, &week_body),
+            "compact Week body must keep the footer"
+        );
+        // Long body line counts as 2.
+        let long = DayReportSection {
+            id: "deadlines",
+            title: "Deadlines",
+            lines: vec![line(
+                "Spice charter - 1 day left - 10/10 - ready to Complete at Contracts",
+                true,
+            )],
+        };
+        assert_eq!(footer_body_cost(&[long]), 3);
+    }
+
+    /// R3: treated healing wound skips Captain wounded and falls through.
+    #[test]
+    fn treated_wound_skips_captain_wounded_rung() {
+        let untreated = Injury {
+            injury_id: "cut_hand".into(),
+            acquired_day: 1,
+            heal_remaining: Some(8),
+            treated: false,
+        };
+        let treated = Injury {
+            injury_id: "cut_hand".into(),
+            acquired_day: 1,
+            heal_remaining: Some(4),
+            treated: true,
+        };
+        let permanent = Injury {
+            injury_id: "blinded_eye".into(),
+            acquired_day: 1,
+            heal_remaining: None,
+            treated: false,
+        };
+        assert!(untreated_healing(&untreated));
+        assert!(!untreated_healing(&treated));
+        assert!(!untreated_healing(&permanent));
+
+        let session = session_with_wound(true, STORES_LOW);
+        let facts = next_facts(&session);
+        assert!(
+            !facts.captain_wounded,
+            "treated healing wound must not set captain_wounded"
+        );
+        assert_eq!(facts.provisions, STORES_LOW);
+        assert_eq!(
+            next_line(&facts).as_deref(),
+            Some("Next: Stores low - restock in port."),
+            "treated wound falls through to Stores low"
+        );
+
+        let stocked = session_with_wound(true, STORES_LOW + 1);
+        assert_eq!(
+            next_line(&next_facts(&stocked)),
+            None,
+            "treated wound with stocked provisions omits Next"
+        );
+
+        let open = session_with_wound(false, STORES_LOW);
+        let open_facts = next_facts(&open);
+        assert!(open_facts.captain_wounded);
+        assert_eq!(
+            next_line(&open_facts).as_deref(),
+            Some("Next: Captain wounded - heal in port."),
+            "untreated healing still takes the wound rung over Stores"
+        );
+
+        // Week open_wounds stays heal_remaining.is_some() (treated or not).
+        assert_eq!(week_sample(&session).open_wounds, 1);
+        assert_eq!(week_sample(&open).open_wounds, 1);
+    }
+
+    /// Inject one cut_hand wound via save/load (Godot crate has no world_mut).
+    fn session_with_wound(treated: bool, provisions: i64) -> Session {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "portlight-day-report-wound-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        session.save(&dir, "wound").unwrap();
+        let path = dir.join("saves").join("wound.json");
+        let mut raw = std::fs::read_to_string(&path).unwrap();
+        let treated_json = if treated { "true" } else { "false" };
+        let injury = format!(
+            r#"{{"injury_id":"cut_hand","acquired_day":1,"heal_remaining":8,"treated":{treated_json}}}"#
+        );
+        let from = "\"injuries\": []";
+        let to = format!("\"injuries\": [{injury}]");
+        assert!(
+            raw.contains(from),
+            "fresh save should have empty injuries array"
+        );
+        raw = raw.replacen(from, &to, 1);
+        // Force provisions for Stores-low fallthrough.
+        let prov_from = format!("\"provisions\": {}", session.world().captain.provisions);
+        let prov_to = format!("\"provisions\": {provisions}");
+        assert!(
+            raw.contains(&prov_from),
+            "save missing provisions field {prov_from}"
+        );
+        raw = raw.replacen(&prov_from, &prov_to, 1);
+        std::fs::write(&path, &raw).unwrap();
+        let loaded = Session::load(&dir, "wound")
+            .unwrap()
+            .expect("reloaded wound session");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(loaded.injuries().len(), 1);
+        assert_eq!(loaded.injuries()[0].treated, treated);
+        assert_eq!(loaded.world().captain.provisions, provisions);
+        loaded
     }
 }
