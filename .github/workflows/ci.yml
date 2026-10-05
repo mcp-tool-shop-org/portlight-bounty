@@ -146,7 +146,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -306,6 +306,22 @@ jobs:
             godot --headless --path godot -- --hunt-screen
           if ! grep -q 'portlight hunt smoke ok' /tmp/godot-hunt-smoke.log; then
             echo "hunt smoke did not report ok"
+            exit 1
+          fi
+          rm -f /tmp/hs-day-report.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-day-report-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-day-report.png \
+            godot --headless --path godot -- --day-report-screen
+          if [ -f /tmp/hs-day-report.png ]; then
+            echo "headless day-report PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-day-report.log \
+            godot --headless --path godot -- --art-docs --day-report-screen
+          run_godot /tmp/godot-day-report-smoke.log \
+            godot --headless --path godot -- --day-report-screen
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-smoke.log; then
+            echo "day-report smoke did not report ok"
             exit 1
           fi
           run_godot /tmp/godot-gl-smoke.log \
@@ -529,6 +545,21 @@ jobs:
               exit 1
             fi
           done
+          mkdir -p /tmp/day-report-shots
+          run_godot /tmp/godot-day-report-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/day-report-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --day-report-screen
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-frames.log; then
+            echo "day-report frame capture did not report ok"
+            exit 1
+          fi
+          for name in day-report-full.png day-report-deadline.png; do
+            if [ ! -f "/tmp/day-report-shots/${name}" ]; then
+              echo "day-report capture did not write /tmp/day-report-shots/${name}"
+              exit 1
+            fi
+          done
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -555,6 +586,8 @@ jobs:
           cmp_committed hunt-forage.png /tmp/hunt-shots/hunt-forage.png
           cmp_committed hunt-board.png /tmp/hunt-shots/hunt-board.png
           cmp_committed hunt-active.png /tmp/hunt-shots/hunt-active.png
+          cmp_committed day-report-full.png /tmp/day-report-shots/day-report-full.png
+          cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
           cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png
