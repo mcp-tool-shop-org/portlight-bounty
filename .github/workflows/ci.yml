@@ -472,3 +472,5 @@ jobs:
           cmp_committed harbour-seam-vertex-crop.png /tmp/seam-shots/harbour-seam-vertex-crop.png
           cmp_committed quay-paving-z100.png /tmp/seam-shots/quay-paving-z100.png
           cmp_committed quay-paving-z072.png /tmp/seam-shots/quay-paving-z072.png
+          cmp_committed flat-deck-z100.png /tmp/seam-shots/flat-deck-z100.png
+          cmp_committed flat-deck-z072.png /tmp/seam-shots/flat-deck-z072.png

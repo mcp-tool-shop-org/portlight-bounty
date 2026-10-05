@@ -4,6 +4,9 @@
 //! and the quay close-ups `quay-paving-z100.png` and `quay-paving-z072.png`.
 //! Those close-ups are [`portlight_chart::quay_paving_crop`]: zoom 1 is
 //! `(340, 160, 360, 340)`, and zoom 0.72 is that same world window.
+//! The flat deck close-ups `flat-deck-z100.png` and `flat-deck-z072.png`
+//! (Addendum X) are [`portlight_chart::flat_deck_crop`]: zoom 1 is
+//! `(224, 72, 432, 352)`, and zoom 0.72 is that same world window.
 //!
 //! The layout is validated before any PNG is written. An illegal layout
 //! exits non-zero and does not save a frame. A blank or mostly flat frame
@@ -12,7 +15,9 @@
 use godot::classes::{Camera2D, INode2D, Image, Node2D};
 use godot::global::Error;
 use godot::prelude::*;
-use portlight_chart::{harbour_seam, quay_paving_crop, seam_camera_center, seam_interior_vertex};
+use portlight_chart::{
+    flat_deck_crop, harbour_seam, quay_paving_crop, seam_camera_center, seam_interior_vertex,
+};
 
 use crate::harbour::place_harbour;
 use crate::logic::{capture_frame_rejected, frame_samples, seam_exit_code, WINDOW_H, WINDOW_W};
@@ -85,6 +90,7 @@ impl INode2D for HarbourSeam {
             self.save_viewport("harbour-seam-z100.png");
             self.save_vertex_crop("harbour-seam-vertex-crop.png");
             self.save_quay_closeup("quay-paving-z100.png", 1.0);
+            self.save_flat_deck_closeup("flat-deck-z100.png", 1.0);
             if let Some(mut camera) = self.camera.clone() {
                 camera.set_zoom(Vector2::new(0.72, 0.72));
             }
@@ -93,6 +99,7 @@ impl INode2D for HarbourSeam {
         if self.frames == 8 {
             self.save_viewport("harbour-seam-z072.png");
             self.save_quay_closeup("quay-paving-z072.png", 0.72);
+            self.save_flat_deck_closeup("flat-deck-z072.png", 0.72);
             self.finish();
         }
     }
@@ -143,11 +150,20 @@ impl HarbourSeam {
     /// Quay close-up. The box is the recorded zoom-1 crop, or that same
     /// world window at the capture zoom.
     fn save_quay_closeup(&mut self, name: &str, zoom: f32) {
+        self.save_closeup(name, quay_paving_crop(zoom));
+    }
+
+    /// Flat deck close-up (Addendum X), same rules as the quay close-up.
+    fn save_flat_deck_closeup(&mut self, name: &str, zoom: f32) {
+        self.save_closeup(name, flat_deck_crop(zoom));
+    }
+
+    fn save_closeup(&mut self, name: &str, crop: (i32, i32, i32, i32)) {
         let Some(image) = self.viewport_image() else {
             self.failed = true;
             return;
         };
-        let (x, y, w, h) = quay_paving_crop(zoom);
+        let (x, y, w, h) = crop;
         if x < 0 || y < 0 || x + w > image.get_width() || y + h > image.get_height() {
             godot_print!("harbour seam quay close-up {name} is outside the frame");
             self.failed = true;
