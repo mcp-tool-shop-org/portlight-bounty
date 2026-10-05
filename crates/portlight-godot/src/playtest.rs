@@ -8,6 +8,14 @@
 //! `pier.crew.open`, `pier.crew.close`. Every other id is a local scheme.
 //! The choice-id contract file was not on disk or in the handoff PR, so these
 //! strings are not a recovered contract. Do not treat them as locked.
+//!
+//! [`PortlightPlaytestLens`] adds the contract strip, the Contracts board
+//! cards, and the Contracts active rows to an observation. It reads the
+//! drawn nodes, the same way the offered choices are read, so it reports
+//! what a player can see and never touches the session.
+
+use godot::classes::{Button, Container, Control, Label};
+use godot::prelude::*;
 
 use crate::game::{Action, ShipyardArm, Stance};
 use crate::harbour_screen::HarbourIntent;
@@ -418,6 +426,281 @@ fn harbour_intent_from(rest: &str) -> Option<HarbourIntent> {
     None
 }
 
+const STRIP_ROOT: &str = "ContractStrip";
+const STRIP_ROW: &str = "ContractStripRow";
+const CONTRACTS_ROOT: &str = "ContractsScreen";
+const CONTRACT_LIST: &str = "ContractList";
+/// The strip draws a `|` label between segments. It is not a segment.
+const STRIP_SEPARATOR: &str = "|";
+
+/// One contract block on the Contracts screen, read from its labels and
+/// its offered buttons.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ContractRow {
+    /// Offer id, taken from the row's accept, complete, or abandon id.
+    pub id: String,
+    pub title: String,
+    pub detail: String,
+    pub meta: String,
+    /// Playtest ids of the row's visible, enabled buttons, in draw order.
+    pub actions: Vec<String>,
+}
+
+/// What the lens adds to an observation.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ContractsView {
+    /// Strip segments joined with ` | `. Empty when the strip is hidden.
+    pub strip: String,
+    /// Board cards. Empty unless the Contracts desk is open.
+    pub board: Vec<ContractRow>,
+    /// Active rows. Empty unless the Contracts desk is open.
+    pub active: Vec<ContractRow>,
+}
+
+impl ContractsView {
+    /// Lines for the observation text, before `Actions:`.
+    pub(crate) fn text_lines(&self, contracts_open: bool) -> Vec<String> {
+        let mut lines = Vec::new();
+        if !self.strip.is_empty() {
+            lines.push(format!("Contract strip: {}", self.strip));
+        }
+        if !contracts_open {
+            return lines;
+        }
+        lines.push("Board:".to_string());
+        if self.board.is_empty() {
+            lines.push("- none".to_string());
+        }
+        for row in &self.board {
+            lines.push(row_line(row));
+        }
+        lines.push("Active:".to_string());
+        if self.active.is_empty() {
+            lines.push("- none".to_string());
+        }
+        for row in &self.active {
+            lines.push(row_line(row));
+        }
+        lines
+    }
+}
+
+fn row_line(row: &ContractRow) -> String {
+    let mut parts = vec![row.title.as_str()];
+    for part in [row.detail.as_str(), row.meta.as_str()] {
+        if !part.is_empty() {
+            parts.push(part);
+        }
+    }
+    let mut line = format!("- {}", parts.join(" — "));
+    if !row.actions.is_empty() {
+        line.push_str(&format!(" [{}]", row.actions.join(", ")));
+    }
+    line
+}
+
+/// Strip segments without the drawn separators.
+pub(crate) fn strip_text(labels: &[String]) -> String {
+    labels
+        .iter()
+        .map(|text| text.trim())
+        .filter(|text| !text.is_empty() && *text != STRIP_SEPARATOR)
+        .collect::<Vec<_>>()
+        .join(" | ")
+}
+
+/// The offer id a row's button names, if it is a contract id.
+pub(crate) fn contract_id_of(action: &str) -> Option<&str> {
+    for prefix in [
+        "contracts.accept.",
+        "contracts.complete.",
+        "contracts.abandon.",
+    ] {
+        if let Some(rest) = action.strip_prefix(prefix) {
+            if rest != "confirm" && rest != "cancel" && !rest.is_empty() {
+                return Some(rest);
+            }
+        }
+    }
+    None
+}
+
+/// A row from a block's label texts (title, detail, meta) and button ids.
+pub(crate) fn contract_row(labels: &[String], actions: Vec<String>) -> ContractRow {
+    let id = actions
+        .iter()
+        .find_map(|action| contract_id_of(action))
+        .unwrap_or_default()
+        .to_string();
+    let field = |index: usize| labels.get(index).cloned().unwrap_or_default();
+    ContractRow {
+        id,
+        title: field(0),
+        detail: field(1),
+        meta: field(2),
+        actions,
+    }
+}
+
+/// Insert lines before the `Actions:` line, or append when there is none.
+pub(crate) fn splice_text(text: &str, extra: &[String]) -> String {
+    if extra.is_empty() {
+        return text.to_string();
+    }
+    let mut lines: Vec<&str> = text.split('\n').collect();
+    let at = lines
+        .iter()
+        .position(|line| *line == "Actions:")
+        .unwrap_or(lines.len());
+    let extra_refs: Vec<&str> = extra.iter().map(String::as_str).collect();
+    lines.splice(at..at, extra_refs);
+    lines.join("\n")
+}
+
+/// Read-only lens for the playtest bridge. `playtest_bridge.gd` passes every
+/// observation through [`PortlightPlaytestLens::augment`].
+#[derive(GodotClass)]
+#[class(init, base = RefCounted)]
+pub(crate) struct PortlightPlaytestLens {}
+
+#[godot_api]
+impl PortlightPlaytestLens {
+    /// Adds `state.contract_strip`, `state.contract_board`, and
+    /// `state.contracts_active`, and the same facts as text lines before
+    /// `Actions:`. Returns the observation unchanged when `game` is null.
+    #[func]
+    fn augment(game: Option<Gd<Node>>, observation: VarDictionary) -> VarDictionary {
+        let Some(game) = game else {
+            return observation;
+        };
+        let contracts_open = find_named(&game, CONTRACTS_ROOT)
+            .and_then(|node| node.try_cast::<Control>().ok())
+            .is_some_and(|control| control.is_visible_in_tree());
+        let view = read_contracts_view(&game, contracts_open);
+
+        let mut result = observation.clone();
+        let mut state = observation
+            .get("state")
+            .and_then(|value| value.try_to::<VarDictionary>().ok())
+            .unwrap_or_default();
+        state.set("contract_strip", view.strip.as_str());
+        state.set("contract_board", &rows_array(&view.board));
+        state.set("contracts_active", &rows_array(&view.active));
+        result.set("state", &state);
+
+        let text = observation
+            .get("text")
+            .and_then(|value| value.try_to::<GString>().ok())
+            .map(|text| text.to_string())
+            .unwrap_or_default();
+        let spliced = splice_text(&text, &view.text_lines(contracts_open));
+        result.set("text", spliced.as_str());
+        result
+    }
+}
+
+fn rows_array(rows: &[ContractRow]) -> VarArray {
+    let mut out = VarArray::new();
+    for row in rows {
+        let mut actions = VarArray::new();
+        for action in &row.actions {
+            actions.push(action.as_str());
+        }
+        let mut dict = vdict! {
+            "id" => row.id.as_str(),
+            "title" => row.title.as_str(),
+            "detail" => row.detail.as_str(),
+            "meta" => row.meta.as_str(),
+        };
+        dict.set("actions", &actions);
+        out.push(&dict);
+    }
+    out
+}
+
+fn read_contracts_view(game: &Gd<Node>, contracts_open: bool) -> ContractsView {
+    let mut view = ContractsView::default();
+    if let Some(root) = find_named(game, STRIP_ROOT) {
+        let shown = root
+            .clone()
+            .try_cast::<Control>()
+            .is_ok_and(|control| control.is_visible_in_tree());
+        if shown {
+            let row = find_named(&root, STRIP_ROW).unwrap_or(root);
+            let mut labels = Vec::new();
+            collect_labels(&row, &mut labels);
+            view.strip = strip_text(&labels);
+        }
+    }
+    if !contracts_open {
+        return view;
+    }
+    // The list keeps its last build while the desk is closed, so it is read
+    // only while the desk is open.
+    let Some(list) = find_named(game, CONTRACT_LIST) else {
+        return view;
+    };
+    let mut section = String::new();
+    for child in list.get_children().iter_shared() {
+        if let Ok(label) = child.clone().try_cast::<Label>() {
+            let text = label.get_text().to_string();
+            if matches!(text.as_str(), "Board" | "Active" | "Recent") {
+                section = text;
+            }
+            continue;
+        }
+        if child.clone().try_cast::<Container>().is_err() {
+            continue;
+        }
+        let mut labels = Vec::new();
+        collect_labels(&child, &mut labels);
+        let mut actions = Vec::new();
+        collect_actions(&child, &mut actions);
+        let row = contract_row(&labels, actions);
+        match section.as_str() {
+            "Board" => view.board.push(row),
+            "Active" => view.active.push(row),
+            _ => {}
+        }
+    }
+    view
+}
+
+fn find_named(root: &Gd<Node>, name: &str) -> Option<Gd<Node>> {
+    // Built in code, so these nodes have no owner. `owned` must be false.
+    root.find_child_ex(name).recursive(true).owned(false).done()
+}
+
+fn collect_labels(node: &Gd<Node>, out: &mut Vec<String>) {
+    if let Ok(label) = node.clone().try_cast::<Label>() {
+        if label.is_visible() {
+            let text = label.get_text().to_string();
+            if !text.is_empty() {
+                out.push(text);
+            }
+        }
+    }
+    for child in node.get_children().iter_shared() {
+        collect_labels(&child, out);
+    }
+}
+
+fn collect_actions(node: &Gd<Node>, out: &mut Vec<String>) {
+    if let Ok(button) = node.clone().try_cast::<Button>() {
+        if button.is_visible_in_tree() && !button.is_disabled() && button.has_meta("playtest_id") {
+            if let Ok(id) = button.get_meta("playtest_id").try_to::<GString>() {
+                let id = id.to_string();
+                if !id.is_empty() && !out.contains(&id) {
+                    out.push(id);
+                }
+            }
+        }
+    }
+    for child in node.get_children().iter_shared() {
+        collect_actions(&child, out);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -470,5 +753,83 @@ mod tests {
             parse_playtest_id(&ask),
             Some(PlaytestCommand::Hunt(HuntAction::AskHunt(id))) if id == "red"
         ));
+    }
+
+    #[test]
+    fn strip_drops_separators_and_hides_when_empty() {
+        let labels = vec![
+            "Grain run - 0/5 - 4 days left".to_string(),
+            "|".to_string(),
+            "+1 more".to_string(),
+        ];
+        assert_eq!(
+            strip_text(&labels),
+            "Grain run - 0/5 - 4 days left | +1 more"
+        );
+        assert_eq!(strip_text(&[]), "");
+    }
+
+    #[test]
+    fn rows_take_the_offer_id_from_their_buttons() {
+        let labels = vec![
+            "Grain for Al-Manar".to_string(),
+            "Grain x5 to Al-Manar   120 silver".to_string(),
+            "9 days left   trust unproven   Shortage".to_string(),
+        ];
+        let board = contract_row(&labels, vec!["contracts.accept.abc123".into()]);
+        assert_eq!(board.id, "abc123");
+        assert_eq!(board.title, "Grain for Al-Manar");
+        assert_eq!(board.meta, "9 days left   trust unproven   Shortage");
+        let active = contract_row(
+            &labels[..2],
+            vec![
+                "contracts.complete.abc123".into(),
+                "contracts.abandon.abc123".into(),
+            ],
+        );
+        assert_eq!(active.id, "abc123");
+        assert_eq!(active.meta, "");
+        assert_eq!(contract_id_of("contracts.abandon.confirm"), None);
+        assert_eq!(contract_id_of("chart.contracts.open"), None);
+        let blind = contract_row(&labels, Vec::new());
+        assert_eq!(blind.id, "");
+    }
+
+    #[test]
+    fn text_lines_name_strip_board_and_active_before_actions() {
+        let view = ContractsView {
+            strip: "Grain run - 0/5 - 4 days left - to Al-Manar".into(),
+            board: vec![contract_row(
+                &[
+                    "Spice run".into(),
+                    "Spice x3 to Corsair's Rest   90 silver".into(),
+                ],
+                vec!["contracts.accept.s1".into()],
+            )],
+            active: Vec::new(),
+        };
+        let closed = view.text_lines(false);
+        assert_eq!(
+            closed,
+            vec!["Contract strip: Grain run - 0/5 - 4 days left - to Al-Manar".to_string()]
+        );
+        let open = view.text_lines(true);
+        assert_eq!(open[1], "Board:");
+        assert_eq!(
+            open[2],
+            "- Spice run — Spice x3 to Corsair's Rest   90 silver [contracts.accept.s1]"
+        );
+        assert_eq!(open[3], "Active:");
+        assert_eq!(open[4], "- none");
+        assert!(ContractsView::default().text_lines(false).is_empty());
+
+        let text = "Screen: chart\nstatus\nActions:\nchart.hire — Hire";
+        let spliced = splice_text(text, &closed);
+        assert_eq!(
+            spliced,
+            "Screen: chart\nstatus\nContract strip: Grain run - 0/5 - 4 days left - to Al-Manar\nActions:\nchart.hire — Hire"
+        );
+        assert_eq!(splice_text(text, &[]), text);
+        assert_eq!(splice_text("x", &["y".into()]), "x\ny");
     }
 }

@@ -140,7 +140,9 @@ func _observation() -> Dictionary:
 	var game := _game()
 	if game == null:
 		return _not_ready()
-	return game.playtest_observation()
+	# The lens adds the contract strip, the Contracts board cards, and the
+	# Contracts active rows (state and text). It reads drawn nodes only.
+	return PortlightPlaytestLens.augment(game, game.playtest_observation())
 
 func _not_ready() -> Dictionary:
 	return {
