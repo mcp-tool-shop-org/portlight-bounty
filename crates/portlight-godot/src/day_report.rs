@@ -2,6 +2,8 @@
 //!
 //! Presentation only. Reads Session facts; never calls mutating Session verbs.
 //! Section order: Deadlines → Health → Prices → Bounties. §13 overrides §§1–12.
+//! Arrival day (sailed→InPort): Arrival → Deadlines → Health → Bounties
+//! (no Prices; visit movers live under Arrival). Title `Arrived - {Port}`.
 //!
 //! Captain's week: a ride-along footer (Week deltas + one Next hint) below the
 //! scroll. It never opens the card, is not a [`DayReportLine`], and does not
@@ -176,6 +178,9 @@ impl DayReportDocument {
 pub(crate) struct DayReportMemory {
     /// Sell prices at the docked pier (`good_id` → `sell_price`). Empty at sea.
     pub price_memory: HashMap<String, i64>,
+    /// Per-port sell prices written at undock (before `depart`). Never saved.
+    /// Keyed `port_id` → (`good_id` → `sell_price`). First visit / missing → no movers.
+    pub visit_price_memory: HashMap<String, HashMap<String, i64>>,
     /// Active bounty ids from the last successful Next day.
     pub active_bounties: HashSet<String>,
     /// Claimable bounty ids already used as an auto-show trigger (not arrival).
@@ -445,26 +450,62 @@ pub(crate) fn build_document(
 ) -> DayReportDocument {
     let world = session.world();
     let day = world.day;
+    let docked_port = (world.voyage.status == VoyageStatus::InPort)
+        .then_some(world.voyage.destination_id.as_str());
+
+    let arrival = if arrival_day {
+        if let Some(port_id) = docked_port {
+            let mut lines = arrival_contract_lines(session.board().active.as_slice(), day, port_id);
+            lines.extend(visit_mover_lines(session, &memory.visit_price_memory));
+            lines
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+
+    let exclude_port = if arrival_day { docked_port } else { None };
     let deadlines = deadline_lines(
         session.board().active.as_slice(),
         day,
         turn_contracts,
         world,
+        exclude_port,
     );
     let health = health_lines(injuries_before, session.injuries());
-    let prices = price_lines(session, prices_before);
+    // Arrival day: visit movers replace day-over-day Prices (no separate section).
+    let prices = if arrival_day {
+        Vec::new()
+    } else {
+        price_lines(session, prices_before)
+    };
     let bounties = bounty_lines(session, memory, arrival_day, bounty_known);
 
-    let raw = vec![
-        ("deadlines", "Deadlines", deadlines),
-        ("health", "Health", health),
-        ("prices", "Prices", prices),
-        ("bounties", "Bounties", bounties),
-    ];
+    let mut raw: Vec<(&'static str, &'static str, Vec<DayReportLine>)> = Vec::new();
+    if arrival_day {
+        raw.push(("arrival", "Arrival", arrival));
+    }
+    raw.push(("deadlines", "Deadlines", deadlines));
+    raw.push(("health", "Health", health));
+    if !arrival_day {
+        raw.push(("prices", "Prices", prices));
+    }
+    raw.push(("bounties", "Bounties", bounties));
+
     let sections = cap_sections(raw);
+    let title = if arrival_day {
+        if let Some(port_id) = docked_port {
+            format!("Arrived - {}", port_label(world, port_id))
+        } else {
+            format!("Day {day}")
+        }
+    } else {
+        format!("Day {day}")
+    };
     DayReportDocument {
         day,
-        title: format!("Day {day}"),
+        title,
         sections,
         footer: DayReportFooter::default(),
     }
@@ -593,11 +634,121 @@ pub(crate) fn next_line(facts: &NextFacts) -> Option<String> {
     None
 }
 
+/// Contracts deliverable at `docked_port`. Cap [`DEADLINE_N`] + `+N more`.
+/// Copy: `{Title} - {d}/{r} - {timing} - sell {need} more {Good} here` (omit hint if need<=0).
+pub(crate) fn arrival_contract_lines(
+    active: &[ActiveContract],
+    day: i64,
+    docked_port: &str,
+) -> Vec<DayReportLine> {
+    let mut matching: Vec<&ActiveContract> = active
+        .iter()
+        .filter(|contract| contract.destination_port_id == docked_port)
+        .collect();
+    matching.sort_by(|a, b| {
+        a.deadline_day
+            .cmp(&b.deadline_day)
+            .then_with(|| a.title.cmp(&b.title))
+            .then_with(|| a.offer_id.cmp(&b.offer_id))
+    });
+    let total = matching.len();
+    let take = DEADLINE_N as usize;
+    let mut lines = Vec::new();
+    for contract in matching.into_iter().take(take) {
+        let title = ascii_sentence(&contract.title);
+        let timing = deadline_timing(contract.deadline_day - day);
+        let progress = format!(
+            "{}/{}",
+            contract.delivered_quantity, contract.required_quantity
+        );
+        let need = contract.required_quantity - contract.delivered_quantity;
+        let text = if need > 0 {
+            let good = good_name(&contract.good_id);
+            format!("{title} - {progress} - {timing} - sell {need} more {good} here")
+        } else {
+            format!("{title} - {progress} - {timing}")
+        };
+        lines.push(DayReportLine {
+            text,
+            notable: true,
+        });
+    }
+    if total > take {
+        lines.push(DayReportLine {
+            text: format!("+{} more", total - take),
+            notable: false,
+        });
+    }
+    lines
+}
+
+/// Visit movers at the docked pier since last undock snapshot. Empty when the
+/// port has no visit memory (first visit) or none pass the 10% bar.
+pub(crate) fn visit_mover_lines(
+    session: &Session,
+    visit_memory: &HashMap<String, HashMap<String, i64>>,
+) -> Vec<DayReportLine> {
+    let world = session.world();
+    if world.voyage.status != VoyageStatus::InPort {
+        return Vec::new();
+    }
+    let port_id = world.voyage.destination_id.as_str();
+    let Some(before) = visit_memory.get(port_id) else {
+        return Vec::new();
+    };
+    let Some(port) = world.port(port_id) else {
+        return Vec::new();
+    };
+    let after: HashMap<String, i64> = port
+        .market
+        .iter()
+        .map(|slot| (slot.good_id.clone(), slot.sell_price))
+        .collect();
+    rank_visit_movers(before, &after)
+}
+
+/// Pure mover ranking: abs percent >= 10%, top 3, copy `Good old to new (+N%)`.
+pub(crate) fn rank_visit_movers(
+    before: &HashMap<String, i64>,
+    after: &HashMap<String, i64>,
+) -> Vec<DayReportLine> {
+    let mut movers: Vec<(i64, String, i64, i64)> = Vec::new();
+    for (good_id, &now) in after {
+        let Some(&prev) = before.get(good_id) else {
+            continue;
+        };
+        let delta = now - prev;
+        if delta == 0 {
+            continue;
+        }
+        let pct = ((delta as f64) / (prev.max(1) as f64) * 100.0).round() as i64;
+        if pct.abs() < 10 {
+            continue;
+        }
+        movers.push((pct.abs(), good_id.clone(), prev, now));
+    }
+    movers.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    movers
+        .into_iter()
+        .take(3)
+        .map(|(_, good_id, old, new)| {
+            let good = good_name(&good_id);
+            let pct = ((new - old) as f64 / (old.max(1) as f64) * 100.0).round() as i64;
+            let sign = if pct > 0 { "+" } else { "" };
+            DayReportLine {
+                text: format!("{good} {old} to {new} ({sign}{pct}%)"),
+                notable: true,
+            }
+        })
+        .collect()
+}
+
 fn deadline_lines(
     active: &[ActiveContract],
     day: i64,
     turn_contracts: &[ContractOutcome],
     world: &portlight_sim::model::World,
+    exclude_port: Option<&str>,
 ) -> Vec<DayReportLine> {
     let mut lines = Vec::new();
     for outcome in turn_contracts {
@@ -615,6 +766,9 @@ fn deadline_lines(
         }
     }
     for contract in active {
+        if exclude_port.is_some_and(|port| contract.destination_port_id == port) {
+            continue;
+        }
         let left = contract.deadline_day - day;
         if left > DEADLINE_N {
             continue;
@@ -1026,6 +1180,64 @@ pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
             next: next_line(&NextFacts {
                 contract_days_left: vec![1],
                 claimable: false,
+                captain_wounded: false,
+                provisions: 20,
+            }),
+        },
+    }
+}
+
+/// Forced arrival variant for CI frame `day-report-arrival.png`.
+pub(crate) fn smoke_arrival_document(day: i64) -> DayReportDocument {
+    DayReportDocument {
+        day,
+        title: "Arrived - Al-Manar".into(),
+        sections: vec![
+            DayReportSection {
+                id: "arrival",
+                title: "Arrival",
+                lines: vec![
+                    DayReportLine {
+                        text: "Porcelain for Al-Manar estate - 0/8 - 5 days left - sell 8 more Porcelain here"
+                            .into(),
+                        notable: true,
+                    },
+                    DayReportLine {
+                        text: "Grain 12 to 16 (+33%)".into(),
+                        notable: true,
+                    },
+                    DayReportLine {
+                        text: "Spice 20 to 14 (-30%)".into(),
+                        notable: true,
+                    },
+                ],
+            },
+            DayReportSection {
+                id: "deadlines",
+                title: "Deadlines",
+                lines: vec![DayReportLine {
+                    text: "Grain run - 2 days left - 3/10 - sell 7 more Grain at Corsair's Rest".into(),
+                    notable: true,
+                }],
+            },
+            DayReportSection {
+                id: "bounties",
+                title: "Bounties",
+                lines: vec![DayReportLine {
+                    text: "Claim ready: Raj the Quiet (120 silver) - open Hunt.".into(),
+                    notable: true,
+                }],
+            },
+        ],
+        // Compact body stays under the footer budget so Week can show (yield rule).
+        footer: DayReportFooter {
+            week: week_line(&smoke_week_window(
+                day,
+                &[(400, Some(3), 0, 0, 0), (520, Some(3), 0, 1, 0)],
+            )),
+            next: next_line(&NextFacts {
+                contract_days_left: vec![5, 2],
+                claimable: true,
                 captain_wounded: false,
                 provisions: 20,
             }),
@@ -1975,5 +2187,263 @@ mod tests {
         assert_eq!(loaded.injuries()[0].treated, treated);
         assert_eq!(loaded.world().captain.provisions, provisions);
         loaded
+    }
+
+    fn test_active(
+        title: &str,
+        dest: &str,
+        good: &str,
+        delivered: i64,
+        required: i64,
+        deadline: i64,
+        offer_id: &str,
+    ) -> ActiveContract {
+        ActiveContract {
+            offer_id: offer_id.into(),
+            template_id: "t".into(),
+            family: "procurement".into(),
+            title: title.into(),
+            accepted_day: 1,
+            deadline_day: deadline,
+            destination_port_id: dest.into(),
+            good_id: good.into(),
+            required_quantity: required,
+            delivered_quantity: delivered,
+            reward_silver: 10,
+            bonus_reward: 0,
+            source_region: None,
+            source_port: None,
+            inspection_modifier: 1.0,
+            status: "active".into(),
+        }
+    }
+
+    #[test]
+    fn visit_movers_threshold_sort_top3_and_omit_zero() {
+        let before: HashMap<String, i64> = [
+            ("grain", 12),
+            ("spice", 20),
+            ("timber", 10),
+            ("wine", 50),
+            ("salt", 8),
+            ("tea", 30),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.into(), v))
+        .collect();
+        let after: HashMap<String, i64> = [
+            ("grain", 16),  // +33%
+            ("spice", 14),  // -30%
+            ("timber", 11), // +10%
+            ("wine", 54),   // +8% — below bar
+            ("salt", 8),    // zero — omit
+            ("tea", 33),    // +10%
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.into(), v))
+        .collect();
+        let lines = rank_visit_movers(&before, &after);
+        assert_eq!(lines.len(), 3, "{lines:?}");
+        assert_eq!(lines[0].text, "Grain 12 to 16 (+33%)");
+        assert_eq!(lines[1].text, "Spice 20 to 14 (-30%)");
+        // timber and tea both 10%; alphabetical good_id: tea before timber
+        assert_eq!(lines[2].text, "Tea 30 to 33 (+10%)");
+        assert!(lines.iter().all(|l| l.notable));
+        assert!(!lines
+            .iter()
+            .any(|l| l.text.contains("Wine") || l.text.contains("Salt")));
+    }
+
+    #[test]
+    fn visit_movers_empty_when_no_snapshot() {
+        let after: HashMap<String, i64> = [("grain".into(), 16)].into_iter().collect();
+        assert!(rank_visit_movers(&HashMap::new(), &after).is_empty());
+        let session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        assert!(
+            visit_mover_lines(&session, &HashMap::new()).is_empty(),
+            "first visit / missing snapshot must omit movers"
+        );
+    }
+
+    #[test]
+    fn arrival_contracts_cap_and_omit_hint_when_fulfilled() {
+        let day = 10;
+        let active = vec![
+            test_active("A run", "al_manar", "grain", 0, 5, 15, "a"),
+            test_active("B run", "al_manar", "spice", 10, 10, 12, "b"),
+            test_active("C run", "al_manar", "timber", 1, 4, 14, "c"),
+            test_active("D run", "al_manar", "wine", 0, 2, 20, "d"),
+            test_active("Elsewhere", "porto_novo", "grain", 0, 5, 11, "e"),
+        ];
+        let lines = arrival_contract_lines(&active, day, "al_manar");
+        // Sorted by deadline: B(12), C(14), A(15), then +1 more for D; Elsewhere excluded.
+        assert_eq!(lines.len(), 4, "{lines:?}");
+        assert!(lines[0].text.starts_with("B run - 10/10 - 2 days left"));
+        assert!(
+            !lines[0].text.contains("sell"),
+            "need<=0 omits hint: {}",
+            lines[0].text
+        );
+        assert!(lines[1].text.contains("sell 3 more Timber here"));
+        assert!(lines[2].text.contains("sell 5 more Grain here"));
+        assert_eq!(lines[3].text, "+1 more");
+        assert!(!lines[3].notable);
+        assert!(lines.iter().all(|l| !l.text.contains("due soon")));
+        assert!(lines
+            .iter()
+            .all(|l| !l.text.contains("Complete") && !l.text.contains("Deliver")));
+    }
+
+    #[test]
+    fn arrival_dedupes_this_port_out_of_deadlines() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let offers = session.available_contracts();
+        let al = offers
+            .iter()
+            .find(|o| o.destination_port_id == "al_manar")
+            .expect("al_manar offer")
+            .id
+            .clone();
+        let other = offers
+            .iter()
+            .find(|o| o.destination_port_id != "al_manar")
+            .map(|o| o.id.clone());
+        session.accept_contract(&al).unwrap();
+        if let Some(id) = other {
+            let _ = session.accept_contract(&id);
+        }
+        // Sail and arrive so build_document sees InPort at al_manar.
+        session.depart("al_manar").unwrap();
+        loop {
+            let turn = session.advance().unwrap();
+            let _ = turn;
+            if session.world().voyage.status == VoyageStatus::InPort {
+                break;
+            }
+            assert!(session.world().day < 80, "never arrived at al_manar");
+        }
+        assert_eq!(session.world().voyage.destination_id, "al_manar");
+        let mut memory = DayReportMemory::default();
+        let known: Vec<portlight_sim::bounty::BountyTarget> = Vec::new();
+        let doc = build_document(
+            &session,
+            &[],
+            &[],
+            &HashMap::new(),
+            &mut memory,
+            true,
+            &known,
+        );
+        assert!(doc.title.starts_with("Arrived - "), "{}", doc.title);
+        assert!(doc.title.contains("Al-Manar"), "{}", doc.title);
+        let arrival = doc
+            .sections
+            .iter()
+            .find(|s| s.id == "arrival")
+            .expect("arrival section");
+        assert!(
+            arrival
+                .lines
+                .iter()
+                .any(|l| l.text.contains("here") || l.text.contains(" to ")),
+            "{arrival:?}"
+        );
+        assert!(doc.has_notable(), "arrival content must auto-show");
+        if let Some(deadlines) = doc.sections.iter().find(|s| s.id == "deadlines") {
+            for line in &deadlines.lines {
+                assert!(
+                    !line.text.contains("here"),
+                    "this-port contract leaked into Deadlines: {}",
+                    line.text
+                );
+            }
+        }
+        assert!(
+            !doc.sections.iter().any(|s| s.id == "prices"),
+            "arrival day must not show Prices"
+        );
+        assert!(rendered_line_count(&doc.sections) <= LINE_CAP);
+    }
+
+    #[test]
+    fn arrival_notability_requires_content_else_existing_rules() {
+        let session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let mut memory = DayReportMemory::default();
+        let known: Vec<portlight_sim::bounty::BountyTarget> = Vec::new();
+        // Fake arrival_day while docked with no contracts and no visit movers:
+        // existing quiet rules → no notable sections.
+        let quiet = build_document(
+            &session,
+            &[],
+            &[],
+            &HashMap::new(),
+            &mut memory,
+            true,
+            &known,
+        );
+        // May still open if day-over-day would have — but prices are suppressed
+        // on arrival and there is no arrival content; claimable/bounty quiet.
+        assert!(
+            !quiet.has_notable() || quiet.sections.iter().any(|s| s.id != "arrival"),
+            "quiet arrival without content must not invent Arrival lines: {quiet:?}"
+        );
+        assert!(
+            quiet
+                .sections
+                .iter()
+                .find(|s| s.id == "arrival")
+                .map(|s| s.lines.is_empty())
+                .unwrap_or(true),
+            "no arrival content expected"
+        );
+    }
+
+    #[test]
+    fn non_arrival_keeps_day_title_and_prices() {
+        let session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let mut memory = DayReportMemory::default();
+        let known: Vec<portlight_sim::bounty::BountyTarget> = Vec::new();
+        let prices_before = snapshot_docked_prices(&session);
+        let doc = build_document(
+            &session,
+            &[],
+            &[],
+            &prices_before,
+            &mut memory,
+            false,
+            &known,
+        );
+        assert_eq!(doc.title, format!("Day {}", session.world().day));
+        assert!(!doc.sections.iter().any(|s| s.id == "arrival"));
+    }
+
+    #[test]
+    fn smoke_arrival_doc_is_notable_ascii() {
+        let doc = smoke_arrival_document(12);
+        assert_eq!(doc.title, "Arrived - Al-Manar");
+        assert!(doc.has_notable());
+        let blob = doc
+            .sections
+            .iter()
+            .flat_map(|s| s.lines.iter())
+            .map(|l| l.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(blob.contains("Arrival") || doc.sections[0].id == "arrival");
+        assert!(blob.contains("Grain 12 to 16 (+33%)"));
+        assert!(!blob.contains('\u{2014}') && blob.contains(" - "));
+        assert!(!blob.contains("due soon"));
+        assert!(rendered_line_count(&doc.sections) <= LINE_CAP);
+    }
+
+    #[test]
+    fn visit_price_memory_resets_with_day_report_memory() {
+        let mut memory = DayReportMemory::default();
+        memory.visit_price_memory.insert(
+            "porto_novo".into(),
+            [("grain".into(), 12)].into_iter().collect(),
+        );
+        memory = DayReportMemory::default();
+        assert!(memory.visit_price_memory.is_empty());
     }
 }
