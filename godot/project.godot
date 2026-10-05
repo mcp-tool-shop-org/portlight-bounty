@@ -25,3 +25,7 @@ environment/defaults/default_clear_color=Color(0.05, 0.1, 0.16, 1)
 viewport/hdr_2d=false
 ; Nearest. Linear filtering and mipmaps change plate edges.
 textures/canvas_textures/default_texture_filter=0
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"

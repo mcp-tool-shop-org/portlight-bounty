@@ -36,9 +36,9 @@ use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
-    Button, Control, DisplayServer, HBoxContainer, IControl, Label, LineEdit, Node, Os,
-    PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer,
-    VBoxContainer,
+    AudioStream, AudioStreamPlayer, Button, Control, DisplayServer, HBoxContainer, IControl, Label,
+    LineEdit, Node, Os, PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport,
+    SubViewportContainer, VBoxContainer,
 };
 use godot::global::Error;
 use godot::obj::InstanceId;
@@ -52,6 +52,7 @@ use portlight_sim::encounter::EncounterState;
 use portlight_sim::model::VoyageStatus;
 use portlight_sim::session::{EncounterStep, Sale};
 use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
+use std::collections::HashMap;
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
@@ -397,6 +398,11 @@ struct PortlightGame {
     fleet_mark: Option<Gd<Control>>,
     shipyard_button: Option<Gd<Button>>,
     shipyard_checked: bool,
+    /// Four voices so a repeated trade click does not cut the coin off.
+    /// Empty means [`Self::play_sfx`] stays silent.
+    sfx_players: Vec<Gd<AudioStreamPlayer>>,
+    sfx_cache: HashMap<String, Gd<AudioStream>>,
+    sfx_rr: usize,
     shipyard_shot_dir: Option<String>,
     shipyard_shot: Option<ShipyardShot>,
     shipyard_scroll: Option<ShipyardSection>,
@@ -488,6 +494,9 @@ impl IControl for PortlightGame {
             fleet_mark: None,
             shipyard_button: None,
             shipyard_checked: false,
+            sfx_players: Vec::new(),
+            sfx_cache: HashMap::new(),
+            sfx_rr: 0,
             shipyard_shot_dir: None,
             shipyard_shot: None,
             shipyard_scroll: None,
@@ -747,6 +756,16 @@ impl PortlightGame {
         // colour underneath. Offsets have to be the full-rect preset too.
         self.base_mut()
             .set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
+
+        // Children of PortlightGame, not of the chart SubViewport, so a frame
+        // capture never reads them. Playback itself is gated in `play_sfx`.
+        self.sfx_players.clear();
+        for _ in 0..4 {
+            let mut player = AudioStreamPlayer::new_alloc();
+            player.set_bus("SFX");
+            self.base_mut().add_child(&player);
+            self.sfx_players.push(player);
+        }
 
         let mut row = HBoxContainer::new_alloc();
         row.set_h_size_flags(SizeFlags::EXPAND_FILL);
@@ -1148,6 +1167,7 @@ impl PortlightGame {
         self.session = Some(session);
         self.newgame_notice.clear();
         self.push_log(format!("A new voyage begins. Docked at {place}."));
+        self.play_sfx("sfx_ui_newgame_start");
         self.newgame_page = NewgamePage::Hidden;
         self.newgame_built = None;
         self.refresh();
@@ -1172,6 +1192,7 @@ impl PortlightGame {
                 self.stances.clear();
                 self.session = Some(session);
                 self.push_log(format!("Loaded slot {slot}. Docked at {place}."));
+                self.play_sfx("sfx_ui_newgame_start");
                 self.newgame_page = NewgamePage::Hidden;
                 self.newgame_built = None;
                 self.refresh();
@@ -1913,6 +1934,7 @@ impl PortlightGame {
             return;
         }
         self.shipyard_open = true;
+        self.play_sfx("sfx_ui_port_open");
         self.shipyard_confirm = None;
         self.shipyard_notice.clear();
         self.shipyard_shown = None;
@@ -2825,7 +2847,11 @@ impl PortlightGame {
             Action::AutoResolve => self.auto_resolve(),
             Action::ToggleMarket => {
                 if self.docked_id().is_some() {
-                    self.market_open = !self.market_open;
+                    let opening = !self.market_open;
+                    self.market_open = opening;
+                    if opening {
+                        self.play_sfx("sfx_ui_port_open");
+                    }
                 }
                 self.refresh();
             }
@@ -2879,7 +2905,10 @@ impl PortlightGame {
             })
         };
         match result {
-            Ok(name) => self.push_log(format!("Departed for {name}.")),
+            Ok(name) => {
+                self.play_sfx("sfx_chart_sail_depart");
+                self.push_log(format!("Departed for {name}."));
+            }
             Err(err) => self.push_log(err.to_string()),
         }
         self.refresh();
@@ -2903,6 +2932,7 @@ impl PortlightGame {
             PortPress::OpenHere => {
                 self.armed_sail = None;
                 self.market_open = true;
+                self.play_sfx("sfx_ui_port_open");
             }
             PortPress::Depart(id) => {
                 if self.armed_sail.as_deref() == Some(id.as_str()) {
@@ -2966,6 +2996,11 @@ impl PortlightGame {
                 }
             }
         };
+        // Cue 7 plays on a successful advance even if a sea encounter opens
+        // on this same tick. The Err arm stays silent.
+        if !failed {
+            self.play_sfx("sfx_chart_next_day");
+        }
         // The CLI and the TUI call this after a sea day. It is not part of
         // `advance`. A frozen pending duel does not move the day, so it is
         // not asked again. An encounter screen that is already up is left
@@ -3012,6 +3047,7 @@ impl PortlightGame {
         };
         match result {
             Ok(lines) => {
+                self.play_sfx("sfx_ui_trade_coin");
                 for line in lines {
                     self.push_log(line);
                 }
@@ -3286,6 +3322,7 @@ impl PortlightGame {
             session.available_contracts();
         }
         self.contracts_open = true;
+        self.play_sfx("sfx_ui_contracts_open");
         self.contracts_notice.clear();
         self.contracts_confirm = None;
         self.refresh();
@@ -3320,6 +3357,7 @@ impl PortlightGame {
         self.contracts_confirm = None;
         match result {
             Ok(active) => {
+                self.play_sfx("sfx_ui_contract_accept");
                 self.contracts_notice = format!(
                     "Accepted {}.",
                     contracts_screen::ascii_sentence(&active.title)
@@ -5411,6 +5449,34 @@ fn encounter_shot_dir() -> String {
         resolve_repo_path("docs/screenshots")
     } else {
         "/tmp".to_string()
+    }
+}
+
+impl PortlightGame {
+    /// Loads `res://assets/audio/sfx/{id}.ogg` once and round-robins the pool.
+    /// Headless, smoke, and screenshot runs return before any load. A missing
+    /// file is a silent no-op so smoke does not fail before the asset drop.
+    fn play_sfx(&mut self, id: &str) {
+        if headless_runtime() || self.smoke || self.shot_path.is_some() {
+            return;
+        }
+        if self.sfx_players.is_empty() {
+            return;
+        }
+        let path = format!("res://assets/audio/sfx/{id}.ogg");
+        let stream = if let Some(cached) = self.sfx_cache.get(id) {
+            cached.clone()
+        } else if let Ok(stream) = try_load::<AudioStream>(&path) {
+            self.sfx_cache.insert(id.to_string(), stream.clone());
+            stream
+        } else {
+            return;
+        };
+        let i = self.sfx_rr % self.sfx_players.len();
+        self.sfx_rr = self.sfx_rr.wrapping_add(1);
+        let mut player = self.sfx_players[i].clone();
+        player.set_stream(&stream);
+        player.play();
     }
 }
 
