@@ -31,10 +31,10 @@ The sim crate (`crates/portlight-sim`) must remain UI-free. No terminal, no rata
 - Voyage: depart, advance_day, arrive, event table, inspection reputation
 - Sail-picker lanes with raw speed estimates
 - Duel system (stance + auto-resolve)
-- Four victory paths (`campaign.rs`). Contracts are merged in the sim, so a played game can complete a path. The docked Contracts screen (#33) offers accept / complete / abandon through `Session`.
-- Public `Session` API on `main`: `new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, `resolve_pending_duel`, `sail_lanes`, `victory`, `books`/`books_mut`, `save`/`load`, `board`, `accept_contract`, `complete_contract`, `abandon_contract`, `encounter_choice`, `naval_round`, `resolve_boarding`, `buy_ship`, `install_upgrade`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `repair`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `train_crew`, `recruit_companion`, `spend_skill_point`, `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, `claim_bounty`. The Godot view calls `Session::new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, and `resolve_pending_duel`, and it reads `world`, `books`, and `victory`. The chart reads `sail_lanes`. The docked Contracts screen also calls `available_contracts` / `board`, `accept_contract`, `complete_contract`, and `abandon_contract` (#33). Other methods past `books_mut` remain merged in the sim; see README for which desks are live.
+- Four victory paths (`campaign.rs`). Contracts are merged in the sim, so a played game can complete a path. The docked Contracts screen (#33) offers accept / complete / abandon through `Session`. PR #48 (`1caa71e`) added the chart HUD contract deadline/progress strip (`crates/portlight-godot/src/contract_strip.rs`, CI `--contract-strip-screen` smoke, goldens `contract-strip-active.png` / `contract-strip-urgent.png`).
+- Public `Session` API on `main`: `new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, `resolve_pending_duel`, `sail_lanes`, `victory`, `books`/`books_mut`, `save`/`load`, `board`, `accept_contract`, `complete_contract`, `abandon_contract`, `encounter_choice`, `naval_round`, `resolve_boarding`, `buy_ship`, `install_upgrade`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire_crew`, `repair`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `train_crew`, `recruit_companion`, `spend_skill_point`, `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, `claim_bounty`. The Godot view calls `Session::new`, `buy`, `sell`, `depart`, `advance`, `hire_crew`, `provision`, `work`, `duel`, and `resolve_pending_duel`, and it reads `world`, `books`, and `victory`. The chart reads `sail_lanes`. The docked Contracts screen also calls `available_contracts` / `board`, `accept_contract`, `complete_contract`, and `abandon_contract` (#33). The shipyard (#37) calls `buy_ship`, `install_upgrade`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, and `repair`. The encounter screen (#16) calls `encounter_choice`, `naval_round`, and `resolve_boarding`. The new-game screen and Save button (#30) call `save` and `load`. Harbour (#38) calls `buy_infrastructure`, `take_credit`, and `buy_insurance`. Crew (#36) calls `fire_crew`, `train_crew`, `recruit_companion`, and `spend_skill_point`. Hunt (#35) calls `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, and `claim_bounty`. The view does not call `books_mut`. See README for the smoke commands.
 - `get_service_modifier` is ported. `provision`, single-ship `repair`, and dry dock apply it.
-- Upgrade bonuses are applied in `ship.rs`. The Godot view does not offer upgrades.
+- Upgrade bonuses are applied in `ship.rs`. The Godot shipyard (#37) offers upgrades through `install_upgrade`.
 - Bounty-hunter sea event is ported. `bounty_hunter_voyage.txt` sets wanted level 3.
 
 ### Merged on `main`
@@ -312,7 +312,7 @@ Inside your own area, do the work in this order:
 ## Specific Deliverables by System Area
 
 ### Area 1: Contracts & Contract Economy
-Sim #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2`; Godot Contracts desk #33.
+Sim #3 `1adb966351c7936fb635afc0fb69b2e82f5dc7f2`; Godot Contracts desk #33; chart HUD contract strip #48 (`contract_strip.rs`).
 - [x] `ContractDef` in `content.rs`, `Contract` in `model.rs`
 - [x] `contracts.rs` with generation, acceptance, completion, expiry
 - [x] Contract board RNG: `PyRandom::from_seed(world.seed + 7919)`
