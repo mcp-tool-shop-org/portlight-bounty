@@ -6,6 +6,7 @@ mod contracts_screen;
 mod encounter_screen;
 mod game;
 mod harbour;
+mod harbour_screen;
 mod journal_screen;
 mod logic;
 mod newgame_screen;

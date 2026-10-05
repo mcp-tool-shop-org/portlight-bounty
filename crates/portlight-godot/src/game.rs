@@ -57,11 +57,12 @@ use std::collections::HashMap;
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
+use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
 use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
     buy_confirm_line, buy_result_line, captain_button_label, capture_frame_rejected,
-    chart_host_width, cycle_index, dock_confirm_line, duel_button_enabled,
+    chart_host_width, cycle_index, day_log_lines, dock_confirm_line, duel_button_enabled,
     encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
     frame_mostly_flat, frame_samples, install_confirm_line, layout_fits_window, newgame_copy,
     newgame_frame_rejected, player_ship, present, save_confirm_title, save_slot_label,
@@ -144,6 +145,17 @@ enum Action {
     OpenJournal,
     CloseJournal,
     ToggleBeat(String),
+    OpenHarbour,
+    CloseHarbour,
+    HarbourPrepare(HarbourIntent),
+    HarbourConfirm,
+    HarbourCancel,
+    HarbourDeposit(String),
+    HarbourWithdraw(String),
+    HarbourRepayField,
+    HarbourRepayAll,
+    HarbourDraw,
+    HarbourEmergency,
 }
 
 #[derive(Clone)]
@@ -421,6 +433,42 @@ struct PortlightGame {
     /// At-sea button check runs after the journal frames, so the shots stay
     /// on the docked early voyage.
     journal_sea_pending: bool,
+    harbour_nodes: Option<HarbourNodes>,
+    harbour_open: bool,
+    harbour_notice: String,
+    harbour_pending: Option<HarbourIntent>,
+    harbour_qty: Option<Gd<LineEdit>>,
+    harbour_draw: Option<Gd<LineEdit>>,
+    harbour_repay: Option<Gd<LineEdit>>,
+    harbour_emergency: Option<Gd<LineEdit>>,
+    harbour_checked: bool,
+    harbour_shot_dir: Option<String>,
+    harbour_shot: Option<HarbourShot>,
+}
+
+#[derive(Clone, Copy)]
+enum HarbourShot {
+    Warehouse,
+    Broker,
+    Finance,
+}
+
+impl HarbourShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Warehouse => "harbour-warehouse.png",
+            Self::Broker => "harbour-broker.png",
+            Self::Finance => "harbour-finance.png",
+        }
+    }
+
+    fn anchor(self) -> &'static str {
+        match self {
+            Self::Warehouse => harbour_screen::ANCHOR_WAREHOUSE,
+            Self::Broker => harbour_screen::ANCHOR_BROKER,
+            Self::Finance => harbour_screen::ANCHOR_FINANCE,
+        }
+    }
 }
 
 #[godot_api]
@@ -510,6 +558,17 @@ impl IControl for PortlightGame {
             journal_shot_dir: None,
             journal_shot: None,
             journal_sea_pending: false,
+            harbour_nodes: None,
+            harbour_open: false,
+            harbour_notice: String::new(),
+            harbour_pending: None,
+            harbour_qty: None,
+            harbour_draw: None,
+            harbour_repay: None,
+            harbour_emergency: None,
+            harbour_checked: false,
+            harbour_shot_dir: None,
+            harbour_shot: None,
         }
     }
 
@@ -594,6 +653,9 @@ impl IControl for PortlightGame {
         if self.advance_newgame_shot() {
             return;
         }
+        if self.advance_harbour_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -611,12 +673,14 @@ impl IControl for PortlightGame {
         // the Xvfb capture is the run that has to see real label sizes.
         if self.smoke && self.shot_path.is_some() && self.market_open {
             self.assert_panel_labels();
+            self.assert_port_row_fits();
         }
-        // A new-game, contracts, shipyard, or journal sequence already wrote its own frames.
+        // A new-game, contracts, shipyard, journal, or harbour sequence already wrote its own frames.
         if self.newgame_shot_dir.is_none()
             && self.contracts_shot_dir.is_none()
             && self.shipyard_shot_dir.is_none()
             && self.journal_shot_dir.is_none()
+            && self.harbour_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -656,6 +720,11 @@ impl IControl for PortlightGame {
         } else if self.contracts_checked {
             godot_print!(
                 "portlight contracts smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.harbour_checked {
+            godot_print!(
+                "portlight harbour smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else {
@@ -737,6 +806,16 @@ impl PortlightGame {
                 self.capture_frames = 4;
             } else {
                 self.run_contracts_smoke();
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--harbour-screen") {
+            self.smoke = true;
+            let capture = harbour_frames_requested(self.shot_path.is_some());
+            self.run_harbour_smoke(capture);
+            if capture {
+                self.begin_harbour_shots();
+                self.capture_frames = 4;
+            } else {
                 self.capture_frames = 2;
             }
         } else if self.smoke {
@@ -870,6 +949,7 @@ impl PortlightGame {
         let shipyard = port_row_button("Shipyard", game_id, Action::OpenShipyard);
         port_row.add_child(&shipyard);
         self.shipyard_button = Some(shipyard);
+        port_row.add_child(&port_row_button("Harbour", game_id, Action::OpenHarbour));
         port_row.set_visible(false);
         column.add_child(&port_row);
         self.port_row = Some(port_row);
@@ -977,6 +1057,11 @@ impl PortlightGame {
         self.base_mut().add_child(&journal.root);
         journal_screen::fill_parent(&mut journal.root);
         self.journal_nodes = Some(journal);
+
+        let mut harbour = harbour_screen::build_harbour_screen();
+        self.base_mut().add_child(&harbour.root);
+        encounter_screen::fill_parent(&mut harbour.root);
+        self.harbour_nodes = Some(harbour);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1634,6 +1719,62 @@ impl PortlightGame {
         };
         journal_screen::section_visible(&nodes.scroll, anchor)
             && journal_screen::line_visible(&nodes.scroll, anchor, needle)
+    }
+
+    fn begin_harbour_shots(&mut self) {
+        self.harbour_shot_dir = Some(newgame_shot_dir(self.shot_path.as_deref()));
+        self.harbour_shot = Some(HarbourShot::Warehouse);
+        self.open_harbour();
+    }
+
+    fn advance_harbour_shot(&mut self) -> bool {
+        let Some(phase) = self.harbour_shot else {
+            return false;
+        };
+        let Some(dir) = self.harbour_shot_dir.clone() else {
+            return false;
+        };
+        if !self.harbour_open {
+            self.smoke_ok = false;
+            godot_print!(
+                "Harbour smoke: screen was not open for {}",
+                phase.file_name()
+            );
+        }
+        self.scroll_harbour(phase.anchor());
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        let next = match phase {
+            HarbourShot::Warehouse => Some(HarbourShot::Broker),
+            HarbourShot::Broker => Some(HarbourShot::Finance),
+            HarbourShot::Finance => None,
+        };
+        if let Some(next) = next {
+            self.scroll_harbour(next.anchor());
+            self.harbour_shot = Some(next);
+            self.capture_frames = 4;
+            true
+        } else {
+            self.harbour_shot = None;
+            false
+        }
+    }
+
+    fn scroll_harbour(&self, anchor: &str) {
+        let Some(nodes) = self.harbour_nodes.as_ref() else {
+            return;
+        };
+        let Some(control) = named_child(&nodes.body, anchor) else {
+            return;
+        };
+        // Put the section at the top. `ensure_control_visible` only scrolls
+        // until the header peeks in, which left Broker and Credit on the
+        // bottom edge of the frame.
+        let y = control.get_position().y.round().max(0.0) as i32;
+        let mut scroll = nodes.scroll.clone();
+        scroll.set_v_scroll(y);
     }
 
     fn resize_newgame_window(&mut self) {
@@ -2627,6 +2768,248 @@ impl PortlightGame {
         self.refresh();
     }
 
+    /// Docked Porto Novo. Lease, deposit, credit, and insurance stay on Session.
+    /// Next day must keep at least one `Turn.notes` line. At sea the Harbour
+    /// button goes with the port row. Capture skips the depart so the frames
+    /// stay on the desk.
+    fn run_harbour_smoke(&mut self, capture: bool) {
+        self.harbour_checked = true;
+        if self.docked_id() != Some("porto_novo") {
+            self.fail_harbour("Harbour smoke: expected to be docked at Porto Novo.");
+            return;
+        }
+        if !self.harbour_button_shown() {
+            self.fail_harbour("Harbour smoke: Harbour button is missing while docked.");
+            return;
+        }
+        let day = self.session.as_ref().map(|session| session.world().day);
+        self.open_harbour();
+        let title = self
+            .harbour_nodes
+            .as_ref()
+            .map(|nodes| nodes.title.get_text().to_string())
+            .unwrap_or_default();
+        if title != "Porto Novo" {
+            self.fail_harbour(format!("Harbour smoke: title was {title}."));
+            return;
+        }
+        if !self
+            .harbour_body_text()
+            .contains("No warehouse leased here.")
+        {
+            self.fail_harbour("Harbour smoke: expected no warehouse yet.");
+            return;
+        }
+        self.perform(Action::HarbourPrepare(HarbourIntent::LeaseWarehouse(
+            "depot".into(),
+        )));
+        self.perform(Action::HarbourConfirm);
+        if !self.warehouse_active("porto_novo") {
+            self.fail_harbour(format!(
+                "Harbour smoke: depot lease failed. {}",
+                self.harbour_notice
+            ));
+            return;
+        }
+        self.perform(Action::Buy("grain".into()));
+        if self.held("grain") < 1 {
+            self.fail_harbour("Harbour smoke: could not buy grain.");
+            return;
+        }
+        self.perform(Action::HarbourDeposit("grain".into()));
+        if self.held("grain") != 0 || !self.warehouse_holds("porto_novo", "grain") {
+            self.fail_harbour(format!(
+                "Harbour smoke: deposit failed. {}",
+                self.harbour_notice
+            ));
+            return;
+        }
+        self.perform(Action::HarbourPrepare(HarbourIntent::OpenCredit(
+            "merchant_line".into(),
+        )));
+        self.perform(Action::HarbourConfirm);
+        if !self.credit_active() {
+            self.fail_harbour(format!(
+                "Harbour smoke: credit open failed. {}",
+                self.harbour_notice
+            ));
+            return;
+        }
+        self.perform(Action::HarbourPrepare(HarbourIntent::Draw {
+            tier: "merchant_line".into(),
+            amount: 40,
+        }));
+        self.perform(Action::HarbourConfirm);
+        if self.credit_outstanding() < 40 {
+            self.fail_harbour(format!(
+                "Harbour smoke: draw failed. {}",
+                self.harbour_notice
+            ));
+            return;
+        }
+        self.perform(Action::HarbourPrepare(HarbourIntent::BuyInsurance {
+            policy_id: "hull_basic".into(),
+            target_id: String::new(),
+            origin: String::new(),
+            destination: String::new(),
+        }));
+        self.perform(Action::HarbourConfirm);
+        if !self.policy_active("hull_basic") {
+            self.fail_harbour(format!(
+                "Harbour smoke: insurance failed. {}",
+                self.harbour_notice
+            ));
+            return;
+        }
+        let license = {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_harbour("Harbour smoke: no session for the license.");
+                return;
+            };
+            session.buy_infrastructure("license", &["med_trade_charter"])
+        };
+        match license {
+            Err(err) => {
+                let text = harbour_screen::ascii_copy(&err.to_string());
+                if !text.to_lowercase().contains("broker") {
+                    self.fail_harbour(format!("Harbour smoke: license error was {text}."));
+                    return;
+                }
+                self.harbour_notice = text;
+            }
+            Ok(()) => {
+                self.fail_harbour("Harbour smoke: license should be rejected without a broker.");
+                return;
+            }
+        }
+        if self.session.as_ref().map(|session| session.world().day) != day {
+            self.fail_harbour("Harbour smoke: the desk advanced the day.");
+            return;
+        }
+        self.close_harbour();
+        if self.harbour_open || !self.warehouse_active("porto_novo") {
+            self.fail_harbour("Harbour smoke: close dropped the desk or the lease.");
+            return;
+        }
+        let mut saw_note = false;
+        for _ in 0..15 {
+            self.next_day();
+            if self.log_lines.iter().any(|line| {
+                line.contains("Interest accrued")
+                    || line.contains("Credit payment")
+                    || line.contains("DEFAULT")
+                    || line.contains("seized")
+                    || line.contains("closed for non-payment")
+            }) {
+                saw_note = true;
+                break;
+            }
+        }
+        if !saw_note {
+            self.fail_harbour(format!(
+                "Harbour smoke: Next day log missed Turn.notes. {}",
+                self.log_lines.join(" | ")
+            ));
+            return;
+        }
+        if capture {
+            return;
+        }
+        self.perform(Action::Sail("al_manar".to_string()));
+        if self.docked_id().is_some() || self.port_row_visible() || self.harbour_open {
+            self.fail_harbour("Harbour smoke: Harbour stayed available at sea.");
+        }
+    }
+
+    fn fail_harbour(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.harbour_checked = true;
+    }
+
+    fn harbour_button_shown(&self) -> bool {
+        let Some(row) = self.port_row.as_ref() else {
+            return false;
+        };
+        if !row.is_visible() {
+            return false;
+        }
+        row.get_children().iter_shared().any(|child| {
+            child
+                .try_cast::<Button>()
+                .ok()
+                .is_some_and(|button| button.get_text() == "Harbour")
+        })
+    }
+
+    fn port_row_visible(&self) -> bool {
+        self.port_row.as_ref().is_some_and(|row| row.is_visible())
+    }
+
+    fn harbour_body_text(&self) -> String {
+        let Some(nodes) = self.harbour_nodes.as_ref() else {
+            return String::new();
+        };
+        labels_under_box(&nodes.body)
+            .into_iter()
+            .map(|label| label.get_text().to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn warehouse_active(&self, port_id: &str) -> bool {
+        self.session.as_ref().is_some_and(|session| {
+            session
+                .infrastructure()
+                .warehouses
+                .iter()
+                .any(|lease| lease.port_id == port_id && lease.active && lease.tier == "depot")
+        })
+    }
+
+    fn warehouse_holds(&self, port_id: &str, good: &str) -> bool {
+        self.session.as_ref().is_some_and(|session| {
+            session.infrastructure().warehouses.iter().any(|lease| {
+                lease.port_id == port_id
+                    && lease.active
+                    && lease
+                        .inventory
+                        .iter()
+                        .any(|lot| lot.good_id == good && lot.quantity > 0)
+            })
+        })
+    }
+
+    fn credit_active(&self) -> bool {
+        self.session.as_ref().is_some_and(|session| {
+            session
+                .infrastructure()
+                .credit
+                .as_ref()
+                .is_some_and(|credit| credit.active && credit.tier == "merchant_line")
+        })
+    }
+
+    fn credit_outstanding(&self) -> i64 {
+        self.session
+            .as_ref()
+            .and_then(|session| session.infrastructure().credit.as_ref())
+            .map(|credit| credit.outstanding)
+            .unwrap_or(0)
+    }
+
+    fn policy_active(&self, spec_id: &str) -> bool {
+        self.session.as_ref().is_some_and(|session| {
+            session
+                .infrastructure()
+                .policies
+                .iter()
+                .any(|policy| policy.active && policy.spec_id == spec_id)
+        })
+    }
+
     /// One chart frame for the art gate: docked sloop at Porto Novo, and a
     /// cutter bought through Session, one day along the Grain Road at facing
     /// f7 with its own wake.
@@ -2888,6 +3271,21 @@ impl PortlightGame {
             Action::OpenJournal => self.open_journal(),
             Action::CloseJournal => self.close_journal(),
             Action::ToggleBeat(id) => self.toggle_beat(&id),
+            Action::OpenHarbour => self.open_harbour(),
+            Action::CloseHarbour => self.close_harbour(),
+            Action::HarbourPrepare(intent) => self.prepare_harbour(intent),
+            Action::HarbourConfirm => self.confirm_harbour(),
+            Action::HarbourCancel => {
+                self.harbour_pending = None;
+                self.harbour_notice.clear();
+                self.refresh();
+            }
+            Action::HarbourDeposit(good) => self.deposit_cargo(&good),
+            Action::HarbourWithdraw(good) => self.withdraw_cargo(&good),
+            Action::HarbourRepayField => self.repay_from_field(),
+            Action::HarbourRepayAll => self.repay_all(),
+            Action::HarbourDraw => self.draw_from_field(),
+            Action::HarbourEmergency => self.emergency_from_field(),
         }
     }
 
@@ -2975,24 +3373,24 @@ impl PortlightGame {
                     vec![err.to_string()]
                 }
                 Ok(turn) => {
-                    let mut notes: Vec<String> = turn
+                    let events: Vec<String> = turn
                         .events
                         .iter()
                         .map(|event| event.message.clone())
-                        .chain(turn.shocks.iter().cloned())
-                        .filter(|line| !line.is_empty())
                         .collect();
-                    if session.world().voyage.status == VoyageStatus::InPort {
+                    let voyage_line = if session.world().voyage.status == VoyageStatus::InPort {
                         let place = docked_name(session).unwrap_or_else(|| "port".to_string());
-                        notes.push(format!("Docked at {place}."));
+                        Some(format!("Docked at {place}."))
                     } else if session.world().voyage.status == VoyageStatus::AtSea {
-                        notes.push(format!(
+                        Some(format!(
                             "At sea. Progress {}/{}.",
                             session.world().voyage.progress,
                             session.world().voyage.distance
-                        ));
-                    }
-                    notes
+                        ))
+                    } else {
+                        None
+                    };
+                    day_log_lines(&events, &turn.shocks, &turn.notes, voyage_line.as_deref())
                 }
             }
         };
@@ -3161,6 +3559,458 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn open_harbour(&mut self) {
+        if self.docked_id().is_none() {
+            return;
+        }
+        self.harbour_open = true;
+        self.harbour_pending = None;
+        self.harbour_notice.clear();
+        self.refresh();
+    }
+
+    fn close_harbour(&mut self) {
+        self.harbour_open = false;
+        self.harbour_pending = None;
+        self.harbour_notice.clear();
+        self.refresh();
+    }
+
+    fn prepare_harbour(&mut self, intent: HarbourIntent) {
+        let prompt = self
+            .session
+            .as_ref()
+            .map(|session| harbour_screen::confirm_prompt(session, &intent))
+            .unwrap_or_default();
+        self.harbour_pending = Some(intent);
+        self.harbour_notice = prompt;
+        self.refresh();
+    }
+
+    fn confirm_harbour(&mut self) {
+        let Some(intent) = self.harbour_pending.clone() else {
+            return;
+        };
+        self.apply_harbour(intent);
+    }
+
+    fn apply_harbour(&mut self, intent: HarbourIntent) {
+        let outcome = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            match &intent {
+                HarbourIntent::LeaseWarehouse(_)
+                | HarbourIntent::OpenBroker { .. }
+                | HarbourIntent::BuyLicense(_) => {
+                    let kind = harbour_screen::infrastructure_kind(&intent)
+                        .expect("warehouse, broker, or license");
+                    let args = infrastructure_args(&intent);
+                    let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+                    session
+                        .buy_infrastructure(kind, &arg_refs)
+                        .map(|()| match &intent {
+                            HarbourIntent::LeaseWarehouse(tier) => format!("Leased {tier}."),
+                            HarbourIntent::OpenBroker { region, tier } => {
+                                format!("Opened {tier} broker in {region}.")
+                            }
+                            HarbourIntent::BuyLicense(id) => format!("Bought license {id}."),
+                            _ => "Done.".to_string(),
+                        })
+                }
+                HarbourIntent::OpenCredit(tier) => session
+                    .take_credit(tier, 0)
+                    .map(|_| format!("Opened {tier}.")),
+                HarbourIntent::Draw { tier, amount } => session
+                    .take_credit(tier, *amount)
+                    .map(|received| format!("Drew {received} silver.")),
+                HarbourIntent::Emergency(amount) => session
+                    .take_credit("emergency", *amount)
+                    .map(|received| format!("Emergency loan {received} silver.")),
+                HarbourIntent::BuyInsurance {
+                    policy_id,
+                    target_id,
+                    origin,
+                    destination,
+                } => session
+                    .buy_insurance(policy_id, target_id, origin, destination)
+                    .map(|()| format!("Bought {policy_id}.")),
+            }
+        };
+        match outcome {
+            Ok(line) => self.harbour_notice = line,
+            Err(err) => self.harbour_notice = harbour_screen::ascii_copy(&err.to_string()),
+        }
+        self.harbour_pending = None;
+        self.refresh();
+    }
+
+    fn deposit_cargo(&mut self, good: &str) {
+        let text = edit_text(&self.harbour_qty);
+        let qty = match harbour_screen::parse_positive(&text) {
+            Ok(qty) => qty,
+            Err(_) => {
+                self.harbour_notice = "Quantity must be positive".to_string();
+                self.refresh();
+                return;
+            }
+        };
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.deposit_cargo(good, qty)
+        };
+        match result {
+            Ok(moved) => self.harbour_notice = format!("Deposited {moved} {good}."),
+            Err(err) => self.harbour_notice = harbour_screen::ascii_copy(&err.to_string()),
+        }
+        self.refresh();
+    }
+
+    fn withdraw_cargo(&mut self, good: &str) {
+        let text = edit_text(&self.harbour_qty);
+        let qty = match harbour_screen::parse_positive(&text) {
+            Ok(qty) => qty,
+            Err(_) => {
+                self.harbour_notice = "Quantity must be positive".to_string();
+                self.refresh();
+                return;
+            }
+        };
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.withdraw_cargo(good, qty, None)
+        };
+        match result {
+            Ok(moved) => self.harbour_notice = format!("Withdrew {moved} {good}."),
+            Err(err) => self.harbour_notice = harbour_screen::ascii_copy(&err.to_string()),
+        }
+        self.refresh();
+    }
+
+    fn repay_from_field(&mut self) {
+        let text = edit_text(&self.harbour_repay);
+        match harbour_screen::parse_positive(&text) {
+            Ok(amount) => self.repay_credit(amount),
+            Err(_) => {
+                self.harbour_notice = "Amount must be positive".to_string();
+                self.refresh();
+            }
+        }
+    }
+
+    fn repay_all(&mut self) {
+        let amount = self
+            .session
+            .as_ref()
+            .and_then(|session| session.infrastructure().credit.as_ref())
+            .filter(|credit| credit.active)
+            .map(|credit| credit.outstanding + credit.interest_accrued)
+            .unwrap_or(0);
+        self.repay_credit(amount);
+    }
+
+    fn repay_credit(&mut self, amount: i64) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.repay_credit(amount)
+        };
+        match result {
+            Ok(()) => self.harbour_notice = format!("Repaid {amount} silver."),
+            Err(err) => self.harbour_notice = harbour_screen::ascii_copy(&err.to_string()),
+        }
+        self.refresh();
+    }
+
+    fn draw_from_field(&mut self) {
+        let text = edit_text(&self.harbour_draw);
+        let amount = match harbour_screen::parse_positive(&text) {
+            Ok(amount) => amount,
+            Err(_) => {
+                self.harbour_notice = "Amount must be positive".to_string();
+                self.refresh();
+                return;
+            }
+        };
+        let tier = self
+            .session
+            .as_ref()
+            .and_then(|session| session.infrastructure().credit.as_ref())
+            .filter(|credit| credit.active)
+            .map(|credit| credit.tier.clone())
+            .unwrap_or_else(|| "merchant_line".to_string());
+        self.prepare_harbour(HarbourIntent::Draw { tier, amount });
+    }
+
+    fn emergency_from_field(&mut self) {
+        let text = edit_text(&self.harbour_emergency);
+        match harbour_screen::parse_positive(&text) {
+            Ok(amount) => self.prepare_harbour(HarbourIntent::Emergency(amount)),
+            Err(_) => {
+                self.harbour_notice = "Amount must be positive".to_string();
+                self.refresh();
+            }
+        }
+    }
+
+    fn sync_harbour(&mut self) {
+        let Some(nodes) = self.harbour_nodes.clone() else {
+            return;
+        };
+        if self.harbour_open && self.docked_id().is_none() {
+            self.harbour_open = false;
+            self.harbour_pending = None;
+        }
+        let mut root = nodes.root.clone();
+        root.set_visible(self.harbour_open);
+        if !self.harbour_open {
+            return;
+        }
+        let Some(model) = self
+            .session
+            .as_ref()
+            .and_then(harbour_screen::harbour_model)
+        else {
+            root.set_visible(false);
+            self.harbour_open = false;
+            return;
+        };
+        let mut title = nodes.title.clone();
+        title.set_text(&model.port_name);
+        let mut notice = nodes.notice.clone();
+        let text = if self.harbour_notice.is_empty() {
+            model.status.clone()
+        } else {
+            format!("{}\n{}", self.harbour_notice, model.status)
+        };
+        notice.set_text(&text);
+        let mut plate = nodes.plate.clone();
+        let mut panel = nodes.plate_panel.clone();
+        let mut placeholder = nodes.placeholder.clone();
+        let mut caption = nodes.plate_caption.clone();
+        set_ship_plate(
+            &mut plate,
+            &mut panel,
+            &mut placeholder,
+            &mut caption,
+            &model.ship_template,
+        );
+        self.fill_harbour_body(&model);
+        self.fill_harbour_confirm();
+    }
+
+    fn fill_harbour_confirm(&mut self) {
+        let Some(nodes) = self.harbour_nodes.clone() else {
+            return;
+        };
+        let mut row = nodes.confirm_row.clone();
+        clear_hbox(&mut row);
+        let game_id = self.instance_id();
+        if self.harbour_pending.is_some() {
+            row.set_visible(true);
+            row.add_child(&encounter_button(
+                "Confirm",
+                game_id,
+                Action::HarbourConfirm,
+            ));
+            row.add_child(&encounter_button("Cancel", game_id, Action::HarbourCancel));
+        } else {
+            row.set_visible(false);
+        }
+        let mut close_host = nodes.close_host.clone();
+        if close_host.get_child_count() == 0 {
+            close_host.add_child(&encounter_button("Close", game_id, Action::CloseHarbour));
+        }
+    }
+
+    fn fill_harbour_body(&mut self, model: &HarbourModel) {
+        let Some(mut body) = self.harbour_nodes.as_ref().map(|nodes| nodes.body.clone()) else {
+            return;
+        };
+        clear_children(&mut body);
+        self.harbour_qty = None;
+        self.harbour_draw = None;
+        self.harbour_repay = None;
+        self.harbour_emergency = None;
+        let game_id = self.instance_id();
+
+        let mut warehouse = harbour_screen::section_label("Warehouse");
+        warehouse.set_name(harbour_screen::ANCHOR_WAREHOUSE);
+        body.add_child(&warehouse);
+        for line in &model.warehouse_lines {
+            body.add_child(&harbour_screen::cream_label(line));
+        }
+        body.add_child(&harbour_screen::muted_label("Qty"));
+        let mut qty = LineEdit::new_alloc();
+        qty.set_text("1");
+        newgame_screen::style_field(&mut qty);
+        body.add_child(&qty);
+        self.harbour_qty = Some(qty);
+        if model.deposit_goods.is_empty() {
+            body.add_child(&harbour_screen::muted_label("No cargo in the hold."));
+        }
+        for good in &model.deposit_goods {
+            self.harbour_good_row(
+                &mut body,
+                game_id,
+                &good.label,
+                "Deposit",
+                Action::HarbourDeposit(good.good_id.clone()),
+            );
+        }
+        if model.withdraw_goods.is_empty() {
+            body.add_child(&harbour_screen::muted_label(
+                "Nothing in the warehouse to withdraw.",
+            ));
+        }
+        for good in &model.withdraw_goods {
+            self.harbour_good_row(
+                &mut body,
+                game_id,
+                &good.label,
+                "Withdraw",
+                Action::HarbourWithdraw(good.good_id.clone()),
+            );
+        }
+        self.harbour_offers(&mut body, game_id, &model.warehouse_offers);
+
+        let mut broker = harbour_screen::section_label("Broker");
+        broker.set_name(harbour_screen::ANCHOR_BROKER);
+        body.add_child(&broker);
+        for line in &model.broker_lines {
+            body.add_child(&harbour_screen::cream_label(line));
+        }
+        self.harbour_offers(&mut body, game_id, &model.broker_offers);
+
+        body.add_child(&harbour_screen::section_label("License"));
+        for line in &model.license_lines {
+            body.add_child(&harbour_screen::cream_label(line));
+        }
+        self.harbour_offers(&mut body, game_id, &model.license_offers);
+
+        let mut credit = harbour_screen::section_label("Credit");
+        credit.set_name(harbour_screen::ANCHOR_FINANCE);
+        body.add_child(&credit);
+        for line in &model.credit_lines {
+            body.add_child(&harbour_screen::cream_label(line));
+        }
+        self.harbour_offers(&mut body, game_id, &model.credit_offers);
+        body.add_child(&harbour_screen::muted_label(&format!(
+            "Draw on {}",
+            model.draw_tier
+        )));
+        let mut draw = LineEdit::new_alloc();
+        draw.set_text("40");
+        newgame_screen::style_field(&mut draw);
+        body.add_child(&draw);
+        self.harbour_draw = Some(draw);
+        let mut draw_button = encounter_button("Draw", game_id, Action::HarbourDraw);
+        if !model.draw_block.is_empty() {
+            draw_button.set_disabled(true);
+            body.add_child(&harbour_screen::muted_label(&model.draw_block));
+        }
+        body.add_child(&draw_button);
+        body.add_child(&harbour_screen::muted_label("Repay"));
+        let mut repay = LineEdit::new_alloc();
+        repay.set_text("10");
+        newgame_screen::style_field(&mut repay);
+        body.add_child(&repay);
+        self.harbour_repay = Some(repay);
+        let mut repay_button = encounter_button("Repay", game_id, Action::HarbourRepayField);
+        let repay_all_label = if model.repay_all > 0 {
+            format!("Repay all {}", model.repay_all)
+        } else {
+            "Repay all".to_string()
+        };
+        let mut repay_all = encounter_button(&repay_all_label, game_id, Action::HarbourRepayAll);
+        if !model.repay_block.is_empty() {
+            repay_button.set_disabled(true);
+            repay_all.set_disabled(true);
+            body.add_child(&harbour_screen::muted_label(&model.repay_block));
+        }
+        let mut repay_row = HBoxContainer::new_alloc();
+        repay_row.add_theme_constant_override("separation", 8);
+        repay_row.add_child(&repay_button);
+        repay_row.add_child(&repay_all);
+        body.add_child(&repay_row);
+        body.add_child(&harbour_screen::muted_label("Emergency loan"));
+        let mut emergency = LineEdit::new_alloc();
+        emergency.set_text("50");
+        newgame_screen::style_field(&mut emergency);
+        body.add_child(&emergency);
+        self.harbour_emergency = Some(emergency);
+        let mut emergency_button = Button::new_alloc();
+        emergency_button.set_text("Emergency loan");
+        harbour_screen::style_danger_button(&mut emergency_button);
+        let action = Action::HarbourEmergency;
+        emergency_button.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game_id) else {
+                return;
+            };
+            gd.bind_mut().perform(action.clone());
+        });
+        body.add_child(&emergency_button);
+
+        body.add_child(&harbour_screen::section_label("Insurance"));
+        for line in &model.policy_lines {
+            body.add_child(&harbour_screen::cream_label(line));
+        }
+        if !model.claim_lines.is_empty() {
+            body.add_child(&harbour_screen::muted_label("Claims"));
+            for line in &model.claim_lines {
+                body.add_child(&harbour_screen::cream_label(line));
+            }
+        }
+        self.harbour_offers(&mut body, game_id, &model.insurance_offers);
+    }
+
+    fn harbour_good_row(
+        &self,
+        body: &mut Gd<VBoxContainer>,
+        game_id: InstanceId,
+        label: &str,
+        button: &str,
+        action: Action,
+    ) {
+        let mut row = HBoxContainer::new_alloc();
+        row.add_theme_constant_override("separation", 8);
+        let mut text = harbour_screen::cream_label(label);
+        text.set_h_size_flags(SizeFlags::EXPAND_FILL);
+        row.add_child(&text);
+        row.add_child(&encounter_button(button, game_id, action));
+        body.add_child(&row);
+    }
+
+    fn harbour_offers(
+        &self,
+        body: &mut Gd<VBoxContainer>,
+        game_id: InstanceId,
+        rows: &[harbour_screen::ActionRow],
+    ) {
+        for row in rows {
+            body.add_child(&harbour_screen::cream_label(&row.title));
+            body.add_child(&harbour_screen::muted_label(&row.detail));
+            if !row.block.is_empty() {
+                body.add_child(&harbour_screen::muted_label(&row.block));
+            }
+            let action = row
+                .intent
+                .clone()
+                .map(Action::HarbourPrepare)
+                .unwrap_or(Action::HarbourCancel);
+            let mut button = encounter_button(&row.button, game_id, action);
+            if row.intent.is_none() {
+                button.set_disabled(true);
+            }
+            body.add_child(&button);
+        }
+    }
+
     fn push_stance(&mut self, stance: Stance) {
         if self
             .session
@@ -3289,6 +4139,33 @@ impl PortlightGame {
         self.sync_contracts();
         self.sync_shipyard();
         self.sync_journal();
+        self.sync_harbour();
+    }
+
+    /// The docked row stays one line, and its minimum width fits the width
+    /// the panel actually gave it. A taller row pushes the lanes down. A
+    /// wider minimum stretches the column and clips Sail.
+    fn assert_port_row_fits(&mut self) {
+        let Some(row) = self.port_row.clone() else {
+            return;
+        };
+        if !row.is_visible() {
+            return;
+        }
+        let min = row.get_combined_minimum_size();
+        let size = row.get_size();
+        if size.y > 32.0 || min.y > 32.0 || min.x > size.x + 0.5 {
+            self.smoke_ok = false;
+            let line = format!(
+                "Smoke: port row is {w}x{h} min {mw}x{mh}; it must stay one line inside the panel.",
+                w = size.x,
+                h = size.y,
+                mw = min.x,
+                mh = min.y
+            );
+            godot_print!("{line}");
+            self.push_log(line);
+        }
     }
 
     fn wire_contracts_chrome(&mut self, nodes: &mut ContractsNodes) {
@@ -5321,8 +6198,13 @@ fn scripted_launch() -> bool {
         || user_arg("--work")
         || user_arg("--art")
         || user_arg("--contracts-screen")
+        || user_arg("--harbour-screen")
         || flag_set("PORTLIGHT_SMOKE")
         || user_arg("--smoke")
+}
+
+fn harbour_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
 }
 
 fn newgame_frames_requested(shot_set: bool) -> bool {
@@ -5546,16 +6428,17 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 /// Chart port-row control. Same theme fill as [`action_button`].
 ///
-/// The face is 13 px so Market, Contracts, Hire, Provisions, Work, and
-/// Shipyard stay on one line. A second line would push the lanes down the
-/// panel. The minimum height stays the default button (31 px) so the row
-/// does not shrink.
+/// The face is 11 px with no horizontal padding so Market, Contracts, Hire,
+/// Provisions, Work, Shipyard, and Harbour stay on one line inside the
+/// panel. A second line would push the lanes down. The minimum height stays
+/// 31 px, so the button band stays y 257-287.
 fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = action_button(text, game, action);
-    button.add_theme_font_size_override("font_size", 13);
+    button.add_theme_font_size_override("font_size", 11);
     button.set_custom_minimum_size(Vector2::new(0.0, 31.0));
-    // Default 4 px side padding plus a sixth label overruns the scrollbar and
-    // reflows the panel. Zero horizontal padding keeps the 13 px face on one line.
+    // Default side padding plus a seventh label overruns the panel and
+    // reflows everything below the row. Zero horizontal padding keeps the
+    // 11 px face on one line.
     for state in [
         "normal",
         "hover",
@@ -5661,6 +6544,31 @@ fn clear_hbox(node: &mut Gd<HBoxContainer>) {
         node.remove_child(&child);
         child.queue_free();
     }
+}
+
+fn infrastructure_args(intent: &HarbourIntent) -> Vec<String> {
+    match intent {
+        HarbourIntent::LeaseWarehouse(tier) => vec![tier.clone()],
+        HarbourIntent::OpenBroker { region, tier } => vec![region.clone(), tier.clone()],
+        HarbourIntent::BuyLicense(id) => vec![id.clone()],
+        _ => Vec::new(),
+    }
+}
+
+fn edit_text(edit: &Option<Gd<LineEdit>>) -> String {
+    edit.as_ref()
+        .map(|edit| edit.get_text().to_string())
+        .unwrap_or_default()
+}
+
+fn named_child(body: &Gd<VBoxContainer>, name: &str) -> Option<Gd<Control>> {
+    body.get_children().iter_shared().find_map(|child| {
+        if child.get_name() == name {
+            child.try_cast::<Control>().ok()
+        } else {
+            None
+        }
+    })
 }
 
 fn flag_set(name: &str) -> bool {

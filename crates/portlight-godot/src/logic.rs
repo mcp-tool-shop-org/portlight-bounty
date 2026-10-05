@@ -30,6 +30,31 @@ pub(crate) fn layout_fits_window() -> bool {
         && WINDOW_H == 720.0
 }
 
+/// Lines for one `Session::advance`, in the order the chart log already used,
+/// with [`portlight_sim::Turn::notes`] included.
+///
+/// Empty strings are dropped. A missing voyage line adds nothing. Notes sit
+/// with the day's events so upkeep, seizure, default, and claim text are not
+/// discarded before the docked or at-sea line.
+pub(crate) fn day_log_lines(
+    event_messages: &[String],
+    shocks: &[String],
+    notes: &[String],
+    voyage_line: Option<&str>,
+) -> Vec<String> {
+    let mut lines: Vec<String> = event_messages
+        .iter()
+        .chain(shocks.iter())
+        .chain(notes.iter())
+        .filter(|line| !line.is_empty())
+        .cloned()
+        .collect();
+    if let Some(line) = voyage_line.filter(|line| !line.is_empty()) {
+        lines.push(line.to_string());
+    }
+    lines
+}
+
 /// The Duel button is available whenever a duel is pending. Stance count is
 /// the sim's check (`Session::duel`), not a second gate in the view.
 pub(crate) fn duel_button_enabled(pending: bool) -> bool {
@@ -1289,6 +1314,47 @@ mod tests {
     fn duel_button_ignores_stance_count() {
         assert!(!duel_button_enabled(false));
         assert!(duel_button_enabled(true));
+    }
+
+    #[test]
+    fn day_log_keeps_turn_notes_with_the_existing_lines() {
+        let lines = day_log_lines(
+            &["Wind on the bow.".to_string()],
+            &["Grain prices jumped.".to_string()],
+            &[
+                "Warehouse at porto_novo closed for non-payment. Goods seized: 2x grain"
+                    .to_string(),
+            ],
+            Some("Docked at Porto Novo."),
+        );
+        assert_eq!(
+            lines,
+            vec![
+                "Wind on the bow.".to_string(),
+                "Grain prices jumped.".to_string(),
+                "Warehouse at porto_novo closed for non-payment. Goods seized: 2x grain"
+                    .to_string(),
+                "Docked at Porto Novo.".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn day_log_drops_empty_notes_and_keeps_a_quiet_day() {
+        let lines = day_log_lines(
+            &["Wind on the bow.".to_string(), String::new()],
+            &[String::new()],
+            &[String::new()],
+            Some("Docked at Porto Novo."),
+        );
+        assert_eq!(
+            lines,
+            vec![
+                "Wind on the bow.".to_string(),
+                "Docked at Porto Novo.".to_string(),
+            ]
+        );
+        assert!(day_log_lines(&[], &[], &[], None).is_empty());
     }
 
     #[test]

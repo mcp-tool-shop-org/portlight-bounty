@@ -146,7 +146,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -258,6 +258,22 @@ jobs:
             godot --headless --path godot -- --journal-screen
           if ! grep -q 'portlight journal smoke ok' /tmp/godot-journal-smoke.log; then
             echo "journal smoke did not report ok"
+            exit 1
+          fi
+          rm -f /tmp/hs-harbour.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-harbour-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-harbour.png \
+            godot --headless --path godot -- --harbour-screen
+          if [ -f /tmp/hs-harbour.png ]; then
+            echo "headless harbour PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-harbour.log \
+            godot --headless --path godot -- --art-docs --harbour-screen
+          run_godot /tmp/godot-harbour-smoke.log \
+            godot --headless --path godot -- --harbour-screen
+          if ! grep -q 'portlight harbour smoke ok' /tmp/godot-harbour-smoke.log; then
+            echo "harbour smoke did not report ok"
             exit 1
           fi
           run_godot /tmp/godot-gl-smoke.log \
@@ -434,6 +450,21 @@ jobs:
               exit 1
             fi
           done
+          mkdir -p /tmp/harbour-shots
+          run_godot /tmp/godot-harbour-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/harbour-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --harbour-screen
+          if ! grep -q 'portlight harbour smoke ok' /tmp/godot-harbour-frames.log; then
+            echo "harbour frame capture did not report ok"
+            exit 1
+          fi
+          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png; do
+            if [ ! -f "/tmp/harbour-shots/${name}" ]; then
+              echo "harbour capture did not write /tmp/harbour-shots/${name}"
+              exit 1
+            fi
+          done
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -449,6 +480,9 @@ jobs:
           cmp_committed contracts-board.png /tmp/contracts-shots/contracts-board.png
           cmp_committed contracts-active.png /tmp/contracts-shots/contracts-active.png
           cmp_committed contracts-empty.png /tmp/contracts-shots/contracts-empty.png
+          cmp_committed harbour-warehouse.png /tmp/harbour-shots/harbour-warehouse.png
+          cmp_committed harbour-broker.png /tmp/harbour-shots/harbour-broker.png
+          cmp_committed harbour-finance.png /tmp/harbour-shots/harbour-finance.png
           cmp_committed chart-cutter-f7.png /tmp/chart-cutter-f7.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
