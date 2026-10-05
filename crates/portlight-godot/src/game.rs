@@ -68,9 +68,9 @@ use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
 use std::collections::HashMap;
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
+use crate::contract_strip::{self, ContractStripNodes};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::crew_screen::{self, CrewNodes};
-use crate::contract_strip::{self, ContractStripNodes};
 use crate::day_report::{self, DayReportDocument, DayReportMemory, DayReportNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
@@ -7292,7 +7292,10 @@ impl PortlightGame {
         let Some(mut nodes) = self.contract_strip_nodes.clone() else {
             return;
         };
-        let doc = self.session.as_ref().and_then(contract_strip::build_document);
+        let doc = self
+            .session
+            .as_ref()
+            .and_then(contract_strip::build_document);
         match doc {
             Some(doc) => {
                 contract_strip::place_strip(&mut nodes.root);
@@ -7404,11 +7407,15 @@ impl PortlightGame {
             .unwrap_or(1);
         self.open_day_report_doc(day_report::smoke_full_document(day));
         if !self.day_report_open {
-            self.fail_contract_strip("Contract-strip smoke: could not open day report for click hygiene.");
+            self.fail_contract_strip(
+                "Contract-strip smoke: could not open day report for click hygiene.",
+            );
         }
         self.perform(Action::OpenContracts);
         if !self.contracts_open {
-            self.fail_contract_strip("Contract-strip smoke: docked strip click did not open Contracts.");
+            self.fail_contract_strip(
+                "Contract-strip smoke: docked strip click did not open Contracts.",
+            );
         }
         if self.day_report_open {
             self.fail_contract_strip("Contract-strip smoke: Contracts left Day's report open.");
@@ -7433,7 +7440,9 @@ impl PortlightGame {
 
         // Advance docked days until a shown contract is urgent (days_left <= 1).
         if !self.advance_until_strip_urgent(40) {
-            self.fail_contract_strip("Contract-strip smoke: could not reach urgent timing via Next day.");
+            self.fail_contract_strip(
+                "Contract-strip smoke: could not reach urgent timing via Next day.",
+            );
             return;
         }
         self.refresh();
@@ -7499,7 +7508,6 @@ impl PortlightGame {
             );
         }
     }
-
 
     fn accept_strip_offer(&mut self) -> Option<String> {
         let id = {
@@ -7618,7 +7626,10 @@ impl PortlightGame {
             if urgent {
                 return true;
             }
-            if self.session.as_ref().is_none_or(|session| session.board().active.is_empty())
+            if self
+                .session
+                .as_ref()
+                .is_none_or(|session| session.board().active.is_empty())
             {
                 return false;
             }
@@ -7706,7 +7717,9 @@ impl PortlightGame {
             ContractStripShot::Active => {
                 if !self.advance_until_strip_urgent(40) {
                     self.smoke_ok = false;
-                    godot_print!("Contract-strip smoke: could not reach urgent frame via Next day.");
+                    godot_print!(
+                        "Contract-strip smoke: could not reach urgent frame via Next day."
+                    );
                 }
                 self.refresh();
                 self.contract_strip_shot = Some(ContractStripShot::Urgent);

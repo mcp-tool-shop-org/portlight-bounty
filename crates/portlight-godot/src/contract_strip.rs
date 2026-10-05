@@ -318,8 +318,14 @@ mod tests {
             test_contract("Grain run", 5, 0, 5, "al_manar"),
         ];
         let doc = build_document_from_active(&active, 1, &world).unwrap();
-        assert_eq!(doc.segments[0].text.split(" - ").next().unwrap(), "Grain run");
-        assert_eq!(doc.segments[1].text.split(" - ").next().unwrap(), "Apple run");
+        assert_eq!(
+            doc.segments[0].text.split(" - ").next().unwrap(),
+            "Grain run"
+        );
+        assert_eq!(
+            doc.segments[1].text.split(" - ").next().unwrap(),
+            "Apple run"
+        );
         assert!(doc.segments[2].text.starts_with("+1 more"));
     }
 
