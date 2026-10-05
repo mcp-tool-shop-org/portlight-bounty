@@ -688,19 +688,23 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
     label
 }
 
-/// Drops non-ASCII for the default font, then collapses the run of spaces a
-/// dropped dash leaves behind ("shellfish \u{2014} not" -> "shellfish not").
-/// Display only; the sim string is unchanged.
+/// Maps em/en dashes to ASCII '-', drops other non-ASCII for the default font,
+/// then collapses leftover double spaces. Display only; the sim string is unchanged.
 fn ascii_text(text: &str) -> String {
     if text.is_ascii() {
         return text.to_string();
     }
     let mut out = String::with_capacity(text.len());
-    for ch in text.chars().filter(|ch| ch.is_ascii()) {
-        if ch == ' ' && out.ends_with(' ') {
+    for ch in text.chars() {
+        let mapped = match ch {
+            '\u{2014}' | '\u{2013}' => '-',
+            c if c.is_ascii() => c,
+            _ => continue,
+        };
+        if mapped == ' ' && out.ends_with(' ') {
             continue;
         }
-        out.push(ch);
+        out.push(mapped);
     }
     out
 }
@@ -756,10 +760,14 @@ mod tests {
     }
 
     #[test]
-    fn ascii_filter_collapses_the_gap_a_dash_leaves() {
+    fn ascii_filter_maps_dashes_and_collapses_leftover_spaces() {
         assert_eq!(
             ascii_text("Shore birds and shellfish \u{2014} not glamorous."),
-            "Shore birds and shellfish not glamorous."
+            "Shore birds and shellfish - not glamorous."
+        );
+        assert_eq!(
+            ascii_text("Shore birds and shellfish \u{2013} not glamorous."),
+            "Shore birds and shellfish - not glamorous."
         );
         assert_eq!(ascii_text("Plain  ascii stays."), "Plain  ascii stays.");
         let sample = HuntResult {
@@ -773,6 +781,7 @@ mod tests {
             flavor: "Shore birds and shellfish \u{2014} not glamorous.".into(),
             danger_text: String::new(),
         };
+        assert!(forage_notice(&sample).contains(" - "));
         assert!(!forage_notice(&sample).contains("  "));
     }
 
