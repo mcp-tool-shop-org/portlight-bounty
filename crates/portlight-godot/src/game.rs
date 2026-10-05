@@ -19,7 +19,7 @@
 //! `train_crew`, `recruit_companion`, and `spend_skill_point`. Train and
 //! Learn show the day advance before the call. Session ignores injury gates
 //! on train, so the desk does not. The provision line is the effective price.
-//! Chart Hire sailor and Provisions +5 stay one-shot shortcuts.
+//! Chart Hire (one sailor) and Provisions +5 stay one-shot shortcuts.
 //!
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
 //! scripted approach uses the encounter screen: `encounter_choice` /
@@ -1185,7 +1185,9 @@ impl PortlightGame {
         let mut contracts = port_row_button("Contracts", game_id, Action::OpenContracts);
         contracts.set_name("ContractsButton");
         port_row.add_child(&contracts);
-        port_row.add_child(&port_row_button("Hire sailor", game_id, Action::HireSailor));
+        // `Hire` is one sailor (HireSailor). The short label keeps the row on
+        // one line at 1280.
+        port_row.add_child(&port_row_button("Hire", game_id, Action::HireSailor));
         port_row.add_child(&port_row_button(
             "Provisions +5",
             game_id,
@@ -4697,18 +4699,26 @@ impl PortlightGame {
             );
             fire.set_disabled(locked || !role.fire_enabled);
             row.add_child(&fire);
+            let mut hire_five = crew_button(
+                "Hire 5",
+                game_id,
+                Action::CrewHire {
+                    role: role.id.to_string(),
+                    count: 5,
+                },
+            );
             if role.hire_five {
-                let mut hire_five = crew_button(
-                    "Hire 5",
-                    game_id,
-                    Action::CrewHire {
-                        role: role.id.to_string(),
-                        count: 5,
-                    },
-                );
                 hire_five.set_disabled(locked || !role.hire_enabled);
-                row.add_child(&hire_five);
+            } else {
+                // Same width, not drawn and not clickable, so every role's
+                // Hire 1 and Fire 1 share one column with Sailor's.
+                hire_five.set_name("HireFiveSlot");
+                hire_five.set_disabled(true);
+                hire_five.set_focus_mode(godot::classes::control::FocusMode::NONE);
+                hire_five.set_mouse_filter(MouseFilter::IGNORE);
+                hire_five.set_modulate(Color::from_rgba(1.0, 1.0, 1.0, 0.0));
             }
+            row.add_child(&hire_five);
             roster.add_child(&row);
         }
         for officer in &desk.officers {
@@ -4926,7 +4936,7 @@ impl PortlightGame {
     }
 
     /// Hire, fire, provision, then train and skill through the confirm bar.
-    /// The chart Hire sailor and Provisions +5 shortcuts still call Session.
+    /// The chart Hire and Provisions +5 shortcuts still call Session.
     fn run_crew_actions(&mut self) {
         if !self.crew_open {
             self.fail_crew("Crew smoke: the desk was not open.");
@@ -5061,7 +5071,7 @@ impl PortlightGame {
                 && world.captain.provisions >= provisions_before + 1 + 5 - 8
         });
         if !shortcuts {
-            self.fail_crew("Crew smoke: chart Hire sailor or Provisions +5 did not apply.");
+            self.fail_crew("Crew smoke: chart Hire or Provisions +5 did not apply.");
         }
     }
 
@@ -6749,12 +6759,17 @@ impl PortlightGame {
             self.hunt_checked = true;
             return;
         }
-        if self
-            .hunt_model_now()
+        let docked_name = self
+            .session
             .as_ref()
-            .is_none_or(|model| !model.title.starts_with("Docked - "))
+            .and_then(|session| docked_port_id(session).map(|id| port_name(session.world(), id)));
+        if docked_name.is_none()
+            || self.hunt_model_now().as_ref().is_none_or(|model| {
+                Some(&model.title) != docked_name.as_ref()
+                    || model.eyebrow != hunt_screen::EYEBROW_DOCKED
+            })
         {
-            self.fail_hunt("Hunt smoke: docked title was missing.");
+            self.fail_hunt("Hunt smoke: docked title was not the port name.");
         }
         self.forage_day();
         let sailed = self.session.as_ref().is_some_and(|session| {
@@ -7321,6 +7336,7 @@ impl PortlightGame {
         let Some(model) = self.hunt_model_now() else {
             return;
         };
+        nodes.eyebrow.set_text(&model.eyebrow);
         nodes.title.set_text(&model.title);
         nodes.notice.set_text(&model.notice);
         let template_id = self
