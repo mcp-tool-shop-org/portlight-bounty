@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "d7d15c3c64bdef1124fa4c33765e099530e750e942d7e027589f27601a39d713",
+          "hash": "21ff8e3fda7c3cbe3790816c2ce87b47a2269c755ca8d8276464f0ce7d7260fa",
           "path": ".github/workflows/ci.yml"
         }
       ],
@@ -44,7 +44,7 @@
           "path": "docs/PORTING-PLAN.md"
         },
         {
-          "hash": "29cf3051c700af16d28067bbcb8fdacd69469f9f5f36f6c7ed9d576ec7764206",
+          "hash": "2fd0b172cf6a3d96e1945c04364bf3cb9f8c5a4f883202ec7a39a3fd2097efa7",
           "path": "docs/screenshots/chart-1280.png"
         },
         {
@@ -2505,7 +2505,7 @@
             "side_column",
             "style_encounter_button"
           ],
-          "hash": "837411073d34474728d98f68ab0cf333ac71b0bc0dc0db3853e6b485feba4e85",
+          "hash": "53253c68eb0dc3ff00a689cba768950fbec6dba1e821ac7e5ca3a03ff834b87d",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/logic.rs"
@@ -2518,185 +2518,220 @@
             {
               "in": "start_game",
               "kind": "match-err",
-              "line": 680
+              "line": 813
             },
             {
               "in": "start_captain",
               "kind": "match-err",
-              "line": 826
+              "line": 959
             },
             {
               "in": "begin_custom",
               "kind": "match-err",
-              "line": 835
+              "line": 968
             },
             {
               "in": "load_slot",
               "kind": "match-err",
-              "line": 877
+              "line": 1010
             },
             {
               "in": "save_current_game",
               "kind": "match-err",
-              "line": 902
+              "line": 1035
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 925
+              "line": 1058
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 932
+              "line": 1065
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 967
+              "line": 1100
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 980
+              "line": 1113
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 985
+              "line": 1118
+            },
+            {
+              "in": "shipyard_repair",
+              "kind": "match-err",
+              "line": 1512
+            },
+            {
+              "in": "shipyard_rename",
+              "kind": "match-err",
+              "line": 1537
+            },
+            {
+              "in": "buy_hull",
+              "kind": "match-err",
+              "line": 1628
+            },
+            {
+              "in": "install_hull_upgrade",
+              "kind": "match-err",
+              "line": 1645
+            },
+            {
+              "in": "sell_docked_hull",
+              "kind": "match-err",
+              "line": 1658
+            },
+            {
+              "in": "dock_flagship",
+              "kind": "match-err",
+              "line": 1671
+            },
+            {
+              "in": "board_docked_hull",
+              "kind": "match-err",
+              "line": 1684
             },
             {
               "in": "run_art",
               "kind": "match-err",
-              "line": 1413
+              "line": 2194
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 1551
+              "line": 2332
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 1558
+              "line": 2339
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 1562
+              "line": 2343
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 1570
+              "line": 2351
             },
             {
               "in": "sail",
               "kind": "match-err",
-              "line": 1656
+              "line": 2444
             },
             {
               "in": "next_day",
               "kind": "match-err",
-              "line": 1716
+              "line": 2504
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 1777
+              "line": 2565
             },
             {
               "in": "trade",
               "kind": "err",
-              "line": 1777
+              "line": 2565
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 1782
+              "line": 2570
             },
             {
               "in": "trade",
               "kind": "err",
-              "line": 1782
+              "line": 2570
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 1792
+              "line": 2580
             },
             {
               "in": "work_docks",
               "kind": "match-err",
-              "line": 1811
+              "line": 2599
             },
             {
               "in": "hire_sailor",
               "kind": "match-err",
-              "line": 1853
+              "line": 2641
             },
             {
               "in": "buy_provisions",
               "kind": "match-err",
-              "line": 1891
+              "line": 2679
             },
             {
               "in": "finish_duel_result",
               "kind": "match-err",
-              "line": 1942
+              "line": 2730
             },
             {
               "in": "finish_victory",
               "kind": "match-err",
-              "line": 2546
+              "line": 3369
             },
             {
               "in": "open_bounty_hunt",
               "kind": "match-err",
-              "line": 2578
+              "line": 3401
             },
             {
               "in": "ingest",
               "kind": "match-err",
-              "line": 2591
+              "line": 3414
             },
             {
               "in": "adopt_step",
               "kind": "match-err",
-              "line": 2626
+              "line": 3449
             },
             {
               "in": "adopt_step",
               "kind": "match-err",
-              "line": 2634
+              "line": 3457
             },
             {
               "in": "probe_naval",
               "kind": "match-err",
-              "line": 2659
+              "line": 3482
             },
             {
               "in": "prepare_scripted_voyage",
               "kind": "match-err",
-              "line": 2840
+              "line": 3663
             },
             {
               "in": "prepare_scripted_voyage",
               "kind": "match-err",
-              "line": 2846
+              "line": 3669
             },
             {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 2957
+              "line": 3780
             },
             {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 2972
+              "line": 3795
             }
           ],
-          "hash": "38e784f39efcabd7f7584370950e24b8a35ef9e96494868cd21924b83c66320a",
+          "hash": "34f277f1f1ddd884ec2c634bbc1b80c1b54a94777ab7f1a759a60f3f9f02e811",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -2709,6 +2744,7 @@
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
+            "crates/portlight-godot/src/shipyard_screen.rs",
             "crates/portlight-sim/src/custom_captain.rs"
           ],
           "importsFiles": [
@@ -2717,6 +2753,7 @@
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
+            "crates/portlight-godot/src/shipyard_screen.rs",
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/custom_captain.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -2739,7 +2776,7 @@
           "testsInside": true
         },
         {
-          "hash": "340d85bca1826eba63c5c9e5bf2e412c1089a0be9620e5aca84f20d38092c59c",
+          "hash": "3849ce1aa67e26ba0c83f61c1c42cfd0be74f03a1ccc2eeeec77dbabaf6d4498",
           "importsFiles": [
             "crates/portlight-godot/src/chart_canvas.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
@@ -2747,7 +2784,8 @@
             "crates/portlight-godot/src/harbour.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
-            "crates/portlight-godot/src/seam.rs"
+            "crates/portlight-godot/src/seam.rs",
+            "crates/portlight-godot/src/shipyard_screen.rs"
           ],
           "path": "crates/portlight-godot/src/lib.rs"
         },
@@ -2757,18 +2795,26 @@
             "action_list_from_error",
             "ascii_label",
             "at_sea",
+            "board_confirm_line",
+            "buy_confirm_line",
+            "buy_result_line",
+            "buying_sells_flagship",
             "captain_button_label",
             "capture_frame_rejected",
             "chart_host_width",
+            "class_label",
             "cycle_index",
+            "dock_confirm_line",
             "duel_button_enabled",
             "encounter_frame_rejected",
             "encounter_plate",
             "facts_for_catalog_captain",
             "facts_from_agency",
             "facts_from_step",
+            "fleet_label",
             "frame_mostly_flat",
             "frame_samples",
+            "install_confirm_line",
             "layout_fits_window",
             "newgame_copy",
             "newgame_frame_rejected",
@@ -2777,13 +2823,20 @@
             "save_confirm_title",
             "save_slot_label",
             "seam_exit_code",
+            "sell_confirm_line",
             "session_text",
+            "shipyard_frame_rejected",
+            "shipyard_gate_sentence",
+            "shipyard_model",
+            "slots_full_sentence",
             "split_session_actions",
             "stance_duel_visible",
             "template_player_ship",
-            "ui_plate_panel"
+            "ui_plate_panel",
+            "ui_sentence",
+            "upgrade_summary"
           ],
-          "hash": "2279220ec976a8833936d723d785b0d7f1c4b84c34bccbf0c9bae26cfe45a046",
+          "hash": "b1dfa87167d49eb347367d29cdd09a4dae2aa3f5482702de10b0156252389c7d",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/encounter.rs",
@@ -2792,7 +2845,8 @@
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/save.rs",
-            "crates/portlight-sim/src/custom_captain.rs"
+            "crates/portlight-sim/src/custom_captain.rs",
+            "crates/portlight-sim/src/naval.rs"
           ],
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
@@ -2801,6 +2855,7 @@
             "crates/portlight-sim/src/encounter.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/naval.rs",
             "crates/portlight-sim/src/save.rs",
             "crates/portlight-sim/src/session.rs"
           ],
@@ -2836,6 +2891,16 @@
             "crates/portlight-godot/src/logic.rs"
           ],
           "path": "crates/portlight-godot/src/seam.rs"
+        },
+        {
+          "exports": [
+            "build_shipyard_screen"
+          ],
+          "hash": "e87c2f88f8a17a0788f1cf674876cb498fb0ed5721a7b0681079b60ac0d34da3",
+          "importsFiles": [
+            "crates/portlight-godot/src/encounter_screen.rs"
+          ],
+          "path": "crates/portlight-godot/src/shipyard_screen.rs"
         },
         {
           "hash": "718399af052d83b162437026b129e1db930544da56b8220a4609bbeeaba762d2",
@@ -5123,7 +5188,7 @@
           "path": "LICENSE"
         },
         {
-          "hash": "6452f869d7f99fd6f1f9a1e8d590bb6f06f2e9d845457be4c24a04f8525864ed",
+          "hash": "df6346086acf81c6528fc447d9170e46436eb6bf1b1058bd5a4aec9fd6b3159c",
           "path": "README.md"
         },
         {
@@ -7426,7 +7491,7 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 9
+          "files": 10
         },
         {
           "boundary": "portlight-sim",
@@ -8153,8 +8218,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "4d0324c5d91ca87723d03f8307b407739d9f0b14",
-    "tracked": 578
+    "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26",
+    "tracked": 579
   },
   "landings": [
     {

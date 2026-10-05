@@ -179,8 +179,8 @@
     "definition": "commits is how many commits in the window touch the file, including merges and commits dropped from coupling. lines is added plus deleted in those commits.",
     "files": [
       {
-        "commits": 10,
-        "lines": 385,
+        "commits": 12,
+        "lines": 395,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -207,6 +207,31 @@
         "commits": 12,
         "lines": 280,
         "path": "README.md"
+      },
+      {
+        "commits": 2,
+        "lines": 202,
+        "path": "atlas/README.md"
+      },
+      {
+        "commits": 2,
+        "lines": 84,
+        "path": "atlas/boundaries.yaml"
+      },
+      {
+        "commits": 2,
+        "lines": 988,
+        "path": "atlas/page.json"
+      },
+      {
+        "commits": 2,
+        "lines": 6540,
+        "path": "atlas/statistics.json"
+      },
+      {
+        "commits": 2,
+        "lines": 18786,
+        "path": "atlas/structure.json"
       },
       {
         "commits": 2,
@@ -3072,11 +3097,11 @@
   },
   "confidence": {
     "level": "low",
-    "reason": "fewer than 30 qualifying commits in the window, and fewer than 20 source files reach 10 revisions"
+    "reason": "fewer than 30 qualifying commits in the window, and fewer than 25 source files reach 10 revisions"
   },
-  "generatedAt": "2026-10-01T02:58:02.452Z",
+  "generatedAt": "2026-10-05T15:17:17.957Z",
   "generatedFrom": {
-    "commit": "4d0324c5d91ca87723d03f8307b407739d9f0b14"
+    "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26"
   },
   "pairs": [
     {
@@ -3237,16 +3262,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "both",
-    "headDate": "2026-09-29T04:32:35-07:00",
-    "inScopeFiles": 583,
+    "headDate": "2026-09-30T20:06:29-07:00",
+    "inScopeFiles": 584,
     "pinnedStart": null,
-    "priorFloor": null,
-    "qualifyingCommits": 26,
+    "priorFloor": "fallen",
+    "qualifyingCommits": 27,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-02T11:32:35.000Z",
+    "since": "2026-04-04T03:06:29.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

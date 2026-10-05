@@ -24,6 +24,11 @@
 //! That panel is hidden while the encounter screen is open and shown again
 //! when the screen closes if a duel is still pending. The screen does not
 //! clear `pending_duel`.
+//!
+//! The docked shipyard screen calls `repair`, `rename_ship`, `dock_current_ship`,
+//! `board_fleet_ship`, `sell_fleet_ship`, `buy_ship`, and `install_upgrade`.
+//! Buy, sell, dock, board, and install wait for a confirm. Opening the screen
+//! does not advance the day.
 
 use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, SizeFlags};
@@ -52,17 +57,21 @@ use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::logic::{
-    action_caption, action_list_from_error, ascii_label, at_sea, captain_button_label,
-    capture_frame_rejected, chart_host_width, cycle_index, duel_button_enabled,
+    action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
+    buy_confirm_line, buy_result_line, captain_button_label, capture_frame_rejected,
+    chart_host_width, cycle_index, dock_confirm_line, duel_button_enabled,
     encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, layout_fits_window, newgame_copy, newgame_frame_rejected,
-    player_ship, present, save_confirm_title, save_slot_label, session_text, stance_duel_visible,
-    template_player_ship, CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction,
-    ScreenPhase, StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W, PANEL_MIN_W, ROW_SEPARATION,
-    SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
-    SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    frame_mostly_flat, frame_samples, install_confirm_line, layout_fits_window, newgame_copy,
+    newgame_frame_rejected, player_ship, present, save_confirm_title, save_slot_label,
+    sell_confirm_line, session_text, shipyard_frame_rejected, shipyard_model, stance_duel_visible,
+    template_player_ship, ui_sentence, CustomDraft, EncounterFacts, NewgamePage, PointPool,
+    ScreenAction, ScreenPhase, ShipyardModel, StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
+    NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
+    SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
+    SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::newgame_screen::{self, NewgameNodes};
+use crate::shipyard_screen::{self, ShipyardNodes};
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
@@ -123,6 +132,45 @@ enum Action {
     ArmAbandon(String),
     ConfirmAbandon,
     CancelAbandon,
+    OpenShipyard,
+    CloseShipyard,
+    ShipyardRepair,
+    ShipyardRename,
+    ShipyardArm(ShipyardArm),
+    ShipyardConfirm,
+    ShipyardCancel,
+}
+
+#[derive(Clone)]
+enum ShipyardArm {
+    Buy(String),
+    Install(String),
+    Sell(String),
+    Dock,
+    Board(String),
+}
+
+#[derive(Clone, Copy)]
+enum ShipyardShot {
+    Flagship,
+    Yard,
+    Fleet,
+}
+
+impl ShipyardShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Flagship => "shipyard-flagship.png",
+            Self::Yard => "shipyard-yard.png",
+            Self::Fleet => "shipyard-fleet.png",
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ShipyardSection {
+    Yard,
+    Fleet,
 }
 
 #[derive(Clone, Copy)]
@@ -309,6 +357,22 @@ struct PortlightGame {
     contracts_checked: bool,
     contracts_shot_dir: Option<String>,
     contracts_shot: Option<ContractsShot>,
+    shipyard_nodes: Option<ShipyardNodes>,
+    shipyard_open: bool,
+    shipyard_notice: String,
+    shipyard_confirm: Option<ShipyardArm>,
+    shipyard_shown: Option<ShipyardModel>,
+    rename_edit: Option<Gd<LineEdit>>,
+    rename_draft: String,
+    yard_mark: Option<Gd<Control>>,
+    fleet_mark: Option<Gd<Control>>,
+    shipyard_button: Option<Gd<Button>>,
+    shipyard_checked: bool,
+    shipyard_shot_dir: Option<String>,
+    shipyard_shot: Option<ShipyardShot>,
+    shipyard_scroll: Option<ShipyardSection>,
+    /// Day when `--shipyard-screen` opened. The script must not move it.
+    shipyard_day: i64,
 }
 
 #[godot_api]
@@ -371,6 +435,21 @@ impl IControl for PortlightGame {
             contracts_checked: false,
             contracts_shot_dir: None,
             contracts_shot: None,
+            shipyard_nodes: None,
+            shipyard_open: false,
+            shipyard_notice: String::new(),
+            shipyard_confirm: None,
+            shipyard_shown: None,
+            rename_edit: None,
+            rename_draft: String::new(),
+            yard_mark: None,
+            fleet_mark: None,
+            shipyard_button: None,
+            shipyard_checked: false,
+            shipyard_shot_dir: None,
+            shipyard_shot: None,
+            shipyard_scroll: None,
+            shipyard_day: 0,
         }
     }
 
@@ -395,6 +474,24 @@ impl IControl for PortlightGame {
             } else {
                 self.capture_frames = 2;
             }
+        } else if user_arg("--shipyard-screen") {
+            self.smoke = true;
+            self.start_game();
+            self.shipyard_checked = true;
+            self.shipyard_day = self
+                .session
+                .as_ref()
+                .map(|session| session.world().day)
+                .unwrap_or(0);
+            let capture = newgame_frames_requested(self.shot_path.is_some());
+            self.open_shipyard();
+            if capture {
+                self.begin_shipyard_shots();
+                self.capture_frames = 4;
+            } else {
+                self.run_shipyard_actions();
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -412,7 +509,13 @@ impl IControl for PortlightGame {
             self.pin_contracts_scroll();
         }
         self.capture_frames -= 1;
+        if self.capture_frames == 2 {
+            self.apply_shipyard_scroll();
+        }
         if self.capture_frames > 0 {
+            return;
+        }
+        if self.advance_shipyard_shot() {
             return;
         }
         if self.advance_newgame_shot() {
@@ -429,8 +532,11 @@ impl IControl for PortlightGame {
         if self.smoke && self.shot_path.is_some() && self.market_open {
             self.assert_panel_labels();
         }
-        // A new-game or contracts sequence already wrote its own frames.
-        if self.newgame_shot_dir.is_none() && self.contracts_shot_dir.is_none() {
+        // A new-game, contracts, or shipyard sequence already wrote its own frames.
+        if self.newgame_shot_dir.is_none()
+            && self.contracts_shot_dir.is_none()
+            && self.shipyard_shot_dir.is_none()
+        {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
                 // multi-frame shot saves its own files before this, then the
@@ -451,7 +557,12 @@ impl IControl for PortlightGame {
             return;
         }
         let code = if self.smoke_ok { 0 } else { 1 };
-        if self.newgame_checked {
+        if self.shipyard_checked {
+            godot_print!(
+                "portlight shipyard smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.newgame_checked {
             godot_print!(
                 "portlight newgame smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
@@ -638,10 +749,10 @@ impl PortlightGame {
         self.save_button = Some(save);
         column.add_child(&buttons);
 
-        // One line. A wrap would push the lanes and the market down the panel.
-        // Horizontal padding is tighter so Contracts fits beside Market.
+        // One line. A wrap would push the lanes, the market, and the log.
         let mut port_row = HBoxContainer::new_alloc();
-        port_row.add_theme_constant_override("separation", 4);
+        port_row.set_name("PortRow");
+        port_row.add_theme_constant_override("separation", 1);
         let market = port_row_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
         self.market_button = Some(market);
@@ -657,6 +768,9 @@ impl PortlightGame {
         let work = port_row_button("Work", game_id, Action::Work);
         port_row.add_child(&work);
         self.work_button = Some(work);
+        let shipyard = port_row_button("Shipyard", game_id, Action::OpenShipyard);
+        port_row.add_child(&shipyard);
+        self.shipyard_button = Some(shipyard);
         port_row.set_visible(false);
         column.add_child(&port_row);
         self.port_row = Some(port_row);
@@ -739,6 +853,19 @@ impl PortlightGame {
         encounter_screen::fill_parent(&mut contracts.root);
         self.wire_contracts_chrome(&mut contracts);
         self.contracts_nodes = Some(contracts);
+
+        let mut shipyard = shipyard_screen::build_shipyard_screen();
+        self.base_mut().add_child(&shipyard.root);
+        encounter_screen::fill_parent(&mut shipyard.root);
+        let close = shipyard.close.clone();
+        let close_game = game_id;
+        close.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(close_game) else {
+                return;
+            };
+            gd.bind_mut().perform(Action::CloseShipyard);
+        });
+        self.shipyard_nodes = Some(shipyard);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1430,6 +1557,654 @@ impl PortlightGame {
         }
     }
 
+    fn open_shipyard(&mut self) {
+        if self.docked_id().is_none() {
+            self.push_log("Shipyard opens from a dock.".to_string());
+            return;
+        }
+        self.shipyard_open = true;
+        self.shipyard_confirm = None;
+        self.shipyard_notice.clear();
+        self.shipyard_shown = None;
+        self.rename_draft.clear();
+        self.refresh();
+    }
+
+    fn close_shipyard(&mut self) {
+        self.read_rename_field();
+        self.shipyard_open = false;
+        self.shipyard_confirm = None;
+        self.refresh();
+    }
+
+    fn shipyard_repair(&mut self) {
+        self.shipyard_confirm = None;
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.repair(None)
+        };
+        self.shipyard_notice = match result {
+            Ok((points, cost)) => format!("Restored {points} hull for {cost} silver."),
+            Err(err) => ui_sentence(&err.to_string()),
+        };
+        self.refresh();
+    }
+
+    fn shipyard_rename(&mut self) {
+        self.read_rename_field();
+        self.shipyard_confirm = None;
+        let draft = self.rename_draft.clone();
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.rename_ship(&draft, None)
+        };
+        self.shipyard_notice = match result {
+            Ok(()) => {
+                let stored = self
+                    .session
+                    .as_ref()
+                    .and_then(|session| session.world().captain.ship.as_ref())
+                    .map(|ship| ship.name.clone())
+                    .unwrap_or(draft);
+                format!("Renamed to {stored}.")
+            }
+            Err(err) => ui_sentence(&err.to_string()),
+        };
+        self.refresh();
+    }
+
+    fn arm_shipyard(&mut self, arm: ShipyardArm) {
+        let Some(model) = self.session.as_ref().and_then(shipyard_model) else {
+            return;
+        };
+        self.shipyard_notice = match &arm {
+            ShipyardArm::Buy(id) => model
+                .offers
+                .iter()
+                .find(|offer| offer.id == *id)
+                .map(|offer| buy_confirm_line(offer, model.buying_sells_flagship))
+                .unwrap_or_else(|| format!("Buy {id}?")),
+            ShipyardArm::Install(id) => model
+                .upgrades
+                .iter()
+                .find(|upgrade| upgrade.id == *id)
+                .map(|upgrade| install_confirm_line(&upgrade.name, upgrade.price))
+                .unwrap_or_else(|| format!("Install {id}?")),
+            ShipyardArm::Sell(name) => sell_confirm_line(name),
+            ShipyardArm::Dock => dock_confirm_line().to_string(),
+            ShipyardArm::Board(name) => board_confirm_line(name),
+        };
+        self.shipyard_confirm = Some(arm);
+        self.refresh();
+    }
+
+    fn cancel_shipyard(&mut self) {
+        self.shipyard_confirm = None;
+        self.shipyard_notice.clear();
+        self.refresh();
+    }
+
+    fn confirm_shipyard(&mut self) {
+        let Some(arm) = self.shipyard_confirm.clone() else {
+            return;
+        };
+        self.shipyard_notice = match arm {
+            ShipyardArm::Buy(id) => self.buy_hull(&id),
+            ShipyardArm::Install(id) => self.install_hull_upgrade(&id),
+            ShipyardArm::Sell(name) => self.sell_docked_hull(&name),
+            ShipyardArm::Dock => self.dock_flagship(),
+            ShipyardArm::Board(name) => self.board_docked_hull(&name),
+        };
+        self.shipyard_confirm = None;
+        self.refresh();
+    }
+
+    fn buy_hull(&mut self, ship_id: &str) -> String {
+        let (previous_name, fleet_before) = {
+            let Some(session) = self.session.as_ref() else {
+                return "No game".to_string();
+            };
+            let world = session.world();
+            (
+                world
+                    .captain
+                    .ship
+                    .as_ref()
+                    .map(|ship| ship.name.clone())
+                    .unwrap_or_default(),
+                world.captain.fleet.len(),
+            )
+        };
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return "No game".to_string();
+            };
+            session.buy_ship(ship_id)
+        };
+        match result {
+            Ok(()) => {
+                let Some(session) = self.session.as_ref() else {
+                    return "No game".to_string();
+                };
+                let world = session.world();
+                let bought = world
+                    .captain
+                    .ship
+                    .as_ref()
+                    .map(|ship| ship.name.clone())
+                    .unwrap_or_else(|| ship_id.to_string());
+                buy_result_line(
+                    &bought,
+                    &previous_name,
+                    world.captain.fleet.len() > fleet_before,
+                )
+            }
+            Err(err) => ui_sentence(&err.to_string()),
+        }
+    }
+
+    fn install_hull_upgrade(&mut self, upgrade_id: &str) -> String {
+        let name = portlight_sim::content::content()
+            .upgrade(upgrade_id)
+            .map(|upgrade| ascii_label(&upgrade.name, upgrade_id).to_string())
+            .unwrap_or_else(|| upgrade_id.to_string());
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return "No game".to_string();
+            };
+            session.install_upgrade(upgrade_id)
+        };
+        match result {
+            Ok(()) => format!("Installed {name}."),
+            Err(err) => ui_sentence(&err.to_string()),
+        }
+    }
+
+    fn sell_docked_hull(&mut self, name: &str) -> String {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return "No game".to_string();
+            };
+            session.sell_fleet_ship(name)
+        };
+        match result {
+            Ok((silver, sold)) => format!("Sold {sold} for {silver} silver."),
+            Err(err) => ui_sentence(&err.to_string()),
+        }
+    }
+
+    fn dock_flagship(&mut self) -> String {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return "No game".to_string();
+            };
+            session.dock_current_ship()
+        };
+        match result {
+            Ok(()) => self.sailing_notice(),
+            Err(err) => ui_sentence(&err.to_string()),
+        }
+    }
+
+    fn board_docked_hull(&mut self, name: &str) -> String {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return "No game".to_string();
+            };
+            session.board_fleet_ship(name)
+        };
+        match result {
+            Ok(()) => self.sailing_notice(),
+            Err(err) => ui_sentence(&err.to_string()),
+        }
+    }
+
+    fn sailing_notice(&self) -> String {
+        self.session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| format!("Now sailing {}.", ship.name))
+            .unwrap_or_else(|| "Now sailing.".to_string())
+    }
+
+    fn read_rename_field(&mut self) {
+        if let Some(edit) = self.rename_edit.as_ref() {
+            self.rename_draft = edit.get_text().to_string();
+        }
+    }
+
+    fn set_rename_text(&mut self, text: &str) {
+        self.rename_draft = text.to_string();
+        if let Some(mut edit) = self.rename_edit.clone() {
+            edit.set_text(text);
+        }
+    }
+
+    fn sync_shipyard(&mut self) {
+        let Some(mut nodes) = self.shipyard_nodes.clone() else {
+            return;
+        };
+        let model = self.session.as_ref().and_then(shipyard_model);
+        let open = self.shipyard_open && model.is_some();
+        nodes.root.set_visible(open);
+        if !open {
+            if self.shipyard_open {
+                self.shipyard_open = false;
+            }
+            return;
+        }
+        let model = model.expect("open shipyard has a model");
+        if self.shipyard_notice.is_empty() && self.shipyard_confirm.is_none() {
+            self.shipyard_notice.clone_from(&model.gate_notice);
+        }
+        nodes.title.set_text(&model.port_name);
+        nodes.notice.set_text(&self.shipyard_notice);
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &model.flagship.template_id,
+        );
+        self.read_rename_field();
+        if self.shipyard_shown.as_ref() != Some(&model) {
+            self.fill_shipyard_body(&model);
+            self.shipyard_shown = Some(model);
+        }
+        self.sync_shipyard_confirm();
+    }
+
+    fn sync_shipyard_confirm(&mut self) {
+        let Some(mut confirm) = self
+            .shipyard_nodes
+            .as_ref()
+            .map(|nodes| nodes.confirm.clone())
+        else {
+            return;
+        };
+        clear_hbox(&mut confirm);
+        if self.shipyard_confirm.is_none() {
+            confirm.set_visible(false);
+            return;
+        }
+        confirm.set_visible(true);
+        let game_id = self.instance_id();
+        confirm.add_child(&encounter_button(
+            "Confirm",
+            game_id,
+            Action::ShipyardConfirm,
+        ));
+        confirm.add_child(&encounter_button("Cancel", game_id, Action::ShipyardCancel));
+    }
+
+    fn fill_shipyard_body(&mut self, model: &ShipyardModel) {
+        self.rename_edit = None;
+        self.yard_mark = None;
+        self.fleet_mark = None;
+        let Some(mut body) = self.shipyard_nodes.as_ref().map(|nodes| nodes.body.clone()) else {
+            return;
+        };
+        clear_children(&mut body);
+        let game_id = self.instance_id();
+        body.add_child(&body_label("Flagship", 18, GOLD));
+        for line in model.flagship.lines(model.silver, &model.fleet_label) {
+            let mut label = body_label(&line, 16, CREAM);
+            label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            body.add_child(&label);
+        }
+        body.add_child(&encounter_button("Repair", game_id, Action::ShipyardRepair));
+        body.add_child(&body_label("Rename", 14, MUTED));
+        let mut edit = LineEdit::new_alloc();
+        edit.set_text(&self.rename_draft);
+        edit.set_placeholder("New name");
+        edit.set_max_length(30);
+        newgame_screen::style_field(&mut edit);
+        body.add_child(&edit);
+        self.rename_edit = Some(edit);
+        body.add_child(&encounter_button(
+            "Confirm rename",
+            game_id,
+            Action::ShipyardRename,
+        ));
+
+        let yard = body_label("Yard", 18, GOLD);
+        self.yard_mark = Some(yard.clone().upcast());
+        body.add_child(&yard);
+        if !model.has_shipyard {
+            let mut gated = body_label(NO_SHIPYARD_BODY, 16, CREAM);
+            gated.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            body.add_child(&gated);
+        }
+        body.add_child(&body_label("Buy hull", 16, GOLD));
+        for offer in &model.offers {
+            let mut block = VBoxContainer::new_alloc();
+            block.add_theme_constant_override("separation", 4);
+            let mut label = body_label(&offer.line(), 16, CREAM);
+            label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            block.add_child(&label);
+            let mut buy = encounter_button(
+                "Buy",
+                game_id,
+                Action::ShipyardArm(ShipyardArm::Buy(offer.id.clone())),
+            );
+            buy.set_disabled(!model.has_shipyard);
+            block.add_child(&buy);
+            body.add_child(&block);
+        }
+        body.add_child(&body_label("Install upgrade", 16, GOLD));
+        if !model.slots_notice.is_empty() {
+            let mut full = body_label(&model.slots_notice, 16, CREAM);
+            full.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            body.add_child(&full);
+        }
+        for upgrade in &model.upgrades {
+            let mut block = VBoxContainer::new_alloc();
+            block.add_theme_constant_override("separation", 4);
+            let mut label = body_label(&upgrade.line(), 16, CREAM);
+            label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            block.add_child(&label);
+            let mut install = encounter_button(
+                "Install",
+                game_id,
+                Action::ShipyardArm(ShipyardArm::Install(upgrade.id.clone())),
+            );
+            install.set_disabled(!model.has_shipyard || !model.slots_notice.is_empty());
+            block.add_child(&install);
+            body.add_child(&block);
+        }
+
+        let fleet = body_label("Fleet here", 18, GOLD);
+        self.fleet_mark = Some(fleet.clone().upcast());
+        body.add_child(&fleet);
+        body.add_child(&body_label(&model.fleet_label, 16, CREAM));
+        if model.fleet.is_empty() {
+            body.add_child(&body_label(NO_FLEET_HERE, 16, CREAM));
+        }
+        for owned in &model.fleet {
+            let mut block = VBoxContainer::new_alloc();
+            block.add_theme_constant_override("separation", 4);
+            let mut label = body_label(&owned.line(), 16, CREAM);
+            label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            block.add_child(&label);
+            if owned.cargo {
+                block.add_child(&body_label("Ship has cargo - transfer it first", 14, MUTED));
+            }
+            let mut buttons = HBoxContainer::new_alloc();
+            buttons.add_theme_constant_override("separation", 8);
+            buttons.add_child(&encounter_button(
+                "Board",
+                game_id,
+                Action::ShipyardArm(ShipyardArm::Board(owned.name.clone())),
+            ));
+            let mut sell = encounter_button(
+                "Sell",
+                game_id,
+                Action::ShipyardArm(ShipyardArm::Sell(owned.name.clone())),
+            );
+            sell.set_disabled(!model.has_shipyard || owned.cargo);
+            buttons.add_child(&sell);
+            block.add_child(&buttons);
+            body.add_child(&block);
+        }
+        body.add_child(&encounter_button(
+            "Dock flagship",
+            game_id,
+            Action::ShipyardArm(ShipyardArm::Dock),
+        ));
+        // Lets the fleet header scroll to the top of the viewport. Without it
+        // the last rows stay pinned to the bottom under the upgrade list.
+        let mut tail = Control::new_alloc();
+        tail.set_mouse_filter(godot::classes::control::MouseFilter::IGNORE);
+        tail.set_custom_minimum_size(Vector2::new(0.0, 480.0));
+        body.add_child(&tail);
+    }
+
+    fn run_shipyard_actions(&mut self) {
+        self.shipyard_repair_and_rename();
+        self.shipyard_buy_and_install();
+        self.shipyard_dock_board_sell();
+        self.close_shipyard();
+        self.finish_shipyard_smoke();
+    }
+
+    fn begin_shipyard_shots(&mut self) {
+        self.shipyard_shot_dir = Some(newgame_shot_dir(self.shot_path.as_deref()));
+        self.shipyard_shot = Some(ShipyardShot::Flagship);
+        self.shipyard_scroll = None;
+    }
+
+    fn advance_shipyard_shot(&mut self) -> bool {
+        let Some(phase) = self.shipyard_shot else {
+            return false;
+        };
+        let Some(dir) = self.shipyard_shot_dir.clone() else {
+            return false;
+        };
+        if !self.shipyard_open {
+            self.fail_shipyard(format!(
+                "Shipyard smoke: screen was closed before {}.",
+                phase.file_name()
+            ));
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shipyard_shot(&path) {
+            self.capture_failed = true;
+        }
+        match phase {
+            ShipyardShot::Flagship => {
+                self.shipyard_repair_and_rename();
+                self.shipyard_scroll = Some(ShipyardSection::Yard);
+                self.shipyard_shot = Some(ShipyardShot::Yard);
+            }
+            ShipyardShot::Yard => {
+                self.shipyard_buy_and_install();
+                self.shipyard_scroll = Some(ShipyardSection::Fleet);
+                self.shipyard_shot = Some(ShipyardShot::Fleet);
+            }
+            ShipyardShot::Fleet => {
+                self.shipyard_dock_board_sell();
+                self.close_shipyard();
+                self.finish_shipyard_smoke();
+                self.shipyard_shot = None;
+                return false;
+            }
+        }
+        self.capture_frames = 4;
+        true
+    }
+
+    fn apply_shipyard_scroll(&mut self) {
+        let Some(section) = self.shipyard_scroll.take() else {
+            return;
+        };
+        let Some(mut scroll) = self
+            .shipyard_nodes
+            .as_ref()
+            .map(|nodes| nodes.scroll.clone())
+        else {
+            return;
+        };
+        let mark = match section {
+            ShipyardSection::Yard => self.yard_mark.clone(),
+            ShipyardSection::Fleet => self.fleet_mark.clone(),
+        };
+        let Some(mark) = mark else {
+            return;
+        };
+        let y = mark.get_position().y.round().max(0.0) as i32;
+        scroll.set_v_scroll(y);
+    }
+
+    fn shipyard_repair_and_rename(&mut self) {
+        let original = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| ship.name.clone())
+            .unwrap_or_default();
+        self.perform(Action::ShipyardRepair);
+        let notice = self.shipyard_notice.clone();
+        if notice != "Ship is already in perfect condition" && !notice.starts_with("Restored ") {
+            self.fail_shipyard(format!("Shipyard smoke: repair returned `{notice}`."));
+        }
+        if self.rename_edit.is_none() {
+            self.fail_shipyard("Shipyard smoke: rename field missing.".to_string());
+            return;
+        }
+        self.set_rename_text("Harbor Sloop");
+        self.perform(Action::ShipyardRename);
+        let renamed = self.flagship_name();
+        if renamed != "Harbor Sloop" {
+            self.fail_shipyard(format!("Shipyard smoke: rename landed on `{renamed}`."));
+        }
+        self.set_rename_text(&original);
+        self.perform(Action::ShipyardRename);
+        let restored = self.flagship_name();
+        if restored != original {
+            self.fail_shipyard(format!(
+                "Shipyard smoke: rename did not restore `{original}` (got `{restored}`)."
+            ));
+        }
+    }
+
+    fn shipyard_buy_and_install(&mut self) {
+        self.perform(Action::ShipyardArm(ShipyardArm::Buy(
+            "swift_cutter".to_string(),
+        )));
+        let ask = self.shipyard_notice.clone();
+        if !ask.contains("Buy Swift Cutter for 450 silver?") || ask.contains("Fleet is full") {
+            self.fail_shipyard(format!("Shipyard smoke: buy confirm was `{ask}`."));
+        }
+        self.perform(Action::ShipyardConfirm);
+        let bought = self.shipyard_notice.clone();
+        if !bought.contains("Coastal Sloop is docked here") {
+            self.fail_shipyard(format!("Shipyard smoke: buy result was `{bought}`."));
+        }
+        if self.flagship_template() != "swift_cutter" {
+            self.fail_shipyard("Shipyard smoke: flagship was not the cutter.".to_string());
+        }
+        self.perform(Action::ShipyardArm(ShipyardArm::Install(
+            "iron_strapping".to_string(),
+        )));
+        self.perform(Action::ShipyardConfirm);
+        let installed = self.shipyard_notice.clone();
+        if installed != "Installed Iron Strapping." {
+            self.fail_shipyard(format!("Shipyard smoke: install result was `{installed}`."));
+        }
+    }
+
+    fn shipyard_dock_board_sell(&mut self) {
+        self.perform(Action::ShipyardArm(ShipyardArm::Dock));
+        self.perform(Action::ShipyardConfirm);
+        if self.flagship_template() != "coastal_sloop" {
+            self.fail_shipyard(format!(
+                "Shipyard smoke: dock left the flagship as {}.",
+                self.flagship_template()
+            ));
+        }
+        self.perform(Action::ShipyardArm(ShipyardArm::Board(
+            "Swift Cutter".to_string(),
+        )));
+        self.perform(Action::ShipyardConfirm);
+        if self.flagship_template() != "swift_cutter" {
+            self.fail_shipyard(format!(
+                "Shipyard smoke: board left the flagship as {}.",
+                self.flagship_template()
+            ));
+        }
+        self.perform(Action::ShipyardArm(ShipyardArm::Sell(
+            "Coastal Sloop".to_string(),
+        )));
+        self.perform(Action::ShipyardConfirm);
+        let sold = self.shipyard_notice.clone();
+        if !sold.starts_with("Sold Coastal Sloop for ") {
+            self.fail_shipyard(format!("Shipyard smoke: sell result was `{sold}`."));
+        }
+    }
+
+    fn finish_shipyard_smoke(&mut self) {
+        let visible = self
+            .shipyard_button
+            .as_ref()
+            .is_some_and(|button| button.is_visible_in_tree());
+        if !visible {
+            self.fail_shipyard("Shipyard smoke: docked chart hid the Shipyard button.".to_string());
+        }
+        if self.shipyard_open {
+            self.fail_shipyard("Shipyard smoke: screen stayed open.".to_string());
+        }
+        let Some(session) = self.session.as_ref() else {
+            self.fail_shipyard("Shipyard smoke: no session.".to_string());
+            return;
+        };
+        let world = session.world();
+        let day = world.day;
+        let port = if world.voyage.status == VoyageStatus::InPort {
+            Some(world.voyage.destination_id.clone())
+        } else {
+            None
+        };
+        let ship = world.captain.ship.as_ref();
+        let on_cutter = ship.is_some_and(|ship| ship.template_id == "swift_cutter");
+        let strapped = ship.is_some_and(|ship| {
+            ship.upgrades
+                .iter()
+                .any(|upgrade| upgrade.upgrade_id == "iron_strapping")
+        });
+        let fleet_empty = world.captain.fleet.is_empty();
+        let silver = world.captain.silver;
+        if day != self.shipyard_day {
+            self.fail_shipyard(format!(
+                "Shipyard smoke: day moved from {} to {day}.",
+                self.shipyard_day
+            ));
+        }
+        if port.as_deref() != Some("porto_novo") {
+            self.fail_shipyard("Shipyard smoke: left Porto Novo.".to_string());
+        }
+        if !on_cutter {
+            self.fail_shipyard("Shipyard smoke: expected to end on the cutter.".to_string());
+        }
+        if !strapped {
+            self.fail_shipyard("Shipyard smoke: iron strapping was not fitted.".to_string());
+        }
+        if !fleet_empty {
+            self.fail_shipyard("Shipyard smoke: the sold hull is still in the fleet.".to_string());
+        }
+        if silver != 0 {
+            self.fail_shipyard(format!(
+                "Shipyard smoke: expected 0 silver after the cutter and the strapping, have {silver}."
+            ));
+        }
+    }
+
+    fn flagship_name(&self) -> String {
+        self.session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| ship.name.clone())
+            .unwrap_or_default()
+    }
+
+    fn flagship_template(&self) -> String {
+        self.session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| ship.template_id.clone())
+            .unwrap_or_default()
+    }
+
+    fn fail_shipyard(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+    }
+
     fn run_smoke(&mut self) {
         let chart = self.chart_now();
         if chart.as_ref().is_none_or(|chart| {
@@ -1727,6 +2502,13 @@ impl PortlightGame {
             Action::ArmAbandon(id) => self.arm_abandon(&id),
             Action::ConfirmAbandon => self.confirm_abandon(),
             Action::CancelAbandon => self.cancel_abandon(),
+            Action::OpenShipyard => self.open_shipyard(),
+            Action::CloseShipyard => self.close_shipyard(),
+            Action::ShipyardRepair => self.shipyard_repair(),
+            Action::ShipyardRename => self.shipyard_rename(),
+            Action::ShipyardArm(arm) => self.arm_shipyard(arm),
+            Action::ShipyardConfirm => self.confirm_shipyard(),
+            Action::ShipyardCancel => self.cancel_shipyard(),
         }
     }
 
@@ -2112,6 +2894,7 @@ impl PortlightGame {
         self.sync_encounter_screen();
         self.sync_newgame();
         self.sync_contracts();
+        self.sync_shipyard();
     }
 
     fn wire_contracts_chrome(&mut self, nodes: &mut ContractsNodes) {
@@ -3201,6 +3984,40 @@ impl PortlightGame {
         }
         if newgame_frame_rejected(width, height, &samples) {
             godot_print!("screenshot rejected: expected a full 1280x800 new game frame");
+            return false;
+        }
+        true
+    }
+
+    /// 1280×720 shipyard frame. The ink ground is most of the shot, so the
+    /// check is the plate fill and a button fill, same as the encounter.
+    fn save_shipyard_shot(&self, path: &str) -> bool {
+        let Some(image) = self.base().get_viewport().and_then(|viewport| {
+            viewport
+                .get_texture()
+                .and_then(|texture| texture.get_image())
+        }) else {
+            godot_print!("viewport image was empty");
+            return false;
+        };
+        if image.is_empty() {
+            godot_print!("viewport image was empty");
+            return false;
+        }
+        let width = image.get_width();
+        let height = image.get_height();
+        let err = image.save_png(path);
+        let samples = frame_samples(&image);
+        godot_print!(
+            "screenshot {path} {width}x{height} samples={} error={err:?}",
+            samples.len()
+        );
+        if err != Error::OK {
+            godot_print!("screenshot save failed");
+            return false;
+        }
+        if shipyard_frame_rejected(width, height, &samples) {
+            godot_print!("screenshot rejected: expected a full 1280x720 shipyard frame");
             return false;
         }
         true
@@ -4304,13 +5121,32 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 /// Chart port-row control. Same theme fill as [`action_button`].
 ///
-/// The font is one step smaller so Market, Contracts, Hire, Provisions, and
-/// Work stay on one line. A second line would push the lanes down the panel.
-/// The minimum height stays the default button so the row does not shrink.
+/// The face is 13 px so Market, Contracts, Hire, Provisions, Work, and
+/// Shipyard stay on one line. A second line would push the lanes down the
+/// panel. The minimum height stays the default button (31 px) so the row
+/// does not shrink.
 fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = action_button(text, game, action);
-    button.add_theme_font_size_override("font_size", 12);
+    button.add_theme_font_size_override("font_size", 13);
     button.set_custom_minimum_size(Vector2::new(0.0, 31.0));
+    // Default 4 px side padding plus a sixth label overruns the scrollbar and
+    // reflows the panel. Zero horizontal padding keeps the 13 px face on one line.
+    for state in [
+        "normal",
+        "hover",
+        "pressed",
+        "focus",
+        "disabled",
+        "hover_disabled",
+    ] {
+        let Some(style) = button.get_theme_stylebox(state) else {
+            continue;
+        };
+        let mut boxed = style.duplicate_resource();
+        boxed.set_content_margin(godot::builtin::Side::LEFT, 0.0);
+        boxed.set_content_margin(godot::builtin::Side::RIGHT, 0.0);
+        button.add_theme_stylebox_override(state, &boxed);
+    }
     button
 }
 
@@ -4387,6 +5223,14 @@ fn scrolling(height: f32) -> (Gd<ScrollContainer>, Gd<VBoxContainer>) {
 }
 
 fn clear_children(node: &mut Gd<VBoxContainer>) {
+    let children = node.get_children();
+    for mut child in children.iter_shared() {
+        node.remove_child(&child);
+        child.queue_free();
+    }
+}
+
+fn clear_hbox(node: &mut Gd<HBoxContainer>) {
     let children = node.get_children();
     for mut child in children.iter_shared() {
         node.remove_child(&child);
