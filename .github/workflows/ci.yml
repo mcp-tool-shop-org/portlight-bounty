@@ -353,6 +353,22 @@ jobs:
             echo "day-report smoke did not report ok"
             exit 1
           fi
+          rm -f /tmp/hs-day-report-week.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-day-report-week-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-day-report-week.png \
+            godot --headless --path godot -- --day-report-week
+          if [ -f /tmp/hs-day-report-week.png ]; then
+            echo "headless day-report-week PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-day-report-week.log \
+            godot --headless --path godot -- --art-docs --day-report-week
+          run_godot /tmp/godot-day-report-week-smoke.log \
+            godot --headless --path godot -- --day-report-week
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-week-smoke.log; then
+            echo "day-report-week smoke did not report ok"
+            exit 1
+          fi
           rm -f /tmp/hs-contract-strip.png
           expect_explicit_headless_shot_fails /tmp/godot-headless-contract-strip-shot.log \
             env PORTLIGHT_SHOT=/tmp/hs-contract-strip.png \
@@ -605,6 +621,19 @@ jobs:
               exit 1
             fi
           done
+          # Captain's week footer on a real notable day (Session verbs only).
+          run_godot /tmp/godot-day-report-week-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/day-report-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --day-report-week
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-week-frames.log; then
+            echo "day-report-week frame capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/day-report-shots/day-report-week.png ]; then
+            echo "day-report-week capture did not write /tmp/day-report-shots/day-report-week.png"
+            exit 1
+          fi
           mkdir -p /tmp/contract-strip-shots
           run_godot /tmp/godot-contract-strip-frames.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
@@ -648,6 +677,7 @@ jobs:
           cmp_committed hunt-active.png /tmp/hunt-shots/hunt-active.png
           cmp_committed day-report-full.png /tmp/day-report-shots/day-report-full.png
           cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
+          cmp_committed day-report-week.png /tmp/day-report-shots/day-report-week.png
           cmp_committed contract-strip-active.png /tmp/contract-strip-shots/contract-strip-active.png
           cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png

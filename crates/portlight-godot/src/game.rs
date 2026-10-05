@@ -419,6 +419,7 @@ impl HuntShot {
 enum DayReportShot {
     Full,
     Deadline,
+    Week,
 }
 
 impl DayReportShot {
@@ -426,6 +427,7 @@ impl DayReportShot {
         match self {
             Self::Full => "day-report-full.png",
             Self::Deadline => "day-report-deadline.png",
+            Self::Week => "day-report-week.png",
         }
     }
 }
@@ -831,6 +833,18 @@ impl IControl for PortlightGame {
                 self.capture_frames = 4;
             } else {
                 self.run_day_report_smoke();
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--day-report-week") {
+            // Captain's week footer on a real notable day (Session verbs only).
+            self.smoke = true;
+            self.day_report_checked = true;
+            let capture = day_report_frames_requested(self.shot_path.is_some());
+            if self.run_day_report_week_smoke() && capture {
+                self.day_report_shot_dir = Some(day_report_shot_dir(self.shot_path.as_deref()));
+                self.day_report_shot = Some(DayReportShot::Week);
+                self.capture_frames = 4;
+            } else {
                 self.capture_frames = 2;
             }
         } else if user_arg("--contract-strip-screen") {
@@ -1425,9 +1439,7 @@ impl PortlightGame {
         self.stances.clear();
         self.hunt_open = false;
         self.hunt_desk = HuntDesk::default();
-        self.day_report_open = false;
-        self.day_report_doc = None;
-        self.day_report_memory = DayReportMemory::default();
+        self.reset_day_report();
         self.encounter = None;
         match Session::new(
             FIRST_PLAYABLE_NAME,
@@ -1605,6 +1617,7 @@ impl PortlightGame {
         self.market_open = false;
         self.armed_sail = None;
         self.stances.clear();
+        self.reset_day_report();
         self.session = Some(session);
         self.newgame_notice.clear();
         self.push_log(format!("A new voyage begins. Docked at {place}."));
@@ -1631,6 +1644,7 @@ impl PortlightGame {
                 self.market_open = false;
                 self.armed_sail = None;
                 self.stances.clear();
+                self.reset_day_report();
                 self.session = Some(session);
                 self.push_log(format!("Loaded slot {slot}. Docked at {place}."));
                 self.play_sfx("sfx_ui_newgame_start");
@@ -7102,7 +7116,9 @@ impl PortlightGame {
             return;
         };
         let mut memory = std::mem::take(&mut self.day_report_memory);
-        let doc = day_report::build_document(
+        // Captain's week: every successful advance feeds the window (post-advance reads).
+        memory.week.push(day_report::week_sample(session));
+        let mut doc = day_report::build_document(
             session,
             turn_contracts,
             injuries_before,
@@ -7111,6 +7127,10 @@ impl PortlightGame {
             arrival_day,
             &self.hunt_desk.known,
         );
+        if doc.has_notable() {
+            // Ride-along only: the footer is attached after the notable gate.
+            doc.footer = day_report::build_footer(session, &memory.week);
+        }
         self.day_report_memory = memory;
         self.day_report_memory.price_memory = day_report::snapshot_docked_prices(session);
         if doc.has_notable() {
@@ -7120,6 +7140,13 @@ impl PortlightGame {
             self.day_report_doc = None;
             self.day_report_open = false;
         }
+    }
+
+    /// New game / load: the report and its Godot-only memory (incl. Captain's week) reset.
+    fn reset_day_report(&mut self) {
+        self.day_report_open = false;
+        self.day_report_doc = None;
+        self.day_report_memory = DayReportMemory::default();
     }
 
     fn open_day_report_doc(&mut self, doc: DayReportDocument) {
@@ -7183,6 +7210,10 @@ impl PortlightGame {
         if text.contains('\u{2014}') || text.contains("due soon") {
             self.fail_day_report("Day-report smoke: forbidden copy on full card.");
         }
+        if !text.contains("Week: ") || !text.contains("Next: ") {
+            self.fail_day_report("Day-report smoke: full card missing Captain's week footer.");
+        }
+        self.assert_day_report_fits("full");
         self.close_day_report();
         if self.day_report_open {
             self.fail_day_report("Day-report smoke: Close left the card up.");
@@ -7197,6 +7228,11 @@ impl PortlightGame {
         if !deadline_text.contains("1 day left") || !deadline_text.contains("ready to Complete") {
             self.fail_day_report("Day-report smoke: deadline card missing Complete cue.");
         }
+        if deadline_text.contains("Week: ") || !deadline_text.contains("Next: Contract 1 day left")
+        {
+            self.fail_day_report("Day-report smoke: deadline footer should be Next only.");
+        }
+        self.assert_day_report_fits("deadline");
         self.close_day_report();
         // Opening Hunt must close the report.
         self.open_day_report_doc(day_report::smoke_full_document(day));
@@ -7228,6 +7264,173 @@ impl PortlightGame {
                 "Day-report smoke: full, deadline, overlay-close, quiet hide.".to_string(),
             );
         }
+    }
+
+    /// Card stays 520x380 with Close inside (footer may shrink the scroll <= 48 px).
+    fn assert_day_report_fits(&mut self, what: &str) {
+        let error = self
+            .day_report_nodes
+            .as_ref()
+            .and_then(day_report::card_fit_error);
+        if let Some(error) = error {
+            self.fail_day_report(format!(
+                "Day-report smoke: {what} card does not fit: {error}"
+            ));
+        }
+    }
+
+    fn day_report_footer_now(&self) -> String {
+        self.day_report_nodes
+            .as_ref()
+            .map(day_report::footer_text)
+            .unwrap_or_default()
+    }
+
+    /// Captain's week on real Session verbs (seed 1, docked at Porto Novo).
+    /// Warm-up hides Week; a notable warm day shows Week; an empty ladder omits
+    /// Next; then a contract three days out, a hire, and a new bounty fill the
+    /// footer for `day-report-week.png`. Returns false when a step failed.
+    fn run_day_report_week_smoke(&mut self) -> bool {
+        self.start_game();
+        if self.session.is_none() {
+            self.fail_day_report("Day-report week: no session.");
+            return false;
+        }
+        // Day 2: one sample. Week never shows while warming up.
+        self.next_day();
+        if self.day_report_memory.week.len() != 1 {
+            self.fail_day_report("Day-report week: first advance did not push one sample.");
+            return false;
+        }
+        if self.day_report_open && self.day_report_footer_now().contains("Week:") {
+            self.fail_day_report("Day-report week: Week shown with one sample.");
+        }
+        // Day 3: Bounty accepted is notable; window of two shows Week; no Next applies.
+        let accepted = self
+            .session
+            .as_mut()
+            .map(|session| session.accept_bounty("raj_the_quiet"));
+        if !matches!(accepted, Some(Ok(()))) {
+            self.fail_day_report("Day-report week: could not accept a bounty.");
+            return false;
+        }
+        self.next_day();
+        let footer = self.day_report_footer_now();
+        if !self.day_report_open || !footer.contains("Week: ") || !footer.contains("bounty +1") {
+            self.fail_day_report(format!(
+                "Day-report week: notable warm day missing Week line: {footer:?}"
+            ));
+            return false;
+        }
+        if footer.contains("Next:") {
+            self.fail_day_report(format!(
+                "Day-report week: empty ladder still showed Next: {footer:?}"
+            ));
+        }
+        self.assert_day_report_fits("warm");
+        self.close_day_report();
+        // Nearest-deadline contract, then advance until it is three days out.
+        let offer = {
+            let Some(session) = self.session.as_mut() else {
+                return false;
+            };
+            let mut offers = session.available_contracts();
+            offers.sort_by(|a, b| {
+                a.deadline_day
+                    .cmp(&b.deadline_day)
+                    .then_with(|| a.title.cmp(&b.title))
+            });
+            offers.into_iter().next().map(|offer| offer.id)
+        };
+        let Some(offer) = offer else {
+            self.fail_day_report("Day-report week: no contract offer.");
+            return false;
+        };
+        self.accept_contract_offer(&offer);
+        let days_left = |game: &Self| {
+            game.session.as_ref().and_then(|session| {
+                let day = session.world().day;
+                session
+                    .board()
+                    .active
+                    .iter()
+                    .map(|contract| contract.deadline_day - day)
+                    .min()
+            })
+        };
+        let mut hired = false;
+        let mut hunted = false;
+        for _ in 0..40 {
+            let Some(left) = days_left(self) else {
+                self.fail_day_report("Day-report week: contract not active.");
+                return false;
+            };
+            if left <= 3 {
+                break;
+            }
+            // Inside the final five-sample window: hire one hand, then take a bounty.
+            if left == 6 && !hired {
+                hired = self
+                    .session
+                    .as_mut()
+                    .is_some_and(|session| session.hire_crew(1, "sailor").is_ok());
+            }
+            if left == 4 && !hunted {
+                hunted = self
+                    .session
+                    .as_mut()
+                    .is_some_and(|session| session.accept_bounty("scarlet_ana").is_ok());
+            }
+            self.close_day_report();
+            self.next_day();
+        }
+        if days_left(self) != Some(3) || !hired || !hunted {
+            self.fail_day_report(format!(
+                "Day-report week: setup left {:?} days, hired {hired}, bounty {hunted}.",
+                days_left(self)
+            ));
+            return false;
+        }
+        let text = self
+            .day_report_nodes
+            .as_ref()
+            .map(day_report::overlay_text)
+            .unwrap_or_default();
+        let footer = self.day_report_footer_now();
+        if !self.day_report_open || !text.contains("Deadlines") || !text.contains("Bounty accepted")
+        {
+            self.fail_day_report(format!("Day-report week: notable body missing: {text:?}"));
+            return false;
+        }
+        let want_next = "Next: Contract 3 days left - open Contracts.";
+        if !footer.contains("Week: ")
+            || !footer.contains("crew 3 to 4")
+            || !footer.contains("bounty +1")
+            || !footer.contains(want_next)
+        {
+            self.fail_day_report(format!("Day-report week: footer {footer:?}"));
+            return false;
+        }
+        if !footer.is_ascii() || footer.contains("due soon") || footer.contains("+0") {
+            self.fail_day_report(format!("Day-report week: forbidden footer copy {footer:?}"));
+        }
+        let body_lines = self
+            .day_report_doc
+            .as_ref()
+            .map(|doc| doc.sections.iter().map(|s| s.lines.len()).sum::<usize>())
+            .unwrap_or(0);
+        if body_lines > day_report::LINE_CAP {
+            self.fail_day_report(format!(
+                "Day-report week: body over LINE_CAP ({body_lines})."
+            ));
+        }
+        self.assert_day_report_fits("week");
+        if self.smoke_ok {
+            let line = format!("Day-report week smoke: {}", footer.replace('\n', " | "));
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+        self.smoke_ok
     }
 
     fn fail_day_report(&mut self, line: impl Into<String>) {
@@ -7270,6 +7473,8 @@ impl PortlightGame {
                 phase.file_name()
             );
         }
+        // Laid out and drawn: the open card must still be 520x380 with Close inside.
+        self.assert_day_report_fits(phase.file_name());
         let path = format!("{dir}/{}", phase.file_name());
         // Compact card over the chart: use the chart flat-frame check, not the
         // encounter plate/button ink gate (no side plate on this panel).
@@ -7304,6 +7509,11 @@ impl PortlightGame {
                     self.smoke_ok = false;
                     godot_print!("Day-report smoke: quiet day left the card visible.");
                 }
+                self.day_report_shot = None;
+                self.day_report_checked = true;
+                false
+            }
+            DayReportShot::Week => {
                 self.day_report_shot = None;
                 self.day_report_checked = true;
                 false
