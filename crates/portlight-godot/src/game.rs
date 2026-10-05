@@ -6869,6 +6869,9 @@ impl PortlightGame {
         {
             self.fail_hunt("Hunt smoke: docked title was not the port name.");
         }
+        if !self.hunt_forage_helper_shown() {
+            self.fail_hunt("Hunt smoke: docked Forage helper missing.");
+        }
         self.forage_day();
         let sailed = self.session.as_ref().is_some_and(|session| {
             session.world().day == day + 1
@@ -6938,6 +6941,9 @@ impl PortlightGame {
         });
         if !sea_ok {
             self.fail_hunt("Hunt smoke: sea forage status did not name the morale gate.");
+        }
+        if !self.hunt_forage_helper_shown() {
+            self.fail_hunt("Hunt smoke: sea Forage helper missing.");
         }
         let sea_day = self
             .session
@@ -7044,6 +7050,12 @@ impl PortlightGame {
         self.push_log(line);
         self.smoke_ok = false;
         self.hunt_checked = true;
+    }
+
+    fn hunt_forage_helper_shown(&self) -> bool {
+        self.hunt_nodes
+            .as_ref()
+            .is_some_and(|nodes| hunt_screen::forage_helper_shown(&nodes.body))
     }
 
     fn hunt_model_now(&self) -> Option<hunt_screen::HuntModel> {

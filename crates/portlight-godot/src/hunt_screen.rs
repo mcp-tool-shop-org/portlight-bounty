@@ -28,6 +28,9 @@ const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 pub(crate) const ACTIVE_CAP: usize = 3;
 
 pub(crate) const FORAGE_BUTTON: &str = "Forage";
+/// Muted helper under the Forage status line. Shown always, at sea and in
+/// port, whatever the bounty state. Forage costs a day; it never opens a fight.
+pub(crate) const FORAGE_HELPER: &str = "Spends a day gathering stores. Does not start a fight.";
 pub(crate) const HUNT_TARGET_BUTTON: &str = "Hunt target";
 pub(crate) const CLAIM_BUTTON: &str = "Claim";
 pub(crate) const EMPTY_BOARD: &str = "No bounties on the board.";
@@ -500,6 +503,7 @@ pub(crate) fn rebuild_body(
     clear_box(body);
     let mut forage = section("Forage");
     forage.add_child(&wrapped(&model.forage_status, 15, CREAM));
+    forage.add_child(&wrapped(FORAGE_HELPER, 14, MUTED));
     let mut forage_button = make(FORAGE_BUTTON, HuntAction::Forage);
     forage_button.set_disabled(!model.forage_enabled);
     forage.add_child(&forage_button);
@@ -578,6 +582,16 @@ pub(crate) fn scroll_to(
             }
         }
     }
+}
+
+/// True when the Forage section in `body` shows [`FORAGE_HELPER`]. Smoke check.
+pub(crate) fn forage_helper_shown(body: &Gd<VBoxContainer>) -> bool {
+    body.get_children()
+        .iter_shared()
+        .filter(|section| section.get_name() == "HuntForage")
+        .flat_map(|section| section.get_children().iter_shared().collect::<Vec<_>>())
+        .filter_map(|child| child.try_cast::<Label>().ok())
+        .any(|label| label.get_text() == FORAGE_HELPER)
 }
 
 pub(crate) fn clear_row(node: &mut Gd<HBoxContainer>) {
@@ -757,6 +771,16 @@ mod tests {
         assert!(!notice.to_lowercase().contains("hunt bounty"));
         assert_eq!(FORAGE_BUTTON, "Forage");
         assert!(!FORAGE_BUTTON.to_lowercase().contains("bounty"));
+    }
+
+    #[test]
+    fn forage_helper_copy_is_pinned_and_ascii() {
+        assert_eq!(
+            FORAGE_HELPER,
+            "Spends a day gathering stores. Does not start a fight."
+        );
+        assert!(FORAGE_HELPER.is_ascii());
+        assert!(!FORAGE_HELPER.contains("  "));
     }
 
     #[test]
