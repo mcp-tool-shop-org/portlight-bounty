@@ -10,7 +10,10 @@
 //! `Session::resolve_pending_duel`. `DuelOutcome.standing_delta` is shown and
 //! not written onto reputation. `Session::sell` returns `Sale`: the log shows
 //! the receipt and any contract summaries. `Session::board` is the contract
-//! board. Deck melee is `Session::resolve_boarding`. Hire and provisions
+//! board. The docked Contracts screen reads that board through
+//! `available_contracts`, `accept_contract`, `complete_contract`, and
+//! `abandon_contract` (no captain, so no breach). Deck melee is
+//! `Session::resolve_boarding`. Hire and provisions
 //! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
 //!
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
@@ -28,8 +31,8 @@ use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
 use godot::classes::{
-    Button, Control, DisplayServer, HBoxContainer, IControl, Label, LineEdit, Node, Os,
-    PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer,
+    Button, Control, DisplayServer, HBoxContainer, HFlowContainer, IControl, Label, LineEdit, Node,
+    Os, PanelContainer, ScrollContainer, StyleBoxFlat, SubViewport, SubViewportContainer,
     VBoxContainer,
 };
 use godot::global::Error;
@@ -46,6 +49,7 @@ use portlight_sim::session::{EncounterStep, Sale};
 use portlight_sim::{content, DuelOutcome, LaneSuitability, Session, SimError};
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
+use crate::contracts_screen::{self, ContractsNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::logic::{
     action_caption, action_list_from_error, ascii_label, at_sea, captain_button_label,
@@ -111,6 +115,14 @@ enum Action {
     TakeAll,
     CaptureCrew(i64),
     LeaveEncounter,
+    OpenContracts,
+    CloseContracts,
+    RefreshContracts,
+    AcceptContract(String),
+    CompleteContract(String),
+    ArmAbandon(String),
+    ConfirmAbandon,
+    CancelAbandon,
 }
 
 #[derive(Clone, Copy)]
@@ -192,6 +204,23 @@ impl NewgameShot {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ContractsShot {
+    Board,
+    Active,
+    Empty,
+}
+
+impl ContractsShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Board => "contracts-board.png",
+            Self::Active => "contracts-active.png",
+            Self::Empty => "contracts-empty.png",
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum Stance {
     Thrust,
@@ -222,7 +251,7 @@ struct PortlightGame {
     log_label: Option<Gd<Label>>,
     market_button: Option<Gd<Button>>,
     work_button: Option<Gd<Button>>,
-    port_row: Option<Gd<HBoxContainer>>,
+    port_row: Option<Gd<HFlowContainer>>,
     port_note: Option<Gd<Label>>,
     encounter_box: Option<Gd<VBoxContainer>>,
     encounter_label: Option<Gd<Label>>,
@@ -272,6 +301,14 @@ struct PortlightGame {
     newgame_checked: bool,
     newgame_shot_dir: Option<String>,
     newgame_shot: Option<NewgameShot>,
+    contracts_nodes: Option<ContractsNodes>,
+    contracts_open: bool,
+    contracts_notice: String,
+    /// Offer id waiting on Confirm. Abandon is not sent until then.
+    contracts_confirm: Option<String>,
+    contracts_checked: bool,
+    contracts_shot_dir: Option<String>,
+    contracts_shot: Option<ContractsShot>,
 }
 
 #[godot_api]
@@ -327,6 +364,13 @@ impl IControl for PortlightGame {
             newgame_checked: false,
             newgame_shot_dir: None,
             newgame_shot: None,
+            contracts_nodes: None,
+            contracts_open: false,
+            contracts_notice: String::new(),
+            contracts_confirm: None,
+            contracts_checked: false,
+            contracts_shot_dir: None,
+            contracts_shot: None,
         }
     }
 
@@ -363,6 +407,10 @@ impl IControl for PortlightGame {
         if self.capture_frames <= 0 {
             return;
         }
+        // Scroll one frame before the capture so the active row has a position.
+        if self.capture_frames == 2 {
+            self.pin_contracts_scroll();
+        }
         self.capture_frames -= 1;
         if self.capture_frames > 0 {
             return;
@@ -373,12 +421,16 @@ impl IControl for PortlightGame {
         if self.advance_encounter_shot() {
             return;
         }
+        if self.advance_contracts_shot() {
+            return;
+        }
         // Measure after layout. Headless `--smoke` has no shot and skips this:
         // the Xvfb capture is the run that has to see real label sizes.
         if self.smoke && self.shot_path.is_some() && self.market_open {
             self.assert_panel_labels();
         }
-        if self.newgame_shot_dir.is_none() {
+        // A new-game or contracts sequence already wrote its own frames.
+        if self.newgame_shot_dir.is_none() && self.contracts_shot_dir.is_none() {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
                 // multi-frame shot saves its own files before this, then the
@@ -402,6 +454,11 @@ impl IControl for PortlightGame {
         if self.newgame_checked {
             godot_print!(
                 "portlight newgame smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.contracts_checked {
+            godot_print!(
+                "portlight contracts smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else {
@@ -474,6 +531,17 @@ impl PortlightGame {
             }
             self.run_art();
             self.capture_frames = 4;
+        } else if user_arg("--contracts-screen") {
+            self.smoke = true;
+            self.contracts_checked = true;
+            let capture = newgame_frames_requested(self.shot_path.is_some());
+            if capture {
+                self.begin_contracts_shots();
+                self.capture_frames = 4;
+            } else {
+                self.run_contracts_smoke();
+                self.capture_frames = 2;
+            }
         } else if self.smoke {
             self.run_smoke();
             self.capture_frames = 4;
@@ -570,10 +638,18 @@ impl PortlightGame {
         self.save_button = Some(save);
         column.add_child(&buttons);
 
-        let mut port_row = HBoxContainer::new_alloc();
+        // The four older buttons already fill the 420 px panel. A flow wraps
+        // Contracts onto the next line instead of widening the chart.
+        let mut port_row = HFlowContainer::new_alloc();
+        port_row.set_h_size_flags(SizeFlags::EXPAND_FILL);
+        port_row.add_theme_constant_override("h_separation", 4);
+        port_row.add_theme_constant_override("v_separation", 4);
         let market = action_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
         self.market_button = Some(market);
+        let mut contracts = action_button("Contracts", game_id, Action::OpenContracts);
+        contracts.set_name("ContractsButton");
+        port_row.add_child(&contracts);
         port_row.add_child(&action_button("Hire sailor", game_id, Action::HireSailor));
         port_row.add_child(&action_button("Provisions +5", game_id, Action::Provision));
         let work = action_button("Work", game_id, Action::Work);
@@ -655,6 +731,12 @@ impl PortlightGame {
         self.base_mut().add_child(&newgame.root);
         newgame_screen::fill_parent(&mut newgame.root);
         self.newgame_nodes = Some(newgame);
+
+        let mut contracts = contracts_screen::build_contracts_screen();
+        self.base_mut().add_child(&contracts.root);
+        encounter_screen::fill_parent(&mut contracts.root);
+        self.wire_contracts_chrome(&mut contracts);
+        self.contracts_nodes = Some(contracts);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1635,6 +1717,14 @@ impl PortlightGame {
                 self.refresh();
             }
             Action::LeaveEncounter => self.leave_encounter(),
+            Action::OpenContracts => self.open_contracts(),
+            Action::CloseContracts => self.close_contracts(),
+            Action::RefreshContracts => self.refresh_contracts(),
+            Action::AcceptContract(id) => self.accept_contract_offer(&id),
+            Action::CompleteContract(id) => self.complete_contract_offer(&id),
+            Action::ArmAbandon(id) => self.arm_abandon(&id),
+            Action::ConfirmAbandon => self.confirm_abandon(),
+            Action::CancelAbandon => self.cancel_abandon(),
         }
     }
 
@@ -2019,6 +2109,710 @@ impl PortlightGame {
         }
         self.sync_encounter_screen();
         self.sync_newgame();
+        self.sync_contracts();
+    }
+
+    fn wire_contracts_chrome(&mut self, nodes: &mut ContractsNodes) {
+        let game_id = self.instance_id();
+        nodes.confirm_row.add_child(&encounter_button(
+            "Confirm",
+            game_id,
+            Action::ConfirmAbandon,
+        ));
+        nodes
+            .confirm_row
+            .add_child(&encounter_button("Cancel", game_id, Action::CancelAbandon));
+        nodes.footer.add_child(&encounter_button(
+            "Refresh board",
+            game_id,
+            Action::RefreshContracts,
+        ));
+        nodes
+            .footer
+            .add_child(&encounter_button("Close", game_id, Action::CloseContracts));
+    }
+
+    fn open_contracts(&mut self) {
+        if self.docked_id().is_none() {
+            return;
+        }
+        {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.available_contracts();
+        }
+        self.contracts_open = true;
+        self.contracts_notice.clear();
+        self.contracts_confirm = None;
+        self.refresh();
+    }
+
+    fn close_contracts(&mut self) {
+        self.contracts_open = false;
+        self.contracts_confirm = None;
+        self.refresh();
+    }
+
+    /// Explicit refresh. Accept, complete, and abandon do not call this.
+    fn refresh_contracts(&mut self) {
+        if !self.contracts_open || self.docked_id().is_none() {
+            return;
+        }
+        if let Some(session) = self.session.as_mut() {
+            session.available_contracts();
+        }
+        self.contracts_confirm = None;
+        self.contracts_notice.clear();
+        self.refresh();
+    }
+
+    fn accept_contract_offer(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.accept_contract(id)
+        };
+        self.contracts_confirm = None;
+        match result {
+            Ok(active) => {
+                self.contracts_notice = format!(
+                    "Accepted {}.",
+                    contracts_screen::ascii_sentence(&active.title)
+                );
+            }
+            Err(err) => self.contracts_notice = err.to_string(),
+        }
+        self.refresh();
+    }
+
+    fn complete_contract_offer(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.complete_contract(id)
+        };
+        self.contracts_confirm = None;
+        match result {
+            Ok(outcome) => {
+                self.contracts_notice = contracts_screen::outcome_notice(&outcome);
+            }
+            Err(err) => self.contracts_notice = err.to_string(),
+        }
+        self.refresh();
+    }
+
+    fn arm_abandon(&mut self, id: &str) {
+        let title = self
+            .session
+            .as_ref()
+            .and_then(|session| {
+                session
+                    .board()
+                    .active
+                    .iter()
+                    .find(|contract| contract.offer_id == id)
+                    .map(|contract| contract.title.clone())
+            })
+            .unwrap_or_else(|| id.to_string());
+        self.contracts_confirm = Some(id.to_string());
+        self.contracts_notice = contracts_screen::abandon_prompt(&title);
+        self.refresh();
+    }
+
+    fn confirm_abandon(&mut self) {
+        let Some(id) = self.contracts_confirm.clone() else {
+            return;
+        };
+        self.contracts_confirm = None;
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.abandon_contract(&id)
+        };
+        match result {
+            Ok(outcome) => {
+                self.contracts_notice = contracts_screen::outcome_notice(&outcome);
+            }
+            Err(err) => self.contracts_notice = err.to_string(),
+        }
+        self.refresh();
+    }
+
+    fn cancel_abandon(&mut self) {
+        self.contracts_confirm = None;
+        self.contracts_notice.clear();
+        self.refresh();
+    }
+
+    fn sync_contracts(&mut self) {
+        let Some(mut nodes) = self.contracts_nodes.clone() else {
+            return;
+        };
+        let open = self.contracts_open && self.session.is_some();
+        nodes.root.set_visible(open);
+        nodes.root.set_mouse_filter(if open {
+            godot::classes::control::MouseFilter::STOP
+        } else {
+            godot::classes::control::MouseFilter::IGNORE
+        });
+        if !open {
+            return;
+        }
+        let template = self
+            .session
+            .as_ref()
+            .and_then(|session| {
+                session
+                    .world()
+                    .captain
+                    .ship
+                    .as_ref()
+                    .map(|ship| ship.template_id.clone())
+            })
+            .unwrap_or_default();
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &template,
+        );
+        let port_title = self
+            .docked_id()
+            .and_then(|id| {
+                self.session
+                    .as_ref()
+                    .and_then(|session| session.world().port(id).map(|port| port.name.clone()))
+            })
+            .unwrap_or_else(|| "Contract board".to_string());
+        nodes
+            .title
+            .set_text(&contracts_screen::ascii_sentence(&port_title));
+        nodes.card.set_text(contracts_screen::BOARD_CARD);
+        nodes.notice.set_text(&self.contracts_notice);
+        let at_cap = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.board().active.len() >= contracts_screen::MAX_ACTIVE);
+        nodes.cap.set_visible(at_cap);
+        nodes.cap.set_text(if at_cap {
+            contracts_screen::CAP_FULL
+        } else {
+            ""
+        });
+        nodes
+            .confirm_row
+            .set_visible(self.contracts_confirm.is_some());
+        self.rebuild_contract_list(at_cap);
+    }
+
+    fn rebuild_contract_list(&mut self, at_cap: bool) {
+        let Some(mut list) = self
+            .contracts_nodes
+            .as_ref()
+            .map(|nodes| nodes.list.clone())
+        else {
+            return;
+        };
+        clear_children(&mut list);
+        let listed = {
+            let Some(session) = self.session.as_ref() else {
+                return;
+            };
+            contract_listing(session)
+        };
+        let game_id = self.instance_id();
+        list.add_child(&contracts_screen::section_label("Board"));
+        if listed.offers.is_empty() {
+            let mut empty = contracts_screen::body_line(contracts_screen::EMPTY_OFFERS, 15, CREAM);
+            empty.set_name("EmptyOffers");
+            list.add_child(&empty);
+        }
+        for offer in listed.offers {
+            list.add_child(&self.offer_block(&offer, game_id, at_cap));
+        }
+
+        let mut active_header = contracts_screen::section_label("Active");
+        active_header.set_name("ActiveSection");
+        list.add_child(&active_header);
+        if listed.active.is_empty() {
+            list.add_child(&contracts_screen::body_line(
+                "No active contracts.",
+                15,
+                CREAM,
+            ));
+        }
+        for (index, contract) in listed.active.iter().enumerate() {
+            list.add_child(&self.active_block(contract, game_id, index == 0));
+        }
+
+        list.add_child(&contracts_screen::section_label("Recent"));
+        if listed.recent.is_empty() {
+            list.add_child(&contracts_screen::body_line(
+                "No settled contracts.",
+                15,
+                MUTED,
+            ));
+        }
+        for line in &listed.recent {
+            list.add_child(&contracts_screen::body_line(line, 14, MUTED));
+        }
+    }
+
+    fn offer_block(
+        &self,
+        offer: &ListedOffer,
+        game_id: InstanceId,
+        at_cap: bool,
+    ) -> Gd<VBoxContainer> {
+        let mut block = VBoxContainer::new_alloc();
+        block.add_theme_constant_override("separation", 2);
+        let mut title_row = HBoxContainer::new_alloc();
+        title_row.add_theme_constant_override("separation", 8);
+        let mut title = contracts_screen::body_line(&offer.title, 16, CREAM);
+        shrink_label(&mut title);
+        title_row.add_child(&title);
+        let mut accept =
+            encounter_button("Accept", game_id, Action::AcceptContract(offer.id.clone()));
+        accept.set_disabled(at_cap);
+        accept.set_h_size_flags(SizeFlags::SHRINK_END);
+        title_row.add_child(&accept);
+        block.add_child(&title_row);
+        block.add_child(&contracts_screen::body_line(&offer.detail, 14, CREAM));
+        block.add_child(&contracts_screen::body_line(
+            &offer.meta,
+            13,
+            contracts_screen::meta_color(offer.due),
+        ));
+        block
+    }
+
+    fn active_block(
+        &self,
+        contract: &ListedActive,
+        game_id: InstanceId,
+        first: bool,
+    ) -> Gd<VBoxContainer> {
+        let mut block = VBoxContainer::new_alloc();
+        block.add_theme_constant_override("separation", 2);
+        let mut title = contracts_screen::body_line(&contract.title, 16, CREAM);
+        if first {
+            title.set_name("ActiveContractTitle");
+        }
+        block.add_child(&title);
+        let mut progress = contracts_screen::body_line(&contract.detail, 14, CREAM);
+        progress.set_name("ActiveProgress");
+        block.add_child(&progress);
+        block.add_child(&contracts_screen::body_line(
+            &contract.meta,
+            13,
+            contracts_screen::meta_color(contract.due),
+        ));
+        let mut actions = HBoxContainer::new_alloc();
+        actions.add_theme_constant_override("separation", 8);
+        if contract.can_complete {
+            actions.add_child(&encounter_button(
+                "Complete",
+                game_id,
+                Action::CompleteContract(contract.id.clone()),
+            ));
+        }
+        let mut abandon =
+            encounter_button("Abandon", game_id, Action::ArmAbandon(contract.id.clone()));
+        if first {
+            abandon.set_name("AbandonButton");
+        }
+        actions.add_child(&abandon);
+        block.add_child(&actions);
+        block
+    }
+
+    fn pin_contracts_scroll(&mut self) {
+        let Some(shot) = self.contracts_shot else {
+            return;
+        };
+        let Some(nodes) = self.contracts_nodes.clone() else {
+            return;
+        };
+        let mut scroll = nodes.scroll.clone();
+        let target = match shot {
+            ContractsShot::Active => "AbandonButton",
+            ContractsShot::Board | ContractsShot::Empty => "ContractList",
+        };
+        if shot == ContractsShot::Board || shot == ContractsShot::Empty {
+            scroll.set_v_scroll(0);
+            return;
+        }
+        if let Some(control) = find_control_named(&nodes.list.clone().upcast(), target) {
+            scroll.ensure_control_visible(&control);
+        }
+    }
+
+    fn begin_contracts_shots(&mut self) {
+        self.contracts_shot_dir = Some(newgame_shot_dir(self.shot_path.as_deref()));
+        self.contracts_shot = Some(ContractsShot::Board);
+        self.open_contracts();
+        if !self.contracts_have_offers() {
+            self.fail_contracts("Contracts smoke: the docked board had no offers.");
+        }
+    }
+
+    fn advance_contracts_shot(&mut self) -> bool {
+        let Some(phase) = self.contracts_shot else {
+            return false;
+        };
+        let Some(dir) = self.contracts_shot_dir.clone() else {
+            return false;
+        };
+        if !self.contracts_frame_ready(phase) {
+            self.capture_failed = true;
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        match phase {
+            ContractsShot::Board => {
+                if self.accept_first_offer().is_none() {
+                    self.fail_contracts("Contracts smoke: could not accept an offer.");
+                }
+                self.contracts_notice.clear();
+                self.contracts_confirm = None;
+                self.refresh();
+                self.contracts_shot = Some(ContractsShot::Active);
+            }
+            ContractsShot::Active => {
+                self.prove_unfilled_complete_and_abandon();
+                self.drain_contract_board();
+                self.contracts_notice.clear();
+                self.contracts_confirm = None;
+                self.refresh();
+                self.contracts_shot = Some(ContractsShot::Empty);
+            }
+            ContractsShot::Empty => {
+                self.finish_contracts_smoke();
+                self.contracts_shot = None;
+                return false;
+            }
+        }
+        self.capture_frames = 4;
+        true
+    }
+
+    fn run_contracts_smoke(&mut self) {
+        if self.docked_id().is_none() || !self.contracts_button_in_tree() {
+            self.fail_contracts("Contracts smoke: expected the docked Contracts button.");
+        }
+        self.open_contracts();
+        if !self.contracts_open || !self.contracts_have_offers() {
+            self.fail_contracts("Contracts smoke: opening the board did not list offers.");
+            return;
+        }
+        if self.accept_first_offer().is_none() {
+            self.fail_contracts("Contracts smoke: could not accept an offer.");
+            return;
+        }
+        self.prove_unfilled_complete_and_abandon();
+        self.drain_contract_board();
+        if !self.board_is_empty() {
+            self.fail_contracts("Contracts smoke: the board still had offers.");
+        }
+        self.finish_contracts_smoke();
+    }
+
+    fn finish_contracts_smoke(&mut self) {
+        let day = self.session.as_ref().map(|session| session.world().day);
+        self.close_contracts();
+        if self.contracts_open {
+            self.fail_contracts("Contracts smoke: Close left the board up.");
+        }
+        if self.docked_id().is_none() {
+            self.fail_contracts("Contracts smoke: the chart was not docked after Close.");
+        }
+        self.perform(Action::Sail("al_manar".into()));
+        self.perform(Action::NextDay);
+        if self.docked_id().is_some() {
+            self.fail_contracts("Contracts smoke: still docked after a sea day.");
+        }
+        if self.contracts_button_in_tree() {
+            self.fail_contracts("Contracts smoke: Contracts stayed visible at sea.");
+        }
+        if self.session.as_ref().map(|session| session.world().day) == day {
+            self.fail_contracts("Contracts smoke: the sea day did not advance.");
+        }
+    }
+
+    fn accept_first_offer(&mut self) -> Option<String> {
+        let id = self
+            .session
+            .as_ref()
+            .and_then(|session| session.board().offers.first().map(|offer| offer.id.clone()))?;
+        let before = self
+            .session
+            .as_ref()
+            .map(|session| session.board().active.len())
+            .unwrap_or(0);
+        self.accept_contract_offer(&id);
+        let moved = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.offer_id == id)
+                && session.board().active.len() == before + 1
+                && session.board().offers.iter().all(|offer| offer.id != id)
+        });
+        if !moved {
+            self.fail_contracts("Contracts smoke: Accept did not move the offer onto Active.");
+            return None;
+        }
+        Some(id)
+    }
+
+    fn prove_unfilled_complete_and_abandon(&mut self) {
+        let Some(id) = self.session.as_ref().and_then(|session| {
+            session
+                .board()
+                .active
+                .first()
+                .map(|contract| contract.offer_id.clone())
+        }) else {
+            self.fail_contracts("Contracts smoke: no active contract to complete.");
+            return;
+        };
+        let (silver, wanted, trust, heat, regional) = self.reputation_snapshot();
+        self.complete_contract_offer(&id);
+        if self.contracts_notice != "Contract is not yet fulfilled" {
+            self.fail_contracts(format!(
+                "Contracts smoke: unfilled complete said {:?}.",
+                self.contracts_notice
+            ));
+        }
+        let still_active = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.offer_id == id)
+        });
+        if !still_active {
+            self.fail_contracts("Contracts smoke: unfilled complete removed the contract.");
+        }
+        self.arm_abandon(&id);
+        if self.contracts_confirm.as_deref() != Some(id.as_str())
+            || !self.contracts_notice.starts_with("Abandon ")
+        {
+            self.fail_contracts("Contracts smoke: Abandon did not ask for confirm.");
+        }
+        self.confirm_abandon();
+        if !self.contracts_notice.contains("Abandoned contract:")
+            || !self.contracts_notice.contains("Trust -2")
+        {
+            self.fail_contracts(format!(
+                "Contracts smoke: abandon outcome was {:?}.",
+                self.contracts_notice
+            ));
+        }
+        let gone =
+            self.session.as_ref().is_some_and(|session| {
+                session.board().breaches.is_empty()
+                    && session
+                        .board()
+                        .active
+                        .iter()
+                        .all(|contract| contract.offer_id != id)
+                    && session.board().completed.iter().any(|outcome| {
+                        outcome.contract_id == id && outcome.outcome_type == "abandoned"
+                    })
+            });
+        if !gone {
+            self.fail_contracts("Contracts smoke: abandon did not record an outcome.");
+        }
+        let (silver_after, wanted_after, trust_after, heat_after, regional_after) =
+            self.reputation_snapshot();
+        if silver != silver_after
+            || wanted != wanted_after
+            || trust != trust_after
+            || heat != heat_after
+            || regional != regional_after
+        {
+            self.fail_contracts(
+                "Contracts smoke: abandon changed silver, trust, standing, heat, or wanted level.",
+            );
+        }
+    }
+
+    fn drain_contract_board(&mut self) {
+        let mut saw_cap = false;
+        for _ in 0..12 {
+            let offer_id = self
+                .session
+                .as_ref()
+                .and_then(|session| session.board().offers.first().map(|offer| offer.id.clone()));
+            let Some(offer_id) = offer_id else {
+                break;
+            };
+            let active_ids: Vec<String> = self
+                .session
+                .as_ref()
+                .map(|session| {
+                    session
+                        .board()
+                        .active
+                        .iter()
+                        .map(|contract| contract.offer_id.clone())
+                        .collect()
+                })
+                .unwrap_or_default();
+            if active_ids.len() >= contracts_screen::MAX_ACTIVE {
+                self.accept_contract_offer(&offer_id);
+                if self.contracts_notice != "Too many active contracts (max 3)" {
+                    self.fail_contracts(format!(
+                        "Contracts smoke: the 3-cap said {:?}.",
+                        self.contracts_notice
+                    ));
+                }
+                saw_cap = true;
+                for id in active_ids {
+                    self.arm_abandon(&id);
+                    self.confirm_abandon();
+                }
+            }
+            self.accept_contract_offer(&offer_id);
+        }
+        if !saw_cap {
+            self.fail_contracts("Contracts smoke: never reached the 3-contract cap.");
+        }
+        let leftover: Vec<String> = self
+            .session
+            .as_ref()
+            .map(|session| {
+                session
+                    .board()
+                    .active
+                    .iter()
+                    .map(|contract| contract.offer_id.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+        for id in leftover {
+            self.arm_abandon(&id);
+            self.confirm_abandon();
+        }
+        if !self.board_is_empty() {
+            self.fail_contracts("Contracts smoke: offers or active work remained.");
+        }
+    }
+
+    fn contracts_frame_ready(&mut self, phase: ContractsShot) -> bool {
+        let Some(nodes) = self.contracts_nodes.clone() else {
+            self.fail_contracts("Contracts smoke: the screen was missing.");
+            return false;
+        };
+        if !nodes.root.is_visible() || nodes.confirm_row.is_visible() {
+            self.fail_contracts(format!(
+                "Contracts smoke: {} had the wrong confirm state.",
+                phase.file_name()
+            ));
+            return false;
+        }
+        match phase {
+            ContractsShot::Board => {
+                if !self.contracts_have_offers()
+                    || !tree_has_button(&nodes.list.clone().upcast(), "Accept")
+                {
+                    self.fail_contracts("Contracts smoke: the board frame had no Accept button.");
+                    return false;
+                }
+            }
+            ContractsShot::Active => {
+                let Some(title) =
+                    find_label_named(&nodes.list.clone().upcast(), "ActiveContractTitle")
+                else {
+                    self.fail_contracts("Contracts smoke: the active frame had no obligation.");
+                    return false;
+                };
+                let progress = find_label_named(&nodes.list.clone().upcast(), "ActiveProgress");
+                let progress_ok = progress
+                    .as_ref()
+                    .is_some_and(|label| label.get_text().to_string().contains('/'));
+                if !progress_ok || tree_has_button(&nodes.list.clone().upcast(), "Complete") {
+                    self.fail_contracts(
+                        "Contracts smoke: an unfilled contract showed Complete or hid progress.",
+                    );
+                    return false;
+                }
+                let abandon = find_button_text(&nodes.list.clone().upcast(), "Abandon");
+                let title_ok = control_on_screen(&title.upcast());
+                let abandon_ok = abandon
+                    .as_ref()
+                    .is_some_and(|button| control_on_screen(&button.clone().upcast()));
+                if !title_ok || !abandon_ok {
+                    self.fail_contracts(
+                        "Contracts smoke: the active obligation was outside the window.",
+                    );
+                    return false;
+                }
+            }
+            ContractsShot::Empty => {
+                let empty = find_label_named(&nodes.list.clone().upcast(), "EmptyOffers");
+                let text_ok = empty
+                    .as_ref()
+                    .is_some_and(|label| label.get_text() == contracts_screen::EMPTY_OFFERS);
+                if !text_ok
+                    || !self.board_is_empty()
+                    || tree_has_button(&nodes.list.clone().upcast(), "Accept")
+                {
+                    self.fail_contracts("Contracts smoke: the empty frame still listed an offer.");
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn contracts_have_offers(&self) -> bool {
+        self.session
+            .as_ref()
+            .is_some_and(|session| !session.board().offers.is_empty())
+    }
+
+    fn board_is_empty(&self) -> bool {
+        self.session.as_ref().is_some_and(|session| {
+            session.board().offers.is_empty() && session.board().active.is_empty()
+        })
+    }
+
+    fn contracts_button_in_tree(&self) -> bool {
+        self.port_row.as_ref().is_some_and(|row| {
+            row.is_visible_in_tree() && tree_has_button(&row.clone().upcast(), "Contracts")
+        })
+    }
+
+    fn reputation_snapshot(&self) -> (i64, i64, i64, [i64; 5], [i64; 5]) {
+        let Some(session) = self.session.as_ref() else {
+            return (0, 0, 0, [0; 5], [0; 5]);
+        };
+        let captain = &session.world().captain;
+        (
+            captain.silver,
+            captain.wanted_level,
+            captain.standing.commercial_trust,
+            captain.standing.heat,
+            captain.standing.regional,
+        )
+    }
+
+    fn fail_contracts(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.contracts_checked = true;
     }
 
     fn rebuild_lanes(&mut self) {
@@ -3051,6 +3845,170 @@ fn good_name(id: &str) -> String {
         .unwrap_or_else(|| id.to_string())
 }
 
+struct ListedOffer {
+    id: String,
+    title: String,
+    detail: String,
+    meta: String,
+    due: bool,
+}
+
+struct ListedActive {
+    id: String,
+    title: String,
+    detail: String,
+    meta: String,
+    due: bool,
+    can_complete: bool,
+}
+
+struct ContractListing {
+    offers: Vec<ListedOffer>,
+    active: Vec<ListedActive>,
+    recent: Vec<String>,
+}
+
+fn contract_listing(session: &Session) -> ContractListing {
+    let day = session.world().day;
+    let world = session.world();
+    let offers = session
+        .board()
+        .offers
+        .iter()
+        .map(|offer| {
+            let destination = port_name(world, &offer.destination_port_id);
+            let good = good_name(&offer.good_id);
+            let (days, due) = contracts_screen::days_left_text(day, offer.deadline_day);
+            ListedOffer {
+                id: offer.id.clone(),
+                title: contracts_screen::ascii_sentence(&offer.title),
+                detail: format!(
+                    "{} x{} to {}   {}",
+                    contracts_screen::ascii_sentence(&good),
+                    offer.quantity,
+                    contracts_screen::ascii_sentence(&destination),
+                    contracts_screen::reward_text(offer.reward_silver, offer.bonus_reward)
+                ),
+                meta: format!(
+                    "{days}   {}   {}",
+                    contracts_screen::requirement_text(
+                        &offer.required_trust_tier,
+                        offer.required_standing
+                    ),
+                    contracts_screen::ascii_sentence(&offer.offer_reason)
+                ),
+                due,
+            }
+        })
+        .collect();
+    let active = session
+        .board()
+        .active
+        .iter()
+        .filter(|contract| contract.status == "accepted")
+        .map(|contract| {
+            let destination = port_name(world, &contract.destination_port_id);
+            let good = good_name(&contract.good_id);
+            let progress = contracts_screen::progress_text(
+                contract.delivered_quantity,
+                contract.required_quantity,
+            );
+            let (days, due) = contracts_screen::days_left_text(day, contract.deadline_day);
+            ListedActive {
+                id: contract.offer_id.clone(),
+                title: contracts_screen::ascii_sentence(&contract.title),
+                detail: format!(
+                    "{} {progress} to {}",
+                    contracts_screen::ascii_sentence(&good),
+                    contracts_screen::ascii_sentence(&destination)
+                ),
+                meta: format!(
+                    "{days}   {}",
+                    contracts_screen::reward_text(contract.reward_silver, contract.bonus_reward)
+                ),
+                due,
+                can_complete: contracts_screen::can_complete(
+                    &contract.status,
+                    contract.delivered_quantity,
+                    contract.required_quantity,
+                ),
+            }
+        })
+        .collect();
+    let recent = session
+        .board()
+        .completed
+        .iter()
+        .rev()
+        .take(4)
+        .map(contracts_screen::recent_line)
+        .collect();
+    ContractListing {
+        offers,
+        active,
+        recent,
+    }
+}
+
+fn control_on_screen(control: &Gd<Control>) -> bool {
+    let pos = control.get_global_position();
+    let size = control.get_size();
+    size.y >= 1.0 && pos.y >= 0.0 && pos.y + size.y <= WINDOW_H
+}
+
+fn find_control_named(node: &Gd<Node>, name: &str) -> Option<Gd<Control>> {
+    if node.get_name() == name {
+        if let Ok(control) = node.clone().try_cast::<Control>() {
+            return Some(control);
+        }
+    }
+    for child in node.get_children().iter_shared() {
+        if let Some(found) = find_control_named(&child, name) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+fn find_button_text(node: &Gd<Node>, text: &str) -> Option<Gd<Button>> {
+    if let Ok(button) = node.clone().try_cast::<Button>() {
+        if button.get_text() == text {
+            return Some(button);
+        }
+    }
+    for child in node.get_children().iter_shared() {
+        if let Some(found) = find_button_text(&child, text) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+fn find_label_named(node: &Gd<Node>, name: &str) -> Option<Gd<Label>> {
+    if node.get_name() == name {
+        if let Ok(label) = node.clone().try_cast::<Label>() {
+            return Some(label);
+        }
+    }
+    for child in node.get_children().iter_shared() {
+        if let Some(found) = find_label_named(&child, name) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+fn tree_has_button(node: &Gd<Node>, text: &str) -> bool {
+    if let Ok(button) = node.clone().try_cast::<Button>() {
+        if button.get_text() == text {
+            return true;
+        }
+    }
+    node.get_children()
+        .iter_shared()
+        .any(|child| tree_has_button(&child, text))
+}
+
 impl PortlightGame {
     fn encounter_text(&self) -> String {
         let Some(session) = self.session.as_ref() else {
@@ -3146,6 +4104,7 @@ fn scripted_launch() -> bool {
         || user_arg("--resolve")
         || user_arg("--work")
         || user_arg("--art")
+        || user_arg("--contracts-screen")
         || flag_set("PORTLIGHT_SMOKE")
         || user_arg("--smoke")
 }
