@@ -19,3 +19,5 @@ node playtest/probe-bridge.mjs
 ```
 
 Reports name the editor. This machine's `godot` is 4.7 stable, not the CI 4.7.2 pin.
+
+The consult for the next harden pass is `docs/playtest/playtest-bridge-consult-brief.md`.
