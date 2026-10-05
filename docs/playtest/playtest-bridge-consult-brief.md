@@ -88,6 +88,7 @@ The probe did not press Hire, did not open Contracts, Sail, Day's report, Journa
 - The bridge does not send an image. Headless has no viewport texture. Pixels are an exhibit attached to a failure, not the action channel. Do not build a pixel action channel.
 - English README and the handbook drivers page on `feat/rpc-launch` describe launch. The translated READMEs on `main` still say rpc does not need a command. This was not a release, so those files were not rewritten by hand. The next release translates before publish.
 - `playtest/README.md` tells a local checkout to run the harness from a sibling `../ai-playtest` build. That is a layout note for this machine's two clones, not a public path.
+- Atlas 1.24.0 treats `godot/playtest_bridge.gd` as a Godot entry beside `godot/scenes/main.tscn`. The first CI run failed `ATLAS_STRUCTURE_DRIFT` until `atlas map` rewrote `atlas/`. `atlas check` passes against that map. Do not revert the map to drop the autoload.
 
 ## Constraints that are not up for debate
 
