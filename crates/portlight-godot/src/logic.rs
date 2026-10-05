@@ -1321,6 +1321,421 @@ pub(crate) fn shipyard_frame_rejected(width: i32, height: i32, samples: &[[u8; 3
     encounter_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, samples)
 }
 
+/// Hire / fire rows. Wages and caps match `session.rs` `role_spec`.
+/// Sailors have no role cap. Their hire price is the port `crew_cost`.
+struct CrewRoleSpec {
+    id: &'static str,
+    name: &'static str,
+    wage: i64,
+    max_per_ship: Option<i64>,
+}
+
+const CREW_ROLES: &[CrewRoleSpec] = &[
+    CrewRoleSpec {
+        id: "sailor",
+        name: "Sailor",
+        wage: 1,
+        max_per_ship: None,
+    },
+    CrewRoleSpec {
+        id: "gunner",
+        name: "Gunner",
+        wage: 2,
+        max_per_ship: Some(3),
+    },
+    CrewRoleSpec {
+        id: "navigator",
+        name: "Navigator",
+        wage: 3,
+        max_per_ship: Some(1),
+    },
+    CrewRoleSpec {
+        id: "surgeon",
+        name: "Surgeon",
+        wage: 3,
+        max_per_ship: Some(1),
+    },
+    CrewRoleSpec {
+        id: "marine",
+        name: "Marine",
+        wage: 2,
+        max_per_ship: Some(4),
+    },
+    CrewRoleSpec {
+        id: "quartermaster",
+        name: "Quartermaster",
+        wage: 2,
+        max_per_ship: Some(1),
+    },
+];
+
+pub(crate) struct CrewRoleLine {
+    pub id: &'static str,
+    pub name: &'static str,
+    /// Read by the desk tests. The row text already shows the number.
+    #[allow(dead_code)]
+    pub count: i64,
+    /// Read by the desk tests. Sailors store `None` and the row prints `-`.
+    #[allow(dead_code)]
+    pub max: Option<i64>,
+    pub hire_cost: i64,
+    pub hire_enabled: bool,
+    /// Sailors only, and only when five free berths remain.
+    pub hire_five: bool,
+    pub fire_enabled: bool,
+    pub text: String,
+}
+
+pub(crate) struct CrewStyleLine {
+    pub id: String,
+    pub name: String,
+    pub cost: i64,
+    pub days: i64,
+    pub known: bool,
+    pub text: String,
+}
+
+pub(crate) struct CrewSkillLine {
+    pub id: String,
+    pub skill_name: String,
+    pub level_name: String,
+    pub cost: i64,
+    pub days: i64,
+    pub can_train: bool,
+    pub text: String,
+    pub next_text: String,
+    /// Set when this port has no trainer for the skill.
+    pub empty_trainer: Option<String>,
+}
+
+pub(crate) struct CrewOfferLine {
+    pub id: String,
+    pub name: String,
+    pub cost: i64,
+    pub text: String,
+}
+
+/// Read-only desk. `None` when the captain is not in port.
+pub(crate) struct CrewDesk {
+    pub port_name: String,
+    pub status: String,
+    /// Read by the desk tests. The provision line already shows the price.
+    #[allow(dead_code)]
+    pub provision_per_day: i64,
+    pub provision_text: String,
+    pub roles: Vec<CrewRoleLine>,
+    pub officers: Vec<String>,
+    pub known_styles: String,
+    pub styles: Vec<CrewStyleLine>,
+    pub skills: Vec<CrewSkillLine>,
+    pub party_line: String,
+    pub party: Vec<String>,
+    pub offers: Vec<CrewOfferLine>,
+}
+
+pub(crate) const NO_FIGHTING_MASTER: &str = "No fighting master at this port.";
+pub(crate) const NO_COMPANIONS_FOR_HIRE: &str = "No companions for hire at this port.";
+
+/// Hire of 50 silver or more asks before `Session::hire_crew`.
+pub(crate) fn hire_needs_confirm(cost: i64) -> bool {
+    cost >= 50
+}
+
+pub(crate) fn hire_confirm_line(count: i64, name: &str, cost: i64) -> String {
+    let label = if count == 1 {
+        name.to_string()
+    } else {
+        format!("{name}s")
+    };
+    format!("Hire {count} {label} for {cost} silver.")
+}
+
+/// Silver and the day advance. `train_crew` calls `Session::advance` once per day.
+/// Session ignores injury gates on this path, so the line does not mention them.
+pub(crate) fn train_confirm_line(name: &str, cost: i64, days: i64) -> String {
+    format!("Train {name} for {cost} silver. The calendar will advance {days} days.")
+}
+
+/// Silver and the day advance. The button is Learn. The method stays
+/// `spend_skill_point`, which calls `Session::advance` once per day.
+pub(crate) fn skill_confirm_line(level: &str, skill: &str, cost: i64, days: i64) -> String {
+    format!("Learn {level} {skill} for {cost} silver. The calendar will advance {days} days.")
+}
+
+/// What `Session::provision` charges. Chart copy keeps the listed port price.
+pub(crate) fn effective_provision_per_day(
+    listed: i64,
+    standing: &portlight_sim::model::Standing,
+    port_id: &str,
+) -> i64 {
+    let mult = portlight_sim::reputation::service_modifier(standing, port_id);
+    1.max(portlight_sim::util::py_trunc(listed as f64 * mult))
+}
+
+pub(crate) fn recruit_confirm_line(name: &str, cost: i64) -> String {
+    format!("Recruit {name} for {cost} silver.")
+}
+
+fn ascii_owned(text: &str, fallback: &str) -> String {
+    ascii_label(text, fallback).to_string()
+}
+
+fn role_count(ship: &portlight_sim::model::Ship, role: &str) -> i64 {
+    match role {
+        "sailor" => ship.sailors,
+        "gunner" => ship.gunners,
+        "navigator" => ship.navigators,
+        "surgeon" => ship.surgeons,
+        "marine" => ship.marines,
+        "quartermaster" => ship.quartermasters,
+        _ => 0,
+    }
+}
+
+fn role_name(role: &str) -> String {
+    CREW_ROLES
+        .iter()
+        .find(|spec| spec.id == role)
+        .map(|spec| spec.name.to_string())
+        .unwrap_or_else(|| ascii_owned(role, "officer"))
+}
+
+/// Docked crew desk from `session.world()` and the embedded catalogs.
+/// Does not call hire, fire, provision, train, recruit, or skill.
+pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
+    let world = session.world();
+    if world.voyage.status != portlight_sim::model::VoyageStatus::InPort {
+        return None;
+    }
+    let port_id = world.voyage.destination_id.as_str();
+    let port = world.port(port_id)?;
+    let port_name = ascii_owned(&port.name, port_id);
+    let catalog = portlight_sim::content::content();
+    let ship = world.captain.ship.as_ref();
+    let (crew, crew_max, space) = ship
+        .map(|ship| {
+            let max = portlight_sim::ship::resolve_crew_max(ship);
+            (ship.crew, max, max - ship.crew)
+        })
+        .unwrap_or((0, 0, 0));
+    let silver = world.captain.silver;
+    let provisions = world.captain.provisions;
+    let status = if ship.is_none() {
+        format!("Silver {silver}. Provisions {provisions}. No ship.")
+    } else {
+        format!("Silver {silver}. Provisions {provisions}. Crew {crew}/{crew_max}.")
+    };
+    let provision_per_day =
+        effective_provision_per_day(port.provision_cost, &world.captain.standing, port_id);
+    let provision_text = format!("Stores {provisions}. {provision_per_day} silver a day.");
+    let roles = CREW_ROLES
+        .iter()
+        .map(|spec| {
+            let count = ship.map(|ship| role_count(ship, spec.id)).unwrap_or(0);
+            let hire_cost = if spec.id == "sailor" {
+                port.crew_cost
+            } else {
+                spec.wage * 10
+            };
+            let at_max = spec.max_per_ship.is_some_and(|max| count >= max);
+            let hire_enabled = ship.is_some() && space > 0 && !at_max;
+            let max_text = spec
+                .max_per_ship
+                .map(|max| max.to_string())
+                .unwrap_or_else(|| "-".to_string());
+            CrewRoleLine {
+                id: spec.id,
+                name: spec.name,
+                count,
+                max: spec.max_per_ship,
+                hire_cost,
+                hire_enabled,
+                hire_five: spec.id == "sailor" && space >= 5,
+                fire_enabled: count > 0,
+                text: format!(
+                    "{name}  {count}  max {max_text}  hire {hire_cost}",
+                    name = spec.name
+                ),
+            }
+        })
+        .collect();
+    let officers = ship
+        .map(|ship| {
+            ship.officers
+                .iter()
+                .map(|officer| {
+                    let name = ascii_owned(&officer.name, "Officer");
+                    let role = role_name(&officer.role);
+                    let trait_name = ascii_owned(&officer.trait_name, "steady");
+                    format!("{name} - {role} - {trait_name}")
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let learned = &world.captain.learned_styles;
+    let styles: Vec<CrewStyleLine> = portlight_sim::training::available_training(port_id)
+        .into_iter()
+        .filter_map(|id| {
+            let style = catalog.fighting_style(&id)?;
+            let name = ascii_owned(&style.name, &style.id);
+            let known = learned.iter().any(|learned_id| learned_id == &id);
+            let known_word = if known { "yes" } else { "no" };
+            Some(CrewStyleLine {
+                id: style.id.clone(),
+                name: name.clone(),
+                cost: style.silver_cost,
+                days: style.training_days,
+                known,
+                text: format!(
+                    "{name}  {} silver  {} days  needs {} styles  known {known_word}",
+                    style.silver_cost, style.training_days, style.prerequisite_styles
+                ),
+            })
+        })
+        .collect();
+    let known_styles = if learned.is_empty() {
+        "Known styles: none".to_string()
+    } else {
+        let names: Vec<String> = learned
+            .iter()
+            .map(|id| {
+                catalog
+                    .fighting_style(id)
+                    .map(|style| ascii_owned(&style.name, id))
+                    .unwrap_or_else(|| ascii_owned(id, "style"))
+            })
+            .collect();
+        format!("Known styles: {}", names.join(", "))
+    };
+    let skills = catalog
+        .skills
+        .skills
+        .iter()
+        .map(|skill| {
+            let skill_name = ascii_owned(&skill.name, &skill.id);
+            let display = portlight_sim::skills::skill_display(&world.captain.skills, &skill.id);
+            let display = ascii_owned(&display, "Untrained");
+            let current = portlight_sim::skills::skill_level(&world.captain.skills, &skill.id);
+            let trainers = catalog.trainers_at(port_id, Some(&skill.id));
+            if trainers.is_empty() {
+                let text = format!("{skill_name}  {display}.");
+                return CrewSkillLine {
+                    id: skill.id.clone(),
+                    skill_name,
+                    level_name: String::new(),
+                    cost: 0,
+                    days: 0,
+                    can_train: false,
+                    text,
+                    next_text: String::new(),
+                    empty_trainer: Some(format!("No {} trainer at this port.", skill.id)),
+                };
+            }
+            let max_teach = trainers
+                .iter()
+                .map(|trainer| trainer.max_teach_level)
+                .max()
+                .unwrap_or(0);
+            let trainer_names: Vec<&str> = trainers
+                .iter()
+                .map(|trainer| ascii_label(&trainer.name, &trainer.id))
+                .collect();
+            let next = skill.levels.get(current as usize);
+            let can_train = next.is_some() && current < skill.max_level && current < max_teach;
+            let (level_name, cost, days, next_text) = if let Some(next) = next {
+                let level_name = ascii_owned(&next.name, "level");
+                (
+                    level_name.clone(),
+                    next.silver_cost,
+                    next.training_days,
+                    format!(
+                        "Next: {level_name}  {} silver  {} days.",
+                        next.silver_cost, next.training_days
+                    ),
+                )
+            } else {
+                (String::new(), 0, 0, "Already at maximum.".to_string())
+            };
+            let text = format!(
+                "{skill_name}  {display}. {} (teaches to {max_teach}).",
+                trainer_names.join(", ")
+            );
+            CrewSkillLine {
+                id: skill.id.clone(),
+                skill_name,
+                level_name,
+                cost,
+                days,
+                can_train,
+                text,
+                next_text,
+                empty_trainer: None,
+            }
+        })
+        .collect();
+    let party = &world.captain.party;
+    let party_line = format!("Party {}/{}.", party.companions.len(), party.max_size);
+    let party_rows = party
+        .companions
+        .iter()
+        .map(|member| {
+            let name = catalog
+                .companion(&member.companion_id)
+                .map(|comp| ascii_owned(&comp.name, &member.companion_id))
+                .unwrap_or_else(|| ascii_owned(&member.companion_id, "companion"));
+            let role = catalog
+                .companion_role(&member.role_id)
+                .map(|role| ascii_owned(&role.name, &member.role_id))
+                .unwrap_or_else(|| ascii_owned(&member.role_id, "role"));
+            format!("{name}  {role}  morale {}", member.morale)
+        })
+        .collect();
+    let offers = catalog
+        .companions
+        .companions
+        .iter()
+        .filter(|comp| comp.home_port_id == port_id)
+        .filter(|comp| {
+            !party
+                .companions
+                .iter()
+                .any(|member| member.companion_id == comp.id)
+        })
+        .filter(|comp| !party.departed.iter().any(|id| id == &comp.id))
+        .map(|comp| {
+            let name = ascii_owned(&comp.name, &comp.id);
+            let role = catalog
+                .companion_role(&comp.role_id)
+                .map(|role| ascii_owned(&role.name, &comp.role_id))
+                .unwrap_or_else(|| ascii_owned(&comp.role_id, "role"));
+            let region = ascii_owned(&comp.region, "region");
+            CrewOfferLine {
+                id: comp.id.clone(),
+                name: name.clone(),
+                cost: comp.hire_cost,
+                text: format!(
+                    "{name}  {role}  {} silver  standing {} in {region}",
+                    comp.hire_cost, comp.required_standing
+                ),
+            }
+        })
+        .collect();
+    Some(CrewDesk {
+        port_name,
+        status,
+        provision_per_day,
+        provision_text,
+        roles,
+        officers,
+        known_styles,
+        styles,
+        skills,
+        party_line,
+        party: party_rows,
+        offers,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
@@ -2341,5 +2756,237 @@ mod tests {
                 "Healing: Gunshot Wound (29 days left).".to_string(),
             ]
         );
+    }
+
+    fn desk_strings_are_ascii(desk: &CrewDesk) {
+        assert!(desk.port_name.is_ascii());
+        assert!(desk.status.is_ascii());
+        assert!(desk.provision_text.is_ascii());
+        assert!(desk.known_styles.is_ascii());
+        assert!(desk.party_line.is_ascii());
+        for role in &desk.roles {
+            assert!(role.text.is_ascii(), "{}", role.text);
+        }
+        for officer in &desk.officers {
+            assert!(officer.is_ascii(), "{officer}");
+        }
+        for style in &desk.styles {
+            assert!(style.text.is_ascii(), "{}", style.text);
+        }
+        for skill in &desk.skills {
+            assert!(skill.text.is_ascii(), "{}", skill.text);
+            assert!(skill.next_text.is_ascii(), "{}", skill.next_text);
+            if let Some(empty) = &skill.empty_trainer {
+                assert!(empty.is_ascii(), "{empty}");
+            }
+        }
+        for member in &desk.party {
+            assert!(member.is_ascii(), "{member}");
+        }
+        for offer in &desk.offers {
+            assert!(offer.text.is_ascii(), "{}", offer.text);
+        }
+    }
+
+    #[test]
+    fn porto_novo_desk_lists_roster_training_and_no_companions() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let desk = crew_desk(&session).unwrap();
+        assert_eq!(desk.port_name, "Porto Novo");
+        assert!(desk.status.contains("Crew "));
+        assert!(desk.status.contains('/'));
+        let sailor = desk.roles.iter().find(|role| role.id == "sailor").unwrap();
+        assert_eq!(sailor.count, 3);
+        assert!(sailor.max.is_none());
+        assert!(sailor.text.contains("max -"));
+        assert_eq!(sailor.hire_cost, 4);
+        assert!(sailor.hire_five);
+        assert!(sailor.fire_enabled);
+        let gunner = desk.roles.iter().find(|role| role.id == "gunner").unwrap();
+        assert_eq!(gunner.max, Some(3));
+        assert_eq!(gunner.hire_cost, 20);
+        assert!(!gunner.hire_five);
+        assert!(!gunner.fire_enabled);
+        let silver = session.world().captain.silver;
+        session.hire_crew(1, "sailor").unwrap();
+        assert_eq!(session.world().captain.silver, silver - sailor.hire_cost);
+        let per_day = desk.provision_per_day;
+        let before = session.world().captain.silver;
+        session.provision(1).unwrap();
+        assert_eq!(before - session.world().captain.silver, per_day);
+        assert!(desk.provision_text.contains(&format!("{per_day} silver")));
+        assert!(desk.styles.iter().any(|style| {
+            style.id == "la_destreza" && style.cost == 80 && style.days == 5 && !style.known
+        }));
+        assert_eq!(desk.known_styles, "Known styles: none");
+        let skill = desk
+            .skills
+            .iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert!(skill.text.contains("Old Vasquez"));
+        assert!(skill.can_train);
+        assert_eq!(skill.cost, 50);
+        assert_eq!(skill.days, 3);
+        assert!(skill.empty_trainer.is_none());
+        assert!(desk.offers.is_empty());
+        assert_eq!(desk.party.len(), 0);
+        let train = train_confirm_line("La Destreza", 80, 5);
+        assert!(train.contains("80"));
+        assert!(train.contains("advance 5 days"));
+        let skill_line =
+            skill_confirm_line(&skill.level_name, &skill.skill_name, skill.cost, skill.days);
+        assert!(skill_line.starts_with("Learn "));
+        assert!(skill_line.contains("advance 3 days"));
+        assert!(skill_line.contains("50"));
+        assert!(!train.contains("injur"));
+        assert!(!recruit_confirm_line("Iron Marta", 80).contains("advance"));
+        assert!(hire_needs_confirm(50));
+        assert!(!hire_needs_confirm(20));
+        desk_strings_are_ascii(&desk);
+        assert!(NO_COMPANIONS_FOR_HIRE.is_ascii());
+        assert!(NO_FIGHTING_MASTER.is_ascii());
+    }
+
+    #[test]
+    fn companions_are_offered_only_at_their_home_port() {
+        let mut session = Session::new("Ada", "corsair", 1, None).unwrap();
+        let desk = crew_desk(&session).unwrap();
+        let ids: Vec<&str> = desk.offers.iter().map(|offer| offer.id.as_str()).collect();
+        assert!(ids.contains(&"red_tomas"));
+        assert!(ids.contains(&"rosa_the_fence"));
+        assert!(!ids.contains(&"iron_marta"));
+        assert!(desk
+            .offers
+            .iter()
+            .all(|offer| offer.text.contains("standing")));
+        let rosa = desk
+            .offers
+            .iter()
+            .find(|offer| offer.id == "rosa_the_fence")
+            .unwrap();
+        assert!(rosa.text.contains("Smuggler"), "{}", rosa.text);
+        assert!(desk.roles.iter().all(|role| role.id != "smuggler"));
+        assert!(matches!(
+            session.hire_crew(1, "smuggler"),
+            Err(portlight_sim::SimError::UnknownRole(_))
+        ));
+        let skill = desk
+            .skills
+            .iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(
+            skill.empty_trainer.as_deref(),
+            Some("No blacksmith trainer at this port.")
+        );
+        desk_strings_are_ascii(&desk);
+    }
+
+    #[test]
+    fn the_crew_desk_is_closed_at_sea() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.depart("al_manar").unwrap();
+        assert!(crew_desk(&session).is_none());
+    }
+
+    #[test]
+    fn hired_officers_are_listed_in_ascii() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.hire_crew(1, "gunner").unwrap();
+        let desk = crew_desk(&session).unwrap();
+        assert_eq!(desk.officers.len(), 1);
+        assert!(desk.officers[0].contains("Gunner"));
+        assert!(desk.officers[0].contains(" - "));
+        desk_strings_are_ascii(&desk);
+    }
+
+    #[test]
+    fn the_desk_prices_provisions_after_standing() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("silva_bay")).unwrap();
+        let desk = crew_desk(&session).unwrap();
+        let listed = session.world().port("silva_bay").unwrap().provision_cost;
+        assert!(listed > 1, "{listed}");
+        assert_eq!(desk.provision_per_day, listed);
+        assert!(!desk.provision_text.contains("listed"));
+        assert!(desk
+            .provision_text
+            .contains(&format!("{listed} silver a day")));
+        let before = session.world().captain.silver;
+        session.provision(1).unwrap();
+        assert_eq!(
+            before - session.world().captain.silver,
+            desk.provision_per_day
+        );
+        let mut standing = portlight_sim::model::Standing {
+            regional: [0; 5],
+            heat: [0; 5],
+            commercial_trust: 0,
+            port_standing: Vec::new(),
+            underworld: Vec::new(),
+            incidents: Vec::new(),
+        };
+        standing.set_port("silva_bay", 30);
+        let discounted = effective_provision_per_day(listed, &standing, "silva_bay");
+        assert!(discounted < listed, "{discounted} vs {listed}");
+        assert_eq!(
+            discounted,
+            1.max(portlight_sim::util::py_trunc(listed as f64 * 0.8))
+        );
+    }
+
+    #[test]
+    fn blacksmith_levels_follow_the_catalog_and_vasquez_stops_at_two() {
+        let catalog = portlight_sim::content::content();
+        let skill = catalog
+            .skills
+            .skills
+            .iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(
+            skill
+                .levels
+                .iter()
+                .map(|level| (level.name.as_str(), level.silver_cost, level.training_days))
+                .collect::<Vec<_>>(),
+            vec![
+                ("Apprentice", 50, 3),
+                ("Journeyman", 150, 5),
+                ("Master", 400, 8),
+            ]
+        );
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let apprentice = crew_desk(&session)
+            .unwrap()
+            .skills
+            .into_iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(apprentice.level_name, "Apprentice");
+        assert_eq!((apprentice.cost, apprentice.days), (50, 3));
+        assert!(apprentice.can_train);
+        assert!(apprentice.text.contains("teaches to 2"));
+        session.spend_skill_point("blacksmith").unwrap();
+        let journeyman = crew_desk(&session)
+            .unwrap()
+            .skills
+            .into_iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(journeyman.level_name, "Journeyman");
+        assert_eq!((journeyman.cost, journeyman.days), (150, 5));
+        assert!(journeyman.can_train);
+        session.spend_skill_point("blacksmith").unwrap();
+        let master = crew_desk(&session)
+            .unwrap()
+            .skills
+            .into_iter()
+            .find(|skill| skill.id == "blacksmith")
+            .unwrap();
+        assert_eq!(master.level_name, "Master");
+        assert_eq!((master.cost, master.days), (400, 8));
+        assert!(!master.can_train);
+        assert!(master.next_text.contains("Master"));
     }
 }

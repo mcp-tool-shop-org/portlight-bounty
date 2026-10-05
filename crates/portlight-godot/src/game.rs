@@ -15,6 +15,11 @@
 //! `abandon_contract` (no captain, so no breach). Deck melee is
 //! `Session::resolve_boarding`. Hire and provisions
 //! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
+//! The docked Crew desk calls `hire_crew`, `fire_crew`, `provision`,
+//! `train_crew`, `recruit_companion`, and `spend_skill_point`. Train and
+//! Learn show the day advance before the call. Session ignores injury gates
+//! on train, so the desk does not. The provision line is the effective price.
+//! Chart Hire sailor and Provisions +5 stay one-shot shortcuts.
 //!
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
 //! scripted approach uses the encounter screen: `encounter_choice` /
@@ -34,7 +39,7 @@
 //! does not advance the day.
 
 use godot::classes::canvas_item::TextureFilter;
-use godot::classes::control::{LayoutPreset, SizeFlags};
+use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
 use godot::classes::scroll_container::ScrollMode;
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::viewport::DefaultCanvasItemTextureFilter;
@@ -59,20 +64,23 @@ use std::collections::HashMap;
 
 use crate::chart_canvas::{connect_port_pressed, ChartCanvas};
 use crate::contracts_screen::{self, ContractsNodes};
+use crate::crew_screen::{self, CrewNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
 use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
     buy_confirm_line, buy_result_line, captain_button_label, capture_frame_rejected,
-    chart_host_width, cycle_index, day_log_lines, dock_confirm_line, duel_button_enabled,
-    encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, install_confirm_line, layout_fits_window, newgame_copy,
-    newgame_frame_rejected, player_ship, present, save_confirm_title, save_slot_label,
-    sell_confirm_line, session_text, shipyard_frame_rejected, shipyard_model, stance_duel_visible,
-    template_player_ship, ui_sentence, victory_receipt_lines, CustomDraft, EncounterFacts,
-    NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel, StepInput, NEWGAME_SHOT_H,
-    NEWGAME_SHOT_W, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
+    chart_host_width, crew_desk, cycle_index, day_log_lines, dock_confirm_line,
+    duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
+    facts_from_step, frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm,
+    install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
+    present, recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line,
+    session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
+    template_player_ship, train_confirm_line, ui_sentence, victory_receipt_lines, CrewDesk,
+    CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel,
+    StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER,
+    NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
     SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
     SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
@@ -114,6 +122,16 @@ enum Action {
     ToggleMarket,
     HireSailor,
     Provision,
+    OpenCrew,
+    CloseCrew,
+    CrewHire { role: String, count: i64 },
+    CrewFire { role: String, count: i64 },
+    CrewProvision(i64),
+    CrewTrain(String),
+    CrewSkill(String),
+    CrewRecruit(String),
+    CrewConfirm,
+    CrewCancel,
     Stance(Stance),
     ClearStances,
     Duel,
@@ -314,6 +332,53 @@ impl ContractsShot {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CrewShot {
+    Roster,
+    Provisions,
+    /// Layout pass after the train confirm is armed. Not a saved frame.
+    PrepareTraining,
+    Training,
+    /// Layout pass after the confirm is cleared. Not a saved frame.
+    PrepareCompanions,
+    Companions,
+}
+
+impl CrewShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Roster => "crew-roster.png",
+            Self::Provisions => "crew-provisions.png",
+            Self::PrepareTraining | Self::Training => "crew-training.png",
+            Self::PrepareCompanions | Self::Companions => "crew-companions.png",
+        }
+    }
+
+    fn saves(self) -> bool {
+        matches!(
+            self,
+            Self::Roster | Self::Provisions | Self::Training | Self::Companions
+        )
+    }
+
+    fn section(self) -> &'static str {
+        match self {
+            Self::Roster => crew_screen::SECTION_ROSTER,
+            Self::Provisions => crew_screen::SECTION_PROVISIONS,
+            Self::PrepareTraining | Self::Training => crew_screen::SECTION_TRAINING,
+            Self::PrepareCompanions | Self::Companions => crew_screen::SECTION_COMPANIONS,
+        }
+    }
+}
+
+#[derive(Clone)]
+enum CrewPending {
+    Hire { role: String, count: i64 },
+    Train { id: String },
+    Skill { id: String },
+    Recruit { id: String },
+}
+
 #[derive(Clone, Copy)]
 enum Stance {
     Thrust,
@@ -447,6 +512,13 @@ struct PortlightGame {
     harbour_checked: bool,
     harbour_shot_dir: Option<String>,
     harbour_shot: Option<HarbourShot>,
+    crew_nodes: Option<CrewNodes>,
+    crew_open: bool,
+    crew_notice: String,
+    crew_pending: Option<CrewPending>,
+    crew_checked: bool,
+    crew_shot_dir: Option<String>,
+    crew_shot: Option<CrewShot>,
 }
 
 #[derive(Clone, Copy)]
@@ -572,6 +644,13 @@ impl IControl for PortlightGame {
             harbour_checked: false,
             harbour_shot_dir: None,
             harbour_shot: None,
+            crew_nodes: None,
+            crew_open: false,
+            crew_notice: String::new(),
+            crew_pending: None,
+            crew_checked: false,
+            crew_shot_dir: None,
+            crew_shot: None,
         }
     }
 
@@ -659,6 +738,9 @@ impl IControl for PortlightGame {
         if self.advance_harbour_shot() {
             return;
         }
+        if self.advance_crew_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -678,12 +760,13 @@ impl IControl for PortlightGame {
             self.assert_panel_labels();
             self.assert_port_row_fits();
         }
-        // A new-game, contracts, shipyard, journal, or harbour sequence already wrote its own frames.
+        // A new-game, contracts, shipyard, journal, harbour, or crew sequence already wrote its own frames.
         if self.newgame_shot_dir.is_none()
             && self.contracts_shot_dir.is_none()
             && self.shipyard_shot_dir.is_none()
             && self.journal_shot_dir.is_none()
             && self.harbour_shot_dir.is_none()
+            && self.crew_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -728,6 +811,11 @@ impl IControl for PortlightGame {
         } else if self.harbour_checked {
             godot_print!(
                 "portlight harbour smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.crew_checked {
+            godot_print!(
+                "portlight crew smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else {
@@ -792,6 +880,21 @@ impl PortlightGame {
             self.smoke = true;
             self.run_work();
             self.capture_frames = 2;
+        } else if user_arg("--crew-screen") {
+            self.smoke = true;
+            self.crew_checked = true;
+            self.open_crew();
+            if self.docked_id().is_none() || !self.crew_open {
+                self.smoke_ok = false;
+                self.push_log("Crew smoke: expected a docked crew desk.".to_string());
+            }
+            if crew_frames_requested(self.shot_path.is_some()) {
+                self.begin_crew_shots();
+                self.capture_frames = 4;
+            } else {
+                self.run_crew_actions();
+                self.capture_frames = 2;
+            }
         } else if user_arg("--art") {
             self.smoke = true;
             if self.shot_path.is_none() {
@@ -930,10 +1033,13 @@ impl PortlightGame {
         self.journal_button = Some(journal);
         column.add_child(&buttons);
 
-        // One line. A wrap would push the lanes, the market, and the log.
+        // One 31 px line. A wrap would push the lanes, the market, and the log.
         let mut port_row = HBoxContainer::new_alloc();
         port_row.set_name("PortRow");
-        port_row.add_theme_constant_override("separation", 1);
+        // Gaps of 1 px, plus the scrollbar, grow the panel past 420 and
+        // slide the chrome. Zero separation keeps Hide market through
+        // Harbour and Crew on one line inside the panel.
+        port_row.add_theme_constant_override("separation", 0);
         let market = port_row_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
         self.market_button = Some(market);
@@ -953,6 +1059,7 @@ impl PortlightGame {
         port_row.add_child(&shipyard);
         self.shipyard_button = Some(shipyard);
         port_row.add_child(&port_row_button("Harbour", game_id, Action::OpenHarbour));
+        port_row.add_child(&port_row_button("Crew", game_id, Action::OpenCrew));
         port_row.set_visible(false);
         column.add_child(&port_row);
         self.port_row = Some(port_row);
@@ -1065,6 +1172,19 @@ impl PortlightGame {
         self.base_mut().add_child(&harbour.root);
         encounter_screen::fill_parent(&mut harbour.root);
         self.harbour_nodes = Some(harbour);
+
+        let mut crew = crew_screen::build_crew_screen();
+        self.base_mut().add_child(&crew.root);
+        crew_screen::fill_parent(&mut crew.root);
+        let mut confirm_row = HBoxContainer::new_alloc();
+        confirm_row.add_theme_constant_override("separation", 8);
+        confirm_row.add_child(&crew_button("Confirm", game_id, Action::CrewConfirm));
+        confirm_row.add_child(&crew_button("Cancel", game_id, Action::CrewCancel));
+        crew.confirm.add_child(&confirm_row);
+        let mut close = crew_button("Close", game_id, Action::CloseCrew);
+        close.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
+        crew.column.add_child(&close);
+        self.crew_nodes = Some(crew);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -3224,6 +3344,16 @@ impl PortlightGame {
             Action::Work => self.work_docks(),
             Action::HireSailor => self.hire_sailor(),
             Action::Provision => self.buy_provisions(),
+            Action::OpenCrew => self.open_crew(),
+            Action::CloseCrew => self.close_crew(),
+            Action::CrewHire { role, count } => self.crew_hire(&role, count),
+            Action::CrewFire { role, count } => self.crew_fire(&role, count),
+            Action::CrewProvision(days) => self.crew_provision(days),
+            Action::CrewTrain(id) => self.arm_train(&id),
+            Action::CrewSkill(id) => self.arm_skill(&id),
+            Action::CrewRecruit(id) => self.arm_recruit(&id),
+            Action::CrewConfirm => self.confirm_crew(),
+            Action::CrewCancel => self.cancel_crew(),
             Action::Stance(stance) => self.push_stance(stance),
             Action::ClearStances => {
                 self.stances.clear();
@@ -4014,6 +4144,739 @@ impl PortlightGame {
         }
     }
 
+    fn open_crew(&mut self) {
+        if self.docked_id().is_none() {
+            return;
+        }
+        self.crew_open = true;
+        self.crew_pending = None;
+        self.crew_notice.clear();
+        self.refresh();
+    }
+
+    fn close_crew(&mut self) {
+        self.crew_open = false;
+        self.crew_pending = None;
+        self.crew_notice.clear();
+        self.refresh();
+    }
+
+    fn crew_hire(&mut self, role: &str, count: i64) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let quote = self.session.as_ref().and_then(crew_desk).and_then(|desk| {
+            desk.roles
+                .into_iter()
+                .find(|row| row.id == role)
+                .map(|row| (row.name, row.hire_cost * count))
+        });
+        if let Some((name, cost)) = quote {
+            if hire_needs_confirm(cost) {
+                self.crew_notice = hire_confirm_line(count, name, cost);
+                self.crew_pending = Some(CrewPending::Hire {
+                    role: role.to_string(),
+                    count,
+                });
+                self.refresh();
+                return;
+            }
+        }
+        self.apply_hire(role, count);
+    }
+
+    fn apply_hire(&mut self, role: &str, count: i64) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.hire_crew(count, role)
+        };
+        self.crew_pending = None;
+        match result {
+            Ok(()) => {
+                let (crew, silver) = self.crew_counts();
+                self.crew_notice = format!("Hired {count} {role}. Crew {crew}. Silver {silver}.");
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn crew_fire(&mut self, role: &str, count: i64) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.fire_crew(count, role)
+        };
+        match result {
+            Ok(()) => {
+                let (crew, silver) = self.crew_counts();
+                self.crew_notice = format!("Fired {count} {role}. Crew {crew}. Silver {silver}.");
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn crew_provision(&mut self, days: i64) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.provision(days)
+        };
+        match result {
+            Ok(()) => {
+                let (provisions, silver) = self
+                    .session
+                    .as_ref()
+                    .map(|session| {
+                        (
+                            session.world().captain.provisions,
+                            session.world().captain.silver,
+                        )
+                    })
+                    .unwrap_or((0, 0));
+                self.crew_notice =
+                    format!("Bought provisions. Stores {provisions}. Silver {silver}.");
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn arm_train(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(style) = self
+            .session
+            .as_ref()
+            .and_then(crew_desk)
+            .and_then(|desk| desk.styles.into_iter().find(|style| style.id == id))
+        else {
+            self.crew_notice = NO_FIGHTING_MASTER.to_string();
+            self.refresh();
+            return;
+        };
+        self.crew_notice = train_confirm_line(&style.name, style.cost, style.days);
+        self.crew_pending = Some(CrewPending::Train { id: id.to_string() });
+        self.refresh();
+    }
+
+    fn arm_skill(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(skill) = self
+            .session
+            .as_ref()
+            .and_then(crew_desk)
+            .and_then(|desk| desk.skills.into_iter().find(|skill| skill.id == id))
+        else {
+            self.crew_notice = "Unknown skill.".to_string();
+            self.refresh();
+            return;
+        };
+        if !skill.can_train {
+            self.crew_notice = skill.empty_trainer.unwrap_or(skill.next_text);
+            self.refresh();
+            return;
+        }
+        self.crew_notice =
+            skill_confirm_line(&skill.level_name, &skill.skill_name, skill.cost, skill.days);
+        self.crew_pending = Some(CrewPending::Skill { id: id.to_string() });
+        self.refresh();
+    }
+
+    fn arm_recruit(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(offer) = self
+            .session
+            .as_ref()
+            .and_then(crew_desk)
+            .and_then(|desk| desk.offers.into_iter().find(|offer| offer.id == id))
+        else {
+            self.crew_notice = NO_COMPANIONS_FOR_HIRE.to_string();
+            self.refresh();
+            return;
+        };
+        self.crew_notice = recruit_confirm_line(&offer.name, offer.cost);
+        self.crew_pending = Some(CrewPending::Recruit { id: id.to_string() });
+        self.refresh();
+    }
+
+    fn confirm_crew(&mut self) {
+        let Some(pending) = self.crew_pending.clone() else {
+            return;
+        };
+        self.crew_pending = None;
+        match pending {
+            CrewPending::Hire { role, count } => self.apply_hire(&role, count),
+            CrewPending::Train { id } => self.apply_train(&id),
+            CrewPending::Skill { id } => self.apply_skill(&id),
+            CrewPending::Recruit { id } => self.apply_recruit(&id),
+        }
+    }
+
+    fn cancel_crew(&mut self) {
+        if self.crew_pending.is_none() {
+            return;
+        }
+        self.crew_pending = None;
+        self.crew_notice = "Cancelled.".to_string();
+        self.refresh();
+    }
+
+    fn apply_train(&mut self, id: &str) {
+        let day_before = self.session.as_ref().map(|session| session.world().day);
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.train_crew(id)
+        };
+        match result {
+            Ok(()) => {
+                let day_after = self.session.as_ref().map(|session| session.world().day);
+                let advanced = day_before
+                    .zip(day_after)
+                    .map(|(before, after)| after - before)
+                    .unwrap_or(0);
+                self.crew_notice = format!("Learned {id}. The calendar advanced {advanced} days.");
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn apply_skill(&mut self, id: &str) {
+        let day_before = self.session.as_ref().map(|session| session.world().day);
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.spend_skill_point(id)
+        };
+        match result {
+            Ok(()) => {
+                let day_after = self.session.as_ref().map(|session| session.world().day);
+                let advanced = day_before
+                    .zip(day_after)
+                    .map(|(before, after)| after - before)
+                    .unwrap_or(0);
+                self.crew_notice = format!("Trained {id}. The calendar advanced {advanced} days.");
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn apply_recruit(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.recruit_companion(id)
+        };
+        match result {
+            Ok(()) => {
+                self.crew_notice = format!("Recruited {id}.");
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn note_crew_error(&mut self, err: SimError) {
+        self.crew_notice = err.to_string();
+        self.push_log(self.crew_notice.clone());
+    }
+
+    fn crew_counts(&self) -> (i64, i64) {
+        self.session
+            .as_ref()
+            .map(|session| {
+                let world = session.world();
+                let crew = world
+                    .captain
+                    .ship
+                    .as_ref()
+                    .map(|ship| ship.crew)
+                    .unwrap_or(0);
+                (crew, world.captain.silver)
+            })
+            .unwrap_or((0, 0))
+    }
+
+    fn sync_crew(&mut self) {
+        let Some(mut nodes) = self.crew_nodes.clone() else {
+            return;
+        };
+        if !self.crew_open {
+            nodes.root.set_visible(false);
+            return;
+        }
+        let Some(session) = self.session.as_ref() else {
+            self.crew_open = false;
+            nodes.root.set_visible(false);
+            return;
+        };
+        let Some(desk) = crew_desk(session) else {
+            self.crew_open = false;
+            nodes.root.set_visible(false);
+            return;
+        };
+        nodes.root.set_visible(true);
+        nodes.title.set_text(&desk.port_name);
+        nodes.status.set_text(&desk.status);
+        nodes.notice.set_text(&self.crew_notice);
+        nodes.confirm_label.set_text(&self.crew_notice);
+        nodes.confirm.set_visible(self.crew_pending.is_some());
+        let template = session
+            .world()
+            .captain
+            .ship
+            .as_ref()
+            .map(|ship| ship.template_id.clone())
+            .unwrap_or_default();
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &template,
+        );
+        let kept = nodes.scroll.get_v_scroll();
+        self.fill_crew_body(&nodes.body, &desk);
+        nodes.scroll.set_v_scroll(kept);
+    }
+
+    fn fill_crew_body(&mut self, body: &Gd<VBoxContainer>, desk: &CrewDesk) {
+        let mut body = body.clone();
+        clear_children(&mut body);
+        let locked = self.crew_pending.is_some();
+        let game_id = self.instance_id();
+
+        let mut roster = crew_section(crew_screen::SECTION_ROSTER);
+        roster.add_child(&crew_subhead("Roster"));
+        for role in &desk.roles {
+            let mut row = HBoxContainer::new_alloc();
+            row.add_theme_constant_override("separation", 8);
+            let mut label = body_label(&role.text, 15, CREAM);
+            shrink_label(&mut label);
+            row.add_child(&label);
+            let mut hire = crew_button(
+                "Hire 1",
+                game_id,
+                Action::CrewHire {
+                    role: role.id.to_string(),
+                    count: 1,
+                },
+            );
+            hire.set_disabled(locked || !role.hire_enabled);
+            row.add_child(&hire);
+            let mut fire = crew_button(
+                "Fire 1",
+                game_id,
+                Action::CrewFire {
+                    role: role.id.to_string(),
+                    count: 1,
+                },
+            );
+            fire.set_disabled(locked || !role.fire_enabled);
+            row.add_child(&fire);
+            if role.hire_five {
+                let mut hire_five = crew_button(
+                    "Hire 5",
+                    game_id,
+                    Action::CrewHire {
+                        role: role.id.to_string(),
+                        count: 5,
+                    },
+                );
+                hire_five.set_disabled(locked || !role.hire_enabled);
+                row.add_child(&hire_five);
+            }
+            roster.add_child(&row);
+        }
+        for officer in &desk.officers {
+            roster.add_child(&crew_muted(officer));
+        }
+        let mut provisions = crew_section(crew_screen::SECTION_PROVISIONS);
+        provisions.add_child(&crew_subhead("Provisions"));
+        provisions.add_child(&crew_copy(&desk.provision_text));
+        let mut provision_buttons = HBoxContainer::new_alloc();
+        provision_buttons.add_theme_constant_override("separation", 8);
+        let mut plus_five = crew_button("Provisions +5", game_id, Action::CrewProvision(5));
+        plus_five.set_disabled(locked);
+        let mut plus_one = crew_button("Provisions +1", game_id, Action::CrewProvision(1));
+        plus_one.set_disabled(locked);
+        provision_buttons.add_child(&plus_five);
+        provision_buttons.add_child(&plus_one);
+        provisions.add_child(&provision_buttons);
+        roster.add_child(&provisions);
+        body.add_child(&roster);
+
+        let mut training = crew_section(crew_screen::SECTION_TRAINING);
+        training.add_child(&crew_subhead("Training"));
+        training.add_child(&crew_copy(&desk.known_styles));
+        if desk.styles.is_empty() {
+            training.add_child(&crew_copy(NO_FIGHTING_MASTER));
+        }
+        for style in &desk.styles {
+            training.add_child(&crew_copy(&style.text));
+            let mut train = crew_button("Train", game_id, Action::CrewTrain(style.id.clone()));
+            train.set_disabled(locked || style.known);
+            training.add_child(&train);
+        }
+        training.add_child(&crew_subhead("Skills"));
+        for skill in &desk.skills {
+            training.add_child(&crew_copy(&skill.text));
+            if let Some(empty) = &skill.empty_trainer {
+                training.add_child(&crew_copy(empty));
+            } else if !skill.next_text.is_empty() {
+                training.add_child(&crew_muted(&skill.next_text));
+            }
+            if skill.can_train {
+                let mut train = crew_button("Learn", game_id, Action::CrewSkill(skill.id.clone()));
+                train.set_disabled(locked);
+                training.add_child(&train);
+            }
+        }
+        body.add_child(&training);
+
+        let mut companions = crew_section(crew_screen::SECTION_COMPANIONS);
+        companions.add_child(&crew_subhead("Companions"));
+        companions.add_child(&crew_copy(&desk.party_line));
+        if desk.party.is_empty() {
+            companions.add_child(&crew_copy("In party: none."));
+        }
+        for member in &desk.party {
+            companions.add_child(&crew_copy(member));
+        }
+        if desk.offers.is_empty() {
+            companions.add_child(&crew_copy(NO_COMPANIONS_FOR_HIRE));
+        }
+        for offer in &desk.offers {
+            companions.add_child(&crew_copy(&offer.text));
+            let mut recruit =
+                crew_button("Recruit", game_id, Action::CrewRecruit(offer.id.clone()));
+            recruit.set_disabled(locked);
+            companions.add_child(&recruit);
+        }
+        body.add_child(&companions);
+
+        if self.crew_shot.is_some() {
+            let mut pad = Control::new_alloc();
+            pad.set_name("CrewShotPad");
+            pad.set_mouse_filter(MouseFilter::IGNORE);
+            pad.set_custom_minimum_size(Vector2::new(0.0, 640.0));
+            body.add_child(&pad);
+        }
+    }
+
+    fn begin_crew_shots(&mut self) {
+        self.crew_shot_dir = Some(newgame_shot_dir(self.shot_path.as_deref()));
+        self.crew_shot = Some(CrewShot::Roster);
+        self.refresh();
+    }
+
+    fn advance_crew_shot(&mut self) -> bool {
+        let Some(phase) = self.crew_shot else {
+            return false;
+        };
+        let Some(dir) = self.crew_shot_dir.clone() else {
+            return false;
+        };
+        // Rebuilding the body invalidates section positions until the next
+        // layout. Prepare phases only scroll, after that layout has run.
+        if !phase.saves() {
+            self.scroll_crew_section(phase.section());
+            self.crew_shot = Some(match phase {
+                CrewShot::PrepareTraining => CrewShot::Training,
+                _ => CrewShot::Companions,
+            });
+            self.capture_frames = 4;
+            return true;
+        }
+        if !self.crew_section_at_top(phase.section()) {
+            self.capture_failed = true;
+            godot_print!(
+                "Crew smoke: {} was not scrolled into view",
+                phase.file_name()
+            );
+        }
+        if phase == CrewShot::Training && !self.training_warning_visible() {
+            self.capture_failed = true;
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        if phase == CrewShot::Roster {
+            // The body is already laid out, so the provisions block can
+            // scroll before the train confirm rebuilds it.
+            self.scroll_crew_section(crew_screen::SECTION_PROVISIONS);
+            self.crew_shot = Some(CrewShot::Provisions);
+            self.capture_frames = 4;
+            return true;
+        }
+        if phase == CrewShot::Provisions {
+            // Arming rebuilds the body, so the training scroll waits.
+            self.arm_train("la_destreza");
+            self.crew_shot = Some(CrewShot::PrepareTraining);
+            self.capture_frames = 4;
+            return true;
+        }
+        if phase == CrewShot::Training {
+            // Drop the confirm without writing "Cancelled." Companions
+            // is the idle desk again, and the action pass arms its own.
+            self.crew_pending = None;
+            self.crew_notice.clear();
+            self.refresh();
+            self.crew_shot = Some(CrewShot::PrepareCompanions);
+            self.capture_frames = 4;
+            return true;
+        }
+        self.crew_shot = None;
+        self.run_crew_actions();
+        false
+    }
+
+    /// The training frame has to show the day-advance line in the notice bar,
+    /// fully inside the window, with every wrapped line tall enough to read.
+    fn training_warning_visible(&mut self) -> bool {
+        let Some(nodes) = self.crew_nodes.clone() else {
+            godot_print!("Crew smoke: no crew desk for the training warning.");
+            return false;
+        };
+        let text = nodes.notice.get_text().to_string();
+        if !text.contains("advance") || !text.contains("days") {
+            godot_print!("Crew smoke: notice bar missing the day-advance warning: {text:?}");
+            return false;
+        }
+        if !nodes.confirm.is_visible() {
+            godot_print!("Crew smoke: the train confirm was hidden.");
+            return false;
+        }
+        let notice_ok = self.warning_label_visible("notice", &nodes.notice);
+        let confirm_ok = self.warning_label_visible("confirm", &nodes.confirm_label);
+        notice_ok && confirm_ok
+    }
+
+    fn warning_label_visible(&mut self, kind: &str, label: &Gd<Label>) -> bool {
+        let text = label.get_text().to_string();
+        let rect = label.get_global_rect();
+        let pos = rect.position;
+        let size = rect.size;
+        let inside = pos.x >= -0.5
+            && pos.y >= -0.5
+            && pos.x + size.x <= WINDOW_W + 0.5
+            && pos.y + size.y <= WINDOW_H + 0.5;
+        let lines = label.get_line_count();
+        let line_h = label.get_line_height();
+        let covered = lines >= 1 && line_h > 0 && size.y + 1.0 >= (lines * line_h) as f32;
+        let visible_lines = label.get_visible_line_count();
+        if !text.contains("advance") || !inside || !covered || visible_lines < lines {
+            godot_print!(
+                "Crew smoke: {kind} warning clipped text={text:?} pos=({}, {}) size=({}, {}) lines={lines} visible={visible_lines} line_h={line_h}",
+                pos.x,
+                pos.y,
+                size.x,
+                size.y,
+                );
+            return false;
+        }
+        true
+    }
+
+    fn scroll_crew_section(&mut self, name: &str) {
+        let Some(nodes) = self.crew_nodes.clone() else {
+            return;
+        };
+        let mut scroll = nodes.scroll.clone();
+        let Some(y) = section_y(&nodes.body, name) else {
+            self.capture_failed = true;
+            godot_print!("Crew smoke: missing section {name}");
+            return;
+        };
+        scroll.set_v_scroll(y);
+    }
+
+    fn crew_section_at_top(&self, name: &str) -> bool {
+        let Some(nodes) = &self.crew_nodes else {
+            return false;
+        };
+        let Some(y) = section_y(&nodes.body, name) else {
+            return false;
+        };
+        (y - nodes.scroll.get_v_scroll()).abs() <= 4
+    }
+
+    /// Hire, fire, provision, then train and skill through the confirm bar.
+    /// The chart Hire sailor and Provisions +5 shortcuts still call Session.
+    fn run_crew_actions(&mut self) {
+        if !self.crew_open {
+            self.fail_crew("Crew smoke: the desk was not open.");
+            return;
+        }
+        if self.docked_id().is_none() {
+            self.fail_crew("Crew smoke: expected to be docked.");
+            return;
+        }
+        let chart_row = self.port_row.as_ref().is_some_and(|row| row.is_visible());
+        if !chart_row {
+            self.fail_crew("Crew smoke: the docked Crew control was hidden.");
+            return;
+        }
+        let (crew_before, silver_before, provisions_before, day_before) =
+            match self.session.as_ref() {
+                Some(session) => {
+                    let world = session.world();
+                    let crew = world
+                        .captain
+                        .ship
+                        .as_ref()
+                        .map(|ship| ship.crew)
+                        .unwrap_or(0);
+                    (
+                        crew,
+                        world.captain.silver,
+                        world.captain.provisions,
+                        world.day,
+                    )
+                }
+                None => {
+                    self.fail_crew("Crew smoke: no session.");
+                    return;
+                }
+            };
+        self.crew_hire("sailor", 1);
+        let hired = self.session.as_ref().is_some_and(|session| {
+            let world = session.world();
+            world.captain.ship.as_ref().map(|ship| ship.crew) == Some(crew_before + 1)
+                && world.captain.silver < silver_before
+        });
+        if !hired {
+            self.fail_crew("Crew smoke: hire 1 sailor did not change crew and silver.");
+            return;
+        }
+        self.crew_fire("sailor", 1);
+        let fired = self.session.as_ref().is_some_and(|session| {
+            session.world().captain.ship.as_ref().map(|ship| ship.crew) == Some(crew_before)
+        });
+        if !fired {
+            self.fail_crew("Crew smoke: fire 1 sailor did not restore the crew.");
+            return;
+        }
+        self.crew_provision(1);
+        let stored = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().captain.provisions == provisions_before + 1);
+        if !stored {
+            self.fail_crew("Crew smoke: provision +1 did not add a day of stores.");
+            return;
+        }
+        let day_now = self.session.as_ref().map(|session| session.world().day);
+        self.arm_train("la_destreza");
+        if self.crew_pending.is_none()
+            || !self.crew_notice.contains("advance")
+            || !self.crew_notice.contains("5 days")
+        {
+            self.fail_crew("Crew smoke: train confirm did not warn that the calendar advances.");
+            return;
+        }
+        self.cancel_crew();
+        if self.session.as_ref().is_some_and(|session| {
+            session
+                .world()
+                .captain
+                .learned_styles
+                .iter()
+                .any(|id| id == "la_destreza")
+        }) || self.session.as_ref().map(|session| session.world().day) != day_now
+        {
+            self.fail_crew("Crew smoke: cancel changed the style or the day.");
+            return;
+        }
+        self.arm_train("la_destreza");
+        self.confirm_crew();
+        let trained = self.session.as_ref().is_some_and(|session| {
+            let world = session.world();
+            world
+                .captain
+                .learned_styles
+                .iter()
+                .any(|id| id == "la_destreza")
+                && world.day == day_before + 5
+        });
+        if !trained {
+            self.fail_crew("Crew smoke: train did not learn La Destreza or advance 5 days.");
+            return;
+        }
+        let day_trained = self.session.as_ref().map(|session| session.world().day);
+        self.arm_skill("blacksmith");
+        if self.crew_pending.is_none()
+            || !self.crew_notice.contains("advance")
+            || !self.crew_notice.contains("3 days")
+        {
+            self.fail_crew("Crew smoke: skill confirm did not warn that the calendar advances.");
+            return;
+        }
+        self.confirm_crew();
+        let skilled = self.session.as_ref().is_some_and(|session| {
+            let world = session.world();
+            portlight_sim::skills::skill_level(&world.captain.skills, "blacksmith") == 1
+                && Some(world.day) == day_trained.map(|day| day + 3)
+        });
+        if !skilled {
+            self.fail_crew(
+                "Crew smoke: skill training did not reach Apprentice or advance 3 days.",
+            );
+            return;
+        }
+        self.close_crew();
+        if self.crew_open {
+            self.fail_crew("Crew smoke: Close left the desk open.");
+            return;
+        }
+        self.hire_sailor();
+        self.buy_provisions();
+        let shortcuts = self.session.as_ref().is_some_and(|session| {
+            let world = session.world();
+            world.captain.ship.as_ref().map(|ship| ship.crew) == Some(crew_before + 1)
+                && world.captain.provisions >= provisions_before + 1 + 5 - 8
+        });
+        if !shortcuts {
+            self.fail_crew("Crew smoke: chart Hire sailor or Provisions +5 did not apply.");
+        }
+    }
+
+    fn fail_crew(&mut self, line: &str) {
+        godot_print!("{line}");
+        self.push_log(line.to_string());
+        self.smoke_ok = false;
+        self.crew_checked = true;
+    }
+
     fn push_stance(&mut self, stance: Stance) {
         if self
             .session
@@ -4143,6 +5006,7 @@ impl PortlightGame {
         self.sync_shipyard();
         self.sync_journal();
         self.sync_harbour();
+        self.sync_crew();
     }
 
     /// The docked row stays one line, and its minimum width fits the width
@@ -6206,6 +7070,7 @@ fn scripted_launch() -> bool {
         || user_arg("--duel")
         || user_arg("--resolve")
         || user_arg("--work")
+        || user_arg("--crew-screen")
         || user_arg("--art")
         || user_arg("--contracts-screen")
         || user_arg("--harbour-screen")
@@ -6218,6 +7083,10 @@ fn harbour_frames_requested(shot_set: bool) -> bool {
 }
 
 fn newgame_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn crew_frames_requested(shot_set: bool) -> bool {
     shot_set || docs_capture()
 }
 
@@ -6438,17 +7307,19 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 /// Chart port-row control. Same theme fill as [`action_button`].
 ///
-/// The face is 11 px with no horizontal padding so Market, Contracts, Hire,
-/// Provisions, Work, Shipyard, and Harbour stay on one line inside the
-/// panel. A second line would push the lanes down. The minimum height stays
-/// 31 px, so the button band stays y 257-287.
+/// The face is 10 px with no horizontal padding so Market, Contracts, Hire,
+/// Provisions, Work, Shipyard, Harbour, and Crew stay on one line inside the
+/// panel. An 11 px face fits seven labels; the eighth grows the panel and
+/// slides the chrome. The minimum height stays 31 px, so the button band
+/// stays y 257-287.
 fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = action_button(text, game, action);
-    button.add_theme_font_size_override("font_size", 11);
+    button.add_theme_font_size_override("font_size", 10);
     button.set_custom_minimum_size(Vector2::new(0.0, 31.0));
-    // Default side padding plus a seventh label overruns the panel and
+    // Default side padding plus an eighth label overruns the panel and
     // reflows everything below the row. Zero horizontal padding keeps the
-    // 11 px face on one line.
+    // 10 px face on one line. `align_to_largest_stylebox` uses the widest
+    // state, including hover_pressed.
     for state in [
         "normal",
         "hover",
@@ -6456,6 +7327,7 @@ fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
         "focus",
         "disabled",
         "hover_disabled",
+        "hover_pressed",
     ] {
         let Some(style) = button.get_theme_stylebox(state) else {
             continue;
@@ -6484,6 +7356,65 @@ fn action_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
 }
 
 /// Encounter actions only. The chart side panel keeps [`action_button`].
+fn crew_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
+    let mut button = Button::new_alloc();
+    button.set_text(text);
+    crew_screen::style_crew_button(&mut button);
+    let action_for_click = action;
+    button.signals().pressed().connect(move || {
+        let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
+            return;
+        };
+        gd.bind_mut().perform(action_for_click.clone());
+    });
+    button
+}
+
+fn crew_section(name: &str) -> Gd<VBoxContainer> {
+    let mut section = VBoxContainer::new_alloc();
+    section.set_name(name);
+    section.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    section.add_theme_constant_override("separation", 6);
+    section
+}
+
+fn crew_subhead(text: &str) -> Gd<Label> {
+    body_label(text, 16, GOLD)
+}
+
+fn crew_copy(text: &str) -> Gd<Label> {
+    let mut label = body_label(text, 15, CREAM);
+    label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+    label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    label
+}
+
+fn crew_muted(text: &str) -> Gd<Label> {
+    let mut label = body_label(text, 14, MUTED);
+    label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+    label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    label
+}
+
+fn section_y(body: &Gd<VBoxContainer>, name: &str) -> Option<i32> {
+    section_offset(&body.clone().upcast::<Node>(), name, 0.0).map(|y| y.round() as i32)
+}
+
+fn section_offset(node: &Gd<Node>, name: &str, origin_y: f32) -> Option<f32> {
+    for child in node.get_children().iter_shared() {
+        let Ok(control) = child.clone().try_cast::<Control>() else {
+            continue;
+        };
+        if child.get_name() == name {
+            return Some(origin_y + control.get_position().y);
+        }
+        if let Some(found) = section_offset(&child, name, origin_y + control.get_position().y) {
+            return Some(found);
+        }
+    }
+    None
+}
+
 fn encounter_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = Button::new_alloc();
     button.set_text(text);
