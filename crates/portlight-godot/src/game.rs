@@ -1036,15 +1036,9 @@ impl PortlightGame {
         // One 31 px line. A wrap would push the lanes, the market, and the log.
         let mut port_row = HBoxContainer::new_alloc();
         port_row.set_name("PortRow");
-<<<<<<< HEAD
         // Gaps of 1 px, plus the scrollbar, grow the panel past 420 and
         // slide the chrome. Zero separation keeps Hide market through
         // Harbour and Crew on one line inside the panel.
-=======
-        // Six gaps of 1 px, plus the scrollbar, grow the panel past 420 and
-        // slide the chrome. Zero separation keeps Hide market through Crew
-        // on one line inside the panel.
->>>>>>> ec227dd (Recapture the one-line port row on the Journal chart.)
         port_row.add_theme_constant_override("separation", 0);
         let market = port_row_button("Market", game_id, Action::ToggleMarket);
         port_row.add_child(&market);
@@ -7313,17 +7307,18 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 /// Chart port-row control. Same theme fill as [`action_button`].
 ///
-/// The face is 11 px with no horizontal padding so Market, Contracts, Hire,
+/// The face is 10 px with no horizontal padding so Market, Contracts, Hire,
 /// Provisions, Work, Shipyard, Harbour, and Crew stay on one line inside the
-/// panel. A second line would push the lanes down. The minimum height stays
-/// 31 px, so the button band stays y 257-287.
+/// panel. An 11 px face fits seven labels; the eighth grows the panel and
+/// slides the chrome. The minimum height stays 31 px, so the button band
+/// stays y 257-287.
 fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = action_button(text, game, action);
-    button.add_theme_font_size_override("font_size", 11);
+    button.add_theme_font_size_override("font_size", 10);
     button.set_custom_minimum_size(Vector2::new(0.0, 31.0));
     // Default side padding plus an eighth label overruns the panel and
     // reflows everything below the row. Zero horizontal padding keeps the
-    // 11 px face on one line. `align_to_largest_stylebox` uses the widest
+    // 10 px face on one line. `align_to_largest_stylebox` uses the widest
     // state, including hover_pressed.
     for state in [
         "normal",
