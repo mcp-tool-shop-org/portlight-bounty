@@ -31,6 +31,8 @@ const PLATE_WHITE: Color = Color::from_rgb(1.0, 1.0, 1.0);
 pub(crate) struct EncounterNodes {
     pub root: Gd<PanelContainer>,
     pub title: Gd<Label>,
+    /// Muted eyebrow. Hidden unless the live captain is an active bounty.
+    pub bounty: Gd<Label>,
     pub card: Gd<Label>,
     /// Signed-delta line between the card and the log. Hidden when empty.
     pub delta: Gd<HBoxContainer>,
@@ -73,6 +75,10 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     row.add_child(&column);
 
     column.add_child(&text_label("Encounter", 14, MUTED));
+    let mut bounty = text_label("Bounty", 14, MUTED);
+    bounty.set_name("BountyBadge");
+    bounty.set_visible(false);
+    column.add_child(&bounty);
     let title = text_label("", 28, GOLD);
     column.add_child(&title);
     let mut card = text_label("", 18, CREAM);
@@ -105,6 +111,7 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     EncounterNodes {
         root,
         title,
+        bounty,
         card,
         delta,
         log,

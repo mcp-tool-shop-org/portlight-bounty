@@ -37,6 +37,11 @@
 //! `board_fleet_ship`, `sell_fleet_ship`, `buy_ship`, and `install_upgrade`.
 //! Buy, sell, dock, board, and install wait for a confirm. Opening the screen
 //! does not advance the day.
+//!
+//! The Hunt overlay is forage (`Session::hunt`) plus the bounty desk
+//! (`bounty_board`, `accept_bounty`, `hunt_bounty`, `claim_bounty`).
+//! `hunt_bounty` opens this same encounter screen. A runner `bounty` verb
+//! is a follow-on; this view does not add one.
 
 use godot::classes::canvas_item::TextureFilter;
 use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
@@ -67,6 +72,7 @@ use crate::contracts_screen::{self, ContractsNodes};
 use crate::crew_screen::{self, CrewNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
+use crate::hunt_screen::{self, HuntAction, HuntConfirm, HuntDesk};
 use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
@@ -119,6 +125,7 @@ enum Action {
     LoadSlot(String),
     NextDay,
     Work,
+    OpenHunt,
     ToggleMarket,
     HireSailor,
     Provision,
@@ -380,6 +387,31 @@ enum CrewPending {
 }
 
 #[derive(Clone, Copy)]
+enum HuntShot {
+    Forage,
+    Board,
+    Active,
+}
+
+impl HuntShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Forage => "hunt-forage.png",
+            Self::Board => "hunt-board.png",
+            Self::Active => "hunt-active.png",
+        }
+    }
+
+    fn section(self) -> &'static str {
+        match self {
+            Self::Forage => "HuntForage",
+            Self::Board => "HuntBoard",
+            Self::Active => "HuntActive",
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 enum Stance {
     Thrust,
     Slash,
@@ -410,6 +442,10 @@ struct PortlightGame {
     market_button: Option<Gd<Button>>,
     work_button: Option<Gd<Button>>,
     port_row: Option<Gd<HBoxContainer>>,
+    /// Docked Hunt control. Its own row so the market buttons stay one line.
+    port_hunt_row: Option<Gd<HBoxContainer>>,
+    /// At-sea Hunt control, on the Next day row. Hidden while docked.
+    sea_hunt_button: Option<Gd<Button>>,
     port_note: Option<Gd<Label>>,
     encounter_box: Option<Gd<VBoxContainer>>,
     encounter_label: Option<Gd<Label>>,
@@ -519,6 +555,14 @@ struct PortlightGame {
     crew_checked: bool,
     crew_shot_dir: Option<String>,
     crew_shot: Option<CrewShot>,
+    hunt_nodes: Option<hunt_screen::HuntNodes>,
+    hunt_open: bool,
+    hunt_desk: HuntDesk,
+    hunt_checked: bool,
+    hunt_shot_dir: Option<String>,
+    hunt_shot: Option<HuntShot>,
+    /// The section is scrolled after layout, then the frame waits one draw.
+    hunt_scrolled: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -561,6 +605,8 @@ impl IControl for PortlightGame {
             market_button: None,
             work_button: None,
             port_row: None,
+            port_hunt_row: None,
+            sea_hunt_button: None,
             port_note: None,
             encounter_box: None,
             encounter_label: None,
@@ -651,6 +697,13 @@ impl IControl for PortlightGame {
             crew_checked: false,
             crew_shot_dir: None,
             crew_shot: None,
+            hunt_nodes: None,
+            hunt_open: false,
+            hunt_desk: HuntDesk::default(),
+            hunt_checked: false,
+            hunt_shot_dir: None,
+            hunt_shot: None,
+            hunt_scrolled: false,
         }
     }
 
@@ -706,6 +759,16 @@ impl IControl for PortlightGame {
                 self.journal_sea_check();
                 self.capture_frames = 2;
             }
+        } else if user_arg("--hunt-screen") {
+            self.smoke = true;
+            let capture = hunt_frames_requested(self.shot_path.is_some());
+            self.run_hunt_smoke();
+            if capture {
+                self.begin_hunt_shots();
+                self.capture_frames = 4;
+            } else {
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -741,6 +804,9 @@ impl IControl for PortlightGame {
         if self.advance_crew_shot() {
             return;
         }
+        if self.advance_hunt_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -760,13 +826,14 @@ impl IControl for PortlightGame {
             self.assert_panel_labels();
             self.assert_port_row_fits();
         }
-        // A new-game, contracts, shipyard, journal, harbour, or crew sequence already wrote its own frames.
+        // A new-game, contracts, shipyard, journal, harbour, crew, or hunt sequence already wrote its frames.
         if self.newgame_shot_dir.is_none()
             && self.contracts_shot_dir.is_none()
             && self.shipyard_shot_dir.is_none()
             && self.journal_shot_dir.is_none()
             && self.harbour_shot_dir.is_none()
             && self.crew_shot_dir.is_none()
+            && self.hunt_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -816,6 +883,11 @@ impl IControl for PortlightGame {
         } else if self.crew_checked {
             godot_print!(
                 "portlight crew smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.hunt_checked {
+            godot_print!(
+                "portlight hunt smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else {
@@ -1031,6 +1103,12 @@ impl PortlightGame {
         let journal = action_button("Journal", game_id, Action::OpenJournal);
         buttons.add_child(&journal);
         self.journal_button = Some(journal);
+        // At sea this sits beside Next day. Hidden in port; docked Hunt is
+        // the row under the market buttons.
+        let mut sea_hunt = action_button("Hunt", game_id, Action::OpenHunt);
+        sea_hunt.set_visible(false);
+        buttons.add_child(&sea_hunt);
+        self.sea_hunt_button = Some(sea_hunt);
         column.add_child(&buttons);
 
         // One 31 px line. A wrap would push the lanes, the market, and the log.
@@ -1063,6 +1141,12 @@ impl PortlightGame {
         port_row.set_visible(false);
         column.add_child(&port_row);
         self.port_row = Some(port_row);
+        // Own row. The four port buttons already fill the panel width.
+        let mut port_hunt_row = HBoxContainer::new_alloc();
+        port_hunt_row.add_child(&action_button("Hunt", game_id, Action::OpenHunt));
+        port_hunt_row.set_visible(false);
+        column.add_child(&port_hunt_row);
+        self.port_hunt_row = Some(port_hunt_row);
         let mut port_note = body_label("", 12, MUTED);
         port_note.set_autowrap_mode(AutowrapMode::WORD_SMART);
         port_note.set_visible(false);
@@ -1185,6 +1269,10 @@ impl PortlightGame {
         close.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
         crew.column.add_child(&close);
         self.crew_nodes = Some(crew);
+        let mut hunt = hunt_screen::build_hunt_screen();
+        self.base_mut().add_child(&hunt.root);
+        hunt_screen::fill_parent(&mut hunt.root);
+        self.hunt_nodes = Some(hunt);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1196,6 +1284,9 @@ impl PortlightGame {
         self.market_open = false;
         self.armed_sail = None;
         self.stances.clear();
+        self.hunt_open = false;
+        self.hunt_desk = HuntDesk::default();
+        self.encounter = None;
         match Session::new(
             FIRST_PLAYABLE_NAME,
             FIRST_PLAYABLE_CAPTAIN,
@@ -3342,6 +3433,7 @@ impl PortlightGame {
             Action::LoadSlot(slot) => self.load_slot(&slot),
             Action::NextDay => self.next_day(),
             Action::Work => self.work_docks(),
+            Action::OpenHunt => self.open_hunt(),
             Action::HireSailor => self.hire_sailor(),
             Action::Provision => self.buy_provisions(),
             Action::OpenCrew => self.open_crew(),
@@ -4963,6 +5055,12 @@ impl PortlightGame {
         if let Some(row) = self.port_row.as_mut() {
             row.set_visible(docked);
         }
+        if let Some(row) = self.port_hunt_row.as_mut() {
+            row.set_visible(docked);
+        }
+        if let Some(button) = self.sea_hunt_button.as_mut() {
+            button.set_visible(!docked && self.session.is_some());
+        }
         if let Some(label) = self.port_note.as_mut() {
             label.set_visible(docked);
             label.set_text(&services);
@@ -5007,6 +5105,7 @@ impl PortlightGame {
         self.sync_journal();
         self.sync_harbour();
         self.sync_crew();
+        self.sync_hunt();
     }
 
     /// The docked row stays one line, and its minimum width fits the width
@@ -6434,6 +6533,7 @@ impl PortlightGame {
                 .unwrap_or_default()
         };
         let view = self.encounter.as_ref().and_then(present);
+        let bounty_marked = view.is_some() && self.bounty_badge_on();
         let Some(nodes) = self.encounter_nodes.as_mut() else {
             return;
         };
@@ -6452,8 +6552,11 @@ impl PortlightGame {
             godot::classes::control::MouseFilter::IGNORE
         });
         let Some(view) = view else {
+            nodes.bounty.set_visible(false);
             return;
         };
+        nodes.bounty.set_text("Bounty");
+        nodes.bounty.set_visible(bounty_marked);
         nodes.title.set_text(view.title);
         nodes.card.set_text(&view.card);
         encounter_screen::set_delta_line(&mut nodes.delta, &view.delta);
@@ -6507,6 +6610,514 @@ impl PortlightGame {
             crew_row.add_child(&encounter_button("Crew +", game_id, Action::CaptureCrew(1)));
             box_node.add_child(&crew_row);
         }
+    }
+
+    fn bounty_badge_on(&self) -> bool {
+        let Some(facts) = self.encounter.as_ref() else {
+            return false;
+        };
+        let Some(session) = self.session.as_ref() else {
+            return false;
+        };
+        session
+            .world()
+            .captain
+            .active_bounties
+            .iter()
+            .any(|id| id == &facts.captain_id)
+    }
+
+    /// `Session::hunt` for one day, then the bounty desk. Forage must not open
+    /// the encounter screen. `hunt_bounty` does, through [`Self::open_agency`].
+    fn run_hunt_smoke(&mut self) {
+        self.start_game();
+        if self.session.is_none() {
+            self.fail_hunt("Hunt smoke: no session.");
+            return;
+        }
+        let day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(0);
+        self.open_hunt();
+        if !self.hunt_open || self.hunt_desk.board.is_empty() {
+            self.fail_hunt("Hunt smoke: open did not post the board.");
+            self.hunt_checked = true;
+            return;
+        }
+        if self
+            .hunt_model_now()
+            .as_ref()
+            .is_none_or(|model| !model.title.starts_with("Docked - "))
+        {
+            self.fail_hunt("Hunt smoke: docked title was missing.");
+        }
+        self.forage_day();
+        let sailed = self.session.as_ref().is_some_and(|session| {
+            session.world().day == day + 1
+                && session.world().captain.day == day + 1
+                && session.world().pending_duel.is_none()
+        });
+        if !sailed || self.encounter.is_some() || !self.hunt_desk.notice.contains("Provisions") {
+            self.fail_hunt(
+                "Hunt smoke: forage did not advance the day, or it opened a fight.".to_string(),
+            );
+        }
+        self.post_board();
+        if self.hunt_desk.board.is_empty() || self.hunt_desk.board.len() > 3 {
+            self.fail_hunt(format!(
+                "Hunt smoke: refresh listed {} offers.",
+                self.hunt_desk.board.len()
+            ));
+        }
+        let first = self
+            .hunt_desk
+            .board
+            .first()
+            .map(|row| row.captain_id.clone())
+            .unwrap_or_default();
+        if first.is_empty() {
+            self.fail_hunt("Hunt smoke: no offer to accept.");
+            self.hunt_checked = true;
+            return;
+        }
+        self.accept_listed(&first);
+        let active_ok = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().captain.active_bounties == vec![first.clone()]);
+        if !active_ok {
+            self.fail_hunt("Hunt smoke: accept did not store one active bounty.");
+        }
+        self.accept_listed(&first);
+        if self.hunt_desk.notice != "Already hunting this target" {
+            self.fail_hunt(format!(
+                "Hunt smoke: second accept said {}.",
+                self.hunt_desk.notice
+            ));
+        }
+        self.close_hunt();
+        if self.hunt_open {
+            self.fail_hunt("Hunt smoke: Close left the overlay up.");
+        }
+        self.fill_bounty_cap(&first);
+        let departed = {
+            let Some(session) = self.session.as_mut() else {
+                self.fail_hunt("Hunt smoke: session dropped.");
+                return;
+            };
+            session.depart("al_manar")
+        };
+        if let Err(err) = departed {
+            self.fail_hunt(format!("Hunt smoke: could not sail: {err}"));
+            return;
+        }
+        self.open_hunt();
+        let sea_ok = self.hunt_model_now().as_ref().is_some_and(|model| {
+            model.title == "At sea"
+                && model.forage_status.contains("Morale")
+                && model.forage_status.contains("20")
+                && model.forage_enabled
+        });
+        if !sea_ok {
+            self.fail_hunt("Hunt smoke: sea forage status did not name the morale gate.");
+        }
+        let sea_day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(0);
+        self.forage_day();
+        let sea_forage = self.session.as_ref().is_some_and(|session| {
+            session.world().day == sea_day + 1 && session.world().pending_duel.is_none()
+        });
+        if !sea_forage || self.encounter.is_some() {
+            self.fail_hunt("Hunt smoke: forage at sea opened a fight or skipped the day.");
+        }
+        self.ask_hunt(&first);
+        self.confirm_hunt();
+        let hunting = self.phase_is(ScreenPhase::Approach)
+            && self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            && !self.hunt_open
+            && self.bounty_badge_on()
+            && self
+                .encounter_nodes
+                .as_ref()
+                .is_some_and(|nodes| nodes.bounty.is_visible());
+        if !hunting {
+            self.fail_hunt("Hunt smoke: hunt target did not open the bounty encounter.");
+        }
+        self.leave_encounter();
+        self.open_hunt();
+        self.ask_claim(&first);
+        self.confirm_hunt();
+        if self.hunt_desk.notice != "Target not yet defeated. Find and defeat them at sea." {
+            self.fail_hunt(format!("Hunt smoke: claim said {}.", self.hunt_desk.notice));
+        }
+        if self.encounter.is_some() {
+            self.fail_hunt("Hunt smoke: claim opened a fight.");
+        }
+        self.hunt_checked = true;
+        if self.smoke_ok {
+            self.push_log("Hunt smoke: forage, board, accept, pursue, and claim gate.".to_string());
+        }
+    }
+
+    fn fill_bounty_cap(&mut self, first: &str) {
+        let catalog = [
+            "scarlet_ana",
+            "the_butcher",
+            "raj_the_quiet",
+            "typhoon_mei",
+            "old_coral",
+            "the_diver",
+            "sergeant_kruze",
+            "gnaw",
+        ];
+        for id in catalog {
+            let full = self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().captain.active_bounties.len() >= 3);
+            if full {
+                break;
+            }
+            if id == first {
+                continue;
+            }
+            self.accept_listed(id);
+        }
+        let count = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.active_bounties.len())
+            .unwrap_or(0);
+        if count != 3 {
+            self.fail_hunt(format!(
+                "Hunt smoke: expected 3 active bounties, have {count}."
+            ));
+            return;
+        }
+        let extra = catalog.into_iter().find(|id| {
+            self.session.as_ref().is_none_or(|session| {
+                !session
+                    .world()
+                    .captain
+                    .active_bounties
+                    .iter()
+                    .any(|active| active == id)
+            })
+        });
+        let Some(extra) = extra else {
+            self.fail_hunt("Hunt smoke: no id left for the cap check.");
+            return;
+        };
+        self.accept_listed(extra);
+        if self.hunt_desk.notice != "Maximum 3 active bounties" {
+            self.fail_hunt(format!("Hunt smoke: cap said {}.", self.hunt_desk.notice));
+        }
+    }
+
+    fn fail_hunt(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.hunt_checked = true;
+    }
+
+    fn hunt_model_now(&self) -> Option<hunt_screen::HuntModel> {
+        let session = self.session.as_ref()?;
+        Some(hunt_screen::hunt_model(session, &self.hunt_desk))
+    }
+
+    fn open_hunt(&mut self) {
+        if self.session.is_none() {
+            return;
+        }
+        self.hunt_open = true;
+        self.hunt_desk.confirm = None;
+        self.hunt_desk.notice.clear();
+        self.post_board();
+    }
+
+    fn close_hunt(&mut self) {
+        self.hunt_open = false;
+        self.hunt_desk.confirm = None;
+        self.refresh();
+    }
+
+    fn post_board(&mut self) {
+        let board = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.bounty_board()
+        };
+        for target in &board {
+            hunt_screen::remember(&mut self.hunt_desk.known, target.clone());
+        }
+        self.hunt_desk.board = board;
+        self.hunt_desk.posted = true;
+        self.refresh();
+    }
+
+    fn forage_day(&mut self) {
+        self.hunt_desk.confirm = None;
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.hunt()
+        };
+        self.hunt_desk.notice = match result {
+            Ok(result) => hunt_screen::forage_notice(&result),
+            Err(err) => err.to_string(),
+        };
+        self.refresh();
+    }
+
+    fn accept_listed(&mut self, id: &str) {
+        self.hunt_desk.confirm = None;
+        if let Some(target) = self
+            .hunt_desk
+            .board
+            .iter()
+            .find(|row| row.captain_id == id)
+            .cloned()
+        {
+            hunt_screen::remember(&mut self.hunt_desk.known, target);
+        }
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.accept_bounty(id)
+        };
+        self.hunt_desk.notice = match result {
+            Ok(()) => {
+                let name = hunt_screen::display_name(id, &self.hunt_desk.known);
+                format!("Accepted {name}.")
+            }
+            Err(err) => err.to_string(),
+        };
+        self.refresh();
+    }
+
+    fn ask_hunt(&mut self, id: &str) {
+        let name = hunt_screen::display_name(id, &self.hunt_desk.known);
+        self.hunt_desk.notice = hunt_screen::hunt_confirm_text(&name);
+        self.hunt_desk.confirm = Some(HuntConfirm::HuntTarget(id.to_string()));
+        self.refresh();
+    }
+
+    fn ask_claim(&mut self, id: &str) {
+        let name = hunt_screen::display_name(id, &self.hunt_desk.known);
+        self.hunt_desk.notice = hunt_screen::claim_confirm_text(&name);
+        self.hunt_desk.confirm = Some(HuntConfirm::Claim(id.to_string()));
+        self.refresh();
+    }
+
+    fn confirm_hunt(&mut self) {
+        let Some(confirm) = self.hunt_desk.confirm.take() else {
+            return;
+        };
+        match confirm {
+            HuntConfirm::HuntTarget(id) => self.pursue_bounty(&id),
+            HuntConfirm::Claim(id) => self.claim_listed(&id),
+        }
+    }
+
+    fn pursue_bounty(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.hunt_bounty(id)
+        };
+        match result {
+            Ok(state) => {
+                self.hunt_open = false;
+                self.hunt_desk.confirm = None;
+                self.open_agency(state, String::new());
+            }
+            Err(err) => {
+                self.hunt_desk.notice = err.to_string();
+            }
+        }
+        self.refresh();
+    }
+
+    fn claim_listed(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.claim_bounty(id)
+        };
+        self.hunt_desk.notice = match result {
+            Ok(silver) => hunt_screen::claim_notice(silver),
+            Err(err) => err.to_string(),
+        };
+        self.refresh();
+    }
+
+    fn perform_hunt(&mut self, action: HuntAction) {
+        match action {
+            HuntAction::Forage => self.forage_day(),
+            HuntAction::RefreshBoard => {
+                self.hunt_desk.confirm = None;
+                self.post_board();
+            }
+            HuntAction::Accept(id) => self.accept_listed(&id),
+            HuntAction::AskHunt(id) => self.ask_hunt(&id),
+            HuntAction::AskClaim(id) => self.ask_claim(&id),
+            HuntAction::Confirm => self.confirm_hunt(),
+            HuntAction::Cancel => {
+                self.hunt_desk.confirm = None;
+                self.hunt_desk.notice.clear();
+                self.refresh();
+            }
+            HuntAction::Close => self.close_hunt(),
+        }
+    }
+
+    fn sync_hunt(&mut self) {
+        let Some(mut nodes) = self.hunt_nodes.clone() else {
+            return;
+        };
+        hunt_screen::show_hunt(&mut nodes, self.hunt_open);
+        if !self.hunt_open {
+            return;
+        }
+        let Some(model) = self.hunt_model_now() else {
+            return;
+        };
+        nodes.title.set_text(&model.title);
+        nodes.notice.set_text(&model.notice);
+        let template_id = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| ship.template_id.clone())
+            .unwrap_or_default();
+        set_ship_plate(
+            &mut nodes.plate,
+            &mut nodes.plate_panel,
+            &mut nodes.placeholder,
+            &mut nodes.plate_caption,
+            &template_id,
+        );
+        let game = self.instance_id();
+        let mut body = nodes.body.clone();
+        hunt_screen::rebuild_body(&mut body, &model, &|text, action| {
+            hunt_button(game, text, action)
+        });
+        let mut confirm_row = nodes.confirm_row.clone();
+        hunt_screen::clear_row(&mut confirm_row);
+        if self.hunt_desk.confirm.is_some() {
+            confirm_row.set_visible(true);
+            confirm_row.add_child(&hunt_button(game, "Confirm", HuntAction::Confirm));
+            confirm_row.add_child(&hunt_button(game, "Cancel", HuntAction::Cancel));
+        } else {
+            confirm_row.set_visible(false);
+        }
+        let mut footer = nodes.footer.clone();
+        hunt_screen::clear_box(&mut footer);
+        footer.add_child(&hunt_button(game, "Close", HuntAction::Close));
+    }
+
+    fn scroll_hunt(&mut self, section: &str) {
+        let Some(nodes) = self.hunt_nodes.clone() else {
+            return;
+        };
+        let mut scroll = nodes.scroll.clone();
+        hunt_screen::scroll_to(&mut scroll, &nodes.body, section);
+    }
+
+    fn begin_hunt_shots(&mut self) {
+        self.start_game();
+        self.open_hunt();
+        self.forage_day();
+        self.hunt_shot_dir = Some(hunt_shot_dir(self.shot_path.as_deref()));
+        self.hunt_shot = Some(HuntShot::Forage);
+        self.hunt_scrolled = false;
+        self.refresh();
+    }
+
+    fn advance_hunt_shot(&mut self) -> bool {
+        let Some(phase) = self.hunt_shot else {
+            return false;
+        };
+        let Some(dir) = self.hunt_shot_dir.clone() else {
+            return false;
+        };
+        if !self.hunt_scrolled {
+            self.scroll_hunt(phase.section());
+            self.hunt_scrolled = true;
+            self.capture_frames = 2;
+            return true;
+        }
+        self.hunt_scrolled = false;
+        if !self.hunt_frame_ready(phase) {
+            self.smoke_ok = false;
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        match phase {
+            HuntShot::Forage => {
+                self.post_board();
+                self.hunt_shot = Some(HuntShot::Board);
+            }
+            HuntShot::Board => {
+                let id = self
+                    .hunt_desk
+                    .board
+                    .first()
+                    .map(|row| row.captain_id.clone());
+                if let Some(id) = id {
+                    self.accept_listed(&id);
+                } else {
+                    self.smoke_ok = false;
+                    godot_print!("Hunt smoke: no offer to accept for the active frame");
+                }
+                self.hunt_shot = Some(HuntShot::Active);
+            }
+            HuntShot::Active => {
+                self.hunt_shot = None;
+                return false;
+            }
+        }
+        self.capture_frames = 4;
+        true
+    }
+
+    fn hunt_frame_ready(&mut self, phase: HuntShot) -> bool {
+        let open = self.hunt_open;
+        let notice = self.hunt_desk.notice.clone();
+        let offers = self.hunt_desk.board.len();
+        let active = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.active_bounties.len())
+            .unwrap_or(0);
+        let ok = match phase {
+            HuntShot::Forage => open && notice.contains("Provisions") && self.encounter.is_none(),
+            HuntShot::Board => open && (1..=3).contains(&offers),
+            HuntShot::Active => open && active >= 1,
+        };
+        if !ok {
+            let line = format!("Hunt smoke: frame {} was not ready.", phase.file_name());
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+        ok
     }
 
     fn run_encounter_screen(&mut self) {
@@ -7090,6 +7701,14 @@ fn crew_frames_requested(shot_set: bool) -> bool {
     shot_set || docs_capture()
 }
 
+fn hunt_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn hunt_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
+}
+
 /// `PORTLIGHT_SHOT` wins. A `.png` path contributes its directory. `--art-docs`
 /// writes `docs/screenshots`. Headless still tries the save and fails it.
 fn newgame_shot_dir(shot: Option<&str>) -> String {
@@ -7337,6 +7956,20 @@ fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
         boxed.set_content_margin(godot::builtin::Side::RIGHT, 0.0);
         button.add_theme_stylebox_override(state, &boxed);
     }
+    button
+}
+
+fn hunt_button(game: InstanceId, text: &str, action: HuntAction) -> Gd<Button> {
+    let mut button = Button::new_alloc();
+    button.set_text(text);
+    encounter_screen::style_encounter_button(&mut button);
+    button.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    button.signals().pressed().connect(move || {
+        let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game) else {
+            return;
+        };
+        gd.bind_mut().perform_hunt(action.clone());
+    });
     button
 }
 
