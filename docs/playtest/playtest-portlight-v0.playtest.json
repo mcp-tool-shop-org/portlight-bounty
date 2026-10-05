@@ -1,0 +1,110 @@
+{
+  "name": "Portlight v0 plumbing / tip cc2c50e4 (#46 Day's report + #47 Hire polish; Hunt+Crew LIVE; PR #48 contract-strip ARMED pending merge) \u2014 first-voyage criteria LOCKED core 15 + 2 tip product-gate live (17) + contract-strip-glance ARMED (not live 18 until #48 merges) (fixture echo \u2014 NO model run; OpenRouter off; seats still dark; GPU/RunPod later)",
+  "game": {
+    "command": "node",
+    "args": [
+      "E:\\AI\\ai-playtest\\test\\fixtures\\echo-game.mjs"
+    ],
+    "promptPatterns": [
+      "What do you do\\?\\s*$",
+      "Character name:\\s*$"
+    ],
+    "promptQuietMs": 300,
+    "idleQuietMs": 3000,
+    "screenTimeoutMs": 30000,
+    "quitInputs": [
+      "quit"
+    ]
+  },
+  "seats": [
+    {
+      "id": "pending-local",
+      "family": "local",
+      "model": "llama3.1:8b",
+      "provider": "ollama"
+    }
+  ],
+  "setup": [
+    {
+      "match": "Character name:\\s*$",
+      "answer": "Wanderer"
+    }
+  ],
+  "turns": 6,
+  "persona": "PLUMBING ONLY \u2014 DO NOT RUN seats. Tip pin GitHub mcp-tool-shop-org/portlight-bounty cc2c50e4 (UI polish #47 on Day's report #46; Hunt #35 + Crew #36 LIVE). Placeholder ollama seat is intentional and must stay dark until Mike clears GPU or RunPod is up. OpenRouter forbidden forever for this consumer. Real Portlight CLI is batch script (new/script), not a REPL; fixture echo retained until rpc/Godot bridge. Swap provider/model in seats only; LOCKED criteria ids stay stable. Tip product-gate live: day-report-clarity + hire-findable (GD PASS WITH EDITS 2026-10-05; 15 LOCKED core + 2 tip = 17 product-gate ids). ARMED pending PR #48 merge (not live 18 until merge): contract-strip-glance (GD PASS no edits; design-signoff-pr48-contract-strip.md).",
+  "criteria": [
+    {
+      "id": "responds-to-input",
+      "check": "The game reacts to the player's specific action with a visible state or log change rather than repeating the same screen text unchanged."
+    },
+    {
+      "id": "world-moves",
+      "check": "Across the session, world state visibly advances in at least one of: day counter, docked port, silver, cargo, contract progress, or journal/log entries."
+    },
+    {
+      "id": "never-stuck",
+      "check": "The player is never soft-locked: overlays can close, the chart remains reachable, and Escape or Close is available whenever the UI expects a dismiss."
+    },
+    {
+      "id": "first-goal-after-begin",
+      "check": "After Begin only (Fix A hint 1), the first chart makes one starting verb discernible (open Contracts, buy at Market, or sail) from UI, notice, or log. Soft until Fix A chart-hints PR merges \u2014 scored every run but not a product-fail until then; then hard. KNOWN GAP \u2014 still soft."
+    },
+    {
+      "id": "identity-clear",
+      "check": "Within 30 seconds of New game \u2192 Begin, docked identity (port, day, silver, ship) and victory-path names are visible on the chart."
+    },
+    {
+      "id": "contracts-findable",
+      "check": "From the docked pier, Contracts opens without hunting through unrelated desks or dead ends."
+    },
+    {
+      "id": "next-verb-after-accept",
+      "check": "Immediately after Accept (Fix A hint 2), the next step (load/sail to destination, sell there, then Complete) is obvious from UI, notice, or log \u2014 not only from prior knowledge. Soft until Fix A chart-hints PR merges \u2014 scored every run but not a product-fail until then; then hard. KNOWN GAP \u2014 still soft."
+    },
+    {
+      "id": "maiden-sail-progress",
+      "check": "Sailing Porto Novo to Al-Manar (lane Sail or chart arm) with Next day shows depart, voyage progress, and Docked at Al-Manar."
+    },
+    {
+      "id": "contract-complete-path",
+      "check": "At the contract destination, selling the contract good then opening Contracts shows Complete (or sell already settles the contract); Complete is idempotent when shown."
+    },
+    {
+      "id": "encounter-interrupt",
+      "check": "When an encounter overlay opens, it feels like an intentional interrupt with clear stance choices; signed delta appears on resolve. Preferred product path on tip cc2c50e4: Hunt target on seed 1 (forage + bounty \u2192 Hunt \u2192 encounter). Seed 1 Grain Road may skip combat (not a fail); Fix B alt remains seed 4 --encounter-screen / encounter_seed4."
+    },
+    {
+      "id": "victory-receipt-payoff",
+      "check": "After Spare or Take all, the #41 victory receipt lines (silver, loot or untouched, standing, companion flavor) read as a reward beat, not a raw log dump."
+    },
+    {
+      "id": "journal-closure",
+      "check": "After at least one voyage beat, Journal opens and the Victory section is readable with requirements vs status, not an empty dead end. Covers Fix A hint 3 (victory \u2192 Journal)."
+    },
+    {
+      "id": "escape-closes-overlay",
+      "check": "Escape / ui_cancel closes each member overlay the same as Close (confirm-first): Contracts, Shipyard, Harbour, Journal, Crew, Hunt, Day's report; in encounter, Escape only leaves when Leave/Back is visible. Membership per playtest-escape-undock-criteria.md. Known-fail until docked-consistency PR merges. KNOWN GAP \u2014 do not flip live."
+    },
+    {
+      "id": "contracts-close-on-undock",
+      "check": "Leaving port (Sail or Next day away) force-closes Contracts and Crew when left open; Journal and Hunt stay sea-capable (intentional); Day's report sea-capable is not a C2 fail. Membership per playtest-escape-undock-criteria.md. Known-fail until docked-consistency PR merges. KNOWN GAP \u2014 do not flip live."
+    },
+    {
+      "id": "one-docked-overlay",
+      "check": "Mutual-exclusion set: Contracts, Shipyard, Harbour, Journal, Crew, Hunt, Day's report \u2014 opening any member clears peers; encounter opening clears all members; Market is in-panel toggle (not in set). Membership per playtest-escape-undock-criteria.md. Known-fail until docked-consistency PR merges. KNOWN GAP \u2014 do not flip live."
+    },
+    {
+      "id": "day-report-clarity",
+      "check": "After a notable Next day, Day's report shows only content among: up to 3 deadlines with \"days left\" (never \"due soon\"); captain health (captain only); prices for the docked port only; claimable bounty once and again on arrival days. Closes in one action (Close or Escape); other docked desk opening closes it. Never traps the loop: after dismiss, Sail and Next day are immediately usable (covering chart while open is by design). Quiet day = no auto panel; health notable only for Healed and 1-day heal milestone. Fail if remote-port prices, crew health lines, \"due soon\", or >3 deadlines. GD PASS WITH EDITS 2026-10-05 \u2014 product-gate."
+    },
+    {
+      "id": "hire-findable",
+      "check": "Docked pier port_row shows Hire; one click performs a single HireSailor with visible crew count or gold change; when unaffordable, visible reason and never a silent no-op. Optional curiosity path (not first-voyage happy-path ordering). If pier-density T2 folds Hire into Crew, rewrite id with fresh GD co-sign. GD PASS WITH EDITS 2026-10-05 \u2014 product-gate."
+    },
+    {
+      "id": "contract-strip-glance",
+      "check": "ARMED pending PR #48 merge \u2014 not product-fail until merge: Hidden when no active contracts (fresh new game \u2014 no empty placeholder). After Accept \u2192 strip visible on chart; ASCII ` - ` separators; never `due soon` (reuse Day's report deadline_timing). Cap 2 segments + `+N more` (MUTED); nearest deadline first. Urgency colour: DUE/warning for due today / 1 day left / overdue; else GOLD. Single-segment may show destination `- to {Port}` when it fits; multi-segment drops dest. Docked click \u2192 opens Contracts (closes Day's report if open). At sea: strip stays visible; click is no-op. chart-1280.png unchanged (byte-identical). Does not wrap port_row, shift lanes/market/log, or host/clear Fix A hints. GD PASS (no edits) design-signoff-pr48-contract-strip.md \u2014 product-gate once #48 merges."
+    }
+  ],
+  "runsDir": "runs"
+}
