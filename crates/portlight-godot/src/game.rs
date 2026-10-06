@@ -6994,8 +6994,8 @@ impl PortlightGame {
             .iter()
             .any(|id| id == &facts.captain_id)
             && !day_report::claimable_ids(session).contains(&facts.captain_id);
-        let name = crate::logic::ascii_label(&facts.captain_name, &facts.captain_id);
-        let line = crate::logic::encounter_end_line(end, name, baseline.deltas(&now), bounty_open);
+        let name = crate::logic::encounter_end_name(&facts.captain_id);
+        let line = crate::logic::encounter_end_line(end, &name, baseline.deltas(&now), bounty_open);
         facts.log = if facts.log.is_empty() {
             line.clone()
         } else {

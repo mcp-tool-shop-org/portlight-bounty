@@ -397,6 +397,23 @@ pub(crate) fn encounter_end(step: &EncounterStep, pending_victory: bool) -> Opti
     }
 }
 
+/// `{Name}` in the non-win receipt: the catalog display name, or
+/// [`humanize_id`] when the catalog has none or it isn't ASCII. Never the
+/// raw id. Empty only when the id is empty.
+pub(crate) fn encounter_end_name(captain_id: &str) -> String {
+    let catalog = portlight_sim::content::content()
+        .pirate(captain_id)
+        .map(|pirate| pirate.name.as_str());
+    display_or_humanized(catalog, captain_id)
+}
+
+fn display_or_humanized(display: Option<&str>, id: &str) -> String {
+    match display {
+        Some(name) if !name.is_empty() && name.is_ascii() => name.to_string(),
+        _ => humanize_id(id),
+    }
+}
+
 /// One plain receipt line for a fight that ended without a win. Terms in
 /// order Silver, Crew, Hull, Cargo; zero terms omitted (R4). No odds, no
 /// advice, no Trust or Standing.
@@ -2527,6 +2544,59 @@ mod tests {
     }
 
     #[test]
+    fn encounter_end_name_prefers_catalog_then_humanizes_never_raw_id() {
+        // Catalog ASCII display name wins.
+        assert_eq!(encounter_end_name("raj_the_quiet"), "Raj the Quiet");
+        // Missing from the catalog: humanized id.
+        assert_eq!(encounter_end_name("salt_widow_kell"), "Salt Widow Kell");
+        assert_eq!(
+            display_or_humanized(None, "salt_widow_kell"),
+            "Salt Widow Kell"
+        );
+        assert_eq!(
+            display_or_humanized(Some(""), "salt_widow_kell"),
+            "Salt Widow Kell"
+        );
+        // Non-ASCII display name: humanized id.
+        assert_eq!(
+            display_or_humanized(Some("Ra\u{e9}l the Quiet"), "rael_the_quiet"),
+            "Rael The Quiet"
+        );
+        assert_eq!(
+            display_or_humanized(Some("Raj the Quiet"), "raj_the_quiet"),
+            "Raj the Quiet"
+        );
+        // Never the raw snake_case id, and always ASCII.
+        for id in [
+            "raj_the_quiet",
+            "salt_widow_kell",
+            "the_butcher",
+            "typhoon_mei",
+        ] {
+            let name = encounter_end_name(id);
+            assert_ne!(name, id);
+            assert!(!name.contains('_'), "{name}");
+            assert!(name.is_ascii(), "{name}");
+        }
+        for (display, id) in [(Some("Ra\u{e9}l"), "rael_x"), (None, "no_such_captain")] {
+            let name = display_or_humanized(display, id);
+            assert_ne!(name, id);
+            assert!(!name.contains('_') && name.is_ascii(), "{name}");
+        }
+        // Empty id and no name: empty, so the head drops ` with {Name}`.
+        assert_eq!(encounter_end_name(""), "");
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::LostFight,
+                &encounter_end_name(""),
+                [-30, 0, 0, 0],
+                false
+            ),
+            "Lost the fight - Silver -30"
+        );
+    }
+
+    #[test]
     fn encounter_end_classifies_resolved_non_wins() {
         let mut session = scripted_session();
         let base = session
@@ -2630,7 +2700,7 @@ mod tests {
             assert_eq!(deltas[2], -step.hull_damage);
             let line = encounter_end_line(
                 EncounterEnd::BrokeAway,
-                ascii_label(&step.enemy_captain_name, &step.enemy_captain_id),
+                &encounter_end_name(&step.enemy_captain_id),
                 deltas,
                 false,
             );
