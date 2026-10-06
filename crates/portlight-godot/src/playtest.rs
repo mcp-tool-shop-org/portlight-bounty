@@ -51,6 +51,7 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::Work => "chart.work".into(),
         Action::OpenHunt => "pier.hunt.open".into(),
         Action::ToggleMarket => "chart.market".into(),
+        Action::CycleTradeQty => "chart.market.qty".into(),
         Action::HireSailor => "chart.hire".into(),
         Action::Provision => "chart.provisions".into(),
         Action::OpenCrew => "pier.crew.open".into(),
@@ -276,6 +277,7 @@ fn static_action(id: &str) -> Option<Action> {
         "chart.work" => Action::Work,
         "pier.hunt.open" => Action::OpenHunt,
         "chart.market" => Action::ToggleMarket,
+        "chart.market.qty" => Action::CycleTradeQty,
         "chart.hire" => Action::HireSailor,
         "chart.provisions" => Action::Provision,
         "pier.crew.open" => Action::OpenCrew,
@@ -914,6 +916,7 @@ mod tests {
         roundtrip_action(Action::StartCaptain("merchant".into()));
         roundtrip_action(Action::Sail("al_manar".into()));
         roundtrip_action(Action::Buy("grain".into()));
+        roundtrip_action(Action::CycleTradeQty);
         roundtrip_action(Action::AcceptContract("grain_run".into()));
         roundtrip_action(Action::AdjustPoints(PointPool::Trade, -1));
         roundtrip_action(Action::CycleRegion(1));

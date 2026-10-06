@@ -13,6 +13,7 @@ mod harbour_screen;
 mod hunt_screen;
 mod journal_screen;
 mod logic;
+mod market;
 mod newgame_screen;
 mod playtest;
 mod seam;

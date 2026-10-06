@@ -401,6 +401,13 @@ jobs:
             echo "contract-strip smoke did not report ok"
             exit 1
           fi
+          # T-Q / T-N: Qty 10 buy, sail, Qty 10 sell that settles a contract.
+          run_godot /tmp/godot-trade-smoke.log \
+            godot --headless --path godot -- --trade-smoke
+          if ! grep -q 'portlight trade smoke ok' /tmp/godot-trade-smoke.log; then
+            echo "trade smoke did not report ok"
+            exit 1
+          fi
           run_godot /tmp/godot-gl-smoke.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \

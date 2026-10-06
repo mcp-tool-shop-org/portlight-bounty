@@ -12,6 +12,7 @@ use godot::prelude::*;
 use portlight_sim::model::ContractOutcome;
 
 use crate::encounter_screen;
+use crate::logic::humanize_id;
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -207,12 +208,79 @@ pub(crate) fn abandon_prompt(title: &str) -> String {
     format!("Abandon {}? Confirm to drop it.", ascii_sentence(title))
 }
 
+/// Contracts desk notice after Complete or Abandon. Same zero-omit ` - `
+/// form as the Market paid notice; the desk keeps its Heat term.
 pub(crate) fn outcome_notice(outcome: &ContractOutcome) -> String {
-    let summary = ascii_sentence(&outcome.summary);
     format!(
-        "{summary}  Silver {:+}. Trust {:+}. Standing {:+}. Heat {:+}.",
-        outcome.silver_delta, outcome.trust_delta, outcome.standing_delta, outcome.heat_delta
+        "{}{}",
+        outcome_summary(outcome),
+        outcome_terms(outcome, true)
     )
+}
+
+/// ` - Silver +615 - Trust +1 - Standing +2`, zero terms dropped. Heat is
+/// only on the Contracts desk notice.
+pub(crate) fn outcome_terms(outcome: &ContractOutcome, heat: bool) -> String {
+    let mut terms = vec![
+        ("Silver", outcome.silver_delta),
+        ("Trust", outcome.trust_delta),
+        ("Standing", outcome.standing_delta),
+    ];
+    if heat {
+        terms.push(("Heat", outcome.heat_delta));
+    }
+    terms
+        .into_iter()
+        .filter(|(_, delta)| *delta != 0)
+        .map(|(name, delta)| format!(" - {name} {delta:+}"))
+        .collect()
+}
+
+/// The engine summary with its raw ids named: the destination port and the
+/// good by their display names, any other `snake_id` title-cased.
+pub(crate) fn outcome_summary(outcome: &ContractOutcome) -> String {
+    let words: Vec<String> = outcome
+        .summary
+        .split(' ')
+        .map(|word| {
+            let core = word.trim_end_matches(['.', ',', ')', ':', ';']);
+            let tail = &word[core.len()..];
+            let name = if core.is_empty() {
+                return word.to_string();
+            } else if core == outcome.destination_port_id {
+                port_display_name(core)
+            } else if core == outcome.good_id {
+                good_display_name(core)
+            } else if is_snake_id(core) {
+                humanize_id(core)
+            } else {
+                return word.to_string();
+            };
+            format!("{name}{tail}")
+        })
+        .collect();
+    ascii_sentence(&words.join(" "))
+}
+
+fn port_display_name(id: &str) -> String {
+    portlight_sim::content::content()
+        .port(id)
+        .map(|port| port.name.clone())
+        .unwrap_or_else(|| humanize_id(id))
+}
+
+fn good_display_name(id: &str) -> String {
+    portlight_sim::content::content()
+        .good(id)
+        .map(|good| good.name.clone())
+        .unwrap_or_else(|| humanize_id(id))
+}
+
+fn is_snake_id(word: &str) -> bool {
+    word.contains('_')
+        && word
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
 }
 
 pub(crate) fn recent_line(outcome: &ContractOutcome) -> String {
@@ -238,8 +306,8 @@ mod tests {
 
     use super::{
         abandon_prompt, ascii_sentence, can_complete, days_left_text, outcome_notice,
-        progress_text, requirement_text, reward_text, BOARD_CARD, CAP_FULL, EMPTY_OFFERS,
-        MAX_ACTIVE,
+        outcome_summary, outcome_terms, progress_text, requirement_text, reward_text, BOARD_CARD,
+        CAP_FULL, EMPTY_OFFERS, MAX_ACTIVE,
     };
 
     #[test]
@@ -306,8 +374,9 @@ mod tests {
         assert!(notice.is_ascii(), "{notice}");
         assert_eq!(
             notice,
-            "Abandoned contract: Grain for Corsair's Rest  Silver +0. Trust -2. Standing -1. Heat +1."
+            "Abandoned contract: Grain for Corsair's Rest - Trust -2 - Standing -1 - Heat +1"
         );
+        assert!(!notice.contains("+0") && !notice.contains("  "), "{notice}");
     }
 
     /// Accept, fail an early complete, abandon with no captain, then clear the
@@ -384,5 +453,55 @@ mod tests {
         assert_eq!(session.world().captain.standing.regional, regional);
         // Same day: a second read must not invent offers.
         assert!(session.available_contracts().is_empty());
+    }
+
+    fn delivered(summary: &str) -> ContractOutcome {
+        ContractOutcome {
+            contract_id: "abc".into(),
+            outcome_type: "completed".into(),
+            silver_delta: 615,
+            trust_delta: 1,
+            standing_delta: 2,
+            heat_delta: -1,
+            completion_day: 9,
+            summary: summary.into(),
+            family: "shortage".into(),
+            good_id: "grain".into(),
+            required_quantity: 23,
+            delivered_quantity: 23,
+            destination_port_id: "corsairs_rest".into(),
+            deadline_day: 19,
+            reward_silver: 552,
+        }
+    }
+
+    #[test]
+    fn outcome_summary_names_the_port_and_good_and_terms_drop_zeroes() {
+        let outcome = delivered("Delivered 23 grain to corsairs_rest (early bonus: +63 silver)");
+        assert_eq!(
+            outcome_summary(&outcome),
+            "Delivered 23 Grain to Corsair's Rest (early bonus: +63 silver)"
+        );
+        let defaulted = delivered("Contract defaulted: failed to deliver grain to corsairs_rest");
+        assert_eq!(
+            outcome_summary(&defaulted),
+            "Contract defaulted: failed to deliver Grain to Corsair's Rest"
+        );
+        // An id content does not know is title-cased; plain words stay.
+        let odd = delivered("Settled with iron_wolves today.");
+        assert_eq!(outcome_summary(&odd), "Settled with Iron Wolves today.");
+        assert_eq!(
+            outcome_terms(&outcome, false),
+            " - Silver +615 - Trust +1 - Standing +2"
+        );
+        assert_eq!(
+            outcome_terms(&outcome, true),
+            " - Silver +615 - Trust +1 - Standing +2 - Heat -1"
+        );
+        let mut quiet = outcome.clone();
+        quiet.silver_delta = 0;
+        quiet.standing_delta = 0;
+        quiet.heat_delta = 0;
+        assert_eq!(outcome_terms(&quiet, true), " - Trust +1");
     }
 }
