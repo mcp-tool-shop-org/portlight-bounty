@@ -33,9 +33,18 @@ pub(crate) struct BuyRoom {
     pub stock: i64,
     pub unit_price: i64,
     pub silver: i64,
-    /// Hold capacity minus current cargo weight.
-    pub free_weight: f64,
+    /// `ship::resolve_cargo_capacity`, as the sim reads it.
+    pub capacity: f64,
+    /// `economy::cargo_weight` of the hold before this press.
+    pub current_weight: f64,
     pub weight_per_unit: f64,
+}
+
+impl BuyRoom {
+    /// The sim's own hold test (`economy::execute_buy`), float for float.
+    fn hold_fits(&self, units: i64) -> bool {
+        self.current_weight + units as f64 * self.weight_per_unit <= self.capacity
+    }
 }
 
 /// Buy qty clamped to stock, affordable silver and free hold. Can be 0.
@@ -45,8 +54,14 @@ pub(crate) fn clamp_buy(qty: i64, room: &BuyRoom) -> i64 {
         units = units.min(room.silver.div_euclid(room.unit_price));
     }
     if room.weight_per_unit > 0.0 {
-        // Small epsilon so 30.0 / 1.0 is not floored to 29 by float noise.
-        let fits = ((room.free_weight / room.weight_per_unit) + 1e-9).floor() as i64;
+        // Small epsilon so 30.0 / 1.0 is not floored to 29 by float noise,
+        // then step down until the sim's exact test passes, so float noise
+        // can never send a qty the sim rejects as hold full.
+        let free = room.capacity - room.current_weight;
+        let mut fits = ((free / room.weight_per_unit) + 1e-9).floor() as i64;
+        while fits > 0 && !room.hold_fits(fits) {
+            fits -= 1;
+        }
         units = units.min(fits);
     }
     units.max(0)
@@ -124,7 +139,8 @@ mod tests {
             stock: 40,
             unit_price: 8,
             silver: 550,
-            free_weight: 30.0,
+            capacity: 30.0,
+            current_weight: 0.0,
             weight_per_unit: 1.0,
         }
     }
@@ -160,7 +176,7 @@ mod tests {
             clamp_buy(
                 10,
                 &BuyRoom {
-                    free_weight: 6.5,
+                    current_weight: 23.5,
                     ..room()
                 }
             ),
@@ -170,7 +186,7 @@ mod tests {
             clamp_buy(
                 10,
                 &BuyRoom {
-                    free_weight: 3.0,
+                    current_weight: 27.0,
                     weight_per_unit: 1.5,
                     ..room()
                 }
@@ -182,7 +198,7 @@ mod tests {
             clamp_buy(
                 10,
                 &BuyRoom {
-                    free_weight: 10.0,
+                    current_weight: 20.0,
                     ..room()
                 }
             ),
@@ -199,13 +215,42 @@ mod tests {
             clamp_buy(
                 5,
                 &BuyRoom {
-                    free_weight: -2.0,
+                    current_weight: 32.0,
                     ..room()
                 }
             ),
             0
         );
         assert_eq!(clamp_buy(5, &BuyRoom { stock: 0, ..room() }), 0);
+    }
+
+    /// Float edge: 0.1 aboard, 3.0 capacity, 0.1 a unit. 29 more fits on
+    /// paper, but the sim's own test reads 0.1 + 29 * 0.1 as
+    /// 3.0000000000000004 > 3.0 and would refuse the press as hold full. The
+    /// clamp rounds down to 28, which the sim takes.
+    #[test]
+    fn hold_clamp_rounds_down_at_the_float_edge() {
+        let edge = BuyRoom {
+            stock: 100,
+            unit_price: 1,
+            silver: 1_000,
+            capacity: 3.0,
+            current_weight: 0.1,
+            weight_per_unit: 0.1,
+        };
+        // The float edge this test pins: the sim's test refuses 29.
+        assert!(!edge.hold_fits(29), "the float edge this test pins");
+        assert!(edge.hold_fits(28));
+        assert_eq!(clamp_buy(100, &edge), 28);
+        assert!(edge.hold_fits(clamp_buy(100, &edge)));
+        // Whole units on whole weights keep the exact fill.
+        let whole = BuyRoom {
+            capacity: 30.0,
+            current_weight: 20.0,
+            weight_per_unit: 1.0,
+            ..edge
+        };
+        assert_eq!(clamp_buy(100, &whole), 10);
     }
 
     #[test]

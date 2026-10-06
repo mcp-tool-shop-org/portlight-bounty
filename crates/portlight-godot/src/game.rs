@@ -4006,7 +4006,8 @@ impl PortlightGame {
             stock: slot.stock_current,
             unit_price: slot.buy_price,
             silver: world.captain.silver,
-            free_weight: capacity - portlight_sim::economy::cargo_weight(&world.captain.cargo),
+            capacity,
+            current_weight: portlight_sim::economy::cargo_weight(&world.captain.cargo),
             weight_per_unit: content::content()
                 .good(good)
                 .map(|def| def.weight_per_unit)

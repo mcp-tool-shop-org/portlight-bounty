@@ -1766,7 +1766,7 @@ pub(crate) fn duel_prompt(duel: &portlight_sim::model::PendingDuel) -> String {
         "Duel: {}.\nFaction {} - {} - strength {} - {}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
         duel.captain_name,
         faction_name(&duel.faction_id),
-        duel.personality,
+        humanize_id(&duel.personality),
         duel.strength,
         duel.region
     )
@@ -1789,14 +1789,22 @@ pub(crate) fn duel_result_line(result: &str, opponent: &str, silver: i64, standi
     line
 }
 
-/// R12. Drops sim rich-text tags (`[bold]`, `[/dim]`, `[/]`) and keeps the
-/// text inside. Brackets that are not a tag (`[3/5]`, `[a.b]`) stay.
+/// R12. Drops sim rich-text tags (`[bold]`, `[/dim]`, `[bold yellow]`, `[/]`)
+/// and keeps the text inside. Only the style words in `MARKUP_WORDS` make a
+/// tag, so any other bracket (`[3/5]`, `[x] done`, `[port]`) stays. A Rich
+/// escape `\[` is a literal bracket: the backslash goes, the `[` stays.
 pub(crate) fn strip_markup(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(open) = rest.find('[') {
-        out.push_str(&rest[..open]);
         let after = &rest[open + 1..];
+        if rest[..open].ends_with('\\') {
+            out.push_str(&rest[..open - 1]);
+            out.push('[');
+            rest = after;
+            continue;
+        }
+        out.push_str(&rest[..open]);
         match after.find(']') {
             Some(close) if is_markup_tag(&after[..close]) => {
                 rest = &after[close + 1..];
@@ -1811,15 +1819,34 @@ pub(crate) fn strip_markup(text: &str) -> String {
     out
 }
 
+/// The Rich style words the sim emits (`bold`, `dim`, `bold yellow` in
+/// `port_arrival_engine.rs`), plus the plain styles and colours of the same
+/// family. A tag is one or more of these, space-separated, or the bare `[/]`.
+const MARKUP_WORDS: [&str; 16] = [
+    "bold",
+    "dim",
+    "italic",
+    "underline",
+    "strike",
+    "reverse",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "white",
+    "black",
+    "grey",
+    "gray",
+];
+
 fn is_markup_tag(inner: &str) -> bool {
     let body = inner.strip_prefix('/').unwrap_or(inner);
     if body.is_empty() {
         return inner == "/";
     }
-    body.starts_with(|ch: char| ch.is_ascii_lowercase())
-        && body
-            .chars()
-            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == ' ' || ch == '#')
+    body.split(' ').all(|word| MARKUP_WORDS.contains(&word))
 }
 
 #[cfg(test)]
@@ -3122,6 +3149,16 @@ mod tests {
             "Use portlight duel <stance> to fight."
         );
         assert_eq!(strip_markup("[bold red]Hot[/] day"), "Hot day");
+        assert_eq!(
+            strip_markup("[bold yellow]Storm warning[/bold yellow] at sea"),
+            "Storm warning at sea"
+        );
+        // A Rich escape is a literal bracket, never a tag.
+        assert_eq!(strip_markup(r"\[dim]x"), "[dim]x");
+        assert_eq!(
+            strip_markup(r"keep \[x] and [dim]y[/dim]"),
+            "keep [x] and y"
+        );
         // Not markup: kept as written.
         for plain in [
             "Bounty [3/5] posted",
@@ -3131,6 +3168,13 @@ mod tests {
             "[]",
             "[Upper]",
             "Grain x5",
+            // Lowercase words that are not style words stay too.
+            "[x] done",
+            "[see note]",
+            "Use [port] here",
+            "[weather] calm",
+            "[bold x]",
+            "[color=red]Hot",
         ] {
             assert_eq!(strip_markup(plain), plain);
         }
@@ -3168,7 +3212,7 @@ mod tests {
             captain_id: "c".into(),
             captain_name: "Bram".into(),
             faction_id: "iron_wolves".into(),
-            personality: "bold".into(),
+            personality: "aggressive".into(),
             strength: 3,
             region: "Mediterranean".into(),
         };
@@ -3176,9 +3220,10 @@ mod tests {
         assert!(text.is_ascii(), "{text}");
         assert!(!text.contains('\u{00b7}'), "{text}");
         assert!(
-            text.contains("Faction The Iron Wolves - bold - strength 3 - Mediterranean."),
+            text.contains("Faction The Iron Wolves - Aggressive - strength 3 - Mediterranean."),
             "{text}"
         );
+        assert!(!text.contains("aggressive"), "{text}");
         assert!(!text.contains("iron_wolves"), "{text}");
     }
 }
