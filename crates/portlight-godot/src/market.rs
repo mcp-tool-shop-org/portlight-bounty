@@ -77,7 +77,7 @@ pub(crate) fn paid_notice_lines(outcomes: &[ContractOutcome]) -> Vec<String> {
             format!(
                 "Contract paid: {}{}",
                 contracts_screen::outcome_summary(outcome),
-                contracts_screen::outcome_terms(outcome, false)
+                contracts_screen::outcome_terms(outcome)
             )
         })
         .collect();
@@ -243,12 +243,15 @@ mod tests {
         assert!(paid_notice_lines(&[]).is_empty());
         assert_eq!(
             paid_notice_lines(&[paid("a", 615, 2)]),
-            vec!["Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615 - Trust +1 - Standing +2"]
+            vec!["Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615"]
         );
-        assert_eq!(
-            paid_notice_lines(&[paid("a", 615, 0)]),
-            vec!["Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615 - Trust +1"]
-        );
+        // Trust, standing and heat ride on the outcome but the sim never
+        // applies them, so the notice never prints them.
+        for line in paid_notice_lines(&[paid("a", 615, 0)]) {
+            for term in ["Trust", "Standing", "Heat"] {
+                assert!(!line.contains(term), "{line}");
+            }
+        }
     }
 
     #[test]
@@ -276,8 +279,8 @@ mod tests {
         assert_eq!(
             lines,
             vec![
-                "Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615 - Trust +1 - Standing +2",
-                "Contract paid: Delivered 12 Weapons to Corsair's Rest - Silver +384 - Trust +1 - Standing +1",
+                "Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615",
+                "Contract paid: Delivered 12 Weapons to Corsair's Rest - Silver +384",
                 "+1 more",
             ]
         );

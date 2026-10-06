@@ -6025,8 +6025,10 @@ impl PortlightGame {
             self.fail_contracts("Contracts smoke: Abandon did not ask for confirm.");
         }
         self.confirm_abandon();
-        if !self.contracts_notice.contains("Abandoned contract:")
-            || !self.contracts_notice.contains("Trust -2")
+        if !self.contracts_notice.starts_with("Abandoned contract:")
+            || ["Silver", "Trust", "Standing", "Heat"]
+                .iter()
+                .any(|term| self.contracts_notice.contains(term))
         {
             self.fail_contracts(format!(
                 "Contracts smoke: abandon outcome was {:?}.",
@@ -8245,6 +8247,9 @@ impl PortlightGame {
             || !paid.contains("Corsair's Rest")
             || !paid.contains(" - Silver +")
             || paid.contains("+0")
+            || ["Trust", "Standing", "Heat"]
+                .iter()
+                .any(|term| paid.contains(term))
             || paid.contains("corsairs_rest")
             || !paid.is_ascii()
         {

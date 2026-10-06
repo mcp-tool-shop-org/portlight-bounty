@@ -209,31 +209,21 @@ pub(crate) fn abandon_prompt(title: &str) -> String {
 }
 
 /// Contracts desk notice after Complete or Abandon. Same zero-omit ` - `
-/// form as the Market paid notice; the desk keeps its Heat term.
+/// form as the Market paid notice.
 pub(crate) fn outcome_notice(outcome: &ContractOutcome) -> String {
-    format!(
-        "{}{}",
-        outcome_summary(outcome),
-        outcome_terms(outcome, true)
-    )
+    format!("{}{}", outcome_summary(outcome), outcome_terms(outcome))
 }
 
-/// ` - Silver +615 - Trust +1 - Standing +2`, zero terms dropped. Heat is
-/// only on the Contracts desk notice.
-pub(crate) fn outcome_terms(outcome: &ContractOutcome, heat: bool) -> String {
-    let mut terms = vec![
-        ("Silver", outcome.silver_delta),
-        ("Trust", outcome.trust_delta),
-        ("Standing", outcome.standing_delta),
-    ];
-    if heat {
-        terms.push(("Heat", outcome.heat_delta));
+/// ` - Silver +615`, or empty when no silver moved. Silver is the only
+/// outcome term the sim applies: trust, standing and heat stay on the record
+/// (they size a contract-guarantee claim) and never reach the captain, as in
+/// Python, so the notice does not print them.
+pub(crate) fn outcome_terms(outcome: &ContractOutcome) -> String {
+    if outcome.silver_delta == 0 {
+        String::new()
+    } else {
+        format!(" - Silver {:+}", outcome.silver_delta)
     }
-    terms
-        .into_iter()
-        .filter(|(_, delta)| *delta != 0)
-        .map(|(name, delta)| format!(" - {name} {delta:+}"))
-        .collect()
 }
 
 /// The engine summary with its raw ids named: the destination port and the
@@ -297,11 +287,13 @@ fn is_snake_id(word: &str) -> bool {
             .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
 }
 
+/// Desk Recent row. Terms come from the shared `outcome_terms` (Silver only).
 pub(crate) fn recent_line(outcome: &ContractOutcome) -> String {
     format!(
-        "{}: {}",
+        "{}: {}{}",
         ascii_sentence(&outcome.outcome_type),
-        ascii_sentence(&outcome.summary)
+        ascii_sentence(&outcome.summary),
+        outcome_terms(outcome)
     )
 }
 
@@ -320,8 +312,8 @@ mod tests {
 
     use super::{
         abandon_prompt, ascii_sentence, availability_tag, can_complete, days_left_text,
-        outcome_notice, outcome_summary, outcome_terms, progress_text, requirement_text,
-        reward_text, BOARD_CARD, CAP_FULL, EMPTY_OFFERS, MAX_ACTIVE,
+        outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
+        requirement_text, reward_text, BOARD_CARD, CAP_FULL, EMPTY_OFFERS, MAX_ACTIVE,
     };
 
     #[test]
@@ -362,7 +354,7 @@ mod tests {
     }
 
     #[test]
-    fn abandon_prompt_and_outcome_keep_the_engine_numbers() {
+    fn abandon_prompt_and_outcome_print_only_applied_terms() {
         assert_eq!(
             abandon_prompt("Grain for Corsair's Rest"),
             "Abandon Grain for Corsair's Rest? Confirm to drop it."
@@ -386,11 +378,11 @@ mod tests {
         };
         let notice = outcome_notice(&outcome);
         assert!(notice.is_ascii(), "{notice}");
-        assert_eq!(
-            notice,
-            "Abandoned contract: Grain for Corsair's Rest - Trust -2 - Standing -1 - Heat +1"
-        );
-        assert!(!notice.contains("+0") && !notice.contains("  "), "{notice}");
+        // Abandon applies nothing, so the notice is the engine summary alone.
+        assert_eq!(notice, "Abandoned contract: Grain for Corsair's Rest");
+        for term in ["Silver", "Trust", "Standing", "Heat", "+0", "  "] {
+            assert!(!notice.contains(term), "{notice}");
+        }
     }
 
     /// Accept, fail an early complete, abandon with no captain, then clear the
@@ -490,7 +482,7 @@ mod tests {
     }
 
     #[test]
-    fn outcome_summary_names_the_port_and_good_and_terms_drop_zeroes() {
+    fn outcome_summary_names_the_port_and_good_and_terms_are_silver_only() {
         let outcome = delivered("Delivered 23 grain to corsairs_rest (early bonus: +63 silver)");
         assert_eq!(
             outcome_summary(&outcome),
@@ -519,19 +511,60 @@ mod tests {
             outcome_summary(&unknown),
             "Delivered 4 Whale Oil to Drowned Quay."
         );
+        // Only silver is applied by the sim, so only silver is printed.
+        assert_eq!(outcome_terms(&outcome), " - Silver +615");
         assert_eq!(
-            outcome_terms(&outcome, false),
-            " - Silver +615 - Trust +1 - Standing +2"
-        );
-        assert_eq!(
-            outcome_terms(&outcome, true),
-            " - Silver +615 - Trust +1 - Standing +2 - Heat -1"
+            outcome_notice(&outcome),
+            "Delivered 23 Grain to Corsair's Rest (early bonus: +63 silver) - Silver +615"
         );
         let mut quiet = outcome.clone();
         quiet.silver_delta = 0;
-        quiet.standing_delta = 0;
-        quiet.heat_delta = 0;
-        assert_eq!(outcome_terms(&quiet, true), " - Trust +1");
+        assert_eq!(outcome_terms(&quiet), "");
+    }
+
+    /// GD M2 ruling: the one shared helper prints Silver only. Trust, standing
+    /// and heat are never applied by the sim (nor by Python), so no outcome
+    /// surface shows them. Zero silver is omitted (R4).
+    #[test]
+    fn outcome_terms_is_silver_only_and_drops_zero() {
+        let mut outcome = delivered("Delivered 23 grain to corsairs_rest");
+        outcome.heat_delta = -1;
+        assert_eq!(outcome_terms(&outcome), " - Silver +615");
+        outcome.silver_delta = 60;
+        outcome.trust_delta = -2;
+        outcome.standing_delta = -1;
+        outcome.heat_delta = 1;
+        assert_eq!(outcome_terms(&outcome), " - Silver +60");
+        outcome.silver_delta = -15;
+        assert_eq!(outcome_terms(&outcome), " - Silver -15");
+        outcome.silver_delta = 0;
+        assert_eq!(outcome_terms(&outcome), "");
+    }
+
+    /// Recent rows carry the same Silver-only terms; a zero-silver failure row
+    /// is the summary alone.
+    #[test]
+    fn recent_line_uses_the_silver_only_terms() {
+        let paid = delivered("Delivered 23 grain to corsairs_rest");
+        assert_eq!(
+            recent_line(&paid),
+            "completed: Delivered 23 grain to corsairs_rest - Silver +615"
+        );
+        let mut abandoned = delivered("Abandoned contract: Grain for Corsair's Rest");
+        abandoned.outcome_type = "abandoned".into();
+        abandoned.silver_delta = 0;
+        abandoned.trust_delta = -2;
+        abandoned.standing_delta = -1;
+        abandoned.heat_delta = 1;
+        assert_eq!(
+            recent_line(&abandoned),
+            "abandoned: Abandoned contract: Grain for Corsair's Rest"
+        );
+        for line in [recent_line(&paid), recent_line(&abandoned)] {
+            for term in ["Trust", "Standing", "Heat", "+0", "  "] {
+                assert!(!line.contains(term), "{line}");
+            }
+        }
     }
 
     #[test]
