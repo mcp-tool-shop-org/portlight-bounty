@@ -766,11 +766,11 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     }
     lines.push(match facts.player_hull_max {
         Some(max) => format!(
-            "Your hull {}/{max} · crew {}",
+            "Your hull {}/{max} - crew {}",
             facts.player_hull, facts.player_crew
         ),
         None => format!(
-            "Your hull {} · crew {}",
+            "Your hull {} - crew {}",
             facts.player_hull, facts.player_crew
         ),
     });
@@ -780,14 +780,14 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
         if let Some(hull) = facts.enemy_hull {
             let crew = facts.enemy_crew.unwrap_or(0);
             lines.push(match facts.enemy_hull_max {
-                Some(max) => format!("Enemy hull {hull}/{max} · crew {crew}"),
-                None => format!("Enemy hull {hull} · crew {crew}"),
+                Some(max) => format!("Enemy hull {hull}/{max} - crew {crew}"),
+                None => format!("Enemy hull {hull} - crew {crew}"),
             });
         }
     }
     if phase == ScreenPhase::Personal && facts.kind == "fight" {
         lines.push(format!(
-            "Your HP {} · opponent {}",
+            "Your HP {} - opponent {}",
             facts.player_hp, facts.opponent_hp
         ));
     }
@@ -2543,6 +2543,45 @@ mod tests {
                 ScreenAction::TakeAll,
             ]
         );
+    }
+
+    #[test]
+    fn card_text_is_ascii_in_every_phase() {
+        let mut facts = facts_for_catalog_captain(
+            "raj_the_quiet",
+            Some(PlayerShip {
+                hull: 18,
+                hull_max: 20,
+                crew: 4,
+            }),
+            true,
+        )
+        .unwrap();
+        facts.kind = "fight".to_string();
+        facts.enemy_hull = Some(40);
+        facts.enemy_hull_max = Some(50);
+        facts.enemy_crew = Some(8);
+        facts.player_hp = 12;
+        facts.opponent_hp = 9;
+        for phase in [
+            ScreenPhase::Approach,
+            ScreenPhase::Naval,
+            ScreenPhase::Boarding,
+            ScreenPhase::Personal,
+            ScreenPhase::Outcome,
+        ] {
+            let card = card_text(&facts, phase);
+            assert!(card.is_ascii(), "{phase:?}: {card}");
+            assert!(!card.contains('\u{b7}'), "{phase:?}: {card}");
+        }
+        assert!(card_text(&facts, ScreenPhase::Naval).contains("Your hull 18/20 - crew 4"));
+        assert!(card_text(&facts, ScreenPhase::Naval).contains("Enemy hull 40/50 - crew 8"));
+        assert!(card_text(&facts, ScreenPhase::Personal).contains("Your HP 12 - opponent 9"));
+        facts.player_hull_max = None;
+        facts.enemy_hull_max = None;
+        let card = card_text(&facts, ScreenPhase::Naval);
+        assert!(card.contains("Your hull 18 - crew 4"), "{card}");
+        assert!(card.contains("Enemy hull 40 - crew 8"), "{card}");
     }
 
     #[test]
