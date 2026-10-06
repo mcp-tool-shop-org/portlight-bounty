@@ -920,7 +920,7 @@ impl IControl for PortlightGame {
             self.capture_frames = 2;
         } else if user_arg("--market-paid-screen") {
             // T-N frames: the real trade-smoke settle, then a staged
-            // three-contract notice on the same Market.
+            // two-contract notice on the same Market.
             self.smoke = true;
             self.trade_checked = true;
             let capture = market_paid_frames_requested(self.shot_path.is_some());
@@ -3983,6 +3983,9 @@ impl PortlightGame {
             }
         }
         self.refresh();
+        if !self.market_notice.is_empty() {
+            self.scroll_market_to_top();
+        }
     }
 
     /// T-Q. The current qty clamped to what this press can do: buy to stock,
@@ -4014,6 +4017,14 @@ impl PortlightGame {
                 .unwrap_or(1.0),
         };
         market::clamp_buy(self.trade_qty, &room)
+    }
+
+    /// AV.1: a new paid notice sits at the top of the Market pane, so the pane
+    /// scrolls there and the notice is never above the view.
+    fn scroll_market_to_top(&mut self) {
+        if let Some(scroll) = self.market_scroll.as_mut() {
+            scroll.set_v_scroll(0);
+        }
     }
 
     /// T-Q / T-N state is Godot memory only: a new game or load starts here.
@@ -6026,7 +6037,7 @@ impl PortlightGame {
             self.fail_contracts("Contracts smoke: Abandon did not ask for confirm.");
         }
         self.confirm_abandon();
-        if !self.contracts_notice.starts_with("Abandoned contract:")
+        if !self.contracts_notice.starts_with("Contract abandoned: ")
             || ["Silver", "Trust", "Standing", "Heat"]
                 .iter()
                 .any(|term| self.contracts_notice.contains(term))
@@ -6286,9 +6297,13 @@ impl PortlightGame {
             return;
         };
         let game_id = self.instance_id();
+        // AV.1: one line, no wrap. `paid_notice_lines` already trims the text
+        // to `market::PAID_NOTICE_CHARS`, which fits the box width; clipping
+        // only keeps a stray long line from widening the panel.
         for line in &self.market_notice {
             let mut notice = body_label(line, 13, GOLD);
-            notice.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            notice.set_autowrap_mode(AutowrapMode::OFF);
+            notice.set_clip_text(true);
             notice.set_h_size_flags(SizeFlags::EXPAND_FILL);
             box_node.add_child(&notice);
         }
@@ -8244,9 +8259,12 @@ impl PortlightGame {
         }
         let paid = self.market_notice.first().cloned().unwrap_or_default();
         godot_print!("trade smoke paid notice: {paid}");
-        if !paid.starts_with("Contract paid: Delivered ")
-            || !paid.contains("Corsair's Rest")
-            || !paid.contains(" - Silver +")
+        if self.market_notice.len() != 1
+            || !paid.starts_with("Contract paid: Silver +")
+            || !paid.contains(" - 23 Grain to ")
+            || paid.len() > market::PAID_NOTICE_CHARS
+            || paid.contains("Delivered")
+            || paid.contains("(+")
             || paid.contains("+0")
             || ["Trust", "Standing", "Heat"]
                 .iter()
@@ -8296,8 +8314,8 @@ impl PortlightGame {
         }
     }
 
-    /// T-N frame 2. The real outcome from the settle leads, then two staged
-    /// deliveries: two GOLD lines and `+1 more`, through `paid_notice_lines`.
+    /// T-N frame 2. One staged delivery, then the real outcome as the latest:
+    /// one GOLD line with ` (+1 more)`, through `paid_notice_lines`.
     fn stage_market_paid_more(&mut self) {
         let real = self
             .session
@@ -8315,7 +8333,11 @@ impl PortlightGame {
         }
         self.market_notice = market::paid_notice_lines(&market::smoke_paid_more(&real));
         self.refresh();
-        if self.market_notice.len() != 3 || self.market_notice[2] != "+1 more" {
+        if self.market_notice.len() != 1
+            || !self.market_notice[0].starts_with("Contract paid: Silver +")
+            || !self.market_notice[0].contains(" (+1 more) - ")
+            || self.market_notice[0].len() > market::PAID_NOTICE_CHARS
+        {
             self.fail_trade(format!(
                 "Market paid frames: staged notice was {:?}.",
                 self.market_notice

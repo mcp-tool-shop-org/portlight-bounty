@@ -208,22 +208,112 @@ pub(crate) fn abandon_prompt(title: &str) -> String {
     format!("Abandon {}? Confirm to drop it.", ascii_sentence(title))
 }
 
-/// Contracts desk notice after Complete or Abandon. Same zero-omit ` - `
-/// form as the Market paid notice.
+/// Char budget for one Contracts desk line (notice 16 px, Recent 14 px). The
+/// desk is about 1000 px wide and its labels wrap, so this only caps a
+/// runaway tail; no catalog outcome reaches it.
+pub(crate) const DESK_CHARS: usize = 96;
+
+/// Contracts desk notice after Complete or Abandon, in the Market paid-notice
+/// form: `Contract abandoned: Grain for Corsair's Rest`.
 pub(crate) fn outcome_notice(outcome: &ContractOutcome) -> String {
-    format!("{}{}", outcome_summary(outcome), outcome_terms(outcome))
+    outcome_line(notice_label(outcome), outcome, 0, DESK_CHARS)
 }
 
-/// ` - Silver +615`, or empty when no silver moved. Silver is the only
-/// outcome term the sim applies: trust, standing and heat stay on the record
-/// (they size a contract-guarantee claim) and never reach the captain, as in
-/// Python, so the notice does not print them.
+/// `Silver +615`, or empty when no silver moved. The one Silver term for every
+/// outcome surface. Silver is the only outcome term the sim applies: trust,
+/// standing and heat stay on the record (they size a contract-guarantee
+/// claim) and never reach the captain, as in Python, so no line prints them.
 pub(crate) fn outcome_terms(outcome: &ContractOutcome) -> String {
     if outcome.silver_delta == 0 {
         String::new()
     } else {
-        format!(" - Silver {:+}", outcome.silver_delta)
+        format!("Silver {:+}", outcome.silver_delta)
     }
+}
+
+/// Notice label by outcome kind: `Contract paid` / `Contract abandoned` /
+/// `Contract expired`.
+pub(crate) fn notice_label(outcome: &ContractOutcome) -> &'static str {
+    match outcome.outcome_type.as_str() {
+        "completed" | "completed_bonus" => "Contract paid",
+        "abandoned" => "Contract abandoned",
+        "expired" => "Contract expired",
+        _ => "Contract settled",
+    }
+}
+
+/// Recent row label by outcome kind: `Paid` / `Abandoned` / `Expired`.
+fn recent_label(outcome: &ContractOutcome) -> &'static str {
+    match outcome.outcome_type.as_str() {
+        "completed" | "completed_bonus" => "Paid",
+        "abandoned" => "Abandoned",
+        "expired" => "Expired",
+        _ => "Settled",
+    }
+}
+
+/// The tail, built from contract fields (never the sim summary) with catalog
+/// names: `23 Grain to Corsair's Rest - early bonus +60` for a payment,
+/// `Grain for Corsair's Rest` otherwise.
+pub(crate) fn outcome_tail(outcome: &ContractOutcome) -> String {
+    let good = good_display_name(&outcome.good_id);
+    let port = port_display_name(&outcome.destination_port_id);
+    let tail = match outcome.outcome_type.as_str() {
+        "completed" | "completed_bonus" => {
+            let mut tail = format!("{} {good} to {port}", outcome.delivered_quantity);
+            let bonus = outcome.silver_delta - outcome.reward_silver;
+            if outcome.outcome_type == "completed_bonus" && bonus > 0 {
+                tail.push_str(&format!(" - early bonus +{bonus}"));
+            }
+            tail
+        }
+        _ => format!("{good} for {port}"),
+    };
+    ascii_sentence(&tail)
+}
+
+/// `{label}: Silver +612 (+1 more) - {tail}`. Zero silver and `+0 more` are
+/// omitted. The head (label, silver, more) is never trimmed; a tail that
+/// would push the line past `budget` chars is cut at a word and ends `...`.
+pub(crate) fn outcome_line(
+    label: &str,
+    outcome: &ContractOutcome,
+    more: usize,
+    budget: usize,
+) -> String {
+    let mut head = format!("{label}:");
+    let silver = outcome_terms(outcome);
+    if !silver.is_empty() {
+        head.push(' ');
+        head.push_str(&silver);
+    }
+    if more > 0 {
+        head.push_str(&format!(" (+{more} more)"));
+    }
+    let sep = if head.ends_with(':') { " " } else { " - " };
+    let room = budget.saturating_sub(head.len() + sep.len());
+    let tail = trim_tail(&outcome_tail(outcome), room);
+    if tail.is_empty() {
+        head
+    } else {
+        format!("{head}{sep}{tail}")
+    }
+}
+
+/// ASCII `tail` cut to `room` chars: whole words, then `...`. Empty when
+/// not even one char and the dots fit.
+fn trim_tail(tail: &str, room: usize) -> String {
+    if tail.len() <= room {
+        return tail.to_string();
+    }
+    if room < 4 {
+        return String::new();
+    }
+    let mut cut = &tail[..room - 3];
+    if let Some(space) = cut.rfind(' ').filter(|space| *space > 0) {
+        cut = &cut[..space];
+    }
+    format!("{}...", cut.trim_end_matches([' ', '-']))
 }
 
 /// The engine summary with its raw ids named: the destination port and the
@@ -287,14 +377,11 @@ fn is_snake_id(word: &str) -> bool {
             .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
 }
 
-/// Desk Recent row. Terms come from the shared `outcome_terms` (Silver only).
+/// Desk Recent row, same builder as the notices: `Paid: Silver +612 - 23
+/// Grain to Corsair's Rest - early bonus +60`, `Abandoned: Grain for
+/// Corsair's Rest`. No raw outcome type, no sim summary.
 pub(crate) fn recent_line(outcome: &ContractOutcome) -> String {
-    format!(
-        "{}: {}{}",
-        ascii_sentence(&outcome.outcome_type),
-        ascii_sentence(&outcome.summary),
-        outcome_terms(outcome)
-    )
+    outcome_line(recent_label(outcome), outcome, 0, DESK_CHARS)
 }
 
 fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
@@ -312,8 +399,8 @@ mod tests {
 
     use super::{
         abandon_prompt, ascii_sentence, availability_tag, can_complete, days_left_text,
-        outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
-        requirement_text, reward_text, BOARD_CARD, CAP_FULL, EMPTY_OFFERS, MAX_ACTIVE,
+        outcome_line, outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
+        requirement_text, reward_text, BOARD_CARD, CAP_FULL, DESK_CHARS, EMPTY_OFFERS, MAX_ACTIVE,
     };
 
     #[test]
@@ -378,8 +465,8 @@ mod tests {
         };
         let notice = outcome_notice(&outcome);
         assert!(notice.is_ascii(), "{notice}");
-        // Abandon applies nothing, so the notice is the engine summary alone.
-        assert_eq!(notice, "Abandoned contract: Grain for Corsair's Rest");
+        // Abandon applies nothing: no Silver term, the tail from fields.
+        assert_eq!(notice, "Contract abandoned: Grain for Corsair's Rest");
         for term in ["Silver", "Trust", "Standing", "Heat", "+0", "  "] {
             assert!(!notice.contains(term), "{notice}");
         }
@@ -482,7 +569,7 @@ mod tests {
     }
 
     #[test]
-    fn outcome_summary_names_the_port_and_good_and_terms_are_silver_only() {
+    fn outcome_summary_names_the_port_and_good() {
         let outcome = delivered("Delivered 23 grain to corsairs_rest (early bonus: +63 silver)");
         assert_eq!(
             outcome_summary(&outcome),
@@ -511,15 +598,43 @@ mod tests {
             outcome_summary(&unknown),
             "Delivered 4 Whale Oil to Drowned Quay."
         );
-        // Only silver is applied by the sim, so only silver is printed.
-        assert_eq!(outcome_terms(&outcome), " - Silver +615");
-        assert_eq!(
-            outcome_notice(&outcome),
-            "Delivered 23 Grain to Corsair's Rest (early bonus: +63 silver) - Silver +615"
-        );
-        let mut quiet = outcome.clone();
-        quiet.silver_delta = 0;
-        assert_eq!(outcome_terms(&quiet), "");
+    }
+
+    fn bonus_paid() -> ContractOutcome {
+        let mut paid = delivered("Delivered 23 grain to corsairs_rest (early bonus: +60 silver)");
+        paid.outcome_type = "completed_bonus".into();
+        paid.silver_delta = 612;
+        paid
+    }
+
+    fn failed(kind: &str, silver: i64) -> ContractOutcome {
+        let mut outcome = delivered("Abandoned contract: Famine relief: grain to Corsair's Rest");
+        outcome.outcome_type = kind.into();
+        outcome.silver_delta = silver;
+        outcome.trust_delta = -2;
+        outcome.standing_delta = -1;
+        outcome.heat_delta = 1;
+        outcome.delivered_quantity = 0;
+        outcome
+    }
+
+    /// Player-surface hygiene for every outcome line.
+    fn assert_clean(line: &str) {
+        assert!(line.is_ascii(), "{line}");
+        for bad in [
+            "Trust",
+            "Standing",
+            "Heat",
+            "+0",
+            "  ",
+            "Delivered",
+            "deliver",
+            "completed",
+            "corsairs_rest",
+            "_",
+        ] {
+            assert!(!line.contains(bad), "{bad:?} in {line}");
+        }
     }
 
     /// GD M2 ruling: the one shared helper prints Silver only. Trust, standing
@@ -528,42 +643,154 @@ mod tests {
     #[test]
     fn outcome_terms_is_silver_only_and_drops_zero() {
         let mut outcome = delivered("Delivered 23 grain to corsairs_rest");
-        outcome.heat_delta = -1;
-        assert_eq!(outcome_terms(&outcome), " - Silver +615");
+        assert_eq!(outcome_terms(&outcome), "Silver +615");
         outcome.silver_delta = 60;
         outcome.trust_delta = -2;
         outcome.standing_delta = -1;
         outcome.heat_delta = 1;
-        assert_eq!(outcome_terms(&outcome), " - Silver +60");
-        outcome.silver_delta = -15;
-        assert_eq!(outcome_terms(&outcome), " - Silver -15");
+        assert_eq!(outcome_terms(&outcome), "Silver +60");
+        outcome.silver_delta = -40;
+        assert_eq!(outcome_terms(&outcome), "Silver -40");
         outcome.silver_delta = 0;
         assert_eq!(outcome_terms(&outcome), "");
     }
 
-    /// Recent rows carry the same Silver-only terms; a zero-silver failure row
-    /// is the summary alone.
+    /// GD final wording: silver first, `(+N more)`, then the tail from fields.
     #[test]
-    fn recent_line_uses_the_silver_only_terms() {
-        let paid = delivered("Delivered 23 grain to corsairs_rest");
+    fn outcome_line_leads_with_silver_and_more_then_the_field_tail() {
+        let paid = bonus_paid();
         assert_eq!(
-            recent_line(&paid),
-            "completed: Delivered 23 grain to corsairs_rest - Silver +615"
+            outcome_line("Contract paid", &paid, 1, DESK_CHARS),
+            "Contract paid: Silver +612 (+1 more) - 23 Grain to Corsair's Rest - early bonus +60"
         );
-        let mut abandoned = delivered("Abandoned contract: Grain for Corsair's Rest");
-        abandoned.outcome_type = "abandoned".into();
-        abandoned.silver_delta = 0;
-        abandoned.trust_delta = -2;
-        abandoned.standing_delta = -1;
-        abandoned.heat_delta = 1;
+        // N = 0 drops the count; no bonus drops the bonus term.
         assert_eq!(
-            recent_line(&abandoned),
-            "abandoned: Abandoned contract: Grain for Corsair's Rest"
+            outcome_notice(&paid),
+            "Contract paid: Silver +612 - 23 Grain to Corsair's Rest - early bonus +60"
         );
-        for line in [recent_line(&paid), recent_line(&abandoned)] {
-            for term in ["Trust", "Standing", "Heat", "+0", "  "] {
-                assert!(!line.contains(term), "{line}");
+        assert_eq!(
+            outcome_notice(&delivered("Delivered 23 grain to corsairs_rest")),
+            "Contract paid: Silver +615 - 23 Grain to Corsair's Rest"
+        );
+        let abandoned = failed("abandoned", -40);
+        assert_eq!(
+            outcome_line("Contract abandoned", &abandoned, 1, DESK_CHARS),
+            "Contract abandoned: Silver -40 (+1 more) - Grain for Corsair's Rest"
+        );
+        assert_eq!(
+            outcome_notice(&abandoned),
+            "Contract abandoned: Silver -40 - Grain for Corsair's Rest"
+        );
+        // Silver 0: the term is gone, the count still leads the tail.
+        let quiet = failed("abandoned", 0);
+        assert_eq!(
+            outcome_notice(&quiet),
+            "Contract abandoned: Grain for Corsair's Rest"
+        );
+        assert_eq!(
+            outcome_line("Contract abandoned", &quiet, 1, DESK_CHARS),
+            "Contract abandoned: (+1 more) - Grain for Corsair's Rest"
+        );
+        assert_eq!(
+            outcome_notice(&failed("expired", 0)),
+            "Contract expired: Grain for Corsair's Rest"
+        );
+        // Ids no catalog lists go through humanize_id.
+        let mut unknown = delivered("Delivered 4 whale_oil to drowned_quay.");
+        unknown.good_id = "whale_oil".into();
+        unknown.destination_port_id = "drowned_quay".into();
+        unknown.delivered_quantity = 4;
+        assert_eq!(
+            outcome_notice(&unknown),
+            "Contract paid: Silver +615 - 4 Whale Oil to Drowned Quay"
+        );
+        for line in [
+            outcome_notice(&paid),
+            outcome_notice(&abandoned),
+            outcome_notice(&quiet),
+            outcome_notice(&unknown),
+        ] {
+            assert_clean(&line);
+        }
+    }
+
+    /// Overflow trims the tail at a word with ASCII `...`; the head
+    /// `Contract paid: Silver +N (+N more)` is never cut.
+    #[test]
+    fn outcome_line_trims_only_the_tail() {
+        let paid = bonus_paid();
+        assert_eq!(
+            outcome_line("Contract paid", &paid, 0, 56),
+            "Contract paid: Silver +612 - 23 Grain to Corsair's..."
+        );
+        assert_eq!(
+            outcome_line("Contract paid", &paid, 1, 56),
+            "Contract paid: Silver +612 (+1 more) - 23 Grain to..."
+        );
+        // Exactly fits: no dots.
+        let plain = delivered("Delivered 23 grain to corsairs_rest");
+        let full = "Contract paid: Silver +615 - 23 Grain to Corsair's Rest";
+        assert_eq!(outcome_line("Contract paid", &plain, 0, full.len()), full);
+        assert_eq!(
+            outcome_line("Contract paid", &plain, 0, full.len() - 1),
+            "Contract paid: Silver +615 - 23 Grain to Corsair's..."
+        );
+        // No room for the tail: the head stands alone, whole.
+        assert_eq!(
+            outcome_line("Contract paid", &paid, 9, 10),
+            "Contract paid: Silver +612 (+9 more)"
+        );
+        for budget in 30..=96 {
+            for more in [0, 1, 9] {
+                let line = outcome_line("Contract paid", &paid, more, budget);
+                let head = if more == 0 {
+                    "Contract paid: Silver +612".to_string()
+                } else {
+                    format!("Contract paid: Silver +612 (+{more} more)")
+                };
+                assert!(line.starts_with(&head), "{line}");
+                assert!(line.len() <= budget.max(head.len()), "{budget}: {line}");
+                assert!(
+                    !line.ends_with(" -...") && !line.ends_with(" ..."),
+                    "{line}"
+                );
+                assert_clean(&line);
             }
+        }
+    }
+
+    /// GD R5: Recent rows use the same builder, no raw type or sim summary.
+    #[test]
+    fn recent_line_is_built_from_fields() {
+        assert_eq!(
+            recent_line(&bonus_paid()),
+            "Paid: Silver +612 - 23 Grain to Corsair's Rest - early bonus +60"
+        );
+        assert_eq!(
+            recent_line(&delivered("Delivered 23 grain to corsairs_rest")),
+            "Paid: Silver +615 - 23 Grain to Corsair's Rest"
+        );
+        assert_eq!(
+            recent_line(&failed("abandoned", 0)),
+            "Abandoned: Grain for Corsair's Rest"
+        );
+        assert_eq!(
+            recent_line(&failed("abandoned", -40)),
+            "Abandoned: Silver -40 - Grain for Corsair's Rest"
+        );
+        assert_eq!(
+            recent_line(&failed("expired", 0)),
+            "Expired: Grain for Corsair's Rest"
+        );
+        assert_eq!(
+            recent_line(&failed("expired", 60)),
+            "Expired: Silver +60 - Grain for Corsair's Rest"
+        );
+        for kind in ["completed", "completed_bonus", "abandoned", "expired"] {
+            let line = recent_line(&failed(kind, 0));
+            assert_clean(&line);
+            assert!(!line.contains("Famine relief"), "{line}");
+            assert!(line.len() <= DESK_CHARS, "{line}");
         }
     }
 

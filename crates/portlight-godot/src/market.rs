@@ -12,8 +12,12 @@ use crate::contracts_screen;
 /// The Qty button cycles these, then wraps.
 pub(crate) const TRADE_QTYS: [i64; 3] = [1, 5, 10];
 
-/// Paid lines shown before the `+N more` tail.
-const PAID_LINES_MAX: usize = 2;
+/// Char budget for the one-line paid notice. The Market box is 376 px wide
+/// (x874-1249) and the notice is the theme fallback font at 13 px. Measured
+/// with that font over every catalog good and port, qty up to 999, silver up
+/// to +99999 and `(+9 more)`: the widest 56-char line is 367 px, and 57 chars
+/// can reach 375 px. So 56 keeps every notice on one line with room to spare.
+pub(crate) const PAID_NOTICE_CHARS: usize = 56;
 
 /// `Qty 1` -> `Qty 5` -> `Qty 10` -> `Qty 1`. An unknown qty restarts at 1.
 pub(crate) fn next_trade_qty(qty: i64) -> i64 {
@@ -82,47 +86,41 @@ pub(crate) fn wire_qty(clamped: i64) -> i64 {
     }
 }
 
-/// GOLD Market lines for the contracts one sale settled. Max two, then
-/// `+N more`. Empty when the sale settled nothing.
+/// The GOLD Market notice for the contracts one sale settled: one line, the
+/// latest contract, the rest counted as ` (+N more)`. Empty when the sale
+/// settled nothing. AV.1: one line keeps two goods rows in view at 720.
 pub(crate) fn paid_notice_lines(outcomes: &[ContractOutcome]) -> Vec<String> {
-    let mut lines: Vec<String> = outcomes
-        .iter()
-        .take(PAID_LINES_MAX)
-        .map(|outcome| {
-            format!(
-                "Contract paid: {}{}",
-                contracts_screen::outcome_summary(outcome),
-                contracts_screen::outcome_terms(outcome)
-            )
-        })
-        .collect();
-    if outcomes.len() > PAID_LINES_MAX {
-        lines.push(format!("+{} more", outcomes.len() - PAID_LINES_MAX));
-    }
-    lines
+    let Some(latest) = outcomes.last() else {
+        return Vec::new();
+    };
+    vec![contracts_screen::outcome_line(
+        contracts_screen::notice_label(latest),
+        latest,
+        outcomes.len() - 1,
+        PAID_NOTICE_CHARS,
+    )]
 }
 
 /// CI frame `market-contract-paid-more.png`. One real sale settles one
-/// contract, so the capture stages two more deliveries to the same port after
-/// the real outcome: two lines, then `+1 more`. Same builder as a live sale.
+/// contract, so the capture stages one more delivery to the same port before
+/// the real outcome, which stays the latest: `(+1 more)`. Same builder as a
+/// live sale.
 pub(crate) fn smoke_paid_more(paid: &ContractOutcome) -> Vec<ContractOutcome> {
-    let staged = |id: &str, good: &str, qty: i64, silver: i64| ContractOutcome {
-        contract_id: id.into(),
-        silver_delta: silver,
+    let staged = ContractOutcome {
+        contract_id: "staged-weapons".into(),
+        outcome_type: "completed".into(),
+        silver_delta: 384,
         trust_delta: 1,
         standing_delta: 1,
-        summary: format!("Delivered {qty} {good} to {}", paid.destination_port_id),
-        good_id: good.into(),
-        required_quantity: qty,
-        delivered_quantity: qty,
-        reward_silver: silver,
+        heat_delta: -1,
+        summary: format!("Delivered 12 weapons to {}", paid.destination_port_id),
+        good_id: "weapons".into(),
+        required_quantity: 12,
+        delivered_quantity: 12,
+        reward_silver: 384,
         ..paid.clone()
     };
-    vec![
-        paid.clone(),
-        staged("staged-weapons", "weapons", 12, 384),
-        staged("staged-rum", "rum", 18, 270),
-    ]
+    vec![staged, paid.clone()]
 }
 
 #[cfg(test)]
@@ -131,7 +129,7 @@ mod tests {
 
     use super::{
         clamp_buy, clamp_sell, next_trade_qty, paid_notice_lines, qty_label, smoke_paid_more,
-        wire_qty, BuyRoom,
+        wire_qty, BuyRoom, PAID_NOTICE_CHARS,
     };
 
     fn room() -> BuyRoom {
@@ -284,50 +282,78 @@ mod tests {
     }
 
     #[test]
-    fn paid_notice_is_exact_copy_with_zero_terms_dropped() {
+    fn paid_notice_is_one_line_with_silver_first() {
         assert!(paid_notice_lines(&[]).is_empty());
         assert_eq!(
             paid_notice_lines(&[paid("a", 615, 2)]),
-            vec!["Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615"]
+            vec!["Contract paid: Silver +615 - 23 Grain to Corsair's Rest"]
         );
         // Trust, standing and heat ride on the outcome but the sim never
         // applies them, so the notice never prints them.
         for line in paid_notice_lines(&[paid("a", 615, 0)]) {
-            for term in ["Trust", "Standing", "Heat"] {
+            for term in ["Trust", "Standing", "Heat", "Delivered", "(+"] {
                 assert!(!line.contains(term), "{line}");
             }
         }
     }
 
+    /// AV.1: one line total. The latest contract leads; the rest are counted
+    /// inline, and the tail is trimmed so the count and silver survive.
     #[test]
-    fn paid_notice_caps_at_two_lines_plus_more() {
-        let two = paid_notice_lines(&[paid("a", 615, 2), paid("b", 400, 1)]);
-        assert_eq!(two.len(), 2);
-        assert!(two.iter().all(|line| line.starts_with("Contract paid: ")));
+    fn paid_notice_counts_the_rest_inline() {
+        let two = paid_notice_lines(&[paid("a", 400, 1), paid("b", 615, 2)]);
+        assert_eq!(
+            two,
+            vec!["Contract paid: Silver +615 (+1 more) - 23 Grain to..."]
+        );
         let four = paid_notice_lines(&[
             paid("a", 615, 2),
             paid("b", 400, 1),
             paid("c", 300, 1),
             paid("d", 200, 1),
         ]);
-        assert_eq!(four.len(), 3);
-        assert_eq!(four[2], "+2 more");
-        for line in &four {
+        assert_eq!(
+            four,
+            vec!["Contract paid: Silver +200 (+3 more) - 23 Grain to..."]
+        );
+        for line in two.iter().chain(&four) {
             assert!(line.is_ascii(), "{line}");
             assert!(!line.contains("+0"), "{line}");
+            assert!(line.len() <= PAID_NOTICE_CHARS, "{line}");
+            assert!(!line.contains('\n'), "{line}");
         }
     }
 
+    /// A long tail is cut in Rust with ASCII `...`, never the head.
     #[test]
-    fn staged_more_frame_is_two_lines_and_one_more() {
-        let lines = paid_notice_lines(&smoke_paid_more(&paid("a", 615, 2)));
+    fn paid_notice_trims_a_long_tail() {
+        let mut long = paid("a", 99_999, 1);
+        long.good_id = "black_powder".into();
+        long.destination_port_id = "typhoon_anchorage".into();
+        long.delivered_quantity = 999;
+        let many: Vec<_> = (0..10).map(|_| long.clone()).collect();
         assert_eq!(
-            lines,
-            vec![
-                "Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615",
-                "Contract paid: Delivered 12 Weapons to Corsair's Rest - Silver +384",
-                "+1 more",
-            ]
+            paid_notice_lines(&many),
+            vec!["Contract paid: Silver +99999 (+9 more) - 999 Black..."]
+        );
+        assert_eq!(
+            paid_notice_lines(&[long]),
+            vec!["Contract paid: Silver +99999 - 999 Black Powder to..."]
+        );
+    }
+
+    #[test]
+    fn staged_more_frame_is_one_line_and_one_more() {
+        let mut real = paid("a", 612, 2);
+        real.outcome_type = "completed_bonus".into();
+        real.reward_silver = 552;
+        assert_eq!(
+            paid_notice_lines(&[real.clone()]),
+            vec!["Contract paid: Silver +612 - 23 Grain to Corsair's..."]
+        );
+        assert_eq!(
+            paid_notice_lines(&smoke_paid_more(&real)),
+            vec!["Contract paid: Silver +612 (+1 more) - 23 Grain to..."]
         );
     }
 }
