@@ -7039,7 +7039,9 @@ impl PortlightGame {
             };
             let mut button = encounter_button(&caption, game_id, command);
             match line {
-                Some(line) => row.add_child(&encounter_screen::choice_cell(button, &line)),
+                Some(line) => {
+                    row.add_child(&encounter_screen::choice_cell(button, &[line.as_str()]))
+                }
                 None => {
                     // Beside a preview cell, a bare button (Capture) keeps its
                     // own height instead of stretching to the cell's.

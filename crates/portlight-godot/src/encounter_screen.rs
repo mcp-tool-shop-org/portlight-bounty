@@ -338,22 +338,25 @@ fn placeholder_panel() -> Gd<PanelContainer> {
 /// Node name of the muted preview line under an Outcome button.
 pub(crate) const CHOICE_PREVIEW: &str = "ChoicePreview";
 
-/// One Outcome button with its muted preview line directly under it.
-/// The button keeps its own width (the cell does not stretch it), and the
-/// line is the 14 px [`MUTED`] note used for helpers. No wrap: the line is
-/// short enough for the column at 1280.
-pub(crate) fn choice_cell(mut button: Gd<Button>, preview: &str) -> Gd<VBoxContainer> {
+/// One Outcome button with its muted preview line(s) directly under it.
+/// The button keeps its own width (the cell does not stretch it). Each line
+/// is the 14 px [`MUTED`] note used for helpers, one label per line, so a
+/// later consequence or risk line stacks under the first without a layout
+/// change. No wrap: P0 has one short line per button at 1280.
+pub(crate) fn choice_cell(mut button: Gd<Button>, lines: &[&str]) -> Gd<VBoxContainer> {
     let mut cell = VBoxContainer::new_alloc();
     cell.set_name("ChoiceCell");
     cell.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
     cell.add_theme_constant_override("separation", 4);
     button.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
     cell.add_child(&button);
-    let mut line = text_label(preview, 14, MUTED);
-    line.set_name(CHOICE_PREVIEW);
-    line.set_autowrap_mode(AutowrapMode::OFF);
-    line.set_mouse_filter(MouseFilter::IGNORE);
-    cell.add_child(&line);
+    for text in lines {
+        let mut line = text_label(text, 14, MUTED);
+        line.set_name(CHOICE_PREVIEW);
+        line.set_autowrap_mode(AutowrapMode::OFF);
+        line.set_mouse_filter(MouseFilter::IGNORE);
+        cell.add_child(&line);
+    }
     cell
 }
 
