@@ -29,7 +29,7 @@ Stable ids feed `ai-playtest score` later; renaming after Phase 1 breaks diffs. 
 ## Voyage step → criteria map
 
 First-voyage spine (LIVE on tip ≥`cc2c50e4`):  
-New game → Contracts → Harbour peek → Sail Al-Manar → Sell/Complete → Encounter (Hunt preferred on seed 1; Fix B alt) → Victory finish → Journal  
+New game → Contracts → Harbour peek → Sail Al-Manar → Sell (the sale pays the contract) → Encounter (Hunt preferred on seed 1; Fix B alt) → Victory finish → Journal  
 (+ Day's report auto-show on notable Next day; Hire optional curiosity)
 
 | Voyage step | Criteria ids |
@@ -41,7 +41,7 @@ New game → Contracts → Harbour peek → Sail Al-Manar → Sell/Complete → 
 | Sail / Next day → Al-Manar | `maiden-sail-progress`, `world-moves`, `responds-to-input` |
 | Day's report (notable Next day) | `day-report-clarity` (product-gate tip) |
 | Contract strip glance (PR #48) | `contract-strip-glance` (**ARMED** — product-gate on #48 merge; not live until merge) |
-| Sell → Complete | `contract-complete-path` |
+| Sell at destination (the sale pays the contract) | `contract-complete-path` |
 | Encounter (Hunt preferred; Fix B alt) | `encounter-interrupt` |
 | Victory finish (#41) | `victory-receipt-payoff` |
 | Journal | `journal-closure` |
@@ -107,8 +107,8 @@ New game → Contracts → Harbour peek → Sail Al-Manar → Sell/Complete → 
 - **Phase:** scripted
 
 ### `next-verb-after-accept`
-- **Intent:** After Accept, next step obvious (sail / sell / Complete) — Fix A hint 2.
-- **Pass:** Notice, log, or UI makes load → sail to dest → sell → Complete clear.
+- **Intent:** After Accept, next step obvious (sail / sell there - the sale pays the contract) — Fix A hint 2.
+- **Pass:** Notice, log, or UI makes load → sail to dest → sell clear; the sale pays the contract.
 - **Fail signals:** Accept succeeds but pier is silent; player hunts for a Deliver button with no cue.
 - **Notes:** Soft until Fix A chart-hints PR merges — scored every run but not a product-fail until then; then hard. **KNOWN GAP — still soft.**
 - **Phase:** live-gpu (soft until Fix A)
@@ -121,9 +121,9 @@ New game → Contracts → Harbour peek → Sail Al-Manar → Sell/Complete → 
 - **Phase:** scripted
 
 ### `contract-complete-path`
-- **Intent:** Sell at destination → Complete works (or sell already settles).
-- **Pass:** After selling contract goods at dest, Contracts shows Complete or contract already settled; Complete idempotent when shown.
-- **Fail signals:** Delivered goods but Complete never appears and contract stays open; Complete errors.
+- **Intent:** Selling the contract good at the destination settles it.
+- **Pass:** Selling the contract good at the destination settles it: it leaves Active and silver rises; Complete is not needed.
+- **Fail signals:** Contract goods sold at the destination but the contract stays in Active, or silver does not rise.
 - **Notes:** Delivery is sell-at-dest by design; no separate Deliver button expected.
 - **Phase:** scripted
 

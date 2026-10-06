@@ -7,9 +7,12 @@
 // Prints the editor version (CI is 4.7.2). Spine: hello, second client
 // refused, bad line answered, Title, captains, the line Ada, Merchant (chart
 // shows Ada docked and Hire). Then Contracts open and close, read the board
-// cards, accept the cheapest run the market stocks, buy the order plus a
-// margin, Hire, sail to the destination while the strip counts down, and
-// sell there. The sale is the delivery: the contract leaves Active, silver
+// cards, accept the run the market stocks with the lowest reward per unit
+// (a proxy for cheap goods, not the buy price), buy the order plus a
+// margin, Hire, sail to the destination while the strip counts down. The
+// docking day opens the Arrival card: it is read from state.day_report
+// before anything presses Escape, then dismissed. Sell there. The sale is
+// the delivery: the contract leaves Active, silver
 // goes up, and the strip clears. Complete is not offered (R10), so that
 // press is the offered-check. Journal open and close, then reset to Title.
 // The last line names what was asserted. It is not a product score.
@@ -186,6 +189,36 @@ async function clearOverlays(socket, result, notes) {
   throw new Error('an overlay did not clear');
 }
 
+// Encounters are stepped without touching day-report, so an Arrival card
+// survives until it has been read.
+async function clearEncounterOnly(socket, result, notes) {
+  let current = result;
+  for (let step = 0; step < 8; step += 1) {
+    if (!openDesks(current).includes('encounter') && String(current?.state?.screen) !== 'encounter') {
+      return current;
+    }
+    const options = ids(current);
+    const pick = ['encounter.auto_resolve', 'encounter.leave', 'encounter.spare', 'encounter.take_all']
+      .find((id) => options.includes(id))
+      ?? options.find((id) => /^encounter\.(choice|naval|combat)\./.test(id)
+        || id === 'encounter.board'
+        || id === 'encounter.duel');
+    assert(pick, 'encounter offered no way forward', current);
+    notes.encounter = notes.encounter ?? pick;
+    current = await choose(socket, pick);
+  }
+  throw new Error('encounter did not clear');
+}
+
+function isDayReport(result) {
+  return String(result?.state?.screen) === 'day-report' || openDesks(result).includes('day-report');
+}
+
+// rank_visit_movers copy, e.g. "Grain 12 to 16 (+33%)".
+const MOVER_RE = /^(.+) (\d+) to (\d+) \(([+-]?\d+)%\)$/;
+// arrival_contract_lines copy; the hint is dropped when nothing is needed.
+const ARRIVAL_CONTRACT_RE = / - \d+\/\d+ - (\d+ days? left|due today|overdue)( - sell \d+ more .+ here)?$/;
+
 function strip(result) {
   return String(result?.state?.contract_strip ?? '');
 }
@@ -318,16 +351,69 @@ async function voyage(socket, chart) {
 
   const startDay = Number(chart?.state?.day);
   let here = sailed;
-  for (let step = 0; step < 40 && String(here?.state?.docked) !== terms.port; step += 1) {
+  let arrival = null;
+  for (let step = 0; step < 40; step += 1) {
+    // At sea a day report may still be escaped; it is not the Arrival card.
     here = await clearOverlays(socket, here, notes);
-    if (String(here?.state?.docked) === terms.port) break;
     assert(String(here?.state?.screen) === 'chart', 'expected the chart while under way', here);
     assert(ids(here).includes('chart.next_day'), 'next day was not offered', here);
     here = await choose(socket, 'chart.next_day');
     if (/Rough seas damaged/.test(String(here?.text ?? ''))) notes.roughSeas = true;
+    if (String(here?.state?.docked) === terms.port) {
+      // The docking reply. Do not press Escape before the card is read.
+      here = await clearEncounterOnly(socket, here, notes);
+      arrival = here;
+      break;
+    }
   }
+  assert(arrival, `did not dock at ${terms.destination}`, here);
+
+  // Arrival card (#57): the deliverable contract makes the docking day notable.
+  assert(isDayReport(arrival), 'arrival card did not open on the docking advance', arrival);
+  assert(ids(arrival).includes('chart.day_report.close'), 'arrival card offered no Close', arrival);
+  const report = arrival?.state?.day_report;
+  assert(report && typeof report === 'object', 'observation had no state.day_report', arrival);
+  assert(
+    report.title === `Arrived - ${terms.destination}`,
+    `arrival title was ${JSON.stringify(report.title)}`,
+    arrival,
+  );
+  assert(report.eyebrow === "Day's report", `arrival eyebrow was ${JSON.stringify(report.eyebrow)}`, arrival);
+  assert(
+    String(arrival?.text ?? '').includes(`Day's report: Arrived - ${terms.destination}`),
+    'arrival card was not in the text',
+    arrival,
+  );
+  const sections = Array.isArray(report.sections) ? report.sections : [];
+  assert(!sections.some((section) => section.id === 'prices'), 'Prices section shown on arrival day', arrival);
+  const arrivalSection = sections.find((section) => section.id === 'arrival');
+  assert(arrivalSection && arrivalSection.lines.length > 0, 'no Arrival section on arrival', arrival);
+  const lines = arrivalSection.lines.map(String);
+  const contractRows = lines.filter((line) => ARRIVAL_CONTRACT_RE.test(line));
+  const movers = lines.filter((line) => MOVER_RE.test(line));
+  const more = lines.filter((line) => /^\+\d+ more$/.test(line));
+  assert(contractRows.some((line) => line.startsWith(card.title)), 'accepted contract not in the Arrival section', arrival);
+  assert(contractRows.length <= 3, 'arrival contract rows over the cap', arrival);
+  assert(movers.length <= 3, `more than 3 movers (${movers.length})`, arrival);
+  for (const mover of movers) {
+    const [, , oldPrice, newPrice, pct] = mover.match(MOVER_RE);
+    const expect = Math.round(((Number(newPrice) - Number(oldPrice)) / Math.max(Number(oldPrice), 1)) * 100);
+    assert(Number(pct) === expect && Math.abs(expect) >= 10, `mover math or threshold off: ${mover}`, arrival);
+  }
+  assert(
+    contractRows.length + movers.length + more.length === lines.length,
+    'unknown line in the Arrival section',
+    arrival,
+  );
+  assert(!lines.some((line) => /due soon|\u2014|Complete|Deliver/.test(line)), 'forbidden arrival copy', arrival);
+  notes.arrivalMovers = movers.length;
+
+  here = await call(socket, 'act', { kind: 'key', key: 'escape' });
+  assert(!isDayReport(here), 'Escape left the arrival card open', here);
+  assert(!ids(here).includes('chart.day_report.close'), 'day-report Close still offered after dismiss', here);
+  assert(here?.state?.day_report == null, 'state.day_report still reported after dismiss', here);
   here = await clearOverlays(socket, here, notes);
-  assert(String(here?.state?.docked) === terms.port, `did not dock at ${terms.destination}`, here);
+  assert(String(here?.state?.docked) === terms.port, `dismiss left ${terms.destination}`, here);
   assert(Number(here?.state?.day) > startDay, 'the day counter did not advance', here);
   assert(String(here?.text ?? '').includes(`Docked at ${terms.destination}`), 'arrival text missing', here);
   const stripAtArrival = strip(here);
@@ -385,6 +471,7 @@ async function voyage(socket, chart) {
     `accept ${terms.good} x${terms.quantity}`,
     'hire',
     `sail ${terms.destination}`,
+    `arrival card read (${notes.arrivalMovers} movers) then escaped`,
     `strip ${stripTiming(stripAtAccept)} -> ${stripTiming(stripAtArrival)}`,
     `sell delivers (silver ${silverAtPort} -> ${sold?.state?.silver}, strip clear, not active)`,
     'complete not offered',

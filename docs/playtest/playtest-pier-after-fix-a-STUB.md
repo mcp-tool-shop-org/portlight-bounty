@@ -49,7 +49,7 @@ Then record time-to-first + misclicks below for pier-density T2 evidence.
 **Misclick taxonomy (tick what happened):**
 
 - [ ] Hire (one-shot) instead of Contracts / Sail  
-- [ ] Provisions +5  
+- [ ] Stores +5  
 - [ ] Work / Shipyard / Harbour / Crew / Hunt  
 - [ ] Market when aiming Contracts  
 - [ ] Journal (top row) when aiming pier  

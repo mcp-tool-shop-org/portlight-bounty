@@ -55,7 +55,7 @@
     },
     {
       "id": "next-verb-after-accept",
-      "check": "Immediately after Accept (Fix A hint 2), the next step (load/sail to destination, sell there, then Complete) is obvious from UI, notice, or log — not only from prior knowledge. Soft until Fix A chart-hints PR merges — scored every run but not a product-fail until then; then hard. KNOWN GAP — still soft."
+      "check": "Immediately after Accept (Fix A hint 2), the next step (load/sail to destination, sell there - the sale pays the contract) is obvious from UI, notice, or log — not only from prior knowledge. Soft until Fix A chart-hints PR merges — scored every run but not a product-fail until then; then hard. KNOWN GAP — still soft."
     },
     {
       "id": "maiden-sail-progress",
@@ -63,7 +63,7 @@
     },
     {
       "id": "contract-complete-path",
-      "check": "At the contract destination, selling the contract good then opening Contracts shows Complete (or sell already settles the contract); Complete is idempotent when shown."
+      "check": "Selling the contract good at the destination settles it: it leaves Active and silver rises; Complete is not needed."
     },
     {
       "id": "encounter-interrupt",

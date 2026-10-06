@@ -19,7 +19,7 @@
 //! `train_crew`, `recruit_companion`, and `spend_skill_point`. Train and
 //! Learn show the day advance before the call. Session ignores injury gates
 //! on train, so the desk does not. The provision line is the effective price.
-//! Chart Hire (one sailor) and Provisions +5 stay one-shot shortcuts.
+//! Chart Hire (one sailor) and Stores +5 stay one-shot shortcuts.
 //!
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
 //! scripted approach uses the encounter screen: `encounter_choice` /
@@ -1251,11 +1251,15 @@ impl PortlightGame {
         // One 31 px line. A wrap would push the lanes, the market, and the log.
         let mut port_row = HBoxContainer::new_alloc();
         port_row.set_name("PortRow");
-        // Gaps of 1 px, plus the scrollbar, grow the panel past 420 and
-        // slide the chrome. Zero separation keeps Hide market through
-        // Harbour, Crew, and Hunt on one line inside the panel.
-        port_row.add_theme_constant_override("separation", 0);
-        let market = port_row_button("Market", game_id, Action::ToggleMarket);
+        // 2 px gaps plus the 1 px button borders mark where each label
+        // ends. The market toggle always reads Market, so the row keeps the
+        // same width open or shut and stays one line inside the panel.
+        port_row.add_theme_constant_override("separation", 2);
+        let mut market = port_row_button("Market", game_id, Action::ToggleMarket);
+        // Open shows as the pressed style with a gold face, not a new label.
+        market.set_toggle_mode(true);
+        market.add_theme_color_override("font_pressed_color", GOLD);
+        market.add_theme_color_override("font_hover_pressed_color", GOLD);
         port_row.add_child(&market);
         self.market_button = Some(market);
         let mut contracts = port_row_button("Contracts", game_id, Action::OpenContracts);
@@ -1264,11 +1268,7 @@ impl PortlightGame {
         // `Hire` is one sailor (HireSailor). The short label keeps the row on
         // one line at 1280.
         port_row.add_child(&port_row_button("Hire", game_id, Action::HireSailor));
-        port_row.add_child(&port_row_button(
-            "Provisions +5",
-            game_id,
-            Action::Provision,
-        ));
+        port_row.add_child(&port_row_button("Stores +5", game_id, Action::Provision));
         let work = port_row_button("Work", game_id, Action::Work);
         port_row.add_child(&work);
         self.work_button = Some(work);
@@ -2755,7 +2755,7 @@ impl PortlightGame {
         };
         clear_children(&mut body);
         let game_id = self.instance_id();
-        body.add_child(&body_label("Flagship", 18, GOLD));
+        body.add_child(&body_label("Flagship", 16, GOLD));
         for line in model.flagship.lines(model.silver, &model.fleet_label) {
             let mut label = body_label(&line, 16, CREAM);
             label.set_autowrap_mode(AutowrapMode::WORD_SMART);
@@ -2776,7 +2776,7 @@ impl PortlightGame {
             Action::ShipyardRename,
         ));
 
-        let yard = body_label("Yard", 18, GOLD);
+        let yard = body_label("Yard", 16, GOLD);
         self.yard_mark = Some(yard.clone().upcast());
         body.add_child(&yard);
         if !model.has_shipyard {
@@ -2784,7 +2784,7 @@ impl PortlightGame {
             gated.set_autowrap_mode(AutowrapMode::WORD_SMART);
             body.add_child(&gated);
         }
-        body.add_child(&body_label("Buy hull", 16, GOLD));
+        body.add_child(&body_label("Buy hull", 14, GOLD));
         for offer in &model.offers {
             let mut block = VBoxContainer::new_alloc();
             block.add_theme_constant_override("separation", 4);
@@ -2800,7 +2800,7 @@ impl PortlightGame {
             block.add_child(&buy);
             body.add_child(&block);
         }
-        body.add_child(&body_label("Install upgrade", 16, GOLD));
+        body.add_child(&body_label("Install upgrade", 14, GOLD));
         if !model.slots_notice.is_empty() {
             let mut full = body_label(&model.slots_notice, 16, CREAM);
             full.set_autowrap_mode(AutowrapMode::WORD_SMART);
@@ -2822,7 +2822,7 @@ impl PortlightGame {
             body.add_child(&block);
         }
 
-        let fleet = body_label("Fleet here", 18, GOLD);
+        let fleet = body_label("Fleet here", 16, GOLD);
         self.fleet_mark = Some(fleet.clone().upcast());
         body.add_child(&fleet);
         body.add_child(&body_label(&model.fleet_label, 16, CREAM));
@@ -5048,7 +5048,7 @@ impl PortlightGame {
     }
 
     /// Hire, fire, provision, then train and skill through the confirm bar.
-    /// The chart Hire and Provisions +5 shortcuts still call Session.
+    /// The chart Hire and Stores +5 shortcuts still call Session.
     fn run_crew_actions(&mut self) {
         if !self.crew_open {
             self.fail_crew("Crew smoke: the desk was not open.");
@@ -5183,7 +5183,7 @@ impl PortlightGame {
                 && world.captain.provisions >= provisions_before + 1 + 5 - 8
         });
         if !shortcuts {
-            self.fail_crew("Crew smoke: chart Hire or Provisions +5 did not apply.");
+            self.fail_crew("Crew smoke: chart Hire or Stores +5 did not apply.");
         }
     }
 
@@ -5259,11 +5259,7 @@ impl PortlightGame {
         }
         if let Some(button) = self.market_button.as_mut() {
             button.set_disabled(!docked);
-            button.set_text(if self.market_open {
-                "Hide market"
-            } else {
-                "Market"
-            });
+            button.set_pressed_no_signal(self.market_open);
         }
         if let Some(scroll) = self.market_scroll.as_mut() {
             scroll.set_visible(self.market_open);
@@ -5615,7 +5611,9 @@ impl PortlightGame {
             contract_listing(session)
         };
         let game_id = self.instance_id();
-        list.add_child(&contracts_screen::section_label("Board"));
+        list.add_child(&contracts_screen::section_label(
+            contracts_screen::SECTION_BOARD,
+        ));
         if listed.offers.is_empty() {
             let mut empty = contracts_screen::body_line(contracts_screen::EMPTY_OFFERS, 15, CREAM);
             empty.set_name("EmptyOffers");
@@ -5625,7 +5623,7 @@ impl PortlightGame {
             list.add_child(&self.offer_block(&offer, game_id, at_cap));
         }
 
-        let mut active_header = contracts_screen::section_label("Active");
+        let mut active_header = contracts_screen::section_label(contracts_screen::SECTION_ACTIVE);
         active_header.set_name("ActiveSection");
         list.add_child(&active_header);
         if listed.active.is_empty() {
@@ -5639,7 +5637,9 @@ impl PortlightGame {
             list.add_child(&self.active_block(contract, game_id, index == 0));
         }
 
-        list.add_child(&contracts_screen::section_label("Recent"));
+        list.add_child(&contracts_screen::section_label(
+            contracts_screen::SECTION_RECENT,
+        ));
         if listed.recent.is_empty() {
             list.add_child(&contracts_screen::body_line(
                 "No settled contracts.",
@@ -7176,7 +7176,7 @@ impl PortlightGame {
     fn reset_day_report(&mut self) {
         self.day_report_open = false;
         self.day_report_doc = None;
-        self.day_report_memory = DayReportMemory::default();
+        self.day_report_memory.reset();
     }
 
     fn open_day_report_doc(&mut self, doc: DayReportDocument) {
@@ -7256,8 +7256,10 @@ impl PortlightGame {
             .as_ref()
             .map(day_report::overlay_text)
             .unwrap_or_default();
-        if !deadline_text.contains("1 day left") || !deadline_text.contains("ready to Complete") {
-            self.fail_day_report("Day-report smoke: deadline card missing Complete cue.");
+        if !deadline_text.contains("Spice charter - 1 day left - 10/10")
+            || deadline_text.contains("Complete")
+        {
+            self.fail_day_report("Day-report smoke: deadline card line or no-Complete copy.");
         }
         // R1: Next without Week never — warm-up deadline carries no footer.
         if deadline_text.contains("Week: ") || deadline_text.contains("Next: ") {
@@ -9242,7 +9244,7 @@ impl PortlightGame {
         self.hunt_desk = HuntDesk::default();
         self.day_report_open = false;
         self.day_report_doc = None;
-        self.day_report_memory = DayReportMemory::default();
+        self.day_report_memory.reset();
         self.contracts_open = false;
         self.contracts_notice.clear();
         self.contracts_confirm = None;
@@ -9596,13 +9598,14 @@ fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {
     title_label(text, size, color)
 }
 
-/// Chart port-row control. Same theme fill as [`action_button`].
+/// Chart port-row control. Same theme fill as [`action_button`], plus a
+/// 1 px MUTED left and right border so each button reads as its own control.
 ///
 /// The face is 10 px with no horizontal padding so Market, Contracts, Hire,
-/// Provisions, Work, Shipyard, Harbour, Crew, and Hunt stay on one line
-/// inside the panel. An 11 px face fits seven labels; more grow the panel and
-/// slide the chrome. The minimum height stays 31 px, so the button band
-/// stays y 257-287.
+/// Stores, Work, Shipyard, Harbour, Crew, and Hunt stay on one line inside
+/// the panel. An 11 px face fits seven labels; more grow the panel and slide
+/// the chrome. The minimum height stays 31 px, so the button band stays
+/// y 257-287.
 fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
     let mut button = action_button(text, game, action);
     button.add_theme_font_size_override("font_size", 10);
@@ -9626,6 +9629,16 @@ fn port_row_button(text: &str, game: InstanceId, action: Action) -> Gd<Button> {
         let mut boxed = style.duplicate_resource();
         boxed.set_content_margin(godot::builtin::Side::LEFT, 0.0);
         boxed.set_content_margin(godot::builtin::Side::RIGHT, 0.0);
+        // The border draws inside the box. With the content margin pinned
+        // at 0 it adds no minimum width. Focus is the theme's outline
+        // overlay, so it keeps its own border.
+        if state != "focus" {
+            if let Ok(mut flat) = boxed.clone().try_cast::<StyleBoxFlat>() {
+                flat.set_border_width(godot::builtin::Side::LEFT, 1);
+                flat.set_border_width(godot::builtin::Side::RIGHT, 1);
+                flat.set_border_color(MUTED);
+            }
+        }
         button.add_theme_stylebox_override(state, &boxed);
     }
     button

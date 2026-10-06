@@ -20,6 +20,7 @@ use portlight_sim::model::{InfrastructureRecord, VoyageStatus};
 use portlight_sim::Session;
 
 use crate::encounter_screen;
+use crate::logic::humanize_id;
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -401,10 +402,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
     });
     let mut credit_lines = Vec::new();
     if let Some(credit) = credit {
-        let name = catalog
-            .credit_tier(&credit.tier)
-            .map(|spec| ascii_copy(&spec.name))
-            .unwrap_or_else(|| ascii_copy(&credit.tier));
+        let name = credit_tier_name(&credit.tier);
         credit_lines.push(format!(
             "{name}. Limit {}. Outstanding {}. Interest {}. Next due day {}.",
             credit.credit_limit, credit.outstanding, credit.interest_accrued, credit.next_due_day
@@ -434,7 +432,9 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
             .map(|err| ascii_copy(&err.to_string()))
             .unwrap_or_default();
         if block.is_empty() && active_tier.is_some() && active_rank >= credit_rank(&spec.tier) {
-            let current = active_tier.as_deref().unwrap_or("none");
+            let current = active_tier
+                .as_deref()
+                .map_or_else(|| "none".to_string(), credit_tier_name);
             block = format!("Already have {current} or better");
         }
         credit_offers.push(ActionRow {
@@ -637,7 +637,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
                 .as_ref()
                 .map(|credit| credit.outstanding)
                 .unwrap_or(0);
-            format!("{tier} outstanding {owed}")
+            credit_status(tier, owed)
         })
         .unwrap_or_else(|| "no credit line".to_string());
     let ship_template = world
@@ -875,6 +875,20 @@ fn format_units(value: f64) -> String {
     }
 }
 
+/// Player copy for a credit tier id: the catalog name (`premier_commercial`
+/// reads `Premier Commercial Line`), else [`humanize_id`].
+fn credit_tier_name(tier: &str) -> String {
+    content::content()
+        .credit_tier(tier)
+        .map(|spec| ascii_copy(&spec.name))
+        .unwrap_or_else(|| humanize_id(tier))
+}
+
+/// The credit half of the desk status line: `Merchant Line outstanding 40`.
+fn credit_status(tier: &str, owed: impl std::fmt::Display) -> String {
+    format!("{} outstanding {owed}", credit_tier_name(tier))
+}
+
 /// Catalog text for the desk. An em dash becomes a hyphen. Other non-ASCII
 /// becomes a space so the overlay stays ASCII.
 pub(crate) fn ascii_copy(text: &str) -> String {
@@ -898,9 +912,10 @@ pub(crate) fn parse_positive(text: &str) -> Result<i64, &'static str> {
     }
 }
 
-/// Gold subhead, same as Contracts, Shipyard, Journal, Crew, and Hunt.
+/// Gold subhead, same as Contracts, Shipyard, Journal, Crew, and Hunt:
+/// section heads are 16 px GOLD on every desk.
 pub(crate) fn section_label(text: &str) -> Gd<Label> {
-    let mut label = text_label(text, 18, GOLD);
+    let mut label = text_label(text, 16, GOLD);
     label.set_autowrap_mode(AutowrapMode::WORD_SMART);
     label
 }
@@ -955,6 +970,20 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn credit_status_uses_the_catalog_tier_name() {
+        assert_eq!(
+            credit_status("premier_commercial", 0),
+            "Premier Commercial Line outstanding 0"
+        );
+        assert_eq!(
+            credit_status("merchant_line", 40),
+            "Merchant Line outstanding 40"
+        );
+        assert_eq!(credit_tier_name("house_credit"), "House Credit");
+        assert_eq!(credit_tier_name("no_such_tier"), "No Such Tier");
+    }
 
     fn merchant() -> Session {
         Session::new("Ada", "merchant", 1, None).unwrap()

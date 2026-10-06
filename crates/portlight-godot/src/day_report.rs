@@ -43,6 +43,10 @@ const CARD_Y: f32 = 40.0;
 const CARD_H: f32 = 380.0;
 /// Scroll minimum height with no footer.
 const SCROLL_MIN_H: f32 = 220.0;
+/// Gap between the scroll and the foot. The column's 8 px gap left the
+/// scroll's bottom edge on a body baseline; 4 px gives those rows to the
+/// scroll, so the clip falls in the gap under a line. Card size is unchanged.
+const SCROLL_FOOT_SEP: i32 = 4;
 /// Captain's week: the scroll may give up at most this much so Close stays inside.
 pub(crate) const FOOTER_SCROLL_SHRINK: f32 = 48.0;
 /// Footer rows: at most Week + Next.
@@ -200,6 +204,14 @@ pub(crate) struct DayReportMemory {
     pub week: WeekWindow,
 }
 
+impl DayReportMemory {
+    /// New game / load: every Godot-only snapshot goes, including the
+    /// arrival `visit_price_memory` and Captain's week.
+    pub(crate) fn reset(&mut self) {
+        *self = Self::default();
+    }
+}
+
 pub(crate) fn build_day_report_screen() -> DayReportNodes {
     let mut root = PanelContainer::new_alloc();
     root.set_name("DayReportScreen");
@@ -221,7 +233,8 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     root.add_child(&column);
 
     column.add_child(&text_label("Day's report", 14, MUTED, false));
-    let title = text_label("", 24, GOLD, false);
+    let mut title = text_label("", 24, GOLD, false);
+    title.set_name("DayReportTitle");
     column.add_child(&title);
 
     let mut scroll = ScrollContainer::new_alloc();
@@ -235,7 +248,13 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     body.set_h_size_flags(SizeFlags::EXPAND_FILL);
     body.add_theme_constant_override("separation", 12);
     scroll.add_child(&body);
-    column.add_child(&scroll);
+    let mut stack = VBoxContainer::new_alloc();
+    stack.set_name("DayReportStack");
+    stack.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    stack.set_v_size_flags(SizeFlags::EXPAND_FILL);
+    stack.add_theme_constant_override("separation", SCROLL_FOOT_SEP);
+    stack.add_child(&scroll);
+    column.add_child(&stack);
 
     // Captain's week footer: below scroll, above Close. Not a capped section.
     // Footer and Close share one column slot (sep 4), so a shown footer costs
@@ -244,7 +263,7 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     foot.set_name("DayReportFoot");
     foot.set_h_size_flags(SizeFlags::EXPAND_FILL);
     foot.add_theme_constant_override("separation", FOOTER_SEP);
-    column.add_child(&foot);
+    stack.add_child(&foot);
 
     let mut footer = VBoxContainer::new_alloc();
     footer.set_name("DayReportFooter");
@@ -337,15 +356,30 @@ pub(crate) fn arrival_row_budget(sections: &[DayReportSection]) -> usize {
 /// out again. Movers may drop to zero. Dropped movers get no `+N more`, and no
 /// other line trims for this.
 pub(crate) fn yield_arrival_movers(
-    mut movers: Vec<DayReportLine>,
+    movers: Vec<DayReportLine>,
     build: impl Fn(&[DayReportLine]) -> Vec<DayReportSection>,
 ) -> Vec<DayReportSection> {
+    yield_arrival_rows(movers, Vec::new(), |kept, _| build(kept))
+}
+
+/// Arrival days with Health (GD ruling on the AD edge case): movers yield
+/// first, then Health lines from last to first while the arrival row cost
+/// is still over budget. `build` lays out the card with the kept movers and
+/// kept Health lines. Still over budget once both are gone is accepted.
+/// Arrival contracts, Deadlines and Bounties never trim.
+pub(crate) fn yield_arrival_rows(
+    mut movers: Vec<DayReportLine>,
+    mut health: Vec<DayReportLine>,
+    build: impl Fn(&[DayReportLine], &[DayReportLine]) -> Vec<DayReportSection>,
+) -> Vec<DayReportSection> {
     loop {
-        let sections = build(&movers);
-        if movers.is_empty() || arrival_row_cost(&sections) <= arrival_row_budget(&sections) {
+        let sections = build(&movers, &health);
+        if arrival_row_cost(&sections) <= arrival_row_budget(&sections) {
             return sections;
         }
-        movers.pop();
+        if movers.pop().is_none() && health.pop().is_none() {
+            return sections;
+        }
     }
 }
 
@@ -541,13 +575,26 @@ pub(crate) fn build_document(
     rest.push(("bounties", "Bounties", bounties));
 
     let sections = if arrival_day {
-        // Movers yield first: re-cap with one fewer mover until the rows fit.
-        yield_arrival_movers(movers, |kept| {
+        // Movers yield first, then Health: re-cap with one fewer line until
+        // the rows fit.
+        let health = rest
+            .iter()
+            .find(|(id, _, _)| *id == "health")
+            .map(|(_, _, lines)| lines.clone())
+            .unwrap_or_default();
+        yield_arrival_rows(movers, health, |kept, kept_health| {
             let mut arrival = arrival_contracts.clone();
             arrival.extend_from_slice(kept);
             let mut raw = Vec::with_capacity(rest.len() + 1);
             raw.push(("arrival", "Arrival", arrival));
-            raw.extend(rest.iter().cloned());
+            for (id, title, lines) in &rest {
+                let lines = if *id == "health" {
+                    kept_health.to_vec()
+                } else {
+                    lines.clone()
+                };
+                raw.push((id, title, lines));
+            }
             cap_sections(raw)
         })
     } else {
@@ -839,15 +886,17 @@ fn deadline_lines(
             contract.delivered_quantity, contract.required_quantity
         );
         let need = contract.required_quantity - contract.delivered_quantity;
-        let cue = if need > 0 {
+        // The sale pays a fulfilled contract (R10), so `need <= 0` drops the
+        // hint clause. No Complete or Deliver wording.
+        let text = if need > 0 {
             let good = good_name(&contract.good_id);
             let port = port_label(world, &contract.destination_port_id);
-            format!("sell {need} more {good} at {port}")
+            format!("{title} - {timing} - {progress} - sell {need} more {good} at {port}")
         } else {
-            "ready to Complete at Contracts".to_string()
+            format!("{title} - {timing} - {progress}")
         };
         lines.push(DayReportLine {
-            text: format!("{title} - {timing} - {progress} - {cue}"),
+            text,
             notable: true,
         });
     }
@@ -1229,7 +1278,7 @@ pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
             id: "deadlines",
             title: "Deadlines",
             lines: vec![DayReportLine {
-                text: "Spice charter - 1 day left - 10/10 - ready to Complete at Contracts".into(),
+                text: "Spice charter - 1 day left - 10/10".into(),
                 notable: true,
             }],
         }],
@@ -1260,7 +1309,7 @@ pub(crate) fn smoke_arrival_document(day: i64) -> DayReportDocument {
                 &[(400, Some(3), 0, 0, 0), (520, Some(3), 0, 1, 0)],
             )),
             next: next_line(&NextFacts {
-                contract_days_left: vec![20, 2],
+                contract_days_left: vec![20],
                 claimable: true,
                 captain_wounded: false,
                 provisions: 20,
@@ -1299,11 +1348,14 @@ fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
             title: "Arrival",
             lines: arrival,
         },
+        // The smoke session holds only the Al-Manar contract, which Arrival
+        // already shows, so the staged card carries no Deadlines row that the
+        // live strip would contradict. Health keeps the same row cost.
         DayReportSection {
-            id: "deadlines",
-            title: "Deadlines",
+            id: "health",
+            title: "Health",
             lines: vec![DayReportLine {
-                text: "Grain run - 2 days left - 3/10 - sell 7 more Grain at Corsair's Rest".into(),
+                text: "Healed: Cut hand.".into(),
                 notable: true,
             }],
         },
@@ -1321,6 +1373,54 @@ fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fixture_contract(delivered: i64, required: i64) -> ActiveContract {
+        ActiveContract {
+            offer_id: "offer-spice".into(),
+            template_id: "test".into(),
+            family: "test".into(),
+            title: "Spice charter".into(),
+            accepted_day: 1,
+            deadline_day: 2,
+            destination_port_id: "al_manar".into(),
+            good_id: "grain".into(),
+            required_quantity: required,
+            delivered_quantity: delivered,
+            reward_silver: 100,
+            bonus_reward: 0,
+            source_region: None,
+            source_port: None,
+            inspection_modifier: 1.0,
+            status: "accepted".into(),
+        }
+    }
+
+    /// R10: the sale pays a fulfilled contract, so `need <= 0` keeps
+    /// `{Title} - {timing} - {d}/{r}` and drops the hint clause.
+    #[test]
+    fn deadline_line_drops_hint_when_nothing_is_needed() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let world = session.world();
+        let active = vec![fixture_contract(10, 10), fixture_contract(12, 10)];
+        let lines = deadline_lines(&active, 1, &[], world, None);
+        let texts: Vec<&str> = lines.iter().map(|line| line.text.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec![
+                "Spice charter - 1 day left - 10/10",
+                "Spice charter - 1 day left - 12/10"
+            ]
+        );
+        for text in texts {
+            assert!(!text.contains("Complete"), "{text}");
+            assert!(!text.contains("Deliver"), "{text}");
+        }
+        let open = deadline_lines(&[fixture_contract(3, 10)], 1, &[], world, None);
+        assert_eq!(
+            open[0].text,
+            "Spice charter - 1 day left - 3/10 - sell 7 more Grain at Al-Manar"
+        );
+    }
 
     #[test]
     fn deadline_timing_never_says_due_soon() {
@@ -2151,7 +2251,7 @@ mod tests {
             id: "deadlines",
             title: "Deadlines",
             lines: vec![line(
-                "Spice charter - 1 day left - 10/10 - ready to Complete at Contracts",
+                "Grain run - 1 day left - 3/10 - sell 7 more Grain at Corsair's Rest",
                 true,
             )],
         };
@@ -2522,13 +2622,23 @@ mod tests {
 
     #[test]
     fn visit_price_memory_resets_with_day_report_memory() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
         let mut memory = DayReportMemory::default();
         memory.visit_price_memory.insert(
             "porto_novo".into(),
             [("grain".into(), 12)].into_iter().collect(),
         );
-        memory = DayReportMemory::default();
+        memory.price_memory.insert("grain".into(), 12);
+        memory.active_bounties.insert("gnaw".into());
+        memory.claimable_seen.insert("gnaw".into());
+        memory.week.push(week_sample(&session));
+        assert!(!memory.visit_price_memory.is_empty());
+        memory.reset();
         assert!(memory.visit_price_memory.is_empty());
+        assert!(memory.price_memory.is_empty());
+        assert!(memory.active_bounties.is_empty());
+        assert!(memory.claimable_seen.is_empty());
+        assert_eq!(memory.week.len(), 0);
     }
 
     fn kept_movers<'a>(sections: &'a [DayReportSection], movers: &[DayReportLine]) -> Vec<&'a str> {
@@ -2597,11 +2707,17 @@ mod tests {
     #[test]
     fn arrival_movers_yield_to_zero_with_four_heads() {
         let movers = smoke_arrival_movers();
-        let staged = smoke_arrival_sections(&[]);
-        let contract = staged[0].lines[0].clone();
-        let deadline = staged[1].lines[0].clone();
-        let claim = staged[2].lines[0].clone();
+        let contract = line(
+            "Porcelain for Al-Manar estate - 0/5 - 20 days left - sell 5 more Porcelain here",
+            true,
+        );
+        let deadline = line(
+            "Grain run - 2 days left - 3/10 - sell 7 more Grain at Corsair's Rest",
+            true,
+        );
+        let claim = line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true);
         let health = line("Healed: Cut hand.", true);
+        // Movers-only yield (no Health stage): over budget once movers are gone.
         let sections = yield_arrival_movers(movers.clone(), |kept| {
             let mut arrival = vec![contract.clone()];
             arrival.extend_from_slice(kept);
@@ -2615,12 +2731,122 @@ mod tests {
         assert_eq!(arrival_row_budget(&sections), ARRIVAL_ROW_BUDGET_FOUR_HEADS);
         assert!(kept_movers(&sections, &movers).is_empty());
         assert!(!has_more_row(&sections[0]));
-        assert_eq!(sections[0].lines, vec![contract]);
-        assert_eq!(sections[1].lines, vec![deadline]);
-        assert_eq!(sections[2].lines, vec![health]);
-        assert_eq!(sections[3].lines, vec![claim]);
-        // Still over budget once movers are gone: nothing else trims.
+        assert_eq!(sections[0].lines, vec![contract.clone()]);
+        assert_eq!(sections[1].lines, vec![deadline.clone()]);
+        assert_eq!(sections[2].lines, vec![health.clone()]);
+        assert_eq!(sections[3].lines, vec![claim.clone()]);
         assert_eq!(arrival_row_cost(&sections), 9);
+
+        // GD ruling: Health yields next, so Claim ready stays inside the budget.
+        let build = |kept: &[DayReportLine], kept_health: &[DayReportLine]| {
+            let mut arrival = vec![contract.clone()];
+            arrival.extend_from_slice(kept);
+            cap_sections(vec![
+                ("arrival", "Arrival", arrival),
+                ("deadlines", "Deadlines", vec![deadline.clone()]),
+                ("health", "Health", kept_health.to_vec()),
+                ("bounties", "Bounties", vec![claim.clone()]),
+            ])
+        };
+        let sections = yield_arrival_rows(movers.clone(), vec![health.clone()], build);
+        assert!(kept_movers(&sections, &movers).is_empty());
+        assert!(sections
+            .iter()
+            .all(|section| section.id != "health" || section.lines.is_empty()));
+        let drawn: Vec<&DayReportSection> =
+            sections.iter().filter(|s| !s.lines.is_empty()).collect();
+        assert_eq!(drawn.len(), 3);
+        assert_eq!(arrival_row_budget(&sections), ARRIVAL_ROW_BUDGET);
+        assert!(arrival_row_cost(&sections) <= arrival_row_budget(&sections));
+        assert_eq!(drawn[2].lines, vec![claim.clone()]);
+        assert_eq!(drawn[0].lines, vec![contract.clone()]);
+        assert_eq!(drawn[1].lines, vec![deadline.clone()]);
+    }
+
+    #[test]
+    fn arrival_health_yields_last_line_first_and_keeps_what_fits() {
+        let contract = line("Porcelain for Al-Manar estate - 0/5 - 20 days left", true);
+        let claim = line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true);
+        let health = vec![
+            line("Healed: Cut hand.", true),
+            line("Healing: Bruised ribs.", false),
+            line("Healing: Sprained wrist.", false),
+        ];
+        let build = |kept: &[DayReportLine], kept_health: &[DayReportLine]| {
+            let mut arrival = vec![contract.clone()];
+            arrival.extend_from_slice(kept);
+            cap_sections(vec![
+                ("arrival", "Arrival", arrival),
+                ("health", "Health", kept_health.to_vec()),
+                ("bounties", "Bounties", vec![claim.clone()]),
+            ])
+        };
+        // Movers go first; with none left the card costs 3 heads + 5 rows = 8,
+        // which fits, so every Health line stays.
+        let movers = smoke_arrival_movers();
+        let sections = yield_arrival_rows(movers.clone(), health.clone(), build);
+        assert!(kept_movers(&sections, &movers).is_empty());
+        let kept_health = &sections.iter().find(|s| s.id == "health").unwrap().lines;
+        assert_eq!(kept_health, &health);
+        assert_eq!(arrival_row_cost(&sections), 8);
+
+        // With one more Arrival contract, the last Health line drops first.
+        let second = line("Spice for Al-Manar - 0/4 - 9 days left", true);
+        let build_two = |kept: &[DayReportLine], kept_health: &[DayReportLine]| {
+            let mut arrival = vec![contract.clone(), second.clone()];
+            arrival.extend_from_slice(kept);
+            cap_sections(vec![
+                ("arrival", "Arrival", arrival),
+                ("health", "Health", kept_health.to_vec()),
+                ("bounties", "Bounties", vec![claim.clone()]),
+            ])
+        };
+        let sections = yield_arrival_rows(Vec::new(), health.clone(), build_two);
+        let kept_health = &sections.iter().find(|s| s.id == "health").unwrap().lines;
+        assert_eq!(kept_health, &health[..2].to_vec());
+        assert!(arrival_row_cost(&sections) <= arrival_row_budget(&sections));
+        let bounties = sections.iter().find(|s| s.id == "bounties").unwrap();
+        assert_eq!(bounties.lines, vec![claim.clone()]);
+    }
+
+    #[test]
+    fn arrival_still_over_budget_after_health_is_accepted() {
+        let wrapped = |title: &str| {
+            line(
+                &format!(
+                    "{title} for Al-Manar estate - 0/5 - 20 days left - sell 5 more {title} here"
+                ),
+                true,
+            )
+        };
+        let contracts = vec![wrapped("Porcelain"), wrapped("Spice"), wrapped("Timber")];
+        let deadline = line("Grain run - 2 days left - 3/10", true);
+        let claim = line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true);
+        let build = |_: &[DayReportLine], kept_health: &[DayReportLine]| {
+            cap_sections(vec![
+                ("arrival", "Arrival", contracts.clone()),
+                ("deadlines", "Deadlines", vec![deadline.clone()]),
+                ("health", "Health", kept_health.to_vec()),
+                ("bounties", "Bounties", vec![claim.clone()]),
+            ])
+        };
+        let sections = yield_arrival_rows(Vec::new(), vec![line("Healed: Cut hand.", true)], build);
+        assert!(sections
+            .iter()
+            .all(|s| s.id != "health" || s.lines.is_empty()));
+        assert_eq!(
+            sections.iter().find(|s| s.id == "arrival").unwrap().lines,
+            contracts
+        );
+        assert_eq!(
+            sections.iter().find(|s| s.id == "deadlines").unwrap().lines,
+            vec![deadline.clone()]
+        );
+        assert_eq!(
+            sections.iter().find(|s| s.id == "bounties").unwrap().lines,
+            vec![claim.clone()]
+        );
+        assert!(arrival_row_cost(&sections) > arrival_row_budget(&sections));
     }
 
     #[test]
