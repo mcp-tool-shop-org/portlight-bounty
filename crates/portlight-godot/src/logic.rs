@@ -345,8 +345,73 @@ pub(crate) struct EncounterView {
     /// different colours. Concatenate [`DeltaSpan::text`] for the line.
     pub delta: Vec<DeltaSpan>,
     pub actions: Vec<ScreenAction>,
+    /// Muted lines under Spare and Take all on a win's Outcome card. `None`
+    /// on every other card, including after the choice (#41's receipt is the
+    /// post-click truth).
+    pub choice_preview: Option<ChoicePreview>,
     /// Always set. The portrait slot is [`PORTRAIT_PLACEHOLDER`].
     pub portrait_placeholder: bool,
+}
+
+/// Pre-click copy for the two mercy/greed buttons. Only the deterministic
+/// purse and standing are shown. Loot, morale, and departures roll at
+/// finalize, so they are never previewed as values.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ChoicePreview {
+    pub spare: String,
+    pub take_all: String,
+}
+
+impl ChoicePreview {
+    /// The line for `action`. Capture has none in P0.
+    pub(crate) fn line_for(&self, action: &ScreenAction) -> Option<&str> {
+        match action {
+            ScreenAction::Spare => Some(&self.spare),
+            ScreenAction::TakeAll => Some(&self.take_all),
+            _ => None,
+        }
+    }
+}
+
+/// Underworld standing on a won duel when the captain spares
+/// (`record_duel_standing` in `session.rs`).
+pub(crate) const SPARE_STANDING: i64 = 5;
+/// Underworld standing on a won duel when the captain takes all.
+pub(crate) const TAKE_ALL_STANDING: i64 = 2;
+
+/// Silver `Session::spare` pays: `20 + strength * 3` (`finalize_victory`).
+pub(crate) fn spare_purse(strength: i64) -> i64 {
+    strength.saturating_mul(3).saturating_add(20)
+}
+
+/// Silver `Session::take_all` pays: `20 + strength * 7` (`finalize_victory`).
+pub(crate) fn take_all_purse(strength: i64) -> i64 {
+    strength.saturating_mul(7).saturating_add(20)
+}
+
+/// `+32 silver - Underworld +5.` for Strength 4. ASCII only.
+pub(crate) fn spare_preview(strength: i64) -> String {
+    format!(
+        "{} silver - Underworld {}.",
+        signed_delta(spare_purse(strength)),
+        signed_delta(SPARE_STANDING)
+    )
+}
+
+/// `+48 silver - Underworld +2 - loot unknown.` for Strength 4. ASCII only.
+pub(crate) fn take_all_preview(strength: i64) -> String {
+    format!(
+        "{} silver - Underworld {} - loot unknown.",
+        signed_delta(take_all_purse(strength)),
+        signed_delta(TAKE_ALL_STANDING)
+    )
+}
+
+pub(crate) fn choice_preview(strength: i64) -> ChoicePreview {
+    ChoicePreview {
+        spare: spare_preview(strength),
+        take_all: take_all_preview(strength),
+    }
 }
 
 /// Whose loss a clause names. A gain, a label, or a separator is [`DeltaTone::Neutral`].
@@ -522,6 +587,8 @@ fn view(phase: ScreenPhase, facts: &EncounterFacts, actions: Vec<ScreenAction>) 
         card: card_text(facts, phase),
         log: facts.log.clone(),
         delta: delta_spans(facts),
+        choice_preview: (phase == ScreenPhase::Outcome && facts.pending_victory)
+            .then(|| choice_preview(facts.strength)),
         actions,
         portrait_placeholder: true,
     }
@@ -2479,6 +2546,108 @@ mod tests {
     }
 
     #[test]
+    fn purse_formulas_match_finalize_victory() {
+        for strength in [0, 1, 4, 9, 12, 100] {
+            assert_eq!(spare_purse(strength), 20 + strength * 3, "{strength}");
+            assert_eq!(take_all_purse(strength), 20 + strength * 7, "{strength}");
+            assert!(take_all_purse(strength) >= spare_purse(strength));
+        }
+        assert_eq!(SPARE_STANDING, 5);
+        assert_eq!(TAKE_ALL_STANDING, 2);
+        // A huge strength saturates rather than overflowing the UI.
+        assert_eq!(spare_purse(i64::MAX), i64::MAX);
+        assert_eq!(take_all_purse(i64::MAX), i64::MAX);
+    }
+
+    #[test]
+    fn choice_preview_copy_is_the_binding_text() {
+        // Brief example: Strength 4.
+        assert_eq!(spare_preview(4), "+32 silver - Underworld +5.");
+        assert_eq!(
+            take_all_preview(4),
+            "+48 silver - Underworld +2 - loot unknown."
+        );
+        // Strength 0 still pays the base 20.
+        assert_eq!(spare_preview(0), "+20 silver - Underworld +5.");
+        assert_eq!(
+            take_all_preview(0),
+            "+20 silver - Underworld +2 - loot unknown."
+        );
+        // Plain integers, no thousands separator (matches the receipt).
+        assert_eq!(spare_preview(1000), "+3020 silver - Underworld +5.");
+        assert_eq!(
+            take_all_preview(1000),
+            "+7020 silver - Underworld +2 - loot unknown."
+        );
+        let preview = choice_preview(4);
+        assert_eq!(preview.spare, spare_preview(4));
+        assert_eq!(preview.take_all, take_all_preview(4));
+    }
+
+    #[test]
+    fn choice_preview_copy_is_ascii_with_no_promises() {
+        for strength in [0, 1, 4, 12, 1000] {
+            for line in [spare_preview(strength), take_all_preview(strength)] {
+                assert!(line.is_ascii(), "{line}");
+                assert!(
+                    !line.contains('\u{2014}') && !line.contains('\u{2013}'),
+                    "{line}"
+                );
+                assert!(!line.contains("--"), "{line}");
+                assert!(line.contains(" - "), "{line}");
+                assert!(line.ends_with('.'), "{line}");
+                assert!(!line.contains("Purse"), "{line}");
+                assert!(!line.to_ascii_lowercase().contains("win"), "{line}");
+                assert!(!line.contains('_'), "{line}");
+            }
+        }
+        assert!(!spare_preview(4).contains("loot"));
+    }
+
+    #[test]
+    fn choice_preview_lines_sit_under_spare_and_take_all_only() {
+        let preview = choice_preview(4);
+        assert_eq!(
+            preview.line_for(&ScreenAction::Spare),
+            Some("+32 silver - Underworld +5.")
+        );
+        assert_eq!(
+            preview.line_for(&ScreenAction::TakeAll),
+            Some("+48 silver - Underworld +2 - loot unknown.")
+        );
+        assert_eq!(preview.line_for(&ScreenAction::Capture), None);
+        assert_eq!(
+            preview.line_for(&ScreenAction::Return { at_sea: true }),
+            None
+        );
+    }
+
+    #[test]
+    fn choice_preview_shows_only_while_the_win_is_pending() {
+        let mut facts = facts_for_catalog_captain("raj_the_quiet", None, true).unwrap();
+        let strength = facts.strength;
+        assert!(present(&facts).unwrap().choice_preview.is_none());
+        facts.phase = "resolved".to_string();
+        facts.pending_victory = true;
+        let outcome = present(&facts).unwrap();
+        assert_eq!(outcome.choice_preview, Some(choice_preview(strength)));
+        // Strength stays on the card; the preview reads the same number.
+        assert!(outcome.card.contains(&format!("Strength {strength}")));
+        // After the choice the card is still Outcome, but the preview is gone.
+        facts.pending_victory = false;
+        let done = present(&facts).unwrap();
+        assert_eq!(done.phase, ScreenPhase::Outcome);
+        assert!(done.choice_preview.is_none());
+        // Capture-available is Outcome without a pending win: no preview.
+        facts.phase = "capture_available".to_string();
+        assert!(present(&facts).unwrap().choice_preview.is_none());
+        for phase in ["naval", "boarding", "duel"] {
+            facts.phase = phase.to_string();
+            assert!(present(&facts).unwrap().choice_preview.is_none(), "{phase}");
+        }
+    }
+
+    #[test]
     fn scripted_boarding_walks_approach_naval_boarding_and_outcome() {
         let mut session = scripted_session();
         let approach =
@@ -2544,8 +2713,17 @@ mod tests {
         );
         assert_eq!(outcome.log, facts.log);
         assert!(!outcome.log.is_empty());
+        let preview = outcome.choice_preview.clone().unwrap();
         let silver = session.world().captain.silver;
         let receipt = session.spare().unwrap();
+        // The pre-click line is the receipt's purse and standing.
+        assert_eq!(
+            preview.spare,
+            format!(
+                "+{} silver - Underworld +{}.",
+                receipt.silver_delta, receipt.standing_delta
+            )
+        );
         let lines = victory_receipt_lines(&receipt);
         assert!(lines.iter().any(|line| line.starts_with("Spared ")));
         assert!(lines
@@ -2646,10 +2824,19 @@ mod tests {
             facts = adopt(&session, &step, Some(&facts), &[], &actions);
         }
         assert!(session.pending_victory());
-        assert_eq!(present(&facts).unwrap().phase, ScreenPhase::Outcome);
+        let outcome = present(&facts).unwrap();
+        assert_eq!(outcome.phase, ScreenPhase::Outcome);
         assert!(session.world().pending_duel.is_some());
+        let preview = outcome.choice_preview.unwrap();
 
-        session.take_all().unwrap();
+        let receipt = session.take_all().unwrap();
+        assert_eq!(
+            preview.take_all,
+            format!(
+                "+{} silver - Underworld +{} - loot unknown.",
+                receipt.silver_delta, receipt.standing_delta
+            )
+        );
         assert!(!session.pending_victory());
         assert!(
             session.world().pending_duel.is_none(),
