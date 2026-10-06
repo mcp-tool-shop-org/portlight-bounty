@@ -7204,6 +7204,23 @@ impl PortlightGame {
             self.fail_hunt("Hunt smoke: forage at sea opened a fight or skipped the day.");
         }
         self.ask_hunt(&first);
+        let crew_fact = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| {
+                format!(
+                    "Boarding can cost crew - you have {}, need {} to sail.",
+                    ship.crew,
+                    portlight_sim::ship::template_crew_min(ship)
+                )
+            });
+        if crew_fact.is_none_or(|fact| !self.hunt_desk.notice.ends_with(&fact)) {
+            self.fail_hunt(format!(
+                "Hunt smoke: confirm did not state the crew fact ({}).",
+                self.hunt_desk.notice
+            ));
+        }
         self.confirm_hunt();
         let hunting = self.phase_is(ScreenPhase::Approach)
             && self
@@ -8665,7 +8682,13 @@ impl PortlightGame {
 
     fn ask_hunt(&mut self, id: &str) {
         let name = hunt_screen::display_name(id, &self.hunt_desk.known);
-        self.hunt_desk.notice = hunt_screen::hunt_confirm_text(&name);
+        // F1: the flagship's crew against the minimum `depart` refuses on.
+        let crew = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| (ship.crew, portlight_sim::ship::template_crew_min(ship)));
+        self.hunt_desk.notice = hunt_screen::hunt_confirm_text(&name, crew);
         self.hunt_desk.confirm = Some(HuntConfirm::HuntTarget(id.to_string()));
         self.refresh();
     }
