@@ -7009,6 +7009,7 @@ impl PortlightGame {
             .crew
             .set_text(&format!("Crew to the prize  {crew_count}"));
         let actions = view.actions.clone();
+        let preview = view.choice_preview.clone();
         let mut box_node = nodes.actions.clone();
         clear_children(&mut box_node);
         let mut row = HBoxContainer::new_alloc();
@@ -7022,6 +7023,10 @@ impl PortlightGame {
                 count = 0;
             }
             let caption = action_caption(&action);
+            let line = preview
+                .as_ref()
+                .and_then(|preview| preview.line_for(&action))
+                .map(str::to_string);
             let command = match action {
                 ScreenAction::Choice(choice) => Action::EncounterChoice(choice.to_string()),
                 ScreenAction::Naval(action) => Action::Naval(action),
@@ -7032,7 +7037,18 @@ impl PortlightGame {
                 ScreenAction::TakeAll => Action::TakeAll,
                 ScreenAction::Return { .. } => Action::LeaveEncounter,
             };
-            row.add_child(&encounter_button(&caption, game_id, command));
+            let mut button = encounter_button(&caption, game_id, command);
+            match line {
+                Some(line) => row.add_child(&encounter_screen::choice_cell(button, &line)),
+                None => {
+                    // Beside a preview cell, a bare button (Capture) keeps its
+                    // own height instead of stretching to the cell's.
+                    if preview.is_some() {
+                        button.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+                    }
+                    row.add_child(&button);
+                }
+            }
             count += 1;
         }
         if count > 0 {
@@ -9044,6 +9060,102 @@ impl PortlightGame {
             self.smoke_ok = false;
             self.push_log("Encounter smoke: pending_victory was not set.".to_string());
         }
+        self.expect_choice_previews("Encounter smoke");
+        self.expect_escape_inert_mid_choice();
+    }
+
+    /// The drawn muted lines under the Outcome buttons, in button order.
+    fn choice_preview_lines(&self) -> Vec<String> {
+        let Some(nodes) = self.encounter_nodes.as_ref() else {
+            return Vec::new();
+        };
+        labels_under_box(&nodes.actions)
+            .into_iter()
+            .filter(|label| {
+                label.get_name() == encounter_screen::CHOICE_PREVIEW && label.is_visible_in_tree()
+            })
+            .map(|label| label.get_text().to_string())
+            .collect()
+    }
+
+    /// Spare and Take all each carry the binding line from `facts.strength`.
+    /// Capture carries none.
+    fn expect_choice_previews(&mut self, scope: &str) {
+        let strength = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.strength)
+            .unwrap_or_default();
+        let expected = vec![
+            crate::logic::spare_preview(strength),
+            crate::logic::take_all_preview(strength),
+        ];
+        let drawn = self.choice_preview_lines();
+        if drawn != expected {
+            self.smoke_ok = false;
+            self.push_log(format!(
+                "{scope}: outcome previews were {drawn:?}, expected {expected:?}."
+            ));
+            return;
+        }
+        godot_print!("encounter choice preview {}", drawn.join(" | "));
+    }
+
+    /// `ui_cancel` mid-choice does not leave, spare, or take.
+    fn expect_escape_inert_mid_choice(&mut self) {
+        let silver = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.silver);
+        self.dismiss_cancel();
+        let still_pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.pending_victory());
+        let same_silver = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.silver)
+            == silver;
+        if !still_pending
+            || !same_silver
+            || self.encounter.is_none()
+            || !self.phase_is(ScreenPhase::Outcome)
+            || self.choice_preview_lines().len() != 2
+        {
+            self.smoke_ok = false;
+            self.push_log("Encounter smoke: Escape acted on the outcome choice.".to_string());
+        }
+    }
+
+    /// After the choice the previews are gone and #41's receipt carries the
+    /// purse the preview named.
+    fn expect_previews_cleared(&mut self, scope: &str, spared: bool) {
+        if !self.choice_preview_lines().is_empty() {
+            self.smoke_ok = false;
+            self.push_log(format!(
+                "{scope}: outcome previews stayed after the choice."
+            ));
+        }
+        let strength = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.strength)
+            .unwrap_or_default();
+        let purse = if spared {
+            crate::logic::spare_purse(strength)
+        } else {
+            crate::logic::take_all_purse(strength)
+        };
+        let receipt = format!("+{purse} silver.");
+        let logged = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| facts.log.lines().any(|line| line == receipt));
+        if !logged {
+            self.smoke_ok = false;
+            self.push_log(format!("{scope}: receipt did not log {receipt}"));
+        }
     }
 
     fn expect_returned(&mut self) {
@@ -9059,6 +9171,7 @@ impl PortlightGame {
             self.smoke_ok = false;
             self.push_log("Encounter smoke: spare did not leave the outcome card.".to_string());
         }
+        self.expect_previews_cleared("Encounter smoke", true);
     }
 
     fn report_encounter_smoke(&mut self) {
@@ -9125,7 +9238,9 @@ impl PortlightGame {
                 "Bounty smoke: pending_duel cleared before the encounter ended.".to_string(),
             );
         }
+        self.expect_choice_previews("Bounty smoke");
         self.take_prize();
+        self.expect_previews_cleared("Bounty smoke", false);
         let cleared = self
             .session
             .as_ref()

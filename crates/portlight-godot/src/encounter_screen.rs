@@ -335,6 +335,28 @@ fn placeholder_panel() -> Gd<PanelContainer> {
     panel
 }
 
+/// Node name of the muted preview line under an Outcome button.
+pub(crate) const CHOICE_PREVIEW: &str = "ChoicePreview";
+
+/// One Outcome button with its muted preview line directly under it.
+/// The button keeps its own width (the cell does not stretch it), and the
+/// line is the 14 px [`MUTED`] note used for helpers. No wrap: the line is
+/// short enough for the column at 1280.
+pub(crate) fn choice_cell(mut button: Gd<Button>, preview: &str) -> Gd<VBoxContainer> {
+    let mut cell = VBoxContainer::new_alloc();
+    cell.set_name("ChoiceCell");
+    cell.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+    cell.add_theme_constant_override("separation", 4);
+    button.set_h_size_flags(SizeFlags::SHRINK_BEGIN);
+    cell.add_child(&button);
+    let mut line = text_label(preview, 14, MUTED);
+    line.set_name(CHOICE_PREVIEW);
+    line.set_autowrap_mode(AutowrapMode::OFF);
+    line.set_mouse_filter(MouseFilter::IGNORE);
+    cell.add_child(&line);
+    cell
+}
+
 /// Tan fill, 2 px gold border, 8 px margin. Cream at rest. Dark ink on hover
 /// and focus: cream on the hover fill is 2.76:1, and this ink is 5.08:1.
 /// The chart panel does not use this style.
