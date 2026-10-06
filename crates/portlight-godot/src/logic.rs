@@ -1773,7 +1773,7 @@ pub(crate) fn duel_prompt(duel: &portlight_sim::model::PendingDuel) -> String {
 }
 
 /// R11. One log line for a finished duel, zero terms dropped (R4).
-/// `result` is `Won`, `Draw` or `Lost`.
+/// `result` is `Won`, `Drew` or `Lost`.
 pub(crate) fn duel_result_line(result: &str, opponent: &str, silver: i64, standing: i64) -> String {
     let mut line = if opponent.is_empty() {
         format!("{result} the duel.")
@@ -3147,8 +3147,8 @@ mod tests {
             "Lost the duel with Bram. Silver -36."
         );
         assert_eq!(
-            duel_result_line("Draw", "Bram", 0, 0),
-            "Draw the duel with Bram."
+            duel_result_line("Drew", "Bram", 0, 0),
+            "Drew the duel with Bram."
         );
         assert_eq!(
             duel_result_line("Won", "", 0, 2),

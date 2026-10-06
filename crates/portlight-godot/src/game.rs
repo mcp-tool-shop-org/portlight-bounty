@@ -3976,6 +3976,8 @@ impl PortlightGame {
     }
 
     fn work_docks(&mut self) {
+        // T-N: Work is a port action like a trade, so the paid notice goes.
+        self.market_notice.clear();
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -8037,11 +8039,11 @@ impl PortlightGame {
             self.fail_contract_strip("Contract-strip smoke: at-sea click opened Contracts.");
         }
 
-        // Complete-at-Contracts is unreachable via Session::sell (auto-settle);
-        // pure unit tests cover that cue. Note for the PR.
+        // The strip cue is always the deadline timing. There is no Complete
+        // cue: Session::sell settles a delivered contract on the sale.
         if self.smoke_ok {
             self.push_log(
-                "Contract-strip smoke: hide, accept, cap, click, urgent, sea no-op ok. Complete cue unit-test-only."
+                "Contract-strip smoke: hide, accept, cap, click, urgent, sea no-op ok. Cue is deadline timing."
                     .to_string(),
             );
         }
@@ -8211,6 +8213,13 @@ impl PortlightGame {
                 "Trade smoke: the Market box did not lead with the notice ({shown:?})."
             ));
         }
+        self.perform(Action::Work);
+        if !self.market_notice.is_empty() {
+            self.fail_trade("Trade smoke: Work kept the paid notice.");
+        }
+        // Put the notice back so Next day has one to clear.
+        self.market_notice = vec![paid.clone()];
+        self.refresh();
         self.perform(Action::NextDay);
         if !self.market_notice.is_empty() {
             self.fail_trade("Trade smoke: Next day kept the paid notice.");
@@ -9228,7 +9237,7 @@ fn duel_outcome_line(outcome: &DuelOutcome) -> String {
     let result = if outcome.player_won {
         "Won"
     } else if outcome.draw {
-        "Draw"
+        "Drew"
     } else {
         "Lost"
     };
@@ -9246,7 +9255,7 @@ fn fight_result_line(step: &EncounterStep, silver_delta: i64) -> Option<String> 
     let result = if step.player_won {
         "Won"
     } else if step.draw {
-        "Draw"
+        "Drew"
     } else if step.phase == "resolved" {
         "Lost"
     } else {

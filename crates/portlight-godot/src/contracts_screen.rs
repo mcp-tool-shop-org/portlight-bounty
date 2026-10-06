@@ -502,8 +502,23 @@ mod tests {
             "Contract defaulted: failed to deliver Grain to Corsair's Rest"
         );
         // An id content does not know is title-cased; plain words stay.
-        let odd = delivered("Settled with iron_wolves today.");
-        assert_eq!(outcome_summary(&odd), "Settled with Iron Wolves today.");
+        // `saltmarsh_guild` is in no catalog, so this is the humanize path.
+        let odd = delivered("Settled with saltmarsh_guild today.");
+        assert_eq!(outcome_summary(&odd), "Settled with Saltmarsh Guild today.");
+        // A destination port and a good content does not list fall back too.
+        let mut unknown = delivered("Delivered 4 whale_oil to drowned_quay.");
+        unknown.good_id = "whale_oil".into();
+        unknown.destination_port_id = "drowned_quay".into();
+        assert!(portlight_sim::content::content()
+            .port("drowned_quay")
+            .is_none());
+        assert!(portlight_sim::content::content()
+            .good("whale_oil")
+            .is_none());
+        assert_eq!(
+            outcome_summary(&unknown),
+            "Delivered 4 Whale Oil to Drowned Quay."
+        );
         assert_eq!(
             outcome_terms(&outcome, false),
             " - Silver +615 - Trust +1 - Standing +2"
