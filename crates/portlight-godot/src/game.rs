@@ -7493,8 +7493,9 @@ impl PortlightGame {
     }
 
     /// Arrival card: accept an Al-Manar contract at Porto Novo, sail, Next day
-    /// until docked, assert arrival title + Arrival section, Escape closes.
-    /// Quiet arrival (no content) stays hidden. Returns false when a step failed.
+    /// until docked, assert arrival title + Arrival section, Escape closes, and
+    /// an already-docked Next day keeps the day title. Quiet arrival is pinned
+    /// by unit tests. Returns false when a step failed.
     fn run_day_report_arrival_smoke(&mut self) -> bool {
         self.start_game();
         if self.session.is_none() {

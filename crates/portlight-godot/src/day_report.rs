@@ -4,6 +4,8 @@
 //! Section order: Deadlines → Health → Prices → Bounties. §13 overrides §§1–12.
 //! Arrival day (sailed→InPort): Arrival → Deadlines → Health → Bounties
 //! (no Prices; visit movers live under Arrival). Title `Arrived - {Port}`.
+//! Movers yield first: they drop (lowest-ranked first) until the arrival row
+//! budget fits, so Claim ready stays above the fold.
 //!
 //! Captain's week: a ride-along footer (Week deltas + one Next hint) below the
 //! scroll. It never opens the card, is not a [`DayReportLine`], and does not
@@ -51,6 +53,15 @@ const FOOTER_SEP: i32 = 4;
 /// body lines; a line over [`FOOTER_WRAP_CHARS`] counts as 2.
 pub(crate) const FOOTER_BODY_BUDGET: usize = 6;
 pub(crate) const FOOTER_WRAP_CHARS: usize = 60;
+/// Arrival mover yield: a body line over this many chars wraps to two rows at
+/// card width (measured: the 69-char Deadlines line fits, the 78-char contract
+/// line wraps). Separate from [`FOOTER_WRAP_CHARS`], which is deliberately
+/// conservative for the footer.
+pub(crate) const ARRIVAL_WRAP_CHARS: usize = 70;
+/// Arrival row budget when the card draws at most 3 section heads.
+pub(crate) const ARRIVAL_ROW_BUDGET: usize = 8;
+/// Arrival row budget when the card draws 4 section heads.
+pub(crate) const ARRIVAL_ROW_BUDGET_FOUR_HEADS: usize = 7;
 
 /// Captain's week rolling window (Godot memory only, never saved).
 pub(crate) const WEEK_N: usize = 5;
@@ -298,6 +309,49 @@ pub(crate) fn apply_document(nodes: &mut DayReportNodes, doc: &DayReportDocument
 /// (two when the line is longer than [`FOOTER_WRAP_CHARS`]). Empty sections
 /// contribute nothing (they are not drawn).
 pub(crate) fn footer_body_cost(sections: &[DayReportSection]) -> usize {
+    body_row_cost(sections, FOOTER_WRAP_CHARS)
+}
+
+/// Arrival row cost: one per drawn section head, plus one per line (two when
+/// the line is longer than [`ARRIVAL_WRAP_CHARS`]).
+pub(crate) fn arrival_row_cost(sections: &[DayReportSection]) -> usize {
+    body_row_cost(sections, ARRIVAL_WRAP_CHARS)
+}
+
+/// Arrival row budget: 8 with at most 3 drawn section heads, 7 with 4.
+pub(crate) fn arrival_row_budget(sections: &[DayReportSection]) -> usize {
+    let heads = sections
+        .iter()
+        .filter(|section| !section.lines.is_empty())
+        .count();
+    if heads >= 4 {
+        ARRIVAL_ROW_BUDGET_FOUR_HEADS
+    } else {
+        ARRIVAL_ROW_BUDGET
+    }
+}
+
+/// Arrival days: movers yield before anything else (C1). `build` lays out the
+/// card with the kept movers (rank order). While the arrival row cost exceeds
+/// the arrival row budget, the lowest-ranked mover drops and the card is laid
+/// out again. Movers may drop to zero. Dropped movers get no `+N more`, and no
+/// other line trims for this.
+pub(crate) fn yield_arrival_movers(
+    mut movers: Vec<DayReportLine>,
+    build: impl Fn(&[DayReportLine]) -> Vec<DayReportSection>,
+) -> Vec<DayReportSection> {
+    loop {
+        let sections = build(&movers);
+        if movers.is_empty() || arrival_row_cost(&sections) <= arrival_row_budget(&sections) {
+            return sections;
+        }
+        movers.pop();
+    }
+}
+
+/// Heads + lines; a line longer than `wrap_chars` counts as 2. Empty sections
+/// contribute nothing (they are not drawn).
+fn body_row_cost(sections: &[DayReportSection], wrap_chars: usize) -> usize {
     sections
         .iter()
         .filter(|section| !section.lines.is_empty())
@@ -306,7 +360,7 @@ pub(crate) fn footer_body_cost(sections: &[DayReportSection]) -> usize {
                 .lines
                 .iter()
                 .map(|line| {
-                    if line.text.chars().count() > FOOTER_WRAP_CHARS {
+                    if line.text.chars().count() > wrap_chars {
                         2
                     } else {
                         1
@@ -453,16 +507,12 @@ pub(crate) fn build_document(
     let docked_port = (world.voyage.status == VoyageStatus::InPort)
         .then_some(world.voyage.destination_id.as_str());
 
-    let arrival = if arrival_day {
-        if let Some(port_id) = docked_port {
-            let mut lines = arrival_contract_lines(session.board().active.as_slice(), day, port_id);
-            lines.extend(visit_mover_lines(session, &memory.visit_price_memory));
-            lines
-        } else {
-            Vec::new()
-        }
-    } else {
-        Vec::new()
+    let (arrival_contracts, movers) = match (arrival_day, docked_port) {
+        (true, Some(port_id)) => (
+            arrival_contract_lines(session.board().active.as_slice(), day, port_id),
+            visit_mover_lines(session, &memory.visit_price_memory),
+        ),
+        _ => (Vec::new(), Vec::new()),
     };
 
     let exclude_port = if arrival_day { docked_port } else { None };
@@ -482,18 +532,27 @@ pub(crate) fn build_document(
     };
     let bounties = bounty_lines(session, memory, arrival_day, bounty_known);
 
-    let mut raw: Vec<(&'static str, &'static str, Vec<DayReportLine>)> = Vec::new();
-    if arrival_day {
-        raw.push(("arrival", "Arrival", arrival));
-    }
-    raw.push(("deadlines", "Deadlines", deadlines));
-    raw.push(("health", "Health", health));
+    let mut rest: Vec<(&'static str, &'static str, Vec<DayReportLine>)> = Vec::new();
+    rest.push(("deadlines", "Deadlines", deadlines));
+    rest.push(("health", "Health", health));
     if !arrival_day {
-        raw.push(("prices", "Prices", prices));
+        rest.push(("prices", "Prices", prices));
     }
-    raw.push(("bounties", "Bounties", bounties));
+    rest.push(("bounties", "Bounties", bounties));
 
-    let sections = cap_sections(raw);
+    let sections = if arrival_day {
+        // Movers yield first: re-cap with one fewer mover until the rows fit.
+        yield_arrival_movers(movers, |kept| {
+            let mut arrival = arrival_contracts.clone();
+            arrival.extend_from_slice(kept);
+            let mut raw = Vec::with_capacity(rest.len() + 1);
+            raw.push(("arrival", "Arrival", arrival));
+            raw.extend(rest.iter().cloned());
+            cap_sections(raw)
+        })
+    } else {
+        cap_sections(rest)
+    };
     let title = if arrival_day {
         if let Some(port_id) = docked_port {
             format!("Arrived - {}", port_label(world, port_id))
@@ -1187,62 +1246,76 @@ pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
     }
 }
 
-/// Forced arrival variant for CI frame `day-report-arrival.png`.
+/// Forced arrival variant for CI frame `day-report-arrival.png`. The staged
+/// body goes through the same mover yield as a live arrival.
 pub(crate) fn smoke_arrival_document(day: i64) -> DayReportDocument {
     DayReportDocument {
         day,
         title: "Arrived - Al-Manar".into(),
-        sections: vec![
-            DayReportSection {
-                id: "arrival",
-                title: "Arrival",
-                lines: vec![
-                    DayReportLine {
-                        text: "Porcelain for Al-Manar estate - 0/8 - 5 days left - sell 8 more Porcelain here"
-                            .into(),
-                        notable: true,
-                    },
-                    DayReportLine {
-                        text: "Grain 12 to 16 (+33%)".into(),
-                        notable: true,
-                    },
-                    DayReportLine {
-                        text: "Spice 20 to 14 (-30%)".into(),
-                        notable: true,
-                    },
-                ],
-            },
-            DayReportSection {
-                id: "deadlines",
-                title: "Deadlines",
-                lines: vec![DayReportLine {
-                    text: "Grain run - 2 days left - 3/10 - sell 7 more Grain at Corsair's Rest".into(),
-                    notable: true,
-                }],
-            },
-            DayReportSection {
-                id: "bounties",
-                title: "Bounties",
-                lines: vec![DayReportLine {
-                    text: "Claim ready: Raj the Quiet (120 silver) - open Hunt.".into(),
-                    notable: true,
-                }],
-            },
-        ],
-        // Compact body stays under the footer budget so Week can show (yield rule).
+        sections: yield_arrival_movers(smoke_arrival_movers(), smoke_arrival_sections),
+        // Forced footer; the body is over the footer budget, so it yields.
         footer: DayReportFooter {
             week: week_line(&smoke_week_window(
                 day,
                 &[(400, Some(3), 0, 0, 0), (520, Some(3), 0, 1, 0)],
             )),
             next: next_line(&NextFacts {
-                contract_days_left: vec![5, 2],
+                contract_days_left: vec![20, 2],
                 claimable: true,
                 captain_wounded: false,
                 provisions: 20,
             }),
         },
     }
+}
+
+/// Staged visit movers in rank order (all three, before the yield).
+fn smoke_arrival_movers() -> Vec<DayReportLine> {
+    [
+        "Grain 12 to 16 (+33%)",
+        "Spice 20 to 14 (-30%)",
+        "Timber 18 to 20 (+11%)",
+    ]
+    .into_iter()
+    .map(|text| DayReportLine {
+        text: text.into(),
+        notable: true,
+    })
+    .collect()
+}
+
+/// Staged arrival body with the given movers under the contract line. The
+/// contract line matches the smoke session's live Al-Manar contract.
+fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
+    let mut arrival = vec![DayReportLine {
+        text: "Porcelain for Al-Manar estate - 0/5 - 20 days left - sell 5 more Porcelain here"
+            .into(),
+        notable: true,
+    }];
+    arrival.extend_from_slice(movers);
+    vec![
+        DayReportSection {
+            id: "arrival",
+            title: "Arrival",
+            lines: arrival,
+        },
+        DayReportSection {
+            id: "deadlines",
+            title: "Deadlines",
+            lines: vec![DayReportLine {
+                text: "Grain run - 2 days left - 3/10 - sell 7 more Grain at Corsair's Rest".into(),
+                notable: true,
+            }],
+        },
+        DayReportSection {
+            id: "bounties",
+            title: "Bounties",
+            lines: vec![DayReportLine {
+                text: "Claim ready: Raj the Quiet (120 silver) - open Hunt.".into(),
+                notable: true,
+            }],
+        },
+    ]
 }
 
 #[cfg(test)]
@@ -2352,7 +2425,7 @@ mod tests {
         if let Some(deadlines) = doc.sections.iter().find(|s| s.id == "deadlines") {
             for line in &deadlines.lines {
                 assert!(
-                    !line.text.contains("here"),
+                    !line.text.contains("Al-Manar"),
                     "this-port contract leaked into Deadlines: {}",
                     line.text
                 );
@@ -2381,21 +2454,32 @@ mod tests {
             true,
             &known,
         );
-        // May still open if day-over-day would have — but prices are suppressed
-        // on arrival and there is no arrival content; claimable/bounty quiet.
+        // Prices are suppressed on arrival and there is no arrival content;
+        // claimable/bounty quiet, so the card stays hidden.
         assert!(
-            !quiet.has_notable() || quiet.sections.iter().any(|s| s.id != "arrival"),
-            "quiet arrival without content must not invent Arrival lines: {quiet:?}"
+            !quiet.has_notable(),
+            "quiet arrival without content must stay hidden: {quiet:?}"
         );
-        assert!(
-            quiet
-                .sections
-                .iter()
-                .find(|s| s.id == "arrival")
-                .map(|s| s.lines.is_empty())
-                .unwrap_or(true),
-            "no arrival content expected"
-        );
+        assert!(quiet.sections.is_empty(), "{quiet:?}");
+    }
+
+    /// Dedupe: a this-port contract inside the deadline window stays out of
+    /// Deadlines on arrival; other ports keep their Deadlines line.
+    #[test]
+    fn arrival_excludes_docked_port_from_deadlines() {
+        let session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let day = session.world().day;
+        let active = vec![
+            test_active("Porcelain run", "al_manar", "porcelain", 0, 5, day + 2, "a"),
+            test_active("Grain run", "porto_novo", "grain", 0, 5, day + 2, "b"),
+        ];
+        let all = deadline_lines(&active, day, &[], session.world(), None);
+        assert_eq!(all.len(), 2, "{all:?}");
+        assert!(all.iter().any(|l| l.text.contains("Al-Manar")), "{all:?}");
+        let arrival = deadline_lines(&active, day, &[], session.world(), Some("al_manar"));
+        assert_eq!(arrival.len(), 1, "{arrival:?}");
+        assert!(arrival[0].text.starts_with("Grain run"), "{arrival:?}");
+        assert!(!arrival[0].text.contains("Al-Manar"), "{arrival:?}");
     }
 
     #[test]
@@ -2445,5 +2529,116 @@ mod tests {
         );
         memory = DayReportMemory::default();
         assert!(memory.visit_price_memory.is_empty());
+    }
+
+    fn kept_movers<'a>(sections: &'a [DayReportSection], movers: &[DayReportLine]) -> Vec<&'a str> {
+        sections
+            .iter()
+            .filter(|s| s.id == "arrival")
+            .flat_map(|s| s.lines.iter())
+            .filter(|l| movers.iter().any(|m| m.text == l.text))
+            .map(|l| l.text.as_str())
+            .collect()
+    }
+
+    fn has_more_row(section: &DayReportSection) -> bool {
+        section
+            .lines
+            .iter()
+            .any(|l| l.text.starts_with('+') && l.text.ends_with(" more"))
+    }
+
+    /// GD C1 (#57): staged arrival = 3 heads + wrapped contract 2 + 3 movers +
+    /// deadline 1 + claim 1 = 10. Movers yield to cost 8; exactly 1 mover kept.
+    #[test]
+    fn arrival_movers_yield_staged_doc_to_budget() {
+        let movers = smoke_arrival_movers();
+        assert_eq!(movers.len(), 3);
+        let staged = smoke_arrival_sections(&movers);
+        assert_eq!(arrival_row_cost(&staged), 10);
+        assert_eq!(arrival_row_budget(&staged), ARRIVAL_ROW_BUDGET);
+
+        let doc = smoke_arrival_document(12);
+        assert_eq!(arrival_row_cost(&doc.sections), 8);
+        assert!(arrival_row_cost(&doc.sections) <= arrival_row_budget(&doc.sections));
+        assert_eq!(
+            kept_movers(&doc.sections, &movers),
+            vec!["Grain 12 to 16 (+33%)"]
+        );
+        // Only movers yield: contract, Deadlines and Bounties are untouched,
+        // and there is no `+N more` for dropped movers.
+        assert_eq!(doc.sections.len(), staged.len());
+        assert_eq!(doc.sections[0].lines[0], staged[0].lines[0]);
+        assert_eq!(doc.sections[0].lines.len(), 2);
+        assert!(!has_more_row(&doc.sections[0]));
+        assert_eq!(doc.sections[1..], staged[1..]);
+        // Claim ready is the last row and sits inside the budget.
+        let last = doc.sections.last().expect("bounties");
+        assert_eq!(last.id, "bounties");
+        assert!(last.lines[0].text.starts_with("Claim ready"));
+    }
+
+    #[test]
+    fn lone_arrival_section_keeps_all_movers() {
+        let movers = smoke_arrival_movers();
+        let contract = smoke_arrival_sections(&[])[0].lines[0].clone();
+        let sections = yield_arrival_movers(movers.clone(), |kept| {
+            let mut lines = vec![contract.clone()];
+            lines.extend_from_slice(kept);
+            cap_sections(vec![("arrival", "Arrival", lines)])
+        });
+        assert_eq!(sections.len(), 1);
+        assert_eq!(kept_movers(&sections, &movers).len(), 3);
+        assert_eq!(arrival_row_cost(&sections), 6);
+    }
+
+    /// 4 heads: budget 7. Movers may drop to zero; nothing else trims, and
+    /// re-capping leaves no `+N more` for dropped movers.
+    #[test]
+    fn arrival_movers_yield_to_zero_with_four_heads() {
+        let movers = smoke_arrival_movers();
+        let staged = smoke_arrival_sections(&[]);
+        let contract = staged[0].lines[0].clone();
+        let deadline = staged[1].lines[0].clone();
+        let claim = staged[2].lines[0].clone();
+        let health = line("Healed: Cut hand.", true);
+        let sections = yield_arrival_movers(movers.clone(), |kept| {
+            let mut arrival = vec![contract.clone()];
+            arrival.extend_from_slice(kept);
+            cap_sections(vec![
+                ("arrival", "Arrival", arrival),
+                ("deadlines", "Deadlines", vec![deadline.clone()]),
+                ("health", "Health", vec![health.clone()]),
+                ("bounties", "Bounties", vec![claim.clone()]),
+            ])
+        });
+        assert_eq!(arrival_row_budget(&sections), ARRIVAL_ROW_BUDGET_FOUR_HEADS);
+        assert!(kept_movers(&sections, &movers).is_empty());
+        assert!(!has_more_row(&sections[0]));
+        assert_eq!(sections[0].lines, vec![contract]);
+        assert_eq!(sections[1].lines, vec![deadline]);
+        assert_eq!(sections[2].lines, vec![health]);
+        assert_eq!(sections[3].lines, vec![claim]);
+        // Still over budget once movers are gone: nothing else trims.
+        assert_eq!(arrival_row_cost(&sections), 9);
+    }
+
+    #[test]
+    fn arrival_wrap_is_separate_from_footer_wrap() {
+        assert_eq!(ARRIVAL_WRAP_CHARS, 70);
+        assert_eq!(FOOTER_WRAP_CHARS, 60);
+        let fits = DayReportSection {
+            id: "deadlines",
+            title: "Deadlines",
+            lines: vec![line(&"x".repeat(70), true)],
+        };
+        let wraps = DayReportSection {
+            id: "deadlines",
+            title: "Deadlines",
+            lines: vec![line(&"x".repeat(71), true)],
+        };
+        assert_eq!(arrival_row_cost(std::slice::from_ref(&fits)), 2);
+        assert_eq!(arrival_row_cost(&[wraps]), 3);
+        assert_eq!(footer_body_cost(&[fits]), 3);
     }
 }
