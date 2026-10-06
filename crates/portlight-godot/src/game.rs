@@ -420,6 +420,7 @@ enum DayReportShot {
     Full,
     Deadline,
     Week,
+    Arrival,
 }
 
 impl DayReportShot {
@@ -428,6 +429,7 @@ impl DayReportShot {
             Self::Full => "day-report-full.png",
             Self::Deadline => "day-report-deadline.png",
             Self::Week => "day-report-week.png",
+            Self::Arrival => "day-report-arrival.png",
         }
     }
 }
@@ -843,6 +845,24 @@ impl IControl for PortlightGame {
             if self.run_day_report_week_smoke() && capture {
                 self.day_report_shot_dir = Some(day_report_shot_dir(self.shot_path.as_deref()));
                 self.day_report_shot = Some(DayReportShot::Week);
+                self.capture_frames = 4;
+            } else {
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--day-report-arrival") {
+            // Arrival variant: real Session sail→dock smoke, then forced frame.
+            self.smoke = true;
+            self.day_report_checked = true;
+            let capture = day_report_frames_requested(self.shot_path.is_some());
+            if self.run_day_report_arrival_smoke() && capture {
+                let day = self
+                    .session
+                    .as_ref()
+                    .map(|session| session.world().day)
+                    .unwrap_or(1);
+                self.open_day_report_doc(day_report::smoke_arrival_document(day));
+                self.day_report_shot_dir = Some(day_report_shot_dir(self.shot_path.as_deref()));
+                self.day_report_shot = Some(DayReportShot::Arrival);
                 self.capture_frames = 4;
             } else {
                 self.capture_frames = 2;
@@ -3674,6 +3694,16 @@ impl PortlightGame {
     }
 
     fn sail(&mut self, dest: &str) {
+        // Arrival visit memory: snapshot docked sell prices before depart (never saved).
+        if let Some(session) = self.session.as_ref() {
+            if session.world().voyage.status == VoyageStatus::InPort {
+                let port_id = session.world().voyage.destination_id.clone();
+                let prices = day_report::snapshot_docked_prices(session);
+                self.day_report_memory
+                    .visit_price_memory
+                    .insert(port_id, prices);
+            }
+        }
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -7462,6 +7492,143 @@ impl PortlightGame {
         self.smoke_ok
     }
 
+    /// Arrival card: accept an Al-Manar contract at Porto Novo, sail, Next day
+    /// until docked, assert arrival title + Arrival section, Escape closes, and
+    /// an already-docked Next day keeps the day title. Quiet arrival is pinned
+    /// by unit tests. Returns false when a step failed.
+    fn run_day_report_arrival_smoke(&mut self) -> bool {
+        self.start_game();
+        if self.session.is_none() {
+            self.fail_day_report("Day-report arrival: no session.");
+            return false;
+        }
+        // Accept a contract deliverable at Al-Manar.
+        let offer = {
+            let Some(session) = self.session.as_mut() else {
+                return false;
+            };
+            let offers = session.available_contracts();
+            offers
+                .into_iter()
+                .find(|offer| offer.destination_port_id == "al_manar")
+                .map(|offer| offer.id)
+        };
+        let Some(offer) = offer else {
+            self.fail_day_report("Day-report arrival: no Al-Manar contract offer.");
+            return false;
+        };
+        self.accept_contract_offer(&offer);
+        let has_active = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|c| c.destination_port_id == "al_manar")
+        });
+        if !has_active {
+            self.fail_day_report("Day-report arrival: accept did not activate Al-Manar contract.");
+            return false;
+        }
+        // Undock via Game::sail so visit_price_memory is written for Porto Novo.
+        self.sail("al_manar");
+        if self.docked_id().is_some() {
+            self.fail_day_report("Day-report arrival: still docked after sail.");
+            return false;
+        }
+        if !self
+            .day_report_memory
+            .visit_price_memory
+            .contains_key("porto_novo")
+        {
+            self.fail_day_report("Day-report arrival: visit memory missing after undock.");
+            return false;
+        }
+        // Advance until sailed→InPort at Al-Manar.
+        let mut arrived = false;
+        for _ in 0..60 {
+            self.close_day_report();
+            // Dismiss any sea encounter so Next day can keep advancing.
+            if self.encounter.is_some() {
+                self.encounter = None;
+            }
+            self.next_day();
+            if self.docked_id() == Some("al_manar") {
+                arrived = true;
+                break;
+            }
+        }
+        if !arrived {
+            self.fail_day_report("Day-report arrival: never reached Al-Manar.");
+            return false;
+        }
+        let text = self
+            .day_report_nodes
+            .as_ref()
+            .map(day_report::overlay_text)
+            .unwrap_or_default();
+        if !self.day_report_open {
+            self.fail_day_report(format!(
+                "Day-report arrival: card hidden on arrival with deliverable contract: {text:?}"
+            ));
+            return false;
+        }
+        let title = self
+            .day_report_doc
+            .as_ref()
+            .map(|doc| doc.title.clone())
+            .unwrap_or_default();
+        if !title.starts_with("Arrived - ") || !title.contains("Al-Manar") {
+            self.fail_day_report(format!("Day-report arrival: bad title {title:?}"));
+            return false;
+        }
+        if !text.contains("Arrival") || !text.contains("here") {
+            self.fail_day_report(format!(
+                "Day-report arrival: missing Arrival section: {text:?}"
+            ));
+            return false;
+        }
+        if text.contains("due soon") || text.contains('\u{2014}') {
+            self.fail_day_report(format!("Day-report arrival: forbidden copy: {text:?}"));
+        }
+        // Prices section must not appear on arrival day.
+        if self
+            .day_report_doc
+            .as_ref()
+            .is_some_and(|doc| doc.sections.iter().any(|s| s.id == "prices"))
+        {
+            self.fail_day_report("Day-report arrival: Prices section present on arrival day.");
+        }
+        self.assert_day_report_fits("arrival");
+        // Escape closes under the existing ladder (no new rung).
+        self.dismiss_cancel();
+        if self.day_report_open {
+            self.fail_day_report("Day-report arrival: Escape left the card up.");
+            return false;
+        }
+        // Already-docked Next day must not use arrival title.
+        self.next_day();
+        if self.day_report_open {
+            let docked_title = self
+                .day_report_doc
+                .as_ref()
+                .map(|doc| doc.title.clone())
+                .unwrap_or_default();
+            if docked_title.starts_with("Arrived - ") {
+                self.fail_day_report(format!(
+                    "Day-report arrival: already-docked Next day used arrival title: {docked_title}"
+                ));
+                return false;
+            }
+        }
+        self.close_day_report();
+        if self.smoke_ok {
+            let line = format!("Day-report arrival smoke: {title}");
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+        self.smoke_ok
+    }
+
     fn fail_day_report(&mut self, line: impl Into<String>) {
         let line = line.into();
         godot_print!("{line}");
@@ -7542,7 +7709,7 @@ impl PortlightGame {
                 self.day_report_checked = true;
                 false
             }
-            DayReportShot::Week => {
+            DayReportShot::Week | DayReportShot::Arrival => {
                 self.day_report_shot = None;
                 self.day_report_checked = true;
                 false

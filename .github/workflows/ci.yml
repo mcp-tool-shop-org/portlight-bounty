@@ -369,6 +369,22 @@ jobs:
             echo "day-report-week smoke did not report ok"
             exit 1
           fi
+          rm -f /tmp/hs-day-report-arrival.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-day-report-arrival-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-day-report-arrival.png \
+            godot --headless --path godot -- --day-report-arrival
+          if [ -f /tmp/hs-day-report-arrival.png ]; then
+            echo "headless day-report-arrival PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-day-report-arrival.log \
+            godot --headless --path godot -- --art-docs --day-report-arrival
+          run_godot /tmp/godot-day-report-arrival-smoke.log \
+            godot --headless --path godot -- --day-report-arrival
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-arrival-smoke.log; then
+            echo "day-report-arrival smoke did not report ok"
+            exit 1
+          fi
           rm -f /tmp/hs-contract-strip.png
           expect_explicit_headless_shot_fails /tmp/godot-headless-contract-strip-shot.log \
             env PORTLIGHT_SHOT=/tmp/hs-contract-strip.png \
@@ -634,6 +650,19 @@ jobs:
             echo "day-report-week capture did not write /tmp/day-report-shots/day-report-week.png"
             exit 1
           fi
+          # Arrival variant (forced smoke doc after real Session sail smoke).
+          run_godot /tmp/godot-day-report-arrival-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/day-report-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --day-report-arrival
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-arrival-frames.log; then
+            echo "day-report-arrival frame capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/day-report-shots/day-report-arrival.png ]; then
+            echo "day-report-arrival capture did not write /tmp/day-report-shots/day-report-arrival.png"
+            exit 1
+          fi
           mkdir -p /tmp/contract-strip-shots
           run_godot /tmp/godot-contract-strip-frames.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
@@ -678,6 +707,7 @@ jobs:
           cmp_committed day-report-full.png /tmp/day-report-shots/day-report-full.png
           cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
           cmp_committed day-report-week.png /tmp/day-report-shots/day-report-week.png
+          cmp_committed day-report-arrival.png /tmp/day-report-shots/day-report-arrival.png
           cmp_committed contract-strip-active.png /tmp/contract-strip-shots/contract-strip-active.png
           cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
