@@ -17,7 +17,7 @@ use portlight_sim::model::VoyageStatus;
 use portlight_sim::Session;
 
 use crate::encounter_screen;
-use crate::logic::{ascii_label, humanize_id};
+use crate::logic::{ascii_label, faction_name};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -651,7 +651,7 @@ fn offer_text(card: &BountyCard) -> String {
         "{}\n{} | {} | {} | {} silver\n{}",
         card.captain_name,
         card.region,
-        humanize_id(&card.faction_id),
+        faction_name(&card.faction_id),
         card.difficulty,
         card.reward,
         card.description
@@ -766,6 +766,24 @@ mod tests {
         expected.sort_unstable();
         let got: Vec<&str> = seen.iter().map(String::as_str).collect();
         assert_eq!(got, expected);
+    }
+
+    #[test]
+    fn offer_text_names_every_faction_by_its_catalog_name() {
+        let content = portlight_sim::content::content();
+        for row in CATALOG {
+            let text = offer_text(&card_from_catalog(row));
+            let name = &content.faction(row.faction_id).unwrap().name;
+            let meta = text.lines().nth(1).unwrap();
+            assert!(meta.contains(&format!(" | {name} | ")), "{meta}");
+        }
+        let deep_reef = CATALOG
+            .iter()
+            .find(|row| row.faction_id == "deep_reef")
+            .unwrap();
+        assert!(
+            offer_text(&card_from_catalog(deep_reef)).contains(" | The Deep Reef Brotherhood | ")
+        );
     }
 
     #[test]

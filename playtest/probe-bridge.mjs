@@ -7,7 +7,8 @@
 // Prints the editor version (CI is 4.7.2). Spine: hello, second client
 // refused, bad line answered, Title, captains, the line Ada, Merchant (chart
 // shows Ada docked and Hire). Then Contracts open and close, read the board
-// cards, accept the cheapest run the market stocks, buy the order plus a
+// cards, accept the run the market stocks with the lowest reward per unit
+// (a proxy for cheap goods, not the buy price), buy the order plus a
 // margin, Hire, sail to the destination while the strip counts down. The
 // docking day opens the Arrival card: it is read from state.day_report
 // before anything presses Escape, then dismissed. Sell there. The sale is

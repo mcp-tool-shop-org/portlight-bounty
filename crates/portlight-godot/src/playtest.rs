@@ -864,7 +864,7 @@ fn find_named(root: &Gd<Node>, name: &str) -> Option<Gd<Node>> {
 
 fn collect_labels(node: &Gd<Node>, out: &mut Vec<String>) {
     if let Ok(label) = node.clone().try_cast::<Label>() {
-        if label.is_visible() {
+        if label.is_visible_in_tree() {
             let text = label.get_text().to_string();
             if !text.is_empty() {
                 out.push(text);

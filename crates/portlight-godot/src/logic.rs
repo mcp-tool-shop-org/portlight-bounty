@@ -550,7 +550,7 @@ pub(crate) fn victory_receipt_lines(receipt: &VictoryReceipt) -> Vec<String> {
             &mut lines,
             format!(
                 "Underworld standing {} {signed}.",
-                humanize_id(&receipt.faction_id)
+                faction_name(&receipt.faction_id)
             ),
         );
     }
@@ -727,7 +727,10 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     lines.join("\n")
 }
 
-fn faction_name(faction_id: &str) -> String {
+/// Player copy for a faction id: the catalog name (`The Iron Wolves`) when
+/// the faction is known, else [`humanize_id`]. Every faction shown to the
+/// player goes through here so one faction never reads two ways.
+pub(crate) fn faction_name(faction_id: &str) -> String {
     if faction_id.is_empty() {
         return String::new();
     }
@@ -2772,7 +2775,7 @@ mod tests {
                 "+55 silver.".to_string(),
                 "+12 silver".to_string(),
                 "Found: Cutlass".to_string(),
-                "Underworld standing Iron Wolves +2.".to_string(),
+                "Underworld standing The Iron Wolves +2.".to_string(),
                 "Red Tomas approves. (+1 morale)".to_string(),
                 "Dr. Amara leaves. I cannot stay.".to_string(),
             ]
