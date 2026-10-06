@@ -7176,7 +7176,7 @@ impl PortlightGame {
     fn reset_day_report(&mut self) {
         self.day_report_open = false;
         self.day_report_doc = None;
-        self.day_report_memory = DayReportMemory::default();
+        self.day_report_memory.reset();
     }
 
     fn open_day_report_doc(&mut self, doc: DayReportDocument) {
@@ -9244,7 +9244,7 @@ impl PortlightGame {
         self.hunt_desk = HuntDesk::default();
         self.day_report_open = false;
         self.day_report_doc = None;
-        self.day_report_memory = DayReportMemory::default();
+        self.day_report_memory.reset();
         self.contracts_open = false;
         self.contracts_notice.clear();
         self.contracts_confirm = None;
