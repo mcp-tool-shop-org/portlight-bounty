@@ -332,6 +332,100 @@ pub(crate) struct EncounterFacts {
     pub on_session: bool,
     pub naval_actions: Vec<String>,
     pub combat_actions: Vec<String>,
+    /// World reading taken when the encounter opened (section 10.3). Godot
+    /// memory only, never saved. Carried across steps; taken (set to
+    /// `None`) when the non-win receipt is logged, so it logs once.
+    pub baseline: Option<EncounterBaseline>,
+}
+
+/// Silver, flagship crew and hull, and total cargo units when an encounter
+/// opens. The step carries no silver or cargo delta, so a non-win receipt
+/// diffs the world against this.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct EncounterBaseline {
+    pub silver: i64,
+    pub crew: i64,
+    pub hull: i64,
+    pub cargo_units: i64,
+}
+
+impl EncounterBaseline {
+    pub(crate) fn read(world: &portlight_sim::model::World) -> Self {
+        let ship = world.captain.ship.as_ref();
+        Self {
+            silver: world.captain.silver,
+            crew: ship.map_or(0, |ship| ship.crew),
+            hull: ship.map_or(0, |ship| ship.hull),
+            cargo_units: world.captain.cargo.iter().map(|item| item.quantity).sum(),
+        }
+    }
+
+    /// `[silver, crew, hull, cargo]` as `now - self`.
+    pub(crate) fn deltas(&self, now: &Self) -> [i64; 4] {
+        [
+            now.silver - self.silver,
+            now.crew - self.crew,
+            now.hull - self.hull,
+            now.cargo_units - self.cargo_units,
+        ]
+    }
+}
+
+/// How a fight ended without a win (section 10.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum EncounterEnd {
+    LostFight,
+    DrewFight,
+    LostAtSea,
+    BrokeAway,
+}
+
+/// The non-win end a resolved step reports, or `None` (still running, a
+/// pending win, an enemy sunk, a negotiated peace, a capture).
+pub(crate) fn encounter_end(step: &EncounterStep, pending_victory: bool) -> Option<EncounterEnd> {
+    if step.phase != "resolved" || pending_victory || step.player_won || step.enemy_sunk {
+        return None;
+    }
+    if step.escaped {
+        return Some(EncounterEnd::BrokeAway);
+    }
+    match step.kind.as_str() {
+        "fight" if step.draw => Some(EncounterEnd::DrewFight),
+        "fight" => Some(EncounterEnd::LostFight),
+        "naval" => Some(EncounterEnd::LostAtSea),
+        _ => None,
+    }
+}
+
+/// One plain receipt line for a fight that ended without a win. Terms in
+/// order Silver, Crew, Hull, Cargo; zero terms omitted (R4). No odds, no
+/// advice, no Trust or Standing.
+pub(crate) fn encounter_end_line(
+    end: EncounterEnd,
+    name: &str,
+    deltas: [i64; 4],
+    bounty_open: bool,
+) -> String {
+    let (head, joiner) = match end {
+        EncounterEnd::LostFight => ("Lost the fight", "with"),
+        EncounterEnd::DrewFight => ("Drew the fight", "with"),
+        EncounterEnd::LostAtSea => ("Lost the sea fight", "with"),
+        EncounterEnd::BrokeAway => ("Broke away", "from"),
+    };
+    let mut line = if name.is_empty() {
+        head.to_string()
+    } else {
+        format!("{head} {joiner} {name}")
+    };
+    for (term, value) in ["Silver", "Crew", "Hull", "Cargo"].iter().zip(deltas) {
+        if value != 0 {
+            line.push_str(&format!(" - {term} {}", signed_delta(value)));
+        }
+    }
+    if bounty_open {
+        line.push_str(" - the bounty stays open");
+    }
+    line
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -842,6 +936,7 @@ fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) 
         on_session: false,
         naval_actions: Vec::new(),
         combat_actions: Vec::new(),
+        baseline: None,
     }
 }
 
@@ -2348,6 +2443,201 @@ mod tests {
         step.kind = "naval".to_string();
         step.phase = "naval".to_string();
         assert_eq!(line_for(&session, &step).0, "");
+    }
+
+    #[test]
+    fn encounter_end_line_heads_terms_and_clause() {
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::LostFight,
+                "Raj the Quiet",
+                [-30, -3, 0, 0],
+                true
+            ),
+            "Lost the fight with Raj the Quiet - Silver -30 - Crew -3 - the bounty stays open"
+        );
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::DrewFight,
+                "Raj the Quiet",
+                [0, -3, 0, 0],
+                false
+            ),
+            "Drew the fight with Raj the Quiet - Crew -3"
+        );
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::LostAtSea,
+                "The Butcher",
+                [-55, -4, -20, -12],
+                false
+            ),
+            "Lost the sea fight with The Butcher - Silver -55 - Crew -4 - Hull -20 - Cargo -12"
+        );
+        assert_eq!(
+            encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0, 0, -4, 0], false),
+            "Broke away from Typhoon Mei - Hull -4"
+        );
+        // All zero, no clause: just the head.
+        assert_eq!(
+            encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0; 4], false),
+            "Broke away from Typhoon Mei"
+        );
+        // The clause only when the bounty is open.
+        assert!(
+            encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0; 4], true)
+                .ends_with(" - the bounty stays open")
+        );
+        // Empty name drops ` with {Name}` / ` from {Name}`.
+        assert_eq!(
+            encounter_end_line(EncounterEnd::LostFight, "", [-30, 0, 0, 0], false),
+            "Lost the fight - Silver -30"
+        );
+        assert_eq!(
+            encounter_end_line(EncounterEnd::BrokeAway, "", [0, 0, -4, 0], false),
+            "Broke away - Hull -4"
+        );
+        // A gain keeps its sign; zero never prints.
+        assert_eq!(
+            encounter_end_line(EncounterEnd::LostAtSea, "X", [0, 0, 2, 0], false),
+            "Lost the sea fight with X - Hull +2"
+        );
+        for end in [
+            EncounterEnd::LostFight,
+            EncounterEnd::DrewFight,
+            EncounterEnd::LostAtSea,
+            EncounterEnd::BrokeAway,
+        ] {
+            for deltas in [[0; 4], [-30, -3, -4, -12], [5, 0, 0, 0]] {
+                let line = encounter_end_line(end, "Raj the Quiet", deltas, true);
+                assert!(line.is_ascii(), "{line}");
+                assert!(
+                    !line.contains('\u{2014}') && !line.contains('\u{2013}'),
+                    "{line}"
+                );
+                assert!(!line.contains("->"), "{line}");
+                assert!(!line.contains("+0") && !line.contains("-0"), "{line}");
+                assert!(
+                    !line.contains("Trust") && !line.contains("Standing"),
+                    "{line}"
+                );
+                assert!(!line.contains('%'), "{line}");
+            }
+        }
+    }
+
+    #[test]
+    fn encounter_end_classifies_resolved_non_wins() {
+        let mut session = scripted_session();
+        let base = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        let synth = |kind: &str, edit: &dyn Fn(&mut portlight_sim::session::EncounterStep)| {
+            let mut step = cleared_deltas(&base);
+            step.kind = kind.to_string();
+            step.phase = "resolved".to_string();
+            step.escaped = false;
+            step.enemy_sunk = false;
+            step.player_sunk = false;
+            step.player_won = false;
+            step.draw = false;
+            edit(&mut step);
+            step
+        };
+        let fight_loss = synth("fight", &|_| {});
+        let draw = synth("fight", &|step| step.draw = true);
+        let naval_sunk = synth("naval", &|step| step.player_sunk = true);
+        let naval_crew_gone = synth("naval", &|step| step.player_crew = 0);
+        let approach_flee = synth("choice", &|step| {
+            step.choice = "flee".to_string();
+            step.escaped = true;
+        });
+        let naval_flee = synth("naval", &|step| {
+            step.choice = "flee".to_string();
+            step.escaped = true;
+        });
+        let fight_win = synth("fight", &|step| step.player_won = true);
+        let enemy_sunk = synth("naval", &|step| step.enemy_sunk = true);
+        let peace = synth("choice", &|step| step.choice = "negotiate".to_string());
+        let capture = synth("capture", &|_| {});
+        let running = synth("fight", &|step| step.phase = "duel".to_string());
+        assert_eq!(
+            encounter_end(&fight_loss, false),
+            Some(EncounterEnd::LostFight)
+        );
+        assert_eq!(encounter_end(&draw, false), Some(EncounterEnd::DrewFight));
+        assert_eq!(
+            encounter_end(&naval_sunk, false),
+            Some(EncounterEnd::LostAtSea)
+        );
+        assert_eq!(
+            encounter_end(&naval_crew_gone, false),
+            Some(EncounterEnd::LostAtSea)
+        );
+        assert_eq!(
+            encounter_end(&approach_flee, false),
+            Some(EncounterEnd::BrokeAway)
+        );
+        assert_eq!(
+            encounter_end(&naval_flee, false),
+            Some(EncounterEnd::BrokeAway)
+        );
+        assert_eq!(encounter_end(&fight_win, false), None);
+        assert_eq!(encounter_end(&enemy_sunk, false), None);
+        assert_eq!(encounter_end(&peace, false), None);
+        assert_eq!(encounter_end(&capture, false), None);
+        assert_eq!(encounter_end(&running, false), None);
+        // A pending win is never a non-win end.
+        assert_eq!(encounter_end(&fight_loss, true), None);
+    }
+
+    #[test]
+    fn encounter_baseline_diffs_the_world() {
+        let session = scripted_session();
+        let before = EncounterBaseline::read(session.world());
+        let ship = session.world().captain.ship.as_ref().unwrap();
+        assert_eq!(before.silver, session.world().captain.silver);
+        assert_eq!(before.crew, ship.crew);
+        assert_eq!(before.hull, ship.hull);
+        let after = EncounterBaseline {
+            silver: before.silver - 30,
+            crew: before.crew - 3,
+            hull: before.hull,
+            cargo_units: before.cargo_units - 12,
+        };
+        assert_eq!(before.deltas(&after), [-30, -3, 0, -12]);
+        assert_eq!(before.deltas(&before), [0; 4]);
+    }
+
+    #[test]
+    fn approach_flee_receipt_matches_the_world() {
+        // Real Session: an approach flee that escapes ends resolved and
+        // classifies as Broke away; the hull term is the real hull change.
+        for seed in 0..40 {
+            let mut session = Session::new("Low", "merchant", 1, None).unwrap();
+            let baseline = EncounterBaseline::read(session.world());
+            let step = session
+                .encounter_choice_with("flee", None, Some(seed))
+                .unwrap();
+            if step.phase != "resolved" || !step.escaped {
+                continue;
+            }
+            assert_eq!(
+                encounter_end(&step, session.pending_victory()),
+                Some(EncounterEnd::BrokeAway)
+            );
+            let deltas = baseline.deltas(&EncounterBaseline::read(session.world()));
+            assert_eq!(deltas[2], -step.hull_damage);
+            let line = encounter_end_line(
+                EncounterEnd::BrokeAway,
+                ascii_label(&step.enemy_captain_name, &step.enemy_captain_id),
+                deltas,
+                false,
+            );
+            assert!(line.starts_with("Broke away from "), "{line}");
+            return;
+        }
+        panic!("no escaping approach flee in 40 seeds");
     }
 
     #[test]

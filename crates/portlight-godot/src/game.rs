@@ -1703,6 +1703,7 @@ impl PortlightGame {
 
     fn begin_session(&mut self, session: Session) {
         let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+        self.drop_encounter_baseline();
         self.log_lines.clear();
         self.market_open = false;
         self.armed_sail = None;
@@ -1731,6 +1732,7 @@ impl PortlightGame {
         match Session::load(&self.save_base, slot) {
             Ok(Some(session)) => {
                 let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+                self.drop_encounter_baseline();
                 self.log_lines.clear();
                 self.market_open = false;
                 self.armed_sail = None;
@@ -6702,8 +6704,23 @@ impl PortlightGame {
         if facts.phase == "naval" {
             facts.naval_actions = self.probe_naval();
         }
+        facts.baseline = self.encounter_baseline_now();
         self.scripted_captain = None;
         self.encounter = Some(facts);
+    }
+
+    /// Section 10.3 baseline, read before any encounter verb.
+    fn encounter_baseline_now(&self) -> Option<crate::logic::EncounterBaseline> {
+        self.session
+            .as_ref()
+            .map(|session| crate::logic::EncounterBaseline::read(session.world()))
+    }
+
+    /// A new or loaded session must not diff against the old world.
+    fn drop_encounter_baseline(&mut self) {
+        if let Some(facts) = self.encounter.as_mut() {
+            facts.baseline = None;
+        }
     }
 
     fn open_scripted_approach(&mut self) {
@@ -6717,7 +6734,8 @@ impl PortlightGame {
             .map(|session| (player_ship(session), at_sea(session)))
             .unwrap_or((None, true));
         match facts_for_catalog_captain(captain_id, ship, sailing) {
-            Some(facts) => {
+            Some(mut facts) => {
+                facts.baseline = self.encounter_baseline_now();
                 self.scripted_captain = Some(captain_id.to_string());
                 self.encounter = Some(facts);
             }
@@ -6912,6 +6930,7 @@ impl PortlightGame {
             .encounter
             .as_ref()
             .and_then(|facts| facts.enemy_hull_max);
+        let baseline = self.encounter.as_ref().and_then(|facts| facts.baseline);
         let (pending, ship, sailing, naval_actions, combat_actions) = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -6937,7 +6956,7 @@ impl PortlightGame {
             };
             (pending, ship, sailing, naval_actions, combat_actions)
         };
-        self.encounter = Some(facts_from_step(StepInput {
+        let mut facts = facts_from_step(StepInput {
             step: &step,
             previous_faction_id: &previous_faction,
             previous_enemy_hull_max: previous_max,
@@ -6946,7 +6965,43 @@ impl PortlightGame {
             at_sea: sailing,
             naval_actions: &naval_actions,
             combat_actions: &combat_actions,
-        }));
+        });
+        facts.baseline = baseline;
+        let receipt = self.encounter_end_receipt(&step, pending, &mut facts);
+        self.encounter = Some(facts);
+        if let Some(receipt) = receipt {
+            self.push_log(receipt);
+        }
+    }
+
+    /// Section 10.3: one line when a fight ends without a win, from the
+    /// world now minus the baseline taken when the encounter opened. Takes
+    /// the baseline so the line logs once. The Outcome log shows it first.
+    fn encounter_end_receipt(
+        &self,
+        step: &EncounterStep,
+        pending: bool,
+        facts: &mut EncounterFacts,
+    ) -> Option<String> {
+        let end = crate::logic::encounter_end(step, pending)?;
+        let session = self.session.as_ref()?;
+        let baseline = facts.baseline.take()?;
+        let now = crate::logic::EncounterBaseline::read(session.world());
+        let bounty_open = session
+            .world()
+            .captain
+            .active_bounties
+            .iter()
+            .any(|id| id == &facts.captain_id)
+            && !day_report::claimable_ids(session).contains(&facts.captain_id);
+        let name = crate::logic::ascii_label(&facts.captain_name, &facts.captain_id);
+        let line = crate::logic::encounter_end_line(end, name, baseline.deltas(&now), bounty_open);
+        facts.log = if facts.log.is_empty() {
+            line.clone()
+        } else {
+            format!("{line}\n{}", facts.log)
+        };
+        Some(line)
     }
 
     fn probe_naval(&mut self) -> Vec<String> {
@@ -9183,6 +9238,23 @@ impl PortlightGame {
         }
     }
 
+    /// Section 10.3: a win logs no non-win receipt.
+    fn expect_no_end_receipt(&mut self, scope: &str) {
+        let is_receipt = |line: &str| {
+            line.starts_with("Lost the ")
+                || line.starts_with("Drew the ")
+                || line.starts_with("Broke away")
+        };
+        let in_card = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| facts.log.lines().any(is_receipt));
+        if in_card || self.log_lines.iter().any(|line| is_receipt(line)) {
+            self.smoke_ok = false;
+            self.push_log(format!("{scope}: a win logged a non-win receipt."));
+        }
+    }
+
     fn expect_returned(&mut self) {
         let pending = self
             .session
@@ -9197,6 +9269,7 @@ impl PortlightGame {
             self.push_log("Encounter smoke: spare did not leave the outcome card.".to_string());
         }
         self.expect_previews_cleared("Encounter smoke", true);
+        self.expect_no_end_receipt("Encounter smoke");
     }
 
     fn report_encounter_smoke(&mut self) {
@@ -9266,6 +9339,7 @@ impl PortlightGame {
         self.expect_choice_previews("Bounty smoke");
         self.take_prize();
         self.expect_previews_cleared("Bounty smoke", false);
+        self.expect_no_end_receipt("Bounty smoke");
         let cleared = self
             .session
             .as_ref()
