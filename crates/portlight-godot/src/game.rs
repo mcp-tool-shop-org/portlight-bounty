@@ -451,6 +451,24 @@ impl ContractStripShot {
     }
 }
 
+/// T-N frames: the GOLD paid notice at the top of the Market box.
+#[derive(Clone, Copy)]
+enum MarketPaidShot {
+    /// The real settle from the trade smoke: one line.
+    Single,
+    /// Staged on top of that settle: two lines and `+1 more`.
+    More,
+}
+
+impl MarketPaidShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Single => "market-contract-paid.png",
+            Self::More => "market-contract-paid-more.png",
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) enum Stance {
     Thrust,
@@ -619,6 +637,8 @@ struct PortlightGame {
     market_notice: Vec<String>,
     /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
     trade_checked: bool,
+    market_paid_shot_dir: Option<String>,
+    market_paid_shot: Option<MarketPaidShot>,
 }
 
 #[derive(Clone, Copy)]
@@ -773,6 +793,8 @@ impl IControl for PortlightGame {
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
             trade_checked: false,
+            market_paid_shot_dir: None,
+            market_paid_shot: None,
         }
     }
 
@@ -896,6 +918,26 @@ impl IControl for PortlightGame {
             self.trade_checked = true;
             self.run_trade_smoke();
             self.capture_frames = 2;
+        } else if user_arg("--market-paid-screen") {
+            // T-N frames: the real trade-smoke settle, then a staged
+            // three-contract notice on the same Market.
+            self.smoke = true;
+            self.trade_checked = true;
+            let capture = market_paid_frames_requested(self.shot_path.is_some());
+            if self.run_trade_settle() {
+                self.check_market_notice_leads("single");
+                if capture {
+                    self.market_paid_shot_dir =
+                        Some(market_paid_shot_dir(self.shot_path.as_deref()));
+                    self.market_paid_shot = Some(MarketPaidShot::Single);
+                    self.capture_frames = 4;
+                } else {
+                    self.stage_market_paid_more();
+                    self.capture_frames = 2;
+                }
+            } else {
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -940,6 +982,9 @@ impl IControl for PortlightGame {
         if self.advance_contract_strip_shot() {
             return;
         }
+        if self.advance_market_paid_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -969,6 +1014,7 @@ impl IControl for PortlightGame {
             && self.hunt_shot_dir.is_none()
             && self.day_report_shot_dir.is_none()
             && self.contract_strip_shot_dir.is_none()
+            && self.market_paid_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -8091,10 +8137,11 @@ impl PortlightGame {
         self.smoke_ok = false;
     }
 
-    /// `--trade-smoke` (T-Q, T-N). Seed 1 at Porto Novo: accept the grain run
-    /// to Corsair's Rest, buy at `Qty 10`, sail, then sell at `Qty 10` until
-    /// the sale settles the contract and the Market shows the paid notice.
-    fn run_trade_smoke(&mut self) {
+    /// Seed 1 at Porto Novo: accept the grain run to Corsair's Rest, buy at
+    /// `Qty 10`, sail, then sell at `Qty 10` until the sale settles the
+    /// contract and the Market leads with the paid notice. False when the
+    /// run could not get that far; a failed copy check still returns true.
+    fn run_trade_settle(&mut self) -> bool {
         self.start_game();
         if self.trade_qty != 1 {
             self.fail_trade("Trade smoke: a new game did not start at Qty 1.");
@@ -8106,7 +8153,7 @@ impl PortlightGame {
                 "Trade smoke: two Qty presses gave {}.",
                 self.trade_qty
             ));
-            return;
+            return false;
         }
         let offer = self.session.as_mut().and_then(|session| {
             session
@@ -8119,7 +8166,7 @@ impl PortlightGame {
         });
         let Some((offer_id, required)) = offer else {
             self.fail_trade("Trade smoke: no grain offer for Corsair's Rest.");
-            return;
+            return false;
         };
         self.accept_contract_offer(&offer_id);
         self.market_open = true;
@@ -8134,11 +8181,11 @@ impl PortlightGame {
             let bought = self.held("grain") - before;
             if press == 0 && bought != 10 {
                 self.fail_trade(format!("Trade smoke: Qty 10 buy took {bought} grain."));
-                return;
+                return false;
             }
             if bought <= 0 {
                 self.fail_trade("Trade smoke: a clamped buy took nothing.");
-                return;
+                return false;
             }
         }
         if !self
@@ -8161,7 +8208,7 @@ impl PortlightGame {
         }
         if self.docked_id() != Some("corsairs_rest") {
             self.fail_trade("Trade smoke: never docked at Corsair's Rest.");
-            return;
+            return false;
         }
         self.close_day_report();
         self.market_open = true;
@@ -8185,12 +8232,12 @@ impl PortlightGame {
                 self.fail_trade(format!(
                     "Trade smoke: Qty 10 sell moved {sold} of {before} grain."
                 ));
-                return;
+                return false;
             }
         }
         if active(self) {
             self.fail_trade("Trade smoke: the Qty 10 sales did not settle the contract.");
-            return;
+            return false;
         }
         let paid = self.market_notice.first().cloned().unwrap_or_default();
         godot_print!("trade smoke paid notice: {paid}");
@@ -8213,6 +8260,16 @@ impl PortlightGame {
                 "Trade smoke: the Market box did not lead with the notice ({shown:?})."
             ));
         }
+        true
+    }
+
+    /// `--trade-smoke` (T-Q, T-N). The settle above, then Work, Next day and a
+    /// new game must each clear the paid notice; the Qty holds until new game.
+    fn run_trade_smoke(&mut self) {
+        if !self.run_trade_settle() {
+            return;
+        }
+        let paid = self.market_notice.first().cloned().unwrap_or_default();
         self.perform(Action::Work);
         if !self.market_notice.is_empty() {
             self.fail_trade("Trade smoke: Work kept the paid notice.");
@@ -8230,6 +8287,88 @@ impl PortlightGame {
         self.start_game();
         if self.trade_qty != 1 || !self.market_notice.is_empty() {
             self.fail_trade("Trade smoke: a new game kept the Qty or notice.");
+        }
+    }
+
+    /// T-N frame 2. The real outcome from the settle leads, then two staged
+    /// deliveries: two GOLD lines and `+1 more`, through `paid_notice_lines`.
+    fn stage_market_paid_more(&mut self) {
+        let real = self
+            .session
+            .as_ref()
+            .and_then(|session| session.board().completed.last().cloned());
+        let Some(real) = real else {
+            self.fail_trade("Market paid frames: no completed contract to stage from.");
+            return;
+        };
+        if market::paid_notice_lines(std::slice::from_ref(&real)) != self.market_notice {
+            self.fail_trade(format!(
+                "Market paid frames: last outcome does not match the notice ({:?}).",
+                self.market_notice
+            ));
+        }
+        self.market_notice = market::paid_notice_lines(&market::smoke_paid_more(&real));
+        self.refresh();
+        if self.market_notice.len() != 3 || self.market_notice[2] != "+1 more" {
+            self.fail_trade(format!(
+                "Market paid frames: staged notice was {:?}.",
+                self.market_notice
+            ));
+        }
+        self.check_market_notice_leads("more");
+    }
+
+    /// The Market box leads with every notice line, then the Market header.
+    fn check_market_notice_leads(&mut self, kind: &str) {
+        let shown: Vec<String> = self
+            .market_box
+            .as_ref()
+            .map(labels_under_box)
+            .unwrap_or_default()
+            .iter()
+            .map(|label| label.get_text().to_string())
+            .collect();
+        let count = self.market_notice.len();
+        let leads = count > 0
+            && shown.len() > count
+            && shown[..count] == self.market_notice[..]
+            && shown[count].starts_with("Market at ");
+        if !leads {
+            self.fail_trade(format!(
+                "Market paid frames: {kind} notice did not lead the Market box ({:?}).",
+                shown.iter().take(count + 1).collect::<Vec<_>>()
+            ));
+        }
+    }
+
+    fn advance_market_paid_shot(&mut self) -> bool {
+        let Some(phase) = self.market_paid_shot else {
+            return false;
+        };
+        let Some(dir) = self.market_paid_shot_dir.clone() else {
+            return false;
+        };
+        if !self.market_open || self.market_notice.is_empty() {
+            self.fail_trade(format!(
+                "Market paid frames: {} had no open Market notice.",
+                phase.file_name()
+            ));
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, false) {
+            self.capture_failed = true;
+        }
+        match phase {
+            MarketPaidShot::Single => {
+                self.stage_market_paid_more();
+                self.market_paid_shot = Some(MarketPaidShot::More);
+                self.capture_frames = 4;
+                true
+            }
+            MarketPaidShot::More => {
+                self.market_paid_shot = None;
+                false
+            }
         }
     }
 
@@ -9330,6 +9469,14 @@ fn contract_strip_frames_requested(shot_set: bool) -> bool {
 }
 
 fn contract_strip_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
+}
+
+fn market_paid_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn market_paid_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
 }
 

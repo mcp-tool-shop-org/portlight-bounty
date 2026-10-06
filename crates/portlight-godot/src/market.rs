@@ -87,12 +87,36 @@ pub(crate) fn paid_notice_lines(outcomes: &[ContractOutcome]) -> Vec<String> {
     lines
 }
 
+/// CI frame `market-contract-paid-more.png`. One real sale settles one
+/// contract, so the capture stages two more deliveries to the same port after
+/// the real outcome: two lines, then `+1 more`. Same builder as a live sale.
+pub(crate) fn smoke_paid_more(paid: &ContractOutcome) -> Vec<ContractOutcome> {
+    let staged = |id: &str, good: &str, qty: i64, silver: i64| ContractOutcome {
+        contract_id: id.into(),
+        silver_delta: silver,
+        trust_delta: 1,
+        standing_delta: 1,
+        summary: format!("Delivered {qty} {good} to {}", paid.destination_port_id),
+        good_id: good.into(),
+        required_quantity: qty,
+        delivered_quantity: qty,
+        reward_silver: silver,
+        ..paid.clone()
+    };
+    vec![
+        paid.clone(),
+        staged("staged-weapons", "weapons", 12, 384),
+        staged("staged-rum", "rum", 18, 270),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use portlight_sim::model::ContractOutcome;
 
     use super::{
-        clamp_buy, clamp_sell, next_trade_qty, paid_notice_lines, qty_label, wire_qty, BuyRoom,
+        clamp_buy, clamp_sell, next_trade_qty, paid_notice_lines, qty_label, smoke_paid_more,
+        wire_qty, BuyRoom,
     };
 
     fn room() -> BuyRoom {
@@ -244,5 +268,18 @@ mod tests {
             assert!(line.is_ascii(), "{line}");
             assert!(!line.contains("+0"), "{line}");
         }
+    }
+
+    #[test]
+    fn staged_more_frame_is_two_lines_and_one_more() {
+        let lines = paid_notice_lines(&smoke_paid_more(&paid("a", 615, 2)));
+        assert_eq!(
+            lines,
+            vec![
+                "Contract paid: Delivered 23 Grain to Corsair's Rest - Silver +615 - Trust +1 - Standing +2",
+                "Contract paid: Delivered 12 Weapons to Corsair's Rest - Silver +384 - Trust +1 - Standing +1",
+                "+1 more",
+            ]
+        );
     }
 }
