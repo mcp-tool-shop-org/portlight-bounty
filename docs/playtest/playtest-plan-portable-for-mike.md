@@ -74,7 +74,7 @@ Copy the outbox files into the other session if that machine cannot see `/worksp
 | 4 | Optional Harbour peek; Close | curiosity only |
 | 5 | Sail toward Al-Manar / Next day as needed | `maiden-sail-progress`, `world-moves`, `responds-to-input` |
 | 6 | On notable Next day: Day's report opens; Escape or Close | `day-report-clarity`; Escape also feeds `escape-closes-overlay` (**known-fail** if other desks Escape no-op) |
-| 7 | At dest: sell → Contracts **Complete** | `contract-complete-path` |
+| 7 | At dest: sell there - the sale pays the contract | `contract-complete-path` |
 | 8 | Prefer **Hunt** target for an encounter on seed 1 (Grain Road skip ≠ fail) | `encounter-interrupt` |
 | 9 | Finish victory (Spare / Take all) | `victory-receipt-payoff` |
 | 10 | Open **Journal** | `journal-closure` |
