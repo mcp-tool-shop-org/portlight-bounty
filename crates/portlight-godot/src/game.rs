@@ -5753,6 +5753,9 @@ impl PortlightGame {
             13,
             contracts_screen::meta_color(offer.due),
         ));
+        if let Some(tag) = &offer.availability {
+            block.add_child(&contracts_screen::body_line(tag, 13, MUTED));
+        }
         block
     }
 
@@ -8977,6 +8980,8 @@ struct ListedOffer {
     detail: String,
     meta: String,
     due: bool,
+    /// T-S. Docked market fact for the good; `None` at sea.
+    availability: Option<String>,
 }
 
 struct ListedActive {
@@ -8997,6 +9002,9 @@ struct ContractListing {
 fn contract_listing(session: &Session) -> ContractListing {
     let day = session.world().day;
     let world = session.world();
+    let docked_market = docked_port_id(session)
+        .and_then(|id| world.port(id))
+        .map(|port| port.market.as_slice());
     let offers = session
         .board()
         .offers
@@ -9024,6 +9032,7 @@ fn contract_listing(session: &Session) -> ContractListing {
                     contracts_screen::ascii_sentence(&offer.offer_reason)
                 ),
                 due,
+                availability: contracts_screen::availability_tag(docked_market, &offer.good_id),
             }
         })
         .collect();

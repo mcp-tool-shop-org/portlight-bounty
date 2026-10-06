@@ -262,6 +262,20 @@ pub(crate) fn outcome_summary(outcome: &ContractOutcome) -> String {
     ascii_sentence(&words.join(" "))
 }
 
+/// T-S. One muted fact about the docked port's market for a board card.
+/// `None` when not docked. No remote prices, no advice.
+pub(crate) fn availability_tag(
+    market: Option<&[portlight_sim::model::MarketSlot]>,
+    good_id: &str,
+) -> Option<String> {
+    let slot = market?.iter().find(|slot| slot.good_id == good_id);
+    Some(match slot {
+        Some(slot) if slot.stock_current > 0 => format!("Sold here - buy {}", slot.buy_price),
+        Some(_) => "Out of stock here".to_string(),
+        None => "Not sold here".to_string(),
+    })
+}
+
 fn port_display_name(id: &str) -> String {
     portlight_sim::content::content()
         .port(id)
@@ -305,9 +319,9 @@ mod tests {
     use portlight_sim::Session;
 
     use super::{
-        abandon_prompt, ascii_sentence, can_complete, days_left_text, outcome_notice,
-        outcome_summary, outcome_terms, progress_text, requirement_text, reward_text, BOARD_CARD,
-        CAP_FULL, EMPTY_OFFERS, MAX_ACTIVE,
+        abandon_prompt, ascii_sentence, availability_tag, can_complete, days_left_text,
+        outcome_notice, outcome_summary, outcome_terms, progress_text, requirement_text,
+        reward_text, BOARD_CARD, CAP_FULL, EMPTY_OFFERS, MAX_ACTIVE,
     };
 
     #[test]
@@ -503,5 +517,41 @@ mod tests {
         quiet.standing_delta = 0;
         quiet.heat_delta = 0;
         assert_eq!(outcome_terms(&quiet, true), " - Trust +1");
+    }
+
+    #[test]
+    fn availability_tag_reads_the_docked_market_only() {
+        let session = Session::new("Ada", "merchant", 1, None).expect("seed-1 session");
+        let mut market = session
+            .world()
+            .port("porto_novo")
+            .expect("Porto Novo")
+            .market
+            .clone();
+        let grain = market
+            .iter()
+            .find(|slot| slot.good_id == "grain")
+            .expect("grain slot")
+            .buy_price;
+        assert_eq!(
+            availability_tag(Some(&market), "grain").as_deref(),
+            Some(format!("Sold here - buy {grain}").as_str())
+        );
+        assert_eq!(
+            availability_tag(Some(&market), "weapons").as_deref(),
+            Some("Not sold here")
+        );
+        for slot in market.iter_mut().filter(|slot| slot.good_id == "grain") {
+            slot.stock_current = 0;
+        }
+        assert_eq!(
+            availability_tag(Some(&market), "grain").as_deref(),
+            Some("Out of stock here")
+        );
+        // At sea there is no docked market, so no tag.
+        assert_eq!(availability_tag(None, "grain"), None);
+        for tag in ["Sold here - buy 8", "Out of stock here", "Not sold here"] {
+            assert!(tag.is_ascii(), "{tag}");
+        }
     }
 }
