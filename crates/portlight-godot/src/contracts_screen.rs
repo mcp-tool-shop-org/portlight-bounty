@@ -23,8 +23,12 @@ const DUE: Color = Color::from_rgb(0.93, 0.55, 0.42);
 pub(crate) const EMPTY_OFFERS: &str = "No offers at this port. Try another day or another port.";
 pub(crate) const CAP_FULL: &str = "Active contracts full (3/3).";
 pub(crate) const BOARD_CARD: &str =
-    "Sell the goods at the destination. Complete pays only a fulfilled contract.";
+    "Sell the goods at the destination - the contract pays out on the sale.";
 pub(crate) const MAX_ACTIVE: usize = 3;
+/// Contracts list headings. The playtest lens splits rows on these texts.
+pub(crate) const SECTION_BOARD: &str = "Board";
+pub(crate) const SECTION_ACTIVE: &str = "Active";
+pub(crate) const SECTION_RECENT: &str = "Recent";
 
 #[derive(Clone)]
 pub(crate) struct ContractsNodes {
@@ -244,6 +248,12 @@ mod tests {
             assert!(line.is_ascii(), "{line}");
         }
         assert_eq!(MAX_ACTIVE, 3);
+        // R10: the sale pays a fulfilled contract. No Complete step in the copy.
+        assert_eq!(
+            BOARD_CARD,
+            "Sell the goods at the destination - the contract pays out on the sale."
+        );
+        assert!(!BOARD_CARD.contains("Complete"));
         assert_eq!(
             ascii_sentence("Shortage at Corsair's Rest \u{2014} urgent demand for grain"),
             "Shortage at Corsair's Rest - urgent demand for grain"

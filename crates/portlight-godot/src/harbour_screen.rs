@@ -20,6 +20,7 @@ use portlight_sim::model::{InfrastructureRecord, VoyageStatus};
 use portlight_sim::Session;
 
 use crate::encounter_screen;
+use crate::logic::humanize_id;
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -637,7 +638,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
                 .as_ref()
                 .map(|credit| credit.outstanding)
                 .unwrap_or(0);
-            format!("{tier} outstanding {owed}")
+            format!("{} outstanding {owed}", humanize_id(tier))
         })
         .unwrap_or_else(|| "no credit line".to_string());
     let ship_template = world
@@ -898,9 +899,10 @@ pub(crate) fn parse_positive(text: &str) -> Result<i64, &'static str> {
     }
 }
 
-/// Gold subhead, same as Contracts, Shipyard, Journal, Crew, and Hunt.
+/// Gold subhead, same as Contracts, Shipyard, Journal, Crew, and Hunt:
+/// section heads are 16 px GOLD on every desk.
 pub(crate) fn section_label(text: &str) -> Gd<Label> {
-    let mut label = text_label(text, 18, GOLD);
+    let mut label = text_label(text, 16, GOLD);
     label.set_autowrap_mode(AutowrapMode::WORD_SMART);
     label
 }

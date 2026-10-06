@@ -17,7 +17,7 @@ use portlight_sim::model::VoyageStatus;
 use portlight_sim::Session;
 
 use crate::encounter_screen;
-use crate::logic::ascii_label;
+use crate::logic::{ascii_label, humanize_id};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -31,6 +31,8 @@ pub(crate) const FORAGE_BUTTON: &str = "Forage";
 /// Muted helper under the Forage status line. Shown always, at sea and in
 /// port, whatever the bounty state. Forage costs a day; it never opens a fight.
 pub(crate) const FORAGE_HELPER: &str = "Spends a day gathering stores. Does not start a fight.";
+/// Forage result line when every term is zero.
+pub(crate) const FORAGE_NO_CHANGE: &str = "No gain, no loss.";
 pub(crate) const HUNT_TARGET_BUTTON: &str = "Hunt target";
 pub(crate) const CLAIM_BUTTON: &str = "Claim";
 pub(crate) const EMPTY_BOARD: &str = "No bounties on the board.";
@@ -343,16 +345,31 @@ pub(crate) fn forage_notice(result: &HuntResult) -> String {
     if !danger.is_empty() {
         lines.push(danger);
     }
-    lines.push(format!(
-        "Provisions {:+}. Pelts {:+}. Silver {:+}. Morale -{}. Crew lost {}. Hull -{}.",
-        result.provisions_gained,
-        result.pelts_gained,
-        result.silver_gained,
-        result.morale_cost,
-        result.crew_lost,
-        result.hull_damage
-    ));
+    lines.push(forage_deltas(result));
     lines.join("\n")
+}
+
+/// One clause per non-zero term: gains are `+N`, losses `-N`. Morale, crew,
+/// and hull are costs, so they read as negatives. All zero is one line.
+pub(crate) fn forage_deltas(result: &HuntResult) -> String {
+    let terms = [
+        ("Provisions", result.provisions_gained),
+        ("Pelts", result.pelts_gained),
+        ("Silver", result.silver_gained),
+        ("Morale", -result.morale_cost),
+        ("Crew", -result.crew_lost),
+        ("Hull", -result.hull_damage),
+    ];
+    let clauses: Vec<String> = terms
+        .iter()
+        .filter(|(_, value)| *value != 0)
+        .map(|(name, value)| format!("{name} {value:+}."))
+        .collect();
+    if clauses.is_empty() {
+        FORAGE_NO_CHANGE.to_string()
+    } else {
+        clauses.join(" ")
+    }
 }
 
 pub(crate) fn claim_notice(silver: i64) -> String {
@@ -634,7 +651,7 @@ fn offer_text(card: &BountyCard) -> String {
         "{}\n{} | {} | {} | {} silver\n{}",
         card.captain_name,
         card.region,
-        card.faction_id,
+        humanize_id(&card.faction_id),
         card.difficulty,
         card.reward,
         card.description
@@ -766,11 +783,56 @@ mod tests {
         };
         let notice = forage_notice(&sample);
         assert!(notice.contains("empty nets"));
-        assert!(notice.contains("Provisions +0"));
-        assert!(notice.contains("Morale -3"));
+        assert!(!notice.contains("Provisions"));
+        assert!(notice.ends_with("\nMorale -3."));
         assert!(!notice.to_lowercase().contains("hunt bounty"));
         assert_eq!(FORAGE_BUTTON, "Forage");
         assert!(!FORAGE_BUTTON.to_lowercase().contains("bounty"));
+    }
+
+    fn forage_sample(terms: [i64; 6]) -> HuntResult {
+        HuntResult {
+            success: true,
+            provisions_gained: terms[0],
+            pelts_gained: terms[1],
+            silver_gained: terms[2],
+            morale_cost: terms[3],
+            crew_lost: terms[4],
+            hull_damage: terms[5],
+            flavor: String::new(),
+            danger_text: String::new(),
+        }
+    }
+
+    #[test]
+    fn forage_deltas_all_zero_is_one_line() {
+        let sample = forage_sample([0; 6]);
+        assert_eq!(forage_deltas(&sample), "No gain, no loss.");
+        assert_eq!(forage_notice(&sample), FORAGE_NO_CHANGE);
+        assert!(!forage_notice(&sample).contains("0"));
+    }
+
+    #[test]
+    fn forage_deltas_mixed_drops_zero_terms() {
+        let sample = forage_sample([4, 1, 0, 2, 0, 0]);
+        assert_eq!(
+            forage_deltas(&sample),
+            "Provisions +4. Pelts +1. Morale -2."
+        );
+        let silver = forage_sample([0, 0, 7, 0, 0, 0]);
+        assert_eq!(forage_deltas(&silver), "Silver +7.");
+        assert!(!forage_deltas(&sample).contains("-0"));
+        assert!(!forage_deltas(&sample).contains("+0"));
+    }
+
+    #[test]
+    fn forage_deltas_all_loss_reads_negative() {
+        let sample = forage_sample([-2, 0, -5, 3, 1, 4]);
+        assert_eq!(
+            forage_deltas(&sample),
+            "Provisions -2. Silver -5. Morale -3. Crew -1. Hull -4."
+        );
+        assert!(!forage_deltas(&sample).contains('+'));
     }
 
     #[test]

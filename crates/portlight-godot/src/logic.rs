@@ -548,7 +548,10 @@ pub(crate) fn victory_receipt_lines(receipt: &VictoryReceipt) -> Vec<String> {
         };
         push_receipt_line(
             &mut lines,
-            format!("Underworld standing {} {signed}.", receipt.faction_id),
+            format!(
+                "Underworld standing {} {signed}.",
+                humanize_id(&receipt.faction_id)
+            ),
         );
     }
     for (_, _, flavor) in &receipt.reactions {
@@ -731,7 +734,7 @@ fn faction_name(faction_id: &str) -> String {
     portlight_sim::content::content()
         .faction(faction_id)
         .map(|faction| faction.name.clone())
-        .unwrap_or_else(|| faction_id.to_string())
+        .unwrap_or_else(|| humanize_id(faction_id))
 }
 
 fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) -> EncounterFacts {
@@ -960,6 +963,23 @@ pub(crate) fn ascii_label<'a>(text: &'a str, fallback: &'a str) -> &'a str {
     } else {
         fallback
     }
+}
+
+/// Player copy for an id that has no display name: underscores become
+/// spaces and each word is title-cased (`monsoon_syndicate` reads
+/// `Monsoon Syndicate`). Callers that have a real display name use it first.
+pub(crate) fn humanize_id(id: &str) -> String {
+    id.split('_')
+        .filter(|word| !word.is_empty())
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().chain(chars).collect::<String>(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 pub(crate) fn cycle_index(len: usize, index: usize, delta: i32) -> usize {
@@ -1541,8 +1561,8 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
             let hire_enabled = ship.is_some() && space > 0 && !at_max;
             let max_text = spec
                 .max_per_ship
-                .map(|max| max.to_string())
-                .unwrap_or_else(|| "-".to_string());
+                .map(|max| format!("max {max}"))
+                .unwrap_or_else(|| "no cap".to_string());
             CrewRoleLine {
                 id: spec.id,
                 name: spec.name,
@@ -1553,7 +1573,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                 hire_five: spec.id == "sailor" && space >= 5,
                 fire_enabled: count > 0,
                 text: format!(
-                    "{name}  {count}  max {max_text}  hire {hire_cost}",
+                    "{name}  {count}  {max_text}  hire {hire_cost}",
                     name = spec.name
                 ),
             }
@@ -1742,6 +1762,32 @@ mod tests {
     use portlight_sim::session::VictoryReceipt;
 
     use super::*;
+
+    #[test]
+    fn humanize_id_title_cases_snake_case_ids() {
+        assert_eq!(humanize_id("monsoon_syndicate"), "Monsoon Syndicate");
+        assert_eq!(humanize_id("merchant_line"), "Merchant Line");
+        assert_eq!(humanize_id("iron_wolves"), "Iron Wolves");
+        assert_eq!(humanize_id("deep_reef"), "Deep Reef");
+        assert_eq!(humanize_id("crimson_tide"), "Crimson Tide");
+        assert_eq!(humanize_id("gnaw"), "Gnaw");
+        assert_eq!(humanize_id("Porto Novo"), "Porto Novo");
+        assert_eq!(humanize_id("_odd__id_"), "Odd Id");
+        assert_eq!(humanize_id(""), "");
+    }
+
+    #[test]
+    fn faction_name_keeps_the_catalog_name_and_humanizes_the_rest() {
+        assert_eq!(
+            faction_name("iron_wolves"),
+            portlight_sim::content::content()
+                .faction("iron_wolves")
+                .unwrap()
+                .name
+        );
+        assert_eq!(faction_name("no_such_faction"), "No Such Faction");
+        assert_eq!(faction_name(""), "");
+    }
 
     #[test]
     fn porto_novo_uses_the_rotated_projection() {
@@ -2726,7 +2772,7 @@ mod tests {
                 "+55 silver.".to_string(),
                 "+12 silver".to_string(),
                 "Found: Cutlass".to_string(),
-                "Underworld standing iron_wolves +2.".to_string(),
+                "Underworld standing Iron Wolves +2.".to_string(),
                 "Red Tomas approves. (+1 morale)".to_string(),
                 "Dr. Amara leaves. I cannot stay.".to_string(),
             ]
@@ -2798,7 +2844,8 @@ mod tests {
         let sailor = desk.roles.iter().find(|role| role.id == "sailor").unwrap();
         assert_eq!(sailor.count, 3);
         assert!(sailor.max.is_none());
-        assert!(sailor.text.contains("max -"));
+        assert!(sailor.text.contains("  no cap  "));
+        assert!(!sailor.text.contains("max -"));
         assert_eq!(sailor.hire_cost, 4);
         assert!(sailor.hire_five);
         assert!(sailor.fire_enabled);

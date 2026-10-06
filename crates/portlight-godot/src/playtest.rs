@@ -17,6 +17,7 @@
 use godot::classes::{Button, Container, Control, Label};
 use godot::prelude::*;
 
+use crate::contracts_screen::{SECTION_ACTIVE, SECTION_BOARD, SECTION_RECENT};
 use crate::game::{Action, ShipyardArm, Stance};
 use crate::harbour_screen::HarbourIntent;
 use crate::hunt_screen::HuntAction;
@@ -432,6 +433,13 @@ const CONTRACTS_ROOT: &str = "ContractsScreen";
 const CONTRACT_LIST: &str = "ContractList";
 /// The strip draws a `|` label between segments. It is not a segment.
 const STRIP_SEPARATOR: &str = "|";
+const DAY_REPORT_ROOT: &str = "DayReportScreen";
+const DAY_REPORT_COLUMN: &str = "DayReportColumn";
+const DAY_REPORT_TITLE: &str = "DayReportTitle";
+const DAY_REPORT_BODY: &str = "DayReportBody";
+const DAY_REPORT_FOOTER: &str = "DayReportFooter";
+/// `apply_document` names each drawn section box `Section{id}`.
+const DAY_REPORT_SECTION_PREFIX: &str = "Section";
 
 /// One contract block on the Contracts screen, read from its labels and
 /// its offered buttons.
@@ -499,6 +507,86 @@ fn row_line(row: &ContractRow) -> String {
     line
 }
 
+/// One drawn Day's report section: its id, heading, and body lines.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct DayReportSectionView {
+    pub id: String,
+    pub title: String,
+    pub lines: Vec<String>,
+}
+
+/// The Day's report card as drawn. Only read while the card is showing.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct DayReportView {
+    pub title: String,
+    pub eyebrow: String,
+    pub sections: Vec<DayReportSectionView>,
+    /// Captain's week rows. Empty when the footer is hidden.
+    pub footer: Vec<String>,
+}
+
+impl DayReportView {
+    /// Lines for the observation text, before `Actions:`.
+    pub(crate) fn text_lines(&self) -> Vec<String> {
+        let mut lines = vec![format!("Day's report: {}", self.title)];
+        for section in &self.sections {
+            lines.push(format!("{}:", section.title));
+            for line in &section.lines {
+                lines.push(format!("- {line}"));
+            }
+        }
+        if !self.footer.is_empty() {
+            lines.push("Footer:".to_string());
+            for line in &self.footer {
+                lines.push(format!("- {line}"));
+            }
+        }
+        lines
+    }
+
+    fn to_dictionary(&self) -> VarDictionary {
+        let mut sections = VarArray::new();
+        for section in &self.sections {
+            let mut lines = VarArray::new();
+            for line in &section.lines {
+                lines.push(line.as_str());
+            }
+            let mut dict = vdict! {
+                "id" => section.id.as_str(),
+                "title" => section.title.as_str(),
+            };
+            dict.set("lines", &lines);
+            sections.push(&dict);
+        }
+        let mut footer = VarArray::new();
+        for line in &self.footer {
+            footer.push(line.as_str());
+        }
+        let mut dict = vdict! {
+            "title" => self.title.as_str(),
+            "eyebrow" => self.eyebrow.as_str(),
+        };
+        dict.set("sections", &sections);
+        dict.set("footer", &footer);
+        dict
+    }
+}
+
+/// A section from its box name (`Section{id}`) and its label texts in draw
+/// order: heading first, then the lines. Other nodes are not sections.
+pub(crate) fn day_report_section(name: &str, labels: &[String]) -> Option<DayReportSectionView> {
+    let id = name.strip_prefix(DAY_REPORT_SECTION_PREFIX)?;
+    if id.is_empty() {
+        return None;
+    }
+    let (title, lines) = labels.split_first()?;
+    Some(DayReportSectionView {
+        id: id.to_string(),
+        title: title.clone(),
+        lines: lines.to_vec(),
+    })
+}
+
 /// Strip segments without the drawn separators.
 pub(crate) fn strip_text(labels: &[String]) -> String {
     labels
@@ -542,6 +630,55 @@ pub(crate) fn contract_row(labels: &[String], actions: Vec<String>) -> ContractR
     }
 }
 
+/// Which Contracts list section a row belongs to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ListSection {
+    Board,
+    Active,
+    Recent,
+}
+
+/// The section a heading label starts, keyed on the same texts the desk
+/// draws. Any other label text is not a heading.
+pub(crate) fn list_section(heading: &str) -> Option<ListSection> {
+    match heading {
+        SECTION_BOARD => Some(ListSection::Board),
+        SECTION_ACTIVE => Some(ListSection::Active),
+        SECTION_RECENT => Some(ListSection::Recent),
+        _ => None,
+    }
+}
+
+/// One child of the Contracts list, in draw order.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ListItem {
+    Label(String),
+    Row(ContractRow),
+}
+
+/// Board and Active rows by the heading drawn above them. Rows before any
+/// heading and Recent rows are dropped.
+pub(crate) fn split_rows(items: Vec<ListItem>) -> (Vec<ContractRow>, Vec<ContractRow>) {
+    let mut board = Vec::new();
+    let mut active = Vec::new();
+    let mut section = None;
+    for item in items {
+        match item {
+            ListItem::Label(text) => {
+                if let Some(next) = list_section(&text) {
+                    section = Some(next);
+                }
+            }
+            ListItem::Row(row) => match section {
+                Some(ListSection::Board) => board.push(row),
+                Some(ListSection::Active) => active.push(row),
+                Some(ListSection::Recent) | None => {}
+            },
+        }
+    }
+    (board, active)
+}
+
 /// Insert lines before the `Actions:` line, or append when there is none.
 pub(crate) fn splice_text(text: &str, extra: &[String]) -> String {
     if extra.is_empty() {
@@ -565,9 +702,15 @@ pub(crate) struct PortlightPlaytestLens {}
 
 #[godot_api]
 impl PortlightPlaytestLens {
-    /// Adds `state.contract_strip`, `state.contract_board`, and
-    /// `state.contracts_active`, and the same facts as text lines before
-    /// `Actions:`. Returns the observation unchanged when `game` is null.
+    /// Adds `state.contract_strip`, `state.contract_board`,
+    /// `state.contracts_active`, and `state.day_report` (null unless the
+    /// card is showing), and the same facts as text lines before `Actions:`.
+    /// Returns the observation unchanged when `game` is null.
+    ///
+    /// `VarDictionary::clone()` shares the dictionary; it is not a copy. With
+    /// a game node, the returned dictionary is the caller's `observation`,
+    /// and it and its nested `state` are updated in place. The bridge builds
+    /// a fresh observation for every call, so nothing else sees the change.
     #[func]
     fn augment(game: Option<Gd<Node>>, observation: VarDictionary) -> VarDictionary {
         let Some(game) = game else {
@@ -577,6 +720,7 @@ impl PortlightPlaytestLens {
             .and_then(|node| node.try_cast::<Control>().ok())
             .is_some_and(|control| control.is_visible_in_tree());
         let view = read_contracts_view(&game, contracts_open);
+        let day_report = read_day_report_view(&game);
 
         let mut result = observation.clone();
         let mut state = observation
@@ -586,6 +730,10 @@ impl PortlightPlaytestLens {
         state.set("contract_strip", view.strip.as_str());
         state.set("contract_board", &rows_array(&view.board));
         state.set("contracts_active", &rows_array(&view.active));
+        match &day_report {
+            Some(report) => state.set("day_report", &report.to_dictionary()),
+            None => state.set("day_report", &Variant::nil()),
+        }
         result.set("state", &state);
 
         let text = observation
@@ -593,7 +741,11 @@ impl PortlightPlaytestLens {
             .and_then(|value| value.try_to::<GString>().ok())
             .map(|text| text.to_string())
             .unwrap_or_default();
-        let spliced = splice_text(&text, &view.text_lines(contracts_open));
+        let mut extra = view.text_lines(contracts_open);
+        if let Some(report) = &day_report {
+            extra.extend(report.text_lines());
+        }
+        let spliced = splice_text(&text, &extra);
         result.set("text", spliced.as_str());
         result
     }
@@ -640,13 +792,10 @@ fn read_contracts_view(game: &Gd<Node>, contracts_open: bool) -> ContractsView {
     let Some(list) = find_named(game, CONTRACT_LIST) else {
         return view;
     };
-    let mut section = String::new();
+    let mut items = Vec::new();
     for child in list.get_children().iter_shared() {
         if let Ok(label) = child.clone().try_cast::<Label>() {
-            let text = label.get_text().to_string();
-            if matches!(text.as_str(), "Board" | "Active" | "Recent") {
-                section = text;
-            }
+            items.push(ListItem::Label(label.get_text().to_string()));
             continue;
         }
         if child.clone().try_cast::<Container>().is_err() {
@@ -656,14 +805,56 @@ fn read_contracts_view(game: &Gd<Node>, contracts_open: bool) -> ContractsView {
         collect_labels(&child, &mut labels);
         let mut actions = Vec::new();
         collect_actions(&child, &mut actions);
-        let row = contract_row(&labels, actions);
-        match section.as_str() {
-            "Board" => view.board.push(row),
-            "Active" => view.active.push(row),
-            _ => {}
+        items.push(ListItem::Row(contract_row(&labels, actions)));
+    }
+    (view.board, view.active) = split_rows(items);
+    view
+}
+
+fn read_day_report_view(game: &Gd<Node>) -> Option<DayReportView> {
+    let root = find_named(game, DAY_REPORT_ROOT)?;
+    let shown = root
+        .clone()
+        .try_cast::<Control>()
+        .is_ok_and(|control| control.is_visible_in_tree());
+    if !shown {
+        return None;
+    }
+    let mut view = DayReportView::default();
+    if let Some(title) =
+        find_named(&root, DAY_REPORT_TITLE).and_then(|node| node.try_cast::<Label>().ok())
+    {
+        view.title = title.get_text().to_string();
+    }
+    // The eyebrow is the column's first label, above the title.
+    if let Some(column) = find_named(&root, DAY_REPORT_COLUMN) {
+        view.eyebrow = column
+            .get_children()
+            .iter_shared()
+            .find_map(|child| child.try_cast::<Label>().ok())
+            .map(|label| label.get_text().to_string())
+            .unwrap_or_default();
+    }
+    if let Some(body) = find_named(&root, DAY_REPORT_BODY) {
+        for child in body.get_children().iter_shared() {
+            let mut labels = Vec::new();
+            collect_labels(&child, &mut labels);
+            let name = child.get_name().to_string();
+            if let Some(section) = day_report_section(&name, &labels) {
+                view.sections.push(section);
+            }
         }
     }
-    view
+    if let Some(footer) = find_named(&root, DAY_REPORT_FOOTER) {
+        let footer_shown = footer
+            .clone()
+            .try_cast::<Control>()
+            .is_ok_and(|control| control.is_visible_in_tree());
+        if footer_shown {
+            collect_labels(&footer, &mut view.footer);
+        }
+    }
+    Some(view)
 }
 
 fn find_named(root: &Gd<Node>, name: &str) -> Option<Gd<Node>> {
@@ -793,6 +984,99 @@ mod tests {
         assert_eq!(contract_id_of("chart.contracts.open"), None);
         let blind = contract_row(&labels, Vec::new());
         assert_eq!(blind.id, "");
+    }
+
+    #[test]
+    fn board_and_active_split_on_the_desk_heading_texts() {
+        // The lens keys on the same constants the Contracts desk draws.
+        assert_eq!(SECTION_BOARD, "Board");
+        assert_eq!(SECTION_ACTIVE, "Active");
+        assert_eq!(SECTION_RECENT, "Recent");
+        assert_eq!(list_section(SECTION_BOARD), Some(ListSection::Board));
+        assert_eq!(list_section(SECTION_ACTIVE), Some(ListSection::Active));
+        assert_eq!(list_section(SECTION_RECENT), Some(ListSection::Recent));
+        assert_eq!(list_section("No active contracts."), None);
+        let row =
+            |id: &str| contract_row(&[id.to_string()], vec![format!("contracts.accept.{id}")]);
+        let items = vec![
+            ListItem::Row(row("orphan")),
+            ListItem::Label(SECTION_BOARD.into()),
+            ListItem::Row(row("b1")),
+            ListItem::Label("No offers at this port.".into()),
+            ListItem::Row(row("b2")),
+            ListItem::Label(SECTION_ACTIVE.into()),
+            ListItem::Row(row("a1")),
+            ListItem::Label(SECTION_RECENT.into()),
+            ListItem::Row(row("r1")),
+        ];
+        let (board, active) = split_rows(items);
+        let ids = |rows: &[ContractRow]| rows.iter().map(|row| row.id.clone()).collect::<Vec<_>>();
+        assert_eq!(ids(&board), vec!["b1", "b2"]);
+        assert_eq!(ids(&active), vec!["a1"]);
+        let (none_board, none_active) = split_rows(vec![ListItem::Row(row("x"))]);
+        assert!(none_board.is_empty() && none_active.is_empty());
+    }
+
+    #[test]
+    fn day_report_sections_come_from_named_boxes() {
+        let labels = vec![
+            "Arrival".to_string(),
+            "Grain run - 0/8 - 5 days left - sell 8 more Grain here".to_string(),
+            "Grain 12 to 16 (+33%)".to_string(),
+        ];
+        let section = day_report_section("Sectionarrival", &labels).unwrap();
+        assert_eq!(section.id, "arrival");
+        assert_eq!(section.title, "Arrival");
+        assert_eq!(section.lines, labels[1..].to_vec());
+        assert_eq!(day_report_section("DayReportFooter", &labels), None);
+        assert_eq!(day_report_section("Section", &labels), None);
+        assert_eq!(day_report_section("Sectionhealth", &[]), None);
+        let heading_only = day_report_section("Sectionhealth", &labels[..1]).unwrap();
+        assert!(heading_only.lines.is_empty());
+    }
+
+    #[test]
+    fn day_report_text_lines_go_before_actions() {
+        let view = DayReportView {
+            title: "Arrived - Al-Manar".into(),
+            eyebrow: "Day's report".into(),
+            sections: vec![
+                DayReportSectionView {
+                    id: "arrival".into(),
+                    title: "Arrival".into(),
+                    lines: vec!["Grain 12 to 16 (+33%)".into()],
+                },
+                DayReportSectionView {
+                    id: "bounties".into(),
+                    title: "Bounties".into(),
+                    lines: vec!["Claim ready: Raj the Quiet (120 silver) - open Hunt.".into()],
+                },
+            ],
+            footer: vec!["Week: +40 silver".into()],
+        };
+        let lines = view.text_lines();
+        assert_eq!(
+            lines,
+            vec![
+                "Day's report: Arrived - Al-Manar",
+                "Arrival:",
+                "- Grain 12 to 16 (+33%)",
+                "Bounties:",
+                "- Claim ready: Raj the Quiet (120 silver) - open Hunt.",
+                "Footer:",
+                "- Week: +40 silver",
+            ]
+        );
+        let bare = DayReportView {
+            title: "Day 3".into(),
+            ..DayReportView::default()
+        };
+        assert_eq!(bare.text_lines(), vec!["Day's report: Day 3"]);
+        let text = "Screen: day-report\nActions:\nchart.day_report.close — Close";
+        assert_eq!(
+            splice_text(text, &bare.text_lines()),
+            "Screen: day-report\nDay's report: Day 3\nActions:\nchart.day_report.close — Close"
+        );
     }
 
     #[test]

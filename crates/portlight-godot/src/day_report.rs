@@ -43,6 +43,10 @@ const CARD_Y: f32 = 40.0;
 const CARD_H: f32 = 380.0;
 /// Scroll minimum height with no footer.
 const SCROLL_MIN_H: f32 = 220.0;
+/// Gap between the scroll and the foot. The column's 8 px gap left the
+/// scroll's bottom edge on a body baseline; 4 px gives those rows to the
+/// scroll, so the clip falls in the gap under a line. Card size is unchanged.
+const SCROLL_FOOT_SEP: i32 = 4;
 /// Captain's week: the scroll may give up at most this much so Close stays inside.
 pub(crate) const FOOTER_SCROLL_SHRINK: f32 = 48.0;
 /// Footer rows: at most Week + Next.
@@ -221,7 +225,8 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     root.add_child(&column);
 
     column.add_child(&text_label("Day's report", 14, MUTED, false));
-    let title = text_label("", 24, GOLD, false);
+    let mut title = text_label("", 24, GOLD, false);
+    title.set_name("DayReportTitle");
     column.add_child(&title);
 
     let mut scroll = ScrollContainer::new_alloc();
@@ -235,7 +240,13 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     body.set_h_size_flags(SizeFlags::EXPAND_FILL);
     body.add_theme_constant_override("separation", 12);
     scroll.add_child(&body);
-    column.add_child(&scroll);
+    let mut stack = VBoxContainer::new_alloc();
+    stack.set_name("DayReportStack");
+    stack.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    stack.set_v_size_flags(SizeFlags::EXPAND_FILL);
+    stack.add_theme_constant_override("separation", SCROLL_FOOT_SEP);
+    stack.add_child(&scroll);
+    column.add_child(&stack);
 
     // Captain's week footer: below scroll, above Close. Not a capped section.
     // Footer and Close share one column slot (sep 4), so a shown footer costs
@@ -244,7 +255,7 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
     foot.set_name("DayReportFoot");
     foot.set_h_size_flags(SizeFlags::EXPAND_FILL);
     foot.add_theme_constant_override("separation", FOOTER_SEP);
-    column.add_child(&foot);
+    stack.add_child(&foot);
 
     let mut footer = VBoxContainer::new_alloc();
     footer.set_name("DayReportFooter");
@@ -839,15 +850,17 @@ fn deadline_lines(
             contract.delivered_quantity, contract.required_quantity
         );
         let need = contract.required_quantity - contract.delivered_quantity;
-        let cue = if need > 0 {
+        // The sale pays a fulfilled contract (R10), so `need <= 0` drops the
+        // hint clause. No Complete or Deliver wording.
+        let text = if need > 0 {
             let good = good_name(&contract.good_id);
             let port = port_label(world, &contract.destination_port_id);
-            format!("sell {need} more {good} at {port}")
+            format!("{title} - {timing} - {progress} - sell {need} more {good} at {port}")
         } else {
-            "ready to Complete at Contracts".to_string()
+            format!("{title} - {timing} - {progress}")
         };
         lines.push(DayReportLine {
-            text: format!("{title} - {timing} - {progress} - {cue}"),
+            text,
             notable: true,
         });
     }
@@ -1229,7 +1242,7 @@ pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
             id: "deadlines",
             title: "Deadlines",
             lines: vec![DayReportLine {
-                text: "Spice charter - 1 day left - 10/10 - ready to Complete at Contracts".into(),
+                text: "Spice charter - 1 day left - 10/10".into(),
                 notable: true,
             }],
         }],
@@ -1321,6 +1334,54 @@ fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fixture_contract(delivered: i64, required: i64) -> ActiveContract {
+        ActiveContract {
+            offer_id: "offer-spice".into(),
+            template_id: "test".into(),
+            family: "test".into(),
+            title: "Spice charter".into(),
+            accepted_day: 1,
+            deadline_day: 2,
+            destination_port_id: "al_manar".into(),
+            good_id: "grain".into(),
+            required_quantity: required,
+            delivered_quantity: delivered,
+            reward_silver: 100,
+            bonus_reward: 0,
+            source_region: None,
+            source_port: None,
+            inspection_modifier: 1.0,
+            status: "accepted".into(),
+        }
+    }
+
+    /// R10: the sale pays a fulfilled contract, so `need <= 0` keeps
+    /// `{Title} - {timing} - {d}/{r}` and drops the hint clause.
+    #[test]
+    fn deadline_line_drops_hint_when_nothing_is_needed() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let world = session.world();
+        let active = vec![fixture_contract(10, 10), fixture_contract(12, 10)];
+        let lines = deadline_lines(&active, 1, &[], world);
+        let texts: Vec<&str> = lines.iter().map(|line| line.text.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec![
+                "Spice charter - 1 day left - 10/10",
+                "Spice charter - 1 day left - 12/10"
+            ]
+        );
+        for text in texts {
+            assert!(!text.contains("Complete"), "{text}");
+            assert!(!text.contains("Deliver"), "{text}");
+        }
+        let open = deadline_lines(&[fixture_contract(3, 10)], 1, &[], world);
+        assert_eq!(
+            open[0].text,
+            "Spice charter - 1 day left - 3/10 - sell 7 more Grain at Al-Manar"
+        );
+    }
 
     #[test]
     fn deadline_timing_never_says_due_soon() {
@@ -2151,7 +2212,7 @@ mod tests {
             id: "deadlines",
             title: "Deadlines",
             lines: vec![line(
-                "Spice charter - 1 day left - 10/10 - ready to Complete at Contracts",
+                "Grain run - 1 day left - 3/10 - sell 7 more Grain at Corsair's Rest",
                 true,
             )],
         };
