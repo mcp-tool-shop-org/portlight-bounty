@@ -518,8 +518,15 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     facts.opponent_hp = step.opponent_hp;
     facts.player_hull_delta = step.player_hull_delta;
     facts.enemy_hull_delta = step.enemy_hull_delta;
-    facts.player_crew_delta = step.player_crew_delta;
-    facts.enemy_crew_delta = step.enemy_crew_delta;
+    if step.kind == "board" {
+        // `board_step` sets only the `*_crew_lost` amounts and leaves the
+        // deltas at 0, so the #40 line was silent on the boarding loss.
+        facts.player_crew_delta = -step.player_crew_lost;
+        facts.enemy_crew_delta = -step.enemy_crew_lost;
+    } else {
+        facts.player_crew_delta = step.player_crew_delta;
+        facts.enemy_crew_delta = step.enemy_crew_delta;
+    }
     // Damage amounts are non-negative. The line shows them as signed HP changes.
     facts.player_hp_delta = -step.damage_to_player;
     facts.opponent_hp_delta = -step.damage_to_opponent;
@@ -2312,6 +2319,38 @@ mod tests {
     }
 
     #[test]
+    fn board_step_shows_its_crew_loss_on_the_delta_line() {
+        let mut session = scripted_session();
+        let base = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        let mut step = cleared_deltas(&base);
+        step.kind = "board".to_string();
+        step.phase = "duel".to_string();
+        step.player_crew_lost = 3;
+        step.enemy_crew_lost = 1;
+        let (text, spans) = line_for(&session, &step);
+        assert_eq!(text, "Crew: you -3, enemy -1");
+        let parts: Vec<(&str, DeltaTone)> = spans
+            .iter()
+            .map(|span| (span.text.as_str(), span.tone))
+            .collect();
+        assert_eq!(
+            parts,
+            vec![
+                ("Crew: ", DeltaTone::Neutral),
+                ("you -3", DeltaTone::PlayerLoss),
+                (", ", DeltaTone::Neutral),
+                ("enemy -1", DeltaTone::EnemyLoss),
+            ]
+        );
+        // Only the board step maps `*_crew_lost`; other kinds keep the deltas.
+        step.kind = "naval".to_string();
+        step.phase = "naval".to_string();
+        assert_eq!(line_for(&session, &step).0, "");
+    }
+
+    #[test]
     fn one_ascii_signed_delta_line_drops_zeros() {
         let mut session = scripted_session();
         let base = session
@@ -2425,11 +2464,23 @@ mod tests {
         let combat_actions = probe_fight(&mut session);
         facts = adopt(&session, &step, Some(&facts), &[], &combat_actions);
         let boarded = delta_text(&present(&facts).unwrap().delta);
-        assert_line_matches_step(&step, &boarded);
-        assert!(
-            boarded.is_empty(),
-            "boarding crew loss is not an EncounterStep delta: {boarded}"
-        );
+        // Section 10.2: the board step's `*_crew_lost` reads as crew deltas.
+        let mut mapped = step.clone();
+        mapped.player_crew_delta = -step.player_crew_lost;
+        mapped.enemy_crew_delta = -step.enemy_crew_lost;
+        assert_line_matches_step(&mapped, &boarded);
+        if step.player_crew_lost != 0 {
+            assert!(
+                boarded.contains(&format!("you -{}", step.player_crew_lost)),
+                "{boarded}"
+            );
+        }
+        if step.enemy_crew_lost != 0 {
+            assert!(
+                boarded.contains(&format!("enemy -{}", step.enemy_crew_lost)),
+                "{boarded}"
+            );
+        }
 
         let mut last_fight = String::new();
         for action in SCRIPTED_FIGHT {
