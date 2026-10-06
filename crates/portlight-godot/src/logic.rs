@@ -1759,6 +1759,69 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
     })
 }
 
+/// Chart duel prompt for `World.pending_duel`. Faction by catalog name,
+/// ASCII ` - ` separators.
+pub(crate) fn duel_prompt(duel: &portlight_sim::model::PendingDuel) -> String {
+    format!(
+        "Duel: {}.\nFaction {} - {} - strength {} - {}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
+        duel.captain_name,
+        faction_name(&duel.faction_id),
+        duel.personality,
+        duel.strength,
+        duel.region
+    )
+}
+
+/// R11. One log line for a finished duel, zero terms dropped (R4).
+/// `result` is `Won`, `Draw` or `Lost`.
+pub(crate) fn duel_result_line(result: &str, opponent: &str, silver: i64, standing: i64) -> String {
+    let mut line = if opponent.is_empty() {
+        format!("{result} the duel.")
+    } else {
+        format!("{result} the duel with {opponent}.")
+    };
+    if silver != 0 {
+        line.push_str(&format!(" Silver {silver:+}."));
+    }
+    if standing != 0 {
+        line.push_str(&format!(" Standing {standing:+}, shown only."));
+    }
+    line
+}
+
+/// R12. Drops sim rich-text tags (`[bold]`, `[/dim]`, `[/]`) and keeps the
+/// text inside. Brackets that are not a tag (`[3/5]`, `[a.b]`) stay.
+pub(crate) fn strip_markup(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(open) = rest.find('[') {
+        out.push_str(&rest[..open]);
+        let after = &rest[open + 1..];
+        match after.find(']') {
+            Some(close) if is_markup_tag(&after[..close]) => {
+                rest = &after[close + 1..];
+            }
+            _ => {
+                out.push('[');
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+fn is_markup_tag(inner: &str) -> bool {
+    let body = inner.strip_prefix('/').unwrap_or(inner);
+    if body.is_empty() {
+        return inner == "/";
+    }
+    body.starts_with(|ch: char| ch.is_ascii_lowercase())
+        && body
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == ' ' || ch == '#')
+}
+
 #[cfg(test)]
 mod tests {
     use portlight_chart::{chart_to_screen_f, chart_to_uv, facing_from_uv, Facing};
@@ -3038,5 +3101,84 @@ mod tests {
         assert_eq!((master.cost, master.days), (400, 8));
         assert!(!master.can_train);
         assert!(master.next_text.contains("Master"));
+    }
+
+    #[test]
+    fn strip_markup_keeps_the_text_inside_tags() {
+        assert_eq!(
+            strip_markup("[dim]Landmark: The Cliff Tavern[/dim]"),
+            "Landmark: The Cliff Tavern"
+        );
+        assert_eq!(
+            strip_markup("[bold]You arrive at Al-Manar.[/bold]"),
+            "You arrive at Al-Manar."
+        );
+        assert_eq!(
+            strip_markup("[bold]Harbor:[/bold] busy quay"),
+            "Harbor: busy quay"
+        );
+        assert_eq!(
+            strip_markup("Use [bold]portlight duel <stance>[/bold] to fight."),
+            "Use portlight duel <stance> to fight."
+        );
+        assert_eq!(strip_markup("[bold red]Hot[/] day"), "Hot day");
+        // Not markup: kept as written.
+        for plain in [
+            "Bounty [3/5] posted",
+            "[contracts.accept.x]",
+            "a [ b",
+            "x ] y",
+            "[]",
+            "[Upper]",
+            "Grain x5",
+        ] {
+            assert_eq!(strip_markup(plain), plain);
+        }
+    }
+
+    #[test]
+    fn duel_result_line_drops_zero_terms() {
+        assert_eq!(
+            duel_result_line("Won", "Bram", 40, 1),
+            "Won the duel with Bram. Silver +40. Standing +1, shown only."
+        );
+        assert_eq!(
+            duel_result_line("Lost", "Bram", -36, 0),
+            "Lost the duel with Bram. Silver -36."
+        );
+        assert_eq!(
+            duel_result_line("Draw", "Bram", 0, 0),
+            "Draw the duel with Bram."
+        );
+        assert_eq!(
+            duel_result_line("Won", "", 0, 2),
+            "Won the duel. Standing +2, shown only."
+        );
+        for line in [
+            duel_result_line("Lost", "Bram", -36, 0),
+            duel_result_line("Won", "Bram", 0, 0),
+        ] {
+            assert!(!line.contains("+0"), "{line}");
+        }
+    }
+
+    #[test]
+    fn duel_prompt_names_the_faction_in_ascii() {
+        let duel = portlight_sim::model::PendingDuel {
+            captain_id: "c".into(),
+            captain_name: "Bram".into(),
+            faction_id: "iron_wolves".into(),
+            personality: "bold".into(),
+            strength: 3,
+            region: "Mediterranean".into(),
+        };
+        let text = duel_prompt(&duel);
+        assert!(text.is_ascii(), "{text}");
+        assert!(!text.contains('\u{00b7}'), "{text}");
+        assert!(
+            text.contains("Faction The Iron Wolves - bold - strength 3 - Mediterranean."),
+            "{text}"
+        );
+        assert!(!text.contains("iron_wolves"), "{text}");
     }
 }

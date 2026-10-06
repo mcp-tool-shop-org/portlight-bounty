@@ -10,7 +10,7 @@ use godot::prelude::*;
 use portlight_sim::model::ActiveContract;
 use portlight_sim::session::Session;
 
-use crate::contracts_screen::{ascii_sentence, can_complete, meta_color, progress_text};
+use crate::contracts_screen::{ascii_sentence, meta_color, progress_text};
 use crate::day_report::deadline_timing;
 use crate::logic::ascii_label;
 
@@ -214,15 +214,8 @@ fn segment_for(
     let progress = progress_text(contract.delivered_quantity, contract.required_quantity);
     let days_left = contract.deadline_day - day;
     let urgent = days_left <= 1;
-    let cue = if can_complete(
-        &contract.status,
-        contract.delivered_quantity,
-        contract.required_quantity,
-    ) {
-        "Complete at Contracts".to_string()
-    } else {
-        deadline_timing(days_left)
-    };
+    // R10: the sale settles a filled contract, so the cue is always timing.
+    let cue = deadline_timing(days_left);
     StripSegment {
         text: format!("{title} - {progress} - {cue}"),
         urgent,
@@ -369,15 +362,15 @@ mod tests {
     }
 
     #[test]
-    fn deliverable_uses_short_complete_cue() {
+    fn deliverable_shows_timing_not_a_complete_cue() {
         let session = Session::new("Ada", "merchant", 1, None).unwrap();
         let world = session.world();
         let active = vec![test_contract("Spice charter", 10, 10, 10, "al_manar")];
         let doc = build_document_from_active(&active, 1, world).unwrap();
         let text = doc.joined_text();
-        assert!(text.contains("Complete at Contracts"));
-        assert!(!text.contains("ready to Complete"));
+        assert!(!text.contains("Complete"), "{text}");
         assert!(text.contains("10/10"));
+        assert!(text.contains(&deadline_timing(9)), "{text}");
     }
 
     #[test]

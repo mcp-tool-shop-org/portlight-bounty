@@ -6498,7 +6498,9 @@ impl PortlightGame {
     }
 
     fn push_log(&mut self, line: impl Into<String>) {
-        self.log_lines.push(line.into());
+        // R12: sim flavour carries `[bold]` / `[dim]` tags; a Label prints them.
+        self.log_lines
+            .push(crate::logic::strip_markup(&line.into()));
         if self.log_lines.len() > 8 {
             let extra = self.log_lines.len() - 8;
             self.log_lines.drain(0..extra);
@@ -6720,13 +6722,22 @@ impl PortlightGame {
     }
 
     fn play_fight(&mut self, action: &str) {
-        let result = {
+        let (silver_before, result) = {
             let Some(session) = self.session.as_mut() else {
                 return;
             };
-            session.fight(action)
+            let before = session.world().captain.silver;
+            (before, session.fight(action))
         };
+        // R11: a finished personal fight (the Hunt duel) logs its result.
+        let outcome = result.as_ref().ok().and_then(|step| {
+            let silver_after = self.session.as_ref()?.world().captain.silver;
+            fight_result_line(step, silver_after - silver_before)
+        });
         self.ingest(result);
+        if let Some(line) = outcome {
+            self.push_log(line);
+        }
     }
 
     fn spare_enemy(&mut self) {
@@ -8683,6 +8694,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Personal, "personal fight");
         self.play_scripted_fight();
         self.expect_phase(ScreenPhase::Outcome, "outcome");
+        self.expect_duel_logged("encounter");
         self.expect_outcome_actions();
         self.spare_enemy();
         self.expect_returned();
@@ -8795,6 +8807,17 @@ impl PortlightGame {
                 return;
             }
             self.play_fight(action);
+        }
+    }
+
+    /// R11: the fight that reached Outcome logged its result as the last line.
+    fn expect_duel_logged(&mut self, label: &str) {
+        let last = self.log_lines.last().cloned().unwrap_or_default();
+        if !last.starts_with("Won the duel") {
+            self.smoke_ok = false;
+            let line = format!("Encounter smoke: {label} duel result not logged ({last:?}).");
+            godot_print!("{line}");
+            self.push_log(line);
         }
     }
 
@@ -8915,6 +8938,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Personal, "bounty personal fight");
         self.play_scripted_fight();
         self.expect_phase(ScreenPhase::Outcome, "bounty outcome");
+        self.expect_duel_logged("bounty");
         let still_pending = self
             .session
             .as_ref()
@@ -9152,10 +9176,7 @@ impl PortlightGame {
         let Some(duel) = session.world().pending_duel.as_ref() else {
             return String::new();
         };
-        format!(
-            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
-            duel.captain_name, duel.faction_id, duel.personality, duel.strength, duel.region
-        )
+        crate::logic::duel_prompt(duel)
     }
 
     fn stance_line(&self) -> String {
@@ -9211,10 +9232,32 @@ fn duel_outcome_line(outcome: &DuelOutcome) -> String {
     } else {
         "Lost"
     };
-    format!(
-        "{result} the duel with {}. Silver {:+}. Standing {:+}, shown only.",
-        outcome.opponent_name, outcome.silver_delta, outcome.standing_delta
+    crate::logic::duel_result_line(
+        result,
+        &outcome.opponent_name,
+        outcome.silver_delta,
+        outcome.standing_delta,
     )
+}
+
+/// R11. Result line for a personal-fight step that ended the duel. A win
+/// logs before Spare / Take all add their own receipt lines.
+fn fight_result_line(step: &EncounterStep, silver_delta: i64) -> Option<String> {
+    let result = if step.player_won {
+        "Won"
+    } else if step.draw {
+        "Draw"
+    } else if step.phase == "resolved" {
+        "Lost"
+    } else {
+        return None;
+    };
+    Some(crate::logic::duel_result_line(
+        result,
+        &step.enemy_captain_name,
+        silver_delta,
+        0,
+    ))
 }
 
 fn ledger_line(session: &Session) -> String {
