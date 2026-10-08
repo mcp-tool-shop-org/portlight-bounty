@@ -436,9 +436,41 @@ fn is_snake_id(word: &str) -> bool {
 
 /// Desk Recent row, same builder as the notices: `Paid: Silver +612 - 23
 /// Grain to Corsair's Rest - early bonus +60`, `Abandoned: Grain for
-/// Corsair's Rest`. No raw outcome type, no sim summary.
-pub(crate) fn recent_line(outcome: &ContractOutcome) -> String {
-    outcome_line(recent_label(outcome), outcome, 0, DESK_CHARS)
+/// Corsair's Rest`. No raw outcome type, no sim summary. An expiry adds its
+/// failure terms and progress (GD #62):
+/// `Expired: Silver +60 - Guarantee +105 - Grain for Corsair's Rest - 5/23`.
+/// `guarantee` is the contract-guarantee silver paid for this contract; only
+/// expired rows read it.
+pub(crate) fn recent_line(outcome: &ContractOutcome, guarantee: i64) -> String {
+    if outcome.outcome_type == "expired" {
+        expired_recent_line(outcome, guarantee)
+    } else {
+        outcome_line(recent_label(outcome), outcome, 0, DESK_CHARS)
+    }
+}
+
+/// `Expired: Silver +N - Guarantee +N - {Good} for {Port} - {d}/{r}`, zero
+/// terms omitted (silver-first, like every trimmed one-liner). The head and
+/// the `{d}/{r}` token are never trimmed; only the field tail gives way.
+fn expired_recent_line(outcome: &ContractOutcome, guarantee: i64) -> String {
+    let mut head = format!("{}:", recent_label(outcome));
+    let terms = failure_terms(outcome, guarantee);
+    if !terms.is_empty() {
+        head.push(' ');
+        head.push_str(&terms.join(" - "));
+    }
+    let progress = format!(
+        " - {}",
+        progress_text(outcome.delivered_quantity, outcome.required_quantity)
+    );
+    let sep = if head.ends_with(':') { " " } else { " - " };
+    let room = DESK_CHARS.saturating_sub(head.len() + sep.len() + progress.len());
+    let tail = trim_tail(&outcome_tail(outcome), room);
+    if tail.is_empty() {
+        format!("{head}{progress}")
+    } else {
+        format!("{head}{sep}{tail}{progress}")
+    }
 }
 
 fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
@@ -822,34 +854,91 @@ mod tests {
     #[test]
     fn recent_line_is_built_from_fields() {
         assert_eq!(
-            recent_line(&bonus_paid()),
+            recent_line(&bonus_paid(), 0),
             "Paid: Silver +612 - 23 Grain to Corsair's Rest - early bonus +60"
         );
         assert_eq!(
-            recent_line(&delivered("Delivered 23 grain to corsairs_rest")),
+            recent_line(&delivered("Delivered 23 grain to corsairs_rest"), 0),
             "Paid: Silver +615 - 23 Grain to Corsair's Rest"
         );
         assert_eq!(
-            recent_line(&failed("abandoned", 0)),
+            recent_line(&failed("abandoned", 0), 0),
             "Abandoned: Grain for Corsair's Rest"
         );
         assert_eq!(
-            recent_line(&failed("abandoned", -40)),
+            recent_line(&failed("abandoned", -40), 0),
             "Abandoned: Silver -40 - Grain for Corsair's Rest"
         );
+        // Abandoned rows never read the guarantee (GD #62: unchanged).
         assert_eq!(
-            recent_line(&failed("expired", 0)),
-            "Expired: Grain for Corsair's Rest"
-        );
-        assert_eq!(
-            recent_line(&failed("expired", 60)),
-            "Expired: Silver +60 - Grain for Corsair's Rest"
+            recent_line(&failed("abandoned", 0), 105),
+            "Abandoned: Grain for Corsair's Rest"
         );
         for kind in ["completed", "completed_bonus", "abandoned", "expired"] {
-            let line = recent_line(&failed(kind, 0));
+            let line = recent_line(&failed(kind, 0), 0);
             assert_clean(&line);
             assert!(!line.contains("Famine relief"), "{line}");
             assert!(line.len() <= DESK_CHARS, "{line}");
+        }
+    }
+
+    /// GD #62 blocker: expired Recent rows carry Silver, Guarantee and
+    /// `{d}/{r}`, zero terms omitted, catalog names, silver-first.
+    #[test]
+    fn expired_recent_row_has_terms_and_progress() {
+        assert_eq!(
+            recent_line(&failed("expired", 0), 0),
+            "Expired: Grain for Corsair's Rest - 0/23"
+        );
+        let mut part = failed("expired", 60);
+        part.delivered_quantity = 5;
+        assert_eq!(
+            recent_line(&part, 0),
+            "Expired: Silver +60 - Grain for Corsair's Rest - 5/23"
+        );
+        assert_eq!(
+            recent_line(&failed("expired", 0), 105),
+            "Expired: Guarantee +105 - Grain for Corsair's Rest - 0/23"
+        );
+        assert_eq!(
+            recent_line(&part, 105),
+            "Expired: Silver +60 - Guarantee +105 - Grain for Corsair's Rest - 5/23"
+        );
+        // Non-catalog ids humanize; never raw.
+        let mut odd = failed("expired", 0);
+        odd.good_id = "whale_oil".into();
+        odd.destination_port_id = "drowned_quay".into();
+        assert_eq!(
+            recent_line(&odd, 0),
+            "Expired: Whale Oil for Drowned Quay - 0/23"
+        );
+        // A runaway port id trims the field tail; head and progress stay.
+        let mut long = part.clone();
+        long.destination_port_id = "a_very_long_port_name".repeat(6);
+        let line = recent_line(&long, 105);
+        assert!(
+            line.starts_with("Expired: Silver +60 - Guarantee +105 - "),
+            "{line}"
+        );
+        assert!(line.ends_with("... - 5/23"), "{line}");
+        assert!(line.len() <= DESK_CHARS, "{line}");
+        for line in [
+            recent_line(&failed("expired", 0), 0),
+            recent_line(&part, 105),
+            recent_line(&odd, 0),
+            line,
+        ] {
+            assert_clean(&line);
+            for bad in [
+                "\u{2014}",
+                "\u{2013}",
+                "->",
+                "sold",
+                "delivered",
+                "Famine relief",
+            ] {
+                assert!(!line.contains(bad), "{bad:?} in {line}");
+            }
         }
     }
 

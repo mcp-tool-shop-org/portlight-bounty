@@ -1245,6 +1245,13 @@ pub(crate) fn guarantee_paid(session: &Session, claims_before: usize, contract_i
     guarantee_in(session.infrastructure(), claims_before, contract_id)
 }
 
+/// Contract-guarantee silver ever paid for `contract_id` (the whole claims
+/// list, not one advance). Recent rows are history and survive a load, so
+/// they read this, never the unsaved `claims_before` snapshot.
+pub(crate) fn guarantee_total(infra: &InfrastructureRecord, contract_id: &str) -> i64 {
+    guarantee_in(infra, 0, contract_id)
+}
+
 fn guarantee_in(infra: &InfrastructureRecord, claims_before: usize, contract_id: &str) -> i64 {
     infra
         .claims
@@ -1600,6 +1607,10 @@ fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
 /// x23 to Corsair's Rest, deadline 19, reward 552; part sold 5/23 pays 60.
 pub(crate) const SMOKE_EXPIRED_TITLE: &str = "Famine relief: grain to Corsair's Rest";
 
+/// Live day of the expired frame: the seed-1 Spice restock (deadline 26) is
+/// 3 days out, so it is on the card's Deadlines and drives Next.
+pub(crate) const SMOKE_EXPIRED_FRAME_DAY: i64 = 23;
+
 pub(crate) fn smoke_expired_outcome(day: i64, delivered: i64, silver: i64) -> ContractOutcome {
     ContractOutcome {
         contract_id: "71773aae754b".into(),
@@ -1620,13 +1631,14 @@ pub(crate) fn smoke_expired_outcome(day: i64, delivered: i64, silver: i64) -> Co
     }
 }
 
-/// Forced document for CI frame `day-report-expired.png`, built through the
-/// real formatters: the F2 failure line (DUE, pinned) above an active Spice
-/// deadline (CREAM), Week footer if it fits under the existing yield rule.
-pub(crate) fn smoke_expired_document(
-    world: &portlight_sim::model::World,
-    day: i64,
-) -> DayReportDocument {
+/// Forced document for CI frame `day-report-expired.png`: the staged F2
+/// failure line (DUE, pinned) built through the real formatter, above the
+/// live board's deadline lines (CREAM) for `session`'s day. The Next line is
+/// live (`next_facts`); Week is the staged window. The smoke accepts the real
+/// seed-1 Spice contract, so the strip shows it beside the card.
+pub(crate) fn smoke_expired_document(session: &Session) -> DayReportDocument {
+    let world = session.world();
+    let day = world.day;
     let failure = DayReportLine {
         text: expired_line(
             &smoke_expired_outcome(day, 5, 60),
@@ -1636,25 +1648,7 @@ pub(crate) fn smoke_expired_document(
         ),
         notable: true,
     };
-    let spice = ActiveContract {
-        offer_id: "smoke-spice".into(),
-        template_id: "smoke".into(),
-        family: "shortage".into(),
-        title: "Spice restock run to Al-Manar".into(),
-        accepted_day: day - 4,
-        deadline_day: day + 2,
-        destination_port_id: "al_manar".into(),
-        good_id: "spice".into(),
-        required_quantity: 8,
-        delivered_quantity: 0,
-        reward_silver: 200,
-        bonus_reward: 0,
-        source_region: None,
-        source_port: None,
-        inspection_modifier: 1.0,
-        status: "accepted".into(),
-    };
-    let deadlines = deadline_lines(&[spice], day, world, None);
+    let deadlines = deadline_lines(&session.board().active, day, world, None);
     DayReportDocument {
         day,
         title: format!("Day {day}"),
@@ -1664,13 +1658,7 @@ pub(crate) fn smoke_expired_document(
                 day,
                 &[(400, Some(3), 0, 0, 0), (457, Some(3), 0, 0, 0)],
             )),
-            next: next_line(&NextFacts {
-                contract_days_left: vec![2],
-                overdue_port: None,
-                claimable: false,
-                captain_wounded: false,
-                provisions: 20,
-            }),
+            next: next_line(&next_facts(session)),
         },
     }
 }
@@ -3595,6 +3583,10 @@ mod tests {
         assert_eq!(guarantee_in(&infra, 1, "c2"), 65);
         assert_eq!(guarantee_in(&infra, 1, "c3"), 0);
         assert_eq!(guarantee_in(&infra, 7, "c1"), 0);
+        // Recent rows: the whole list, same filters.
+        assert_eq!(guarantee_total(&infra, "c1"), 155);
+        assert_eq!(guarantee_total(&infra, "c2"), 65);
+        assert_eq!(guarantee_total(&infra, "c3"), 0);
     }
 
     /// 12.1 #8: the tone predicate matches only the expiry prefix, and no
@@ -3715,13 +3707,30 @@ mod tests {
         );
     }
 
-    /// Frame doc: F2 line pinned (DUE) above the real Spice deadline line,
-    /// Week + Next fit under the existing footer rule.
+    /// Frame doc: F2 line pinned (DUE) above the live Spice deadline line
+    /// (seed 1: Famine relief + Spice restock accepted, idle to day 23),
+    /// Week + live Next fit under the existing footer rule.
     #[test]
     fn smoke_expired_doc_follows_formatters() {
-        let session = Session::new("Ada", "merchant", 1, None).unwrap();
-        let doc = smoke_expired_document(session.world(), 21);
-        assert_eq!(doc.title, "Day 21");
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let picks: Vec<String> = session
+            .available_contracts()
+            .into_iter()
+            .filter(|offer| {
+                (offer.destination_port_id == "corsairs_rest" && offer.good_id == "grain")
+                    || (offer.destination_port_id == "al_manar" && offer.good_id == "spice")
+            })
+            .map(|offer| offer.id)
+            .collect();
+        assert_eq!(picks.len(), 2);
+        for id in &picks {
+            session.accept_contract(id).unwrap();
+        }
+        while session.world().day < SMOKE_EXPIRED_FRAME_DAY {
+            session.advance().unwrap();
+        }
+        let doc = smoke_expired_document(&session);
+        assert_eq!(doc.title, "Day 23");
         assert!(doc.has_notable());
         let texts: Vec<&str> = doc.sections[0]
             .lines
@@ -3733,14 +3742,14 @@ mod tests {
             texts,
             [
                 "Contract expired: Famine relief: grain to Corsair's Rest - 5/23 - Silver +60 - 22 Grain still aboard",
-                "Spice restock run to Al-Manar - 2 days left - 0/8 - sell 8 more Spice at Al-Manar",
+                "Spice restock run to Al-Manar - 3 days left - 0/8 - sell 8 more Spice at Al-Manar",
             ]
         );
         assert!(is_failure_line(texts[0]) && !is_failure_line(texts[1]));
         assert_eq!(doc.footer.week.as_deref(), Some("Week: +57 silver"));
         assert_eq!(
             doc.footer.next.as_deref(),
-            Some("Next: Contract 2 days left - open Contracts.")
+            Some("Next: Contract 3 days left - open Contracts.")
         );
         assert!(footer_should_show(&doc.footer, &doc.sections));
         for text in texts {
