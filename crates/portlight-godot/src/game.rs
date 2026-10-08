@@ -72,6 +72,7 @@ use crate::contract_strip::{self, ContractStripNodes};
 use crate::contracts_screen::{self, ContractsNodes};
 use crate::crew_screen::{self, CrewNodes};
 use crate::day_report::{self, DayReportDocument, DayReportMemory, DayReportNodes};
+use crate::departure_check::{self, DepartureDoc, DepartureNodes};
 use crate::encounter_screen::{self, set_ship_plate, EncounterNodes};
 use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
 use crate::hunt_screen::{self, HuntAction, HuntConfirm, HuntDesk};
@@ -149,6 +150,8 @@ pub(crate) enum Action {
     Duel,
     AutoResolve,
     Sail(String),
+    DepartureSail,
+    DepartureStay,
     Buy(String),
     Sell(String),
     EncounterChoice(String),
@@ -456,6 +459,13 @@ impl ContractStripShot {
     }
 }
 
+/// `--departure-check-screen` state held across the layout wait at step 3.
+#[derive(Clone, Copy)]
+struct DepartureSmoke {
+    capture: bool,
+    silver: i64,
+}
+
 /// T-N frames: the GOLD paid notice at the top of the Market box.
 #[derive(Clone, Copy)]
 enum MarketPaidShot {
@@ -635,6 +645,15 @@ struct PortlightGame {
     contract_strip_checked: bool,
     contract_strip_shot_dir: Option<String>,
     contract_strip_shot: Option<ContractStripShot>,
+    /// Departure check panel. Transient: never saved, reset on new game / load.
+    departure_nodes: Option<DepartureNodes>,
+    departure_open: bool,
+    departure_doc: Option<DepartureDoc>,
+    departure_dest: Option<String>,
+    departure_checked: bool,
+    /// `--departure-check-screen` waits for layout at step 3, then finishes.
+    departure_pending: Option<DepartureSmoke>,
+    departure_shot_dir: Option<String>,
     /// T-Q. Units per Buy/Sell press. Godot memory only; never saved.
     trade_qty: i64,
     /// T-N. GOLD paid lines at the top of the Market box until the next
@@ -799,6 +818,13 @@ impl IControl for PortlightGame {
             contract_strip_checked: false,
             contract_strip_shot_dir: None,
             contract_strip_shot: None,
+            departure_nodes: None,
+            departure_open: false,
+            departure_doc: None,
+            departure_dest: None,
+            departure_checked: false,
+            departure_pending: None,
+            departure_shot_dir: None,
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
             trade_checked: false,
@@ -924,6 +950,17 @@ impl IControl for PortlightGame {
                 self.run_contract_strip_smoke();
                 self.capture_frames = 2;
             }
+        } else if user_arg("--departure-check-screen") {
+            // Departure check: real Session verbs. Steps 0-3 run now; the
+            // fit asserts (and the frame) wait for layout, then steps 4-7.
+            self.smoke = true;
+            self.departure_checked = true;
+            let capture = departure_frames_requested(self.shot_path.is_some());
+            if capture {
+                self.departure_shot_dir = Some(departure_shot_dir(self.shot_path.as_deref()));
+            }
+            self.run_departure_check_smoke(capture);
+            self.capture_frames = 4;
         } else if user_arg("--trade-smoke") {
             // T-Q / T-N: real Session trades only, no frames.
             self.smoke = true;
@@ -959,6 +996,9 @@ impl IControl for PortlightGame {
     }
 
     fn process(&mut self, _delta: f64) {
+        if self.departure_open {
+            self.fit_departure_panel();
+        }
         if self.capture_frames <= 0 {
             return;
         }
@@ -997,6 +1037,9 @@ impl IControl for PortlightGame {
         if self.advance_market_paid_shot() {
             return;
         }
+        if self.advance_departure_smoke() {
+            return;
+        }
         if self.advance_loss_outcome_shot() {
             return;
         }
@@ -1031,6 +1074,7 @@ impl IControl for PortlightGame {
             && self.contract_strip_shot_dir.is_none()
             && self.market_paid_shot_dir.is_none()
             && self.loss_outcome_shot_dir.is_none()
+            && self.departure_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -1095,6 +1139,11 @@ impl IControl for PortlightGame {
         } else if self.contract_strip_checked {
             godot_print!(
                 "portlight contract-strip smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.departure_checked {
+            godot_print!(
+                "portlight departure-check smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else if self.trade_checked {
@@ -1548,6 +1597,23 @@ impl PortlightGame {
         self.base_mut().add_child(&contract_strip.root);
         contract_strip::place_strip(&mut contract_strip.root);
         self.contract_strip_nodes = Some(contract_strip);
+
+        let mut departure = departure_check::build_departure_screen();
+        for (button, action) in [
+            (&mut departure.stay, Action::DepartureStay),
+            (&mut departure.sail, Action::DepartureSail),
+        ] {
+            stamp_playtest_id(button, &action_playtest_id(&action));
+            button.signals().pressed().connect(move || {
+                let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(game_id) else {
+                    return;
+                };
+                gd.bind_mut().perform(action.clone());
+            });
+        }
+        self.base_mut().add_child(&departure.root);
+        departure_check::place_panel(&mut departure.root);
+        self.departure_nodes = Some(departure);
     }
 
     fn instance_id(&self) -> InstanceId {
@@ -1562,6 +1628,7 @@ impl PortlightGame {
         self.hunt_open = false;
         self.hunt_desk = HuntDesk::default();
         self.reset_day_report();
+        self.reset_departure();
         self.reset_trade();
         self.encounter = None;
         match Session::new(
@@ -1742,6 +1809,7 @@ impl PortlightGame {
         self.armed_sail = None;
         self.stances.clear();
         self.reset_day_report();
+        self.reset_departure();
         self.reset_trade();
         self.session = Some(session);
         self.newgame_notice.clear();
@@ -1771,6 +1839,7 @@ impl PortlightGame {
                 self.armed_sail = None;
                 self.stances.clear();
                 self.reset_day_report();
+                self.reset_departure();
                 self.reset_trade();
                 self.session = Some(session);
                 self.push_log(format!("Loaded slot {slot}. Docked at {place}."));
@@ -3700,6 +3769,11 @@ impl PortlightGame {
     }
 
     fn perform(&mut self, action: Action) {
+        // Departure check: any other input is an implicit Stay in port. A
+        // Sail press then re-checks from scratch, so it never departs here.
+        if self.departure_open && !matches!(action, Action::DepartureSail | Action::DepartureStay) {
+            self.stay_in_port();
+        }
         match action {
             Action::NewGame => self.open_newgame(NewgamePage::Title),
             Action::SaveGame => self.save_current_game(),
@@ -3754,7 +3828,9 @@ impl PortlightGame {
                 self.trade_qty = market::next_trade_qty(self.trade_qty);
                 self.refresh();
             }
-            Action::Sail(dest) => self.sail(&dest),
+            Action::Sail(dest) => self.request_sail(&dest),
+            Action::DepartureSail => self.sail_anyway(),
+            Action::DepartureStay => self.stay_in_port(),
             Action::Buy(good) => self.trade(true, &good),
             Action::Sell(good) => self.trade(false, &good),
             Action::EncounterChoice(choice) => self.choose_encounter(&choice),
@@ -3806,7 +3882,113 @@ impl PortlightGame {
         }
     }
 
-    fn sail(&mut self, dest: &str) {
+    /// Sail press (lane button or chart second click). A clean sail, or a
+    /// gate case the sim will refuse, departs (or logs the refusal) exactly
+    /// as before. Otherwise the Departure check opens and no Session verb runs.
+    fn request_sail(&mut self, dest: &str) {
+        let doc = self
+            .session
+            .as_ref()
+            .and_then(|session| departure_check::departure_document(session, dest));
+        let Some(doc) = doc else {
+            self.depart_now(dest);
+            return;
+        };
+        // M1: one overlay. The panel takes the Day's report slot and closes desks.
+        self.close_overlays_for_departure();
+        self.departure_doc = Some(doc);
+        self.departure_dest = Some(dest.to_string());
+        self.departure_open = true;
+        self.refresh();
+        if let Some(nodes) = self.departure_nodes.as_mut() {
+            nodes.stay.grab_focus();
+        }
+    }
+
+    fn sail_anyway(&mut self) {
+        let dest = self.departure_dest.clone();
+        self.close_departure();
+        match dest {
+            Some(dest) => self.depart_now(&dest),
+            None => self.refresh(),
+        }
+    }
+
+    /// Stay in port: close the panel. Nothing else (no fee, no log line).
+    fn stay_in_port(&mut self) {
+        self.close_departure();
+        self.refresh();
+    }
+
+    fn close_departure(&mut self) {
+        self.departure_open = false;
+        self.departure_doc = None;
+        self.departure_dest = None;
+        if let Some(mut nodes) = self.departure_nodes.clone() {
+            departure_check::set_open(&mut nodes, false);
+        }
+    }
+
+    /// New game / load / playtest reset: the panel is never saved.
+    fn reset_departure(&mut self) {
+        self.close_departure();
+    }
+
+    fn close_overlays_for_departure(&mut self) {
+        self.day_report_open = false;
+        if self.contracts_open {
+            self.contracts_open = false;
+            self.contracts_confirm = None;
+        }
+        if self.shipyard_open {
+            self.read_rename_field();
+            self.shipyard_open = false;
+            self.shipyard_confirm = None;
+        }
+        if self.harbour_open {
+            self.harbour_open = false;
+            self.harbour_pending = None;
+            self.harbour_notice.clear();
+        }
+        if self.crew_open {
+            self.crew_open = false;
+            self.crew_pending = None;
+            self.crew_notice.clear();
+        }
+        if self.journal_open {
+            self.journal_open = false;
+        }
+        if self.hunt_open {
+            self.hunt_open = false;
+            self.hunt_desk.confirm = None;
+        }
+    }
+
+    fn sync_departure_check(&mut self) {
+        let Some(mut nodes) = self.departure_nodes.clone() else {
+            return;
+        };
+        let open = self.departure_open && self.docked_id().is_some();
+        departure_check::set_open(&mut nodes, open);
+        if !open {
+            return;
+        }
+        if let Some(doc) = self.departure_doc.as_ref() {
+            departure_check::apply_document(&mut nodes, doc);
+        }
+        departure_check::place_panel(&mut nodes.root);
+    }
+
+    /// Wrapped lines settle after a container sort; keep the panel at its
+    /// content height (min 160) while open.
+    fn fit_departure_panel(&mut self) {
+        if let Some(nodes) = self.departure_nodes.as_mut() {
+            departure_check::place_panel(&mut nodes.root);
+        }
+    }
+
+    /// Real departure only: visit memory, depart SFX and the log line live here.
+    fn depart_now(&mut self, dest: &str) {
         // Arrival visit memory: snapshot docked sell prices before depart (never saved).
         if let Some(session) = self.session.as_ref() {
             if session.world().voyage.status == VoyageStatus::InPort {
@@ -3841,6 +4023,10 @@ impl PortlightGame {
     }
 
     fn on_port_pressed(&mut self, port_id: &str) {
+        if self.departure_open {
+            // Implicit Stay in port; a second click on an armed port re-checks.
+            self.close_departure();
+        }
         let decision = {
             let Some(session) = self.session.as_ref() else {
                 return;
@@ -3863,7 +4049,7 @@ impl PortlightGame {
             PortPress::Depart(id) => {
                 if self.armed_sail.as_deref() == Some(id.as_str()) {
                     self.armed_sail = None;
-                    self.sail(&id);
+                    self.request_sail(&id);
                     return;
                 }
                 self.armed_sail = Some(id.clone());
@@ -5497,6 +5683,7 @@ impl PortlightGame {
         self.sync_hunt();
         self.sync_day_report();
         self.sync_contract_strip();
+        self.sync_departure_check();
     }
 
     /// The docked row stays one line, and its minimum width fits the width
@@ -6291,6 +6478,24 @@ impl PortlightGame {
         if chart.lanes.is_empty() {
             box_node.add_child(&body_label("At sea. Advance the day to sail.", 14, CREAM));
             return;
+        }
+        // F9: below the crew minimum the Sail press is refused; say so first.
+        let short = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .and_then(|ship| {
+                departure_check::crew_short_line(
+                    ship.crew,
+                    portlight_sim::ship::template_crew_min(ship),
+                )
+            });
+        if let Some(line) = short {
+            let mut label = body_label(&line, 13, contracts_screen::meta_color(true));
+            label.set_name("CrewShortLine");
+            label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+            label.set_h_size_flags(SizeFlags::EXPAND_FILL);
+            box_node.add_child(&label);
         }
         let game_id = self.instance_id();
         for lane in &chart.lanes {
@@ -7833,8 +8038,8 @@ impl PortlightGame {
             self.fail_day_report("Day-report arrival: accept did not activate Al-Manar contract.");
             return false;
         }
-        // Undock via Game::sail so visit_price_memory is written for Porto Novo.
-        self.sail("al_manar");
+        // Undock via Game::depart_now so visit_price_memory is written for Porto Novo.
+        self.depart_now("al_manar");
         if self.docked_id().is_some() {
             self.fail_day_report("Day-report arrival: still docked after sail.");
             return false;
@@ -8342,7 +8547,7 @@ impl PortlightGame {
         {
             self.fail_trade("Trade smoke: the receipt did not log the real qty.");
         }
-        self.sail("corsairs_rest");
+        self.depart_now("corsairs_rest");
         for _ in 0..40 {
             if self.docked_id() == Some("corsairs_rest") {
                 break;
@@ -9516,7 +9721,7 @@ fn sea_agency(session: &mut Session) -> Option<(EncounterState, String)> {
     Some((state, log))
 }
 
-fn cargo_held(cargo: &[portlight_sim::model::CargoItem], good: &str) -> i64 {
+pub(crate) fn cargo_held(cargo: &[portlight_sim::model::CargoItem], good: &str) -> i64 {
     cargo
         .iter()
         .filter(|item| item.good_id == good)
@@ -10054,6 +10259,14 @@ impl PortlightGame {
 
 impl PortlightGame {
     fn dismiss_cancel(&mut self) {
+        if self.departure_open {
+            // Escape is Stay in port; it never sails.
+            self.stay_in_port();
+            if let Some(mut viewport) = self.base().get_viewport() {
+                viewport.set_input_as_handled();
+            }
+            return;
+        }
         if self.day_report_open {
             self.close_day_report();
             if let Some(mut viewport) = self.base().get_viewport() {
@@ -10080,6 +10293,7 @@ impl PortlightGame {
         self.day_report_open = false;
         self.day_report_doc = None;
         self.day_report_memory.reset();
+        self.reset_departure();
         self.contracts_open = false;
         self.contracts_notice.clear();
         self.contracts_confirm = None;
@@ -10234,6 +10448,9 @@ impl PortlightGame {
     }
 
     fn playtest_screen(&self) -> &'static str {
+        if self.departure_open {
+            return "departure-check";
+        }
         if self.day_report_open {
             return "day-report";
         }
@@ -10270,6 +10487,9 @@ impl PortlightGame {
 
     fn open_desks(&self) -> Vec<&'static str> {
         let mut open = Vec::new();
+        if self.departure_open {
+            open.push("departure-check");
+        }
         if self.day_report_open {
             open.push("day-report");
         }
@@ -10676,6 +10896,354 @@ fn flag_set(name: &str) -> bool {
 fn user_arg(flag: &str) -> bool {
     let args = Os::singleton().get_cmdline_user_args();
     (0..args.len()).any(|index| args.get(index).is_some_and(|value| value == flag))
+}
+
+/// `--departure-check-screen` (brief section 12.2 plus section 19 step 0).
+impl PortlightGame {
+    fn fail_departure(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+        self.departure_checked = true;
+    }
+
+    fn smoke_day(&self) -> i64 {
+        self.session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(0)
+    }
+
+    fn smoke_silver(&self) -> i64 {
+        self.session
+            .as_ref()
+            .map(|session| session.world().captain.silver)
+            .unwrap_or(0)
+    }
+
+    fn first_lane_text(&self) -> String {
+        self.lane_box
+            .as_ref()
+            .and_then(|lanes| lanes.get_child(0))
+            .and_then(|child| child.try_cast::<Label>().ok())
+            .map(|label| label.get_text().to_string())
+            .unwrap_or_default()
+    }
+
+    fn departure_lines(&self) -> Vec<String> {
+        self.departure_nodes
+            .as_ref()
+            .map(departure_check::line_texts)
+            .unwrap_or_default()
+    }
+
+    fn departure_visible(&self) -> bool {
+        self.departure_nodes
+            .as_ref()
+            .is_some_and(departure_check::overlay_visible)
+    }
+
+    /// Steps 0-3. Step 3 leaves the panel open for the layout wait.
+    fn run_departure_check_smoke(&mut self, capture: bool) {
+        // Step 0 (F9): below the crew minimum the lane list says so, and Sail
+        // still logs the sim refusal with no panel.
+        self.start_game();
+        let fired = self
+            .session
+            .as_mut()
+            .map(|session| session.fire_crew(1, "sailor"));
+        if !matches!(fired, Some(Ok(()))) {
+            self.fail_departure("Departure smoke: could not fire a sailor.");
+            return;
+        }
+        self.refresh();
+        let want = "Need 3 crew to sail - you have 2. Hire at the Crew desk.";
+        let first = self.first_lane_text();
+        if first != want {
+            self.fail_departure(format!(
+                "Departure smoke: lane list led with '{first}', want '{want}'."
+            ));
+        }
+        self.perform(Action::Sail("al_manar".into()));
+        if self.departure_open || self.departure_visible() {
+            self.fail_departure("Departure smoke: crew-short Sail opened the panel.");
+        }
+        if self.docked_id() != Some("porto_novo") || self.smoke_day() != 1 {
+            self.fail_departure("Departure smoke: crew-short Sail left port or moved the day.");
+        }
+        if !self
+            .log_lines
+            .iter()
+            .any(|line| line == "Need at least 3 crew to sail, have 2. Hire crew first.")
+        {
+            self.fail_departure(format!(
+                "Departure smoke: crew refusal not logged: {}",
+                self.log_lines.join(" | ")
+            ));
+        }
+        self.perform(Action::HireSailor);
+        if self.first_lane_text() == want {
+            self.fail_departure("Departure smoke: crew line stayed after hiring to the minimum.");
+        }
+
+        // Step 1: a clean sail departs with no panel.
+        self.start_game();
+        if !self.first_lane_text().is_empty() && self.first_lane_text().starts_with("Need ") {
+            self.fail_departure("Departure smoke: new game showed the crew line.");
+        }
+        self.perform(Action::Sail("al_manar".into()));
+        if self.departure_open || self.departure_visible() {
+            self.fail_departure("Departure smoke: clean day-1 Sail opened the panel.");
+        }
+        if self.docked_id().is_some() || self.smoke_day() != 1 {
+            self.fail_departure("Departure smoke: clean day-1 Sail did not depart on day 1.");
+        }
+
+        // Step 2: Famine relief to Corsair's Rest, then wait to day 18.
+        self.start_game();
+        let offer = self.session.as_mut().and_then(|session| {
+            session
+                .available_contracts()
+                .into_iter()
+                .find(|offer| {
+                    offer.good_id == "grain" && offer.destination_port_id == "corsairs_rest"
+                })
+                .map(|offer| (offer.id, offer.deadline_day))
+        });
+        let Some((offer_id, deadline)) = offer else {
+            self.fail_departure("Departure smoke: no grain offer for Corsair's Rest.");
+            return;
+        };
+        if deadline != 19 {
+            self.fail_departure(format!(
+                "Departure smoke: Famine relief deadline {deadline}, want 19."
+            ));
+        }
+        self.perform(Action::OpenContracts);
+        self.accept_contract_offer(&offer_id);
+        self.perform(Action::CloseContracts);
+        let accepted = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.offer_id == offer_id)
+        });
+        if !accepted {
+            self.fail_departure("Departure smoke: Famine relief did not activate.");
+            return;
+        }
+        for _ in 0..40 {
+            if self.smoke_day() >= deadline - 1 {
+                break;
+            }
+            self.next_day();
+        }
+        if self.smoke_day() != deadline - 1 || self.docked_id() != Some("porto_novo") {
+            self.fail_departure(format!(
+                "Departure smoke: reached day {} docked {:?}, want day 18 at Porto Novo.",
+                self.smoke_day(),
+                self.docked_id()
+            ));
+            return;
+        }
+
+        // Step 3: Corsair's Rest is two days out with one day left.
+        let silver = self.smoke_silver();
+        self.perform(Action::Sail("corsairs_rest".into()));
+        if !self.departure_open || !self.departure_visible() {
+            self.fail_departure("Departure smoke: tight Sail did not open the panel.");
+            return;
+        }
+        if self.day_report_open {
+            self.fail_departure("Departure smoke: the panel left the Day's report open.");
+        }
+        let (title, context) = self
+            .departure_doc
+            .as_ref()
+            .map(|doc| (doc.title.clone(), doc.context.clone()))
+            .unwrap_or_default();
+        let drawn_title = self
+            .departure_nodes
+            .as_ref()
+            .map(|nodes| nodes.title.get_text().to_string())
+            .unwrap_or_default();
+        if title != "Before you sail - Corsair's Rest" || drawn_title != title {
+            self.fail_departure(format!(
+                "Departure smoke: title '{title}' / '{drawn_title}'."
+            ));
+        }
+        if context != "Voyage 2 days - Hold empty" {
+            self.fail_departure(format!("Departure smoke: context '{context}'."));
+        }
+        let lines = self.departure_lines();
+        if !lines
+            .first()
+            .is_some_and(|line| line.ends_with("1 day left - will be late"))
+        {
+            self.fail_departure(format!("Departure smoke: lines {lines:?}."));
+        }
+        for text in lines.iter().chain([&title, &context]) {
+            if !text.is_ascii()
+                || text.contains("due soon")
+                || text.contains("Complete")
+                || text.contains("Deliver")
+            {
+                self.fail_departure(format!("Departure smoke: copy hygiene '{text}'."));
+            }
+        }
+        self.expect_still_docked(18, silver, "panel open");
+        self.departure_pending = Some(DepartureSmoke { capture, silver });
+    }
+
+    fn expect_still_docked(&mut self, day: i64, silver: i64, step: &str) {
+        if self.docked_id() != Some("porto_novo")
+            || self.smoke_day() != day
+            || self.smoke_silver() != silver
+        {
+            self.fail_departure(format!(
+                "Departure smoke ({step}): docked {:?} day {} silver {}, want Porto Novo day {day} silver {silver}.",
+                self.docked_id(),
+                self.smoke_day(),
+                self.smoke_silver()
+            ));
+        }
+    }
+
+    fn expect_departure_closed(&mut self, step: &str) {
+        if self.departure_open || self.departure_visible() {
+            self.fail_departure(format!("Departure smoke ({step}): panel still open."));
+        }
+        let filter = self
+            .departure_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.get_mouse_filter());
+        if filter != Some(MouseFilter::IGNORE) {
+            self.fail_departure(format!(
+                "Departure smoke ({step}): hidden panel must IGNORE mouse."
+            ));
+        }
+    }
+
+    fn assert_departure_check_fits(&mut self) {
+        let Some(nodes) = self.departure_nodes.clone() else {
+            self.fail_departure("Departure smoke: no panel nodes.");
+            return;
+        };
+        if let Some(problem) = departure_check::panel_fit_error(&nodes) {
+            self.fail_departure(format!("Smoke: departure check {problem}."));
+        }
+        if !nodes.stay.has_focus() {
+            self.fail_departure("Smoke: Stay in port did not have focus on open.");
+        }
+        self.assert_contract_strip_fits();
+        self.assert_port_row_fits();
+    }
+
+    /// After the layout wait: fit asserts, the frame, then steps 4-7.
+    fn advance_departure_smoke(&mut self) -> bool {
+        let Some(smoke) = self.departure_pending.take() else {
+            return false;
+        };
+        self.assert_departure_check_fits();
+        if smoke.capture {
+            if let Some(dir) = self.departure_shot_dir.clone() {
+                if !self.save_shot(&format!("{dir}/departure-check.png"), false) {
+                    self.capture_failed = true;
+                }
+            }
+        }
+        let silver = smoke.silver;
+        let log = self.log_lines.clone();
+
+        // Step 4: Escape is Stay in port.
+        self.dismiss_cancel();
+        self.expect_departure_closed("Escape");
+        self.expect_still_docked(18, silver, "Escape");
+
+        // Step 5: Sail again (twice: a repeat re-checks, never departs), then Stay.
+        self.perform(Action::Sail("corsairs_rest".into()));
+        self.perform(Action::Sail("corsairs_rest".into()));
+        if !self.departure_open {
+            self.fail_departure("Departure smoke: repeat Sail did not show the panel.");
+        }
+        self.expect_still_docked(18, silver, "repeat Sail");
+        self.perform(Action::DepartureStay);
+        self.expect_departure_closed("Stay in port");
+        self.expect_still_docked(18, silver, "Stay in port");
+        if self.log_lines != log {
+            self.fail_departure(format!(
+                "Departure smoke: the panel wrote to the log: {}",
+                self.log_lines.join(" | ")
+            ));
+        }
+        // Any other input is an implicit Stay; opening a desk closes the panel.
+        self.perform(Action::Sail("corsairs_rest".into()));
+        self.perform(Action::OpenContracts);
+        if self.departure_open || !self.contracts_open {
+            self.fail_departure("Departure smoke: opening Contracts did not close the panel.");
+        }
+        self.perform(Action::CloseContracts);
+        self.expect_still_docked(18, silver, "implicit Stay");
+
+        // Step 6: Sun Harbor; the elsewhere line drops `to {Port}` (the title has it).
+        self.perform(Action::Sail("sun_harbor".into()));
+        let title = self
+            .departure_doc
+            .as_ref()
+            .map(|doc| doc.title.clone())
+            .unwrap_or_default();
+        let lines = self.departure_lines();
+        let late = lines
+            .iter()
+            .find(|line| line.ends_with(" - 1 day left - will be late"))
+            .cloned()
+            .unwrap_or_default();
+        if !self.departure_open || title != "Before you sail - Sun Harbor" || late.is_empty() {
+            self.fail_departure(format!(
+                "Departure smoke: Sun Harbor panel '{title}' lines {lines:?}."
+            ));
+        }
+        if late.contains(" - to Corsair's Rest") {
+            self.fail_departure(format!(
+                "Departure smoke: elsewhere line kept the port: {late}"
+            ));
+        }
+
+        // Step 7: Sail anyway departs (same day).
+        self.perform(Action::DepartureSail);
+        self.expect_departure_closed("Sail anyway");
+        let dest = self
+            .session
+            .as_ref()
+            .map(|session| session.world().voyage.destination_id.clone())
+            .unwrap_or_default();
+        if self.docked_id().is_some() || dest != "sun_harbor" || self.smoke_day() != 18 {
+            self.fail_departure(format!(
+                "Departure smoke: Sail anyway gave docked {:?} dest {dest} day {}.",
+                self.docked_id(),
+                self.smoke_day()
+            ));
+        }
+        if !self
+            .log_lines
+            .iter()
+            .any(|line| line == "Departed for Sun Harbor.")
+        {
+            self.fail_departure("Departure smoke: no 'Departed for Sun Harbor.' log line.");
+        }
+        self.departure_checked = true;
+        false
+    }
+}
+
+fn departure_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn departure_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
 }
 
 #[cfg(test)]

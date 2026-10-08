@@ -441,6 +441,24 @@ jobs:
             echo "market-paid smoke did not report ok"
             exit 1
           fi
+          # Departure check: F9 crew line, clean sail, late panel, Escape /
+          # Stay keep port, Sail anyway departs. Real Session verbs only.
+          rm -f /tmp/hs-departure-check.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-departure-check-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-departure-check.png \
+            godot --headless --path godot -- --departure-check-screen
+          if [ -f /tmp/hs-departure-check.png ]; then
+            echo "headless departure-check PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-departure-check.log \
+            godot --headless --path godot -- --art-docs --departure-check-screen
+          run_godot /tmp/godot-departure-check-smoke.log \
+            godot --headless --path godot -- --departure-check-screen
+          if ! grep -q 'portlight departure-check smoke ok' /tmp/godot-departure-check-smoke.log; then
+            echo "departure-check smoke did not report ok"
+            exit 1
+          fi
           run_godot /tmp/godot-gl-smoke.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SMOKE=1 PORTLIGHT_SHOT=/tmp/portlight-chart-1280.png \
@@ -748,6 +766,20 @@ jobs:
               exit 1
             fi
           done
+          # Departure check panel (Famine relief late, day 18, Corsair's Rest).
+          mkdir -p /tmp/departure-check-shots
+          run_godot /tmp/godot-departure-check-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/departure-check-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --departure-check-screen
+          if ! grep -q 'portlight departure-check smoke ok' /tmp/godot-departure-check-frames.log; then
+            echo "departure-check frame capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/departure-check-shots/departure-check.png ]; then
+            echo "departure-check capture did not write /tmp/departure-check-shots/departure-check.png"
+            exit 1
+          fi
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -783,6 +815,7 @@ jobs:
           cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
           cmp_committed market-contract-paid.png /tmp/market-paid-shots/market-contract-paid.png
           cmp_committed market-contract-paid-more.png /tmp/market-paid-shots/market-contract-paid-more.png
+          cmp_committed departure-check.png /tmp/departure-check-shots/departure-check.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
           cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png
