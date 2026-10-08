@@ -376,12 +376,15 @@ pub(crate) fn claim_notice(silver: i64) -> String {
     format!("Claimed {silver} silver.")
 }
 
-/// Hunt confirm. `crew` is the flagship's `(crew, template_crew_min)`, the
-/// same minimum `depart` refuses on. No odds and no loss estimate.
-pub(crate) fn hunt_confirm_text(name: &str, crew: Option<(i64, i64)>) -> String {
+/// Hunt confirm. `crew` is `(crew, template_crew_min, cap)` where `cap` comes
+/// from [`portlight_sim::naval::hunt_crew_loss_cap`]. No odds.
+pub(crate) fn hunt_confirm_text(name: &str, crew: Option<(i64, i64, i64)>) -> String {
     match crew {
-        Some((crew, min)) => format!(
-            "Hunt {name}? This opens a fight. Boarding can cost crew - you have {crew}, need {min} to sail."
+        Some((crew, min, cap)) if cap > 0 => format!(
+            "Hunt {name}? This opens a fight. Boarding can cost up to {cap} crew - you have {crew}, need {min} to sail."
+        ),
+        Some((_, min, _)) => format!(
+            "Hunt {name}? This opens a fight. Boarding won't cost crew below the {min} you need to sail."
         ),
         None => format!("Hunt {name}? This opens a fight."),
     }
@@ -754,14 +757,18 @@ mod tests {
     #[test]
     fn hunt_confirm_states_crew_against_the_sail_minimum() {
         assert_eq!(
-            hunt_confirm_text("Raj the Quiet", Some((4, 3))),
-            "Hunt Raj the Quiet? This opens a fight. Boarding can cost crew - you have 4, need 3 to sail."
+            hunt_confirm_text("Raj the Quiet", Some((4, 3, 1))),
+            "Hunt Raj the Quiet? This opens a fight. Boarding can cost up to 1 crew - you have 4, need 3 to sail."
+        );
+        assert_eq!(
+            hunt_confirm_text("Raj the Quiet", Some((5, 5, 0))),
+            "Hunt Raj the Quiet? This opens a fight. Boarding won't cost crew below the 5 you need to sail."
         );
         assert_eq!(
             hunt_confirm_text("Raj the Quiet", None),
             "Hunt Raj the Quiet? This opens a fight."
         );
-        for crew in [Some((4, 3)), Some((1, 3)), None] {
+        for crew in [Some((4, 3, 1)), Some((5, 5, 0)), None] {
             let text = hunt_confirm_text("Raj the Quiet", crew);
             assert!(text.is_ascii(), "{text}");
             assert!(!text.contains('%'), "{text}");

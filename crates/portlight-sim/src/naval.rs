@@ -310,22 +310,85 @@ pub fn resolve_naval_round(
     }
 }
 
-/// `(player_crew_lost, enemy_crew_lost, player_advantage)`.
-pub fn resolve_boarding(player_crew: i64, enemy_crew: i64, rng: &mut PyRandom) -> (i64, i64, bool) {
+/// Boarding bracket and the two randint draws (player loss first, then enemy).
+///
+/// Same brackets and draw order as Python `resolve_boarding`. The rolls are the
+/// raw values before the keep-1 / enemy clamps.
+pub fn boarding_rolls(
+    player_crew: i64,
+    enemy_crew: i64,
+    rng: &mut PyRandom,
+) -> (i64, i64, i64, i64) {
     let ratio = player_crew as f64 / enemy_crew.max(1) as f64;
-    let (mut p_lost, mut e_lost) = if ratio > 2.0 {
-        (rng.randint(0, 1), rng.randint(2, 4))
+    let (lo, hi, e_lo, e_hi) = if ratio > 2.0 {
+        (0, 1, 2, 4)
     } else if ratio > 1.5 {
-        (rng.randint(1, 3), rng.randint(2, 4))
+        (1, 3, 2, 4)
     } else if ratio > 0.67 {
-        (rng.randint(2, 5), rng.randint(2, 5))
+        (2, 5, 2, 5)
     } else {
-        (rng.randint(3, 6), rng.randint(1, 3))
+        (3, 6, 1, 3)
     };
-    p_lost = p_lost.min(0.max(player_crew - 1));
-    e_lost = e_lost.min(enemy_crew);
+    let p_roll = rng.randint(lo, hi);
+    let e_roll = rng.randint(e_lo, e_hi);
+    (lo, hi, p_roll, e_roll)
+}
+
+/// Python clamps and the advantage test after the two boarding rolls.
+pub fn finish_boarding(
+    player_crew: i64,
+    enemy_crew: i64,
+    p_lost: i64,
+    e_lost: i64,
+) -> (i64, i64, bool) {
+    let p_lost = p_lost.min(0.max(player_crew - 1));
+    let e_lost = e_lost.min(enemy_crew);
     let player_advantage = player_crew - p_lost > enemy_crew - e_lost;
     (p_lost, e_lost, player_advantage)
+}
+
+/// `(player_crew_lost, enemy_crew_lost, player_advantage)`.
+///
+/// Python parity path: same draws, keep-at-least-1 clamp.
+pub fn resolve_boarding(player_crew: i64, enemy_crew: i64, rng: &mut PyRandom) -> (i64, i64, bool) {
+    let (_lo, _hi, p_roll, e_roll) = boarding_rolls(player_crew, enemy_crew, rng);
+    finish_boarding(player_crew, enemy_crew, p_roll, e_roll)
+}
+
+/// Hunt-fight boarding loss cap for confirm copy and the boarding formula.
+///
+/// `max(1, ceil(crew * 0.03))`, then floored by the sail-minimum gap
+/// `max(0, crew - crew_min)`. A ship already at or below its minimum gets 0.
+pub fn hunt_crew_loss_cap(crew: i64, crew_min: i64) -> i64 {
+    let pct = ((crew.max(0) * 3 + 99) / 100).max(1);
+    pct.min(0.max(crew - crew_min))
+}
+
+/// Raw hunt boarding loss from the player roll (section 9 formula without the
+/// outer `min(cap, …, r)`). `r == 0` is no loss. Integer form of
+/// `floor(0.15 + 0.025*crew + (r - lo + 0.5)/n)`.
+pub fn hunt_boarding_loss(r: i64, lo: i64, hi: i64, crew: i64) -> i64 {
+    if r == 0 {
+        return 0;
+    }
+    let n = hi - lo + 1;
+    (60 * n + 10 * crew.max(0) * n + 400 * (r - lo) + 200) / (400 * n)
+}
+
+/// Hunt-fight boarding: same draws as [`resolve_boarding`], then re-read the
+/// player roll as `min(cap, formula, r)` (design-call section 9). Enemy loss is
+/// unchanged.
+pub fn resolve_hunt_boarding(
+    player_crew: i64,
+    enemy_crew: i64,
+    crew_min: i64,
+    rng: &mut PyRandom,
+) -> (i64, i64, bool) {
+    let (lo, hi, p_roll, e_roll) = boarding_rolls(player_crew, enemy_crew, rng);
+    let cap = hunt_crew_loss_cap(player_crew, crew_min);
+    let raw = hunt_boarding_loss(p_roll, lo, hi, player_crew);
+    let p_lost = raw.min(cap).min(p_roll);
+    finish_boarding(player_crew, enemy_crew, p_lost, e_roll)
 }
 
 /// Sailors first, then specialists, matching `apply_crew_casualties` with no floor.
@@ -715,5 +778,141 @@ mod tests {
         assert_eq!(boarding_threshold(0.8), 2);
         assert_eq!(boarding_threshold(0.3), 3);
         assert_eq!(boarding_threshold(0.0), 3);
+    }
+
+    #[test]
+    fn hunt_crew_loss_cap_table() {
+        let cases = [
+            (3, 3, 0),
+            (4, 3, 1),
+            (5, 5, 0),
+            (8, 3, 1),
+            (12, 5, 1),
+            (16, 15, 1),
+            (20, 8, 1),
+            (25, 15, 1),
+            (34, 15, 2),
+            (40, 15, 2),
+            (50, 25, 2),
+            (60, 25, 2),
+            (68, 25, 3),
+            (2, 3, 0),
+        ];
+        for (crew, crew_min, want) in cases {
+            assert_eq!(
+                hunt_crew_loss_cap(crew, crew_min),
+                want,
+                "cap({crew}, {crew_min})"
+            );
+        }
+    }
+
+    #[test]
+    fn hunt_boarding_loss_matches_section_3_1() {
+        // Per-roll raw formula (no outer min with r). Section 3.1 tables.
+        // Bracket (0,1): r=0 -> 0; r=1 -> floor(0.15+0.025c+0.75)
+        // Bracket (1,3): r=1,2,3
+        // Bracket (2,5): r=2..5
+        // Bracket (3,6): r=3..6
+        let brackets = [(0, 1), (1, 3), (2, 5), (3, 6)];
+        let crews = [4, 8, 12, 20, 25, 40, 50, 60];
+        // Expected raw losses from section 3.1 (before sail-min cap / r clamp).
+        // Format: crew -> [bracket_idx -> [per-roll losses]]
+        let expect: &[(i64, &[&[i64]])] = &[
+            (4, &[&[0, 1], &[0, 0, 1], &[0, 0, 0, 1], &[0, 0, 0, 1]]),
+            (8, &[&[0, 1], &[0, 0, 1], &[0, 0, 0, 1], &[0, 0, 0, 1]]),
+            (12, &[&[0, 1], &[0, 0, 1], &[0, 0, 1, 1], &[0, 0, 1, 1]]),
+            (20, &[&[0, 1], &[0, 1, 1], &[0, 1, 1, 1], &[0, 1, 1, 1]]),
+            (25, &[&[0, 1], &[0, 1, 1], &[0, 1, 1, 1], &[0, 1, 1, 1]]),
+            (40, &[&[0, 1], &[1, 1, 1], &[1, 1, 1, 2], &[1, 1, 1, 2]]),
+            (50, &[&[0, 2], &[1, 1, 2], &[1, 1, 2, 2], &[1, 1, 2, 2]]),
+            (60, &[&[0, 2], &[1, 2, 2], &[1, 2, 2, 2], &[1, 2, 2, 2]]),
+        ];
+        assert_eq!(crews.len(), expect.len());
+        for ((crew, rows), &c) in expect.iter().zip(crews.iter()) {
+            assert_eq!(*crew, c);
+            for ((lo, hi), row) in brackets.iter().zip(rows.iter()) {
+                for (r, &want) in (*lo..=*hi).zip(row.iter()) {
+                    assert_eq!(
+                        hunt_boarding_loss(r, *lo, *hi, c),
+                        want,
+                        "raw loss crew={c} bracket=({lo},{hi}) r={r}"
+                    );
+                }
+            }
+        }
+        assert_eq!(hunt_boarding_loss(0, 0, 1, 60), 0);
+    }
+
+    #[test]
+    fn hunt_boarding_applies_section_9_r_clamp() {
+        // Section 9: loss = min(cap, formula, r). Crew 50, (0,1), r=1:
+        // formula 2, cap 2, r 1 -> 1 (not 2).
+        for seed in 0i128..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let (p, e, _) = resolve_hunt_boarding(50, 16, 25, &mut rng);
+            assert!(p <= 1, "seed {seed}: p_lost {p} exceeds r max 1 in (0,1)");
+            assert!(p <= hunt_crew_loss_cap(50, 25));
+            assert!((2..=4).contains(&e));
+        }
+    }
+
+    #[test]
+    fn hunt_and_python_boarding_consume_the_same_rng() {
+        // Draw preservation: same PyRandom state after both paths, equal enemy loss.
+        let crews = [3, 4, 5, 8, 12, 20, 25, 40, 50, 60, 68];
+        let enemies = [16, 20, 23, 28, 38];
+        let mins = [3, 3, 5, 3, 5, 8, 15, 15, 25, 25, 25];
+        for seed in 0i128..200 {
+            for (i, &crew) in crews.iter().enumerate() {
+                let crew_min = mins[i];
+                for &enemy in &enemies {
+                    let mut a = PyRandom::from_seed(seed);
+                    let mut b = PyRandom::from_seed(seed);
+                    let (p_py, e_py, _) = resolve_boarding(crew, enemy, &mut a);
+                    let (p_h, e_h, _) = resolve_hunt_boarding(crew, enemy, crew_min, &mut b);
+                    assert_eq!(
+                        e_py, e_h,
+                        "enemy loss seed={seed} crew={crew} enemy={enemy}"
+                    );
+                    let cap = hunt_crew_loss_cap(crew, crew_min);
+                    assert!(p_h <= cap, "over cap");
+                    if crew >= crew_min {
+                        assert!(crew - p_h >= crew_min, "below sail min");
+                    }
+                    // Compare RNG by drawing one more int from each.
+                    assert_eq!(
+                        a.randint(0, 1_000_000),
+                        b.randint(0, 1_000_000),
+                        "rng diverged seed={seed} crew={crew} enemy={enemy} p_py={p_py} p_h={p_h}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sloop_crew_4_hunt_boarding_distribution() {
+        // Against enemy 16, bracket (3,6): analytic P(lose 1) = 0.25.
+        let mut lose1 = 0i64;
+        let mut lose_ge2 = 0i64;
+        let n = 2000i128;
+        for seed in 0i128..n {
+            let mut rng = PyRandom::from_seed(seed);
+            let (p, _, _) = resolve_hunt_boarding(4, 16, 3, &mut rng);
+            if p == 1 {
+                lose1 += 1;
+            } else if p >= 2 {
+                lose_ge2 += 1;
+            } else {
+                assert_eq!(p, 0);
+            }
+        }
+        let rate = lose1 as f64 / n as f64; // n is i128
+        assert!(
+            (0.20..=0.30).contains(&rate),
+            "P(lose 1)={rate} outside [0.20, 0.30]"
+        );
+        assert_eq!(lose_ge2, 0);
     }
 }

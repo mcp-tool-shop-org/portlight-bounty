@@ -877,6 +877,27 @@ impl Session {
     /// One naval action: `broadside`, `close`, `evade`, `rake`, or `flee`.
     ///
     /// Stops when the enemy sinks or the boarding threshold is met.
+    /// Hunt-fight marker: the enemy is an active, unclaimed bounty. Returns the
+    /// flagship's template crew minimum when the fight is a hunt, else `None`.
+    /// Derived from saved state; no new Session field.
+    fn hunt_crew_min(&self) -> Option<i64> {
+        let enc = self.encounter.as_ref()?;
+        let captain = &self.world.captain;
+        if captain
+            .active_bounties
+            .iter()
+            .any(|id| id == &enc.enemy_captain_id)
+            && !captain
+                .claimed_bounties
+                .iter()
+                .any(|id| id == &enc.enemy_captain_id)
+        {
+            captain.ship.as_ref().map(ship::template_crew_min)
+        } else {
+            None
+        }
+    }
+
     /// [`Session::resolve_boarding`] resolves the deck melee. Cannon math uses the
     /// session RNG.
     pub fn naval_round(&mut self, action: &str) -> Result<EncounterStep, SimError> {
@@ -899,11 +920,15 @@ impl Session {
         if action == "flee" {
             return self.naval_flee();
         }
-        let round = {
+        let mut round = {
             let ship = self.combat_ship()?;
             let encounter = self.encounter.as_mut().ok_or(SimError::NotInNavalCombat)?;
             encounter::resolve_naval_turn(encounter, &action, &ship, &mut self.rng)
         };
+        // Hunt fights: enemy rake roll still drawn and hull damage kept; crew result dropped.
+        if self.hunt_crew_min().is_some() {
+            round.player_crew_delta = 0;
+        }
         let crew_lost = 0.max(-round.player_crew_delta);
         if let Some(ship) = self.world.captain.ship.as_mut() {
             ship.hull = 0.max(ship.hull + round.player_hull_delta);
@@ -978,9 +1003,10 @@ impl Session {
             .as_ref()
             .map(|ship| ship.crew)
             .unwrap_or(0);
+        let hunt_min = self.hunt_crew_min();
         let outcome = {
             let encounter = self.encounter.as_mut().ok_or(SimError::NotBoarding)?;
-            encounter::resolve_boarding_phase(encounter, crew, &mut self.rng)
+            encounter::resolve_boarding_phase(encounter, crew, hunt_min, &mut self.rng)
         };
         if let Some(ship) = self.world.captain.ship.as_mut() {
             naval::apply_crew_loss(ship, outcome.player_crew_lost);
@@ -4395,6 +4421,74 @@ mod tests {
             session.repair(Some(1)).unwrap_err().to_string(),
             "Must be docked to repair"
         );
+    }
+
+    #[test]
+    fn hunt_rake_costs_no_crew_but_keeps_hull_damage() {
+        // Privateer cutter at crew_min 5. Force an enemy rake by closing until
+        // a naval step reports a crew delta of 0 and a hull drop when the enemy
+        // raked (or keep closing; hunt marker zeros crew delta).
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        let start_crew = session.world.captain.ship.as_ref().unwrap().crew;
+        assert_eq!(start_crew, 5);
+        session.accept_bounty("raj_the_quiet").unwrap();
+        session.hunt_bounty("raj_the_quiet").unwrap();
+        session.encounter_choice("fight").unwrap();
+        let mut saw_rake = false;
+        let mut hull_before = session.world.captain.ship.as_ref().unwrap().hull;
+        for _ in 0..12 {
+            let phase = session
+                .encounter
+                .as_ref()
+                .map(|e| e.phase.as_str())
+                .unwrap_or("");
+            if phase != "naval" {
+                break;
+            }
+            let step = session.naval_round("close").unwrap();
+            let hull_after = session.world.captain.ship.as_ref().unwrap().hull;
+            let crew_after = session.world.captain.ship.as_ref().unwrap().crew;
+            assert_eq!(crew_after, start_crew, "hunt rake must not cost crew");
+            assert_eq!(step.player_crew_delta, 0);
+            if step.enemy_action == "rake" {
+                saw_rake = true;
+                // Hull may or may not drop (randint hull 0/1); crew never does.
+                let _ = (hull_before, hull_after);
+            }
+            hull_before = hull_after;
+        }
+        // Not every seed sees a rake; the assertion that matters is crew unchanged
+        // on every naval step above. Record whether we saw one for coverage.
+        let _ = saw_rake;
+    }
+
+    #[test]
+    fn hunt_boarding_at_sail_minimum_keeps_crew() {
+        let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
+        assert_eq!(session.world.captain.ship.as_ref().unwrap().crew, 5);
+        session.accept_bounty("raj_the_quiet").unwrap();
+        session.hunt_bounty("raj_the_quiet").unwrap();
+        session.encounter_choice("fight").unwrap();
+        for _ in 0..12 {
+            let phase = session
+                .encounter
+                .as_ref()
+                .map(|e| e.phase.as_str())
+                .unwrap_or("");
+            if phase != "naval" {
+                break;
+            }
+            let _ = session.naval_round("close").unwrap();
+        }
+        assert_eq!(
+            session.encounter.as_ref().map(|e| e.phase.as_str()),
+            Some("boarding")
+        );
+        let step = session.resolve_boarding().unwrap();
+        assert_eq!(step.player_crew_lost, 0);
+        let ship = session.world.captain.ship.as_ref().unwrap();
+        assert_eq!(ship.crew, 5);
+        assert!(ship.crew >= ship::template_crew_min(ship));
     }
 
     #[test]

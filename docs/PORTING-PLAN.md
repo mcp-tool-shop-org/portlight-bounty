@@ -124,6 +124,22 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 
 **Contract outcome trust, standing, and heat are computed but never applied.** `engine/contracts.py` puts `trust_delta`, `standing_delta`, and `heat_delta` on every `ContractOutcome` (completed, completed_bonus, expired, abandoned), but `GameSession` adds only `silver_delta` to the captain (`app/session.py:651-653` on a sale, `:715-717` on expiry, nothing on abandon at `:1628-1637`). The three deltas are read in one gameplay place: sizing a `contract_failure` insurance claim (`app/session.py:721`, `abs(trust) * 50 + abs(standing) * 30`). The Rust port keeps this: `note_contract_on_books` applies silver only, and `file_contract_claims` is the only reader. The parity goldens lock it (`contract_expire.json` ends with trust, standing, and heat unchanged). Godot outcome copy prints the Silver term only, so it never shows a change that does not happen.
 
+## Deliberate divergence (Mike-authorized)
+
+**Hunt fight crew loss.** Python costs crew at the enemy rake (naval.py:318-351)
+and at boarding (encounter.py:246-266). A starter boarding a bounty target always
+lands in the (3,6) bracket and keeps 1 crew. In a hunt fight (enemy is an
+active, unclaimed bounty: active_bounties has enemy_captain_id, claimed_bounties
+does not) Rust drops the enemy rake's crew result (roll still drawn, hull damage
+kept) and re-reads the boarding player roll r in lo..hi as
+0 if r == 0, else min(cap, floor(0.15 + 0.025*crew + (r - lo + 0.5)/n), r),
+cap = max(1, ceil(0.03*crew)) floored at template_crew_min
+(naval::hunt_crew_loss_cap). Same draws, same order, no save change.
+Random sea encounters, scripted encounters and claimed-target fights keep
+Python. Pinned in parity/expected_divergences.json: bounty_claim.txt and
+bounty_claim_sail.txt.
+
+
 ## Porting order
 
 1. **Done.** Content catalogs, CPython RNG, Python rounding, new game, prices, buy/sell, trade reputation, market tick, depart, sea day, events, arrival, the four victory paths, and the public `Session`. The sim on `main` is `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b`.
@@ -134,6 +150,9 @@ When there is no ship the three call sites disagree on the fallback speed: the T
 6. **Merged in the sim and offered by the Godot Hunt overlay (#35).** Hunting and bounty (#11 `1b00b8fd8a87d0ec7ac8dff0cbdfacc4dde2da1b`): `hunt`, the bounty board, accept, hunt, and claim, and the bounty-hunter voyage. The Hunt overlay calls `hunt`, `bounty_board`, `accept_bounty`, `hunt_bounty`, and `claim_bounty`.
 
 ## Parity harness
+
+**CLI-vs-oracle naval RNG stream.** The real Python CLI seeds naval rounds from a per-turn `random.Random(seed + day×1000 + naval_turns + 7777)` (cli.py:2105-2108). The TUI uses `seed + day×1000 + naval_turns + duel_turns`. The parity oracle and Rust use the session stream. Rust matches the oracle, not the CLI's naval RNG.
+
 
 Regenerate content and goldens from a Python checkout of commit `9b02494`:
 

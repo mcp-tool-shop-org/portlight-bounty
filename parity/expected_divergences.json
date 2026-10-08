@@ -40,6 +40,206 @@
       "rust": "crates/portlight-sim/src/session.rs:1306-1307",
       "oracle": "tools/parity/oracle.py:1407-1413",
       "python": "src/portlight/app/session.py:186-213"
+    },
+    {
+      "script": "bounty_claim.txt",
+      "check": "oracle",
+      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "paths": [
+        {
+          "path": "$.captain.ship.crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.captain.ship.sailors",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[10].encounter.message",
+          "python": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 4 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade.",
+          "rust": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 0 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade."
+        },
+        {
+          "path": "$.log[10].encounter.flavor",
+          "python": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 4 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade.",
+          "rust": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 0 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade."
+        },
+        {
+          "path": "$.log[10].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[10].encounter.player_crew_lost",
+          "python": 4,
+          "rust": 0
+        },
+        {
+          "path": "$.log[11].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[12].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[13].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[14].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[15].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[16].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[17].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[18].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        }
+      ],
+      "rust": "crates/portlight-sim/src/naval.rs (resolve_hunt_boarding, hunt_crew_loss_cap); session.rs hunt_crew_min",
+      "python": "src/portlight/engine/naval.py:318-351",
+      "oracle": "tools/parity/oracle.py:1302-1312"
+    },
+    {
+      "script": "bounty_claim.txt",
+      "check": "roundtrip",
+      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "paths": [
+        {
+          "path": "$.captain.ship.crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.captain.ship.sailors",
+          "python": 1,
+          "rust": 5
+        }
+      ],
+      "rust": "crates/portlight-sim/src/naval.rs (resolve_hunt_boarding, hunt_crew_loss_cap); session.rs hunt_crew_min",
+      "python": "src/portlight/engine/naval.py:318-351",
+      "oracle": "tools/parity/oracle.py:1302-1312"
+    },
+    {
+      "script": "bounty_claim_sail.txt",
+      "check": "oracle",
+      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "paths": [
+        {
+          "path": "$.captain.ship.crew",
+          "python": 5,
+          "rust": 9
+        },
+        {
+          "path": "$.captain.ship.sailors",
+          "python": 5,
+          "rust": 9
+        },
+        {
+          "path": "$.log[10].encounter.message",
+          "python": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 4 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade.",
+          "rust": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 0 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade."
+        },
+        {
+          "path": "$.log[10].encounter.flavor",
+          "python": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 4 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade.",
+          "rust": "Grappling hooks fly! Your crew boards the enemy vessel. You lose 0 crew, they lose 1. They outnumber you on deck! Now face Raj the Quiet blade to blade."
+        },
+        {
+          "path": "$.log[10].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[10].encounter.player_crew_lost",
+          "python": 4,
+          "rust": 0
+        },
+        {
+          "path": "$.log[11].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[12].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[13].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[14].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[15].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[16].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[17].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        },
+        {
+          "path": "$.log[18].encounter.player_crew",
+          "python": 1,
+          "rust": 5
+        }
+      ],
+      "rust": "crates/portlight-sim/src/naval.rs (resolve_hunt_boarding, hunt_crew_loss_cap); session.rs hunt_crew_min",
+      "python": "src/portlight/engine/naval.py:318-351",
+      "oracle": "tools/parity/oracle.py:1302-1312"
+    },
+    {
+      "script": "bounty_claim_sail.txt",
+      "check": "roundtrip",
+      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "paths": [
+        {
+          "path": "$.captain.ship.crew",
+          "python": 5,
+          "rust": 9
+        },
+        {
+          "path": "$.captain.ship.sailors",
+          "python": 5,
+          "rust": 9
+        }
+      ],
+      "rust": "crates/portlight-sim/src/naval.rs (resolve_hunt_boarding, hunt_crew_loss_cap); session.rs hunt_crew_min",
+      "python": "src/portlight/engine/naval.py:318-351",
+      "oracle": "tools/parity/oracle.py:1302-1312"
     }
   ]
 }
