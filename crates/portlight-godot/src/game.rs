@@ -1703,6 +1703,7 @@ impl PortlightGame {
 
     fn begin_session(&mut self, session: Session) {
         let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+        self.drop_encounter_baseline();
         self.log_lines.clear();
         self.market_open = false;
         self.armed_sail = None;
@@ -1731,6 +1732,7 @@ impl PortlightGame {
         match Session::load(&self.save_base, slot) {
             Ok(Some(session)) => {
                 let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+                self.drop_encounter_baseline();
                 self.log_lines.clear();
                 self.market_open = false;
                 self.armed_sail = None;
@@ -6702,8 +6704,23 @@ impl PortlightGame {
         if facts.phase == "naval" {
             facts.naval_actions = self.probe_naval();
         }
+        facts.baseline = self.encounter_baseline_now();
         self.scripted_captain = None;
         self.encounter = Some(facts);
+    }
+
+    /// Section 10.3 baseline, read before any encounter verb.
+    fn encounter_baseline_now(&self) -> Option<crate::logic::EncounterBaseline> {
+        self.session
+            .as_ref()
+            .map(|session| crate::logic::EncounterBaseline::read(session.world()))
+    }
+
+    /// A new or loaded session must not diff against the old world.
+    fn drop_encounter_baseline(&mut self) {
+        if let Some(facts) = self.encounter.as_mut() {
+            facts.baseline = None;
+        }
     }
 
     fn open_scripted_approach(&mut self) {
@@ -6717,7 +6734,8 @@ impl PortlightGame {
             .map(|session| (player_ship(session), at_sea(session)))
             .unwrap_or((None, true));
         match facts_for_catalog_captain(captain_id, ship, sailing) {
-            Some(facts) => {
+            Some(mut facts) => {
+                facts.baseline = self.encounter_baseline_now();
                 self.scripted_captain = Some(captain_id.to_string());
                 self.encounter = Some(facts);
             }
@@ -6795,7 +6813,8 @@ impl PortlightGame {
             let before = session.world().captain.silver;
             (before, session.fight(action))
         };
-        // R11: a finished personal fight (the Hunt duel) logs its result.
+        // R11 win only. Lost, Draw, and break-away are the section 10.3
+        // receipt, so a fight end logs exactly one result line.
         let outcome = result.as_ref().ok().and_then(|step| {
             let silver_after = self.session.as_ref()?.world().captain.silver;
             fight_result_line(step, silver_after - silver_before)
@@ -6912,6 +6931,7 @@ impl PortlightGame {
             .encounter
             .as_ref()
             .and_then(|facts| facts.enemy_hull_max);
+        let baseline = self.encounter.as_ref().and_then(|facts| facts.baseline);
         let (pending, ship, sailing, naval_actions, combat_actions) = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -6937,7 +6957,7 @@ impl PortlightGame {
             };
             (pending, ship, sailing, naval_actions, combat_actions)
         };
-        self.encounter = Some(facts_from_step(StepInput {
+        let mut facts = facts_from_step(StepInput {
             step: &step,
             previous_faction_id: &previous_faction,
             previous_enemy_hull_max: previous_max,
@@ -6946,7 +6966,43 @@ impl PortlightGame {
             at_sea: sailing,
             naval_actions: &naval_actions,
             combat_actions: &combat_actions,
-        }));
+        });
+        facts.baseline = baseline;
+        let receipt = self.encounter_end_receipt(&step, pending, &mut facts);
+        self.encounter = Some(facts);
+        if let Some(receipt) = receipt {
+            self.push_log(receipt);
+        }
+    }
+
+    /// Section 10.3: one line when a fight ends without a win, from the
+    /// world now minus the baseline taken when the encounter opened. Takes
+    /// the baseline so the line logs once. The Outcome log shows it first.
+    fn encounter_end_receipt(
+        &self,
+        step: &EncounterStep,
+        pending: bool,
+        facts: &mut EncounterFacts,
+    ) -> Option<String> {
+        let end = crate::logic::encounter_end(step, pending)?;
+        let session = self.session.as_ref()?;
+        let baseline = facts.baseline.take()?;
+        let now = crate::logic::EncounterBaseline::read(session.world());
+        let bounty_open = session
+            .world()
+            .captain
+            .active_bounties
+            .iter()
+            .any(|id| id == &facts.captain_id)
+            && !day_report::claimable_ids(session).contains(&facts.captain_id);
+        let name = crate::logic::encounter_end_name(&facts.captain_id);
+        let line = crate::logic::encounter_end_line(end, &name, baseline.deltas(&now), bounty_open);
+        facts.log = if facts.log.is_empty() {
+            line.clone()
+        } else {
+            format!("{line}\n{}", facts.log)
+        };
+        Some(line)
     }
 
     fn probe_naval(&mut self) -> Vec<String> {
@@ -7009,6 +7065,7 @@ impl PortlightGame {
             .crew
             .set_text(&format!("Crew to the prize  {crew_count}"));
         let actions = view.actions.clone();
+        let preview = view.choice_preview.clone();
         let mut box_node = nodes.actions.clone();
         clear_children(&mut box_node);
         let mut row = HBoxContainer::new_alloc();
@@ -7022,6 +7079,10 @@ impl PortlightGame {
                 count = 0;
             }
             let caption = action_caption(&action);
+            let line = preview
+                .as_ref()
+                .and_then(|preview| preview.line_for(&action))
+                .map(str::to_string);
             let command = match action {
                 ScreenAction::Choice(choice) => Action::EncounterChoice(choice.to_string()),
                 ScreenAction::Naval(action) => Action::Naval(action),
@@ -7032,7 +7093,20 @@ impl PortlightGame {
                 ScreenAction::TakeAll => Action::TakeAll,
                 ScreenAction::Return { .. } => Action::LeaveEncounter,
             };
-            row.add_child(&encounter_button(&caption, game_id, command));
+            let mut button = encounter_button(&caption, game_id, command);
+            match line {
+                Some(line) => {
+                    row.add_child(&encounter_screen::choice_cell(button, &[line.as_str()]))
+                }
+                None => {
+                    // Beside a preview cell, a bare button (Capture) keeps its
+                    // own height instead of stretching to the cell's.
+                    if preview.is_some() {
+                        button.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+                    }
+                    row.add_child(&button);
+                }
+            }
             count += 1;
         }
         if count > 0 {
@@ -7186,6 +7260,23 @@ impl PortlightGame {
             self.fail_hunt("Hunt smoke: forage at sea opened a fight or skipped the day.");
         }
         self.ask_hunt(&first);
+        let crew_fact = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| {
+                format!(
+                    "Boarding can cost crew - you have {}, need {} to sail.",
+                    ship.crew,
+                    portlight_sim::ship::template_crew_min(ship)
+                )
+            });
+        if crew_fact.is_none_or(|fact| !self.hunt_desk.notice.ends_with(&fact)) {
+            self.fail_hunt(format!(
+                "Hunt smoke: confirm did not state the crew fact ({}).",
+                self.hunt_desk.notice
+            ));
+        }
         self.confirm_hunt();
         let hunting = self.phase_is(ScreenPhase::Approach)
             && self
@@ -8647,7 +8738,13 @@ impl PortlightGame {
 
     fn ask_hunt(&mut self, id: &str) {
         let name = hunt_screen::display_name(id, &self.hunt_desk.known);
-        self.hunt_desk.notice = hunt_screen::hunt_confirm_text(&name);
+        // F1: the flagship's crew against the minimum `depart` refuses on.
+        let crew = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| (ship.crew, portlight_sim::ship::template_crew_min(ship)));
+        self.hunt_desk.notice = hunt_screen::hunt_confirm_text(&name, crew);
         self.hunt_desk.confirm = Some(HuntConfirm::HuntTarget(id.to_string()));
         self.refresh();
     }
@@ -9044,6 +9141,119 @@ impl PortlightGame {
             self.smoke_ok = false;
             self.push_log("Encounter smoke: pending_victory was not set.".to_string());
         }
+        self.expect_choice_previews("Encounter smoke");
+        self.expect_escape_inert_mid_choice();
+    }
+
+    /// The drawn muted lines under the Outcome buttons, in button order.
+    fn choice_preview_lines(&self) -> Vec<String> {
+        let Some(nodes) = self.encounter_nodes.as_ref() else {
+            return Vec::new();
+        };
+        labels_under_box(&nodes.actions)
+            .into_iter()
+            .filter(|label| {
+                label.get_name() == encounter_screen::CHOICE_PREVIEW && label.is_visible_in_tree()
+            })
+            .map(|label| label.get_text().to_string())
+            .collect()
+    }
+
+    /// Spare and Take all each carry the binding line from `facts.strength`.
+    /// Capture carries none.
+    fn expect_choice_previews(&mut self, scope: &str) {
+        let strength = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.strength)
+            .unwrap_or_default();
+        let expected = vec![
+            crate::logic::spare_preview(strength),
+            crate::logic::take_all_preview(strength),
+        ];
+        let drawn = self.choice_preview_lines();
+        if drawn != expected {
+            self.smoke_ok = false;
+            self.push_log(format!(
+                "{scope}: outcome previews were {drawn:?}, expected {expected:?}."
+            ));
+            return;
+        }
+        godot_print!("encounter choice preview {}", drawn.join(" | "));
+    }
+
+    /// `ui_cancel` mid-choice does not leave, spare, or take.
+    fn expect_escape_inert_mid_choice(&mut self) {
+        let silver = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.silver);
+        self.dismiss_cancel();
+        let still_pending = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.pending_victory());
+        let same_silver = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.silver)
+            == silver;
+        if !still_pending
+            || !same_silver
+            || self.encounter.is_none()
+            || !self.phase_is(ScreenPhase::Outcome)
+            || self.choice_preview_lines().len() != 2
+        {
+            self.smoke_ok = false;
+            self.push_log("Encounter smoke: Escape acted on the outcome choice.".to_string());
+        }
+    }
+
+    /// After the choice the previews are gone and #41's receipt carries the
+    /// purse the preview named.
+    fn expect_previews_cleared(&mut self, scope: &str, spared: bool) {
+        if !self.choice_preview_lines().is_empty() {
+            self.smoke_ok = false;
+            self.push_log(format!(
+                "{scope}: outcome previews stayed after the choice."
+            ));
+        }
+        let strength = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.strength)
+            .unwrap_or_default();
+        let purse = if spared {
+            crate::logic::spare_purse(strength)
+        } else {
+            crate::logic::take_all_purse(strength)
+        };
+        let receipt = format!("+{purse} silver.");
+        let logged = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| facts.log.lines().any(|line| line == receipt));
+        if !logged {
+            self.smoke_ok = false;
+            self.push_log(format!("{scope}: receipt did not log {receipt}"));
+        }
+    }
+
+    /// Section 10.3: a win logs no non-win receipt.
+    fn expect_no_end_receipt(&mut self, scope: &str) {
+        let is_receipt = |line: &str| {
+            line.starts_with("Lost the ")
+                || line.starts_with("Drew the ")
+                || line.starts_with("Broke away")
+        };
+        let in_card = self
+            .encounter
+            .as_ref()
+            .is_some_and(|facts| facts.log.lines().any(is_receipt));
+        if in_card || self.log_lines.iter().any(|line| is_receipt(line)) {
+            self.smoke_ok = false;
+            self.push_log(format!("{scope}: a win logged a non-win receipt."));
+        }
     }
 
     fn expect_returned(&mut self) {
@@ -9059,6 +9269,8 @@ impl PortlightGame {
             self.smoke_ok = false;
             self.push_log("Encounter smoke: spare did not leave the outcome card.".to_string());
         }
+        self.expect_previews_cleared("Encounter smoke", true);
+        self.expect_no_end_receipt("Encounter smoke");
     }
 
     fn report_encounter_smoke(&mut self) {
@@ -9125,7 +9337,10 @@ impl PortlightGame {
                 "Bounty smoke: pending_duel cleared before the encounter ended.".to_string(),
             );
         }
+        self.expect_choice_previews("Bounty smoke");
         self.take_prize();
+        self.expect_previews_cleared("Bounty smoke", false);
+        self.expect_no_end_receipt("Bounty smoke");
         let cleared = self
             .session
             .as_ref()
@@ -9416,20 +9631,15 @@ fn duel_outcome_line(outcome: &DuelOutcome) -> String {
     )
 }
 
-/// R11. Result line for a personal-fight step that ended the duel. A win
-/// logs before Spare / Take all add their own receipt lines.
+/// R11. A personal-fight win logs before Spare / Take all add their own
+/// receipt lines. Lost and Draw are the section 10.3 receipt, so this
+/// returns a line only when the player won.
 fn fight_result_line(step: &EncounterStep, silver_delta: i64) -> Option<String> {
-    let result = if step.player_won {
-        "Won"
-    } else if step.draw {
-        "Drew"
-    } else if step.phase == "resolved" {
-        "Lost"
-    } else {
+    if !step.player_won {
         return None;
-    };
+    }
     Some(crate::logic::duel_result_line(
-        result,
+        "Won",
         &step.enemy_captain_name,
         silver_delta,
         0,
@@ -10315,4 +10525,80 @@ fn flag_set(name: &str) -> bool {
 fn user_arg(flag: &str) -> bool {
     let args = Os::singleton().get_cmdline_user_args();
     (0..args.len()).any(|index| args.get(index).is_some_and(|value| value == flag))
+}
+
+#[cfg(test)]
+mod fight_end_tests {
+    use super::fight_result_line;
+    use crate::logic::{
+        encounter_end, encounter_end_line, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+        SCRIPTED_DEPART, SCRIPTED_NAME, SCRIPTED_SEED,
+    };
+    use portlight_sim::session::{EncounterStep, Session};
+
+    fn resolved(edit: impl FnOnce(&mut EncounterStep)) -> EncounterStep {
+        let mut session =
+            Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None).unwrap();
+        session.depart(SCRIPTED_DEPART).unwrap();
+        let mut step = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        step.kind = "fight".to_string();
+        step.phase = "resolved".to_string();
+        step.escaped = false;
+        step.enemy_sunk = false;
+        step.player_won = false;
+        step.draw = false;
+        edit(&mut step);
+        step
+    }
+
+    /// The two sites that can log a fight end: R11's win line from
+    /// `play_fight`, and the section 10.3 receipt from `adopt_step`.
+    /// The stance-duel path (`duel_outcome_line`) is separate and stays.
+    fn fight_end_lines(step: &EncounterStep) -> Vec<String> {
+        let mut lines = Vec::new();
+        if let Some(line) = fight_result_line(step, -30) {
+            lines.push(line);
+        }
+        if let Some(end) = encounter_end(step, false) {
+            lines.push(encounter_end_line(
+                end,
+                "Raj the Quiet",
+                [-30, 0, 0, 0],
+                false,
+            ));
+        }
+        lines
+    }
+
+    #[test]
+    fn each_fight_end_logs_exactly_one_line() {
+        let cases = [
+            (
+                "win",
+                resolved(|step| step.player_won = true),
+                "Won the duel",
+            ),
+            ("loss", resolved(|_| {}), "Lost the fight"),
+            ("draw", resolved(|step| step.draw = true), "Drew the fight"),
+            (
+                "break-away",
+                resolved(|step| {
+                    step.kind = "choice".to_string();
+                    step.escaped = true;
+                }),
+                "Broke away",
+            ),
+        ];
+        for (label, step, head) in cases {
+            let lines = fight_end_lines(&step);
+            assert_eq!(lines.len(), 1, "{label}: {lines:?}");
+            assert!(
+                lines[0].starts_with(head),
+                "{label}: {} does not start with {head}",
+                lines[0]
+            );
+        }
+    }
 }

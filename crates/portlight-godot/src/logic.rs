@@ -332,6 +332,117 @@ pub(crate) struct EncounterFacts {
     pub on_session: bool,
     pub naval_actions: Vec<String>,
     pub combat_actions: Vec<String>,
+    /// World reading taken when the encounter opened (section 10.3). Godot
+    /// memory only, never saved. Carried across steps; taken (set to
+    /// `None`) when the non-win receipt is logged, so it logs once.
+    pub baseline: Option<EncounterBaseline>,
+}
+
+/// Silver, flagship crew and hull, and total cargo units when an encounter
+/// opens. The step carries no silver or cargo delta, so a non-win receipt
+/// diffs the world against this.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct EncounterBaseline {
+    pub silver: i64,
+    pub crew: i64,
+    pub hull: i64,
+    pub cargo_units: i64,
+}
+
+impl EncounterBaseline {
+    pub(crate) fn read(world: &portlight_sim::model::World) -> Self {
+        let ship = world.captain.ship.as_ref();
+        Self {
+            silver: world.captain.silver,
+            crew: ship.map_or(0, |ship| ship.crew),
+            hull: ship.map_or(0, |ship| ship.hull),
+            cargo_units: world.captain.cargo.iter().map(|item| item.quantity).sum(),
+        }
+    }
+
+    /// `[silver, crew, hull, cargo]` as `now - self`.
+    pub(crate) fn deltas(&self, now: &Self) -> [i64; 4] {
+        [
+            now.silver - self.silver,
+            now.crew - self.crew,
+            now.hull - self.hull,
+            now.cargo_units - self.cargo_units,
+        ]
+    }
+}
+
+/// How a fight ended without a win (section 10.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum EncounterEnd {
+    LostFight,
+    DrewFight,
+    LostAtSea,
+    BrokeAway,
+}
+
+/// The non-win end a resolved step reports, or `None` (still running, a
+/// pending win, an enemy sunk, a negotiated peace, a capture).
+pub(crate) fn encounter_end(step: &EncounterStep, pending_victory: bool) -> Option<EncounterEnd> {
+    if step.phase != "resolved" || pending_victory || step.player_won || step.enemy_sunk {
+        return None;
+    }
+    if step.escaped {
+        return Some(EncounterEnd::BrokeAway);
+    }
+    match step.kind.as_str() {
+        "fight" if step.draw => Some(EncounterEnd::DrewFight),
+        "fight" => Some(EncounterEnd::LostFight),
+        "naval" => Some(EncounterEnd::LostAtSea),
+        _ => None,
+    }
+}
+
+/// `{Name}` in the non-win receipt: the catalog display name, or
+/// [`humanize_id`] when the catalog has none or it isn't ASCII. Never the
+/// raw id. Empty only when the id is empty.
+pub(crate) fn encounter_end_name(captain_id: &str) -> String {
+    let catalog = portlight_sim::content::content()
+        .pirate(captain_id)
+        .map(|pirate| pirate.name.as_str());
+    display_or_humanized(catalog, captain_id)
+}
+
+fn display_or_humanized(display: Option<&str>, id: &str) -> String {
+    match display {
+        Some(name) if !name.is_empty() && name.is_ascii() => name.to_string(),
+        _ => humanize_id(id),
+    }
+}
+
+/// One plain receipt line for a fight that ended without a win. Terms in
+/// order Silver, Crew, Hull, Cargo; zero terms omitted (R4). No odds, no
+/// advice, no Trust or Standing.
+pub(crate) fn encounter_end_line(
+    end: EncounterEnd,
+    name: &str,
+    deltas: [i64; 4],
+    bounty_open: bool,
+) -> String {
+    let (head, joiner) = match end {
+        EncounterEnd::LostFight => ("Lost the fight", "with"),
+        EncounterEnd::DrewFight => ("Drew the fight", "with"),
+        EncounterEnd::LostAtSea => ("Lost the sea fight", "with"),
+        EncounterEnd::BrokeAway => ("Broke away", "from"),
+    };
+    let mut line = if name.is_empty() {
+        head.to_string()
+    } else {
+        format!("{head} {joiner} {name}")
+    };
+    for (term, value) in ["Silver", "Crew", "Hull", "Cargo"].iter().zip(deltas) {
+        if value != 0 {
+            line.push_str(&format!(" - {term} {}", signed_delta(value)));
+        }
+    }
+    if bounty_open {
+        line.push_str(" - the bounty stays open");
+    }
+    line
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -345,8 +456,73 @@ pub(crate) struct EncounterView {
     /// different colours. Concatenate [`DeltaSpan::text`] for the line.
     pub delta: Vec<DeltaSpan>,
     pub actions: Vec<ScreenAction>,
+    /// Muted lines under Spare and Take all on a win's Outcome card. `None`
+    /// on every other card, including after the choice (#41's receipt is the
+    /// post-click truth).
+    pub choice_preview: Option<ChoicePreview>,
     /// Always set. The portrait slot is [`PORTRAIT_PLACEHOLDER`].
     pub portrait_placeholder: bool,
+}
+
+/// Pre-click copy for the two mercy/greed buttons. Only the deterministic
+/// purse and standing are shown. Loot, morale, and departures roll at
+/// finalize, so they are never previewed as values.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ChoicePreview {
+    pub spare: String,
+    pub take_all: String,
+}
+
+impl ChoicePreview {
+    /// The line for `action`. Capture has none in P0.
+    pub(crate) fn line_for(&self, action: &ScreenAction) -> Option<&str> {
+        match action {
+            ScreenAction::Spare => Some(&self.spare),
+            ScreenAction::TakeAll => Some(&self.take_all),
+            _ => None,
+        }
+    }
+}
+
+/// Underworld standing on a won duel when the captain spares
+/// (`record_duel_standing` in `session.rs`).
+pub(crate) const SPARE_STANDING: i64 = 5;
+/// Underworld standing on a won duel when the captain takes all.
+pub(crate) const TAKE_ALL_STANDING: i64 = 2;
+
+/// Silver `Session::spare` pays: `20 + strength * 3` (`finalize_victory`).
+pub(crate) fn spare_purse(strength: i64) -> i64 {
+    strength.saturating_mul(3).saturating_add(20)
+}
+
+/// Silver `Session::take_all` pays: `20 + strength * 7` (`finalize_victory`).
+pub(crate) fn take_all_purse(strength: i64) -> i64 {
+    strength.saturating_mul(7).saturating_add(20)
+}
+
+/// `+32 silver - Underworld +5.` for Strength 4. ASCII only.
+pub(crate) fn spare_preview(strength: i64) -> String {
+    format!(
+        "{} silver - Underworld {}.",
+        signed_delta(spare_purse(strength)),
+        signed_delta(SPARE_STANDING)
+    )
+}
+
+/// `+48 silver - Underworld +2 - loot unknown.` for Strength 4. ASCII only.
+pub(crate) fn take_all_preview(strength: i64) -> String {
+    format!(
+        "{} silver - Underworld {} - loot unknown.",
+        signed_delta(take_all_purse(strength)),
+        signed_delta(TAKE_ALL_STANDING)
+    )
+}
+
+pub(crate) fn choice_preview(strength: i64) -> ChoicePreview {
+    ChoicePreview {
+        spare: spare_preview(strength),
+        take_all: take_all_preview(strength),
+    }
 }
 
 /// Whose loss a clause names. A gain, a label, or a separator is [`DeltaTone::Neutral`].
@@ -453,8 +629,15 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     facts.opponent_hp = step.opponent_hp;
     facts.player_hull_delta = step.player_hull_delta;
     facts.enemy_hull_delta = step.enemy_hull_delta;
-    facts.player_crew_delta = step.player_crew_delta;
-    facts.enemy_crew_delta = step.enemy_crew_delta;
+    if step.kind == "board" {
+        // `board_step` sets only the `*_crew_lost` amounts and leaves the
+        // deltas at 0, so the #40 line was silent on the boarding loss.
+        facts.player_crew_delta = -step.player_crew_lost;
+        facts.enemy_crew_delta = -step.enemy_crew_lost;
+    } else {
+        facts.player_crew_delta = step.player_crew_delta;
+        facts.enemy_crew_delta = step.enemy_crew_delta;
+    }
     // Damage amounts are non-negative. The line shows them as signed HP changes.
     facts.player_hp_delta = -step.damage_to_player;
     facts.opponent_hp_delta = -step.damage_to_opponent;
@@ -522,6 +705,8 @@ fn view(phase: ScreenPhase, facts: &EncounterFacts, actions: Vec<ScreenAction>) 
         card: card_text(facts, phase),
         log: facts.log.clone(),
         delta: delta_spans(facts),
+        choice_preview: (phase == ScreenPhase::Outcome && facts.pending_victory)
+            .then(|| choice_preview(facts.strength)),
         actions,
         portrait_placeholder: true,
     }
@@ -699,11 +884,11 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     }
     lines.push(match facts.player_hull_max {
         Some(max) => format!(
-            "Your hull {}/{max} · crew {}",
+            "Your hull {}/{max} - crew {}",
             facts.player_hull, facts.player_crew
         ),
         None => format!(
-            "Your hull {} · crew {}",
+            "Your hull {} - crew {}",
             facts.player_hull, facts.player_crew
         ),
     });
@@ -713,14 +898,14 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
         if let Some(hull) = facts.enemy_hull {
             let crew = facts.enemy_crew.unwrap_or(0);
             lines.push(match facts.enemy_hull_max {
-                Some(max) => format!("Enemy hull {hull}/{max} · crew {crew}"),
-                None => format!("Enemy hull {hull} · crew {crew}"),
+                Some(max) => format!("Enemy hull {hull}/{max} - crew {crew}"),
+                None => format!("Enemy hull {hull} - crew {crew}"),
             });
         }
     }
     if phase == ScreenPhase::Personal && facts.kind == "fight" {
         lines.push(format!(
-            "Your HP {} · opponent {}",
+            "Your HP {} - opponent {}",
             facts.player_hp, facts.opponent_hp
         ));
     }
@@ -768,6 +953,7 @@ fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) 
         on_session: false,
         naval_actions: Vec::new(),
         combat_actions: Vec::new(),
+        baseline: None,
     }
 }
 
@@ -2245,6 +2431,286 @@ mod tests {
     }
 
     #[test]
+    fn board_step_shows_its_crew_loss_on_the_delta_line() {
+        let mut session = scripted_session();
+        let base = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        let mut step = cleared_deltas(&base);
+        step.kind = "board".to_string();
+        step.phase = "duel".to_string();
+        step.player_crew_lost = 3;
+        step.enemy_crew_lost = 1;
+        let (text, spans) = line_for(&session, &step);
+        assert_eq!(text, "Crew: you -3, enemy -1");
+        let parts: Vec<(&str, DeltaTone)> = spans
+            .iter()
+            .map(|span| (span.text.as_str(), span.tone))
+            .collect();
+        assert_eq!(
+            parts,
+            vec![
+                ("Crew: ", DeltaTone::Neutral),
+                ("you -3", DeltaTone::PlayerLoss),
+                (", ", DeltaTone::Neutral),
+                ("enemy -1", DeltaTone::EnemyLoss),
+            ]
+        );
+        // Only the board step maps `*_crew_lost`; other kinds keep the deltas.
+        step.kind = "naval".to_string();
+        step.phase = "naval".to_string();
+        assert_eq!(line_for(&session, &step).0, "");
+    }
+
+    #[test]
+    fn encounter_end_line_heads_terms_and_clause() {
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::LostFight,
+                "Raj the Quiet",
+                [-30, -3, 0, 0],
+                true
+            ),
+            "Lost the fight with Raj the Quiet - Silver -30 - Crew -3 - the bounty stays open"
+        );
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::DrewFight,
+                "Raj the Quiet",
+                [0, -3, 0, 0],
+                false
+            ),
+            "Drew the fight with Raj the Quiet - Crew -3"
+        );
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::LostAtSea,
+                "The Butcher",
+                [-55, -4, -20, -12],
+                false
+            ),
+            "Lost the sea fight with The Butcher - Silver -55 - Crew -4 - Hull -20 - Cargo -12"
+        );
+        assert_eq!(
+            encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0, 0, -4, 0], false),
+            "Broke away from Typhoon Mei - Hull -4"
+        );
+        // All zero, no clause: just the head.
+        assert_eq!(
+            encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0; 4], false),
+            "Broke away from Typhoon Mei"
+        );
+        // The clause only when the bounty is open.
+        assert!(
+            encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0; 4], true)
+                .ends_with(" - the bounty stays open")
+        );
+        // Empty name drops ` with {Name}` / ` from {Name}`.
+        assert_eq!(
+            encounter_end_line(EncounterEnd::LostFight, "", [-30, 0, 0, 0], false),
+            "Lost the fight - Silver -30"
+        );
+        assert_eq!(
+            encounter_end_line(EncounterEnd::BrokeAway, "", [0, 0, -4, 0], false),
+            "Broke away - Hull -4"
+        );
+        // A gain keeps its sign; zero never prints.
+        assert_eq!(
+            encounter_end_line(EncounterEnd::LostAtSea, "X", [0, 0, 2, 0], false),
+            "Lost the sea fight with X - Hull +2"
+        );
+        for end in [
+            EncounterEnd::LostFight,
+            EncounterEnd::DrewFight,
+            EncounterEnd::LostAtSea,
+            EncounterEnd::BrokeAway,
+        ] {
+            for deltas in [[0; 4], [-30, -3, -4, -12], [5, 0, 0, 0]] {
+                let line = encounter_end_line(end, "Raj the Quiet", deltas, true);
+                assert!(line.is_ascii(), "{line}");
+                assert!(
+                    !line.contains('\u{2014}') && !line.contains('\u{2013}'),
+                    "{line}"
+                );
+                assert!(!line.contains("->"), "{line}");
+                assert!(!line.contains("+0") && !line.contains("-0"), "{line}");
+                assert!(
+                    !line.contains("Trust") && !line.contains("Standing"),
+                    "{line}"
+                );
+                assert!(!line.contains('%'), "{line}");
+            }
+        }
+    }
+
+    #[test]
+    fn encounter_end_name_prefers_catalog_then_humanizes_never_raw_id() {
+        // Catalog ASCII display name wins.
+        assert_eq!(encounter_end_name("raj_the_quiet"), "Raj the Quiet");
+        // Missing from the catalog: humanized id.
+        assert_eq!(encounter_end_name("salt_widow_kell"), "Salt Widow Kell");
+        assert_eq!(
+            display_or_humanized(None, "salt_widow_kell"),
+            "Salt Widow Kell"
+        );
+        assert_eq!(
+            display_or_humanized(Some(""), "salt_widow_kell"),
+            "Salt Widow Kell"
+        );
+        // Non-ASCII display name: humanized id.
+        assert_eq!(
+            display_or_humanized(Some("Ra\u{e9}l the Quiet"), "rael_the_quiet"),
+            "Rael The Quiet"
+        );
+        assert_eq!(
+            display_or_humanized(Some("Raj the Quiet"), "raj_the_quiet"),
+            "Raj the Quiet"
+        );
+        // Never the raw snake_case id, and always ASCII.
+        for id in [
+            "raj_the_quiet",
+            "salt_widow_kell",
+            "the_butcher",
+            "typhoon_mei",
+        ] {
+            let name = encounter_end_name(id);
+            assert_ne!(name, id);
+            assert!(!name.contains('_'), "{name}");
+            assert!(name.is_ascii(), "{name}");
+        }
+        for (display, id) in [(Some("Ra\u{e9}l"), "rael_x"), (None, "no_such_captain")] {
+            let name = display_or_humanized(display, id);
+            assert_ne!(name, id);
+            assert!(!name.contains('_') && name.is_ascii(), "{name}");
+        }
+        // Empty id and no name: empty, so the head drops ` with {Name}`.
+        assert_eq!(encounter_end_name(""), "");
+        assert_eq!(
+            encounter_end_line(
+                EncounterEnd::LostFight,
+                &encounter_end_name(""),
+                [-30, 0, 0, 0],
+                false
+            ),
+            "Lost the fight - Silver -30"
+        );
+    }
+
+    #[test]
+    fn encounter_end_classifies_resolved_non_wins() {
+        let mut session = scripted_session();
+        let base = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        let synth = |kind: &str, edit: &dyn Fn(&mut portlight_sim::session::EncounterStep)| {
+            let mut step = cleared_deltas(&base);
+            step.kind = kind.to_string();
+            step.phase = "resolved".to_string();
+            step.escaped = false;
+            step.enemy_sunk = false;
+            step.player_sunk = false;
+            step.player_won = false;
+            step.draw = false;
+            edit(&mut step);
+            step
+        };
+        let fight_loss = synth("fight", &|_| {});
+        let draw = synth("fight", &|step| step.draw = true);
+        let naval_sunk = synth("naval", &|step| step.player_sunk = true);
+        let naval_crew_gone = synth("naval", &|step| step.player_crew = 0);
+        let approach_flee = synth("choice", &|step| {
+            step.choice = "flee".to_string();
+            step.escaped = true;
+        });
+        let naval_flee = synth("naval", &|step| {
+            step.choice = "flee".to_string();
+            step.escaped = true;
+        });
+        let fight_win = synth("fight", &|step| step.player_won = true);
+        let enemy_sunk = synth("naval", &|step| step.enemy_sunk = true);
+        let peace = synth("choice", &|step| step.choice = "negotiate".to_string());
+        let capture = synth("capture", &|_| {});
+        let running = synth("fight", &|step| step.phase = "duel".to_string());
+        assert_eq!(
+            encounter_end(&fight_loss, false),
+            Some(EncounterEnd::LostFight)
+        );
+        assert_eq!(encounter_end(&draw, false), Some(EncounterEnd::DrewFight));
+        assert_eq!(
+            encounter_end(&naval_sunk, false),
+            Some(EncounterEnd::LostAtSea)
+        );
+        assert_eq!(
+            encounter_end(&naval_crew_gone, false),
+            Some(EncounterEnd::LostAtSea)
+        );
+        assert_eq!(
+            encounter_end(&approach_flee, false),
+            Some(EncounterEnd::BrokeAway)
+        );
+        assert_eq!(
+            encounter_end(&naval_flee, false),
+            Some(EncounterEnd::BrokeAway)
+        );
+        assert_eq!(encounter_end(&fight_win, false), None);
+        assert_eq!(encounter_end(&enemy_sunk, false), None);
+        assert_eq!(encounter_end(&peace, false), None);
+        assert_eq!(encounter_end(&capture, false), None);
+        assert_eq!(encounter_end(&running, false), None);
+        // A pending win is never a non-win end.
+        assert_eq!(encounter_end(&fight_loss, true), None);
+    }
+
+    #[test]
+    fn encounter_baseline_diffs_the_world() {
+        let session = scripted_session();
+        let before = EncounterBaseline::read(session.world());
+        let ship = session.world().captain.ship.as_ref().unwrap();
+        assert_eq!(before.silver, session.world().captain.silver);
+        assert_eq!(before.crew, ship.crew);
+        assert_eq!(before.hull, ship.hull);
+        let after = EncounterBaseline {
+            silver: before.silver - 30,
+            crew: before.crew - 3,
+            hull: before.hull,
+            cargo_units: before.cargo_units - 12,
+        };
+        assert_eq!(before.deltas(&after), [-30, -3, 0, -12]);
+        assert_eq!(before.deltas(&before), [0; 4]);
+    }
+
+    #[test]
+    fn approach_flee_receipt_matches_the_world() {
+        // Real Session: an approach flee that escapes ends resolved and
+        // classifies as Broke away; the hull term is the real hull change.
+        for seed in 0..40 {
+            let mut session = Session::new("Low", "merchant", 1, None).unwrap();
+            let baseline = EncounterBaseline::read(session.world());
+            let step = session
+                .encounter_choice_with("flee", None, Some(seed))
+                .unwrap();
+            if step.phase != "resolved" || !step.escaped {
+                continue;
+            }
+            assert_eq!(
+                encounter_end(&step, session.pending_victory()),
+                Some(EncounterEnd::BrokeAway)
+            );
+            let deltas = baseline.deltas(&EncounterBaseline::read(session.world()));
+            assert_eq!(deltas[2], -step.hull_damage);
+            let line = encounter_end_line(
+                EncounterEnd::BrokeAway,
+                &encounter_end_name(&step.enemy_captain_id),
+                deltas,
+                false,
+            );
+            assert!(line.starts_with("Broke away from "), "{line}");
+            return;
+        }
+        panic!("no escaping approach flee in 40 seeds");
+    }
+
+    #[test]
     fn one_ascii_signed_delta_line_drops_zeros() {
         let mut session = scripted_session();
         let base = session
@@ -2358,11 +2824,23 @@ mod tests {
         let combat_actions = probe_fight(&mut session);
         facts = adopt(&session, &step, Some(&facts), &[], &combat_actions);
         let boarded = delta_text(&present(&facts).unwrap().delta);
-        assert_line_matches_step(&step, &boarded);
-        assert!(
-            boarded.is_empty(),
-            "boarding crew loss is not an EncounterStep delta: {boarded}"
-        );
+        // Section 10.2: the board step's `*_crew_lost` reads as crew deltas.
+        let mut mapped = step.clone();
+        mapped.player_crew_delta = -step.player_crew_lost;
+        mapped.enemy_crew_delta = -step.enemy_crew_lost;
+        assert_line_matches_step(&mapped, &boarded);
+        if step.player_crew_lost != 0 {
+            assert!(
+                boarded.contains(&format!("you -{}", step.player_crew_lost)),
+                "{boarded}"
+            );
+        }
+        if step.enemy_crew_lost != 0 {
+            assert!(
+                boarded.contains(&format!("enemy -{}", step.enemy_crew_lost)),
+                "{boarded}"
+            );
+        }
 
         let mut last_fight = String::new();
         for action in SCRIPTED_FIGHT {
@@ -2479,6 +2957,147 @@ mod tests {
     }
 
     #[test]
+    fn card_text_is_ascii_in_every_phase() {
+        let mut facts = facts_for_catalog_captain(
+            "raj_the_quiet",
+            Some(PlayerShip {
+                hull: 18,
+                hull_max: 20,
+                crew: 4,
+            }),
+            true,
+        )
+        .unwrap();
+        facts.kind = "fight".to_string();
+        facts.enemy_hull = Some(40);
+        facts.enemy_hull_max = Some(50);
+        facts.enemy_crew = Some(8);
+        facts.player_hp = 12;
+        facts.opponent_hp = 9;
+        for phase in [
+            ScreenPhase::Approach,
+            ScreenPhase::Naval,
+            ScreenPhase::Boarding,
+            ScreenPhase::Personal,
+            ScreenPhase::Outcome,
+        ] {
+            let card = card_text(&facts, phase);
+            assert!(card.is_ascii(), "{phase:?}: {card}");
+            assert!(!card.contains('\u{b7}'), "{phase:?}: {card}");
+        }
+        assert!(card_text(&facts, ScreenPhase::Naval).contains("Your hull 18/20 - crew 4"));
+        assert!(card_text(&facts, ScreenPhase::Naval).contains("Enemy hull 40/50 - crew 8"));
+        assert!(card_text(&facts, ScreenPhase::Personal).contains("Your HP 12 - opponent 9"));
+        facts.player_hull_max = None;
+        facts.enemy_hull_max = None;
+        let card = card_text(&facts, ScreenPhase::Naval);
+        assert!(card.contains("Your hull 18 - crew 4"), "{card}");
+        assert!(card.contains("Enemy hull 40 - crew 8"), "{card}");
+    }
+
+    #[test]
+    fn purse_formulas_match_finalize_victory() {
+        for strength in [0, 1, 4, 9, 12, 100] {
+            assert_eq!(spare_purse(strength), 20 + strength * 3, "{strength}");
+            assert_eq!(take_all_purse(strength), 20 + strength * 7, "{strength}");
+            assert!(take_all_purse(strength) >= spare_purse(strength));
+        }
+        assert_eq!(SPARE_STANDING, 5);
+        assert_eq!(TAKE_ALL_STANDING, 2);
+        // A huge strength saturates rather than overflowing the UI.
+        assert_eq!(spare_purse(i64::MAX), i64::MAX);
+        assert_eq!(take_all_purse(i64::MAX), i64::MAX);
+    }
+
+    #[test]
+    fn choice_preview_copy_is_the_binding_text() {
+        // Brief example: Strength 4.
+        assert_eq!(spare_preview(4), "+32 silver - Underworld +5.");
+        assert_eq!(
+            take_all_preview(4),
+            "+48 silver - Underworld +2 - loot unknown."
+        );
+        // Strength 0 still pays the base 20.
+        assert_eq!(spare_preview(0), "+20 silver - Underworld +5.");
+        assert_eq!(
+            take_all_preview(0),
+            "+20 silver - Underworld +2 - loot unknown."
+        );
+        // Plain integers, no thousands separator (matches the receipt).
+        assert_eq!(spare_preview(1000), "+3020 silver - Underworld +5.");
+        assert_eq!(
+            take_all_preview(1000),
+            "+7020 silver - Underworld +2 - loot unknown."
+        );
+        let preview = choice_preview(4);
+        assert_eq!(preview.spare, spare_preview(4));
+        assert_eq!(preview.take_all, take_all_preview(4));
+    }
+
+    #[test]
+    fn choice_preview_copy_is_ascii_with_no_promises() {
+        for strength in [0, 1, 4, 12, 1000] {
+            for line in [spare_preview(strength), take_all_preview(strength)] {
+                assert!(line.is_ascii(), "{line}");
+                assert!(
+                    !line.contains('\u{2014}') && !line.contains('\u{2013}'),
+                    "{line}"
+                );
+                assert!(!line.contains("--"), "{line}");
+                assert!(line.contains(" - "), "{line}");
+                assert!(line.ends_with('.'), "{line}");
+                assert!(!line.contains("Purse"), "{line}");
+                assert!(!line.to_ascii_lowercase().contains("win"), "{line}");
+                assert!(!line.contains('_'), "{line}");
+            }
+        }
+        assert!(!spare_preview(4).contains("loot"));
+    }
+
+    #[test]
+    fn choice_preview_lines_sit_under_spare_and_take_all_only() {
+        let preview = choice_preview(4);
+        assert_eq!(
+            preview.line_for(&ScreenAction::Spare),
+            Some("+32 silver - Underworld +5.")
+        );
+        assert_eq!(
+            preview.line_for(&ScreenAction::TakeAll),
+            Some("+48 silver - Underworld +2 - loot unknown.")
+        );
+        assert_eq!(preview.line_for(&ScreenAction::Capture), None);
+        assert_eq!(
+            preview.line_for(&ScreenAction::Return { at_sea: true }),
+            None
+        );
+    }
+
+    #[test]
+    fn choice_preview_shows_only_while_the_win_is_pending() {
+        let mut facts = facts_for_catalog_captain("raj_the_quiet", None, true).unwrap();
+        let strength = facts.strength;
+        assert!(present(&facts).unwrap().choice_preview.is_none());
+        facts.phase = "resolved".to_string();
+        facts.pending_victory = true;
+        let outcome = present(&facts).unwrap();
+        assert_eq!(outcome.choice_preview, Some(choice_preview(strength)));
+        // Strength stays on the card; the preview reads the same number.
+        assert!(outcome.card.contains(&format!("Strength {strength}")));
+        // After the choice the card is still Outcome, but the preview is gone.
+        facts.pending_victory = false;
+        let done = present(&facts).unwrap();
+        assert_eq!(done.phase, ScreenPhase::Outcome);
+        assert!(done.choice_preview.is_none());
+        // Capture-available is Outcome without a pending win: no preview.
+        facts.phase = "capture_available".to_string();
+        assert!(present(&facts).unwrap().choice_preview.is_none());
+        for phase in ["naval", "boarding", "duel"] {
+            facts.phase = phase.to_string();
+            assert!(present(&facts).unwrap().choice_preview.is_none(), "{phase}");
+        }
+    }
+
+    #[test]
     fn scripted_boarding_walks_approach_naval_boarding_and_outcome() {
         let mut session = scripted_session();
         let approach =
@@ -2544,8 +3163,17 @@ mod tests {
         );
         assert_eq!(outcome.log, facts.log);
         assert!(!outcome.log.is_empty());
+        let preview = outcome.choice_preview.clone().unwrap();
         let silver = session.world().captain.silver;
         let receipt = session.spare().unwrap();
+        // The pre-click line is the receipt's purse and standing.
+        assert_eq!(
+            preview.spare,
+            format!(
+                "+{} silver - Underworld +{}.",
+                receipt.silver_delta, receipt.standing_delta
+            )
+        );
         let lines = victory_receipt_lines(&receipt);
         assert!(lines.iter().any(|line| line.starts_with("Spared ")));
         assert!(lines
@@ -2646,10 +3274,19 @@ mod tests {
             facts = adopt(&session, &step, Some(&facts), &[], &actions);
         }
         assert!(session.pending_victory());
-        assert_eq!(present(&facts).unwrap().phase, ScreenPhase::Outcome);
+        let outcome = present(&facts).unwrap();
+        assert_eq!(outcome.phase, ScreenPhase::Outcome);
         assert!(session.world().pending_duel.is_some());
+        let preview = outcome.choice_preview.unwrap();
 
-        session.take_all().unwrap();
+        let receipt = session.take_all().unwrap();
+        assert_eq!(
+            preview.take_all,
+            format!(
+                "+{} silver - Underworld +{} - loot unknown.",
+                receipt.silver_delta, receipt.standing_delta
+            )
+        );
         assert!(!session.pending_victory());
         assert!(
             session.world().pending_duel.is_none(),

@@ -376,8 +376,15 @@ pub(crate) fn claim_notice(silver: i64) -> String {
     format!("Claimed {silver} silver.")
 }
 
-pub(crate) fn hunt_confirm_text(name: &str) -> String {
-    format!("Hunt {name}? This opens a fight.")
+/// Hunt confirm. `crew` is the flagship's `(crew, template_crew_min)`, the
+/// same minimum `depart` refuses on. No odds and no loss estimate.
+pub(crate) fn hunt_confirm_text(name: &str, crew: Option<(i64, i64)>) -> String {
+    match crew {
+        Some((crew, min)) => format!(
+            "Hunt {name}? This opens a fight. Boarding can cost crew - you have {crew}, need {min} to sail."
+        ),
+        None => format!("Hunt {name}? This opens a fight."),
+    }
 }
 
 pub(crate) fn claim_confirm_text(name: &str) -> String {
@@ -743,6 +750,29 @@ fn ascii_text(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hunt_confirm_states_crew_against_the_sail_minimum() {
+        assert_eq!(
+            hunt_confirm_text("Raj the Quiet", Some((4, 3))),
+            "Hunt Raj the Quiet? This opens a fight. Boarding can cost crew - you have 4, need 3 to sail."
+        );
+        assert_eq!(
+            hunt_confirm_text("Raj the Quiet", None),
+            "Hunt Raj the Quiet? This opens a fight."
+        );
+        for crew in [Some((4, 3)), Some((1, 3)), None] {
+            let text = hunt_confirm_text("Raj the Quiet", crew);
+            assert!(text.is_ascii(), "{text}");
+            assert!(!text.contains('%'), "{text}");
+            assert!(!text.to_ascii_lowercase().contains("chance"), "{text}");
+            assert!(
+                !text.contains('\u{2014}') && !text.contains('\u{2013}'),
+                "{text}"
+            );
+            assert!(!text.contains(" will "), "{text}");
+        }
+    }
 
     #[test]
     fn catalog_matches_every_live_board_row() {
