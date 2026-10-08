@@ -231,6 +231,63 @@ pub(crate) fn outcome_terms(outcome: &ContractOutcome) -> String {
     }
 }
 
+/// Failure terms: the Silver term from [`outcome_terms`] (partial pay on an
+/// expiry), then `Guarantee +{p}` when a contract guarantee paid out. Zero
+/// terms are omitted (R4). Same Silver-only rule as every outcome surface.
+pub(crate) fn failure_terms(outcome: &ContractOutcome, guarantee: i64) -> Vec<String> {
+    let mut terms = Vec::new();
+    let silver = outcome_terms(outcome);
+    if !silver.is_empty() {
+        terms.push(silver);
+    }
+    if guarantee > 0 {
+        terms.push(format!("Guarantee +{guarantee}"));
+    }
+    terms
+}
+
+/// ` - 22 Grain still aboard` (catalog good name), or empty when none of the
+/// contract's good is held. The one next-step fact on a failure line.
+pub(crate) fn aboard_clause(good_id: &str, held: i64) -> String {
+    if held > 0 {
+        ascii_sentence(&format!(
+            " - {held} {} still aboard",
+            good_display_name(good_id)
+        ))
+    } else {
+        String::new()
+    }
+}
+
+/// Desk notice after Abandon: the shared [`outcome_notice`] form plus the
+/// aboard clause. The head is never trimmed; the field tail gives way first
+/// so the whole line stays within [`DESK_CHARS`].
+pub(crate) fn abandon_notice(outcome: &ContractOutcome, held: i64) -> String {
+    let aboard = aboard_clause(&outcome.good_id, held);
+    let line = outcome_line(
+        notice_label(outcome),
+        outcome,
+        0,
+        DESK_CHARS.saturating_sub(aboard.len()),
+    );
+    format!("{line}{aboard}")
+}
+
+/// A desk notice for a failure outcome (abandon, or an expiry if one is ever
+/// shown here). These render in DUE; every other notice stays CREAM.
+pub(crate) fn is_failure_notice(text: &str) -> bool {
+    text.starts_with("Contract abandoned: ") || text.starts_with("Contract expired: ")
+}
+
+/// Desk notice tone: DUE for a failure outcome, CREAM otherwise.
+pub(crate) fn notice_color(text: &str) -> Color {
+    if is_failure_notice(text) {
+        DUE
+    } else {
+        CREAM
+    }
+}
+
 /// Notice label by outcome kind: `Contract paid` / `Contract abandoned` /
 /// `Contract expired`.
 pub(crate) fn notice_label(outcome: &ContractOutcome) -> &'static str {
@@ -356,14 +413,14 @@ pub(crate) fn availability_tag(
     })
 }
 
-fn port_display_name(id: &str) -> String {
+pub(crate) fn port_display_name(id: &str) -> String {
     portlight_sim::content::content()
         .port(id)
         .map(|port| port.name.clone())
         .unwrap_or_else(|| humanize_id(id))
 }
 
-fn good_display_name(id: &str) -> String {
+pub(crate) fn good_display_name(id: &str) -> String {
     portlight_sim::content::content()
         .good(id)
         .map(|good| good.name.clone())
@@ -379,9 +436,41 @@ fn is_snake_id(word: &str) -> bool {
 
 /// Desk Recent row, same builder as the notices: `Paid: Silver +612 - 23
 /// Grain to Corsair's Rest - early bonus +60`, `Abandoned: Grain for
-/// Corsair's Rest`. No raw outcome type, no sim summary.
-pub(crate) fn recent_line(outcome: &ContractOutcome) -> String {
-    outcome_line(recent_label(outcome), outcome, 0, DESK_CHARS)
+/// Corsair's Rest`. No raw outcome type, no sim summary. An expiry adds its
+/// failure terms and progress (GD #62):
+/// `Expired: Silver +60 - Guarantee +105 - Grain for Corsair's Rest - 5/23`.
+/// `guarantee` is the contract-guarantee silver paid for this contract; only
+/// expired rows read it.
+pub(crate) fn recent_line(outcome: &ContractOutcome, guarantee: i64) -> String {
+    if outcome.outcome_type == "expired" {
+        expired_recent_line(outcome, guarantee)
+    } else {
+        outcome_line(recent_label(outcome), outcome, 0, DESK_CHARS)
+    }
+}
+
+/// `Expired: Silver +N - Guarantee +N - {Good} for {Port} - {d}/{r}`, zero
+/// terms omitted (silver-first, like every trimmed one-liner). The head and
+/// the `{d}/{r}` token are never trimmed; only the field tail gives way.
+fn expired_recent_line(outcome: &ContractOutcome, guarantee: i64) -> String {
+    let mut head = format!("{}:", recent_label(outcome));
+    let terms = failure_terms(outcome, guarantee);
+    if !terms.is_empty() {
+        head.push(' ');
+        head.push_str(&terms.join(" - "));
+    }
+    let progress = format!(
+        " - {}",
+        progress_text(outcome.delivered_quantity, outcome.required_quantity)
+    );
+    let sep = if head.ends_with(':') { " " } else { " - " };
+    let room = DESK_CHARS.saturating_sub(head.len() + sep.len() + progress.len());
+    let tail = trim_tail(&outcome_tail(outcome), room);
+    if tail.is_empty() {
+        format!("{head}{progress}")
+    } else {
+        format!("{head}{sep}{tail}{progress}")
+    }
 }
 
 fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
@@ -398,9 +487,11 @@ mod tests {
     use portlight_sim::Session;
 
     use super::{
-        abandon_prompt, ascii_sentence, availability_tag, can_complete, days_left_text,
-        outcome_line, outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
-        requirement_text, reward_text, BOARD_CARD, CAP_FULL, DESK_CHARS, EMPTY_OFFERS, MAX_ACTIVE,
+        abandon_notice, abandon_prompt, aboard_clause, ascii_sentence, availability_tag,
+        can_complete, days_left_text, failure_terms, is_failure_notice, notice_color, outcome_line,
+        outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
+        requirement_text, reward_text, BOARD_CARD, CAP_FULL, CREAM, DESK_CHARS, DUE, EMPTY_OFFERS,
+        MAX_ACTIVE,
     };
 
     #[test]
@@ -763,34 +854,162 @@ mod tests {
     #[test]
     fn recent_line_is_built_from_fields() {
         assert_eq!(
-            recent_line(&bonus_paid()),
+            recent_line(&bonus_paid(), 0),
             "Paid: Silver +612 - 23 Grain to Corsair's Rest - early bonus +60"
         );
         assert_eq!(
-            recent_line(&delivered("Delivered 23 grain to corsairs_rest")),
+            recent_line(&delivered("Delivered 23 grain to corsairs_rest"), 0),
             "Paid: Silver +615 - 23 Grain to Corsair's Rest"
         );
         assert_eq!(
-            recent_line(&failed("abandoned", 0)),
+            recent_line(&failed("abandoned", 0), 0),
             "Abandoned: Grain for Corsair's Rest"
         );
         assert_eq!(
-            recent_line(&failed("abandoned", -40)),
+            recent_line(&failed("abandoned", -40), 0),
             "Abandoned: Silver -40 - Grain for Corsair's Rest"
         );
+        // Abandoned rows never read the guarantee (GD #62: unchanged).
         assert_eq!(
-            recent_line(&failed("expired", 0)),
-            "Expired: Grain for Corsair's Rest"
-        );
-        assert_eq!(
-            recent_line(&failed("expired", 60)),
-            "Expired: Silver +60 - Grain for Corsair's Rest"
+            recent_line(&failed("abandoned", 0), 105),
+            "Abandoned: Grain for Corsair's Rest"
         );
         for kind in ["completed", "completed_bonus", "abandoned", "expired"] {
-            let line = recent_line(&failed(kind, 0));
+            let line = recent_line(&failed(kind, 0), 0);
             assert_clean(&line);
             assert!(!line.contains("Famine relief"), "{line}");
             assert!(line.len() <= DESK_CHARS, "{line}");
+        }
+    }
+
+    /// GD #62 blocker: expired Recent rows carry Silver, Guarantee and
+    /// `{d}/{r}`, zero terms omitted, catalog names, silver-first.
+    #[test]
+    fn expired_recent_row_has_terms_and_progress() {
+        assert_eq!(
+            recent_line(&failed("expired", 0), 0),
+            "Expired: Grain for Corsair's Rest - 0/23"
+        );
+        let mut part = failed("expired", 60);
+        part.delivered_quantity = 5;
+        assert_eq!(
+            recent_line(&part, 0),
+            "Expired: Silver +60 - Grain for Corsair's Rest - 5/23"
+        );
+        assert_eq!(
+            recent_line(&failed("expired", 0), 105),
+            "Expired: Guarantee +105 - Grain for Corsair's Rest - 0/23"
+        );
+        assert_eq!(
+            recent_line(&part, 105),
+            "Expired: Silver +60 - Guarantee +105 - Grain for Corsair's Rest - 5/23"
+        );
+        // Non-catalog ids humanize; never raw.
+        let mut odd = failed("expired", 0);
+        odd.good_id = "whale_oil".into();
+        odd.destination_port_id = "drowned_quay".into();
+        assert_eq!(
+            recent_line(&odd, 0),
+            "Expired: Whale Oil for Drowned Quay - 0/23"
+        );
+        // A runaway port id trims the field tail; head and progress stay.
+        let mut long = part.clone();
+        long.destination_port_id = "a_very_long_port_name".repeat(6);
+        let line = recent_line(&long, 105);
+        assert!(
+            line.starts_with("Expired: Silver +60 - Guarantee +105 - "),
+            "{line}"
+        );
+        assert!(line.ends_with("... - 5/23"), "{line}");
+        assert!(line.len() <= DESK_CHARS, "{line}");
+        for line in [
+            recent_line(&failed("expired", 0), 0),
+            recent_line(&part, 105),
+            recent_line(&odd, 0),
+            line,
+        ] {
+            assert_clean(&line);
+            for bad in [
+                "\u{2014}",
+                "\u{2013}",
+                "->",
+                "sold",
+                "delivered",
+                "Famine relief",
+            ] {
+                assert!(!line.contains(bad), "{bad:?} in {line}");
+            }
+        }
+    }
+
+    /// Contract fail: Silver (partial pay) then Guarantee, zero terms dropped.
+    #[test]
+    fn failure_terms_put_guarantee_after_silver_and_drop_zero() {
+        let mut outcome = failed("expired", 60);
+        assert_eq!(failure_terms(&outcome, 0), vec!["Silver +60".to_string()]);
+        assert_eq!(
+            failure_terms(&outcome, 65),
+            vec!["Silver +60".to_string(), "Guarantee +65".to_string()]
+        );
+        outcome.silver_delta = 0;
+        assert_eq!(
+            failure_terms(&outcome, 105),
+            vec!["Guarantee +105".to_string()]
+        );
+        assert!(failure_terms(&outcome, 0).is_empty());
+        // A denied or empty claim never prints a term.
+        assert!(failure_terms(&outcome, -5).is_empty());
+    }
+
+    /// Contract fail: the aboard clause, and the abandon notice that carries it.
+    #[test]
+    fn abandon_notice_adds_the_aboard_clause_and_keeps_the_head() {
+        assert_eq!(aboard_clause("grain", 22), " - 22 Grain still aboard");
+        assert_eq!(aboard_clause("grain", 0), "");
+        assert_eq!(aboard_clause("whale_oil", 3), " - 3 Whale Oil still aboard");
+        let quiet = failed("abandoned", 0);
+        assert_eq!(
+            abandon_notice(&quiet, 23),
+            "Contract abandoned: Grain for Corsair's Rest - 23 Grain still aboard"
+        );
+        // Nothing held: exactly the shared notice.
+        assert_eq!(abandon_notice(&quiet, 0), outcome_notice(&quiet));
+        // A runaway tail trims before the aboard clause; the head stays whole.
+        let mut long = failed("abandoned", 0);
+        long.destination_port_id =
+            "the_very_long_and_winding_harbour_of_the_far_southern_reaches_beyond".into();
+        let notice = abandon_notice(&long, 23);
+        assert!(
+            notice.starts_with("Contract abandoned: Grain for "),
+            "{notice}"
+        );
+        assert!(notice.ends_with("... - 23 Grain still aboard"), "{notice}");
+        assert!(notice.len() <= DESK_CHARS, "{notice}");
+        for line in [abandon_notice(&quiet, 23), notice] {
+            assert_clean(&line);
+            assert!(
+                !line.contains("Complete") && !line.contains("due soon"),
+                "{line}"
+            );
+        }
+    }
+
+    /// Contract fail: the desk notice is DUE after an abandon, CREAM otherwise.
+    #[test]
+    fn failure_notice_tone_is_due_only_for_failures() {
+        let abandoned = abandon_notice(&failed("abandoned", 0), 23);
+        assert!(is_failure_notice(&abandoned));
+        assert_eq!(notice_color(&abandoned), DUE);
+        assert!(is_failure_notice(&outcome_notice(&failed("expired", 0))));
+        for other in [
+            outcome_notice(&bonus_paid()),
+            "Accepted Famine relief: grain to Corsair's Rest.".to_string(),
+            abandon_prompt("Grain for Corsair's Rest"),
+            "Contract is not yet fulfilled".to_string(),
+            String::new(),
+        ] {
+            assert!(!is_failure_notice(&other), "{other}");
+            assert_eq!(notice_color(&other), CREAM, "{other}");
         }
     }
 

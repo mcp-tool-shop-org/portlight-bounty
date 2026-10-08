@@ -401,6 +401,23 @@ jobs:
             echo "day-report-arrival smoke did not report ok"
             exit 1
           fi
+          # Contract fail: real seed-1 expiry (Session verbs), then the frame.
+          rm -f /tmp/hs-day-report-expired.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-day-report-expired-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-day-report-expired.png \
+            godot --headless --path godot -- --day-report-expired
+          if [ -f /tmp/hs-day-report-expired.png ]; then
+            echo "headless day-report-expired PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-day-report-expired.log \
+            godot --headless --path godot -- --art-docs --day-report-expired
+          run_godot /tmp/godot-day-report-expired-smoke.log \
+            godot --headless --path godot -- --day-report-expired
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-expired-smoke.log; then
+            echo "day-report-expired smoke did not report ok"
+            exit 1
+          fi
           rm -f /tmp/hs-contract-strip.png
           expect_explicit_headless_shot_fails /tmp/godot-headless-contract-strip-shot.log \
             env PORTLIGHT_SHOT=/tmp/hs-contract-strip.png \
@@ -735,6 +752,19 @@ jobs:
             echo "day-report-arrival capture did not write /tmp/day-report-shots/day-report-arrival.png"
             exit 1
           fi
+          # Contract fail: pinned DUE expiry line (forced doc after the real expiry smoke).
+          run_godot /tmp/godot-day-report-expired-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/day-report-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --day-report-expired
+          if ! grep -q 'portlight day-report smoke ok' /tmp/godot-day-report-expired-frames.log; then
+            echo "day-report-expired frame capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/day-report-shots/day-report-expired.png ]; then
+            echo "day-report-expired capture did not write /tmp/day-report-shots/day-report-expired.png"
+            exit 1
+          fi
           mkdir -p /tmp/contract-strip-shots
           run_godot /tmp/godot-contract-strip-frames.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
@@ -811,6 +841,7 @@ jobs:
           cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
           cmp_committed day-report-week.png /tmp/day-report-shots/day-report-week.png
           cmp_committed day-report-arrival.png /tmp/day-report-shots/day-report-arrival.png
+          cmp_committed day-report-expired.png /tmp/day-report-shots/day-report-expired.png
           cmp_committed contract-strip-active.png /tmp/contract-strip-shots/contract-strip-active.png
           cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
           cmp_committed market-contract-paid.png /tmp/market-paid-shots/market-contract-paid.png

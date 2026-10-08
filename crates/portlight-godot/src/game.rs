@@ -431,6 +431,8 @@ enum DayReportShot {
     Deadline,
     Week,
     Arrival,
+    /// Contract fail: pinned DUE expiry line, forced card on live Day 23.
+    Expired,
 }
 
 impl DayReportShot {
@@ -440,6 +442,7 @@ impl DayReportShot {
             Self::Deadline => "day-report-deadline.png",
             Self::Week => "day-report-week.png",
             Self::Arrival => "day-report-arrival.png",
+            Self::Expired => "day-report-expired.png",
         }
     }
 }
@@ -935,6 +938,20 @@ impl IControl for PortlightGame {
                 self.open_day_report_doc(day_report::smoke_arrival_document(day));
                 self.day_report_shot_dir = Some(day_report_shot_dir(self.shot_path.as_deref()));
                 self.day_report_shot = Some(DayReportShot::Arrival);
+                self.capture_frames = 4;
+            } else {
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--day-report-expired") {
+            // Contract fail: real seed-1 expiry on Session verbs, then the
+            // forced frame built through the real formatters.
+            self.smoke = true;
+            self.day_report_checked = true;
+            let capture = day_report_frames_requested(self.shot_path.is_some());
+            if self.run_day_report_expired_smoke() && capture {
+                self.open_expired_frame_doc();
+                self.day_report_shot_dir = Some(day_report_shot_dir(self.shot_path.as_deref()));
+                self.day_report_shot = Some(DayReportShot::Expired);
                 self.capture_frames = 4;
             } else {
                 self.capture_frames = 2;
@@ -4088,7 +4105,13 @@ impl PortlightGame {
             .as_ref()
             .map(|session| session.injuries().to_vec())
             .unwrap_or_default();
-        let mut turn_contracts = Vec::new();
+        // Contract fail: titles and claim count before the advance.
+        let failure_facts = self
+            .session
+            .as_ref()
+            .map(day_report::FailureFacts::snapshot)
+            .unwrap_or_default();
+        let mut failures = Vec::new();
         let notes = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -4099,7 +4122,8 @@ impl PortlightGame {
                     vec![err.to_string()]
                 }
                 Ok(turn) => {
-                    turn_contracts = turn.contracts.clone();
+                    // One formatter for the card and the Log.
+                    failures = day_report::failure_lines(session, &turn.contracts, &failure_facts);
                     let events: Vec<String> = turn
                         .events
                         .iter()
@@ -4144,6 +4168,10 @@ impl PortlightGame {
         for note in notes {
             self.push_log(note);
         }
+        // After the day's lines, so a busy sea day cannot scroll them out.
+        for line in &failures {
+            self.push_log(line.text.clone());
+        }
         if !failed {
             let arrival_day = sailed
                 && self
@@ -4151,7 +4179,7 @@ impl PortlightGame {
                     .as_ref()
                     .is_some_and(|session| session.world().voyage.status == VoyageStatus::InPort);
             self.show_day_report_after_advance(
-                &turn_contracts,
+                &failures,
                 &injuries_before,
                 &prices_before,
                 arrival_day,
@@ -5878,7 +5906,15 @@ impl PortlightGame {
         };
         match result {
             Ok(outcome) => {
-                self.contracts_notice = contracts_screen::outcome_notice(&outcome);
+                // Contract fail: the shared notice plus what is still in the
+                // hold, in DUE (`notice_color`), and the same line to the Log.
+                let held = self
+                    .session
+                    .as_ref()
+                    .map(|session| cargo_held(&session.world().captain.cargo, &outcome.good_id))
+                    .unwrap_or(0);
+                self.contracts_notice = contracts_screen::abandon_notice(&outcome, held);
+                self.push_log(self.contracts_notice.clone());
             }
             Err(err) => self.contracts_notice = err.to_string(),
         }
@@ -5937,6 +5973,10 @@ impl PortlightGame {
             .set_text(&contracts_screen::ascii_sentence(&port_title));
         nodes.card.set_text(contracts_screen::BOARD_CARD);
         nodes.notice.set_text(&self.contracts_notice);
+        nodes.notice.add_theme_color_override(
+            "font_color",
+            contracts_screen::notice_color(&self.contracts_notice),
+        );
         let at_cap = self
             .session
             .as_ref()
@@ -6266,6 +6306,23 @@ impl PortlightGame {
         {
             self.fail_contracts(format!(
                 "Contracts smoke: abandon outcome was {:?}.",
+                self.contracts_notice
+            ));
+        }
+        // Contract fail: the abandon notice is DUE and is the last Log line.
+        let tone = self
+            .contracts_nodes
+            .as_ref()
+            .map(|nodes| nodes.notice.get_theme_color("font_color"));
+        if tone != Some(contracts_screen::meta_color(true)) {
+            self.fail_contracts(format!(
+                "Contracts smoke: abandon notice tone was {tone:?}, want DUE."
+            ));
+        }
+        if self.log_lines.last() != Some(&self.contracts_notice) {
+            self.fail_contracts(format!(
+                "Contracts smoke: abandon Log line {:?} != notice {:?}.",
+                self.log_lines.last(),
                 self.contracts_notice
             ));
         }
@@ -7644,7 +7701,7 @@ impl PortlightGame {
 
     fn show_day_report_after_advance(
         &mut self,
-        turn_contracts: &[portlight_sim::model::ContractOutcome],
+        failures: &[day_report::DayReportLine],
         injuries_before: &[portlight_sim::model::Injury],
         prices_before: &std::collections::HashMap<String, i64>,
         arrival_day: bool,
@@ -7657,7 +7714,7 @@ impl PortlightGame {
         memory.week.push(day_report::week_sample(session));
         let mut doc = day_report::build_document(
             session,
-            turn_contracts,
+            failures,
             injuries_before,
             prices_before,
             &mut memory,
@@ -8138,6 +8195,459 @@ impl PortlightGame {
         self.smoke_ok
     }
 
+    /// Contract fail on real Session verbs (seed 1, Ada, Porto Novo): accept
+    /// Famine relief (grain to Corsair's Rest, deadline 19), idle docked to
+    /// the grace day (still active, `overdue`, no failure line), then the
+    /// advance that expires it opens Day 21 with the pinned DUE line, the same
+    /// line ends the Log, the strip drops the job, and the desk Recent row is
+    /// field-built. A second run buys the contract guarantee through the
+    /// Harbour intent and asserts the Guarantee term. Returns false on failure.
+    fn run_day_report_expired_smoke(&mut self) -> bool {
+        let Some(offer) = self.expired_smoke_accept() else {
+            return false;
+        };
+        // Idle docked to day 20 (deadline + 1): still active, `overdue`.
+        let mut silver_step = None;
+        for _ in 0..40 {
+            let day = self.session.as_ref().map(|s| s.world().day).unwrap_or(0);
+            if day >= 20 {
+                break;
+            }
+            self.close_day_report();
+            let before = self.session.as_ref().map(|s| s.world().captain.silver);
+            self.next_day();
+            let after = self.session.as_ref().map(|s| s.world().captain.silver);
+            silver_step = before.zip(after).map(|(b, a)| a - b);
+        }
+        let (day, active) = self
+            .session
+            .as_ref()
+            .map(|session| {
+                (
+                    session.world().day,
+                    session
+                        .board()
+                        .active
+                        .iter()
+                        .any(|contract| contract.offer_id == offer),
+                )
+            })
+            .unwrap_or((0, false));
+        if day != 20 || !active {
+            self.fail_day_report(format!(
+                "Day-report expired: grace day {day}, still active {active}."
+            ));
+            return false;
+        }
+        self.refresh();
+        let strip = self
+            .session
+            .as_ref()
+            .and_then(contract_strip::build_document);
+        let overdue = strip.as_ref().is_some_and(|doc| {
+            doc.segments
+                .iter()
+                .any(|segment| segment.text.contains("overdue") && segment.urgent)
+        });
+        if !overdue {
+            self.fail_day_report(format!(
+                "Day-report expired: grace-day strip not overdue in DUE: {:?}",
+                strip.map(|doc| doc.joined_text())
+            ));
+            return false;
+        }
+        let early_text = self
+            .day_report_nodes
+            .as_ref()
+            .map(day_report::overlay_text)
+            .unwrap_or_default();
+        if early_text.contains(day_report::EXPIRED_PREFIX)
+            || self
+                .log_lines
+                .iter()
+                .any(|line| line.contains(day_report::EXPIRED_PREFIX))
+        {
+            self.fail_day_report("Day-report expired: failure line before the expiry.");
+            return false;
+        }
+        // GD OQ2: the grace-day hint names the sale, not the desk.
+        let grace_next = self
+            .session
+            .as_ref()
+            .and_then(|session| day_report::next_line(&day_report::next_facts(session)));
+        if grace_next.as_deref() != Some("Next: Contract overdue - sell at Corsair's Rest.") {
+            self.fail_day_report(format!(
+                "Day-report expired: grace-day Next was {grace_next:?}."
+            ));
+            return false;
+        }
+        // The advance that starts on day 20 expires it.
+        self.close_day_report();
+        let silver_before = self.session.as_ref().map(|s| s.world().captain.silver);
+        self.next_day();
+        let silver_after = self.session.as_ref().map(|s| s.world().captain.silver);
+        let want = format!(
+            "{}{} - 0/23",
+            day_report::EXPIRED_PREFIX,
+            day_report::SMOKE_EXPIRED_TITLE
+        );
+        if !self.expect_expired_card(&want) {
+            return false;
+        }
+        let recorded = self.session.as_ref().is_some_and(|session| {
+            session.board().completed.last().is_some_and(|outcome| {
+                outcome.outcome_type == "expired"
+                    && outcome.contract_id == offer
+                    && outcome.silver_delta == 0
+            })
+        });
+        if !recorded {
+            self.fail_day_report("Day-report expired: last outcome is not this expiry.");
+            return false;
+        }
+        // Nothing sold, no guarantee: silver moves only by the daily wage
+        // (the same step as the docked day before).
+        let step = silver_before.zip(silver_after).map(|(b, a)| a - b);
+        if step.is_none() || step != silver_step {
+            self.fail_day_report(format!(
+                "Day-report expired: silver step {step:?}, wage step {silver_step:?}."
+            ));
+            return false;
+        }
+        // Escape closes under the existing ladder.
+        self.dismiss_cancel();
+        if self.day_report_open {
+            self.fail_day_report("Day-report expired: Escape left the card up.");
+            return false;
+        }
+        // The desk Recent row (GD #62: from fields, `{d}/{r}`, MUTED).
+        if !self.expect_expired_recent("Expired: Grain for Corsair's Rest - 0/23") {
+            return false;
+        }
+        let first = want;
+        // Guarantee branch: a new game, the same contract, insured through
+        // the Harbour intent, expires with the payout term. The real seed-1
+        // Spice restock (deadline 26) rides along, so after the expiry the
+        // strip keeps it, and on the frame day it drives the live Next line.
+        let Some(offer) = self.expired_smoke_accept() else {
+            return false;
+        };
+        let Some(spice) = self.expired_smoke_accept_spice() else {
+            return false;
+        };
+        self.perform(Action::OpenHarbour);
+        self.perform(Action::HarbourPrepare(HarbourIntent::BuyInsurance {
+            policy_id: "contract_basic".into(),
+            target_id: offer.clone(),
+            origin: String::new(),
+            destination: String::new(),
+        }));
+        self.perform(Action::HarbourConfirm);
+        self.close_harbour();
+        let insured = self.session.as_ref().is_some_and(|session| {
+            session
+                .infrastructure()
+                .policies
+                .iter()
+                .any(|policy| policy.active && policy.target_id == offer)
+        });
+        if !insured {
+            self.fail_day_report(format!(
+                "Day-report expired: could not buy the guarantee: {}",
+                self.harbour_notice
+            ));
+            return false;
+        }
+        for _ in 0..40 {
+            let done = self.session.as_ref().is_none_or(|session| {
+                session.world().day > 20
+                    || session
+                        .board()
+                        .active
+                        .iter()
+                        .all(|contract| contract.offer_id != offer)
+            });
+            if done {
+                break;
+            }
+            self.close_day_report();
+            self.next_day();
+        }
+        let insured_want = format!(
+            "{}{} - 0/23 - Guarantee +105",
+            day_report::EXPIRED_PREFIX,
+            day_report::SMOKE_EXPIRED_TITLE
+        );
+        if !self.expect_expired_card(&insured_want) {
+            return false;
+        }
+        self.close_day_report();
+        if !self.expect_expired_recent("Expired: Guarantee +105 - Grain for Corsair's Rest - 0/23")
+        {
+            return false;
+        }
+        // Idle to the frame day: Spice 3 days out, strip up with it, Next live.
+        for _ in 0..8 {
+            let day = self.session.as_ref().map(|s| s.world().day).unwrap_or(0);
+            if day >= day_report::SMOKE_EXPIRED_FRAME_DAY {
+                break;
+            }
+            self.close_day_report();
+            self.next_day();
+        }
+        self.close_day_report();
+        self.refresh();
+        let (day, next, strip) = self
+            .session
+            .as_ref()
+            .map(|session| {
+                (
+                    session.world().day,
+                    day_report::next_line(&day_report::next_facts(session)),
+                    contract_strip::build_document(session).map(|doc| doc.joined_text()),
+                )
+            })
+            .unwrap_or((0, None, None));
+        let strip_up = self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible);
+        let spice_live = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.offer_id == spice)
+        });
+        if day != day_report::SMOKE_EXPIRED_FRAME_DAY
+            || !spice_live
+            || !strip_up
+            || !strip
+                .as_deref()
+                .is_some_and(|text| text.contains("Spice restock run to Al-Manar"))
+            || next.as_deref() != Some("Next: Contract 3 days left - open Contracts.")
+        {
+            self.fail_day_report(format!(
+                "Day-report expired: frame day {day} spice {spice_live} strip {strip_up} {strip:?} next {next:?}."
+            ));
+            return false;
+        }
+        if self.smoke_ok {
+            let line = format!("Day-report expired smoke: {first} | {insured_want}");
+            godot_print!("{line}");
+        }
+        self.smoke_ok
+    }
+
+    /// New seed-1 game; accept Famine relief (grain to Corsair's Rest) on the
+    /// desk and close it. `None` (smoke failed) when the offer is missing.
+    fn expired_smoke_accept(&mut self) -> Option<String> {
+        self.start_game();
+        if self.session.is_none() {
+            self.fail_day_report("Day-report expired: no session.");
+            return None;
+        }
+        self.open_contracts();
+        let offer = self.session.as_ref().and_then(|session| {
+            session
+                .board()
+                .offers
+                .iter()
+                .find(|offer| {
+                    offer.destination_port_id == "corsairs_rest"
+                        && offer.good_id == "grain"
+                        && offer.deadline_day == 19
+                })
+                .map(|offer| offer.id.clone())
+        });
+        let Some(offer) = offer else {
+            self.fail_day_report("Day-report expired: no seed-1 Famine relief offer.");
+            return None;
+        };
+        self.accept_contract_offer(&offer);
+        self.close_contracts();
+        let title = self.session.as_ref().and_then(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .find(|contract| contract.offer_id == offer)
+                .map(|contract| contract.title.clone())
+        });
+        if title.as_deref() != Some(day_report::SMOKE_EXPIRED_TITLE) {
+            self.fail_day_report(format!("Day-report expired: accepted {title:?}."));
+            return None;
+        }
+        Some(offer)
+    }
+
+    /// Accept the seed-1 Spice restock run to Al-Manar (deadline 26) on the
+    /// desk. `None` (smoke failed) when it is missing or refused.
+    fn expired_smoke_accept_spice(&mut self) -> Option<String> {
+        self.open_contracts();
+        let offer = self.session.as_ref().and_then(|session| {
+            session
+                .board()
+                .offers
+                .iter()
+                .find(|offer| {
+                    offer.destination_port_id == "al_manar"
+                        && offer.good_id == "spice"
+                        && offer.deadline_day == 26
+                })
+                .map(|offer| offer.id.clone())
+        });
+        let Some(offer) = offer else {
+            self.fail_day_report("Day-report expired: no seed-1 Spice restock offer.");
+            return None;
+        };
+        self.accept_contract_offer(&offer);
+        self.close_contracts();
+        let accepted = self.session.as_ref().is_some_and(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .any(|contract| contract.offer_id == offer)
+        });
+        if !accepted {
+            self.fail_day_report("Day-report expired: Spice restock not accepted.");
+            return None;
+        }
+        Some(offer)
+    }
+
+    /// Open the desk; the first Recent row is exactly `want` in MUTED; close.
+    fn expect_expired_recent(&mut self, want: &str) -> bool {
+        self.open_contracts();
+        let recent = self
+            .session
+            .as_ref()
+            .and_then(|session| contract_listing(session).recent.first().cloned())
+            .unwrap_or_default();
+        let recent_tone = self.contracts_nodes.as_ref().and_then(|nodes| {
+            day_report::label_color(
+                &nodes.list.clone().upcast::<godot::classes::Node>(),
+                &recent,
+            )
+        });
+        self.close_contracts();
+        if recent != want || recent_tone != Some(contracts_screen::meta_color(false)) {
+            self.fail_day_report(format!(
+                "Day-report expired: Recent row {recent:?} tone {recent_tone:?}, want {want:?}."
+            ));
+            return false;
+        }
+        true
+    }
+
+    /// Day 21 card open; Deadlines leads with exactly `want` in DUE; the same
+    /// string is the last Log line; the strip is gone; copy hygiene; fit.
+    fn expect_expired_card(&mut self, want: &str) -> bool {
+        let doc = self.day_report_doc.clone();
+        let title = doc
+            .as_ref()
+            .map(|doc| doc.title.clone())
+            .unwrap_or_default();
+        let first = doc.as_ref().and_then(|doc| {
+            doc.sections
+                .iter()
+                .find(|section| section.id == "deadlines")
+                .and_then(|section| section.lines.first())
+                .map(|line| line.text.clone())
+        });
+        if !self.day_report_open || title != "Day 21" || first.as_deref() != Some(want) {
+            self.fail_day_report(format!(
+                "Day-report expired: open {} title {title:?} first {first:?}, want {want:?}.",
+                self.day_report_open
+            ));
+            return false;
+        }
+        let tone = self.day_report_nodes.as_ref().and_then(|nodes| {
+            day_report::label_color(&nodes.body.clone().upcast::<godot::classes::Node>(), want)
+        });
+        if tone != Some(contracts_screen::meta_color(true)) {
+            self.fail_day_report(format!("Day-report expired: line tone {tone:?}, want DUE."));
+            return false;
+        }
+        if self.log_lines.last().map(String::as_str) != Some(want) {
+            self.fail_day_report(format!(
+                "Day-report expired: last Log line {:?}.",
+                self.log_lines.last()
+            ));
+            return false;
+        }
+        // The strip drops the expired job; it hides only when no job is left.
+        let strip_up = self
+            .contract_strip_nodes
+            .as_ref()
+            .is_some_and(contract_strip::overlay_visible);
+        let (jobs_left, strip_text) = self
+            .session
+            .as_ref()
+            .map(|session| {
+                (
+                    !session.board().active.is_empty(),
+                    contract_strip::build_document(session)
+                        .map(|doc| doc.joined_text())
+                        .unwrap_or_default(),
+                )
+            })
+            .unwrap_or_default();
+        if strip_up != jobs_left
+            || strip_text.contains("Famine relief")
+            || strip_text.contains("Corsair's Rest")
+        {
+            self.fail_day_report(format!(
+                "Day-report expired: strip up {strip_up} with jobs {jobs_left}: {strip_text:?}."
+            ));
+            return false;
+        }
+        let text = self
+            .day_report_nodes
+            .as_ref()
+            .map(day_report::overlay_text)
+            .unwrap_or_default();
+        for bad in [
+            "\u{2014}",
+            "\u{2013}",
+            "->",
+            "+0",
+            "  ",
+            "Deliver",
+            "deliver",
+            "Complete",
+            "due soon",
+            "Trust",
+            "Standing",
+            "Heat",
+            "corsairs_rest",
+            "_",
+        ] {
+            if text.contains(bad) {
+                self.fail_day_report(format!("Day-report expired: {bad:?} on the card: {text:?}"));
+                return false;
+            }
+        }
+        if !text.is_ascii() {
+            self.fail_day_report(format!("Day-report expired: non-ASCII card {text:?}"));
+            return false;
+        }
+        self.assert_day_report_fits("expired");
+        self.smoke_ok
+    }
+
+    /// Frame doc for `day-report-expired.png` (forced, real formatters).
+    fn open_expired_frame_doc(&mut self) {
+        let doc = self
+            .session
+            .as_ref()
+            .map(day_report::smoke_expired_document);
+        if let Some(doc) = doc {
+            self.open_day_report_doc(doc);
+        }
+    }
+
     fn fail_day_report(&mut self, line: impl Into<String>) {
         let line = line.into();
         godot_print!("{line}");
@@ -8218,7 +8728,7 @@ impl PortlightGame {
                 self.day_report_checked = true;
                 false
             }
-            DayReportShot::Week | DayReportShot::Arrival => {
+            DayReportShot::Week | DayReportShot::Arrival | DayReportShot::Expired => {
                 self.day_report_shot = None;
                 self.day_report_checked = true;
                 false
@@ -9838,7 +10348,11 @@ fn contract_listing(session: &Session) -> ContractListing {
         .iter()
         .rev()
         .take(4)
-        .map(contracts_screen::recent_line)
+        .map(|outcome| {
+            let guarantee =
+                day_report::guarantee_total(session.infrastructure(), &outcome.contract_id);
+            contracts_screen::recent_line(outcome, guarantee)
+        })
         .collect();
     ContractListing {
         offers,
