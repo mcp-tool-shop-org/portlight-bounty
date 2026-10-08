@@ -337,6 +337,22 @@ jobs:
             echo "hunt smoke did not report ok"
             exit 1
           fi
+          rm -f /tmp/hs-loss-outcome.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-loss-outcome-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-loss-outcome.png \
+            godot --headless --path godot -- --encounter-loss-outcome
+          if [ -f /tmp/hs-loss-outcome.png ]; then
+            echo "headless loss-outcome PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-loss-outcome.log \
+            godot --headless --path godot -- --art-docs --encounter-loss-outcome
+          run_godot /tmp/godot-loss-outcome-smoke.log \
+            godot --headless --path godot -- --encounter-loss-outcome
+          if ! grep -q 'portlight loss-outcome smoke ok' /tmp/godot-loss-outcome-smoke.log; then
+            echo "loss-outcome smoke did not report ok"
+            exit 1
+          fi
           rm -f /tmp/hs-day-report.png
           expect_explicit_headless_shot_fails /tmp/godot-headless-day-report-shot.log \
             env PORTLIGHT_SHOT=/tmp/hs-day-report.png \
@@ -459,6 +475,20 @@ jobs:
           fi
           if [ ! -f /tmp/encounter-approach.png ]; then
             echo "encounter capture did not write /tmp/encounter-approach.png"
+            exit 1
+          fi
+          # AD: Outcome card with a section 10.3 non-win receipt (Crew term).
+          mkdir -p /tmp/loss-outcome-shots
+          run_godot /tmp/godot-loss-outcome-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/loss-outcome-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --encounter-loss-outcome
+          if ! grep -q 'portlight loss-outcome smoke ok' /tmp/godot-loss-outcome-frames.log; then
+            echo "loss-outcome frame capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/loss-outcome-shots/encounter-loss-outcome.png ]; then
+            echo "loss-outcome capture did not write /tmp/loss-outcome-shots/encounter-loss-outcome.png"
             exit 1
           fi
           # The seam capture validates the layout before it writes. An illegal
@@ -640,7 +670,7 @@ jobs:
             echo "hunt frame capture did not report ok"
             exit 1
           fi
-          for name in hunt-forage.png hunt-board.png hunt-active.png; do
+          for name in hunt-forage.png hunt-board.png hunt-active.png hunt-confirm.png; do
             if [ ! -f "/tmp/hunt-shots/${name}" ]; then
               echo "hunt capture did not write /tmp/hunt-shots/${name}"
               exit 1
@@ -744,6 +774,7 @@ jobs:
           cmp_committed hunt-forage.png /tmp/hunt-shots/hunt-forage.png
           cmp_committed hunt-board.png /tmp/hunt-shots/hunt-board.png
           cmp_committed hunt-active.png /tmp/hunt-shots/hunt-active.png
+          cmp_committed hunt-confirm.png /tmp/hunt-shots/hunt-confirm.png
           cmp_committed day-report-full.png /tmp/day-report-shots/day-report-full.png
           cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
           cmp_committed day-report-week.png /tmp/day-report-shots/day-report-week.png
@@ -769,6 +800,7 @@ jobs:
           cmp_committed encounter-boarding.png /tmp/encounter-boarding.png
           cmp_committed encounter-fight.png /tmp/encounter-fight.png
           cmp_committed encounter-outcome.png /tmp/encounter-outcome.png
+          cmp_committed encounter-loss-outcome.png /tmp/loss-outcome-shots/encounter-loss-outcome.png
           cmp_committed harbour-seam-z100.png /tmp/seam-shots/harbour-seam-z100.png
           cmp_committed harbour-seam-z072.png /tmp/seam-shots/harbour-seam-z072.png
           cmp_committed harbour-seam-vertex-crop.png /tmp/seam-shots/harbour-seam-vertex-crop.png

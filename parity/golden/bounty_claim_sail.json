@@ -1,4 +1,6 @@
 {
+  "_source": "python-oracle",
+  "_note": "Python oracle snapshot (narrow; wide keys stripped). Not the Rust snapshot. Hunt-fight crew loss is a deliberate Mike-authorized divergence: Rust keeps crew at the sail minimum on bounty_claim / bounty_claim_sail; Python still drops to 1. Pinned in parity/expected_divergences.json.",
   "seed": 4,
   "day": 1,
   "trade_seq": 0,

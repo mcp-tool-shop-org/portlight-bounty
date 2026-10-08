@@ -306,10 +306,15 @@ pub struct BoardingOutcome {
 pub fn resolve_boarding_phase(
     encounter: &mut EncounterState,
     player_crew: i64,
+    hunt_crew_min: Option<i64>,
     rng: &mut PyRandom,
 ) -> BoardingOutcome {
-    let (p_lost, e_lost, player_advantage) =
-        naval::resolve_boarding(player_crew, encounter.enemy_ship_crew, rng);
+    let (p_lost, e_lost, player_advantage) = match hunt_crew_min {
+        Some(crew_min) => {
+            naval::resolve_hunt_boarding(player_crew, encounter.enemy_ship_crew, crew_min, rng)
+        }
+        None => naval::resolve_boarding(player_crew, encounter.enemy_ship_crew, rng),
+    };
     encounter.enemy_ship_crew = 0.max(encounter.enemy_ship_crew - e_lost);
     encounter.phase = "duel".to_string();
     let advantage = if player_advantage {

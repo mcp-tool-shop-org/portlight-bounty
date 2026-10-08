@@ -397,6 +397,8 @@ enum HuntShot {
     Forage,
     Board,
     Active,
+    /// Confirm notice with the capped boarding-crew line (section 6 / 10.1).
+    Confirm,
 }
 
 impl HuntShot {
@@ -405,14 +407,17 @@ impl HuntShot {
             Self::Forage => "hunt-forage.png",
             Self::Board => "hunt-board.png",
             Self::Active => "hunt-active.png",
+            Self::Confirm => "hunt-confirm.png",
         }
     }
 
-    fn section(self) -> &'static str {
+    fn section(self) -> Option<&'static str> {
         match self {
-            Self::Forage => "HuntForage",
-            Self::Board => "HuntBoard",
-            Self::Active => "HuntActive",
+            Self::Forage => Some("HuntForage"),
+            Self::Board => Some("HuntBoard"),
+            Self::Active => Some("HuntActive"),
+            // Confirm copy sits above the scroll body.
+            Self::Confirm => None,
         }
     }
 }
@@ -639,6 +644,10 @@ struct PortlightGame {
     trade_checked: bool,
     market_paid_shot_dir: Option<String>,
     market_paid_shot: Option<MarketPaidShot>,
+    /// AD frame: Outcome card after a scripted non-win (section 10.3 receipt).
+    loss_outcome_checked: bool,
+    loss_outcome_shot_dir: Option<String>,
+    loss_outcome_pending: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -795,6 +804,9 @@ impl IControl for PortlightGame {
             trade_checked: false,
             market_paid_shot_dir: None,
             market_paid_shot: None,
+            loss_outcome_checked: false,
+            loss_outcome_shot_dir: None,
+            loss_outcome_pending: false,
         }
     }
 
@@ -985,6 +997,9 @@ impl IControl for PortlightGame {
         if self.advance_market_paid_shot() {
             return;
         }
+        if self.advance_loss_outcome_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -1015,6 +1030,7 @@ impl IControl for PortlightGame {
             && self.day_report_shot_dir.is_none()
             && self.contract_strip_shot_dir.is_none()
             && self.market_paid_shot_dir.is_none()
+            && self.loss_outcome_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -1086,6 +1102,11 @@ impl IControl for PortlightGame {
                 "portlight trade smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
+        } else if self.loss_outcome_checked {
+            godot_print!(
+                "portlight loss-outcome smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
         } else {
             if self.encounter_checked {
                 godot_print!(
@@ -1115,7 +1136,19 @@ impl IControl for PortlightGame {
 
 impl PortlightGame {
     fn launch_scripted(&mut self) {
-        if user_arg("--encounter-screen") {
+        if user_arg("--encounter-loss-outcome") {
+            // AD: Outcome card with a section 10.3 non-win receipt (Crew term).
+            self.smoke = true;
+            self.loss_outcome_checked = true;
+            let capture = loss_outcome_frames_requested(self.shot_path.is_some());
+            if self.run_loss_outcome_to_card() && capture {
+                self.loss_outcome_shot_dir = Some(loss_outcome_shot_dir(self.shot_path.as_deref()));
+                self.loss_outcome_pending = true;
+                self.capture_frames = 4;
+            } else {
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--encounter-screen") {
             self.smoke = true;
             // The five frames are opt-in. A default `/tmp` path is not a
             // request. An explicit directory still captures on headless, and
@@ -7265,11 +7298,16 @@ impl PortlightGame {
             .as_ref()
             .and_then(|session| session.world().captain.ship.as_ref())
             .map(|ship| {
-                format!(
-                    "Boarding can cost crew - you have {}, need {} to sail.",
-                    ship.crew,
-                    portlight_sim::ship::template_crew_min(ship)
-                )
+                let min = portlight_sim::ship::template_crew_min(ship);
+                let cap = portlight_sim::naval::hunt_crew_loss_cap(ship.crew, min);
+                if cap > 0 {
+                    format!(
+                        "Boarding can cost up to {cap} crew - you have {}, need {min} to sail.",
+                        ship.crew
+                    )
+                } else {
+                    format!("Boarding won't cost crew below the {min} you need to sail.")
+                }
             });
         if crew_fact.is_none_or(|fact| !self.hunt_desk.notice.ends_with(&fact)) {
             self.fail_hunt(format!(
@@ -8738,12 +8776,16 @@ impl PortlightGame {
 
     fn ask_hunt(&mut self, id: &str) {
         let name = hunt_screen::display_name(id, &self.hunt_desk.known);
-        // F1: the flagship's crew against the minimum `depart` refuses on.
+        // F1: crew, sail minimum, and hunt boarding cap from the sim.
         let crew = self
             .session
             .as_ref()
             .and_then(|session| session.world().captain.ship.as_ref())
-            .map(|ship| (ship.crew, portlight_sim::ship::template_crew_min(ship)));
+            .map(|ship| {
+                let min = portlight_sim::ship::template_crew_min(ship);
+                let cap = portlight_sim::naval::hunt_crew_loss_cap(ship.crew, min);
+                (ship.crew, min, cap)
+            });
         self.hunt_desk.notice = hunt_screen::hunt_confirm_text(&name, crew);
         self.hunt_desk.confirm = Some(HuntConfirm::HuntTarget(id.to_string()));
         self.refresh();
@@ -8892,10 +8934,13 @@ impl PortlightGame {
             return false;
         };
         if !self.hunt_scrolled {
-            self.scroll_hunt(phase.section());
+            if let Some(section) = phase.section() {
+                self.scroll_hunt(section);
+                self.hunt_scrolled = true;
+                self.capture_frames = 2;
+                return true;
+            }
             self.hunt_scrolled = true;
-            self.capture_frames = 2;
-            return true;
         }
         self.hunt_scrolled = false;
         if !self.hunt_frame_ready(phase) {
@@ -8925,6 +8970,24 @@ impl PortlightGame {
                 self.hunt_shot = Some(HuntShot::Active);
             }
             HuntShot::Active => {
+                // Hire one so the confirm shows the capped "up to N crew" line
+                // (a privateer at crew_min has cap 0 and uses the won't-cost copy).
+                if let Some(session) = self.session.as_mut() {
+                    let _ = session.hire_crew(1, "sailor");
+                }
+                let id = self
+                    .session
+                    .as_ref()
+                    .and_then(|session| session.world().captain.active_bounties.first().cloned());
+                if let Some(id) = id {
+                    self.ask_hunt(&id);
+                } else {
+                    self.smoke_ok = false;
+                    godot_print!("Hunt smoke: no active bounty for the confirm frame");
+                }
+                self.hunt_shot = Some(HuntShot::Confirm);
+            }
+            HuntShot::Confirm => {
                 self.hunt_shot = None;
                 return false;
             }
@@ -8946,6 +9009,11 @@ impl PortlightGame {
             HuntShot::Forage => open && notice.contains("Provisions") && self.encounter.is_none(),
             HuntShot::Board => open && (1..=3).contains(&offers),
             HuntShot::Active => open && active >= 1,
+            HuntShot::Confirm => {
+                open && self.hunt_desk.confirm.is_some()
+                    && (notice.contains("Boarding can cost up to")
+                        || notice.contains("Boarding won't cost crew below"))
+            }
         };
         if !ok {
             let line = format!("Hunt smoke: frame {} was not ready.", phase.file_name());
@@ -8953,6 +9021,80 @@ impl PortlightGame {
             self.push_log(line);
         }
         ok
+    }
+
+    /// Scripted approach → naval → board → lose the duel. Leaves Outcome up
+    /// with a section 10.3 non-win receipt that includes a Crew term.
+    fn run_loss_outcome_to_card(&mut self) -> bool {
+        self.prepare_scripted_voyage();
+        self.open_scripted_approach();
+        if !self.phase_is(ScreenPhase::Approach) {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: expected approach.".to_string());
+            return false;
+        }
+        self.choose_encounter("fight");
+        if !self.phase_is(ScreenPhase::Naval) {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: expected naval.".to_string());
+            return false;
+        }
+        self.play_scripted_naval();
+        if !self.phase_is(ScreenPhase::Boarding) {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: expected boarding.".to_string());
+            return false;
+        }
+        self.resolve_board();
+        if !self.phase_is(ScreenPhase::Personal) {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: expected personal fight.".to_string());
+            return false;
+        }
+        for _ in 0..12 {
+            if !self.smoke_ok {
+                return false;
+            }
+            if self.phase_is(ScreenPhase::Outcome) {
+                break;
+            }
+            self.play_fight("parry");
+        }
+        if !self.phase_is(ScreenPhase::Outcome) {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: expected Outcome after losing.".to_string());
+            return false;
+        }
+        let log = self
+            .encounter
+            .as_ref()
+            .map(|facts| facts.log.clone())
+            .unwrap_or_default();
+        if !log.contains("Lost the fight") || !log.contains("Crew") {
+            self.smoke_ok = false;
+            self.push_log(format!(
+                "Loss-outcome smoke: receipt missing Lost/Crew ({log:?})."
+            ));
+            return false;
+        }
+        godot_print!("loss-outcome phase outcome");
+        true
+    }
+
+    fn advance_loss_outcome_shot(&mut self) -> bool {
+        if !self.loss_outcome_pending {
+            return false;
+        }
+        let Some(dir) = self.loss_outcome_shot_dir.clone() else {
+            self.loss_outcome_pending = false;
+            return false;
+        };
+        let path = format!("{dir}/encounter-loss-outcome.png");
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        self.loss_outcome_pending = false;
+        false
     }
 
     fn run_encounter_screen(&mut self) {
@@ -9665,6 +9807,7 @@ fn victory_line(session: &Session) -> String {
 
 fn scripted_launch() -> bool {
     user_arg("--encounter-screen")
+        || user_arg("--encounter-loss-outcome")
         || user_arg("--encounter-galleon")
         || user_arg("--encounter")
         || user_arg("--duel")
@@ -9719,6 +9862,14 @@ fn market_paid_shot_dir(shot: Option<&str>) -> String {
 }
 
 fn hunt_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
+}
+
+fn loss_outcome_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn loss_outcome_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
 }
 
