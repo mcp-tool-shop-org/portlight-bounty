@@ -6,6 +6,7 @@ mod contract_strip;
 mod contracts_screen;
 mod crew_screen;
 mod day_report;
+mod departure_check;
 mod encounter_screen;
 mod game;
 mod harbour;
