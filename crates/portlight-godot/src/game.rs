@@ -92,6 +92,7 @@ use crate::logic::{
     SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
     SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
+use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
 use crate::playtest::{action_playtest_id, hunt_playtest_id, parse_playtest_id, PlaytestCommand};
 use crate::shipyard_screen::{self, ShipyardNodes};
@@ -130,6 +131,7 @@ pub(crate) enum Action {
     Work,
     OpenHunt,
     ToggleMarket,
+    CycleTradeQty,
     HireSailor,
     Provision,
     OpenCrew,
@@ -449,6 +451,24 @@ impl ContractStripShot {
     }
 }
 
+/// T-N frames: the GOLD paid notice at the top of the Market box.
+#[derive(Clone, Copy)]
+enum MarketPaidShot {
+    /// The real settle from the trade smoke: one line.
+    Single,
+    /// Staged on top of that settle: two lines and `+1 more`.
+    More,
+}
+
+impl MarketPaidShot {
+    fn file_name(self) -> &'static str {
+        match self {
+            Self::Single => "market-contract-paid.png",
+            Self::More => "market-contract-paid-more.png",
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) enum Stance {
     Thrust,
@@ -610,6 +630,15 @@ struct PortlightGame {
     contract_strip_checked: bool,
     contract_strip_shot_dir: Option<String>,
     contract_strip_shot: Option<ContractStripShot>,
+    /// T-Q. Units per Buy/Sell press. Godot memory only; never saved.
+    trade_qty: i64,
+    /// T-N. GOLD paid lines at the top of the Market box until the next
+    /// trade, Market close, undock or Next day.
+    market_notice: Vec<String>,
+    /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
+    trade_checked: bool,
+    market_paid_shot_dir: Option<String>,
+    market_paid_shot: Option<MarketPaidShot>,
 }
 
 #[derive(Clone, Copy)]
@@ -761,6 +790,11 @@ impl IControl for PortlightGame {
             contract_strip_checked: false,
             contract_strip_shot_dir: None,
             contract_strip_shot: None,
+            trade_qty: market::TRADE_QTYS[0],
+            market_notice: Vec::new(),
+            trade_checked: false,
+            market_paid_shot_dir: None,
+            market_paid_shot: None,
         }
     }
 
@@ -878,6 +912,32 @@ impl IControl for PortlightGame {
                 self.run_contract_strip_smoke();
                 self.capture_frames = 2;
             }
+        } else if user_arg("--trade-smoke") {
+            // T-Q / T-N: real Session trades only, no frames.
+            self.smoke = true;
+            self.trade_checked = true;
+            self.run_trade_smoke();
+            self.capture_frames = 2;
+        } else if user_arg("--market-paid-screen") {
+            // T-N frames: the real trade-smoke settle, then a staged
+            // two-contract notice on the same Market.
+            self.smoke = true;
+            self.trade_checked = true;
+            let capture = market_paid_frames_requested(self.shot_path.is_some());
+            if self.run_trade_settle() {
+                self.check_market_notice_leads("single");
+                if capture {
+                    self.market_paid_shot_dir =
+                        Some(market_paid_shot_dir(self.shot_path.as_deref()));
+                    self.market_paid_shot = Some(MarketPaidShot::Single);
+                    self.capture_frames = 4;
+                } else {
+                    self.stage_market_paid_more();
+                    self.capture_frames = 2;
+                }
+            } else {
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -922,6 +982,9 @@ impl IControl for PortlightGame {
         if self.advance_contract_strip_shot() {
             return;
         }
+        if self.advance_market_paid_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -951,6 +1014,7 @@ impl IControl for PortlightGame {
             && self.hunt_shot_dir.is_none()
             && self.day_report_shot_dir.is_none()
             && self.contract_strip_shot_dir.is_none()
+            && self.market_paid_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -1015,6 +1079,11 @@ impl IControl for PortlightGame {
         } else if self.contract_strip_checked {
             godot_print!(
                 "portlight contract-strip smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.trade_checked {
+            godot_print!(
+                "portlight trade smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else {
@@ -1460,6 +1529,7 @@ impl PortlightGame {
         self.hunt_open = false;
         self.hunt_desk = HuntDesk::default();
         self.reset_day_report();
+        self.reset_trade();
         self.encounter = None;
         match Session::new(
             FIRST_PLAYABLE_NAME,
@@ -1638,6 +1708,7 @@ impl PortlightGame {
         self.armed_sail = None;
         self.stances.clear();
         self.reset_day_report();
+        self.reset_trade();
         self.session = Some(session);
         self.newgame_notice.clear();
         self.push_log(format!("A new voyage begins. Docked at {place}."));
@@ -1665,6 +1736,7 @@ impl PortlightGame {
                 self.armed_sail = None;
                 self.stances.clear();
                 self.reset_day_report();
+                self.reset_trade();
                 self.session = Some(session);
                 self.push_log(format!("Loaded slot {slot}. Docked at {place}."));
                 self.play_sfx("sfx_ui_newgame_start");
@@ -3637,8 +3709,14 @@ impl PortlightGame {
                     self.market_open = opening;
                     if opening {
                         self.play_sfx("sfx_ui_port_open");
+                    } else {
+                        self.market_notice.clear();
                     }
                 }
+                self.refresh();
+            }
+            Action::CycleTradeQty => {
+                self.trade_qty = market::next_trade_qty(self.trade_qty);
                 self.refresh();
             }
             Action::Sail(dest) => self.sail(&dest),
@@ -3718,6 +3796,7 @@ impl PortlightGame {
         };
         match result {
             Ok(name) => {
+                self.market_notice.clear();
                 self.play_sfx("sfx_chart_sail_depart");
                 self.push_log(format!("Departed for {name}."));
             }
@@ -3770,6 +3849,7 @@ impl PortlightGame {
     }
 
     fn next_day(&mut self) {
+        self.market_notice.clear();
         let mut failed = false;
         let screen_open = self.encounter.is_some();
         let (day_before, sailed) = self
@@ -3866,28 +3946,34 @@ impl PortlightGame {
     }
 
     fn trade(&mut self, buy: bool, good: &str) {
+        self.market_notice.clear();
+        let qty = market::wire_qty(self.clamped_trade_qty(buy, good));
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
             };
             if buy {
-                match session.buy(good, 1) {
-                    Ok(receipt) => Ok(vec![receipt_line(&receipt)]),
+                match session.buy(good, qty) {
+                    Ok(receipt) => Ok((vec![receipt_line(&receipt)], Vec::new())),
                     Err(err) => Err(err),
                 }
             } else {
-                match session.sell(good, 1) {
-                    Ok(sale) => Ok(sale_lines(&sale)),
+                match session.sell(good, qty) {
+                    Ok(sale) => Ok((
+                        sale_lines(&sale),
+                        market::paid_notice_lines(&sale.contracts),
+                    )),
                     Err(err) => Err(err),
                 }
             }
         };
         match result {
-            Ok(lines) => {
+            Ok((lines, paid)) => {
                 self.play_sfx("sfx_ui_trade_coin");
                 for line in lines {
                     self.push_log(line);
                 }
+                self.market_notice = paid;
             }
             Err(err) => {
                 if self.smoke {
@@ -3897,9 +3983,59 @@ impl PortlightGame {
             }
         }
         self.refresh();
+        if !self.market_notice.is_empty() {
+            self.scroll_market_to_top();
+        }
+    }
+
+    /// T-Q. The current qty clamped to what this press can do: buy to stock,
+    /// silver and free hold, sell to held. 0 when nothing would succeed.
+    fn clamped_trade_qty(&self, buy: bool, good: &str) -> i64 {
+        let Some(session) = self.session.as_ref() else {
+            return 0;
+        };
+        let world = session.world();
+        if !buy {
+            return market::clamp_sell(self.trade_qty, cargo_held(&world.captain.cargo, good));
+        }
+        let slot = docked_port_id(session)
+            .and_then(|id| world.port(id))
+            .and_then(|port| port.slot(good));
+        let (Some(slot), Some(ship)) = (slot, world.captain.ship.as_ref()) else {
+            return 0;
+        };
+        let capacity = portlight_sim::ship::resolve_cargo_capacity(ship) as f64;
+        let room = BuyRoom {
+            stock: slot.stock_current,
+            unit_price: slot.buy_price,
+            silver: world.captain.silver,
+            capacity,
+            current_weight: portlight_sim::economy::cargo_weight(&world.captain.cargo),
+            weight_per_unit: content::content()
+                .good(good)
+                .map(|def| def.weight_per_unit)
+                .unwrap_or(1.0),
+        };
+        market::clamp_buy(self.trade_qty, &room)
+    }
+
+    /// AV.1: a new paid notice sits at the top of the Market pane, so the pane
+    /// scrolls there and the notice is never above the view.
+    fn scroll_market_to_top(&mut self) {
+        if let Some(scroll) = self.market_scroll.as_mut() {
+            scroll.set_v_scroll(0);
+        }
+    }
+
+    /// T-Q / T-N state is Godot memory only: a new game or load starts here.
+    fn reset_trade(&mut self) {
+        self.trade_qty = market::TRADE_QTYS[0];
+        self.market_notice.clear();
     }
 
     fn work_docks(&mut self) {
+        // T-N: Work is a port action like a trade, so the paid notice goes.
+        self.market_notice.clear();
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -5677,6 +5813,9 @@ impl PortlightGame {
             13,
             contracts_screen::meta_color(offer.due),
         ));
+        if let Some(tag) = &offer.availability {
+            block.add_child(&contracts_screen::body_line(tag, 13, MUTED));
+        }
         block
     }
 
@@ -5898,8 +6037,10 @@ impl PortlightGame {
             self.fail_contracts("Contracts smoke: Abandon did not ask for confirm.");
         }
         self.confirm_abandon();
-        if !self.contracts_notice.contains("Abandoned contract:")
-            || !self.contracts_notice.contains("Trust -2")
+        if !self.contracts_notice.starts_with("Contract abandoned: ")
+            || ["Silver", "Trust", "Standing", "Heat"]
+                .iter()
+                .any(|term| self.contracts_notice.contains(term))
         {
             self.fail_contracts(format!(
                 "Contracts smoke: abandon outcome was {:?}.",
@@ -6155,8 +6296,29 @@ impl PortlightGame {
         let Some((port_name, rows)) = self.market_rows() else {
             return;
         };
-        box_node.add_child(&body_label(&format!("Market at {port_name}"), 15, GOLD));
         let game_id = self.instance_id();
+        // AV.1: one line, no wrap. `paid_notice_lines` already trims the text
+        // to `market::PAID_NOTICE_CHARS`, which fits the box width; clipping
+        // only keeps a stray long line from widening the panel.
+        for line in &self.market_notice {
+            let mut notice = body_label(line, 13, GOLD);
+            notice.set_autowrap_mode(AutowrapMode::OFF);
+            notice.set_clip_text(true);
+            notice.set_h_size_flags(SizeFlags::EXPAND_FILL);
+            box_node.add_child(&notice);
+        }
+        let mut header = HBoxContainer::new_alloc();
+        let mut title = body_label(&format!("Market at {port_name}"), 15, GOLD);
+        shrink_label(&mut title);
+        header.add_child(&title);
+        let mut qty = action_button(
+            &market::qty_label(self.trade_qty),
+            game_id,
+            Action::CycleTradeQty,
+        );
+        qty.set_h_size_flags(SizeFlags::SHRINK_END);
+        header.add_child(&qty);
+        box_node.add_child(&header);
         for row in rows {
             let MarketRow {
                 id,
@@ -6402,7 +6564,9 @@ impl PortlightGame {
     }
 
     fn push_log(&mut self, line: impl Into<String>) {
-        self.log_lines.push(line.into());
+        // R12: sim flavour carries `[bold]` / `[dim]` tags; a Label prints them.
+        self.log_lines
+            .push(crate::logic::strip_markup(&line.into()));
         if self.log_lines.len() > 8 {
             let extra = self.log_lines.len() - 8;
             self.log_lines.drain(0..extra);
@@ -6624,13 +6788,22 @@ impl PortlightGame {
     }
 
     fn play_fight(&mut self, action: &str) {
-        let result = {
+        let (silver_before, result) = {
             let Some(session) = self.session.as_mut() else {
                 return;
             };
-            session.fight(action)
+            let before = session.world().captain.silver;
+            (before, session.fight(action))
         };
+        // R11: a finished personal fight (the Hunt duel) logs its result.
+        let outcome = result.as_ref().ok().and_then(|step| {
+            let silver_after = self.session.as_ref()?.world().captain.silver;
+            fight_result_line(step, silver_after - silver_before)
+        });
         self.ingest(result);
+        if let Some(line) = outcome {
+            self.push_log(line);
+        }
     }
 
     fn spare_enemy(&mut self) {
@@ -7930,11 +8103,11 @@ impl PortlightGame {
             self.fail_contract_strip("Contract-strip smoke: at-sea click opened Contracts.");
         }
 
-        // Complete-at-Contracts is unreachable via Session::sell (auto-settle);
-        // pure unit tests cover that cue. Note for the PR.
+        // The strip cue is always the deadline timing. There is no Complete
+        // cue: Session::sell settles a delivered contract on the sale.
         if self.smoke_ok {
             self.push_log(
-                "Contract-strip smoke: hide, accept, cap, click, urgent, sea no-op ok. Complete cue unit-test-only."
+                "Contract-strip smoke: hide, accept, cap, click, urgent, sea no-op ok. Cue is deadline timing."
                     .to_string(),
             );
         }
@@ -7973,6 +8146,258 @@ impl PortlightGame {
         self.push_log(line);
         self.smoke_ok = false;
         self.contract_strip_checked = true;
+    }
+
+    fn fail_trade(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+    }
+
+    /// Seed 1 at Porto Novo: accept the grain run to Corsair's Rest, buy at
+    /// `Qty 10`, sail, then sell at `Qty 10` until the sale settles the
+    /// contract and the Market leads with the paid notice. False when the
+    /// run could not get that far; a failed copy check still returns true.
+    fn run_trade_settle(&mut self) -> bool {
+        self.start_game();
+        if self.trade_qty != 1 {
+            self.fail_trade("Trade smoke: a new game did not start at Qty 1.");
+        }
+        self.perform(Action::CycleTradeQty);
+        self.perform(Action::CycleTradeQty);
+        if self.trade_qty != 10 {
+            self.fail_trade(format!(
+                "Trade smoke: two Qty presses gave {}.",
+                self.trade_qty
+            ));
+            return false;
+        }
+        let offer = self.session.as_mut().and_then(|session| {
+            session
+                .available_contracts()
+                .into_iter()
+                .find(|offer| {
+                    offer.good_id == "grain" && offer.destination_port_id == "corsairs_rest"
+                })
+                .map(|offer| (offer.id, offer.quantity))
+        });
+        let Some((offer_id, required)) = offer else {
+            self.fail_trade("Trade smoke: no grain offer for Corsair's Rest.");
+            return false;
+        };
+        self.accept_contract_offer(&offer_id);
+        self.market_open = true;
+        // Rough seas take a few units, so buy a margin over the order.
+        let want = required + 5;
+        for press in 0..6 {
+            if self.held("grain") >= want {
+                break;
+            }
+            let before = self.held("grain");
+            self.perform(Action::Buy("grain".into()));
+            let bought = self.held("grain") - before;
+            if press == 0 && bought != 10 {
+                self.fail_trade(format!("Trade smoke: Qty 10 buy took {bought} grain."));
+                return false;
+            }
+            if bought <= 0 {
+                self.fail_trade("Trade smoke: a clamped buy took nothing.");
+                return false;
+            }
+        }
+        if !self
+            .log_lines
+            .iter()
+            .any(|line| line.starts_with("buy 10 Grain for "))
+        {
+            self.fail_trade("Trade smoke: the receipt did not log the real qty.");
+        }
+        self.sail("corsairs_rest");
+        for _ in 0..40 {
+            if self.docked_id() == Some("corsairs_rest") {
+                break;
+            }
+            self.close_day_report();
+            if self.encounter.is_some() {
+                self.encounter = None;
+            }
+            self.next_day();
+        }
+        if self.docked_id() != Some("corsairs_rest") {
+            self.fail_trade("Trade smoke: never docked at Corsair's Rest.");
+            return false;
+        }
+        self.close_day_report();
+        self.market_open = true;
+        let active = |game: &Self| {
+            game.session.as_ref().is_some_and(|session| {
+                session
+                    .board()
+                    .active
+                    .iter()
+                    .any(|contract| contract.offer_id == offer_id)
+            })
+        };
+        for press in 0..6 {
+            if !active(self) {
+                break;
+            }
+            let before = self.held("grain");
+            self.perform(Action::Sell("grain".into()));
+            let sold = before - self.held("grain");
+            if sold != before.min(10) || (press == 0 && sold != 10) {
+                self.fail_trade(format!(
+                    "Trade smoke: Qty 10 sell moved {sold} of {before} grain."
+                ));
+                return false;
+            }
+        }
+        if active(self) {
+            self.fail_trade("Trade smoke: the Qty 10 sales did not settle the contract.");
+            return false;
+        }
+        let paid = self.market_notice.first().cloned().unwrap_or_default();
+        godot_print!("trade smoke paid notice: {paid}");
+        if self.market_notice.len() != 1
+            || !paid.starts_with("Contract paid: Silver +")
+            || !paid.contains(" - 23 Grain to ")
+            || paid.len() > market::PAID_NOTICE_CHARS
+            || paid.contains("Delivered")
+            || paid.contains("(+")
+            || paid.contains("+0")
+            || ["Trust", "Standing", "Heat"]
+                .iter()
+                .any(|term| paid.contains(term))
+            || paid.contains("corsairs_rest")
+            || !paid.is_ascii()
+        {
+            self.fail_trade(format!("Trade smoke: paid notice was {paid:?}."));
+        }
+        let shown = self
+            .market_box
+            .as_ref()
+            .map(labels_under_box)
+            .and_then(|labels| labels.first().map(|label| label.get_text().to_string()));
+        if shown.as_deref() != Some(paid.as_str()) {
+            self.fail_trade(format!(
+                "Trade smoke: the Market box did not lead with the notice ({shown:?})."
+            ));
+        }
+        true
+    }
+
+    /// `--trade-smoke` (T-Q, T-N). The settle above, then Work, Next day and a
+    /// new game must each clear the paid notice; the Qty holds until new game.
+    fn run_trade_smoke(&mut self) {
+        if !self.run_trade_settle() {
+            return;
+        }
+        let paid = self.market_notice.first().cloned().unwrap_or_default();
+        self.perform(Action::Work);
+        if !self.market_notice.is_empty() {
+            self.fail_trade("Trade smoke: Work kept the paid notice.");
+        }
+        // Put the notice back so Next day has one to clear.
+        self.market_notice = vec![paid.clone()];
+        self.refresh();
+        self.perform(Action::NextDay);
+        if !self.market_notice.is_empty() {
+            self.fail_trade("Trade smoke: Next day kept the paid notice.");
+        }
+        if self.trade_qty != 10 {
+            self.fail_trade("Trade smoke: Qty did not hold across trades.");
+        }
+        self.start_game();
+        if self.trade_qty != 1 || !self.market_notice.is_empty() {
+            self.fail_trade("Trade smoke: a new game kept the Qty or notice.");
+        }
+    }
+
+    /// T-N frame 2. One staged delivery, then the real outcome as the latest:
+    /// one GOLD line with ` (+1 more)`, through `paid_notice_lines`.
+    fn stage_market_paid_more(&mut self) {
+        let real = self
+            .session
+            .as_ref()
+            .and_then(|session| session.board().completed.last().cloned());
+        let Some(real) = real else {
+            self.fail_trade("Market paid frames: no completed contract to stage from.");
+            return;
+        };
+        if market::paid_notice_lines(std::slice::from_ref(&real)) != self.market_notice {
+            self.fail_trade(format!(
+                "Market paid frames: last outcome does not match the notice ({:?}).",
+                self.market_notice
+            ));
+        }
+        self.market_notice = market::paid_notice_lines(&market::smoke_paid_more(&real));
+        self.refresh();
+        if self.market_notice.len() != 1
+            || !self.market_notice[0].starts_with("Contract paid: Silver +")
+            || !self.market_notice[0].contains(" (+1 more) - ")
+            || self.market_notice[0].len() > market::PAID_NOTICE_CHARS
+        {
+            self.fail_trade(format!(
+                "Market paid frames: staged notice was {:?}.",
+                self.market_notice
+            ));
+        }
+        self.check_market_notice_leads("more");
+    }
+
+    /// The Market box leads with every notice line, then the Market header.
+    fn check_market_notice_leads(&mut self, kind: &str) {
+        let shown: Vec<String> = self
+            .market_box
+            .as_ref()
+            .map(labels_under_box)
+            .unwrap_or_default()
+            .iter()
+            .map(|label| label.get_text().to_string())
+            .collect();
+        let count = self.market_notice.len();
+        let leads = count > 0
+            && shown.len() > count
+            && shown[..count] == self.market_notice[..]
+            && shown[count].starts_with("Market at ");
+        if !leads {
+            self.fail_trade(format!(
+                "Market paid frames: {kind} notice did not lead the Market box ({:?}).",
+                shown.iter().take(count + 1).collect::<Vec<_>>()
+            ));
+        }
+    }
+
+    fn advance_market_paid_shot(&mut self) -> bool {
+        let Some(phase) = self.market_paid_shot else {
+            return false;
+        };
+        let Some(dir) = self.market_paid_shot_dir.clone() else {
+            return false;
+        };
+        if !self.market_open || self.market_notice.is_empty() {
+            self.fail_trade(format!(
+                "Market paid frames: {} had no open Market notice.",
+                phase.file_name()
+            ));
+        }
+        let path = format!("{dir}/{}", phase.file_name());
+        if !self.save_shot(&path, false) {
+            self.capture_failed = true;
+        }
+        match phase {
+            MarketPaidShot::Single => {
+                self.stage_market_paid_more();
+                self.market_paid_shot = Some(MarketPaidShot::More);
+                self.capture_frames = 4;
+                true
+            }
+            MarketPaidShot::More => {
+                self.market_paid_shot = None;
+                false
+            }
+        }
     }
 
     /// Buy grain at Porto Novo, sail to Corsair's Rest, sell a partial lot for progress.
@@ -8445,6 +8870,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Personal, "personal fight");
         self.play_scripted_fight();
         self.expect_phase(ScreenPhase::Outcome, "outcome");
+        self.expect_duel_logged("encounter");
         self.expect_outcome_actions();
         self.spare_enemy();
         self.expect_returned();
@@ -8557,6 +8983,17 @@ impl PortlightGame {
                 return;
             }
             self.play_fight(action);
+        }
+    }
+
+    /// R11: the fight that reached Outcome logged its result as the last line.
+    fn expect_duel_logged(&mut self, label: &str) {
+        let last = self.log_lines.last().cloned().unwrap_or_default();
+        if !last.starts_with("Won the duel") {
+            self.smoke_ok = false;
+            let line = format!("Encounter smoke: {label} duel result not logged ({last:?}).");
+            godot_print!("{line}");
+            self.push_log(line);
         }
     }
 
@@ -8677,6 +9114,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Personal, "bounty personal fight");
         self.play_scripted_fight();
         self.expect_phase(ScreenPhase::Outcome, "bounty outcome");
+        self.expect_duel_logged("bounty");
         let still_pending = self
             .session
             .as_ref()
@@ -8742,6 +9180,8 @@ struct ListedOffer {
     detail: String,
     meta: String,
     due: bool,
+    /// T-S. Docked market fact for the good; `None` at sea.
+    availability: Option<String>,
 }
 
 struct ListedActive {
@@ -8762,6 +9202,9 @@ struct ContractListing {
 fn contract_listing(session: &Session) -> ContractListing {
     let day = session.world().day;
     let world = session.world();
+    let docked_market = docked_port_id(session)
+        .and_then(|id| world.port(id))
+        .map(|port| port.market.as_slice());
     let offers = session
         .board()
         .offers
@@ -8789,6 +9232,7 @@ fn contract_listing(session: &Session) -> ContractListing {
                     contracts_screen::ascii_sentence(&offer.offer_reason)
                 ),
                 due,
+                availability: contracts_screen::availability_tag(docked_market, &offer.good_id),
             }
         })
         .collect();
@@ -8908,10 +9352,7 @@ impl PortlightGame {
         let Some(duel) = session.world().pending_duel.as_ref() else {
             return String::new();
         };
-        format!(
-            "Duel: {}.\nFaction {} · {} · strength {} · {}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
-            duel.captain_name, duel.faction_id, duel.personality, duel.strength, duel.region
-        )
+        crate::logic::duel_prompt(duel)
     }
 
     fn stance_line(&self) -> String {
@@ -8942,7 +9383,10 @@ impl PortlightGame {
 fn receipt_line(receipt: &TradeReceipt) -> String {
     format!(
         "{} {} {} for {} silver.",
-        receipt.action, receipt.quantity, receipt.good_id, receipt.total_price
+        receipt.action,
+        receipt.quantity,
+        good_name(&receipt.good_id),
+        receipt.total_price
     )
 }
 
@@ -8950,7 +9394,7 @@ fn sale_lines(sale: &Sale) -> Vec<String> {
     let mut lines = vec![receipt_line(&sale.receipt)];
     for contract in &sale.contracts {
         if !contract.summary.is_empty() {
-            lines.push(contract.summary.clone());
+            lines.push(contracts_screen::outcome_summary(contract));
         }
     }
     lines
@@ -8960,14 +9404,36 @@ fn duel_outcome_line(outcome: &DuelOutcome) -> String {
     let result = if outcome.player_won {
         "Won"
     } else if outcome.draw {
-        "Draw"
+        "Drew"
     } else {
         "Lost"
     };
-    format!(
-        "{result} the duel with {}. Silver {:+}. Standing {:+}, shown only.",
-        outcome.opponent_name, outcome.silver_delta, outcome.standing_delta
+    crate::logic::duel_result_line(
+        result,
+        &outcome.opponent_name,
+        outcome.silver_delta,
+        outcome.standing_delta,
     )
+}
+
+/// R11. Result line for a personal-fight step that ended the duel. A win
+/// logs before Spare / Take all add their own receipt lines.
+fn fight_result_line(step: &EncounterStep, silver_delta: i64) -> Option<String> {
+    let result = if step.player_won {
+        "Won"
+    } else if step.draw {
+        "Drew"
+    } else if step.phase == "resolved" {
+        "Lost"
+    } else {
+        return None;
+    };
+    Some(crate::logic::duel_result_line(
+        result,
+        &step.enemy_captain_name,
+        silver_delta,
+        0,
+    ))
 }
 
 fn ledger_line(session: &Session) -> String {
@@ -9031,6 +9497,14 @@ fn contract_strip_frames_requested(shot_set: bool) -> bool {
 }
 
 fn contract_strip_shot_dir(shot: Option<&str>) -> String {
+    newgame_shot_dir(shot)
+}
+
+fn market_paid_frames_requested(shot_set: bool) -> bool {
+    shot_set || docs_capture()
+}
+
+fn market_paid_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
 }
 

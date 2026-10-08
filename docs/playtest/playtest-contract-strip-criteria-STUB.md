@@ -49,7 +49,7 @@ Do **not** count as live product-gate or product-fail until #48 merges.
 
 - `--contract-strip-screen` → `portlight contract-strip smoke ok`  
 - Frames: `contract-strip-active.png`, `contract-strip-urgent.png`  
-- Unit: sort/cap/copy/empty-hide; Complete short cue unit-only (Session auto-settles)
+- Unit: sort/cap/copy/empty-hide; a filled contract shows its deadline timing, never a Complete cue (the sale settles it)
 
 ---
 
@@ -58,7 +58,7 @@ Do **not** count as live product-gate or product-fail until #48 merges.
 | Id | Interaction with strip |
 |----|------------------------|
 | `next-verb-after-accept` | Strip helps glance progress; Fix A hint 2 still owns “named next verb” until/after soft→hard |
-| `contract-complete-path` | Strip may show progress toward Complete; delivery still sell-at-dest |
+| `contract-complete-path` | Strip shows progress and deadline timing; the sale at the destination settles the contract (no Complete) |
 | `day-report-clarity` | Separate surface — daily delta vs persistent glance; do not merge criteria |
 | `one-docked-overlay` | Docked strip click → Contracts; closes Day's report peers per #48 smoke |
 | `contracts-findable` | Strip is not a pier door; findability of Contracts desk stays separate |

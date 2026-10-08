@@ -175,7 +175,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log" || grep -q 'portlight trade smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -399,6 +399,30 @@ jobs:
             godot --headless --path godot -- --contract-strip-screen
           if ! grep -q 'portlight contract-strip smoke ok' /tmp/godot-contract-strip-smoke.log; then
             echo "contract-strip smoke did not report ok"
+            exit 1
+          fi
+          # T-Q / T-N: Qty 10 buy, sail, Qty 10 sell that settles a contract.
+          run_godot /tmp/godot-trade-smoke.log \
+            godot --headless --path godot -- --trade-smoke
+          if ! grep -q 'portlight trade smoke ok' /tmp/godot-trade-smoke.log; then
+            echo "trade smoke did not report ok"
+            exit 1
+          fi
+          # T-N frames: the same settle, then a staged two-line + more notice.
+          rm -f /tmp/hs-market-paid.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-market-paid-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-market-paid.png \
+            godot --headless --path godot -- --market-paid-screen
+          if [ -f /tmp/hs-market-paid.png ]; then
+            echo "headless market-paid PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-market-paid.log \
+            godot --headless --path godot -- --art-docs --market-paid-screen
+          run_godot /tmp/godot-market-paid-smoke.log \
+            godot --headless --path godot -- --market-paid-screen
+          if ! grep -q 'portlight trade smoke ok' /tmp/godot-market-paid-smoke.log; then
+            echo "market-paid smoke did not report ok"
             exit 1
           fi
           run_godot /tmp/godot-gl-smoke.log \
@@ -678,6 +702,22 @@ jobs:
               exit 1
             fi
           done
+          # T-N: GOLD Contract paid notice at the top of the Market box.
+          mkdir -p /tmp/market-paid-shots
+          run_godot /tmp/godot-market-paid-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/market-paid-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --market-paid-screen
+          if ! grep -q 'portlight trade smoke ok' /tmp/godot-market-paid-frames.log; then
+            echo "market-paid frame capture did not report ok"
+            exit 1
+          fi
+          for name in market-contract-paid.png market-contract-paid-more.png; do
+            if [ ! -f "/tmp/market-paid-shots/${name}" ]; then
+              echo "market-paid capture did not write /tmp/market-paid-shots/${name}"
+              exit 1
+            fi
+          done
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -710,6 +750,8 @@ jobs:
           cmp_committed day-report-arrival.png /tmp/day-report-shots/day-report-arrival.png
           cmp_committed contract-strip-active.png /tmp/contract-strip-shots/contract-strip-active.png
           cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
+          cmp_committed market-contract-paid.png /tmp/market-paid-shots/market-contract-paid.png
+          cmp_committed market-contract-paid-more.png /tmp/market-paid-shots/market-contract-paid-more.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
           cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png
