@@ -6813,7 +6813,8 @@ impl PortlightGame {
             let before = session.world().captain.silver;
             (before, session.fight(action))
         };
-        // R11: a finished personal fight (the Hunt duel) logs its result.
+        // R11 win only. Lost, Draw, and break-away are the section 10.3
+        // receipt, so a fight end logs exactly one result line.
         let outcome = result.as_ref().ok().and_then(|step| {
             let silver_after = self.session.as_ref()?.world().captain.silver;
             fight_result_line(step, silver_after - silver_before)
@@ -9630,20 +9631,15 @@ fn duel_outcome_line(outcome: &DuelOutcome) -> String {
     )
 }
 
-/// R11. Result line for a personal-fight step that ended the duel. A win
-/// logs before Spare / Take all add their own receipt lines.
+/// R11. A personal-fight win logs before Spare / Take all add their own
+/// receipt lines. Lost and Draw are the section 10.3 receipt, so this
+/// returns a line only when the player won.
 fn fight_result_line(step: &EncounterStep, silver_delta: i64) -> Option<String> {
-    let result = if step.player_won {
-        "Won"
-    } else if step.draw {
-        "Drew"
-    } else if step.phase == "resolved" {
-        "Lost"
-    } else {
+    if !step.player_won {
         return None;
-    };
+    }
     Some(crate::logic::duel_result_line(
-        result,
+        "Won",
         &step.enemy_captain_name,
         silver_delta,
         0,
@@ -10529,4 +10525,80 @@ fn flag_set(name: &str) -> bool {
 fn user_arg(flag: &str) -> bool {
     let args = Os::singleton().get_cmdline_user_args();
     (0..args.len()).any(|index| args.get(index).is_some_and(|value| value == flag))
+}
+
+#[cfg(test)]
+mod fight_end_tests {
+    use super::fight_result_line;
+    use crate::logic::{
+        encounter_end, encounter_end_line, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+        SCRIPTED_DEPART, SCRIPTED_NAME, SCRIPTED_SEED,
+    };
+    use portlight_sim::session::{EncounterStep, Session};
+
+    fn resolved(edit: impl FnOnce(&mut EncounterStep)) -> EncounterStep {
+        let mut session =
+            Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None).unwrap();
+        session.depart(SCRIPTED_DEPART).unwrap();
+        let mut step = session
+            .encounter_choice_with("fight", Some(SCRIPTED_CAPTAIN), None)
+            .unwrap();
+        step.kind = "fight".to_string();
+        step.phase = "resolved".to_string();
+        step.escaped = false;
+        step.enemy_sunk = false;
+        step.player_won = false;
+        step.draw = false;
+        edit(&mut step);
+        step
+    }
+
+    /// The two sites that can log a fight end: R11's win line from
+    /// `play_fight`, and the section 10.3 receipt from `adopt_step`.
+    /// The stance-duel path (`duel_outcome_line`) is separate and stays.
+    fn fight_end_lines(step: &EncounterStep) -> Vec<String> {
+        let mut lines = Vec::new();
+        if let Some(line) = fight_result_line(step, -30) {
+            lines.push(line);
+        }
+        if let Some(end) = encounter_end(step, false) {
+            lines.push(encounter_end_line(
+                end,
+                "Raj the Quiet",
+                [-30, 0, 0, 0],
+                false,
+            ));
+        }
+        lines
+    }
+
+    #[test]
+    fn each_fight_end_logs_exactly_one_line() {
+        let cases = [
+            (
+                "win",
+                resolved(|step| step.player_won = true),
+                "Won the duel",
+            ),
+            ("loss", resolved(|_| {}), "Lost the fight"),
+            ("draw", resolved(|step| step.draw = true), "Drew the fight"),
+            (
+                "break-away",
+                resolved(|step| {
+                    step.kind = "choice".to_string();
+                    step.escaped = true;
+                }),
+                "Broke away",
+            ),
+        ];
+        for (label, step, head) in cases {
+            let lines = fight_end_lines(&step);
+            assert_eq!(lines.len(), 1, "{label}: {lines:?}");
+            assert!(
+                lines[0].starts_with(head),
+                "{label}: {} does not start with {head}",
+                lines[0]
+            );
+        }
+    }
 }
