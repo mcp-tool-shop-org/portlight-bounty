@@ -231,6 +231,63 @@ pub(crate) fn outcome_terms(outcome: &ContractOutcome) -> String {
     }
 }
 
+/// Failure terms: the Silver term from [`outcome_terms`] (partial pay on an
+/// expiry), then `Guarantee +{p}` when a contract guarantee paid out. Zero
+/// terms are omitted (R4). Same Silver-only rule as every outcome surface.
+pub(crate) fn failure_terms(outcome: &ContractOutcome, guarantee: i64) -> Vec<String> {
+    let mut terms = Vec::new();
+    let silver = outcome_terms(outcome);
+    if !silver.is_empty() {
+        terms.push(silver);
+    }
+    if guarantee > 0 {
+        terms.push(format!("Guarantee +{guarantee}"));
+    }
+    terms
+}
+
+/// ` - 22 Grain still aboard` (catalog good name), or empty when none of the
+/// contract's good is held. The one next-step fact on a failure line.
+pub(crate) fn aboard_clause(good_id: &str, held: i64) -> String {
+    if held > 0 {
+        ascii_sentence(&format!(
+            " - {held} {} still aboard",
+            good_display_name(good_id)
+        ))
+    } else {
+        String::new()
+    }
+}
+
+/// Desk notice after Abandon: the shared [`outcome_notice`] form plus the
+/// aboard clause. The head is never trimmed; the field tail gives way first
+/// so the whole line stays within [`DESK_CHARS`].
+pub(crate) fn abandon_notice(outcome: &ContractOutcome, held: i64) -> String {
+    let aboard = aboard_clause(&outcome.good_id, held);
+    let line = outcome_line(
+        notice_label(outcome),
+        outcome,
+        0,
+        DESK_CHARS.saturating_sub(aboard.len()),
+    );
+    format!("{line}{aboard}")
+}
+
+/// A desk notice for a failure outcome (abandon, or an expiry if one is ever
+/// shown here). These render in DUE; every other notice stays CREAM.
+pub(crate) fn is_failure_notice(text: &str) -> bool {
+    text.starts_with("Contract abandoned: ") || text.starts_with("Contract expired: ")
+}
+
+/// Desk notice tone: DUE for a failure outcome, CREAM otherwise.
+pub(crate) fn notice_color(text: &str) -> Color {
+    if is_failure_notice(text) {
+        DUE
+    } else {
+        CREAM
+    }
+}
+
 /// Notice label by outcome kind: `Contract paid` / `Contract abandoned` /
 /// `Contract expired`.
 pub(crate) fn notice_label(outcome: &ContractOutcome) -> &'static str {
@@ -356,14 +413,14 @@ pub(crate) fn availability_tag(
     })
 }
 
-fn port_display_name(id: &str) -> String {
+pub(crate) fn port_display_name(id: &str) -> String {
     portlight_sim::content::content()
         .port(id)
         .map(|port| port.name.clone())
         .unwrap_or_else(|| humanize_id(id))
 }
 
-fn good_display_name(id: &str) -> String {
+pub(crate) fn good_display_name(id: &str) -> String {
     portlight_sim::content::content()
         .good(id)
         .map(|good| good.name.clone())
@@ -398,9 +455,11 @@ mod tests {
     use portlight_sim::Session;
 
     use super::{
-        abandon_prompt, ascii_sentence, availability_tag, can_complete, days_left_text,
-        outcome_line, outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
-        requirement_text, reward_text, BOARD_CARD, CAP_FULL, DESK_CHARS, EMPTY_OFFERS, MAX_ACTIVE,
+        abandon_notice, abandon_prompt, aboard_clause, ascii_sentence, availability_tag,
+        can_complete, days_left_text, failure_terms, is_failure_notice, notice_color, outcome_line,
+        outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
+        requirement_text, reward_text, BOARD_CARD, CAP_FULL, CREAM, DESK_CHARS, DUE, EMPTY_OFFERS,
+        MAX_ACTIVE,
     };
 
     #[test]
@@ -791,6 +850,77 @@ mod tests {
             assert_clean(&line);
             assert!(!line.contains("Famine relief"), "{line}");
             assert!(line.len() <= DESK_CHARS, "{line}");
+        }
+    }
+
+    /// Contract fail: Silver (partial pay) then Guarantee, zero terms dropped.
+    #[test]
+    fn failure_terms_put_guarantee_after_silver_and_drop_zero() {
+        let mut outcome = failed("expired", 60);
+        assert_eq!(failure_terms(&outcome, 0), vec!["Silver +60".to_string()]);
+        assert_eq!(
+            failure_terms(&outcome, 65),
+            vec!["Silver +60".to_string(), "Guarantee +65".to_string()]
+        );
+        outcome.silver_delta = 0;
+        assert_eq!(
+            failure_terms(&outcome, 105),
+            vec!["Guarantee +105".to_string()]
+        );
+        assert!(failure_terms(&outcome, 0).is_empty());
+        // A denied or empty claim never prints a term.
+        assert!(failure_terms(&outcome, -5).is_empty());
+    }
+
+    /// Contract fail: the aboard clause, and the abandon notice that carries it.
+    #[test]
+    fn abandon_notice_adds_the_aboard_clause_and_keeps_the_head() {
+        assert_eq!(aboard_clause("grain", 22), " - 22 Grain still aboard");
+        assert_eq!(aboard_clause("grain", 0), "");
+        assert_eq!(aboard_clause("whale_oil", 3), " - 3 Whale Oil still aboard");
+        let quiet = failed("abandoned", 0);
+        assert_eq!(
+            abandon_notice(&quiet, 23),
+            "Contract abandoned: Grain for Corsair's Rest - 23 Grain still aboard"
+        );
+        // Nothing held: exactly the shared notice.
+        assert_eq!(abandon_notice(&quiet, 0), outcome_notice(&quiet));
+        // A runaway tail trims before the aboard clause; the head stays whole.
+        let mut long = failed("abandoned", 0);
+        long.destination_port_id =
+            "the_very_long_and_winding_harbour_of_the_far_southern_reaches_beyond".into();
+        let notice = abandon_notice(&long, 23);
+        assert!(
+            notice.starts_with("Contract abandoned: Grain for "),
+            "{notice}"
+        );
+        assert!(notice.ends_with("... - 23 Grain still aboard"), "{notice}");
+        assert!(notice.len() <= DESK_CHARS, "{notice}");
+        for line in [abandon_notice(&quiet, 23), notice] {
+            assert_clean(&line);
+            assert!(
+                !line.contains("Complete") && !line.contains("due soon"),
+                "{line}"
+            );
+        }
+    }
+
+    /// Contract fail: the desk notice is DUE after an abandon, CREAM otherwise.
+    #[test]
+    fn failure_notice_tone_is_due_only_for_failures() {
+        let abandoned = abandon_notice(&failed("abandoned", 0), 23);
+        assert!(is_failure_notice(&abandoned));
+        assert_eq!(notice_color(&abandoned), DUE);
+        assert!(is_failure_notice(&outcome_notice(&failed("expired", 0))));
+        for other in [
+            outcome_notice(&bonus_paid()),
+            "Accepted Famine relief: grain to Corsair's Rest.".to_string(),
+            abandon_prompt("Grain for Corsair's Rest"),
+            "Contract is not yet fulfilled".to_string(),
+            String::new(),
+        ] {
+            assert!(!is_failure_notice(&other), "{other}");
+            assert_eq!(notice_color(&other), CREAM, "{other}");
         }
     }
 

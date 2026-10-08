@@ -7,6 +7,10 @@
 //! Movers yield first: they drop (lowest-ranked first) until the arrival row
 //! budget fits, so Claim ready stays above the fold.
 //!
+//! Contract fail: an expiry on this advance is a `Contract expired: ...` line
+//! pinned at the top of Deadlines in DUE ([`failure_lines`]). Pinned lines
+//! never trim (cap, arrival yield, footer yield) and always open the card.
+//!
 //! Captain's week: a ride-along footer (Week deltas + one Next hint) below the
 //! scroll. It never opens the card, is not a [`DayReportLine`], and does not
 //! count toward [`LINE_CAP`]. The footer yields when the body would scroll at
@@ -19,10 +23,14 @@ use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::{Button, Label, PanelContainer, ScrollContainer, StyleBoxFlat, VBoxContainer};
 use godot::prelude::*;
 use portlight_sim::content;
-use portlight_sim::model::{ActiveContract, ContractOutcome, Injury, VoyageStatus};
+use portlight_sim::model::{
+    ActiveContract, ContractOutcome, InfrastructureRecord, Injury, VoyageStatus,
+};
 use portlight_sim::session::Session;
 
-use crate::contracts_screen::ascii_sentence;
+use crate::contracts_screen::{
+    aboard_clause, ascii_sentence, failure_terms, good_display_name, meta_color, port_display_name,
+};
 use crate::encounter_screen::style_encounter_button;
 use crate::hunt_screen;
 use crate::logic::ascii_label;
@@ -66,6 +74,10 @@ pub(crate) const ARRIVAL_WRAP_CHARS: usize = 70;
 pub(crate) const ARRIVAL_ROW_BUDGET: usize = 8;
 /// Arrival row budget when the card draws 4 section heads.
 pub(crate) const ARRIVAL_ROW_BUDGET_FOUR_HEADS: usize = 7;
+
+/// Contract fail: the one prefix for an expiry line (card and Log). Mirrors
+/// the T-N `Contract paid:` notice.
+pub(crate) const EXPIRED_PREFIX: &str = "Contract expired: ";
 
 /// Captain's week rolling window (Godot memory only, never saved).
 pub(crate) const WEEK_N: usize = 5;
@@ -317,7 +329,13 @@ pub(crate) fn apply_document(nodes: &mut DayReportNodes, doc: &DayReportDocument
         box_node.add_theme_constant_override("separation", 4);
         box_node.add_child(&text_label(section.title, 16, GOLD, false));
         for line in &section.lines {
-            box_node.add_child(&text_label(&line.text, 15, CREAM, true));
+            // Contract fail: an expiry line takes the existing DUE tone.
+            let color = if is_failure_line(&line.text) {
+                meta_color(true)
+            } else {
+                CREAM
+            };
+            box_node.add_child(&text_label(&line.text, 15, color, true));
         }
         nodes.body.add_child(&box_node);
     }
@@ -526,10 +544,11 @@ pub(crate) fn snapshot_docked_prices(session: &Session) -> HashMap<String, i64> 
 }
 
 /// Build the capped document from Session + memory. Updates `memory` claimable_seen
-/// for claimables that fire as notable this day.
+/// for claimables that fire as notable this day. `failures` are this advance's
+/// [`failure_lines`]: pinned at the top of Deadlines and never trimmed.
 pub(crate) fn build_document(
     session: &Session,
-    turn_contracts: &[ContractOutcome],
+    failures: &[DayReportLine],
     injuries_before: &[Injury],
     prices_before: &HashMap<String, i64>,
     memory: &mut DayReportMemory,
@@ -550,13 +569,7 @@ pub(crate) fn build_document(
     };
 
     let exclude_port = if arrival_day { docked_port } else { None };
-    let deadlines = deadline_lines(
-        session.board().active.as_slice(),
-        day,
-        turn_contracts,
-        world,
-        exclude_port,
-    );
+    let deadlines = deadline_lines(session.board().active.as_slice(), day, world, exclude_port);
     let health = health_lines(injuries_before, session.injuries());
     // Arrival day: visit movers replace day-over-day Prices (no separate section).
     let prices = if arrival_day {
@@ -595,10 +608,10 @@ pub(crate) fn build_document(
                 };
                 raw.push((id, title, lines));
             }
-            cap_sections(raw)
+            cap_sections_pinned(raw, failures.to_vec())
         })
     } else {
-        cap_sections(rest)
+        cap_sections_pinned(rest, failures.to_vec())
     };
     let title = if arrival_day {
         if let Some(port_id) = docked_port {
@@ -683,6 +696,9 @@ pub(crate) fn week_line(window: &WeekWindow) -> Option<String> {
 pub(crate) struct NextFacts {
     /// `deadline_day - day` for each active contract.
     pub contract_days_left: Vec<i64>,
+    /// Destination of the first overdue contract (deadline, title, id order),
+    /// catalog name. Names the sale in `Next: Contract overdue - sell at ...`.
+    pub overdue_port: Option<String>,
     pub claimable: bool,
     /// Any captain injury still asking the player to act: healing and untreated.
     pub captain_wounded: bool,
@@ -697,6 +713,18 @@ fn untreated_healing(injury: &Injury) -> bool {
 pub(crate) fn next_facts(session: &Session) -> NextFacts {
     let world = session.world();
     let day = world.day;
+    let mut overdue: Vec<&ActiveContract> = session
+        .board()
+        .active
+        .iter()
+        .filter(|contract| contract.deadline_day < day)
+        .collect();
+    overdue.sort_by(|a, b| {
+        a.deadline_day
+            .cmp(&b.deadline_day)
+            .then_with(|| a.title.cmp(&b.title))
+            .then_with(|| a.offer_id.cmp(&b.offer_id))
+    });
     NextFacts {
         contract_days_left: session
             .board()
@@ -704,6 +732,9 @@ pub(crate) fn next_facts(session: &Session) -> NextFacts {
             .iter()
             .map(|contract| contract.deadline_day - day)
             .collect(),
+        overdue_port: overdue
+            .first()
+            .map(|contract| failure_name(&port_display_name(&contract.destination_port_id))),
         claimable: !claimable_ids(session).is_empty(),
         captain_wounded: session.injuries().iter().any(untreated_healing),
         provisions: world.captain.provisions,
@@ -711,10 +742,13 @@ pub(crate) fn next_facts(session: &Session) -> NextFacts {
 }
 
 /// First match: overdue, due today, approaching, Claim ready, wounded, Stores low.
+/// Overdue names the sale (GD: the desk cannot fix it; selling is the action),
+/// without promising that the sale still pays.
 pub(crate) fn next_line(facts: &NextFacts) -> Option<String> {
     let lefts = &facts.contract_days_left;
     if lefts.iter().any(|&left| left < 0) {
-        return Some("Next: Contract overdue - open Contracts.".to_string());
+        let port = facts.overdue_port.as_deref().unwrap_or("the destination");
+        return Some(format!("Next: Contract overdue - sell at {port}."));
     }
     if lefts.contains(&0) {
         return Some("Next: Contract due today - open Contracts.".to_string());
@@ -849,28 +883,15 @@ pub(crate) fn rank_visit_movers(
         .collect()
 }
 
+/// Active contracts within [`DEADLINE_N`] days. Expiries are not here: they
+/// come only from [`failure_lines`] (one source), pinned above these.
 fn deadline_lines(
     active: &[ActiveContract],
     day: i64,
-    turn_contracts: &[ContractOutcome],
     world: &portlight_sim::model::World,
     exclude_port: Option<&str>,
 ) -> Vec<DayReportLine> {
     let mut lines = Vec::new();
-    for outcome in turn_contracts {
-        if outcome.outcome_type == "expired" {
-            let title = ascii_sentence(&outcome.summary);
-            let text = if title.to_lowercase().starts_with("expired") {
-                title
-            } else {
-                format!("Expired: {title}")
-            };
-            lines.push(DayReportLine {
-                text,
-                notable: true,
-            });
-        }
-    }
     for contract in active {
         if exclude_port.is_some_and(|port| contract.destination_port_id == port) {
             continue;
@@ -1096,11 +1117,61 @@ pub(crate) fn cap_sections(
     if !auto_show {
         return Vec::new();
     }
+    cap_within(raw, LINE_CAP)
+}
 
+/// Contract fail: `pinned` failure lines bypass the cap. The rest is capped
+/// at `LINE_CAP - pinned` (same C1 reserve), then the pinned lines go on top
+/// of Deadlines, which is created at its canonical place when the rest left
+/// it empty. Auto-show counts pinned lines too. With no pinned lines this is
+/// exactly [`cap_sections`].
+pub(crate) fn cap_sections_pinned(
+    raw: Vec<(&'static str, &'static str, Vec<DayReportLine>)>,
+    pinned: Vec<DayReportLine>,
+) -> Vec<DayReportSection> {
+    if pinned.is_empty() {
+        return cap_sections(raw);
+    }
+    let order: Vec<&'static str> = raw.iter().map(|(id, _, _)| *id).collect();
+    let mut sections = cap_within(raw, LINE_CAP.saturating_sub(pinned.len()));
+    if let Some(section) = sections
+        .iter_mut()
+        .find(|section| section.id == "deadlines")
+    {
+        let mut lines = pinned;
+        lines.append(&mut section.lines);
+        section.lines = lines;
+    } else {
+        let before: &[&str] = match order.iter().position(|id| *id == "deadlines") {
+            Some(at) => &order[..at],
+            None => &[],
+        };
+        let index = sections
+            .iter()
+            .filter(|section| before.contains(&section.id))
+            .count();
+        sections.insert(
+            index,
+            DayReportSection {
+                id: "deadlines",
+                title: "Deadlines",
+                lines: pinned,
+            },
+        );
+    }
+    sections
+}
+
+/// Fill sections in order within `cap` lines, C1 reserve for later
+/// non-empty sections, trailing `+N more` where a section overflows.
+fn cap_within(
+    raw: Vec<(&'static str, &'static str, Vec<DayReportLine>)>,
+    cap: usize,
+) -> Vec<DayReportSection> {
     // C1: reserve only for later sections that actually have lines.
     let non_empty: Vec<bool> = raw.iter().map(|(_, _, lines)| !lines.is_empty()).collect();
 
-    let mut remaining = LINE_CAP;
+    let mut remaining = cap;
     let mut sections = Vec::new();
     for (index, (id, title, lines)) in raw.into_iter().enumerate() {
         if lines.is_empty() || remaining == 0 {
@@ -1142,6 +1213,145 @@ pub(crate) fn cap_sections(
     sections
 }
 
+/// Pre-advance snapshot `next_day` takes for the failure line: active titles
+/// (the outcome has no title) and the claim count (to find this advance's
+/// contract-guarantee payout). Transient; never saved.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct FailureFacts {
+    /// `offer_id` -> title for every active contract before the advance.
+    pub titles_before: HashMap<String, String>,
+    /// `infrastructure().claims.len()` before the advance.
+    pub claims_before: usize,
+}
+
+impl FailureFacts {
+    pub(crate) fn snapshot(session: &Session) -> Self {
+        Self {
+            titles_before: session
+                .board()
+                .active
+                .iter()
+                .map(|contract| (contract.offer_id.clone(), contract.title.clone()))
+                .collect(),
+            claims_before: session.infrastructure().claims.len(),
+        }
+    }
+}
+
+/// Contract-guarantee silver paid for `contract_id` on this advance: claims
+/// after `claims_before`, `contract_failure`, not denied, payout > 0, whose
+/// policy targets this contract (both guarantee specs are `named_contract`).
+pub(crate) fn guarantee_paid(session: &Session, claims_before: usize, contract_id: &str) -> i64 {
+    guarantee_in(session.infrastructure(), claims_before, contract_id)
+}
+
+fn guarantee_in(infra: &InfrastructureRecord, claims_before: usize, contract_id: &str) -> i64 {
+    infra
+        .claims
+        .iter()
+        .skip(claims_before)
+        .filter(|claim| {
+            claim.incident_type == "contract_failure" && !claim.denied && claim.payout > 0
+        })
+        .filter(|claim| {
+            infra
+                .policies
+                .iter()
+                .any(|policy| policy.id == claim.policy_id && policy.target_id == contract_id)
+        })
+        .map(|claim| claim.payout)
+        .sum()
+}
+
+/// True only for a [`failure_lines`] line (DUE tone on the card).
+pub(crate) fn is_failure_line(text: &str) -> bool {
+    text.starts_with(EXPIRED_PREFIX)
+}
+
+/// The one expiry formatter for the card and the Log:
+/// `Contract expired: {Title} - {d}/{r} - Silver +N - Guarantee +N - {n} {Good} still aboard`.
+/// Silver-only terms (GD M2), zero terms omitted, catalog names first then
+/// `humanize_id`, never the sim summary. Title falls back to `{Good} to {Port}`.
+pub(crate) fn expired_line(
+    outcome: &ContractOutcome,
+    title: Option<&str>,
+    held: i64,
+    guarantee: i64,
+) -> String {
+    let mut text = format!(
+        "{EXPIRED_PREFIX}{} - {}/{}",
+        failure_title(outcome, title),
+        outcome.delivered_quantity,
+        outcome.required_quantity
+    );
+    for term in failure_terms(outcome, guarantee) {
+        text.push_str(" - ");
+        text.push_str(&term);
+    }
+    text.push_str(&aboard_clause(&outcome.good_id, held));
+    text
+}
+
+/// Snapshot title (ASCII), else `{Good} to {Port}` from catalog names.
+fn failure_title(outcome: &ContractOutcome, title: Option<&str>) -> String {
+    title
+        .map(ascii_sentence)
+        .map(|title| title.trim().to_string())
+        .filter(|title| !title.is_empty())
+        .unwrap_or_else(|| {
+            failure_name(&format!(
+                "{} to {}",
+                good_display_name(&outcome.good_id),
+                port_display_name(&outcome.destination_port_id)
+            ))
+        })
+}
+
+/// ASCII guard for a catalog or humanised name.
+fn failure_name(name: &str) -> String {
+    ascii_sentence(name)
+}
+
+/// One `notable` line per expired outcome on this advance, sorted by
+/// deadline, then title, then contract id. `held` is the flagship hold after
+/// the advance; the guarantee comes from this advance's claims only.
+pub(crate) fn failure_lines(
+    session: &Session,
+    turn_contracts: &[ContractOutcome],
+    facts: &FailureFacts,
+) -> Vec<DayReportLine> {
+    let cargo = &session.world().captain.cargo;
+    let mut rows: Vec<(i64, String, String, String)> = turn_contracts
+        .iter()
+        .filter(|outcome| outcome.outcome_type == "expired")
+        .map(|outcome| {
+            let title = facts
+                .titles_before
+                .get(&outcome.contract_id)
+                .map(String::as_str);
+            let held = cargo
+                .iter()
+                .filter(|item| item.good_id == outcome.good_id)
+                .map(|item| item.quantity)
+                .sum();
+            let guarantee = guarantee_paid(session, facts.claims_before, &outcome.contract_id);
+            (
+                outcome.deadline_day,
+                failure_title(outcome, title),
+                outcome.contract_id.clone(),
+                expired_line(outcome, title, held, guarantee),
+            )
+        })
+        .collect();
+    rows.sort();
+    rows.into_iter()
+        .map(|(_, _, _, text)| DayReportLine {
+            text,
+            notable: true,
+        })
+        .collect()
+}
+
 fn good_name(id: &str) -> String {
     content::content()
         .good(id)
@@ -1181,6 +1391,19 @@ fn clear_children(node: &mut Gd<VBoxContainer>) {
         node.remove_child(&child);
         child.queue_free();
     }
+}
+
+/// Font colour of the first Label under `node` whose text is `text` (smoke
+/// tone checks). `None` when no such label exists.
+pub(crate) fn label_color(node: &Gd<godot::classes::Node>, text: &str) -> Option<Color> {
+    if let Ok(label) = node.clone().try_cast::<Label>() {
+        if label.get_text() == text {
+            return Some(label.get_theme_color("font_color"));
+        }
+    }
+    node.get_children()
+        .iter_shared()
+        .find_map(|child| label_color(&child, text))
 }
 
 fn collect_text(node: &Gd<godot::classes::Node>, parts: &mut Vec<String>) {
@@ -1243,6 +1466,7 @@ pub(crate) fn smoke_full_document(day: i64) -> DayReportDocument {
             )),
             next: next_line(&NextFacts {
                 contract_days_left: vec![2],
+                overdue_port: None,
                 claimable: true,
                 captain_wounded: false,
                 provisions: 20,
@@ -1287,6 +1511,7 @@ pub(crate) fn smoke_deadline_document(day: i64) -> DayReportDocument {
             week: week_line(&smoke_week_window(day, &[(540, Some(3), 0, 0, 0)])),
             next: next_line(&NextFacts {
                 contract_days_left: vec![1],
+                overdue_port: None,
                 claimable: false,
                 captain_wounded: false,
                 provisions: 20,
@@ -1310,6 +1535,7 @@ pub(crate) fn smoke_arrival_document(day: i64) -> DayReportDocument {
             )),
             next: next_line(&NextFacts {
                 contract_days_left: vec![20],
+                overdue_port: None,
                 claimable: true,
                 captain_wounded: false,
                 provisions: 20,
@@ -1370,6 +1596,85 @@ fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
     ]
 }
 
+/// Seed-1 probe numbers for the expired frame and tests: Famine relief, grain
+/// x23 to Corsair's Rest, deadline 19, reward 552; part sold 5/23 pays 60.
+pub(crate) const SMOKE_EXPIRED_TITLE: &str = "Famine relief: grain to Corsair's Rest";
+
+pub(crate) fn smoke_expired_outcome(day: i64, delivered: i64, silver: i64) -> ContractOutcome {
+    ContractOutcome {
+        contract_id: "71773aae754b".into(),
+        outcome_type: "expired".into(),
+        silver_delta: silver,
+        trust_delta: if delivered > 0 { -2 } else { -3 },
+        standing_delta: if delivered > 0 { -1 } else { -2 },
+        heat_delta: if delivered > 0 { 1 } else { 2 },
+        completion_day: day - 1,
+        summary: "Contract defaulted: failed to deliver grain to corsairs_rest".into(),
+        family: "shortage".into(),
+        good_id: "grain".into(),
+        required_quantity: 23,
+        delivered_quantity: delivered,
+        destination_port_id: "corsairs_rest".into(),
+        deadline_day: 19,
+        reward_silver: 552,
+    }
+}
+
+/// Forced document for CI frame `day-report-expired.png`, built through the
+/// real formatters: the F2 failure line (DUE, pinned) above an active Spice
+/// deadline (CREAM), Week footer if it fits under the existing yield rule.
+pub(crate) fn smoke_expired_document(
+    world: &portlight_sim::model::World,
+    day: i64,
+) -> DayReportDocument {
+    let failure = DayReportLine {
+        text: expired_line(
+            &smoke_expired_outcome(day, 5, 60),
+            Some(SMOKE_EXPIRED_TITLE),
+            22,
+            0,
+        ),
+        notable: true,
+    };
+    let spice = ActiveContract {
+        offer_id: "smoke-spice".into(),
+        template_id: "smoke".into(),
+        family: "shortage".into(),
+        title: "Spice restock run to Al-Manar".into(),
+        accepted_day: day - 4,
+        deadline_day: day + 2,
+        destination_port_id: "al_manar".into(),
+        good_id: "spice".into(),
+        required_quantity: 8,
+        delivered_quantity: 0,
+        reward_silver: 200,
+        bonus_reward: 0,
+        source_region: None,
+        source_port: None,
+        inspection_modifier: 1.0,
+        status: "accepted".into(),
+    };
+    let deadlines = deadline_lines(&[spice], day, world, None);
+    DayReportDocument {
+        day,
+        title: format!("Day {day}"),
+        sections: cap_sections_pinned(vec![("deadlines", "Deadlines", deadlines)], vec![failure]),
+        footer: DayReportFooter {
+            week: week_line(&smoke_week_window(
+                day,
+                &[(400, Some(3), 0, 0, 0), (457, Some(3), 0, 0, 0)],
+            )),
+            next: next_line(&NextFacts {
+                contract_days_left: vec![2],
+                overdue_port: None,
+                claimable: false,
+                captain_wounded: false,
+                provisions: 20,
+            }),
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1402,7 +1707,7 @@ mod tests {
         let session = Session::new("Ada", "merchant", 1, None).unwrap();
         let world = session.world();
         let active = vec![fixture_contract(10, 10), fixture_contract(12, 10)];
-        let lines = deadline_lines(&active, 1, &[], world, None);
+        let lines = deadline_lines(&active, 1, world, None);
         let texts: Vec<&str> = lines.iter().map(|line| line.text.as_str()).collect();
         assert_eq!(
             texts,
@@ -1415,7 +1720,7 @@ mod tests {
             assert!(!text.contains("Complete"), "{text}");
             assert!(!text.contains("Deliver"), "{text}");
         }
-        let open = deadline_lines(&[fixture_contract(3, 10)], 1, &[], world, None);
+        let open = deadline_lines(&[fixture_contract(3, 10)], 1, world, None);
         assert_eq!(
             open[0].text,
             "Spice charter - 1 day left - 3/10 - sell 7 more Grain at Al-Manar"
@@ -2025,6 +2330,7 @@ mod tests {
     fn next_ladder_first_match_order() {
         let base = NextFacts {
             contract_days_left: vec![],
+            overdue_port: None,
             claimable: false,
             captain_wounded: false,
             provisions: 20,
@@ -2032,13 +2338,24 @@ mod tests {
         assert_eq!(next_line(&base), None, "empty ladder omits Next");
         let all = NextFacts {
             contract_days_left: vec![9, 2, 0, -1],
+            overdue_port: Some("Corsair's Rest".into()),
             claimable: true,
             captain_wounded: true,
             provisions: 1,
         };
+        // GD (contract fail, OQ2): overdue names the sale, not the desk, and
+        // promises nothing about payment.
         assert_eq!(
             next_line(&all).as_deref(),
-            Some("Next: Contract overdue - open Contracts.")
+            Some("Next: Contract overdue - sell at Corsair's Rest.")
+        );
+        assert_eq!(
+            next_line(&NextFacts {
+                overdue_port: None,
+                ..all.clone()
+            })
+            .as_deref(),
+            Some("Next: Contract overdue - sell at the destination.")
         );
         let today = NextFacts {
             contract_days_left: vec![3, 0],
@@ -2573,10 +2890,10 @@ mod tests {
             test_active("Porcelain run", "al_manar", "porcelain", 0, 5, day + 2, "a"),
             test_active("Grain run", "porto_novo", "grain", 0, 5, day + 2, "b"),
         ];
-        let all = deadline_lines(&active, day, &[], session.world(), None);
+        let all = deadline_lines(&active, day, session.world(), None);
         assert_eq!(all.len(), 2, "{all:?}");
         assert!(all.iter().any(|l| l.text.contains("Al-Manar")), "{all:?}");
-        let arrival = deadline_lines(&active, day, &[], session.world(), Some("al_manar"));
+        let arrival = deadline_lines(&active, day, session.world(), Some("al_manar"));
         assert_eq!(arrival.len(), 1, "{arrival:?}");
         assert!(arrival[0].text.starts_with("Grain run"), "{arrival:?}");
         assert!(!arrival[0].text.contains("Al-Manar"), "{arrival:?}");
@@ -2866,5 +3183,589 @@ mod tests {
         assert_eq!(arrival_row_cost(std::slice::from_ref(&fits)), 2);
         assert_eq!(arrival_row_cost(&[wraps]), 3);
         assert_eq!(footer_body_cost(&[fits]), 3);
+    }
+
+    // ---- Contract fail (design-brief-contract-fail.md section 12.1) ----
+
+    use portlight_sim::model::{ActivePolicy, InsuranceClaim};
+
+    fn probe_f1() -> ContractOutcome {
+        smoke_expired_outcome(21, 0, 0)
+    }
+
+    fn probe_f2() -> ContractOutcome {
+        smoke_expired_outcome(21, 5, 60)
+    }
+
+    /// Player-surface hygiene for every failure string.
+    fn assert_failure_clean(text: &str) {
+        assert!(text.is_ascii(), "{text}");
+        for bad in [
+            "\u{2014}",
+            "\u{2013}",
+            "->",
+            "+0",
+            "  ",
+            "Deliver",
+            "deliver",
+            "Complete",
+            "due soon",
+            "Trust",
+            "Standing",
+            "Heat",
+            "corsairs_rest",
+            "_",
+        ] {
+            assert!(!text.contains(bad), "{bad:?} in {text}");
+        }
+    }
+
+    /// 12.1 #1: F1 (nothing sold). GD M2: Silver-only terms, so a plain
+    /// expiry is just `{Title} - {d}/{r}`.
+    #[test]
+    fn expired_line_f1_is_title_and_progress() {
+        assert_eq!(
+            expired_line(&probe_f1(), Some(SMOKE_EXPIRED_TITLE), 0, 0),
+            "Contract expired: Famine relief: grain to Corsair's Rest - 0/23"
+        );
+    }
+
+    /// 12.1 #2: F2 partial pay, aboard clause, guarantee order, all-zero.
+    #[test]
+    fn expired_line_f2_terms_guarantee_and_aboard() {
+        let title = Some(SMOKE_EXPIRED_TITLE);
+        assert_eq!(
+            expired_line(&probe_f2(), title, 22, 0),
+            "Contract expired: Famine relief: grain to Corsair's Rest - 5/23 - Silver +60 - 22 Grain still aboard"
+        );
+        assert_eq!(
+            expired_line(&probe_f2(), title, 0, 0),
+            "Contract expired: Famine relief: grain to Corsair's Rest - 5/23 - Silver +60"
+        );
+        assert_eq!(
+            expired_line(&probe_f2(), title, 22, 65),
+            "Contract expired: Famine relief: grain to Corsair's Rest - 5/23 - Silver +60 - Guarantee +65 - 22 Grain still aboard"
+        );
+        // Silver 0: Guarantee is the first term.
+        assert_eq!(
+            expired_line(&probe_f1(), title, 0, 105),
+            "Contract expired: Famine relief: grain to Corsair's Rest - 0/23 - Guarantee +105"
+        );
+        assert_eq!(
+            expired_line(&probe_f1(), title, 23, 105),
+            "Contract expired: Famine relief: grain to Corsair's Rest - 0/23 - Guarantee +105 - 23 Grain still aboard"
+        );
+    }
+
+    /// 12.1 #3: hygiene, title fallback, humanised unknown ids.
+    #[test]
+    fn expired_line_hygiene_and_fallbacks() {
+        assert_eq!(
+            expired_line(&probe_f1(), None, 0, 0),
+            "Contract expired: Grain to Corsair's Rest - 0/23"
+        );
+        assert_eq!(
+            expired_line(&probe_f1(), Some("  "), 0, 0),
+            "Contract expired: Grain to Corsair's Rest - 0/23"
+        );
+        let mut unknown = probe_f2();
+        unknown.good_id = "whale_oil".into();
+        unknown.destination_port_id = "drowned_quay".into();
+        assert!(content::content().good("whale_oil").is_none());
+        assert_eq!(
+            expired_line(&unknown, None, 4, 0),
+            "Contract expired: Whale Oil to Drowned Quay - 5/23 - Silver +60 - 4 Whale Oil still aboard"
+        );
+        // Curly quotes and dashes in a title come out ASCII.
+        assert_eq!(
+            expired_line(
+                &probe_f1(),
+                Some("Famine relief \u{2014} Corsair\u{2019}s Rest"),
+                0,
+                0
+            ),
+            "Contract expired: Famine relief - Corsair's Rest - 0/23"
+        );
+        for text in [
+            expired_line(&probe_f1(), Some(SMOKE_EXPIRED_TITLE), 0, 0),
+            expired_line(&probe_f2(), Some(SMOKE_EXPIRED_TITLE), 22, 105),
+            expired_line(&probe_f1(), None, 0, 0),
+            expired_line(&unknown, None, 4, 0),
+            crate::contracts_screen::abandon_notice(&probe_f1(), 23),
+        ] {
+            assert_failure_clean(&text);
+        }
+    }
+
+    fn failure(text: &str) -> DayReportLine {
+        DayReportLine {
+            text: format!("{EXPIRED_PREFIX}{text}"),
+            notable: true,
+        }
+    }
+
+    fn section<'a>(sections: &'a [DayReportSection], id: &str) -> Option<&'a DayReportSection> {
+        sections.iter().find(|section| section.id == id)
+    }
+
+    /// 12.1 #4 (a): 3 failures + Health 2 + Prices 3 + Bounties (Claim ready).
+    #[test]
+    fn pinned_cap_keeps_three_failures_and_claim_ready() {
+        let pinned: Vec<DayReportLine> = (0..3).map(|i| failure(&format!("F{i} - 0/5"))).collect();
+        let sections = cap_sections_pinned(
+            vec![
+                ("deadlines", "Deadlines", vec![]),
+                (
+                    "health",
+                    "Health",
+                    vec![
+                        line("Healed: Cut hand.", true),
+                        line("Healed: Bruise.", true),
+                    ],
+                ),
+                (
+                    "prices",
+                    "Prices",
+                    (0..3).map(|i| line(&format!("p{i}"), true)).collect(),
+                ),
+                (
+                    "bounties",
+                    "Bounties",
+                    vec![line("Claim ready: A (1 silver) - open Hunt.", true)],
+                ),
+            ],
+            pinned.clone(),
+        );
+        assert_eq!(sections[0].id, "deadlines");
+        assert_eq!(sections[0].lines, pinned);
+        let bounties = section(&sections, "bounties").expect("Bounties kept");
+        assert!(bounties.lines[0].text.starts_with("Claim ready"));
+        assert!(rendered_line_count(&sections) <= LINE_CAP);
+        let ids: Vec<&str> = sections.iter().map(|s| s.id).collect();
+        assert_eq!(ids, ["deadlines", "health", "prices", "bounties"]);
+    }
+
+    /// 12.1 #4 (b): 2 failures + 1 active deadline + Health + Prices + Bounties.
+    #[test]
+    fn pinned_cap_two_failures_with_an_active_deadline() {
+        let pinned: Vec<DayReportLine> = (0..2).map(|i| failure(&format!("F{i} - 0/5"))).collect();
+        let sections = cap_sections_pinned(
+            vec![
+                (
+                    "deadlines",
+                    "Deadlines",
+                    vec![line("Spice charter - 1 day left - 0/8", true)],
+                ),
+                ("health", "Health", vec![line("Healed: Cut hand.", true)]),
+                (
+                    "prices",
+                    "Prices",
+                    (0..4).map(|i| line(&format!("p{i}"), true)).collect(),
+                ),
+                (
+                    "bounties",
+                    "Bounties",
+                    vec![
+                        line("Claim ready: A (1 silver) - open Hunt.", true),
+                        line("Bounty accepted: B.", true),
+                    ],
+                ),
+            ],
+            pinned.clone(),
+        );
+        let deadlines = section(&sections, "deadlines").unwrap();
+        assert_eq!(&deadlines.lines[..2], pinned.as_slice());
+        assert_eq!(deadlines.lines[2].text, "Spice charter - 1 day left - 0/8");
+        let bounties = section(&sections, "bounties").expect("Bounties kept");
+        assert!(bounties.lines[0].text.starts_with("Claim ready"));
+        assert!(section(&sections, "health").is_some());
+        assert!(section(&sections, "prices").is_some());
+        assert!(rendered_line_count(&sections) <= LINE_CAP);
+    }
+
+    /// 12.1 #4 (c): arrival with 1 failure, 2 arrival contracts, 3 movers,
+    /// Health, Claim ready: movers then Health yield; failure and Claim stay.
+    #[test]
+    fn pinned_failure_survives_arrival_yield() {
+        let pinned = vec![failure(
+            "Famine relief: grain to Corsair's Rest - 5/23 - Silver +60 - 22 Grain still aboard",
+        )];
+        let movers = smoke_arrival_movers();
+        let health = vec![line("Healed: Cut hand.", true)];
+        let arrival =
+            vec![
+            line(
+                "Porcelain for Al-Manar estate - 0/5 - 20 days left - sell 5 more Porcelain here",
+                true,
+            ),
+            line("Spice run - 2/8 - 9 days left - sell 6 more Spice here", true),
+        ];
+        let sections = yield_arrival_rows(movers.clone(), health, |kept, kept_health| {
+            let mut lines = arrival.clone();
+            lines.extend_from_slice(kept);
+            cap_sections_pinned(
+                vec![
+                    ("arrival", "Arrival", lines),
+                    ("deadlines", "Deadlines", vec![]),
+                    ("health", "Health", kept_health.to_vec()),
+                    (
+                        "bounties",
+                        "Bounties",
+                        vec![line(
+                            "Claim ready: Raj the Quiet (120 silver) - open Hunt.",
+                            true,
+                        )],
+                    ),
+                ],
+                pinned.clone(),
+            )
+        });
+        let ids: Vec<&str> = sections.iter().map(|s| s.id).collect();
+        assert_eq!(
+            ids[..2],
+            ["arrival", "deadlines"],
+            "failure heads Deadlines after Arrival"
+        );
+        assert_eq!(section(&sections, "deadlines").unwrap().lines, pinned);
+        assert!(
+            kept_movers(&sections, &movers).is_empty(),
+            "movers yield first"
+        );
+        assert!(section(&sections, "health").is_none(), "Health yields next");
+        let bounties = section(&sections, "bounties").expect("Claim ready kept");
+        assert!(bounties.lines[0].text.starts_with("Claim ready"));
+        assert_eq!(section(&sections, "arrival").unwrap().lines, arrival);
+    }
+
+    /// 12.1 #4 (d) + section 6.6: a lone failure opens the card on a quiet day.
+    #[test]
+    fn lone_failure_is_notable() {
+        let sections = cap_sections_pinned(
+            vec![
+                ("deadlines", "Deadlines", vec![]),
+                (
+                    "health",
+                    "Health",
+                    vec![line("Healing: Bruised ribs (3 days left).", false)],
+                ),
+            ],
+            vec![failure("Grain to Corsair's Rest - 0/23")],
+        );
+        let doc = DayReportDocument {
+            day: 21,
+            title: "Day 21".into(),
+            sections,
+            footer: DayReportFooter::default(),
+        };
+        assert!(doc.has_notable());
+        assert_eq!(doc.sections[0].id, "deadlines");
+        // The quiet non-notable rest still renders under the failure.
+        assert_eq!(doc.sections.len(), 2);
+        // No pinned lines: exactly cap_sections (a quiet day stays closed).
+        assert!(cap_sections_pinned(
+            vec![(
+                "health",
+                "Health",
+                vec![line("Healing: Bruised ribs (3 days left).", false)],
+            )],
+            Vec::new(),
+        )
+        .is_empty());
+    }
+
+    /// 12.1 #5: failures sit above active lines; the arrival exclude never
+    /// drops a failure; deadline_lines no longer emits the old `Expired:`.
+    #[test]
+    fn failures_lead_deadlines_and_the_old_expired_line_is_gone() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let day = session.world().day;
+        let active = test_active("Grain run", "al_manar", "grain", 0, 10, day + 2, "a1");
+        let deadlines = deadline_lines(std::slice::from_ref(&active), day, session.world(), None);
+        assert!(deadlines.iter().all(|l| !l.text.starts_with("Expired")));
+        assert!(deadlines.iter().all(|l| !is_failure_line(&l.text)));
+        let pinned = vec![failure("Grain to Corsair's Rest - 0/23")];
+        let sections = cap_sections_pinned(
+            vec![("deadlines", "Deadlines", deadlines.clone())],
+            pinned.clone(),
+        );
+        assert_eq!(sections[0].lines[0], pinned[0]);
+        assert_eq!(sections[0].lines[1], deadlines[0]);
+        // Arrival exclude removes the docked port's active line, never a failure.
+        let excluded = deadline_lines(&[active], day, session.world(), Some("al_manar"));
+        assert!(excluded.is_empty());
+        let sections = cap_sections_pinned(
+            vec![
+                (
+                    "arrival",
+                    "Arrival",
+                    vec![line("Grain run - 0/10 - 2 days left", true)],
+                ),
+                ("deadlines", "Deadlines", excluded),
+            ],
+            pinned.clone(),
+        );
+        assert_eq!(section(&sections, "deadlines").unwrap().lines, pinned);
+    }
+
+    /// 12.1 #6: footer cost counts a long failure line as 2 rows and the
+    /// footer yields on the probe F2 card plus 3 other lines.
+    #[test]
+    fn failure_line_counts_in_footer_cost() {
+        let f2 = DayReportLine {
+            text: expired_line(&probe_f2(), Some(SMOKE_EXPIRED_TITLE), 22, 0),
+            notable: true,
+        };
+        assert!(f2.text.chars().count() > FOOTER_WRAP_CHARS);
+        let lone = cap_sections_pinned(vec![], vec![f2.clone()]);
+        assert_eq!(footer_body_cost(&lone), 3);
+        let busy = cap_sections_pinned(
+            vec![
+                (
+                    "deadlines",
+                    "Deadlines",
+                    vec![line("Spice charter - 2 days left - 0/8", true)],
+                ),
+                ("health", "Health", vec![line("Healed: Cut hand.", true)]),
+                (
+                    "prices",
+                    "Prices",
+                    vec![line("Grain at Porto Novo +3 (now 21)", true)],
+                ),
+            ],
+            vec![f2],
+        );
+        let footer = DayReportFooter {
+            week: Some("Week: +57 silver".into()),
+            next: None,
+        };
+        assert!(footer_body_cost(&busy) > FOOTER_BODY_BUDGET);
+        assert!(!footer_should_show(&footer, &busy));
+    }
+
+    fn policy(id: &str, target: &str) -> ActivePolicy {
+        ActivePolicy {
+            id: id.into(),
+            spec_id: "contract_basic".into(),
+            family: "contract_guarantee".into(),
+            scope: "named_contract".into(),
+            purchased_day: 1,
+            coverage_pct: 0.5,
+            coverage_cap: 400,
+            premium_paid: 20,
+            target_id: target.into(),
+            claims_made: 0,
+            total_paid_out: 0,
+            active: true,
+            voyage_origin: String::new(),
+            voyage_destination: String::new(),
+        }
+    }
+
+    fn claim(policy_id: &str, incident: &str, payout: i64, denied: bool) -> InsuranceClaim {
+        InsuranceClaim {
+            policy_id: policy_id.into(),
+            day: 20,
+            incident_type: incident.into(),
+            loss_value: 210,
+            payout,
+            denied,
+            denial_reason: String::new(),
+        }
+    }
+
+    /// 12.1 #7: only this advance's paid, undenied contract_failure claims on
+    /// a policy that targets this contract.
+    #[test]
+    fn guarantee_matches_only_this_contract_and_this_advance() {
+        let infra = InfrastructureRecord {
+            policies: vec![policy("p1", "c1"), policy("p2", "c2")],
+            claims: vec![
+                claim("p1", "contract_failure", 50, false), // before the advance
+                claim("p1", "contract_failure", 105, false),
+                claim("p2", "contract_failure", 65, false), // another contract
+                claim("p1", "storm", 30, false),
+                claim("p1", "contract_failure", 40, true),
+                claim("p1", "contract_failure", 0, false),
+                claim("ghost", "contract_failure", 99, false),
+            ],
+            ..InfrastructureRecord::default()
+        };
+        assert_eq!(guarantee_in(&infra, 1, "c1"), 105);
+        assert_eq!(guarantee_in(&infra, 0, "c1"), 155);
+        assert_eq!(guarantee_in(&infra, 1, "c2"), 65);
+        assert_eq!(guarantee_in(&infra, 1, "c3"), 0);
+        assert_eq!(guarantee_in(&infra, 7, "c1"), 0);
+    }
+
+    /// 12.1 #8: the tone predicate matches only the expiry prefix, and no
+    /// existing smoke document line matches it.
+    #[test]
+    fn failure_tone_predicate_is_prefix_only() {
+        assert!(is_failure_line(
+            "Contract expired: Grain to Corsair's Rest - 0/23"
+        ));
+        for text in [
+            "Expired: Contract defaulted: failed to deliver grain",
+            "Contract paid: Silver +612 - 23 Grain to Corsair's Rest",
+            "Contract abandoned: Grain for Corsair's Rest",
+            "Spice charter - 1 day left - 10/10",
+            "",
+        ] {
+            assert!(!is_failure_line(text), "{text}");
+        }
+        for doc in [
+            smoke_full_document(3),
+            smoke_deadline_document(4),
+            smoke_arrival_document(5),
+        ] {
+            assert!(doc
+                .sections
+                .iter()
+                .flat_map(|s| s.lines.iter())
+                .all(|l| !is_failure_line(&l.text)));
+        }
+    }
+
+    /// Real Session: seed-1 Famine relief lapses on the advance that starts on
+    /// day 20 (grace day). One line, from the snapshot title, no Trust copy.
+    /// Then the same with `contract_basic`: the Guarantee term (+105).
+    #[test]
+    fn failure_lines_from_a_real_seed_one_expiry() {
+        for insured in [false, true] {
+            let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+            let offer = session
+                .available_contracts()
+                .into_iter()
+                .find(|offer| {
+                    offer.destination_port_id == "corsairs_rest" && offer.good_id == "grain"
+                })
+                .expect("seed-1 Famine relief");
+            assert_eq!(offer.deadline_day, 19);
+            session.accept_contract(&offer.id).unwrap();
+            if insured {
+                session
+                    .buy_insurance("contract_basic", &offer.id, "", "")
+                    .unwrap();
+            }
+            let mut lines = Vec::new();
+            while session.world().day <= 20 {
+                let facts = FailureFacts::snapshot(&session);
+                let day = session.world().day;
+                let turn = session.advance().unwrap();
+                lines = failure_lines(&session, &turn.contracts, &facts);
+                if day < 20 {
+                    assert!(lines.is_empty(), "day {day}: {lines:?}");
+                    assert!(session
+                        .board()
+                        .active
+                        .iter()
+                        .any(|c| c.offer_id == offer.id));
+                }
+            }
+            assert_eq!(session.world().day, 21);
+            let want = if insured {
+                "Contract expired: Famine relief: grain to Corsair's Rest - 0/23 - Guarantee +105"
+            } else {
+                "Contract expired: Famine relief: grain to Corsair's Rest - 0/23"
+            };
+            assert_eq!(lines.len(), 1);
+            assert_eq!(lines[0].text, want);
+            assert!(lines[0].notable);
+            assert_failure_clean(&lines[0].text);
+            // The persisted outcome still carries the record-only numbers.
+            let last = session.board().completed.last().unwrap();
+            assert_eq!(last.outcome_type, "expired");
+            assert_eq!(last.trust_delta, -3);
+        }
+    }
+
+    /// Sort: deadline, then title, then contract id. Abandon outcomes in the
+    /// slice are never failure lines (only `expired`).
+    #[test]
+    fn failure_lines_sort_and_ignore_other_kinds() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let mut late = probe_f1();
+        late.contract_id = "z".into();
+        late.deadline_day = 20;
+        let mut b = probe_f1();
+        b.contract_id = "b".into();
+        let mut a = probe_f1();
+        a.contract_id = "a".into();
+        let mut abandoned = probe_f1();
+        abandoned.outcome_type = "abandoned".into();
+        let facts = FailureFacts {
+            titles_before: [
+                ("z".to_string(), "Alpha run".to_string()),
+                ("b".to_string(), "Beta run".to_string()),
+                ("a".to_string(), "Beta run".to_string()),
+            ]
+            .into_iter()
+            .collect(),
+            claims_before: 0,
+        };
+        let lines = failure_lines(&session, &[late, abandoned, b, a], &facts);
+        let texts: Vec<&str> = lines.iter().map(|l| l.text.as_str()).collect();
+        assert_eq!(
+            texts,
+            [
+                "Contract expired: Beta run - 0/23",
+                "Contract expired: Beta run - 0/23",
+                "Contract expired: Alpha run - 0/23",
+            ]
+        );
+    }
+
+    /// Frame doc: F2 line pinned (DUE) above the real Spice deadline line,
+    /// Week + Next fit under the existing footer rule.
+    #[test]
+    fn smoke_expired_doc_follows_formatters() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let doc = smoke_expired_document(session.world(), 21);
+        assert_eq!(doc.title, "Day 21");
+        assert!(doc.has_notable());
+        let texts: Vec<&str> = doc.sections[0]
+            .lines
+            .iter()
+            .map(|l| l.text.as_str())
+            .collect();
+        assert_eq!(doc.sections.len(), 1);
+        assert_eq!(
+            texts,
+            [
+                "Contract expired: Famine relief: grain to Corsair's Rest - 5/23 - Silver +60 - 22 Grain still aboard",
+                "Spice restock run to Al-Manar - 2 days left - 0/8 - sell 8 more Spice at Al-Manar",
+            ]
+        );
+        assert!(is_failure_line(texts[0]) && !is_failure_line(texts[1]));
+        assert_eq!(doc.footer.week.as_deref(), Some("Week: +57 silver"));
+        assert_eq!(
+            doc.footer.next.as_deref(),
+            Some("Next: Contract 2 days left - open Contracts.")
+        );
+        assert!(footer_should_show(&doc.footer, &doc.sections));
+        for text in texts {
+            assert_failure_clean(text);
+        }
+    }
+
+    /// GD OQ2: the overdue rung names the docked-sale port from the session.
+    #[test]
+    fn next_facts_names_the_overdue_port() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let offer = session
+            .available_contracts()
+            .into_iter()
+            .find(|offer| offer.destination_port_id == "corsairs_rest" && offer.good_id == "grain")
+            .unwrap();
+        session.accept_contract(&offer.id).unwrap();
+        while session.world().day < 20 {
+            session.advance().unwrap();
+        }
+        let facts = next_facts(&session);
+        assert_eq!(facts.overdue_port.as_deref(), Some("Corsair's Rest"));
+        assert_eq!(
+            next_line(&facts).as_deref(),
+            Some("Next: Contract overdue - sell at Corsair's Rest.")
+        );
     }
 }
