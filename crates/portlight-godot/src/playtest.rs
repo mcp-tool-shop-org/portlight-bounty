@@ -98,6 +98,8 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::OpenJournal => "chart.journal.open".into(),
         Action::CloseJournal => "chart.journal.close".into(),
         Action::CloseDayReport => "chart.day_report.close".into(),
+        Action::DepartureSail => "chart.departure.sail".into(),
+        Action::DepartureStay => "chart.departure.stay".into(),
         Action::ToggleBeat(id) => format!("journal.beat.{id}"),
         Action::OpenHarbour => "chart.harbour.open".into(),
         Action::CloseHarbour => "chart.harbour.close".into(),
@@ -304,6 +306,8 @@ fn static_action(id: &str) -> Option<Action> {
         "chart.journal.open" => Action::OpenJournal,
         "chart.journal.close" => Action::CloseJournal,
         "chart.day_report.close" => Action::CloseDayReport,
+        "chart.departure.sail" => Action::DepartureSail,
+        "chart.departure.stay" => Action::DepartureStay,
         "chart.harbour.open" => Action::OpenHarbour,
         "chart.harbour.close" => Action::CloseHarbour,
         "harbour.confirm" => Action::HarbourConfirm,
@@ -915,6 +919,8 @@ mod tests {
         roundtrip_action(Action::CloseCrew);
         roundtrip_action(Action::StartCaptain("merchant".into()));
         roundtrip_action(Action::Sail("al_manar".into()));
+        roundtrip_action(Action::DepartureSail);
+        roundtrip_action(Action::DepartureStay);
         roundtrip_action(Action::Buy("grain".into()));
         roundtrip_action(Action::CycleTradeQty);
         roundtrip_action(Action::AcceptContract("grain_run".into()));
