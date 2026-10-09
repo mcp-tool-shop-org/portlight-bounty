@@ -16,6 +16,7 @@ First GitHub release of the Rust port and the Godot chart.
 - The Godot 4.7 chart: new game, save and load, sail, market, contracts, crew, shipyard, harbour, hunt, journal, the day's report, and sea fights.
 - The landing bundle at manifest 0.4.3. The pictures are not part of the MIT grant.
 - A landing page and a handbook.
+- Patch coverage fails under 90%. The repository-wide percentage aims at 90% and stays informational. The Godot crate is outside that report.
 
 ### Changed
 

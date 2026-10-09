@@ -56,64 +56,69 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 18,
-      "changed": 69,
+      "added": 25,
+      "changed": 3,
       "moved": 0,
-      "parts": 9,
+      "parts": 4,
       "removed": 0
     },
     "items": [
       {
         "kind": "door",
-        "sentence": "CI's pull request trigger now also names `**/*.md` and `docs/**`.",
+        "sentence": "Deploy site to GitHub Pages (.github/workflows/pages.yml) is a new door. It starts on a push to main touching 2 paths; or by hand. It runs site/astro.config.mjs and site/src/.",
         "subjects": [
-          ".github/workflows/ci.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "CI's push trigger now also names `**/*.md`, `docs/**` and `main`.",
-        "subjects": [
-          ".github/workflows/ci.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "CI now also starts by hand.",
-        "subjects": [
-          ".github/workflows/ci.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "And 1 more change to a door.",
-        "subjects": []
-      },
-      {
-        "kind": "landing",
-        "sentence": "crates/portlight-godot/src/game.rs is now read by crates/portlight-godot/src/playtest.rs.",
-        "subjects": [
-          "crates/portlight-godot/src/game.rs",
-          "crates/portlight-godot/src/playtest.rs"
+          ".github/workflows/pages.yml",
+          "site/astro.config.mjs",
+          "site/src/"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "godot/ is now also read by playtest/README.md.",
+        "sentence": "godot/ is now also read by site/src/content/docs/handbook/getting-started.md.",
         "subjects": [
           "godot/",
-          "playtest/README.md"
+          "site/src/content/docs/handbook/getting-started.md"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "site/src/content/docs/ is now read by site/astro.config.mjs.",
+        "subjects": [
+          "site/src/content/docs/",
+          "site/astro.config.mjs"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "site/src/content/docs/handbook/ is now read by site/astro.config.mjs.",
+        "subjects": [
+          "site/src/content/docs/handbook/",
+          "site/astro.config.mjs"
+        ]
+      },
+      {
+        "kind": "part",
+        "sentence": "scripts is a new part, drawn from `scripts/**`.",
+        "subjects": [
+          "scripts"
+        ]
+      },
+      {
+        "kind": "part",
+        "sentence": "site is a new part, drawn from `site/**`.",
+        "subjects": [
+          "site"
         ]
       },
       {
         "kind": "counts",
-        "sentence": "18 files added and 69 changed content, across 9 parts.",
+        "sentence": "25 files added and 3 changed content, across 4 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "a28530431382b01f707f47d251824a750659c6e9",
-      "generatedAt": "2026-10-05T20:29:39.557Z"
+      "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6",
+      "generatedAt": "2026-10-09T21:09:25.841Z"
     },
     "unchanged": false
   },
@@ -199,9 +204,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 8 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6",
+  "commit": "3bea25f9917fae3585f68f699456600171964817",
   "defaultBranch": "main",
-  "derived": "10 parts, mostly Rust (75 files), Python (12), GDScript (1) and JavaScript (1). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
+  "derived": "12 parts, mostly Rust (75 files), Python (12), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
     {
       "checks": [
@@ -319,7 +324,9 @@
       ],
       "runsCount": 62,
       "runsMore": 61,
-      "sends": [],
+      "sends": [
+        "uploads coverage to Codecov"
+      ],
       "stages": [],
       "triggers": [
         "on a pull request except when only **/*.md or docs/** change",
@@ -327,6 +334,37 @@
         "or by hand"
       ],
       "untracked": "portlight-newgame-smoke/, which is not tracked"
+    },
+    {
+      "checks": [],
+      "checksCount": 0,
+      "checksMore": 0,
+      "file": ".github/workflows/pages.yml",
+      "id": ".github/workflows/pages.yml",
+      "landings": [],
+      "name": "Deploy site to GitHub Pages",
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "site",
+          "depth": 0,
+          "files": 5
+        }
+      ],
+      "runs": [
+        "site/astro.config.mjs",
+        "site/src/"
+      ],
+      "runsCount": 2,
+      "runsMore": 0,
+      "sends": [
+        "deploys the site"
+      ],
+      "stages": [],
+      "triggers": [
+        "on a push to main touching 2 paths",
+        "or by hand"
+      ]
     },
     {
       "builtFrom": "crates/portlight-chart",
@@ -471,7 +509,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-09T21:09:25.841Z",
+  "generatedAt": "2026-10-09T21:18:10.765Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "1 write and 14 reads use paths built at run time and are not named here.",
@@ -492,9 +530,11 @@
     "portlight-godot": "portlight-godot",
     "portlight-sim": "portlight-sim",
     "root": "the repository root",
+    "scripts": "scripts",
+    "site": "site",
     "tools": "tools"
   },
-  "parts": 10,
+  "parts": 12,
   "readers": [
     {
       "readers": [
@@ -543,6 +583,7 @@
     "portlight-cli": 0,
     "portlight-godot": 13,
     "portlight-sim": 34,
+    "site": 0,
     "tools": 2
   },
   "testedInside": [
@@ -551,6 +592,10 @@
   ],
   "unnamedWrites": 1,
   "unread": [],
+  "unreadCode": [
+    "scripts"
+  ],
+  "unreadCodeUses": "scripts holds only PowerShell and shell files, which this map does not read, so what uses it cannot be seen.",
   "unreadFiles": 0,
   "unreadNote": [],
   "untested": [
@@ -563,11 +608,17 @@
       "part": "portlight-cli",
       "partLabel": "portlight-cli",
       "testedBy": 0
+    },
+    {
+      "part": "site",
+      "partLabel": "site",
+      "testedBy": 0
     }
   ],
   "untestedNote": [
     "portlight-chart is tested only by the unit tests in its own files.",
-    "portlight-godot is tested only by the unit tests in its own files."
+    "portlight-godot is tested only by the unit tests in its own files.",
+    "scripts holds only PowerShell and shell files, which this map does not read, so whether a test touches it cannot be seen."
   ],
   "written": 5
 }

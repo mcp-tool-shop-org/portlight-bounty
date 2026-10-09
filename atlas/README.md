@@ -1,27 +1,28 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-09 from commit 776b2b1 by Atlas 1.24.0.
+Mapped at 2026-10-09 from commit 3bea25f by Atlas 1.24.0.
 
 ## What this is
 
-10 parts, mostly Rust (75 files), Python (12), GDScript (1) and JavaScript (1). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
+12 parts, mostly Rust (75 files), Python (12), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-05 (a285304)
+## What changed since 2026-10-09 (776b2b1)
 
-- CI's pull request trigger now also names `**/*.md` and `docs/**`.
-- CI's push trigger now also names `**/*.md`, `docs/**` and `main`.
-- CI now also starts by hand.
-- And 1 more change to a door.
-- crates/portlight-godot/src/game.rs is now read by crates/portlight-godot/src/playtest.rs.
-- godot/ is now also read by playtest/README.md.
-- 18 files added and 69 changed content, across 9 parts.
+- Deploy site to GitHub Pages (.github/workflows/pages.yml) is a new door. It starts on a push to main touching 2 paths; or by hand. It runs site/astro.config.mjs and site/src/.
+- godot/ is now also read by site/src/content/docs/handbook/getting-started.md.
+- site/src/content/docs/ is now read by site/astro.config.mjs.
+- site/src/content/docs/handbook/ is now read by site/astro.config.mjs.
+- scripts is a new part, drawn from `scripts/**`.
+- site is a new part, drawn from `site/**`.
+- 25 files added and 3 changed content, across 4 parts.
 
 ## What comes in
 
 1. **CI.** On a pull request except when only **/*.md or docs/** change; on a push to main except when only **/*.md or docs/** change; or by hand. Runs godot/scenes/harbour_seam.tscn, godot/scenes/main.tscn, tools/parity/check.py and 61 more; checks crates/portlight-chart/src/bin/gen_placeholders.rs, crates/portlight-chart/src/lib.rs, crates/portlight-cli/src/main.rs and 2 more.
-2. **gen_placeholders** (a command built from crates/portlight-chart, which nothing ships). Runs crates/portlight-chart/src/bin/gen_placeholders.rs.
-3. **portlight** (a command people run). Runs crates/portlight-cli/src/main.rs.
-4. **the game** (what Godot runs). Starts godot/scenes/main.tscn.
+2. **Deploy site to GitHub Pages.** On a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
+3. **gen_placeholders** (a command built from crates/portlight-chart, which nothing ships). Runs crates/portlight-chart/src/bin/gen_placeholders.rs.
+4. **portlight** (a command people run). Runs crates/portlight-cli/src/main.rs.
+5. **the game** (what Godot runs). Starts godot/scenes/main.tscn.
 
 ## What happens through CI
 
@@ -29,12 +30,15 @@ Mapped at 2026-10-09 from commit 776b2b1 by Atlas 1.24.0.
    1. Inside tools/parity/test_check.py, `broker_paths` does, in order: `load_divergences` and `listed`.
 2. It writes to parity/golden/ and parity/saves/custom_captain_v12.json.
 3. It also writes to portlight-newgame-smoke/, which is not tracked.
+4. It uploads coverage to Codecov.
 
 ## Who reads the results
 
 - **parity/** is read by tools/parity/save_slots.py.
 
 ## The other doors
+
+**Deploy site to GitHub Pages** runs site/astro.config.mjs and site/src/, and deploys the site.
 
 **gen_placeholders** (a command built from crates/portlight-chart, which nothing ships) runs crates/portlight-chart/src/bin/gen_placeholders.rs and reaches portlight-sim.
 
@@ -49,6 +53,8 @@ Mapped at 2026-10-09 from commit 776b2b1 by Atlas 1.24.0.
 - **godot** is imported by no other part and sits on the path of 2 doors.
 - **portlight-cli** is imported by no other part and sits on the path of 2 doors.
 - **parity/golden/** is written by tools and read by tools; a hand edit reaches every reader.
+
+scripts holds only PowerShell and shell files, which this map does not read, so what uses it cannot be seen.
 
 ## What tends to change together
 
@@ -66,10 +72,13 @@ Window: 180 days; a pair counts from 3 shared commits, since 8 source files reac
 
 - **godot** is imported by no test.
 - **portlight-cli** is imported by no test.
+- **site** is imported by no test.
 
 portlight-chart is tested only by the unit tests in its own files.
 
 portlight-godot is tested only by the unit tests in its own files.
+
+scripts holds only PowerShell and shell files, which this map does not read, so whether a test touches it cannot be seen.
 
 ## Written but never read
 

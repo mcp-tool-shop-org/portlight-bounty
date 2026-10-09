@@ -1,4 +1,5 @@
 /target
+/coverage/
 # Interactive chart saves. Session writes <cwd>/saves, which is the repo root
 # when Godot is launched from this checkout. Fixtures live under parity/.
 /saves/

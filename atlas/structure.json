@@ -9,8 +9,12 @@
       "externals": 0,
       "files": [
         {
-          "hash": "e16d0867afb6adb246272fe283c61c849e52ffa763ab695e2baa0e7f44850fa1",
+          "hash": "efd1b640fbc70d26a679268fd5d999501a05b40116e89c94308a2dfe7b233755",
           "path": ".github/workflows/ci.yml"
+        },
+        {
+          "hash": "bd9345a1fbcaa0230311ecd4bbfae7ea5cf1456271b578fe243ee00fffc49167",
+          "path": ".github/workflows/pages.yml"
         }
       ],
       "globs": [
@@ -6103,8 +6107,16 @@
       "externals": 0,
       "files": [
         {
-          "hash": "a34cf3f814f42838aa45f08945a73601bfa9810048a194be1beb859d936002db",
+          "hash": "779528db26e8b80ef494f266202b347b2ce4a71aec19120dfcbdded170cdfa70",
           "path": ".gitignore"
+        },
+        {
+          "hash": "3bd37e7dbedf49dcfc71b2a2fe9e8db36d866116949d1aaaedee3e06f41b5a1b",
+          "path": "CHANGELOG.md"
+        },
+        {
+          "hash": "47c065adf9f13b907bc6491b1bdaf381bbacb93ffc9ab9e37f23e8d6f93e4767",
+          "path": "CONTRIBUTING.md"
         },
         {
           "hash": "f58e67af3a0ab3f69dd24eb8230a0a150ebe38be4ccbd976ccbd8ba19557c0a1",
@@ -6119,8 +6131,20 @@
           "path": "LICENSE"
         },
         {
-          "hash": "26ab4d669545e5c99a6e05b421a94950396f4bb16ca50054fa4c986f192f9ecf",
+          "hash": "d016c8607fcadbbd1c27b27157d74137f79138942b93b2a79a17fd409cd00cea",
           "path": "README.md"
+        },
+        {
+          "hash": "4c42f25d5bd69c443ab4525af93e5414d06c70341db42b591cdc4ff0e1bf5b31",
+          "path": "SCORECARD.md"
+        },
+        {
+          "hash": "38464c80c6682e79368703ed9c2f34fa2749e0ba9659e7ed5156057218699dd5",
+          "path": "SECURITY.md"
+        },
+        {
+          "hash": "3f3a2d636ea8d13c29c368d48e337d73b57c44a0e55d128c957490922961af75",
+          "path": "SHIP_GATE.md"
         },
         {
           "hash": "7553618f800829444096beea3dce84c3d07585efda504c19adb6787369bbd9e8",
@@ -6134,6 +6158,130 @@
       "name": "root",
       "origin": "authored",
       "role": "config",
+      "testedBy": 0,
+      "unresolvedSites": 0
+    },
+    {
+      "dynamicReads": 0,
+      "dynamicSpawns": 0,
+      "dynamicSpawnsInTests": 0,
+      "dynamicWrites": 0,
+      "entryPoints": [],
+      "externals": 0,
+      "files": [
+        {
+          "hash": "a3b5b49945b6fc69d841fed1c9b72613ff106e9ffad38476c03621e04e065ef7",
+          "path": "scripts/verify.ps1"
+        },
+        {
+          "hash": "b6526d443a6a788083d8a3f902099951b9913c13033c484f9462b0e46945e1b2",
+          "path": "scripts/verify.sh"
+        }
+      ],
+      "globs": [
+        "scripts/**"
+      ],
+      "importConfidence": "full",
+      "name": "scripts",
+      "origin": "authored",
+      "role": "code",
+      "testedBy": 0,
+      "unresolvedSites": 0
+    },
+    {
+      "dynamicReads": 0,
+      "dynamicSpawns": 0,
+      "dynamicSpawnsInTests": 0,
+      "dynamicWrites": 0,
+      "entryPoints": [],
+      "externals": 0,
+      "files": [
+        {
+          "hash": "ec08437d199b8f06547662b156954107ba292119d62846962420c899ad68ef34",
+          "path": "site/astro.config.mjs"
+        },
+        {
+          "hash": "b9d7acc887f4e30c430e76f811ff2a36ce9c3d4c324b5d11e5886149ca42fe70",
+          "path": "site/package-lock.json"
+        },
+        {
+          "hash": "9c39e620ebae2c5718ecd8c6188bd3451409a614ec8f5308dc15d5fd886e5b91",
+          "path": "site/package.json"
+        },
+        {
+          "hash": "db3c76ae1d22efa9f6c9a1cf3d8b1f45a5e94210d34e4b518006018e7d3d097d",
+          "path": "site/public/favicon.svg"
+        },
+        {
+          "hash": "b586bafeb311941b1e15b4a67292d5b2cd5b945b87ca71f5214d2c18c276e48e",
+          "path": "site/src/assets/logo.png"
+        },
+        {
+          "constantOnly": true,
+          "hash": "ee756dfba4122d2acc94a39b2555d9f200fff56a87a8c0b10f9cd01df26a8b62",
+          "path": "site/src/content.config.ts"
+        },
+        {
+          "hash": "efe4dc90e718755cab779d8e41c440d81724570fce8cb7d055ced3f47a116d28",
+          "path": "site/src/content/docs/handbook/art.md"
+        },
+        {
+          "hash": "e0f596b47552fbd9036f189da08effed73f2073a673b22be0fa8101a528b7e68",
+          "path": "site/src/content/docs/handbook/getting-started.md"
+        },
+        {
+          "hash": "d9ef579c269eeb2611e45c314294563361538abc2c9ca7e653ad55e4c61381e3",
+          "path": "site/src/content/docs/handbook/index.md"
+        },
+        {
+          "hash": "9abb6f9511593493fed37038958433aac192a90e8a00ceb01ce35ff793239481",
+          "path": "site/src/content/docs/handbook/play.md"
+        },
+        {
+          "hash": "c86d20aa690257d69889e5d86f0c52b6b4da68eb077dcaae9096ef08be84d2a3",
+          "path": "site/src/content/docs/handbook/reference.md"
+        },
+        {
+          "hash": "780a4117a1e972f724db07ea11988d7dfc89a9ebf8bba663bd251e9be5e75c7c",
+          "path": "site/src/content/docs/handbook/simulation.md"
+        },
+        {
+          "hash": "4fb84a646c4d833c33f4058e1ed1775849e855c65e5adb7e45d2a633674bd603",
+          "importOrder": [
+            "site/src/styles/global.css",
+            "site/src/site-config.ts"
+          ],
+          "importsFiles": [
+            "site/src/site-config.ts",
+            "site/src/styles/global.css"
+          ],
+          "path": "site/src/pages/index.astro"
+        },
+        {
+          "constantOnly": true,
+          "hash": "199adc992c15236d4a0b96591ee400be3eda7da3da0a8c986d7107b44ef1af8a",
+          "path": "site/src/site-config.ts"
+        },
+        {
+          "hash": "29ee8df91833e694bdba973126b34a6177de4cf01dab6d9ef7d3126e8e2b67fb",
+          "path": "site/src/styles/global.css"
+        },
+        {
+          "hash": "cdb0845dea4e7835ceb5c750caa9358e03cb03132cd85c17931a9fb96299b94f",
+          "path": "site/src/styles/starlight-custom.css"
+        },
+        {
+          "hash": "b5b0a5b04a14cddd7713c5e1c82e86c79c17c2f86b170e26e9b170b3d5e01cd9",
+          "path": "site/tsconfig.json"
+        }
+      ],
+      "globs": [
+        "site/**"
+      ],
+      "importConfidence": "full",
+      "name": "site",
+      "origin": "authored",
+      "role": "code",
       "testedBy": 0,
       "unresolvedSites": 0
     },
@@ -8209,6 +8357,15 @@
         },
         {
           "dir": "",
+          "job": "coverage",
+          "programs": [
+            "cargo",
+            "mkdir"
+          ],
+          "step": "Test with coverage"
+        },
+        {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "cargo"
@@ -8349,6 +8506,22 @@
         },
         {
           "basis": "declared",
+          "name": "coverage",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
           "name": "oracle",
           "runsOn": [
             {
@@ -8419,6 +8592,7 @@
       "name": "CI",
       "permissions": [
         "contents:read",
+        "id-token:write",
         "issues:write"
       ],
       "pushes": false,
@@ -8518,6 +8692,13 @@
       ],
       "runs": [
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/assets.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/assets.rs",
@@ -8532,9 +8713,23 @@
           "via": "cargo clippy"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/harbour.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/harbour.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/landing.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8553,9 +8748,23 @@
           "via": "cargo clippy"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/placeholder.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/placeholder.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/project.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8567,9 +8776,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/seam.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/seam.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/view.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8715,9 +8938,23 @@
           "via": "cargo fmt"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/bounty.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/bounty.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/campaign.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8729,9 +8966,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/combat.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/combat.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/companion.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8743,9 +8994,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/consequences.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/consequences.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/contracts.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8757,9 +9022,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/cross_port_networks.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/cross_port_networks.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/culture.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8771,9 +9050,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/custom_captain.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/custom_captain.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/fleet.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8785,7 +9078,7 @@
           "via": "cargo test"
         },
         {
-          "job": "test",
+          "job": "coverage",
           "matched": true,
           "path": "crates/portlight-sim/src/hunting.rs",
           "runKind": "executes",
@@ -8794,7 +9087,28 @@
         {
           "job": "test",
           "matched": true,
+          "path": "crates/portlight-sim/src/hunting.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
           "path": "crates/portlight-sim/src/infrastructure.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "test",
+          "matched": true,
+          "path": "crates/portlight-sim/src/infrastructure.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/injuries.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8813,9 +9127,23 @@
           "via": "cargo clippy"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/loot.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/loot.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/memory.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8827,9 +9155,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/merchant.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/merchant.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/narrative.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8841,9 +9183,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/naval.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/naval.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/port_arrival_engine.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8855,9 +9211,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/pyrand.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/pyrand.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/save.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8869,9 +9239,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/script.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/script.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/sea_culture.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8883,9 +9267,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/session.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/session.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/skills.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8897,9 +9295,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/training.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/training.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/util.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8911,9 +9323,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/voyage.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/voyage.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/weapon_provenance.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8925,7 +9351,7 @@
           "via": "cargo test"
         },
         {
-          "job": "test",
+          "job": "coverage",
           "matched": true,
           "path": "crates/portlight-sim/src/weapon_quality.rs",
           "runKind": "executes",
@@ -8934,7 +9360,29 @@
         {
           "job": "test",
           "matched": true,
+          "path": "crates/portlight-sim/src/weapon_quality.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
           "path": "crates/portlight-sim/src/world.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "test",
+          "matched": true,
+          "path": "crates/portlight-sim/src/world.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "directory": true,
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/tests/",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -9032,6 +9480,13 @@
           "step": "Parity allowlist"
         },
         {
+          "coverage": true,
+          "files": 41,
+          "job": "coverage",
+          "runner": "cargo test",
+          "step": "Test with coverage"
+        },
+        {
           "files": 1,
           "job": "oracle",
           "runner": "python",
@@ -9083,10 +9538,154 @@
         "actions/checkout",
         "actions/setup-node",
         "actions/setup-python",
+        "codecov/codecov-action",
         "dtolnay/rust-toolchain",
-        "rustsec/audit-check"
+        "rustsec/audit-check",
+        "taiki-e/install-action"
       ],
       "usesWorkflowToken": true
+    },
+    {
+      "checksCount": 0,
+      "commands": [
+        {
+          "dir": "site",
+          "job": "build",
+          "programs": [
+            "npm"
+          ],
+          "step": "Install site dependencies"
+        },
+        {
+          "dir": "site",
+          "job": "build",
+          "programs": [
+            "npm"
+          ],
+          "step": "Build site"
+        }
+      ],
+      "elsewhere": [],
+      "file": ".github/workflows/pages.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "build",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "environment": {
+            "name": "github-pages"
+          },
+          "name": "deploy",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
+      "landings": [],
+      "mentions": [],
+      "name": "Deploy site to GitHub Pages",
+      "permissions": [
+        "contents:read",
+        "id-token:write",
+        "pages:write"
+      ],
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "site",
+          "depth": 0,
+          "files": 5
+        }
+      ],
+      "readers": [],
+      "runs": [
+        {
+          "job": "build",
+          "matched": true,
+          "path": "site/astro.config.mjs",
+          "runKind": "executes",
+          "via": "astro build"
+        },
+        {
+          "directory": true,
+          "job": "build",
+          "matched": true,
+          "path": "site/src/",
+          "runKind": "executes",
+          "via": "astro build"
+        }
+      ],
+      "runsCount": 2,
+      "secrets": [],
+      "sends": {
+        "deploysPages": true,
+        "dispatchesTo": [],
+        "opensIssues": false,
+        "opensIssuesOnFailure": false,
+        "opensPullRequests": false,
+        "publishes": false,
+        "publishesTo": [],
+        "releases": false
+      },
+      "stages": [],
+      "triggers": [
+        {
+          "branches": [
+            "main"
+          ],
+          "event": "push",
+          "paths": [
+            ".github/workflows/pages.yml",
+            "site/**"
+          ]
+        },
+        {
+          "event": "workflow_dispatch"
+        }
+      ],
+      "uses": [
+        "actions/checkout",
+        "actions/deploy-pages",
+        "actions/setup-node",
+        "actions/upload-pages-artifact"
+      ],
+      "usesWorkflowToken": false
     },
     {
       "checksCount": 0,
@@ -9259,8 +9858,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6",
-    "tracked": 655
+    "commit": "3bea25f9917fae3585f68f699456600171964817",
+    "tracked": 680
   },
   "landings": [
     {
@@ -9457,6 +10056,11 @@
         },
         {
           "by": "playtest/README.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "site/src/content/docs/handbook/getting-started.md",
           "call": "--path",
           "confidence": "text"
         }
@@ -10509,6 +11113,28 @@
           "confidence": "ast"
         }
       ]
+    },
+    {
+      "readers": [
+        {
+          "by": "site/astro.config.mjs",
+          "call": "content-collection",
+          "confidence": "ast"
+        }
+      ],
+      "target": "site/src/content/docs",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "site/astro.config.mjs",
+          "call": "autogenerate",
+          "confidence": "ast"
+        }
+      ],
+      "target": "site/src/content/docs/handbook",
+      "writers": []
     },
     {
       "readers": [

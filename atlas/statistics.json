@@ -99,7 +99,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "portlight-cli",
-      "qualifyingSourceCommits": 2,
+      "qualifyingSourceCommits": 3,
       "rebaseline": null
     },
     {
@@ -158,6 +158,38 @@
     },
     {
       "breakage": {
+        "coChangesOnly": [],
+        "collapsed": false,
+        "confidence": "low",
+        "importsAndCoChanges": [],
+        "importsOnly": []
+      },
+      "cohesion": null,
+      "cohesionDropped": false,
+      "confidence": "low",
+      "highWater": null,
+      "name": "scripts",
+      "qualifyingSourceCommits": 0,
+      "rebaseline": null
+    },
+    {
+      "breakage": {
+        "coChangesOnly": [],
+        "collapsed": false,
+        "confidence": "low",
+        "importsAndCoChanges": [],
+        "importsOnly": []
+      },
+      "cohesion": null,
+      "cohesionDropped": false,
+      "confidence": "low",
+      "highWater": null,
+      "name": "site",
+      "qualifyingSourceCommits": 1,
+      "rebaseline": null
+    },
+    {
+      "breakage": {
         "coChangesOnly": [
           "portlight-sim"
         ],
@@ -179,14 +211,29 @@
     "definition": "commits is how many commits in the window touch the file, including merges and commits dropped from coupling. lines is added plus deleted in those commits.",
     "files": [
       {
-        "commits": 33,
-        "lines": 966,
+        "commits": 34,
+        "lines": 978,
         "path": ".github/workflows/ci.yml"
       },
       {
-        "commits": 4,
-        "lines": 13,
+        "commits": 1,
+        "lines": 50,
+        "path": ".github/workflows/pages.yml"
+      },
+      {
+        "commits": 5,
+        "lines": 17,
         "path": ".gitignore"
+      },
+      {
+        "commits": 1,
+        "lines": 24,
+        "path": "CHANGELOG.md"
+      },
+      {
+        "commits": 1,
+        "lines": 21,
+        "path": "CONTRIBUTING.md"
       },
       {
         "commits": 4,
@@ -199,18 +246,33 @@
         "path": "Cargo.toml"
       },
       {
-        "commits": 1,
-        "lines": 21,
+        "commits": 2,
+        "lines": 35,
         "path": "LICENSE"
       },
       {
-        "commits": 23,
-        "lines": 330,
+        "commits": 24,
+        "lines": 582,
         "path": "README.md"
       },
       {
-        "commits": 4,
-        "lines": 258,
+        "commits": 1,
+        "lines": 26,
+        "path": "SCORECARD.md"
+      },
+      {
+        "commits": 1,
+        "lines": 52,
+        "path": "SECURITY.md"
+      },
+      {
+        "commits": 1,
+        "lines": 82,
+        "path": "SHIP_GATE.md"
+      },
+      {
+        "commits": 5,
+        "lines": 289,
         "path": "atlas/README.md"
       },
       {
@@ -219,18 +281,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 4,
-        "lines": 1190,
+        "commits": 5,
+        "lines": 1319,
         "path": "atlas/page.json"
       },
       {
-        "commits": 4,
-        "lines": 7302,
+        "commits": 5,
+        "lines": 7793,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 4,
-        "lines": 20582,
+        "commits": 5,
+        "lines": 21526,
         "path": "atlas/structure.json"
       },
       {
@@ -294,8 +356,8 @@
         "path": "crates/portlight-cli/Cargo.toml"
       },
       {
-        "commits": 5,
-        "lines": 251,
+        "commits": 6,
+        "lines": 305,
         "path": "crates/portlight-cli/src/main.rs"
       },
       {
@@ -3419,6 +3481,101 @@
         "path": "rust-toolchain.toml"
       },
       {
+        "commits": 1,
+        "lines": 14,
+        "path": "scripts/verify.ps1"
+      },
+      {
+        "commits": 1,
+        "lines": 11,
+        "path": "scripts/verify.sh"
+      },
+      {
+        "commits": 1,
+        "lines": 37,
+        "path": "site/astro.config.mjs"
+      },
+      {
+        "commits": 1,
+        "lines": 5669,
+        "path": "site/package-lock.json"
+      },
+      {
+        "commits": 1,
+        "lines": 18,
+        "path": "site/package.json"
+      },
+      {
+        "commits": 1,
+        "lines": 5,
+        "path": "site/public/favicon.svg"
+      },
+      {
+        "commits": 1,
+        "lines": 0,
+        "path": "site/src/assets/logo.png"
+      },
+      {
+        "commits": 1,
+        "lines": 7,
+        "path": "site/src/content.config.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 26,
+        "path": "site/src/content/docs/handbook/art.md"
+      },
+      {
+        "commits": 1,
+        "lines": 40,
+        "path": "site/src/content/docs/handbook/getting-started.md"
+      },
+      {
+        "commits": 1,
+        "lines": 30,
+        "path": "site/src/content/docs/handbook/index.md"
+      },
+      {
+        "commits": 1,
+        "lines": 40,
+        "path": "site/src/content/docs/handbook/play.md"
+      },
+      {
+        "commits": 1,
+        "lines": 40,
+        "path": "site/src/content/docs/handbook/reference.md"
+      },
+      {
+        "commits": 1,
+        "lines": 42,
+        "path": "site/src/content/docs/handbook/simulation.md"
+      },
+      {
+        "commits": 1,
+        "lines": 35,
+        "path": "site/src/pages/index.astro"
+      },
+      {
+        "commits": 1,
+        "lines": 74,
+        "path": "site/src/site-config.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 3,
+        "path": "site/src/styles/global.css"
+      },
+      {
+        "commits": 1,
+        "lines": 5,
+        "path": "site/src/styles/starlight-custom.css"
+      },
+      {
+        "commits": 1,
+        "lines": 5,
+        "path": "site/tsconfig.json"
+      },
+      {
         "commits": 7,
         "lines": 1478,
         "path": "tools/build_manifest_pb002.py"
@@ -3484,23 +3641,16 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-10-09T21:09:25.841Z",
+  "generatedAt": "2026-10-09T21:18:10.765Z",
   "generatedFrom": {
-    "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6"
+    "commit": "3bea25f9917fae3585f68f699456600171964817"
   },
   "pairs": [
     {
       "a": ".github/workflows/ci.yml",
       "b": "crates/portlight-godot/src/game.rs",
-      "either": 41,
+      "either": 42,
       "shared": 21,
-      "strength": 0.512195
-    },
-    {
-      "a": "README.md",
-      "b": "docs/screenshots/chart-1280.png",
-      "either": 22,
-      "shared": 11,
       "strength": 0.5
     },
     {
@@ -3794,16 +3944,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-10-09T11:35:55-07:00",
-    "inScopeFiles": 660,
+    "headDate": "2026-10-09T17:12:03-04:00",
+    "inScopeFiles": 685,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 65,
+    "qualifyingCommits": 66,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-12T18:35:55.000Z",
+    "since": "2026-04-12T21:12:03.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",
