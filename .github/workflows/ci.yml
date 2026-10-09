@@ -884,3 +884,15 @@ jobs:
           cmp_committed quay-paving-z072.png /tmp/seam-shots/quay-paving-z072.png
           cmp_committed flat-deck-z100.png /tmp/seam-shots/flat-deck-z100.png
           cmp_committed flat-deck-z072.png /tmp/seam-shots/flat-deck-z072.png
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

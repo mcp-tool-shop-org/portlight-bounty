@@ -56,8 +56,8 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 58,
-      "changed": 37,
+      "added": 18,
+      "changed": 69,
       "moved": 0,
       "parts": 9,
       "removed": 0
@@ -65,100 +65,59 @@
     "items": [
       {
         "kind": "door",
-        "sentence": "CI now also runs crates/portlight-godot/src/contracts_screen.rs, crates/portlight-godot/src/day_report.rs, crates/portlight-godot/src/harbour_screen.rs and 3 more.",
+        "sentence": "CI's pull request trigger now also names `**/*.md` and `docs/**`.",
         "subjects": [
-          ".github/workflows/ci.yml",
-          "crates/portlight-godot/src/contracts_screen.rs",
-          "crates/portlight-godot/src/day_report.rs",
-          "crates/portlight-godot/src/harbour_screen.rs",
-          "crates/portlight-godot/src/hunt_screen.rs",
-          "crates/portlight-godot/src/journal_screen.rs",
+          ".github/workflows/ci.yml"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "CI's push trigger now also names `**/*.md`, `docs/**` and `main`.",
+        "subjects": [
+          ".github/workflows/ci.yml"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "CI now also starts by hand.",
+        "subjects": [
+          ".github/workflows/ci.yml"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "And 1 more change to a door.",
+        "subjects": []
+      },
+      {
+        "kind": "landing",
+        "sentence": "crates/portlight-godot/src/game.rs is now read by crates/portlight-godot/src/playtest.rs.",
+        "subjects": [
+          "crates/portlight-godot/src/game.rs",
           "crates/portlight-godot/src/playtest.rs"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "godot/ is now also read by docs/playtest/playtest-bridge-consult-brief.md.",
+        "sentence": "godot/ is now also read by playtest/README.md.",
         "subjects": [
           "godot/",
-          "docs/playtest/playtest-bridge-consult-brief.md"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "godot/assets/landing/props/barrel_1x1/beauty.png is now read by godot/assets/landing/MANIFEST.json.",
-        "subjects": [
-          "godot/assets/landing/props/barrel_1x1/beauty.png",
-          "godot/assets/landing/MANIFEST.json"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "godot/assets/landing/props/bollard_1x1/beauty.png is now read by godot/assets/landing/MANIFEST.json.",
-        "subjects": [
-          "godot/assets/landing/props/bollard_1x1/beauty.png",
-          "godot/assets/landing/MANIFEST.json"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "And 3 more new writers and readers of places.",
-        "subjects": []
-      },
-      {
-        "kind": "unassigned",
-        "sentence": "playtest/README.md is new and belongs to no part, so atlas check fails on it against the previous map.",
-        "subjects": [
           "playtest/README.md"
         ]
       },
       {
-        "kind": "unassigned",
-        "sentence": "playtest/_plumbing-fixture.playtest.json is new and belongs to no part, so atlas check fails on it against the previous map.",
-        "subjects": [
-          "playtest/_plumbing-fixture.playtest.json"
-        ]
-      },
-      {
-        "kind": "unassigned",
-        "sentence": "playtest/portlight-godot.playtest.json is new and belongs to no part, so atlas check fails on it against the previous map.",
-        "subjects": [
-          "playtest/portlight-godot.playtest.json"
-        ]
-      },
-      {
-        "kind": "unassigned",
-        "sentence": "And 1 more new file that belongs to no part.",
-        "subjects": []
-      },
-      {
         "kind": "counts",
-        "sentence": "58 files added and 37 changed content, across 9 parts.",
+        "sentence": "18 files added and 69 changed content, across 9 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "2d3d8b32b7806b547ea101fb28e0ddb0388dcd26",
-      "generatedAt": "2026-10-05T15:17:17.957Z"
+      "commit": "a28530431382b01f707f47d251824a750659c6e9",
+      "generatedAt": "2026-10-05T20:29:39.557Z"
     },
     "unchanged": false
   },
   "changesTogether": [
-    {
-      "a": "crates/portlight-sim/src/session.rs",
-      "b": "tools/parity/oracle.py",
-      "either": 11,
-      "partLabels": [
-        "portlight-sim",
-        "tools"
-      ],
-      "parts": [
-        "portlight-sim",
-        "tools"
-      ],
-      "relation": "none",
-      "shared": 9
-    },
     {
       "a": "crates/portlight-sim/src/script.rs",
       "b": "tools/parity/oracle.py",
@@ -218,16 +177,31 @@
       ],
       "relation": "inside",
       "shared": 5
+    },
+    {
+      "a": "crates/portlight-sim/src/model.rs",
+      "b": "crates/portlight-sim/src/script.rs",
+      "either": 7,
+      "partLabels": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "parts": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "relation": "inside",
+      "shared": 5
     }
   ],
   "changesTogetherNote": [
     "Confidence is low: fewer than 25 source files reach 10 revisions in the window.",
-    "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
+    "Window: 180 days; a pair counts from 3 shared commits, since 8 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "a28530431382b01f707f47d251824a750659c6e9",
+  "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6",
   "defaultBranch": "main",
-  "derived": "10 parts, mostly Rust (72 files), Python (12), GDScript (1) and JavaScript (1). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
+  "derived": "10 parts, mostly Rust (75 files), Python (12), GDScript (1) and JavaScript (1). Work enters through 4 doors; the busiest is CI, which reaches 6 parts. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
     {
       "checks": [
@@ -266,7 +240,7 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 17
+          "files": 20
         },
         {
           "boundary": "portlight-sim",
@@ -296,14 +270,18 @@
         "crates/portlight-chart/src/project.rs",
         "crates/portlight-chart/src/seam.rs",
         "crates/portlight-chart/src/view.rs",
+        "crates/portlight-godot/src/contract_strip.rs",
         "crates/portlight-godot/src/contracts_screen.rs",
         "crates/portlight-godot/src/day_report.rs",
+        "crates/portlight-godot/src/departure_check.rs",
         "crates/portlight-godot/src/encounter_screen.rs",
+        "crates/portlight-godot/src/game.rs",
         "crates/portlight-godot/src/harbour.rs",
         "crates/portlight-godot/src/harbour_screen.rs",
         "crates/portlight-godot/src/hunt_screen.rs",
         "crates/portlight-godot/src/journal_screen.rs",
         "crates/portlight-godot/src/logic.rs",
+        "crates/portlight-godot/src/market.rs",
         "crates/portlight-godot/src/playtest.rs",
         "crates/portlight-godot/tests/",
         "crates/portlight-sim/src/bounty.rs",
@@ -339,13 +317,14 @@
         "crates/portlight-sim/src/world.rs",
         "crates/portlight-sim/tests/"
       ],
-      "runsCount": 58,
-      "runsMore": 57,
+      "runsCount": 62,
+      "runsMore": 61,
       "sends": [],
       "stages": [],
       "triggers": [
-        "on a pull request",
-        "on a push"
+        "on a pull request except when only **/*.md or docs/** change",
+        "on a push to main except when only **/*.md or docs/** change",
+        "or by hand"
       ],
       "untracked": "portlight-newgame-smoke/, which is not tracked"
     },
@@ -492,7 +471,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-05T20:29:39.557Z",
+  "generatedAt": "2026-10-09T21:09:25.841Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "1 write and 14 reads use paths built at run time and are not named here.",
@@ -557,12 +536,12 @@
   "startReason": "This path follows gen_placeholders (a command built from crates/portlight-chart, which nothing ships) from its entry, since CI runs only tests, scripts that import no code here and checks.",
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 53,
+  "testFiles": 57,
   "testedBy": {
     "godot": 0,
     "portlight-chart": 7,
     "portlight-cli": 0,
-    "portlight-godot": 9,
+    "portlight-godot": 13,
     "portlight-sim": 34,
     "tools": 2
   },

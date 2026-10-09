@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "78742ad7cc386a73b4d848a6c5e4c5a3a0a7839376d8015ffcf2662515eeb0db",
+          "hash": "e16d0867afb6adb246272fe283c61c849e52ffa763ab695e2baa0e7f44850fa1",
           "path": ".github/workflows/ci.yml"
         }
       ],
@@ -36,11 +36,11 @@
           "path": "docs/BUILD-CHECK-WIN-MAC.md"
         },
         {
-          "hash": "2ef1def631763cbbe243d0379f93269cd2bf5e98ce9a8f21ede26df33cfc2ef1",
+          "hash": "4b7b8ddd32fa9f499ddbc5dadd126d52d1bfe4ca75a1534392025ae9eeece4d3",
           "path": "docs/HANDOFF-GROK-BOTS.md"
         },
         {
-          "hash": "efffbde47842819738dc3b1b6451f225fe42e27cce319ff5a7da6a1b75f07e10",
+          "hash": "bd3c163d08a9c5908c33506a21fabc2ed6f5f589c503cb1e6be8f4c5e82840ad",
           "path": "docs/PORTING-PLAN.md"
         },
         {
@@ -52,23 +52,23 @@
           "path": "docs/playtest/fix-a-acceptance-player.md"
         },
         {
-          "hash": "b6de0268605e1a86ca621277b722a8ab2c6ab0075dc928b3d3f20343fa575fc8",
+          "hash": "e711e1b07b45638d34a4113525b486a6e551f215d1f1f801a442d37182a14993",
           "path": "docs/playtest/playtest-bridge-consult-brief.md"
         },
         {
-          "hash": "9fed8b0ef1e0293f15e52cd79e9faf1049c65a04b7bf2a71d7eee2762fb57c02",
+          "hash": "bc35f9221d8b9d1a054ff0f9f541f81d3977fb3f6b56fbbb38348f58dd3ffd5f",
           "path": "docs/playtest/playtest-contract-strip-criteria-STUB.md"
         },
         {
-          "hash": "655300ad7321d945df3cbab1bcbdd6ac621ff0bf121ca15760e7f5345a1bb2ac",
+          "hash": "125196fdcc2a1223fac2b5c6582786da56a16548a105446d3b1ef5fc32884eb9",
           "path": "docs/playtest/playtest-criteria-draft.md"
         },
         {
-          "hash": "d2b073a3c490b3ea1e5182764aa0a21e35540cf50ba6315d05fbfd6305c06e57",
+          "hash": "2910926549faecc0b55c5b580fdcd0cc5c0b45e984b801dafbe0f64071be304f",
           "path": "docs/playtest/playtest-escape-undock-criteria.md"
         },
         {
-          "hash": "a8894e099d8fc5a7b861ce5bd3c159553b7862ff3de7e6f6380caff7bfa40226",
+          "hash": "10995a34861495cf3b256be3c4f196c1bd8f3076cc15f2fee1d8216779b960d9",
           "path": "docs/playtest/playtest-harness-status.md"
         },
         {
@@ -76,11 +76,11 @@
           "path": "docs/playtest/playtest-mike-runbook.md"
         },
         {
-          "hash": "b11a969d51b48e7cef4c8cd95816201176c0b99a608c1539c310bc572d79ed29",
+          "hash": "cfd78c7816e18b0ab8924a36128ca4aa4866b61ae5d71c18eb612ddf4a6d15db",
           "path": "docs/playtest/playtest-pier-after-fix-a-STUB.md"
         },
         {
-          "hash": "e9ef5f7e29734d073549f9819c94bc08f207d607c83b672661d9acafd87dd698",
+          "hash": "2ab88986a9dbecaea1af78e0c287af5e181bd48a906b54fe716bff41a5b4f318",
           "path": "docs/playtest/playtest-plan-portable-for-mike.md"
         },
         {
@@ -88,75 +88,119 @@
           "path": "docs/playtest/playtest-portlight-v0.playtest.json"
         },
         {
+          "hash": "04d54029c9514f4e2bc3981c8f9b50f52d1ff91c5966cd18b25e083c869aa4e9",
+          "path": "docs/playtest/playtest-rpc-choice-ids.md"
+        },
+        {
           "hash": "95aaba6a2e2fcbe2d1bcbeba83f0cb2593b227b4ec0a555cec99f8c65ca62f6e",
           "path": "docs/playtest/playtest-seats-README.md"
         },
         {
-          "hash": "2c27c177aa46e69dbc86d60a6544f52281c93350a459fc7a13fedd8a8863af8d",
+          "hash": "005d35d5265e2fcb089989c7d05aafdc6080262bd930a4a7d13ff29bad850f45",
           "path": "docs/screenshots/chart-1280.png"
         },
         {
-          "hash": "2a183255860d9d6602f32e663ed574a5aa02ce45ab107183a6749b818c055917",
+          "hash": "7300b1ec5236f15c2c7c9d46b3f88d7b77aa846ef5a4ac24a5ab9b1a010f91ba",
+          "path": "docs/screenshots/chart-at-sea-first.png"
+        },
+        {
+          "hash": "a711bc758a33d5efe23ba02eccd32922082097891dd74a81709f3bdc34685fc2",
           "path": "docs/screenshots/chart-cutter-f7.png"
         },
         {
-          "hash": "b8a091ce57514077a2e0770a34c975ced8ed71650ca645d1c50c8897d20b67a7",
+          "hash": "1dcb4d133e0b97b646d0fadbc45bf9b8d3ac3b9c05b55d2ab5c881ef4be89d58",
+          "path": "docs/screenshots/contract-strip-active.png"
+        },
+        {
+          "hash": "3ad34a67bd5f7b53565e2bc7e25aa5124a2cd44c67de52f8268ad30913a4f9e2",
+          "path": "docs/screenshots/contract-strip-urgent.png"
+        },
+        {
+          "hash": "b0fad6aaadd88def18bb53f1a06d1a72494ee113650d095f23b76b082b04a19b",
           "path": "docs/screenshots/contracts-active.png"
         },
         {
-          "hash": "87d74263928fccc16d8fed9ac7d6b0930f89628664890e65c3f908c7d5080089",
+          "hash": "310eb77393a57ddb175b1587299e4728c0f7efb015e5a83645377e14ac15c484",
           "path": "docs/screenshots/contracts-board.png"
         },
         {
-          "hash": "a02a75b9191f5d1274d69a0089376c70a24a5bb7aab7d715df995a18799c3380",
+          "hash": "d0932e1a43f36dba95f8fb1e416ecb647766ba467cf7a327c864108563c0db50",
           "path": "docs/screenshots/contracts-empty.png"
         },
         {
-          "hash": "2c2ca15ac921a4ebee8b56a1b5c12380fd986d9ed151387bd62ba1be1dec27cc",
+          "hash": "6dfbf1570ed3e4104186b2e2029dfe9a677ee40f280c9bf8b6041aa279579539",
           "path": "docs/screenshots/crew-companions.png"
         },
         {
-          "hash": "89d6ef87557d017cb82f4da2cb461baa44add1b71ac900a4a3744974dc959a4e",
+          "hash": "c4064aaec951501eec90171487e181991b070bc55203e670404728ae9fe0f32f",
           "path": "docs/screenshots/crew-provisions.png"
         },
         {
-          "hash": "8efa1a0faeb9ecba4ae57b15a18d5268f26dd73d3b81178349f007fc7b06dd78",
+          "hash": "b6354c0da3f4d4b4432b8f2e234323b3b4c786b06db4b9e2c66561367c7ea1ca",
           "path": "docs/screenshots/crew-roster.png"
         },
         {
-          "hash": "fe5e106a46d2565935a16343bf0e69aec4acab8b8090046224d765153048d7fc",
+          "hash": "e170ba252be636bdd8ec3ccc608203307685728388456664c14e15168f4ee0b7",
           "path": "docs/screenshots/crew-training.png"
         },
         {
-          "hash": "36a1d38ba1c3724a6bdbc1b7b24625171c4dc1aad53ae55480e6ddfc45ad8311",
+          "hash": "e5931daa0b5f1446c4d72b037538fd3a63d7b223f20c24265f8ac3699e18faf4",
+          "path": "docs/screenshots/day-report-arrival.png"
+        },
+        {
+          "hash": "80c9dcefd94ec4455019c028a7197ed47d8e925751650adca31453774a86bf2b",
           "path": "docs/screenshots/day-report-deadline.png"
         },
         {
-          "hash": "06d9537e2924022f93d9e90e67fe16d0b20eebb3e8fa01fde49863cefac2ff66",
+          "hash": "cc9302e1fe0bd37779516eba62b0d6244190758b45e3e268e71afe42154c2cc0",
+          "path": "docs/screenshots/day-report-expired.png"
+        },
+        {
+          "hash": "f100ccedb3185de637efb3c9b41298428fe6c47ef49d958d7a2466e803c7f9cb",
           "path": "docs/screenshots/day-report-full.png"
         },
         {
-          "hash": "884fd99d3add3c3df98b1018d32a66ce258e340c32cb137532387c168986b950",
+          "hash": "2d5518f889e9e4b4d41bf6744924d9e6b7d5c5d5c905d7d1f4c6264723b8fd2b",
+          "path": "docs/screenshots/day-report-over-screen.png"
+        },
+        {
+          "hash": "07655fae4048b32337a946243f13e98e4f78bec8a0d97d4bc652d7239308a4e5",
+          "path": "docs/screenshots/day-report-week.png"
+        },
+        {
+          "hash": "1d4adb5273f06d64da85f3b81ea75ec61f2ebc0fe976e17c183de0eebedf3a93",
+          "path": "docs/screenshots/departure-check-worst.png"
+        },
+        {
+          "hash": "82add96dcf1312ebc1814461cb2f26b8c2cb8d6b693fbba1c731183fd01ddd9a",
+          "path": "docs/screenshots/departure-check.png"
+        },
+        {
+          "hash": "c638b8432fb5adcd6846c81b011accb4ad3e7bb6ed3e9a9ae116ddb317060413",
           "path": "docs/screenshots/encounter-approach.png"
         },
         {
-          "hash": "a4fb3b0ac98c01153b26792747b40cbcfe918ad04f43b12e3afd7fe6596bff33",
+          "hash": "a0116184b426fd3a940d2deb5374b14f3d65d2e9d8d9b832cad5d52e29962dc4",
           "path": "docs/screenshots/encounter-boarding.png"
         },
         {
-          "hash": "387b1d61f1c0fa25768a959624b345601e2449e5ceed9af4c176e96c1a246027",
+          "hash": "da5bc09c9bef2f1293b40b355d01777953356cb6dfb3a88e8e83ec036e0924f6",
           "path": "docs/screenshots/encounter-fight.png"
         },
         {
-          "hash": "27f45302e02f8f23e81dc4b81f6a22e0d33861664a9f6d5c0ff87e0a2d77bc18",
+          "hash": "30502fc05cb9748e7bd0a292d6d0a088cd6ea89bddbfed28b08836eea145de72",
           "path": "docs/screenshots/encounter-galleon.png"
         },
         {
-          "hash": "c1cdd56f0549d3ecd0ada3b278e9d1a140fdab66a2026d75c34d14bf4854ee80",
+          "hash": "2473fb14b9b44b36d3d525e01ecfd94b0b77457c21bbe1b14e4b810c6a7040e8",
+          "path": "docs/screenshots/encounter-loss-outcome.png"
+        },
+        {
+          "hash": "8463c0ea2c33da0ddd61b44590e259bff8ab362e02fe35b1d5cb750850df061b",
           "path": "docs/screenshots/encounter-naval.png"
         },
         {
-          "hash": "8127c3a5ef392e7c8aeb62431f117e29abf9e4b88fd590552fe942a2f9885d44",
+          "hash": "76b5916dda5fca131e21aef28c80f83ea1e5fc11d35dba17c7c9ce372a040e55",
           "path": "docs/screenshots/encounter-outcome.png"
         },
         {
@@ -168,12 +212,16 @@
           "path": "docs/screenshots/flat-deck-z100.png"
         },
         {
-          "hash": "ccc4ace09dc04cb3db15506d8309b6e7bd75d6e4ff4352347b13dfaa9764a5c4",
+          "hash": "056970f3865ffda33c08a25f590b25b1b6f15118e946ecc08bd28cf902239354",
           "path": "docs/screenshots/harbour-broker.png"
         },
         {
-          "hash": "e80a6cc18748268dd034f014ff9f5724fab7ce54af2b0943d1a06afe0f5a9715",
+          "hash": "e8fbc223a0a43253ac61576aba33567906039b4d7114d5870a35bd64b2626f9f",
           "path": "docs/screenshots/harbour-finance.png"
+        },
+        {
+          "hash": "4c0f46ca9493856391bb27e8c03142163eb7ce5bde3d7928535123410f79d181",
+          "path": "docs/screenshots/harbour-insurance.png"
         },
         {
           "hash": "cd767ceb7b4040c96cf977e5d5b65d874fe75246bae13f2b3cb3786b110c8117",
@@ -188,19 +236,23 @@
           "path": "docs/screenshots/harbour-seam-z100.png"
         },
         {
-          "hash": "18e868a02c914f11ce43bbbaa01a570c14c6bd19820044167e517b9d879a90a9",
+          "hash": "e6d6769e2bc3da98d238fac2687d6389300e13e438554a15c84941853faf0fe5",
           "path": "docs/screenshots/harbour-warehouse.png"
         },
         {
-          "hash": "c4687b0edb1139c6c356a91d6bf7957b74259fca232dd0af5007d3d2e3935dd6",
+          "hash": "8b8e85b96029a783a902563526e5e4d4e5602af1997285ea574fdfc8165205af",
           "path": "docs/screenshots/hunt-active.png"
         },
         {
-          "hash": "05ba539a1b8f0b020e35af42e3864dd5ad0933ca725c0d2909379710da853522",
+          "hash": "e60ad4ed7b76b2d8a97cd6abc402d24a64debb7fa689fffb4b9cac56996db557",
           "path": "docs/screenshots/hunt-board.png"
         },
         {
-          "hash": "0dd0a92f7883c35e6377bbd4ad9cd68bac96f8b48fe25a05352c1a98fb8ac5ae",
+          "hash": "c6354b7705cfa25b779fef860ef840b21ceac262f57acce594e7cad5260bcbe7",
+          "path": "docs/screenshots/hunt-confirm.png"
+        },
+        {
+          "hash": "80c4127dff01e3770a7e2380f1d07ca49630661dfff076102e423c29580632d3",
           "path": "docs/screenshots/hunt-forage.png"
         },
         {
@@ -216,6 +268,14 @@
           "path": "docs/screenshots/journal-victory.png"
         },
         {
+          "hash": "63e86a3761a3183f88c4fa97b63953c0d899ccdc5e902ed3736aa9dec34c44fe",
+          "path": "docs/screenshots/market-contract-paid-more.png"
+        },
+        {
+          "hash": "321f86ddd3061ebab894f76194b18a3d87aa6b33e6347ad493c752db3768fd28",
+          "path": "docs/screenshots/market-contract-paid.png"
+        },
+        {
           "hash": "bbad62767808ab40354d917bc15c5cc5a0b20e75afefbdab141bcfdeb7c72092",
           "path": "docs/screenshots/newgame-captains.png"
         },
@@ -228,7 +288,7 @@
           "path": "docs/screenshots/newgame-load.png"
         },
         {
-          "hash": "dbf0a36df45bd56e1fa23fa3ba6f6fc03553f2dfd197019057d1551785996a9e",
+          "hash": "afa5288f9aca2d4889665ca4fc46eaa8b8d9d63ac480c0ff815bea7de5bbecd6",
           "path": "docs/screenshots/newgame-save.png"
         },
         {
@@ -244,15 +304,15 @@
           "path": "docs/screenshots/quay-paving-z100.png"
         },
         {
-          "hash": "bb9d3f4b2f4f9d5a0d52dd9eaf5df6ad77c4cb4a6f3726796a737106041df9db",
+          "hash": "01043fc473a0473f4472ee5f1ff0387ca93e7a46f72be7454448c216a396da4e",
           "path": "docs/screenshots/shipyard-flagship.png"
         },
         {
-          "hash": "d464b93f5c9120cd736875353316428f04bd1afe2eff6ed87ef575a176870a6b",
+          "hash": "0ac73ed9738b7ea9cd54af0b51e7ff8fe15f69c3ed34753a70907117801efabd",
           "path": "docs/screenshots/shipyard-fleet.png"
         },
         {
-          "hash": "772cffa61a749116e18e19552429818f58c3be026dc5757e841c0d026f86f22a",
+          "hash": "c4182d3b6551d4f4ef051f75ea923d923930a100eadafe9f6de4bae6739770d7",
           "path": "docs/screenshots/shipyard-yard.png"
         }
       ],
@@ -934,7 +994,7 @@
           "path": "godot/icon.svg.import"
         },
         {
-          "hash": "1396bbc511e7181938598ea04db86f807b1fefc014cd9ff3f1a931317f1009f0",
+          "hash": "17e10b1718476ff71bf914291d65c0e50cdf825441c82478599fefaa49a42e4a",
           "path": "godot/playtest_bridge.gd"
         },
         {
@@ -973,7 +1033,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "9e78a89d0d1ea58d235c9b0840b79093b94b579ff314d6f8fc5374b3ad3730a6",
+          "hash": "9369145a28c12edb63a2e07759bbd8182a3f198348527b44cbc4e4b8cf169229",
           "path": "parity/expected_divergences.json"
         },
         {
@@ -1093,11 +1153,11 @@
           "path": "parity/golden/bounty_board.json"
         },
         {
-          "hash": "6ae73a58fe2d11c525501d0291883bc64e7d33c341d368ae40e44a91bc750e85",
+          "hash": "b50594d0f97c8802b9f89c1c481ab01bea0f545663af89d08a45d423a7677220",
           "path": "parity/golden/bounty_claim.json"
         },
         {
-          "hash": "72c5bf439939bc4b8eee2fe04f030b454a5907abf05b172dc9343d6ecdb2b1a8",
+          "hash": "0d3cf8860bef9278076837d0060f172856313d859d2e5aee83f1e0abbafe9159",
           "path": "parity/golden/bounty_claim_sail.json"
         },
         {
@@ -1485,7 +1545,7 @@
           "path": "parity/golden/inspection_rep.json"
         },
         {
-          "hash": "caaf31d2dbc533bc227278a170487d0df086b19c9b55c0828d904a88431adde0",
+          "hash": "638c0ce8f0f6cfc07268d7431dcf041f8220262c2a9d18124ee300b072fcf5a0",
           "path": "parity/golden/insurance_claim.json"
         },
         {
@@ -2258,7 +2318,7 @@
             "ship_draw",
             "water_variant"
           ],
-          "hash": "765f6fa8d5889b9acd2c7543b96a1c9e6b67e0e06dad02d3e92b62324e764320",
+          "hash": "954bf64ce9b51471a26da8b388dba6e4812db4d1282cf767c5a85d4224c97a71",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-chart/src/project.rs"
@@ -2357,7 +2417,7 @@
               "line": 496
             }
           ],
-          "hash": "c287886d009e0957087e7b2cad32f3c11d7b9022f8093b6411dcc5dc2ce273b5",
+          "hash": "d22ef6196c4fb40b926b565f38f0be1468a7d4449f0f00244d8ae7f87cc84a7f",
           "importOrder": [
             "crates/portlight-chart/src/cover.rs",
             "crates/portlight-chart/src/project.rs",
@@ -2437,7 +2497,7 @@
             "seam_flat_deck",
             "seam_interior_vertex"
           ],
-          "hash": "674fe3017a0267a255ee2ff8fa392c5aacdeb312335ae06379f345a26aa8e9fb",
+          "hash": "d21f4663b76f49251eeb166861e5bef52511c3314aa28b5c5847aad77f987d2d",
           "importsFiles": [
             "crates/portlight-chart/src/harbour.rs",
             "crates/portlight-chart/src/project.rs"
@@ -2521,35 +2581,35 @@
             {
               "in": "script_cmd",
               "kind": "match-err",
-              "line": 115
+              "line": 121
             },
             {
               "in": "script_cmd",
               "kind": "match-err",
-              "line": 124
+              "line": 130
             },
             {
               "in": "script_cmd",
               "kind": "match-err",
-              "line": 134
+              "line": 140
             },
             {
               "in": "load_cmd",
               "kind": "match-err",
-              "line": 157
+              "line": 163
             },
             {
               "in": "load_cmd",
               "kind": "match-err",
-              "line": 166
+              "line": 172
             },
             {
               "in": "new_cmd",
               "kind": "match-err",
-              "line": 203
+              "line": 209
             }
           ],
-          "hash": "0f15fe0ea87f017e4c4af7c339392244bdca6e833cbfb69266b57c7154bdfa62",
+          "hash": "3c1871a79f02ec9862c602270c934e6c96f8e4bae877682da12f87d6f632ec5a",
           "importsFiles": [
             "crates/portlight-sim/src/lib.rs"
           ],
@@ -2558,7 +2618,7 @@
             {
               "calls": [
                 {
-                  "line": 122,
+                  "line": 128,
                   "name": "run_and_save",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2566,7 +2626,7 @@
                   "via": "script_cmd"
                 },
                 {
-                  "line": 130,
+                  "line": 136,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2574,7 +2634,7 @@
                   "via": "script_cmd"
                 },
                 {
-                  "line": 151,
+                  "line": 157,
                   "name": "load_snapshot",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2582,7 +2642,7 @@
                   "via": "load_cmd"
                 },
                 {
-                  "line": 201,
+                  "line": 207,
                   "name": "new_game",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2591,7 +2651,7 @@
                 },
                 {
                   "branch": "json",
-                  "line": 210,
+                  "line": 216,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2607,14 +2667,14 @@
             {
               "calls": [
                 {
-                  "line": 122,
+                  "line": 128,
                   "name": "run_and_save",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
                   }
                 },
                 {
-                  "line": 130,
+                  "line": 136,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2629,7 +2689,7 @@
             {
               "calls": [
                 {
-                  "line": 151,
+                  "line": 157,
                   "name": "load_snapshot",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2644,7 +2704,7 @@
             {
               "calls": [
                 {
-                  "line": 201,
+                  "line": 207,
                   "name": "new_game",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2652,7 +2712,7 @@
                 },
                 {
                   "branch": "json",
-                  "line": 210,
+                  "line": 216,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -2704,28 +2764,77 @@
         },
         {
           "exports": [
+            "apply_document",
+            "build_contract_strip",
+            "build_document",
+            "build_document_from_active",
+            "overlay_text",
+            "overlay_visible",
+            "place_strip",
+            "set_visible"
+          ],
+          "hash": "2365aa358c14ddf06cd01568acd2a381d046af36f1b53aa252d94fe596d04dc2",
+          "importOrder": [
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/departure_check.rs",
+            "crates/portlight-godot/src/logic.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/departure_check.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs"
+          ],
+          "path": "crates/portlight-godot/src/contract_strip.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
+            "abandon_notice",
             "abandon_prompt",
+            "aboard_clause",
             "ascii_sentence",
+            "availability_tag",
             "body_line",
             "build_contracts_screen",
             "can_complete",
             "days_left_text",
+            "failure_terms",
+            "good_display_name",
+            "is_failure_notice",
             "meta_color",
+            "notice_color",
+            "notice_label",
+            "outcome_line",
             "outcome_notice",
+            "outcome_tail",
+            "outcome_terms",
+            "port_display_name",
             "progress_text",
             "recent_line",
             "requirement_text",
             "reward_text",
             "section_label"
           ],
-          "hash": "795aee83bc4375dedf156b81f230878fe8945efb6b240f7e905c7c665f197900",
+          "hash": "d0b784a3f90fcaa2055aa36e2d7f4ff28ae44673928dbfc2722517b9aee2f75a",
           "importOrder": [
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/lib.rs"
           ],
           "importsFiles": [
+            "crates/portlight-godot/src/day_report.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/model.rs"
           ],
@@ -2747,23 +2856,60 @@
         {
           "exports": [
             "apply_document",
+            "arrival_contract_lines",
+            "arrival_row_budget",
+            "arrival_row_cost",
             "bounty_lines",
             "build_day_report_screen",
             "build_document",
+            "build_footer",
             "cap_sections",
+            "cap_sections_pinned",
+            "card_fit_error",
             "claimable_ids",
             "deadline_timing",
+            "expired_line",
+            "failure_lines",
+            "footer_body_cost",
+            "footer_should_show",
+            "footer_text",
+            "guarantee_paid",
+            "guarantee_total",
             "heal_days_left",
+            "is_failure_line",
+            "keyboard_free",
+            "keyboard_trapped",
+            "label_color",
+            "label_copy",
+            "next_facts",
+            "next_line",
             "overlay_text",
             "overlay_visible",
             "place_card",
+            "price_line_text",
             "price_lines",
+            "price_move_is_notable",
+            "rank_visit_movers",
+            "scrim_shown",
+            "separator_wrap",
+            "separator_wrap_lines",
             "set_open",
+            "set_scrim",
+            "set_separator_copy",
+            "smoke_arrival_document",
             "smoke_deadline_document",
+            "smoke_expired_document",
+            "smoke_expired_outcome",
             "smoke_full_document",
-            "snapshot_docked_prices"
+            "snapshot_docked_prices",
+            "visit_mover_lines",
+            "watch_separator_wrap",
+            "week_line",
+            "week_sample",
+            "yield_arrival_movers",
+            "yield_arrival_rows"
           ],
-          "hash": "7f38448787a5dd209824757f791c3938c316b39f83911533922d45475bc58e56",
+          "hash": "adf4065226a15f53c74f57ab5145187984081db0e566b59eacef1743e02b29ab",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/model.rs",
@@ -2789,7 +2935,64 @@
         },
         {
           "exports": [
+            "apply_document",
+            "build_departure_check",
+            "build_departure_screen",
+            "button_texts",
+            "context_line",
+            "crew_short_line",
+            "departure_document",
+            "departure_facts",
+            "gate_allows_panel",
+            "line_texts",
+            "more_text",
+            "overlay_visible",
+            "panel_fit_error",
+            "place_panel",
+            "set_open",
+            "title_names_port",
+            "worst_case_document"
+          ],
+          "hash": "ec73ded0c76026d27ba204c7447fda787edafc5c89ad557ea604b9829a70a63e",
+          "importOrder": [
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/economy.rs",
+            "crates/portlight-sim/src/ship.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-godot/src/game.rs",
+            "crates/portlight-chart/src/lib.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-chart/src/lib.rs",
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/game.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/content.rs",
+            "crates/portlight-sim/src/economy.rs",
+            "crates/portlight-sim/src/lib.rs",
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/session.rs",
+            "crates/portlight-sim/src/ship.rs"
+          ],
+          "path": "crates/portlight-godot/src/departure_check.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
+            "add_capture_crew",
             "build_encounter_screen",
+            "capture_crew_text",
+            "choice_cell",
+            "choice_column_width",
+            "even_choice_columns",
             "fill_parent",
             "placeholder_minimum_size",
             "set_delta_line",
@@ -2797,7 +3000,7 @@
             "side_column",
             "style_encounter_button"
           ],
-          "hash": "ed7aa0de93138242550da5dd8acdcc9db62a5ce91cce0153cec1ac6db5192d40",
+          "hash": "8ace80962589ef9fb6936771df7d23e0faa3cb5774fa8845d1080667c654e636",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/logic.rs"
@@ -2806,354 +3009,368 @@
           "testsInside": true
         },
         {
+          "exports": [
+            "cargo_held",
+            "rename_ready"
+          ],
           "failurePaths": [
             {
               "in": "start_game",
               "kind": "match-err",
-              "line": 1386
+              "line": 1723
             },
             {
               "in": "start_captain",
               "kind": "match-err",
-              "line": 1532
+              "line": 1869
             },
             {
               "in": "begin_custom",
               "kind": "match-err",
-              "line": 1541
+              "line": 1878
             },
             {
               "in": "load_slot",
               "kind": "match-err",
-              "line": 1585
+              "line": 1930
             },
             {
               "in": "save_current_game",
               "kind": "match-err",
-              "line": 1610
+              "line": 1955
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1633
+              "line": 1978
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1640
+              "line": 1985
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1675
+              "line": 2020
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1688
+              "line": 2033
             },
             {
               "in": "run_newgame_smoke",
               "kind": "match-err",
-              "line": 1693
+              "line": 2038
             },
             {
               "in": "journal_sea_check",
               "kind": "match-err",
-              "line": 1915
+              "line": 2260
+            },
+            {
+              "in": "stage_harbour_insurance",
+              "kind": "match-err",
+              "line": 2427
             },
             {
               "in": "shipyard_repair",
               "kind": "match-err",
-              "line": 2404
+              "line": 2770
             },
             {
               "in": "shipyard_rename",
               "kind": "match-err",
-              "line": 2429
+              "line": 2795
             },
             {
               "in": "buy_hull",
               "kind": "match-err",
-              "line": 2520
+              "line": 2886
             },
             {
               "in": "install_hull_upgrade",
               "kind": "match-err",
-              "line": 2537
+              "line": 2903
             },
             {
               "in": "sell_docked_hull",
               "kind": "match-err",
-              "line": 2550
+              "line": 2916
             },
             {
               "in": "dock_flagship",
               "kind": "match-err",
-              "line": 2563
+              "line": 2929
             },
             {
               "in": "board_docked_hull",
               "kind": "match-err",
-              "line": 2576
+              "line": 2942
             },
             {
               "in": "run_harbour_smoke",
               "kind": "match-err",
-              "line": 3173
+              "line": 3545
             },
             {
               "in": "run_art",
               "kind": "match-err",
-              "line": 3328
+              "line": 3700
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 3466
+              "line": 3838
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 3473
+              "line": 3845
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 3477
+              "line": 3849
             },
             {
               "in": "sail_until_duel",
               "kind": "match-err",
-              "line": 3485
+              "line": 3857
             },
             {
-              "in": "sail",
+              "in": "depart_now",
               "kind": "match-err",
-              "line": 3623
+              "line": 4132
             },
             {
               "in": "next_day",
               "kind": "match-err",
-              "line": 3695
+              "line": 4215
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 3775
+              "line": 4302
             },
             {
               "in": "trade",
               "kind": "err",
-              "line": 3775
+              "line": 4302
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 3780
+              "line": 4310
             },
             {
               "in": "trade",
               "kind": "err",
-              "line": 3780
+              "line": 4310
             },
             {
               "in": "trade",
               "kind": "match-err",
-              "line": 3791
+              "line": 4322
             },
             {
               "in": "work_docks",
               "kind": "match-err",
-              "line": 3810
+              "line": 4391
             },
             {
               "in": "hire_sailor",
               "kind": "match-err",
-              "line": 3852
+              "line": 4433
             },
             {
               "in": "buy_provisions",
               "kind": "match-err",
-              "line": 3890
+              "line": 4471
             },
             {
               "in": "apply_harbour",
               "kind": "match-err",
-              "line": 3981
+              "line": 4566
             },
             {
               "in": "deposit_cargo",
               "kind": "match-err",
-              "line": 3991
+              "line": 4576
             },
             {
               "in": "deposit_cargo",
               "kind": "match-err",
-              "line": 4005
+              "line": 4590
             },
             {
               "in": "withdraw_cargo",
               "kind": "match-err",
-              "line": 4014
+              "line": 4599
             },
             {
               "in": "withdraw_cargo",
               "kind": "match-err",
-              "line": 4028
+              "line": 4613
             },
             {
               "in": "repay_from_field",
               "kind": "match-err",
-              "line": 4037
+              "line": 4622
             },
             {
               "in": "repay_credit",
               "kind": "match-err",
-              "line": 4064
+              "line": 4649
             },
             {
               "in": "draw_from_field",
               "kind": "match-err",
-              "line": 4073
+              "line": 4658
             },
             {
               "in": "emergency_from_field",
               "kind": "match-err",
-              "line": 4093
+              "line": 4678
             },
             {
               "in": "apply_hire",
               "kind": "match-err",
-              "line": 4409
+              "line": 4997
             },
             {
               "in": "crew_fire",
               "kind": "match-err",
-              "line": 4430
+              "line": 5018
             },
             {
               "in": "crew_provision",
               "kind": "match-err",
-              "line": 4461
+              "line": 5048
             },
             {
               "in": "apply_train",
               "kind": "match-err",
-              "line": 4569
+              "line": 5156
             },
             {
               "in": "apply_skill",
               "kind": "match-err",
-              "line": 4592
+              "line": 5179
             },
             {
               "in": "apply_recruit",
               "kind": "match-err",
-              "line": 4609
+              "line": 5196
             },
             {
               "in": "finish_duel_result",
               "kind": "match-err",
-              "line": 5136
+              "line": 5723
             },
             {
               "in": "accept_contract_offer",
               "kind": "match-err",
-              "line": 5331
+              "line": 5954
             },
             {
               "in": "complete_contract_offer",
               "kind": "match-err",
-              "line": 5348
+              "line": 5971
             },
             {
               "in": "confirm_abandon",
               "kind": "match-err",
-              "line": 5386
+              "line": 6017
             },
             {
               "in": "finish_victory",
               "kind": "match-err",
-              "line": 6528
+              "line": 7284
             },
             {
               "in": "open_bounty_hunt",
               "kind": "match-err",
-              "line": 6560
+              "line": 7316
             },
             {
               "in": "ingest",
               "kind": "match-err",
-              "line": 6573
+              "line": 7329
             },
             {
               "in": "adopt_step",
               "kind": "match-err",
-              "line": 6608
+              "line": 7365
             },
             {
               "in": "adopt_step",
               "kind": "match-err",
-              "line": 6616
+              "line": 7373
             },
             {
               "in": "probe_naval",
               "kind": "match-err",
-              "line": 6641
+              "line": 7434
             },
             {
               "in": "run_hunt_smoke",
               "kind": "match-err",
-              "line": 6840
+              "line": 7651
             },
             {
               "in": "run_day_report_smoke",
               "kind": "match-err",
-              "line": 7105
+              "line": 7994
+            },
+            {
+              "in": "run_contract_strip_smoke",
+              "kind": "match-err",
+              "line": 9184
             },
             {
               "in": "forage_day",
               "kind": "match-err",
-              "line": 7228
+              "line": 9732
             },
             {
               "in": "accept_listed",
               "kind": "match-err",
-              "line": 7255
+              "line": 9759
             },
             {
               "in": "pursue_bounty",
               "kind": "match-err",
-              "line": 7297
+              "line": 9811
             },
             {
               "in": "claim_listed",
               "kind": "match-err",
-              "line": 7313
+              "line": 9827
             },
             {
               "in": "prepare_scripted_voyage",
               "kind": "match-err",
-              "line": 7562
+              "line": 10177
             },
             {
               "in": "prepare_scripted_voyage",
               "kind": "match-err",
-              "line": 7568
+              "line": 10183
             },
             {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 7679
+              "line": 10509
             },
             {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 7694
+              "line": 10524
             }
           ],
-          "hash": "0fb5f6392019c4774ef0125eddb9f9bd7f6241f2f3c9512913487b76ba608ccd",
+          "hash": "42334e972d51f5a1bd5ff253e778f2bf678eecb125ee5ed75fb5297b4b675fdb",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -3163,31 +3380,39 @@
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-godot/src/chart_canvas.rs",
+            "crates/portlight-godot/src/contract_strip.rs",
             "crates/portlight-godot/src/contracts_screen.rs",
             "crates/portlight-godot/src/crew_screen.rs",
             "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/departure_check.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/harbour_screen.rs",
             "crates/portlight-godot/src/hunt_screen.rs",
             "crates/portlight-godot/src/journal_screen.rs",
             "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-godot/src/market.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
             "crates/portlight-godot/src/playtest.rs",
             "crates/portlight-godot/src/shipyard_screen.rs",
+            "crates/portlight-sim/src/ship.rs",
             "crates/portlight-sim/src/skills.rs",
+            "crates/portlight-sim/src/naval.rs",
             "crates/portlight-sim/src/custom_captain.rs"
           ],
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/chart_canvas.rs",
+            "crates/portlight-godot/src/contract_strip.rs",
             "crates/portlight-godot/src/contracts_screen.rs",
             "crates/portlight-godot/src/crew_screen.rs",
             "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/departure_check.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/harbour_screen.rs",
             "crates/portlight-godot/src/hunt_screen.rs",
             "crates/portlight-godot/src/journal_screen.rs",
             "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-godot/src/market.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
             "crates/portlight-godot/src/playtest.rs",
             "crates/portlight-godot/src/shipyard_screen.rs",
@@ -3197,16 +3422,19 @@
             "crates/portlight-sim/src/encounter.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/model.rs",
+            "crates/portlight-sim/src/naval.rs",
             "crates/portlight-sim/src/session.rs",
+            "crates/portlight-sim/src/ship.rs",
             "crates/portlight-sim/src/skills.rs"
           ],
-          "path": "crates/portlight-godot/src/game.rs"
+          "path": "crates/portlight-godot/src/game.rs",
+          "testsInside": true
         },
         {
           "exports": [
             "place_harbour"
           ],
-          "hash": "1e6ee72115a28914a71da157b3f1b25814e1593caa427bb2e36e6953ef115d02",
+          "hash": "8e455bd135ac4c42b03dcd22ca38ac23de994f10f62e4192544bb220290f470a",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs"
           ],
@@ -3216,24 +3444,37 @@
         {
           "exports": [
             "ascii_copy",
+            "broker_name",
             "build_harbour_screen",
             "confirm_prompt",
+            "contract_target_name",
             "cream_label",
+            "credit_tier_name",
             "harbour_model",
             "infrastructure_kind",
+            "insurance_stage_session",
+            "license_name",
             "muted_label",
             "parse_positive",
+            "policy_name",
             "section_label",
-            "style_danger_button"
+            "style_danger_button",
+            "trust_block",
+            "warehouse_name"
           ],
           "failurePaths": [
             {
+              "in": "insurance_stage_session",
+              "kind": "err",
+              "line": 995
+            },
+            {
               "in": "parse_positive",
               "kind": "err",
-              "line": 897
+              "line": 1070
             }
           ],
-          "hash": "aa08508da846bdae8f44d6bf8aa67f68fc214e9ea5cfefae349ae3d261245ba6",
+          "hash": "16e5fdb970ba074d80ec0771c6acb0223300d497ba6135b42a7a7a261ff41a42",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -3241,8 +3482,8 @@
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
-            "crates/portlight-sim/src/util.rs",
-            "crates/portlight-godot/src/logic.rs"
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/util.rs"
           ],
           "importsFiles": [
             "crates/portlight-godot/src/encounter_screen.rs",
@@ -3270,7 +3511,9 @@
             "clear_row",
             "display_name",
             "fill_parent",
+            "forage_deltas",
             "forage_enabled",
+            "forage_helper_shown",
             "forage_notice",
             "forage_status",
             "hunt_confirm_text",
@@ -3282,19 +3525,21 @@
             "show_hunt",
             "wanted_copy"
           ],
-          "hash": "91fb88719186b1c265cb6408102813b751d8c8ba82b9d22f0fe14bcf90e6b1fb",
+          "hash": "63c55766ff5b3d561a5784ececaee686e97e0e8f25454e47c7d792c650ad15a3",
           "importOrder": [
             "crates/portlight-sim/src/bounty.rs",
             "crates/portlight-sim/src/hunting.rs",
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
-            "crates/portlight-godot/src/logic.rs"
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/content.rs"
           ],
           "importsFiles": [
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/logic.rs",
             "crates/portlight-sim/src/bounty.rs",
+            "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/hunting.rs",
             "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/model.rs"
@@ -3307,26 +3552,31 @@
             "apply_document",
             "beat_title",
             "build_journal_screen",
+            "contract_failure_was_dropped",
             "document_lines",
+            "festival_name",
             "fill_parent",
             "journal_document",
             "line_visible",
+            "milestone_name",
             "overlay_text",
             "scroll_to",
             "section_visible",
             "set_open"
           ],
-          "hash": "cefee47639e2e4c35973fca8e1d1cf3248fce23f871924c268857f8127c9698d",
+          "hash": "b941635b1ae61107c6aa924c870038fad9e7bb23caf6da2e0e85989e1d41862a",
           "importOrder": [
             "crates/portlight-sim/src/model.rs",
             "crates/portlight-sim/src/session.rs",
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
             "crates/portlight-sim/src/lib.rs"
           ],
           "importsFiles": [
             "crates/portlight-godot/src/encounter_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/lib.rs",
@@ -3337,12 +3587,14 @@
           "testsInside": true
         },
         {
-          "hash": "9caf905f49e3fe550daba7d4acceb0c1942d36f5ffef6b024cf726ab335179f4",
+          "hash": "4edc73b7e6b796165ad5e57373c5744c3b01d1384058ab1d69a9fef7816ef96b",
           "importsFiles": [
             "crates/portlight-godot/src/chart_canvas.rs",
+            "crates/portlight-godot/src/contract_strip.rs",
             "crates/portlight-godot/src/contracts_screen.rs",
             "crates/portlight-godot/src/crew_screen.rs",
             "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/departure_check.rs",
             "crates/portlight-godot/src/encounter_screen.rs",
             "crates/portlight-godot/src/game.rs",
             "crates/portlight-godot/src/harbour.rs",
@@ -3350,6 +3602,7 @@
             "crates/portlight-godot/src/hunt_screen.rs",
             "crates/portlight-godot/src/journal_screen.rs",
             "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-godot/src/market.rs",
             "crates/portlight-godot/src/newgame_screen.rs",
             "crates/portlight-godot/src/playtest.rs",
             "crates/portlight-godot/src/seam.rs",
@@ -3362,23 +3615,36 @@
             "action_caption",
             "action_list_from_error",
             "ascii_label",
+            "ascii_punctuation",
             "at_sea",
             "board_confirm_line",
             "buy_confirm_line",
             "buy_result_line",
             "buying_sells_flagship",
             "captain_button_label",
+            "captain_display_name",
             "capture_frame_rejected",
             "chart_host_width",
+            "choice_preview",
             "class_label",
             "crew_desk",
             "cycle_index",
             "day_log_lines",
+            "departed_line",
+            "dimmed_frame_rejected",
+            "display_or_humanized",
             "dock_confirm_line",
             "duel_button_enabled",
+            "duel_prompt",
+            "duel_result_line",
             "effective_provision_per_day",
+            "empty_lane_note",
+            "encounter_end",
+            "encounter_end_line",
+            "encounter_end_name",
             "encounter_frame_rejected",
             "encounter_plate",
+            "faction_name",
             "facts_for_catalog_captain",
             "facts_from_agency",
             "facts_from_step",
@@ -3387,6 +3653,7 @@
             "frame_samples",
             "hire_confirm_line",
             "hire_needs_confirm",
+            "humanize_id",
             "install_confirm_line",
             "layout_fits_window",
             "newgame_copy",
@@ -3398,14 +3665,22 @@
             "save_slot_label",
             "seam_exit_code",
             "sell_confirm_line",
+            "services_line",
             "session_text",
+            "ship_display_name",
             "shipyard_frame_rejected",
             "shipyard_gate_sentence",
             "shipyard_model",
             "skill_confirm_line",
             "slots_full_sentence",
+            "spare_preview",
+            "spare_purse",
             "split_session_actions",
             "stance_duel_visible",
+            "status_header",
+            "strip_markup",
+            "take_all_preview",
+            "take_all_purse",
             "template_player_ship",
             "train_confirm_line",
             "ui_plate_panel",
@@ -3413,7 +3688,7 @@
             "upgrade_summary",
             "victory_receipt_lines"
           ],
-          "hash": "523216be41680c3a752a3b9d2f6f171926d3f647889bd7fffed05f3286c6f39e",
+          "hash": "feb324e76f49276c0e0131837cf99e65aa757be2f9d5badc1d571a8bc32044e3",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/encounter.rs",
@@ -3453,6 +3728,28 @@
         },
         {
           "exports": [
+            "clamp_buy",
+            "clamp_sell",
+            "next_trade_qty",
+            "paid_notice_lines",
+            "qty_label",
+            "smoke_paid_more",
+            "wire_qty"
+          ],
+          "hash": "82a9dac15907bd62896cda96a0a359a8904bb51acacbc5c0ef316678d59a5597",
+          "importOrder": [
+            "crates/portlight-sim/src/model.rs",
+            "crates/portlight-godot/src/contracts_screen.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-sim/src/model.rs"
+          ],
+          "path": "crates/portlight-godot/src/market.rs",
+          "testsInside": true
+        },
+        {
+          "exports": [
             "build_newgame_screen",
             "fill_parent",
             "show_page",
@@ -3468,15 +3765,38 @@
         {
           "exports": [
             "action_playtest_id",
+            "blocking_overlay",
+            "contract_id_of",
+            "contract_row",
+            "day_report_section",
             "hunt_playtest_id",
-            "parse_playtest_id"
+            "implicit_dismiss",
+            "list_section",
+            "offer_scope",
+            "parse_playtest_id",
+            "sail_offer_label",
+            "splice_text",
+            "split_rows",
+            "strip_text"
           ],
-          "hash": "e76b1aa82d9a9ae9dbcf888f7f001c6e7ba87bdce64706579ef60b35f5169768",
-          "importsFiles": [
+          "hash": "66fe270c00cef53566edd44e64ca3c0b767102a04ead911e34e8e7e8352b029b",
+          "importOrder": [
+            "crates/portlight-godot/src/contracts_screen.rs",
             "crates/portlight-godot/src/game.rs",
             "crates/portlight-godot/src/harbour_screen.rs",
             "crates/portlight-godot/src/hunt_screen.rs",
-            "crates/portlight-godot/src/logic.rs"
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-sim/src/lib.rs"
+          ],
+          "importsFiles": [
+            "crates/portlight-godot/src/contracts_screen.rs",
+            "crates/portlight-godot/src/day_report.rs",
+            "crates/portlight-godot/src/game.rs",
+            "crates/portlight-godot/src/harbour_screen.rs",
+            "crates/portlight-godot/src/hunt_screen.rs",
+            "crates/portlight-godot/src/logic.rs",
+            "crates/portlight-sim/src/lib.rs"
           ],
           "path": "crates/portlight-godot/src/playtest.rs",
           "testsInside": true
@@ -3489,7 +3809,7 @@
               "line": 57
             }
           ],
-          "hash": "c002ddaa41131d81f403cfaa2413f7bd9f15c8eed1d1c0e4ec6016820ffc07ec",
+          "hash": "41d877607e175188ee794d8dc3de5561b516e19d0140dc232d8d590821d2312d",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-godot/src/harbour.rs",
@@ -3523,7 +3843,7 @@
       "testRunners": [
         "cargo test"
       ],
-      "testedBy": 9,
+      "testedBy": 13,
       "testedInside": true,
       "unresolvedSites": 0
     },
@@ -3980,7 +4300,7 @@
             "resolve_negotiate",
             "voyage_region"
           ],
-          "hash": "2fcd93d7cdd91fdec5668dfd54e4cd80ea5efe8112e86bfebdeea7590ad25a8e",
+          "hash": "573e1a6dbd2b4451b3c66f0387dff74e6dd3ee7de40b119586d514dc29e261e5",
           "importsFiles": [
             "crates/portlight-sim/src/combat.rs",
             "crates/portlight-sim/src/content.rs",
@@ -4247,67 +4567,57 @@
             {
               "in": "check_credit_eligibility",
               "kind": "err",
-              "line": 821
-            },
-            {
-              "in": "check_credit_eligibility",
-              "kind": "err",
               "line": 829
             },
             {
               "in": "check_credit_eligibility",
               "kind": "err",
-              "line": 838
+              "line": 837
             },
             {
               "in": "check_credit_eligibility",
               "kind": "err",
-              "line": 845
+              "line": 846
             },
             {
               "in": "check_credit_eligibility",
               "kind": "err",
-              "line": 854
+              "line": 853
             },
             {
               "in": "check_credit_eligibility",
               "kind": "err",
-              "line": 857
+              "line": 862
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 865
             },
             {
               "in": "open_credit_line",
               "kind": "err",
-              "line": 882
+              "line": 890
             },
             {
               "in": "draw_credit",
               "kind": "err",
-              "line": 905
+              "line": 913
             },
             {
               "in": "draw_credit",
               "kind": "err",
-              "line": 908
+              "line": 916
             },
             {
               "in": "draw_credit",
               "kind": "err",
-              "line": 912
+              "line": 920
             },
             {
               "in": "repay_credit",
               "kind": "err",
-              "line": 931
-            },
-            {
-              "in": "repay_credit",
-              "kind": "err",
-              "line": 934
-            },
-            {
-              "in": "repay_credit",
-              "kind": "err",
-              "line": 938
+              "line": 939
             },
             {
               "in": "repay_credit",
@@ -4315,37 +4625,47 @@
               "line": 942
             },
             {
-              "in": "emergency_loan",
+              "in": "repay_credit",
               "kind": "err",
-              "line": 1034
+              "line": 946
+            },
+            {
+              "in": "repay_credit",
+              "kind": "err",
+              "line": 950
             },
             {
               "in": "emergency_loan",
               "kind": "err",
-              "line": 1037
+              "line": 1042
+            },
+            {
+              "in": "emergency_loan",
+              "kind": "err",
+              "line": 1045
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 1060
+              "line": 1068
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 1069
+              "line": 1077
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 1073
+              "line": 1081
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 1078
+              "line": 1086
             }
           ],
-          "hash": "facd0c65a43bf6112e3c9bf8f20b39e88539d154919e23f7af388a5c72695a8a",
+          "hash": "39d9d4f89c28c39bac17a1ac18c32eb48545b05d2e3bd5bb0fb7f5195c1e30cd",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -4507,7 +4827,7 @@
           "exports": [
             "evaluate_narrative"
           ],
-          "hash": "b325729c188da52aa78f1e4f5db6879efb59927d0a4798a533484837ff7e506b",
+          "hash": "c975ef972dddd6843589355d845998c488e8329c9c0e8b71d1f8b181ce7269b4",
           "importsFiles": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/content.rs",
@@ -4524,18 +4844,23 @@
             "apply_crew_casualties",
             "apply_crew_loss",
             "attempt_flee",
+            "boarding_rolls",
             "boarding_threshold",
             "can_capture_prize",
             "capture_prize",
+            "finish_boarding",
             "generate_enemy_ship",
+            "hunt_boarding_loss",
+            "hunt_crew_loss_cap",
             "max_fleet_size",
             "pick_enemy_naval_action",
             "prize_template_id",
             "resolve_boarding",
+            "resolve_hunt_boarding",
             "resolve_naval_round",
             "valid_actions"
           ],
-          "hash": "7119354d5d21b3a428de4a3b02823a75254fa85f03b8c4c101a6f307d6f88239",
+          "hash": "e4bfc19fbcd5c9c6a393fb5b809adc09ded0649f5ea827e58825ac097d751e53",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/model.rs",
@@ -5051,285 +5376,285 @@
             {
               "in": "naval_round",
               "kind": "err",
-              "line": 886
+              "line": 907
             },
             {
               "in": "naval_round",
               "kind": "err",
-              "line": 897
+              "line": 918
             },
             {
               "in": "resolve_boarding",
-              "kind": "err",
-              "line": 972
-            },
-            {
-              "in": "fight",
               "kind": "err",
               "line": 997
             },
             {
               "in": "fight",
               "kind": "err",
-              "line": 1006
+              "line": 1023
+            },
+            {
+              "in": "fight",
+              "kind": "err",
+              "line": 1032
             },
             {
               "in": "repair",
               "kind": "err",
-              "line": 1099
+              "line": 1125
             },
             {
               "in": "repair",
               "kind": "err",
-              "line": 1105
+              "line": 1131
             },
             {
               "in": "repair",
               "kind": "err",
-              "line": 1121
+              "line": 1147
             },
             {
               "in": "rename_ship",
               "kind": "err",
-              "line": 1138
+              "line": 1164
             },
             {
               "in": "rename_ship",
               "kind": "err",
-              "line": 1148
+              "line": 1174
             },
             {
               "in": "sell_fleet_ship",
               "kind": "err",
-              "line": 1194
+              "line": 1220
             },
             {
               "in": "fire_crew",
               "kind": "err",
-              "line": 1204
+              "line": 1230
             },
             {
               "in": "fire_crew",
               "kind": "err",
-              "line": 1211
+              "line": 1237
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1243
+              "line": 1269
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1260
+              "line": 1286
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1276
+              "line": 1302
             },
             {
               "in": "capture",
               "kind": "err",
-              "line": 1289
+              "line": 1315
             },
             {
               "in": "ensure_encounter",
               "kind": "err",
-              "line": 1336
+              "line": 1362
             },
             {
               "in": "ensure_encounter",
               "kind": "err",
-              "line": 1349
+              "line": 1375
             },
             {
               "in": "finalize_victory",
               "kind": "err",
-              "line": 1645
+              "line": 1671
             },
             {
               "in": "finalize_victory",
               "kind": "err",
-              "line": 1649
+              "line": 1675
             },
             {
               "in": "buy_infrastructure",
               "kind": "err",
-              "line": 1890
+              "line": 1916
             },
             {
               "in": "buy_infrastructure",
-              "kind": "err",
-              "line": 1896
-            },
-            {
-              "in": "buy_infrastructure",
-              "kind": "err",
-              "line": 1903
-            },
-            {
-              "in": "buy_infrastructure",
-              "kind": "err",
-              "line": 1908
-            },
-            {
-              "in": "take_credit",
               "kind": "err",
               "line": 1922
             },
             {
-              "in": "take_credit",
+              "in": "buy_infrastructure",
               "kind": "err",
-              "line": 1938
+              "line": 1929
+            },
+            {
+              "in": "buy_infrastructure",
+              "kind": "err",
+              "line": 1934
             },
             {
               "in": "take_credit",
               "kind": "err",
-              "line": 1951
+              "line": 1948
+            },
+            {
+              "in": "take_credit",
+              "kind": "err",
+              "line": 1964
+            },
+            {
+              "in": "take_credit",
+              "kind": "err",
+              "line": 1977
             },
             {
               "in": "buy_insurance",
               "kind": "err",
-              "line": 1979
+              "line": 2005
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 2249
+              "line": 2275
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 2252
+              "line": 2278
             },
             {
               "in": "lease_warehouse",
               "kind": "err",
-              "line": 2399
+              "line": 2425
             },
             {
               "in": "lease_warehouse",
               "kind": "err",
-              "line": 2413
+              "line": 2439
             },
             {
               "in": "open_broker",
               "kind": "err",
-              "line": 2431
+              "line": 2457
             },
             {
               "in": "purchase_license",
               "kind": "err",
-              "line": 2449
+              "line": 2475
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 2478
+              "line": 2504
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2512
+              "line": 2538
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2524
+              "line": 2550
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2528
+              "line": 2554
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 2533
+              "line": 2559
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 2602
+              "line": 2628
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 2616
+              "line": 2642
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 2619
+              "line": 2645
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 2662
+              "line": 2688
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 2670
+              "line": 2696
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 2676
+              "line": 2702
             },
             {
               "in": "remove_upgrade",
               "kind": "err",
-              "line": 2711
+              "line": 2737
             },
             {
               "in": "remove_upgrade",
               "kind": "err",
-              "line": 2722
+              "line": 2748
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 2764
+              "line": 2790
             },
             {
               "in": "buy_gear",
-              "kind": "err",
-              "line": 2774
-            },
-            {
-              "in": "buy_gear",
-              "kind": "err",
-              "line": 2781
-            },
-            {
-              "in": "maintain_weapon",
               "kind": "err",
               "line": 2800
             },
             {
+              "in": "buy_gear",
+              "kind": "err",
+              "line": 2807
+            },
+            {
+              "in": "maintain_weapon",
+              "kind": "err",
+              "line": 2826
+            },
+            {
               "in": "train_crew",
               "kind": "err",
-              "line": 2886
+              "line": 2912
             },
             {
               "in": "recruit_companion",
               "kind": "err",
-              "line": 2908
+              "line": 2934
             },
             {
               "in": "spend_skill_point",
               "kind": "err",
-              "line": 2935
+              "line": 2961
             },
             {
               "in": "remember_captain",
               "kind": "err",
-              "line": 3022
+              "line": 3048
             }
           ],
-          "hash": "59d05fd3914d95f042bc7d51a580b0841eebbef49eef711f59ae538c77166acb",
+          "hash": "92db03467c652da0f486101523eda16daa4063615710e02d88658a044726bb85",
           "importOrder": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/combat.rs",
@@ -5778,7 +6103,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "e3eac4454ac2efafbb4cfb43ab9d751c6868b57a147ee1b8bd62a7ed7ca15534",
+          "hash": "a34cf3f814f42838aa45f08945a73601bfa9810048a194be1beb859d936002db",
           "path": ".gitignore"
         },
         {
@@ -5790,11 +6115,11 @@
           "path": "Cargo.toml"
         },
         {
-          "hash": "367e5141e4f5884e5791c4021f33a9faa958840a5decf44e1b273a87aad1c459",
+          "hash": "db91f871bbe403f8b159de513ce7af286c1ea52e74f92a649ca0cc06fa45c822",
           "path": "LICENSE"
         },
         {
-          "hash": "1a1d35e1dc7e14d388d408ac803bebf07fb3ef9a978ae50b7fc38be6a98dbbb7",
+          "hash": "26ab4d669545e5c99a6e05b421a94950396f4bb16ca50054fa4c986f192f9ecf",
           "path": "README.md"
         },
         {
@@ -8045,7 +8370,7 @@
                   "range": ">=3.12.0 <3.13.0-0"
                 }
               ],
-              "step": "3",
+              "step": "4",
               "uses": "actions/setup-python",
               "version": "3.12"
             }
@@ -8054,6 +8379,22 @@
         {
           "basis": "declared",
           "name": "godot",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "audit",
           "runsOn": [
             {
               "labels": [
@@ -8076,7 +8417,10 @@
       ],
       "mentions": [],
       "name": "CI",
-      "permissions": [],
+      "permissions": [
+        "contents:read",
+        "issues:write"
+      ],
       "pushes": false,
       "reach": [
         {
@@ -8097,7 +8441,7 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 17
+          "files": 20
         },
         {
           "boundary": "portlight-sim",
@@ -8253,6 +8597,13 @@
         {
           "job": "godot",
           "matched": true,
+          "path": "crates/portlight-godot/src/contract_strip.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
           "path": "crates/portlight-godot/src/contracts_screen.rs",
           "runKind": "executes",
           "via": "cargo test"
@@ -8267,7 +8618,21 @@
         {
           "job": "godot",
           "matched": true,
+          "path": "crates/portlight-godot/src/departure_check.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
           "path": "crates/portlight-godot/src/encounter_screen.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/game.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8317,6 +8682,13 @@
           "job": "godot",
           "matched": true,
           "path": "crates/portlight-godot/src/logic.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "godot",
+          "matched": true,
+          "path": "crates/portlight-godot/src/market.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -8625,8 +8997,10 @@
           "runKind": "executes"
         }
       ],
-      "runsCount": 64,
-      "secrets": [],
+      "runsCount": 68,
+      "secrets": [
+        "GITHUB_TOKEN"
+      ],
       "sends": {
         "deploysPages": false,
         "dispatchesTo": [],
@@ -8664,7 +9038,7 @@
           "step": "Parity allowlist and golden bytes"
         },
         {
-          "files": 10,
+          "files": 14,
           "job": "godot",
           "runner": "cargo test",
           "step": "Build the GDExtension"
@@ -8681,22 +9055,38 @@
       ],
       "triggers": [
         {
-          "event": "pull_request"
+          "event": "pull_request",
+          "paths-ignore": [
+            "**/*.md",
+            "docs/**"
+          ]
         },
         {
-          "event": "push"
+          "branches": [
+            "main"
+          ],
+          "event": "push",
+          "paths-ignore": [
+            "**/*.md",
+            "docs/**"
+          ]
+        },
+        {
+          "event": "workflow_dispatch"
         }
       ],
       "untrackedLandings": [
         "portlight-newgame-smoke/"
       ],
       "uses": [
+        "Swatinem/rust-cache",
         "actions/checkout",
         "actions/setup-node",
         "actions/setup-python",
-        "dtolnay/rust-toolchain"
+        "dtolnay/rust-toolchain",
+        "rustsec/audit-check"
       ],
-      "usesWorkflowToken": false
+      "usesWorkflowToken": true
     },
     {
       "checksCount": 0,
@@ -8869,8 +9259,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "a28530431382b01f707f47d251824a750659c6e9",
-    "tracked": 637
+    "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6",
+    "tracked": 655
   },
   "landings": [
     {
@@ -8971,6 +9361,17 @@
     {
       "readers": [
         {
+          "by": "crates/portlight-godot/src/playtest.rs",
+          "call": "include_str",
+          "confidence": "ast"
+        }
+      ],
+      "target": "crates/portlight-godot/src/game.rs",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "crates/portlight-chart/src/seam.rs",
           "call": "include_str",
           "confidence": "ast"
@@ -9053,20 +9454,14 @@
           "by": "docs/playtest/playtest-bridge-consult-brief.md",
           "call": "--path",
           "confidence": "text"
-        }
-      ],
-      "target": "godot",
-      "writers": []
-    },
-    {
-      "readers": [
+        },
         {
-          "by": "README.md",
-          "call": "--",
+          "by": "playtest/README.md",
+          "call": "--path",
           "confidence": "text"
         }
       ],
-      "target": "godot/assets",
+      "target": "godot",
       "writers": []
     },
     {
@@ -10164,10 +10559,10 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 53,
+  "testFiles": 57,
   "unassigned": [
     {
-      "hash": "5fd2ea99604f5e29b8196b758b66afdd9b29b397cf38918e143dedd303a609b1",
+      "hash": "b4a781e9dd177141a3d9230c929d3dcb98fa2054507be1f5eb8378b1a8f527fd",
       "path": "playtest/README.md"
     },
     {
@@ -10175,7 +10570,7 @@
       "path": "playtest/_plumbing-fixture.playtest.json"
     },
     {
-      "hash": "c7206057cd69dc4a4d9de3995370c1dbea5f284ac1cdf1434ed4a28d5ddffc50",
+      "hash": "a02a77fd2b9e7e7576a9f2bc7ac32cb8b9b1e94aaa67bd3645e5cf7e3a9c370d",
       "path": "playtest/portlight-godot.playtest.json"
     },
     {
@@ -10183,14 +10578,29 @@
         {
           "in": "assert",
           "kind": "throw",
-          "line": 110
+          "line": 127
+        },
+        {
+          "in": "clearOverlays",
+          "kind": "throw",
+          "line": 211
+        },
+        {
+          "in": "clearEncounterOnly",
+          "kind": "throw",
+          "line": 234
+        },
+        {
+          "in": "voyage",
+          "kind": "catch",
+          "line": 557
         },
         {
           "kind": "catch",
-          "line": 149
+          "line": 678
         }
       ],
-      "hash": "40405b862789c54bad43dc76e0d28c28fea61d737cd7b1d43370f62a63b27ab8",
+      "hash": "decc39778f65ff25046a101a7ba6227e1b76d50efab0f7d73eeeebe81224e804",
       "path": "playtest/probe-bridge.mjs"
     }
   ]
