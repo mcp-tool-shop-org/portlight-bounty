@@ -499,6 +499,82 @@ pub(crate) fn blocking_overlay(open: &[(BlockingOverlay, bool)]) -> Option<Block
         .find(|overlay| open.iter().any(|(kind, shown)| kind == overlay && *shown))
 }
 
+/// A layer the bridge can offer from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum OfferLayer {
+    /// The Departure check panel (non-blocking, drawn above everything).
+    Departure,
+    /// The Day's report card (non-blocking, drawn above the desks and the
+    /// encounter).
+    DayReport,
+    /// An input-blocking screen.
+    Blocking(BlockingOverlay),
+}
+
+/// Where the offered choices come from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum OfferScope {
+    /// Every drawn, enabled, stamped button: the chart plus any
+    /// non-blocking overlay over it (F10-1, F10-4).
+    Everything,
+    /// Only this layer's own buttons (F10-2, F10-3).
+    Only(OfferLayer),
+}
+
+/// GD's F10 rules (design-signoff-pr64.md section 4):
+/// - F10-1: the top screen's own actions are always offered.
+/// - F10-2: an input-blocking screen hides the chart behind it.
+/// - F10-3: one layer at a time. A non-blocking overlay over a blocking
+///   screen (the Day's report over an encounter) is the only layer offered.
+/// - F10-4: with nothing blocking, Departure and the Day's report keep the
+///   chart offered. A chart press counts as Stay / close first
+///   ([`implicit_dismiss`]).
+///
+/// Draw order (top first): Departure, Day's report, then the blocking
+/// screens.
+pub(crate) fn offer_scope(
+    blocking: Option<BlockingOverlay>,
+    day_report: bool,
+    departure: bool,
+) -> OfferScope {
+    let Some(blocking) = blocking else {
+        return OfferScope::Everything;
+    };
+    if departure {
+        OfferScope::Only(OfferLayer::Departure)
+    } else if day_report {
+        OfferScope::Only(OfferLayer::DayReport)
+    } else {
+        OfferScope::Only(OfferLayer::Blocking(blocking))
+    }
+}
+
+/// What a press dismisses first under a non-blocking overlay (F10-4).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ImplicitDismiss {
+    /// Departure check: any other press is Stay in port. `perform` does it.
+    StayInPort,
+    /// Day's report over the chart: a chart press closes the card first.
+    CloseDayReport,
+}
+
+/// The dismiss a chosen id implies. `own_departure` / `own_day_report`: the
+/// id is one of that overlay's own buttons.
+pub(crate) fn implicit_dismiss(
+    departure_open: bool,
+    day_report_open: bool,
+    own_departure: bool,
+    own_day_report: bool,
+) -> Option<ImplicitDismiss> {
+    if departure_open && !own_departure {
+        Some(ImplicitDismiss::StayInPort)
+    } else if day_report_open && !own_day_report && !own_departure {
+        Some(ImplicitDismiss::CloseDayReport)
+    } else {
+        None
+    }
+}
+
 /// F14: the offered label for a lane's Sail button. The drawn text stays
 /// `Sail`; the id stays `chart.sail.<port_id>`.
 pub(crate) fn sail_offer_label(port_name: &str) -> String {
@@ -1430,5 +1506,105 @@ mod tests {
             splice_text(text, &view.text_lines()[..1]),
             "Screen: journal\nJournal: Captain's Journal\nActions:\nchart.journal.close — Close"
         );
+    }
+
+    /// F10-1: the top screen's own actions are always offered. The Day's
+    /// report over an encounter offers the report; Departure over the
+    /// chart or over a blocking screen offers Departure's own buttons; a
+    /// blocking screen alone offers its own.
+    #[test]
+    fn f10_1_top_screen_actions_are_always_offered() {
+        use BlockingOverlay::*;
+        assert_eq!(
+            offer_scope(Some(Encounter), true, false),
+            OfferScope::Only(OfferLayer::DayReport)
+        );
+        assert_eq!(
+            offer_scope(Some(Hunt), false, true),
+            OfferScope::Only(OfferLayer::Departure)
+        );
+        assert_eq!(
+            offer_scope(Some(Journal), false, false),
+            OfferScope::Only(OfferLayer::Blocking(Journal))
+        );
+        // Over the chart the scope is everything drawn, which holds the
+        // overlay's own Close / Stay / Sail anyway.
+        assert_eq!(offer_scope(None, true, false), OfferScope::Everything);
+        assert_eq!(offer_scope(None, false, true), OfferScope::Everything);
+    }
+
+    /// F10-2: an input-blocking screen hides the chart behind it. Every
+    /// blocking screen narrows the offer to itself, never everything.
+    #[test]
+    fn f10_2_blocking_screen_hides_the_chart() {
+        use BlockingOverlay::*;
+        for overlay in [
+            Encounter, Hunt, Crew, Contracts, Shipyard, Harbour, Journal, Newgame,
+        ] {
+            assert_eq!(
+                offer_scope(Some(overlay), false, false),
+                OfferScope::Only(OfferLayer::Blocking(overlay)),
+                "{overlay:?}"
+            );
+        }
+        // Encounter outranks a desk left open under it.
+        let top = blocking_overlay(&[(Contracts, true), (Encounter, true)]);
+        assert_eq!(
+            offer_scope(top, false, false),
+            OfferScope::Only(OfferLayer::Blocking(Encounter))
+        );
+    }
+
+    /// F10-3: one layer at a time. The Day's report over an encounter is the
+    /// only layer offered; the encounter returns once the report closes.
+    #[test]
+    fn f10_3_one_layer_at_a_time() {
+        use BlockingOverlay::*;
+        let report_over_fight = offer_scope(Some(Encounter), true, false);
+        assert_eq!(report_over_fight, OfferScope::Only(OfferLayer::DayReport));
+        assert_ne!(
+            report_over_fight,
+            OfferScope::Only(OfferLayer::Blocking(Encounter))
+        );
+        assert_eq!(
+            offer_scope(Some(Encounter), false, false),
+            OfferScope::Only(OfferLayer::Blocking(Encounter))
+        );
+        // The top-most non-blocking layer wins when both are up.
+        assert_eq!(
+            offer_scope(Some(Encounter), true, true),
+            OfferScope::Only(OfferLayer::Departure)
+        );
+    }
+
+    /// F10-4: Departure and the Day's report over the chart keep the chart
+    /// offered, and a chart press counts as Stay / close first.
+    #[test]
+    fn f10_4_non_blocking_overlays_keep_the_chart() {
+        assert_eq!(offer_scope(None, false, true), OfferScope::Everything);
+        assert_eq!(offer_scope(None, true, false), OfferScope::Everything);
+        assert_eq!(offer_scope(None, true, true), OfferScope::Everything);
+        // A chart press under Departure is Stay in port; its own buttons
+        // are not.
+        assert_eq!(
+            implicit_dismiss(true, false, false, false),
+            Some(ImplicitDismiss::StayInPort)
+        );
+        assert_eq!(implicit_dismiss(true, false, true, false), None);
+        // A chart press under the Day's report closes the card first; its
+        // own Close is not an implicit dismiss.
+        assert_eq!(
+            implicit_dismiss(false, true, false, false),
+            Some(ImplicitDismiss::CloseDayReport)
+        );
+        assert_eq!(implicit_dismiss(false, true, false, true), None);
+        // Departure on top of the card: Stay first, and its own press
+        // leaves the card alone.
+        assert_eq!(
+            implicit_dismiss(true, true, false, false),
+            Some(ImplicitDismiss::StayInPort)
+        );
+        assert_eq!(implicit_dismiss(true, true, true, false), None);
+        assert_eq!(implicit_dismiss(false, false, false, false), None);
     }
 }

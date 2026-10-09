@@ -171,10 +171,17 @@ async function choose(socket, id) {
 // recorded when present and are not required on a choice or naval screen.
 async function clearOverlays(socket, result, notes) {
   let current = result;
-  for (let step = 0; step < 8; step += 1) {
+  for (let step = 0; step < 30; step += 1) {
     const screen = String(current?.state?.screen ?? '');
     const open = openDesks(current);
     if (screen === 'day-report' || open.includes('day-report')) {
+      if (open.includes('encounter')) {
+        // F10-3: the report over an encounter is the only layer offered.
+        const leaked = ids(current).filter((id) => id !== 'chart.day_report.close');
+        assert(ids(current).includes('chart.day_report.close'), 'F10-1: report Close not offered over the encounter', current);
+        assert(leaked.length === 0, `F10-3: report over encounter also offered ${leaked.join(', ')}`, current);
+        notes.f10Layer = true;
+      }
       const after = await call(socket, 'act', { kind: 'key', key: 'escape' });
       const still = String(after?.state?.screen) === 'day-report'
         || openDesks(after).includes('day-report');
@@ -201,7 +208,7 @@ async function clearOverlays(socket, result, notes) {
     notes.encounter = notes.encounter ?? pick;
     current = await choose(socket, pick);
   }
-  throw new Error('an overlay did not clear');
+  throw new Error(`an overlay did not clear\n${String(current?.text ?? '').slice(-2500)}`);
 }
 
 // Encounters are stepped without touching day-report, so an Arrival card
@@ -278,6 +285,63 @@ async function closeContracts(socket, result) {
   return String(result?.state?.screen) === 'contracts'
     ? choose(socket, 'chart.contracts.close')
     : result;
+}
+
+// Docked: open Hunt, accept the first board offer, sail, then hunt it at
+// sea. That opens the bounty encounter, so the F10-2 encounter check runs.
+// A Departure check on the way is checked for F10-1 / F10-4 then sailed.
+async function huntEncounter(socket, docked, notes) {
+  let here = docked;
+  if (!ids(here).includes('pier.hunt.open')) return here;
+  const desk = await choose(socket, 'pier.hunt.open');
+  assert(String(desk?.state?.screen) === 'hunt', 'hunt did not open', desk);
+  const deskLeak = chartOrPier(desk).filter((id) => !id.startsWith('pier.hunt.'));
+  assert(deskLeak.length === 0, `F10-2: Hunt desk offered ${deskLeak.join(', ')}`, desk);
+  const accept = ids(desk).find((id) => id.startsWith('pier.hunt.accept.'));
+  if (!accept) {
+    notes.hunt = 'hunt board empty';
+    return choose(socket, 'pier.hunt.close');
+  }
+  const target = accept.slice('pier.hunt.accept.'.length);
+  await choose(socket, accept);
+  here = await choose(socket, 'pier.hunt.close');
+  const sail = ids(here).find((id) => id.startsWith('chart.sail.'));
+  assert(sail, 'no lane to sail after the hunt accept', here);
+  here = await choose(socket, sail);
+  if (String(here?.state?.screen) === 'departure-check') {
+    const own = ids(here).filter((id) => id.startsWith('chart.departure.'));
+    assert(own.includes('chart.departure.sail') && own.includes('chart.departure.stay'), 'F10-1: Departure buttons not offered', here);
+    assert(ids(here).some((id) => !id.startsWith('chart.departure.')), 'F10-4: Departure hid the chart', here);
+    notes.f10Departure = 'departure keeps chart';
+    here = await choose(socket, 'chart.departure.sail');
+  }
+  here = await clearOverlays(socket, here, notes);
+  assert(String(here?.state?.docked ?? '') === '', 'hunt sail left the ship docked', here);
+  const sea = await choose(socket, 'pier.hunt.open');
+  const ask = `pier.hunt.ask.${target}`;
+  if (!ids(sea).includes(ask)) {
+    notes.hunt = `hunt ${target} not offered at sea`;
+    return clearOverlays(socket, await choose(socket, 'pier.hunt.close'), notes);
+  }
+  await choose(socket, ask);
+  const fight = await choose(socket, 'pier.hunt.confirm');
+  const inFight = String(fight?.state?.screen) === 'encounter' || openDesks(fight).includes('encounter');
+  assert(inFight || isDayReport(fight), 'hunt confirm opened no encounter', fight);
+  if (String(fight?.state?.screen) === 'encounter') {
+    assert(chartOrPier(fight).length === 0, `F10-2: chart/pier offered under the hunt encounter (${chartOrPier(fight).join(', ')})`, fight);
+    notes.f10Encounter = true;
+  }
+  notes.hunt = `hunt ${target} encounter`;
+  here = await clearOverlays(socket, fight, notes);
+  // Sail home so the rest of the spine runs docked.
+  for (let step = 0; step < 40 && String(here?.state?.docked ?? '') === ''; step += 1) {
+    here = await clearOverlays(socket, here, notes);
+    if (String(here?.state?.docked ?? '') !== '') break;
+    here = await choose(socket, 'chart.next_day');
+  }
+  here = await clearOverlays(socket, here, notes);
+  if (isDayReport(here)) here = await call(socket, 'act', { kind: 'key', key: 'escape' });
+  return here;
 }
 
 async function voyage(socket, chart) {
@@ -403,6 +467,10 @@ async function voyage(socket, chart) {
   // Arrival card (#57): the deliverable contract makes the docking day notable.
   assert(isDayReport(arrival), 'arrival card did not open on the docking advance', arrival);
   assert(ids(arrival).includes('chart.day_report.close'), 'arrival card offered no Close', arrival);
+  const arrivalChartIds = ids(arrival).filter((id) => id.startsWith('chart.') && id !== 'chart.day_report.close');
+  if (!openDesks(arrival).includes('encounter')) {
+    assert(arrivalChartIds.length > 0, 'F10-4: Arrival card over the chart hid the chart actions', arrival);
+  }
   const report = arrival?.state?.day_report;
   assert(report && typeof report === 'object', 'observation had no state.day_report', arrival);
   assert(
@@ -493,10 +561,17 @@ async function voyage(socket, chart) {
   const afterComplete = await closeContracts(socket, desk2);
   assert(String(afterComplete?.state?.screen) === 'chart', 'chart was not back after contracts', afterComplete);
 
+  // F10-4: the Arrival card was over the chart, so chart actions stayed
+  // offered beside its Close.
+  notes.f10Chart = arrivalChartIds.length > 0;
+
+  // F10-2 / F10-3: a hunt target at sea opens the bounty encounter.
+  const hunt = await huntEncounter(socket, afterComplete, notes);
+
   // F13: `line` types into the shipyard rename field; Rename is offered
   // only once the text differs.
   let renamed = 'no shipyard';
-  const yardChart = afterComplete;
+  const yardChart = hunt;
   if (ids(yardChart).includes('chart.shipyard.open')) {
     const yard = await choose(socket, 'chart.shipyard.open');
     assert(String(yard?.state?.screen) === 'shipyard', 'shipyard did not open', yard);
@@ -533,7 +608,8 @@ async function voyage(socket, chart) {
     'complete not offered',
     renamed,
     `journal lens (${lens.sections.length} sections)`,
-    `F10 ${notes.f10Encounter ? 'encounter clean' : 'no encounter'}, ${notes.f10Desk}`,
+    `F10 ${notes.f10Encounter ? 'encounter clean' : 'no encounter'}, ${notes.f10Desk}, ${notes.f10Layer ? 'report-over-encounter only' : 'no report over an encounter'}, ${notes.f10Chart ? 'chart under card' : 'no chart under card'}${notes.f10Departure ? `, ${notes.f10Departure}` : ''}`,
+    notes.hunt ?? 'no hunt encounter',
   ];
   if (notes.roughSeas) parts.push('rough seas');
   if (notes.encounter) parts.push(`encounter ${notes.encounter}`);

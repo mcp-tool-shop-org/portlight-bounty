@@ -96,8 +96,9 @@ use crate::logic::{
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
 use crate::playtest::{
-    action_playtest_id, blocking_overlay, hunt_playtest_id, parse_playtest_id, sail_offer_label,
-    BlockingOverlay, PlaytestCommand,
+    action_playtest_id, blocking_overlay, hunt_playtest_id, implicit_dismiss, offer_scope,
+    parse_playtest_id, sail_offer_label, BlockingOverlay, ImplicitDismiss, OfferLayer, OfferScope,
+    PlaytestCommand,
 };
 use crate::shipyard_screen::{self, ShipyardNodes};
 
@@ -11008,19 +11009,62 @@ impl PortlightGame {
                 self.newgame_page != NewgamePage::Hidden && shown(newgame.clone()),
             ),
         ];
-        let root = match blocking_overlay(&open) {
-            Some(BlockingOverlay::Encounter) => encounter,
-            Some(BlockingOverlay::Hunt) => hunt,
-            Some(BlockingOverlay::Crew) => crew,
-            Some(BlockingOverlay::Contracts) => contracts,
-            Some(BlockingOverlay::Shipyard) => shipyard,
-            Some(BlockingOverlay::Harbour) => harbour,
-            Some(BlockingOverlay::Journal) => journal,
-            Some(BlockingOverlay::Newgame) => newgame,
-            None => None,
+        let root = match offer_scope(
+            blocking_overlay(&open),
+            self.day_report_shown(),
+            self.departure_shown(),
+        ) {
+            OfferScope::Everything => None,
+            OfferScope::Only(OfferLayer::Departure) => self.departure_root(),
+            OfferScope::Only(OfferLayer::DayReport) => self.day_report_root(),
+            OfferScope::Only(OfferLayer::Blocking(overlay)) => match overlay {
+                BlockingOverlay::Encounter => encounter,
+                BlockingOverlay::Hunt => hunt,
+                BlockingOverlay::Crew => crew,
+                BlockingOverlay::Contracts => contracts,
+                BlockingOverlay::Shipyard => shipyard,
+                BlockingOverlay::Harbour => harbour,
+                BlockingOverlay::Journal => journal,
+                BlockingOverlay::Newgame => newgame,
+            },
         };
         root.map(|root| root.upcast::<Node>())
             .unwrap_or_else(|| self.to_gd().upcast::<Node>())
+    }
+
+    fn departure_root(&self) -> Option<Gd<Control>> {
+        self.departure_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>())
+    }
+
+    fn day_report_root(&self) -> Option<Gd<Control>> {
+        self.day_report_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>())
+    }
+
+    fn departure_shown(&self) -> bool {
+        self.departure_open
+            && self
+                .departure_root()
+                .is_some_and(|root| root.is_visible_in_tree())
+    }
+
+    fn day_report_shown(&self) -> bool {
+        self.day_report_open
+            && self
+                .day_report_root()
+                .is_some_and(|root| root.is_visible_in_tree())
+    }
+
+    /// The id is one of this overlay's own drawn buttons.
+    fn owns_choice(root: Option<Gd<Control>>, id: &str) -> bool {
+        root.is_some_and(|root| {
+            offered_choices(&root.upcast::<Node>())
+                .iter()
+                .any(|(offered, _)| offered == id)
+        })
     }
 
     fn playtest_choose(&mut self, id: &str) -> GString {
@@ -11031,10 +11075,27 @@ impl PortlightGame {
         {
             return GString::from(format!("'{id}' is not on screen").as_str());
         }
-        match parse_playtest_id(id) {
-            Some(PlaytestCommand::Action(action)) => self.perform(action),
-            Some(PlaytestCommand::Hunt(action)) => self.perform_hunt(action),
-            None => return GString::from(format!("'{id}' is not a known action").as_str()),
+        let Some(command) = parse_playtest_id(id) else {
+            return GString::from(format!("'{id}' is not a known action").as_str());
+        };
+        // F10-4: under a non-blocking overlay a chart press is Stay / close
+        // first. `perform` already treats any non-Departure action as Stay.
+        let dismiss = implicit_dismiss(
+            self.departure_shown(),
+            self.day_report_shown(),
+            Self::owns_choice(self.departure_root(), id),
+            Self::owns_choice(self.day_report_root(), id),
+        );
+        match dismiss {
+            Some(ImplicitDismiss::StayInPort) if matches!(command, PlaytestCommand::Hunt(_)) => {
+                self.stay_in_port();
+            }
+            Some(ImplicitDismiss::CloseDayReport) => self.close_day_report(),
+            _ => {}
+        }
+        match command {
+            PlaytestCommand::Action(action) => self.perform(action),
+            PlaytestCommand::Hunt(action) => self.perform_hunt(action),
         }
         GString::new()
     }

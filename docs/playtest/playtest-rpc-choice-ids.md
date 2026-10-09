@@ -36,7 +36,7 @@ Static ids and prefixes follow the match. The ones a first voyage presses:
 
 Insurance ids drop empty segments (`harbour.prepare.insurance.{policy}`, `.{policy}.{target}`, `.{policy}.{origin}.{destination}`). For one release, the parser still accepts the old trailing-empty form. No insurance id is in the locked table.
 
-Under a blocking overlay (an encounter, a docked desk, or a new-game page), only that overlay's ids are offered. Departure check and Day's report do not block.
+Offered ids follow GD's F10 layer rules (`design-signoff-pr64.md`). The top screen's ids are always offered. An input-blocking screen (an encounter, a docked desk, or a new-game page) offers only its own ids. The Day's report or the Departure check over a blocking screen is the only layer offered. Over the chart, both keep the chart ids, and a chart press is Stay in port or closes the card first.
 
 `harbour.emergency` is the emergency-loan button. It is stamped. The amount field is not a `line` target.
 
