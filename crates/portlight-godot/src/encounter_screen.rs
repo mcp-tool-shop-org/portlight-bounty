@@ -371,7 +371,7 @@ pub(crate) fn add_capture_crew(
     cell.add_child(&text_label(&capture_crew_text(crew), 14, MUTED));
 }
 
-/// One space before the count, like every other label.
+/// One space before the count, like every other label. No colon.
 pub(crate) fn capture_crew_text(crew: i64) -> String {
     format!("Crew to the prize {crew}")
 }
@@ -448,7 +448,7 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 #[cfg(test)]
 mod tests {
-    use super::{placeholder_minimum_size, plate_caption};
+    use super::{capture_crew_text, placeholder_minimum_size, plate_caption};
     use crate::logic::{encounter_plate, ui_plate_panel};
 
     /// Every Outcome column is the widest column plus the pad.
@@ -487,6 +487,18 @@ mod tests {
             let (width, height) = placeholder_minimum_size(panel_w, 120.0);
             assert_eq!(width, panel_w as f32, "{template}");
             assert_eq!(height, 120.0, "{template}");
+        }
+    }
+
+    #[test]
+    fn capture_crew_text_has_no_double_space() {
+        assert_eq!(capture_crew_text(3), "Crew to the prize 3");
+        assert_eq!(capture_crew_text(12), "Crew to the prize 12");
+        for crew in [0, 3, 12] {
+            let text = capture_crew_text(crew);
+            assert!(!text.contains("  "), "{text}");
+            assert!(!text.contains(':'), "{text}");
+            assert!(text.is_ascii());
         }
     }
 }
