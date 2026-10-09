@@ -341,6 +341,8 @@ impl NewgameShot {
 enum ContractsShot {
     Board,
     Active,
+    /// The Abandon prompt armed on a contract with credited progress.
+    Armed,
     Empty,
 }
 
@@ -349,9 +351,18 @@ impl ContractsShot {
         match self {
             Self::Board => "contracts-board.png",
             Self::Active => "contracts-active.png",
+            Self::Armed => "contracts-abandon-armed.png",
             Self::Empty => "contracts-empty.png",
         }
     }
+}
+
+/// Smoke state set aside while a frame is staged on a fresh game.
+struct StagingSnapshot {
+    session: Option<Session>,
+    log_lines: Vec<String>,
+    trade_qty: i64,
+    market_open: bool,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -500,6 +511,8 @@ const DEPARTURE_WORST_FRAMES: i32 = 4;
 /// T-N frames: the GOLD paid notice at the top of the Market box.
 #[derive(Clone, Copy)]
 enum MarketPaidShot {
+    /// The notice after the first partial sale: one GOLD progress line.
+    Progress,
     /// The real settle from the trade smoke: one line.
     Single,
     /// Staged on top of that settle: two lines and `+1 more`.
@@ -509,6 +522,7 @@ enum MarketPaidShot {
 impl MarketPaidShot {
     fn file_name(self) -> &'static str {
         match self {
+            Self::Progress => "market-contract-progress.png",
             Self::Single => "market-contract-paid.png",
             Self::More => "market-contract-paid-more.png",
         }
@@ -605,6 +619,7 @@ struct PortlightGame {
     contracts_checked: bool,
     contracts_shot_dir: Option<String>,
     contracts_shot: Option<ContractsShot>,
+    armed_saved: Option<StagingSnapshot>,
     shipyard_nodes: Option<ShipyardNodes>,
     shipyard_open: bool,
     shipyard_notice: String,
@@ -695,6 +710,8 @@ struct PortlightGame {
     /// T-N. GOLD paid lines at the top of the Market box until the next
     /// trade, Market close, undock or Next day.
     market_notice: Vec<String>,
+    /// Offer id of a trade settle paused after its first partial sale.
+    settle_resume: Option<String>,
     /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
     trade_checked: bool,
     market_paid_shot_dir: Option<String>,
@@ -794,6 +811,7 @@ impl IControl for PortlightGame {
             contracts_checked: false,
             contracts_shot_dir: None,
             contracts_shot: None,
+            armed_saved: None,
             shipyard_nodes: None,
             shipyard_open: false,
             shipyard_notice: String::new(),
@@ -868,6 +886,7 @@ impl IControl for PortlightGame {
             departure_shot_dir: None,
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
+            settle_resume: None,
             trade_checked: false,
             market_paid_shot_dir: None,
             market_paid_shot: None,
@@ -1030,14 +1049,17 @@ impl IControl for PortlightGame {
             self.smoke = true;
             self.trade_checked = true;
             let capture = market_paid_frames_requested(self.shot_path.is_some());
-            if self.run_trade_settle() {
-                self.check_market_notice_leads("single");
+            // The real settle, paused after the first partial sale for the
+            // progress frame, then finished for the paid frames.
+            if self.run_trade_settle_to(capture) {
                 if capture {
+                    self.check_market_notice_leads("progress");
                     self.market_paid_shot_dir =
                         Some(market_paid_shot_dir(self.shot_path.as_deref()));
-                    self.market_paid_shot = Some(MarketPaidShot::Single);
+                    self.market_paid_shot = Some(MarketPaidShot::Progress);
                     self.capture_frames = 4;
                 } else {
+                    self.check_market_notice_leads("single");
                     self.stage_market_paid_more();
                     self.capture_frames = 2;
                 }
@@ -4302,11 +4324,30 @@ impl PortlightGame {
                     Err(err) => Err(err),
                 }
             } else {
+                let before = session.board().active.clone();
                 match session.sell(good, qty) {
-                    Ok(sale) => Ok((
-                        sale_lines(&sale),
-                        market::paid_notice_lines(&sale.contracts),
-                    )),
+                    Ok(sale) => {
+                        let mut lines = sale_lines(&sale);
+                        let mut paid = market::paid_notice_lines(&sale.contracts);
+                        // A partial credit to a contract still open: Log
+                        // after any paid line; the Market notice shows it
+                        // only when nothing was paid (one line).
+                        let progress = contracts_screen::progress_lines(
+                            &before,
+                            &session.board().active,
+                            contracts_screen::DESK_CHARS,
+                        );
+                        lines.extend(progress);
+                        if paid.is_empty() {
+                            let notice = contracts_screen::progress_lines(
+                                &before,
+                                &session.board().active,
+                                market::PAID_NOTICE_CHARS,
+                            );
+                            paid = notice.last().cloned().into_iter().collect();
+                        }
+                        Ok((lines, paid))
+                    }
                     Err(err) => Err(err),
                 }
             }
@@ -6233,7 +6274,7 @@ impl PortlightGame {
         };
         let mut scroll = nodes.scroll.clone();
         let target = match shot {
-            ContractsShot::Active => "AbandonButton",
+            ContractsShot::Active | ContractsShot::Armed => "AbandonButton",
             ContractsShot::Board | ContractsShot::Empty => "ContractList",
         };
         if shot == ContractsShot::Board || shot == ContractsShot::Empty {
@@ -6281,6 +6322,22 @@ impl PortlightGame {
             ContractsShot::Active => {
                 self.prove_unfilled_complete_and_abandon();
                 self.drain_contract_board();
+                self.contracts_notice.clear();
+                self.contracts_confirm = None;
+                // The armed prompt is staged on a fresh game; the Empty frame
+                // gets the drained board back afterwards.
+                self.armed_saved = Some(self.snapshot_for_staging());
+                if self.stage_progress_abandon(true).is_none() {
+                    self.fail_contracts("Contracts smoke: could not stage the armed prompt.");
+                }
+                self.refresh();
+                self.contracts_shot = Some(ContractsShot::Armed);
+            }
+            ContractsShot::Armed => {
+                if let Some(saved) = self.armed_saved.take() {
+                    self.restore_staging(saved);
+                }
+                self.contracts_open = true;
                 self.contracts_notice.clear();
                 self.contracts_confirm = None;
                 self.refresh();
@@ -6342,7 +6399,10 @@ impl PortlightGame {
         self.refresh();
     }
 
-    fn run_abandon_with_progress(&mut self) -> bool {
+    /// Fresh game, a grain contract part-delivered by a real sale at Corsair's
+    /// Rest, then the Abandon prompt armed. Returns the offer id and the
+    /// `d/r` token. `show_desk` also opens Contracts, for a frame.
+    fn stage_progress_abandon(&mut self, show_desk: bool) -> Option<(String, String)> {
         match Session::new(
             FIRST_PLAYABLE_NAME,
             FIRST_PLAYABLE_CAPTAIN,
@@ -6350,7 +6410,7 @@ impl PortlightGame {
             None,
         ) {
             Ok(session) => self.session = Some(session),
-            Err(_) => return false,
+            Err(_) => return None,
         }
         self.log_lines.clear();
         self.trade_qty = 10;
@@ -6365,7 +6425,7 @@ impl PortlightGame {
         });
         let Some((offer_id, required)) = offer else {
             godot_print!("Abandon smoke: no grain offer for Corsair's Rest.");
-            return false;
+            return None;
         };
         self.accept_contract_offer(&offer_id);
         self.market_open = true;
@@ -6386,10 +6446,14 @@ impl PortlightGame {
         }
         if self.docked_id() != Some("corsairs_rest") {
             godot_print!("Abandon smoke: never docked at Corsair's Rest.");
-            return false;
+            return None;
         }
         self.close_day_report();
         self.perform(Action::Sell("grain".into()));
+        if show_desk {
+            self.market_open = false;
+            self.open_contracts();
+        }
         let credited = self.session.as_ref().and_then(|session| {
             session
                 .board()
@@ -6400,10 +6464,33 @@ impl PortlightGame {
         });
         let Some((done, need)) = credited.filter(|(done, _)| *done > 0) else {
             godot_print!("Abandon smoke: the partial sale credited nothing ({credited:?}).");
-            return false;
+            return None;
         };
         let token = format!("{done}/{need}");
         self.arm_abandon(&offer_id);
+        Some((offer_id, token))
+    }
+
+    fn snapshot_for_staging(&self) -> StagingSnapshot {
+        StagingSnapshot {
+            session: self.session.clone(),
+            log_lines: self.log_lines.clone(),
+            trade_qty: self.trade_qty,
+            market_open: self.market_open,
+        }
+    }
+
+    fn restore_staging(&mut self, saved: StagingSnapshot) {
+        self.session = saved.session;
+        self.log_lines = saved.log_lines;
+        self.trade_qty = saved.trade_qty;
+        self.market_open = saved.market_open;
+    }
+
+    fn run_abandon_with_progress(&mut self) -> bool {
+        let Some((_, token)) = self.stage_progress_abandon(false) else {
+            return false;
+        };
         let prompt = self.contracts_notice.clone();
         let want_prompt = format!("Progress {token} is lost. Confirm to drop it.");
         if !prompt.starts_with("Abandon ") || !prompt.ends_with(&want_prompt) {
@@ -6637,7 +6724,9 @@ impl PortlightGame {
             self.fail_contracts("Contracts smoke: the screen was missing.");
             return false;
         };
-        if !nodes.root.is_visible() || nodes.confirm_row.is_visible() {
+        if !nodes.root.is_visible()
+            || nodes.confirm_row.is_visible() != (phase == ContractsShot::Armed)
+        {
             self.fail_contracts(format!(
                 "Contracts smoke: {} had the wrong confirm state.",
                 phase.file_name()
@@ -6679,6 +6768,18 @@ impl PortlightGame {
                     self.fail_contracts(
                         "Contracts smoke: the active obligation was outside the window.",
                     );
+                    return false;
+                }
+            }
+            ContractsShot::Armed => {
+                let prompt = self.contracts_notice.clone();
+                if !prompt.starts_with("Abandon ")
+                    || !prompt.contains(" Progress ")
+                    || !prompt.ends_with(" is lost. Confirm to drop it.")
+                {
+                    self.fail_contracts(format!(
+                        "Contracts smoke: the armed frame had prompt {prompt:?}."
+                    ));
                     return false;
                 }
             }
@@ -9375,6 +9476,13 @@ impl PortlightGame {
     /// contract and the Market leads with the paid notice. False when the
     /// run could not get that far; a failed copy check still returns true.
     fn run_trade_settle(&mut self) -> bool {
+        self.run_trade_settle_to(false)
+    }
+
+    /// With `pause`, returns right after the first partial sale (the contract
+    /// still open, the real Log) so a frame can be shot; `resume_trade_settle`
+    /// then finishes the settle.
+    fn run_trade_settle_to(&mut self, pause: bool) -> bool {
         self.start_game();
         if self.trade_qty != 1 {
             self.fail_trade("Trade smoke: a new game did not start at Qty 1.");
@@ -9445,6 +9553,18 @@ impl PortlightGame {
         }
         self.close_day_report();
         self.market_open = true;
+        self.trade_sell_loop(offer_id, 0, pause)
+    }
+
+    /// Finishes the settle that [`Self::run_trade_settle_to`] paused.
+    fn resume_trade_settle(&mut self) -> bool {
+        match self.settle_resume.take() {
+            Some(offer_id) => self.trade_sell_loop(offer_id, 1, false),
+            None => false,
+        }
+    }
+
+    fn trade_sell_loop(&mut self, offer_id: String, start: usize, pause: bool) -> bool {
         let active = |game: &Self| {
             game.session.as_ref().is_some_and(|session| {
                 session
@@ -9454,7 +9574,7 @@ impl PortlightGame {
                     .any(|contract| contract.offer_id == offer_id)
             })
         };
-        for press in 0..6 {
+        for press in start..6 {
             if !active(self) {
                 break;
             }
@@ -9467,6 +9587,40 @@ impl PortlightGame {
                 ));
                 return false;
             }
+            if press == 0 {
+                // A partial sale credits the contract: a progress line in the
+                // Log and as the Market notice, with `d/r` from the board.
+                let (done, need) = self
+                    .session
+                    .as_ref()
+                    .and_then(|session| {
+                        session
+                            .board()
+                            .active
+                            .iter()
+                            .find(|contract| contract.offer_id == offer_id)
+                            .map(|c| (c.delivered_quantity, c.required_quantity))
+                    })
+                    .unwrap_or((0, 0));
+                let want = format!("Contract progress - Grain for Corsair's Rest - {done}/{need}");
+                if done != 10
+                    || !self.log_lines.contains(&want)
+                    || self.market_notice != vec![want.clone()]
+                {
+                    self.fail_trade(format!(
+                        "Trade smoke: partial sale gave progress {done}/{need}, notice {:?}.",
+                        self.market_notice
+                    ));
+                } else {
+                    godot_print!("trade smoke progress notice: {want}");
+                }
+                if pause && self.smoke_ok {
+                    self.settle_resume = Some(offer_id);
+                    return true;
+                }
+            } else if press == 1 && self.market_notice.len() != 1 {
+                self.fail_trade("Trade smoke: a second partial sale lost its notice.");
+            }
         }
         if active(self) {
             self.fail_trade("Trade smoke: the Qty 10 sales did not settle the contract.");
@@ -9476,7 +9630,7 @@ impl PortlightGame {
         godot_print!("trade smoke paid notice: {paid}");
         if self.market_notice.len() != 1
             || !paid.starts_with("Contract paid: Silver +")
-            || !paid.contains(" - 23 Grain to ")
+            || !(paid.contains(" - 23 Grain to ") || paid.contains(" - incl. bonus +"))
             || paid.len() > market::PAID_NOTICE_CHARS
             || paid.contains("Delivered")
             || paid.contains("(+")
@@ -9620,6 +9774,16 @@ impl PortlightGame {
             self.capture_failed = true;
         }
         match phase {
+            MarketPaidShot::Progress => {
+                if !self.resume_trade_settle() {
+                    self.capture_failed = true;
+                    return false;
+                }
+                self.check_market_notice_leads("single");
+                self.market_paid_shot = Some(MarketPaidShot::Single);
+                self.capture_frames = 4;
+                true
+            }
             MarketPaidShot::Single => {
                 self.stage_market_paid_more();
                 self.market_paid_shot = Some(MarketPaidShot::More);
@@ -10528,6 +10692,11 @@ impl PortlightGame {
             self.fail_day_report("Day-report smoke: Contracts did not open for the desk check.");
             return;
         }
+        // The strip only shows with an active contract; take one so the
+        // checks under the dim look at a strip that is really drawn.
+        if self.accept_strip_offer().is_none() {
+            self.fail_day_report("Day-report smoke: no contract to show the strip.");
+        }
         self.open_day_report_doc(day_report::smoke_deadline_document(day));
         let (dimmed, stops, trapped, focused) = self
             .day_report_nodes
@@ -11427,6 +11596,13 @@ impl PortlightGame {
             return;
         };
         let strip_root = strip.root.clone().upcast::<Control>();
+        if !strip_root.is_visible() {
+            self.smoke_ok = false;
+            godot_print!(
+                "Scrim over strip: the contract strip is not shown, so the check proves nothing"
+            );
+            return;
+        }
         let strip_rect = strip_root.get_global_rect();
         let scrim_rect = nodes.scrim.get_global_rect();
         let covers = scrim_rect.encloses(strip_rect);

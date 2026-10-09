@@ -378,6 +378,18 @@ pub(crate) fn outcome_line(
     more: usize,
     budget: usize,
 ) -> String {
+    outcome_line_with_tail(label, outcome, more, budget, &outcome_tail(outcome))
+}
+
+/// [`outcome_line`] with the tail given by the caller (the Market notice uses
+/// the bonus alone, so the early bonus is never trimmed away).
+pub(crate) fn outcome_line_with_tail(
+    label: &str,
+    outcome: &ContractOutcome,
+    more: usize,
+    budget: usize,
+    full_tail: &str,
+) -> String {
     let mut head = format!("{label}:");
     let silver = outcome_terms(outcome);
     if !silver.is_empty() {
@@ -389,12 +401,74 @@ pub(crate) fn outcome_line(
     }
     let sep = if head.ends_with(':') { " " } else { " - " };
     let room = budget.saturating_sub(head.len() + sep.len());
-    let tail = trim_tail(&outcome_tail(outcome), room);
+    let tail = trim_tail(full_tail, room);
     if tail.is_empty() {
         head
     } else {
         format!("{head}{sep}{tail}")
     }
+}
+
+/// `incl. bonus +60` when the outcome paid an early bonus, else `None`. The
+/// Market notice tail; the Log and desk rows keep `early bonus +60`.
+pub(crate) fn notice_bonus_tail(outcome: &ContractOutcome) -> Option<String> {
+    let bonus = outcome.silver_delta - outcome.reward_silver;
+    (outcome.outcome_type == "completed_bonus" && bonus > 0)
+        .then(|| format!("incl. bonus +{bonus}"))
+}
+
+/// `Contract progress - Grain for Corsair's Rest - 10/23`. The tail trims
+/// first; the head and the `{d}/{r}` token never do. No Silver, Trust,
+/// Standing or Heat: nothing was paid.
+pub(crate) fn progress_line(
+    good_id: &str,
+    port_id: &str,
+    delivered: i64,
+    required: i64,
+    budget: usize,
+) -> String {
+    let head = "Contract progress";
+    let token = format!(" - {}", progress_text(delivered, required));
+    let tail = ascii_sentence(&format!(
+        "{} for {}",
+        good_display_name(good_id),
+        port_display_name(port_id)
+    ));
+    let room = budget.saturating_sub(head.len() + 3 + token.len());
+    let tail = trim_tail(&tail, room);
+    if tail.is_empty() {
+        format!("{head}{token}")
+    } else {
+        format!("{head} - {tail}{token}")
+    }
+}
+
+/// One progress line per contract still active whose delivered count rose
+/// between `before` and `after` (matched by offer id). Empty when nothing was
+/// credited, so a sale that moves no contract prints nothing extra.
+pub(crate) fn progress_lines(
+    before: &[portlight_sim::model::ActiveContract],
+    after: &[portlight_sim::model::ActiveContract],
+    budget: usize,
+) -> Vec<String> {
+    after
+        .iter()
+        .filter(|now| {
+            before
+                .iter()
+                .find(|old| old.offer_id == now.offer_id)
+                .is_some_and(|old| now.delivered_quantity > old.delivered_quantity)
+        })
+        .map(|now| {
+            progress_line(
+                &now.good_id,
+                &now.destination_port_id,
+                now.delivered_quantity,
+                now.required_quantity,
+                budget,
+            )
+        })
+        .collect()
 }
 
 /// ASCII `tail` cut to `room` chars: whole words, then `...`. Empty when
@@ -492,14 +566,15 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 
 #[cfg(test)]
 mod tests {
-    use portlight_sim::model::ContractOutcome;
+    use portlight_sim::model::{ActiveContract, ContractOutcome};
     use portlight_sim::Session;
 
     use super::{
         abandon_notice, abandon_prompt, aboard_clause, ascii_sentence, availability_tag,
         can_complete, days_left_text, failure_terms, is_failure_notice, notice_color, outcome_line,
-        outcome_notice, outcome_terms, progress_text, recent_line, requirement_text, reward_text,
-        BOARD_CARD, CAP_FULL, CREAM, DESK_CHARS, DUE, EMPTY_OFFERS, MAX_ACTIVE,
+        outcome_notice, outcome_terms, progress_line, progress_lines, progress_text, recent_line,
+        requirement_text, reward_text, BOARD_CARD, CAP_FULL, CREAM, DESK_CHARS, DUE, EMPTY_OFFERS,
+        MAX_ACTIVE,
     };
 
     #[test]
@@ -1051,6 +1126,27 @@ mod tests {
         }
     }
 
+    fn active(offer: &str, good: &str, port: &str, done: i64, need: i64) -> ActiveContract {
+        ActiveContract {
+            offer_id: offer.into(),
+            template_id: "t".into(),
+            family: "shortage".into(),
+            title: "Grain run".into(),
+            accepted_day: 1,
+            deadline_day: 20,
+            destination_port_id: port.into(),
+            good_id: good.into(),
+            required_quantity: need,
+            delivered_quantity: done,
+            reward_silver: 500,
+            bonus_reward: 60,
+            source_region: None,
+            source_port: None,
+            inspection_modifier: 1.0,
+            status: "active".into(),
+        }
+    }
+
     #[test]
     fn abandon_notice_carries_progress_before_the_aboard_clause() {
         assert_eq!(
@@ -1105,5 +1201,58 @@ mod tests {
                 assert!(!line.contains(term), "{line}");
             }
         }
+    }
+
+    #[test]
+    fn progress_line_formats_head_tail_and_token() {
+        assert_eq!(
+            progress_line("grain", "corsairs_rest", 10, 23, 96),
+            "Contract progress - Grain for Corsair's Rest - 10/23"
+        );
+        let before = [active("a", "grain", "corsairs_rest", 0, 23)];
+        let after = [active("a", "grain", "corsairs_rest", 10, 23)];
+        assert_eq!(
+            progress_lines(&before, &after, 96),
+            vec!["Contract progress - Grain for Corsair's Rest - 10/23"]
+        );
+        // No credit, no line (R4); a contract that left the board is paid, not progress.
+        assert!(progress_lines(&after, &after, 96).is_empty());
+        assert!(progress_lines(&before, &[], 96).is_empty());
+    }
+
+    #[test]
+    fn progress_line_trims_the_tail_not_the_token() {
+        let long = progress_line("black_powder", "typhoon_anchorage", 999, 999, 40);
+        assert!(long.starts_with("Contract progress - "), "{long}");
+        assert!(long.ends_with(" - 999/999"), "{long}");
+        assert!(long.contains("..."), "{long}");
+        // No room for any tail: head and token stand whole.
+        assert_eq!(
+            progress_line("grain", "corsairs_rest", 10, 23, 10),
+            "Contract progress - 10/23"
+        );
+        for budget in 20..=96 {
+            let line = progress_line("black_powder", "typhoon_anchorage", 12, 345, budget);
+            assert!(line.starts_with("Contract progress"), "{line}");
+            assert!(line.ends_with("12/345"), "{line}");
+            assert_clean(&line);
+        }
+    }
+
+    #[test]
+    fn progress_line_has_no_trust_standing_heat_or_complete() {
+        let line = progress_line("grain", "corsairs_rest", 10, 23, 96);
+        for term in [
+            "Silver",
+            "Trust",
+            "Standing",
+            "Heat",
+            "Complete",
+            "Deliver",
+            "corsairs_rest",
+        ] {
+            assert!(!line.contains(term), "{line}");
+        }
+        assert!(line.is_ascii());
     }
 }
