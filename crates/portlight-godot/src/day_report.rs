@@ -20,7 +20,9 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
-use godot::classes::{Button, Label, PanelContainer, ScrollContainer, StyleBoxFlat, VBoxContainer};
+use godot::classes::{
+    Button, ColorRect, Label, PanelContainer, ScrollContainer, StyleBoxFlat, VBoxContainer,
+};
 use godot::prelude::*;
 use portlight_sim::content;
 use portlight_sim::model::{
@@ -81,7 +83,7 @@ pub(crate) const EXPIRED_PREFIX: &str = "Contract expired: ";
 
 /// Captain's week rolling window (Godot memory only, never saved).
 pub(crate) const WEEK_N: usize = 5;
-/// GD presentation threshold for `Next: Stores low`.
+/// Days of stores at or under which `Next: Stores low` shows.
 pub(crate) const STORES_LOW: i64 = 3;
 
 #[derive(Clone)]
@@ -93,6 +95,10 @@ pub(crate) struct DayReportNodes {
     pub body: Gd<VBoxContainer>,
     pub footer: Gd<VBoxContainer>,
     pub close: Gd<Button>,
+    /// Full-screen dim drawn just under the card. Shown only while the card
+    /// is up over an input-blocking screen (an encounter or a desk), so the
+    /// screen behind is dimmed and takes no clicks until the report closes.
+    pub scrim: Gd<ColorRect>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -298,7 +304,38 @@ pub(crate) fn build_day_report_screen() -> DayReportNodes {
         body,
         footer,
         close,
+        scrim: build_scrim(),
     }
+}
+
+/// Alpha of the dim laid over a blocking screen behind the card.
+pub(crate) const SCRIM_ALPHA: f32 = 0.55;
+
+fn build_scrim() -> Gd<ColorRect> {
+    let mut scrim = ColorRect::new_alloc();
+    scrim.set_name("DayReportScrim");
+    scrim.set_color(Color {
+        a: SCRIM_ALPHA,
+        ..INK
+    });
+    scrim.set_visible(false);
+    scrim.set_mouse_filter(MouseFilter::IGNORE);
+    scrim
+}
+
+/// Show or hide the dim behind the card. While shown it stops every click
+/// that misses the card.
+pub(crate) fn set_scrim(nodes: &mut DayReportNodes, on: bool) {
+    nodes.scrim.set_visible(on);
+    nodes.scrim.set_mouse_filter(if on {
+        MouseFilter::STOP
+    } else {
+        MouseFilter::IGNORE
+    });
+}
+
+pub(crate) fn scrim_shown(nodes: &DayReportNodes) -> bool {
+    nodes.scrim.is_visible()
 }
 
 /// Compact card over the chart. Not a full-rect overlay (Sail / Next day stay usable).
@@ -380,7 +417,7 @@ pub(crate) fn yield_arrival_movers(
     yield_arrival_rows(movers, Vec::new(), |kept, _| build(kept))
 }
 
-/// Arrival days with Health (GD ruling on the AD edge case): movers yield
+/// Arrival days with Health: movers yield
 /// first, then Health lines from last to first while the arrival row cost
 /// is still over budget. `build` lays out the card with the kept movers and
 /// kept Health lines. Still over budget once both are gone is accepted.
@@ -742,7 +779,7 @@ pub(crate) fn next_facts(session: &Session) -> NextFacts {
 }
 
 /// First match: overdue, due today, approaching, Claim ready, wounded, Stores low.
-/// Overdue names the sale (GD: the desk cannot fix it; selling is the action),
+/// Overdue names the sale (the desk cannot fix it; selling is the action),
 /// without promising that the sale still pays.
 pub(crate) fn next_line(facts: &NextFacts) -> Option<String> {
     let lefts = &facts.contract_days_left;
@@ -1294,7 +1331,7 @@ pub(crate) fn is_failure_line(text: &str) -> bool {
 
 /// The one expiry formatter for the card and the Log:
 /// `Contract expired: {Title} - {d}/{r} - Silver +N - Guarantee +N - {n} {Good} still aboard`.
-/// Silver-only terms (GD M2), zero terms omitted, catalog names first then
+/// Silver-only terms, zero terms omitted, catalog names first then
 /// `humanize_id`, never the sim summary. Title falls back to `{Good} to {Port}`.
 pub(crate) fn expired_line(
     outcome: &ContractOutcome,
@@ -1923,7 +1960,7 @@ mod tests {
         }
     }
 
-    /// AD #62 soft 2: a row never ends on the ` - ` separator dash.
+    /// A row never ends on the ` - ` separator dash.
     #[test]
     fn separator_wrap_breaks_before_a_trailing_dash() {
         // One char = one unit of width.
@@ -2541,7 +2578,7 @@ mod tests {
             captain_wounded: true,
             provisions: 1,
         };
-        // GD (contract fail, OQ2): overdue names the sale, not the desk, and
+        // Contract fail: overdue names the sale, not the desk, and
         // promises nothing about payment.
         assert_eq!(
             next_line(&all).as_deref(),
@@ -3173,7 +3210,7 @@ mod tests {
             .any(|l| l.text.starts_with('+') && l.text.ends_with(" more"))
     }
 
-    /// GD C1 (#57): staged arrival = 3 heads + wrapped contract 2 + 3 movers +
+    /// Staged arrival = 3 heads + wrapped contract 2 + 3 movers +
     /// deadline 1 + claim 1 = 10. Movers yield to cost 8; exactly 1 mover kept.
     #[test]
     fn arrival_movers_yield_staged_doc_to_budget() {
@@ -3252,7 +3289,7 @@ mod tests {
         assert_eq!(sections[3].lines, vec![claim.clone()]);
         assert_eq!(arrival_row_cost(&sections), 9);
 
-        // GD ruling: Health yields next, so Claim ready stays inside the budget.
+        // Health yields next, so Claim ready stays inside the budget.
         let build = |kept: &[DayReportLine], kept_health: &[DayReportLine]| {
             let mut arrival = vec![contract.clone()];
             arrival.extend_from_slice(kept);
@@ -3418,7 +3455,7 @@ mod tests {
         }
     }
 
-    /// 12.1 #1: F1 (nothing sold). GD M2: Silver-only terms, so a plain
+    /// Nothing sold: Silver-only terms, so a plain
     /// expiry is just `{Title} - {d}/{r}`.
     #[test]
     fn expired_line_f1_is_title_and_progress() {
@@ -3968,7 +4005,7 @@ mod tests {
         }
     }
 
-    /// GD OQ2: the overdue rung names the docked-sale port from the session.
+    /// The overdue rung names the docked-sale port from the session.
     #[test]
     fn next_facts_names_the_overdue_port() {
         let mut session = Session::new("Ada", "merchant", 1, None).unwrap();

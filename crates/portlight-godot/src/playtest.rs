@@ -481,21 +481,26 @@ pub(crate) enum BlockingOverlay {
     Newgame,
 }
 
+/// The input-blocking screens in draw order, top first. The game adds their
+/// roots in the reverse of this order (so the first here is drawn on top),
+/// and its smoke checks that. Ranking and drawing therefore agree: the screen
+/// the bridge offers is the one the player sees on top.
+pub(crate) const BLOCKING_DRAW_ORDER: [BlockingOverlay; 8] = [
+    BlockingOverlay::Encounter,
+    BlockingOverlay::Hunt,
+    BlockingOverlay::Crew,
+    BlockingOverlay::Harbour,
+    BlockingOverlay::Journal,
+    BlockingOverlay::Shipyard,
+    BlockingOverlay::Contracts,
+    BlockingOverlay::Newgame,
+];
+
 /// The overlay whose actions are the only ones offered: the first open one
-/// in priority order (encounter first, then the docked desks, then the
-/// new-game pages). `None` offers everything drawn.
+/// in [`BLOCKING_DRAW_ORDER`] (the one drawn on top). `None` offers
+/// everything drawn.
 pub(crate) fn blocking_overlay(open: &[(BlockingOverlay, bool)]) -> Option<BlockingOverlay> {
-    const ORDER: [BlockingOverlay; 8] = [
-        BlockingOverlay::Encounter,
-        BlockingOverlay::Hunt,
-        BlockingOverlay::Crew,
-        BlockingOverlay::Contracts,
-        BlockingOverlay::Shipyard,
-        BlockingOverlay::Harbour,
-        BlockingOverlay::Journal,
-        BlockingOverlay::Newgame,
-    ];
-    ORDER
+    BLOCKING_DRAW_ORDER
         .into_iter()
         .find(|overlay| open.iter().any(|(kind, shown)| kind == overlay && *shown))
 }
@@ -1555,6 +1560,43 @@ mod tests {
             offer_scope(top, false, false),
             OfferScope::Only(OfferLayer::Blocking(Encounter))
         );
+    }
+
+    /// The ranking is the draw order: of any two open blocking screens the
+    /// one drawn on top is offered, and `build_ui` adds the roots bottom
+    /// first, so the source order is the reverse of the ranking.
+    #[test]
+    fn blocking_rank_matches_draw_order() {
+        for (i, upper) in BLOCKING_DRAW_ORDER.iter().enumerate() {
+            for lower in &BLOCKING_DRAW_ORDER[i + 1..] {
+                let top = blocking_overlay(&[(*lower, true), (*upper, true)]);
+                assert_eq!(top, Some(*upper), "{upper:?} over {lower:?}");
+            }
+        }
+        let source = include_str!("game.rs");
+        let body = &source[source.find("fn build_ui(").expect("build_ui")..];
+        let add = |root: &str| {
+            body.find(&format!("add_child(&{root}.root)"))
+                .unwrap_or_else(|| panic!("{root} root added in build_ui"))
+        };
+        let roots = [
+            "encounter_screen",
+            "hunt",
+            "crew",
+            "harbour",
+            "journal",
+            "shipyard",
+            "contracts",
+            "newgame",
+        ];
+        for pair in roots.windows(2) {
+            assert!(
+                add(pair[0]) > add(pair[1]),
+                "{} must be added after {} (drawn above it)",
+                pair[0],
+                pair[1]
+            );
+        }
     }
 
     /// F10-3: one layer at a time. The Day's report over an encounter is the

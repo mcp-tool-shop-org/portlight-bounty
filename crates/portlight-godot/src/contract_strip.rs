@@ -298,7 +298,7 @@ mod tests {
     use super::*;
     use portlight_sim::session::Session;
 
-    /// #63 GD note 5: the single-contract `- to {Port}` tail drops when the
+    /// The single-contract `- to {Port}` tail drops when the
     /// title already names the port (case-insensitive), else it stays.
     #[test]
     fn single_contract_drops_the_port_the_title_names() {

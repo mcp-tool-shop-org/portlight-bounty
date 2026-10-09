@@ -1,12 +1,12 @@
 //! Places a [`portlight_chart::HarbourTile`] list.
 //!
 //! Water stays on its own layer and does not Y-sort. Quay paving uses the
-//! existing Land ground layer (art-gate U.4: offset `0,0`, y-sort origin `0`).
+//! existing Land ground layer (offset `0,0`, y-sort origin `0`).
 //! The land anchor is the footprint bottom with no sea datum, which is where
 //! the flag diamond meets the quay block's top face. A separate ground node
 //! at a lower z would paint that diamond before the block and hide it, so
 //! each paving plate is a child of its quay sprite: Godot draws the block,
-//! then the child, and deck props (Y.1) are further children of that pier or
+//! then the child, and deck props are further children of that pier or
 //! quay so they draw after the flag. The child's position is only the delta
 //! from the block anchor to the land-offset screen point; the plate offset
 //! stays the manifest anchor.
@@ -15,9 +15,9 @@
 //! (`col + row`). Equal Y keeps tree order, which is the builder's tie-break
 //! (pilings before a pier or quay). Sprites do not get a z of their own.
 //!
-//! Flat deck (Addendum X): a paving plate on a cell that has no quay block
+//! Flat deck: a paving plate on a cell that has no quay block
 //! in the list is a `Land` node directly on the works Y-sort, at the same
-//! U.4 screen point. Its Y is the footprint bottom with no sea datum, which
+//! Land anchor screen point. Its Y is the footprint bottom with no sea datum, which
 //! sorts after every work behind it (their anchors carry the `+48` datum) and
 //! before every block or prop in front of it. A paving plate whose cell has
 //! a quay block later in the list is still a missing plate, not a deck.
@@ -41,7 +41,7 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
 
     // Structure sprites in list order. Paving and deck props parent under
     // the pier/quay on the cell so the flag draws after the block and deck
-    // props draw after the flag (art-gate W / Y.1).
+    // props draw after the flag.
     let mut structures: Vec<((i32, i32), Gd<Sprite2D>)> = Vec::new();
     // Cells with a quay block anywhere in the list. Paving elsewhere is flat deck.
     let quay_cells: Vec<(i32, i32)> = tiles
@@ -79,7 +79,7 @@ pub fn place_harbour(root: &mut Gd<Node2D>, tiles: &[HarbourTile]) -> bool {
                         ok = false;
                         continue;
                     }
-                    // Flat deck: no block on this cell. Same plate and U.4
+                    // Flat deck: no block on this cell. Same plate and Land placement
                     // point, sorted with the works by its footprint Y.
                     let mut deck = Node2D::new_alloc();
                     deck.set_name("Land");
@@ -228,8 +228,8 @@ mod tests {
         );
         assert!(body.contains("for tile in tiles"));
 
-        // Flat deck (Addendum X): paving with no block on its cell joins the
-        // works Y-sort itself, z 0, at the U.4 point. Paving whose block comes
+        // Flat deck: paving with no block on its cell joins the
+        // works Y-sort itself, z 0, at the Land anchor point. Paving whose block comes
         // later is still a missing plate.
         let deck_z = body.find("deck.set_z_index(0)").expect("deck z 0");
         let deck_add = body

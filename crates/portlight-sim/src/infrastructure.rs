@@ -791,13 +791,21 @@ pub fn resolve_claim(
     claims
 }
 
-/// `expire_voyage_policies`.
+/// `expire_voyage_policies`. The note names the policy by its catalog name
+/// (`Voyage policy expired: Basic Hull Insurance`); a spec missing from the
+/// catalog falls back to the spec id. Python prints the spec id; this is a
+/// listed parity divergence.
 pub fn expire_voyage_policies(state: &mut InfrastructureRecord) -> Vec<String> {
     let mut messages = Vec::new();
     for policy in &mut state.policies {
         if policy.active && policy.scope == "next_voyage" {
             policy.active = false;
-            messages.push(format!("Voyage policy expired: {}", policy.spec_id));
+            let name = content::content()
+                .policy(&policy.spec_id)
+                .map(|spec| spec.name.as_str())
+                .filter(|name| !name.is_empty())
+                .unwrap_or(policy.spec_id.as_str());
+            messages.push(format!("Voyage policy expired: {name}"));
         }
     }
     messages
@@ -1248,7 +1256,7 @@ mod tests {
         assert_eq!(claims[0].payout, 40);
         assert_eq!(world.captain.silver, before - 40 + 40);
         let expired = expire_voyage_policies(&mut infra);
-        assert_eq!(expired, vec!["Voyage policy expired: hull_basic"]);
+        assert_eq!(expired, vec!["Voyage policy expired: Basic Hull Insurance"]);
         assert!(!infra.policies[0].active);
     }
 

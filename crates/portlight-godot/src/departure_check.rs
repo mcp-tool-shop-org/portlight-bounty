@@ -513,11 +513,13 @@ pub(crate) fn button_texts(nodes: &DepartureNodes) -> Vec<String> {
 
 /// The tallest document the panel can get: a long title, the cap of
 /// two-row warning lines, and `+N more`. Used by the smoke's height check.
+/// The hold is the largest play can reach: a Royal Man-of-War (200) with all
+/// six upgrade slots on Reinforced Bulkheads (+20 each), nearly full.
 pub(crate) fn worst_case_document() -> DepartureDoc {
     let long = "Premium charter: black powder to Corsair's Rest - 0/40 - 1 day left - will be late";
     DepartureDoc {
         title: "Before you sail - Corsair's Rest".to_string(),
-        context: "Voyage 12 days - Hold 999.5/999".to_string(),
+        context: "Voyage 12 days - Hold 319.5/320".to_string(),
         lines: (0..DEPARTURE_LINE_CAP)
             .map(|_| DepartureLine {
                 text: format!("{long} - sell 40 more Black Powder"),
@@ -1002,7 +1004,6 @@ mod tests {
         }
     }
 
-    // 12 (GD section 18.2)
     #[test]
     fn unsold_here_fires_first_and_clamps_to_need() {
         let mut sell = contract("Grain for Porto Novo", "porto_novo", "Porto Novo", 40, 9);

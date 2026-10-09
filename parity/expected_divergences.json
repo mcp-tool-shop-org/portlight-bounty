@@ -240,6 +240,21 @@
       "rust": "crates/portlight-sim/src/naval.rs (resolve_hunt_boarding, hunt_crew_loss_cap); session.rs hunt_crew_min",
       "python": "src/portlight/engine/naval.py:318-351",
       "oracle": "tools/parity/oracle.py:1302-1312"
+    },
+    {
+      "script": "insurance_claim.txt",
+      "check": "oracle",
+      "summary": "The next-voyage policy expiry note names the policy by its catalog name in Rust (Basic Hull Insurance); Python prints the spec id (hull_basic). Player copy only: the policy state, claims, silver and every other field agree. The golden file stays the Python snapshot.",
+      "paths": [
+        {
+          "path": "$.log[5].notes[0]",
+          "python": "Voyage policy expired: hull_basic",
+          "rust": "Voyage policy expired: Basic Hull Insurance"
+        }
+      ],
+      "rust": "crates/portlight-sim/src/infrastructure.rs (expire_voyage_policies)",
+      "python": "src/portlight/engine/infrastructure.py:951",
+      "oracle": "tools/parity/oracle.py:485"
     }
   ]
 }

@@ -375,8 +375,8 @@ pub(crate) fn capture_crew_text(crew: i64) -> String {
     format!("Crew to the prize  {crew}")
 }
 
-/// Padding added to the widest Outcome column (GD ruling: widest label plus
-/// padding, even gap).
+/// Padding added to the widest Outcome column: every column is the widest
+/// label plus this padding, so the gaps stay even.
 pub(crate) const CHOICE_COLUMN_PAD: f32 = 12.0;
 
 /// Width every Outcome column gets: the widest column's own minimum width plus
@@ -450,7 +450,7 @@ mod tests {
     use super::{placeholder_minimum_size, plate_caption};
     use crate::logic::{encounter_plate, ui_plate_panel};
 
-    /// GD: every Outcome column is the widest column plus the pad.
+    /// Every Outcome column is the widest column plus the pad.
     #[test]
     fn choice_columns_take_the_widest_plus_pad() {
         use super::{choice_column_width, CHOICE_COLUMN_PAD};
