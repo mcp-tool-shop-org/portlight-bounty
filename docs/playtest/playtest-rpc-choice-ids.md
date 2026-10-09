@@ -28,9 +28,15 @@ Static ids and prefixes follow the match. The ones a first voyage presses:
 - `newgame.captains`, `newgame.start.<captain>` (`merchant` for Merchant Ada)
 - `chart.contracts.open`, `chart.contracts.close`, `contracts.accept.<id>`, `contracts.complete.<id>`
 - `chart.market`, `chart.buy.<good>`, `chart.sell.<good>`
-- `chart.sail.<dest>` (`al_manar` for the maiden lane)
+- `chart.sail.<dest>` (`al_manar` for the maiden lane). Label convention, not an id change: the offered label is `Sail - {Port display name}`, ASCII ` - `. The drawn button still reads `Sail`.
 - `chart.next_day`, `chart.journal.open`, `chart.journal.close`
 - `encounter.auto_resolve`, `encounter.leave`, `encounter.stance.<thrust|slash|parry>`
+
+`chart.contract_strip` is the chart contract strip. It opens Contracts when docked. It is a new id, and no existing id changed.
+
+Insurance ids drop empty segments (`harbour.prepare.insurance.{policy}`, `.{policy}.{target}`, `.{policy}.{origin}.{destination}`). For one release, the parser still accepts the old trailing-empty form. No insurance id is in the locked table.
+
+Under a blocking overlay (an encounter, a docked desk, or a new-game page), only that overlay's ids are offered. Departure check and Day's report do not block.
 
 `harbour.emergency` is the emergency-loan button. It is stamped. The amount field is not a `line` target.
 

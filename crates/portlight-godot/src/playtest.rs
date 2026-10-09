@@ -295,6 +295,9 @@ fn static_action(id: &str) -> Option<Action> {
         "encounter.take_all" => Action::TakeAll,
         "encounter.leave" => Action::LeaveEncounter,
         "chart.contracts.open" => Action::OpenContracts,
+        // The chart strip opens the desk; it has its own id so a seat can
+        // tell a strip press from the Contracts button.
+        "chart.contract_strip" => Action::OpenContracts,
         "chart.contracts.close" => Action::CloseContracts,
         "contracts.refresh" => Action::RefreshContracts,
         "chart.shipyard.open" => Action::OpenShipyard,
@@ -390,7 +393,7 @@ fn harbour_intent_id(intent: &HarbourIntent) -> String {
             target_id,
             origin,
             destination,
-        } => format!("insurance.{policy_id}.{target_id}.{origin}.{destination}"),
+        } => insurance_id(policy_id, target_id, origin, destination),
     }
 }
 
@@ -422,15 +425,84 @@ fn harbour_intent_from(rest: &str) -> Option<HarbourIntent> {
         return Some(HarbourIntent::Emergency(amount.parse().ok()?));
     }
     if let Some(rest) = rest.strip_prefix("insurance.") {
-        let mut parts = rest.splitn(4, '.');
-        return Some(HarbourIntent::BuyInsurance {
-            policy_id: parts.next()?.to_string(),
-            target_id: parts.next()?.to_string(),
-            origin: parts.next()?.to_string(),
-            destination: parts.next()?.to_string(),
-        });
+        return insurance_from(rest);
     }
     None
+}
+
+/// F12: `insurance.{policy}` when unscoped, `insurance.{policy}.{target}`
+/// for a contract guarantee, `insurance.{policy}.{origin}.{destination}` for
+/// a voyage. Any other mix keeps the full four-segment form so it parses
+/// back the same way.
+fn insurance_id(policy: &str, target: &str, origin: &str, destination: &str) -> String {
+    match (target.is_empty(), origin.is_empty(), destination.is_empty()) {
+        (true, true, true) => format!("insurance.{policy}"),
+        (false, true, true) => format!("insurance.{policy}.{target}"),
+        (true, false, false) => format!("insurance.{policy}.{origin}.{destination}"),
+        _ => format!("insurance.{policy}.{target}.{origin}.{destination}"),
+    }
+}
+
+/// Reads the short forms above and, for one release, the old form with
+/// empty trailing segments (`insurance.hull_basic...`).
+fn insurance_from(rest: &str) -> Option<HarbourIntent> {
+    let parts: Vec<&str> = rest.split('.').collect();
+    let (policy, target, origin, destination) = match parts.as_slice() {
+        [policy] => (*policy, "", "", ""),
+        [policy, target] => (*policy, *target, "", ""),
+        [policy, origin, destination] => (*policy, "", *origin, *destination),
+        [policy, target, origin, destination] => (*policy, *target, *origin, *destination),
+        _ => return None,
+    };
+    if policy.is_empty() {
+        return None;
+    }
+    Some(HarbourIntent::BuyInsurance {
+        policy_id: policy.to_string(),
+        target_id: target.to_string(),
+        origin: origin.to_string(),
+        destination: destination.to_string(),
+    })
+}
+
+/// F10: an overlay that takes the whole offer while it is open. Departure
+/// check and Day's report are not here: GD ruled them non-blocking, so they
+/// never narrow what is offered.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum BlockingOverlay {
+    Encounter,
+    Hunt,
+    Crew,
+    Contracts,
+    Shipyard,
+    Harbour,
+    Journal,
+    Newgame,
+}
+
+/// The overlay whose actions are the only ones offered: the first open one
+/// in priority order (encounter first, then the docked desks, then the
+/// new-game pages). `None` offers everything drawn.
+pub(crate) fn blocking_overlay(open: &[(BlockingOverlay, bool)]) -> Option<BlockingOverlay> {
+    const ORDER: [BlockingOverlay; 8] = [
+        BlockingOverlay::Encounter,
+        BlockingOverlay::Hunt,
+        BlockingOverlay::Crew,
+        BlockingOverlay::Contracts,
+        BlockingOverlay::Shipyard,
+        BlockingOverlay::Harbour,
+        BlockingOverlay::Journal,
+        BlockingOverlay::Newgame,
+    ];
+    ORDER
+        .into_iter()
+        .find(|overlay| open.iter().any(|(kind, shown)| kind == overlay && *shown))
+}
+
+/// F14: the offered label for a lane's Sail button. The drawn text stays
+/// `Sail`; the id stays `chart.sail.<port_id>`.
+pub(crate) fn sail_offer_label(port_name: &str) -> String {
+    format!("Sail - {port_name}")
 }
 
 const STRIP_ROOT: &str = "ContractStrip";
@@ -446,6 +518,11 @@ const DAY_REPORT_BODY: &str = "DayReportBody";
 const DAY_REPORT_FOOTER: &str = "DayReportFooter";
 /// `apply_document` names each drawn section box `Section{id}`.
 const DAY_REPORT_SECTION_PREFIX: &str = "Section";
+const JOURNAL_ROOT: &str = "JournalScreen";
+const JOURNAL_TITLE: &str = "JournalTitle";
+const JOURNAL_NOTICE: &str = "JournalNotice";
+/// The Journal names its section boxes `Section{Name}` too.
+const JOURNAL_BODY: &str = "JournalBody";
 
 /// One contract block on the Contracts screen, read from its labels and
 /// its offered buttons.
@@ -574,6 +651,55 @@ impl DayReportView {
         };
         dict.set("sections", &sections);
         dict.set("footer", &footer);
+        dict
+    }
+}
+
+/// F11: the Journal as drawn. Only read while the Journal is open.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct JournalView {
+    pub title: String,
+    pub notice: String,
+    /// Shown sections in draw order. A section's lines are its labels and
+    /// beat button texts, heading first in `title`.
+    pub sections: Vec<DayReportSectionView>,
+}
+
+impl JournalView {
+    /// Lines for the observation text, before `Actions:`.
+    pub(crate) fn text_lines(&self) -> Vec<String> {
+        let mut lines = vec![format!("Journal: {}", self.title)];
+        if !self.notice.is_empty() {
+            lines.push(self.notice.clone());
+        }
+        for section in &self.sections {
+            lines.push(format!("{}:", section.title));
+            for line in &section.lines {
+                lines.push(format!("- {line}"));
+            }
+        }
+        lines
+    }
+
+    fn to_dictionary(&self) -> VarDictionary {
+        let mut sections = VarArray::new();
+        for section in &self.sections {
+            let mut lines = VarArray::new();
+            for line in &section.lines {
+                lines.push(line.as_str());
+            }
+            let mut dict = vdict! {
+                "id" => section.id.as_str(),
+                "title" => section.title.as_str(),
+            };
+            dict.set("lines", &lines);
+            sections.push(&dict);
+        }
+        let mut dict = vdict! {
+            "title" => self.title.as_str(),
+            "notice" => self.notice.as_str(),
+        };
+        dict.set("sections", &sections);
         dict
     }
 }
@@ -709,8 +835,9 @@ pub(crate) struct PortlightPlaytestLens {}
 #[godot_api]
 impl PortlightPlaytestLens {
     /// Adds `state.contract_strip`, `state.contract_board`,
-    /// `state.contracts_active`, and `state.day_report` (null unless the
-    /// card is showing), and the same facts as text lines before `Actions:`.
+    /// `state.contracts_active`, `state.day_report` (null unless the card is
+    /// showing), and `state.journal` (null unless the Journal is open), and
+    /// the same facts as text lines before `Actions:`.
     /// Returns the observation unchanged when `game` is null.
     ///
     /// `VarDictionary::clone()` shares the dictionary; it is not a copy. With
@@ -727,6 +854,7 @@ impl PortlightPlaytestLens {
             .is_some_and(|control| control.is_visible_in_tree());
         let view = read_contracts_view(&game, contracts_open);
         let day_report = read_day_report_view(&game);
+        let journal = read_journal_view(&game);
 
         let mut result = observation.clone();
         let mut state = observation
@@ -740,6 +868,10 @@ impl PortlightPlaytestLens {
             Some(report) => state.set("day_report", &report.to_dictionary()),
             None => state.set("day_report", &Variant::nil()),
         }
+        match &journal {
+            Some(view) => state.set("journal", &view.to_dictionary()),
+            None => state.set("journal", &Variant::nil()),
+        }
         result.set("state", &state);
 
         let text = observation
@@ -750,6 +882,9 @@ impl PortlightPlaytestLens {
         let mut extra = view.text_lines(contracts_open);
         if let Some(report) = &day_report {
             extra.extend(report.text_lines());
+        }
+        if let Some(view) = &journal {
+            extra.extend(view.text_lines());
         }
         let spliced = splice_text(&text, &extra);
         result.set("text", spliced.as_str());
@@ -861,6 +996,66 @@ fn read_day_report_view(game: &Gd<Node>) -> Option<DayReportView> {
         }
     }
     Some(view)
+}
+
+fn read_journal_view(game: &Gd<Node>) -> Option<JournalView> {
+    let root = find_named(game, JOURNAL_ROOT)?;
+    if !shown(&root) {
+        return None;
+    }
+    let label_text = |name: &str| {
+        find_named(&root, name)
+            .and_then(|node| node.try_cast::<Label>().ok())
+            .map(|label| label.get_text().to_string())
+            .unwrap_or_default()
+    };
+    let mut view = JournalView {
+        title: label_text(JOURNAL_TITLE),
+        notice: label_text(JOURNAL_NOTICE),
+        sections: Vec::new(),
+    };
+    if let Some(body) = find_named(&root, JOURNAL_BODY) {
+        for child in body.get_children().iter_shared() {
+            if !shown(&child) {
+                continue;
+            }
+            let mut copy = Vec::new();
+            collect_copy(&child, &mut copy);
+            let name = child.get_name().to_string();
+            if let Some(section) = day_report_section(&name, &copy) {
+                view.sections.push(section);
+            }
+        }
+    }
+    Some(view)
+}
+
+fn shown(node: &Gd<Node>) -> bool {
+    node.clone()
+        .try_cast::<Control>()
+        .is_ok_and(|control| control.is_visible_in_tree())
+}
+
+/// Visible label texts and button texts in draw order.
+fn collect_copy(node: &Gd<Node>, out: &mut Vec<String>) {
+    if let Ok(label) = node.clone().try_cast::<Label>() {
+        if label.is_visible_in_tree() {
+            let text = label.get_text().to_string();
+            if !text.is_empty() {
+                out.push(text);
+            }
+        }
+    } else if let Ok(button) = node.clone().try_cast::<Button>() {
+        if button.is_visible_in_tree() {
+            let text = button.get_text().to_string();
+            if !text.is_empty() {
+                out.push(text);
+            }
+        }
+    }
+    for child in node.get_children().iter_shared() {
+        collect_copy(&child, out);
+    }
 }
 
 fn find_named(root: &Gd<Node>, name: &str) -> Option<Gd<Node>> {
@@ -1126,5 +1321,114 @@ mod tests {
         );
         assert_eq!(splice_text(text, &[]), text);
         assert_eq!(splice_text("x", &["y".into()]), "x\ny");
+    }
+
+    fn insurance(policy: &str, target: &str, origin: &str, destination: &str) -> Action {
+        Action::HarbourPrepare(HarbourIntent::BuyInsurance {
+            policy_id: policy.into(),
+            target_id: target.into(),
+            origin: origin.into(),
+            destination: destination.into(),
+        })
+    }
+
+    /// F12: empty segments are dropped, every form round-trips, and the old
+    /// trailing-empty form still parses for one release.
+    #[test]
+    fn insurance_ids_drop_empty_segments() {
+        let cases = [
+            (
+                insurance("hull_basic", "", "", ""),
+                "harbour.prepare.insurance.hull_basic",
+            ),
+            (
+                insurance("contract_basic", "offer-1", "", ""),
+                "harbour.prepare.insurance.contract_basic.offer-1",
+            ),
+            (
+                insurance("cargo_voyage", "", "porto_novo", "al_manar"),
+                "harbour.prepare.insurance.cargo_voyage.porto_novo.al_manar",
+            ),
+            (
+                insurance("odd", "ship", "porto_novo", ""),
+                "harbour.prepare.insurance.odd.ship.porto_novo.",
+            ),
+        ];
+        for (action, id) in cases {
+            assert_eq!(action_playtest_id(&action), id);
+            roundtrip_action(action);
+        }
+        for (old, new) in [
+            (
+                "harbour.prepare.insurance.hull_basic...",
+                "harbour.prepare.insurance.hull_basic",
+            ),
+            (
+                "harbour.prepare.insurance.contract_basic.offer-1..",
+                "harbour.prepare.insurance.contract_basic.offer-1",
+            ),
+        ] {
+            let Some(PlaytestCommand::Action(back)) = parse_playtest_id(old) else {
+                panic!("old form {old} did not parse");
+            };
+            assert_eq!(action_playtest_id(&back), new);
+        }
+        assert!(parse_playtest_id("harbour.prepare.insurance.").is_none());
+    }
+
+    /// F10: encounter first, then the docked desks, then the new-game pages.
+    /// Departure check and Day's report are not blocking overlays.
+    #[test]
+    fn blocking_overlay_takes_the_top_one() {
+        use BlockingOverlay::*;
+        assert_eq!(blocking_overlay(&[]), None);
+        assert_eq!(blocking_overlay(&[(Journal, false), (Hunt, false)]), None);
+        assert_eq!(
+            blocking_overlay(&[(Journal, true), (Encounter, true), (Hunt, true)]),
+            Some(Encounter)
+        );
+        assert_eq!(
+            blocking_overlay(&[(Encounter, false), (Contracts, true), (Newgame, true)]),
+            Some(Contracts)
+        );
+        assert_eq!(blocking_overlay(&[(Newgame, true)]), Some(Newgame));
+    }
+
+    /// F14 label and the strip id.
+    #[test]
+    fn sail_label_and_strip_id() {
+        assert_eq!(sail_offer_label("Corsair's Rest"), "Sail - Corsair's Rest");
+        assert!(sail_offer_label("Al-Manar").is_ascii());
+        assert!(matches!(
+            parse_playtest_id("chart.contract_strip"),
+            Some(PlaytestCommand::Action(Action::OpenContracts))
+        ));
+    }
+
+    /// F11: the Journal lens text goes before `Actions:`.
+    #[test]
+    fn journal_lens_text_lines() {
+        let view = JournalView {
+            title: "Captain's Journal".into(),
+            notice: String::new(),
+            sections: vec![day_report_section(
+                "SectionChronicle",
+                &["Chronicle".to_string(), "Day 1: Set out.".to_string()],
+            )
+            .unwrap()],
+        };
+        assert_eq!(
+            view.text_lines(),
+            vec![
+                "Journal: Captain's Journal",
+                "Chronicle:",
+                "- Day 1: Set out."
+            ]
+        );
+        let text = "Screen: journal\nActions:\nchart.journal.close — Close";
+        assert_eq!(
+            splice_text(text, &view.text_lines()[..1]),
+            "Screen: journal\nJournal: Captain's Journal\nActions:\nchart.journal.close — Close"
+        );
     }
 }

@@ -95,7 +95,10 @@ use crate::logic::{
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
-use crate::playtest::{action_playtest_id, hunt_playtest_id, parse_playtest_id, PlaytestCommand};
+use crate::playtest::{
+    action_playtest_id, blocking_overlay, hunt_playtest_id, parse_playtest_id, sail_offer_label,
+    BlockingOverlay, PlaytestCommand,
+};
 use crate::shipyard_screen::{self, ShipyardNodes};
 
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -1607,6 +1610,10 @@ impl PortlightGame {
         self.day_report_nodes = Some(day_report);
 
         let mut contract_strip = contract_strip::build_contract_strip();
+        stamp_playtest_id(&mut contract_strip.hit, "chart.contract_strip");
+        contract_strip
+            .hit
+            .set_meta("playtest_label", &"Contract strip".to_variant());
         let strip_click = game_id;
         contract_strip.hit.signals().pressed().connect(move || {
             let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(strip_click) else {
@@ -6585,6 +6592,11 @@ impl PortlightGame {
             row.add_child(&label);
             let mut sail =
                 action_button("Sail", game_id, Action::Sail(lane.destination_id.clone()));
+            let offer = sail_offer_label(&display_or_humanized(
+                Some(&lane.destination_name),
+                &lane.destination_id,
+            ));
+            sail.set_meta("playtest_label", &offer.to_variant());
             sail.set_h_size_flags(SizeFlags::SHRINK_END);
             row.add_child(&sail);
             block.add_child(&row);
@@ -10930,8 +10942,89 @@ impl PortlightGame {
         }
     }
 
+    /// F10: the node whose buttons are offered. Under a blocking overlay
+    /// only that overlay's actions are offered; otherwise everything drawn.
+    /// Departure check and Day's report never narrow the offer.
+    fn offer_root(&self) -> Gd<Node> {
+        let shown = |root: Option<Gd<Control>>| root.is_some_and(|root| root.is_visible_in_tree());
+        let encounter = self
+            .encounter_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let hunt = self
+            .hunt_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let crew = self
+            .crew_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let contracts = self
+            .contracts_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let shipyard = self
+            .shipyard_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let harbour = self
+            .harbour_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let journal = self
+            .journal_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let newgame = self
+            .newgame_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>());
+        let encounter_open = self.encounter.as_ref().and_then(present).is_some();
+        let open = [
+            (
+                BlockingOverlay::Encounter,
+                encounter_open && shown(encounter.clone()),
+            ),
+            (BlockingOverlay::Hunt, self.hunt_open && shown(hunt.clone())),
+            (BlockingOverlay::Crew, self.crew_open && shown(crew.clone())),
+            (
+                BlockingOverlay::Contracts,
+                self.contracts_open && shown(contracts.clone()),
+            ),
+            (
+                BlockingOverlay::Shipyard,
+                self.shipyard_open && shown(shipyard.clone()),
+            ),
+            (
+                BlockingOverlay::Harbour,
+                self.harbour_open && shown(harbour.clone()),
+            ),
+            (
+                BlockingOverlay::Journal,
+                self.journal_open && shown(journal.clone()),
+            ),
+            (
+                BlockingOverlay::Newgame,
+                self.newgame_page != NewgamePage::Hidden && shown(newgame.clone()),
+            ),
+        ];
+        let root = match blocking_overlay(&open) {
+            Some(BlockingOverlay::Encounter) => encounter,
+            Some(BlockingOverlay::Hunt) => hunt,
+            Some(BlockingOverlay::Crew) => crew,
+            Some(BlockingOverlay::Contracts) => contracts,
+            Some(BlockingOverlay::Shipyard) => shipyard,
+            Some(BlockingOverlay::Harbour) => harbour,
+            Some(BlockingOverlay::Journal) => journal,
+            Some(BlockingOverlay::Newgame) => newgame,
+            None => None,
+        };
+        root.map(|root| root.upcast::<Node>())
+            .unwrap_or_else(|| self.to_gd().upcast::<Node>())
+    }
+
     fn playtest_choose(&mut self, id: &str) -> GString {
-        let root = self.to_gd().upcast::<Node>();
+        let root = self.offer_root();
         if !offered_choices(&root)
             .iter()
             .any(|(offered, _)| offered == id)
@@ -10946,7 +11039,22 @@ impl PortlightGame {
         GString::new()
     }
 
+    /// F13: `line` types into the visible text field: the shipyard rename
+    /// field while the Shipyard is open, else the new-game name field.
     fn playtest_set_line(&mut self, line: &str) -> GString {
+        let rename_shown = self
+            .rename_edit
+            .as_ref()
+            .is_some_and(|edit| edit.is_visible_in_tree());
+        if rename_shown {
+            // `set_text` does not emit `text_changed`, and that signal is
+            // what enables `Rename`. Emit it as typing would.
+            self.set_rename_text(line);
+            if let Some(mut edit) = self.rename_edit.clone() {
+                edit.emit_signal("text_changed", &[GString::from(line).to_variant()]);
+            }
+            return GString::new();
+        }
         // `read_draft_fields` copies the LineEdit over `draft.name` on the next
         // menu action, so both have to move together.
         let Some(edit) = self.name_edit.as_mut() else {
@@ -10971,7 +11079,7 @@ impl PortlightGame {
     }
 
     fn playtest_observation_dict(&self) -> VarDictionary {
-        let root = self.to_gd().upcast::<Node>();
+        let root = self.offer_root();
         let choices = offered_choices(&root);
         let text = self.playtest_text(&choices);
         let mut options = VarArray::new();
@@ -11169,7 +11277,17 @@ fn offered_choices(root: &Gd<Node>) -> Vec<(String, String)> {
         if id.is_empty() || !seen.insert(id.clone()) {
             return;
         }
-        out.push((id, button.get_text().to_string()));
+        // F14: an offered label can differ from the drawn text.
+        let label = if button.has_meta("playtest_label") {
+            button
+                .get_meta("playtest_label")
+                .try_to::<GString>()
+                .map(|text| text.to_string())
+                .unwrap_or_else(|_| button.get_text().to_string())
+        } else {
+            button.get_text().to_string()
+        };
+        out.push((id, label));
     });
     out
 }

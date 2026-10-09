@@ -151,6 +151,17 @@ function readLine(socket, ms) {
   });
 }
 
+// F10: under a blocking overlay only that overlay's actions are offered.
+// Encounter: no chart.* or pier.* id. A docked desk: no other desk's .open
+// id; that one is informational until the docked-consistency PR.
+function chartOrPier(result) {
+  return ids(result).filter((id) => id.startsWith('chart.') || id.startsWith('pier.'));
+}
+
+function deskLeaks(result, own) {
+  return ids(result).filter((id) => (id.startsWith('chart.') || id.startsWith('pier.')) && !id.startsWith(own));
+}
+
 async function choose(socket, id) {
   return call(socket, 'act', { kind: 'choose', id });
 }
@@ -174,6 +185,10 @@ async function clearOverlays(socket, result, notes) {
     }
     if (screen !== 'encounter' && !open.includes('encounter')) return current;
     const options = ids(current);
+    if (!open.includes('day-report')) {
+      assert(chartOrPier(current).length === 0, `F10: chart/pier offered under an encounter (${chartOrPier(current).join(', ')})`, current);
+      notes.f10Encounter = true;
+    }
     if (options.some((id) => id.startsWith('encounter.stance.'))) notes.stance = true;
     const prefer = ['encounter.auto_resolve', 'encounter.leave', 'encounter.spare', 'encounter.take_all'];
     const pick = prefer.find((id) => options.includes(id))
@@ -198,6 +213,8 @@ async function clearEncounterOnly(socket, result, notes) {
       return current;
     }
     const options = ids(current);
+    assert(chartOrPier(current).length === 0, `F10: chart/pier offered under an encounter (${chartOrPier(current).join(', ')})`, current);
+    notes.f10Encounter = true;
     const pick = ['encounter.auto_resolve', 'encounter.leave', 'encounter.spare', 'encounter.take_all']
       .find((id) => options.includes(id))
       ?? options.find((id) => /^encounter\.(choice|naval|combat)\./.test(id)
@@ -267,8 +284,19 @@ async function voyage(socket, chart) {
   const notes = {};
   assert(strip(chart) === '', 'a fresh game showed the contract strip', chart);
   assert(ids(chart).includes('chart.contracts.open'), 'docked chart did not offer contracts', chart);
+  // F14: a lane's offered label names the port; the id is unchanged.
+  const sails = ids(chart).filter((id) => id.startsWith('chart.sail.'));
+  assert(sails.length > 0, 'docked chart offered no sail ids', chart);
+  for (const option of chart?.actions?.options ?? []) {
+    if (!String(option.id).startsWith('chart.sail.')) continue;
+    assert(/^Sail - \S/.test(String(option.label)), `F14: ${option.id} label was ${JSON.stringify(option.label)}`, chart);
+    assert(/^[\x20-\x7e]+$/.test(String(option.label)), `F14: ${option.id} label not ASCII`, chart);
+  }
+  assert(!ids(chart).includes('chart.contract_strip'), 'strip id offered with the strip hidden', chart);
   const opened = await choose(socket, 'chart.contracts.open');
   assert(String(opened?.state?.screen) === 'contracts', 'contracts did not open', opened);
+  const leaks = deskLeaks(opened, 'chart.contracts.');
+  notes.f10Desk = leaks.length === 0 ? 'desk clean' : `desk leaks ${leaks.join(',')}`;
   assert(ids(opened).includes('chart.contracts.close'), 'contracts did not offer close', opened);
   const closed = await choose(socket, 'chart.contracts.close');
   assert(String(closed?.state?.screen) === 'chart', 'contracts did not return to the chart', closed);
@@ -296,7 +324,7 @@ async function voyage(socket, chart) {
     .map((card) => ({ card, terms: cardTerms(card) }))
     .filter(({ card, terms }) => terms
       && buyable.has(terms.good)
-      && ids(again).includes(`chart.sail.${terms.port}`)
+      && sails.includes(`chart.sail.${terms.port}`)
       && card.actions.includes(`contracts.accept.${card.id}`))
     .sort((a, b) => a.terms.perUnit - b.terms.perUnit)[0];
   assert(pick, `no card for goods sold here (${[...buyable].join(', ')})`, again);
@@ -313,6 +341,10 @@ async function voyage(socket, chart) {
   assert(String(desk?.state?.screen) === 'chart', 'chart was not back after accept', desk);
   assert(/^Contract strip: /m.test(String(desk?.text ?? '')), 'strip was not in the chart text', desk);
   const stripAtAccept = strip(desk);
+  assert(ids(desk).includes('chart.contract_strip'), 'chart.contract_strip not offered with the strip shown', desk);
+  const viaStrip = await choose(socket, 'chart.contract_strip');
+  assert(String(viaStrip?.state?.screen) === 'contracts', 'chart.contract_strip did not open Contracts', viaStrip);
+  await closeContracts(socket, viaStrip);
 
   // Rough seas take 1-3 units per event, so carry a margin over the order.
   const silverBefore = Number(desk?.state?.silver);
@@ -461,10 +493,34 @@ async function voyage(socket, chart) {
   const afterComplete = await closeContracts(socket, desk2);
   assert(String(afterComplete?.state?.screen) === 'chart', 'chart was not back after contracts', afterComplete);
 
+  // F13: `line` types into the shipyard rename field; Rename is offered
+  // only once the text differs.
+  let renamed = 'no shipyard';
+  const yardChart = afterComplete;
+  if (ids(yardChart).includes('chart.shipyard.open')) {
+    const yard = await choose(socket, 'chart.shipyard.open');
+    assert(String(yard?.state?.screen) === 'shipyard', 'shipyard did not open', yard);
+    assert(!ids(yard).includes('shipyard.rename'), 'shipyard.rename offered before typing', yard);
+    const typed = await call(socket, 'act', { kind: 'line', line: 'Gull' });
+    assert(ids(typed).includes('shipyard.rename'), 'F13: line did not reach the rename field', typed);
+    const after = await choose(socket, 'shipyard.rename');
+    assert(/Gull/.test(String(after?.text ?? '')), 'rename did not name Gull', after);
+    const closedYard = await choose(socket, 'chart.shipyard.close');
+    assert(String(closedYard?.state?.screen) === 'chart', 'shipyard did not close', closedYard);
+    renamed = 'line renames Gull';
+  }
+
   const journal = await choose(socket, 'chart.journal.open');
   assert(String(journal?.state?.screen) === 'journal', 'journal did not open', journal);
+  // F11: the Journal lens.
+  const lens = journal?.state?.journal;
+  assert(lens && typeof lens === 'object', 'observation had no state.journal', journal);
+  assert(Array.isArray(lens.sections) && lens.sections.length > 0, 'journal lens had no sections', journal);
+  assert(/^Journal: /m.test(String(journal?.text ?? '')), 'journal lens was not in the text', journal);
+  assert(chartOrPier(journal).every((id) => id === 'chart.journal.close'), `F10: journal offered ${chartOrPier(journal).join(', ')}`, journal);
   const back = await choose(socket, 'chart.journal.close');
   assert(String(back?.state?.screen) === 'chart', 'journal did not close', back);
+  assert(back?.state?.journal == null, 'state.journal reported with the Journal closed', back);
 
   const parts = [
     `board ${cards.length} cards`,
@@ -475,7 +531,9 @@ async function voyage(socket, chart) {
     `strip ${stripTiming(stripAtAccept)} -> ${stripTiming(stripAtArrival)}`,
     `sell delivers (silver ${silverAtPort} -> ${sold?.state?.silver}, strip clear, not active)`,
     'complete not offered',
-    'journal',
+    renamed,
+    `journal lens (${lens.sections.length} sections)`,
+    `F10 ${notes.f10Encounter ? 'encounter clean' : 'no encounter'}, ${notes.f10Desk}`,
   ];
   if (notes.roughSeas) parts.push('rough seas');
   if (notes.encounter) parts.push(`encounter ${notes.encounter}`);
