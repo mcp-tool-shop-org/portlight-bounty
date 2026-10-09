@@ -751,7 +751,7 @@ jobs:
             echo "day-report frame capture did not report ok"
             exit 1
           fi
-          for name in day-report-full.png day-report-deadline.png day-report-over-screen.png; do
+          for name in day-report-full.png day-report-deadline.png day-report-over-screen.png day-report-over-encounter.png; do
             if [ ! -f "/tmp/day-report-shots/${name}" ]; then
               echo "day-report capture did not write /tmp/day-report-shots/${name}"
               exit 1
@@ -880,6 +880,7 @@ jobs:
           cmp_committed day-report-full.png /tmp/day-report-shots/day-report-full.png
           cmp_committed day-report-deadline.png /tmp/day-report-shots/day-report-deadline.png
           cmp_committed day-report-over-screen.png /tmp/day-report-shots/day-report-over-screen.png
+          cmp_committed day-report-over-encounter.png /tmp/day-report-shots/day-report-over-encounter.png
           cmp_committed day-report-week.png /tmp/day-report-shots/day-report-week.png
           cmp_committed day-report-arrival.png /tmp/day-report-shots/day-report-arrival.png
           cmp_committed day-report-expired.png /tmp/day-report-shots/day-report-expired.png

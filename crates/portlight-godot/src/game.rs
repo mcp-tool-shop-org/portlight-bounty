@@ -452,6 +452,8 @@ enum DayReportShot {
     Expired,
     /// The card over an open desk (Contracts): the desk is dimmed behind it.
     OverScreen,
+    /// The card over an open encounter: the Approach card is dimmed behind it.
+    OverEncounter,
 }
 
 impl DayReportShot {
@@ -463,6 +465,7 @@ impl DayReportShot {
             Self::Arrival => "day-report-arrival.png",
             Self::Expired => "day-report-expired.png",
             Self::OverScreen => "day-report-over-screen.png",
+            Self::OverEncounter => "day-report-over-encounter.png",
         }
     }
 }
@@ -4290,10 +4293,7 @@ impl PortlightGame {
             );
         }
         if let Some((state, log)) = opened {
-            if !log.is_empty() {
-                self.push_log(log.clone());
-            }
-            self.open_agency(state, log);
+            self.open_sea_agency(state, log);
         }
         self.refresh();
     }
@@ -7144,6 +7144,21 @@ impl PortlightGame {
 
     fn open_agency(&mut self, state: EncounterState, log: String) {
         self.close_day_report();
+        self.open_agency_screen(state, log);
+    }
+
+    /// The sea agency a Next day opens. Unlike [`Self::open_agency`] it leaves
+    /// the Day's report up: the card opens first over the Approach card
+    /// (dimmed, input blocked) and Close gives the encounter back, so an
+    /// expiry from the same tick is never lost behind it.
+    fn open_sea_agency(&mut self, state: EncounterState, log: String) {
+        if !log.is_empty() {
+            self.push_log(log.clone());
+        }
+        self.open_agency_screen(state, log);
+    }
+
+    fn open_agency_screen(&mut self, state: EncounterState, log: String) {
         let (ship, sailing) = self
             .session
             .as_ref()
@@ -8065,6 +8080,8 @@ impl PortlightGame {
         }
         self.close_hunt();
         self.check_report_over_desk(day);
+        self.check_report_over_harbour(day);
+        self.check_report_same_tick_encounter();
         self.check_failed_press_after_close(day);
         // Quiet day at sea: Prices stay empty (§13.2); no deadline/heal/claimable.
         let departed = {
@@ -8975,6 +8992,16 @@ impl PortlightGame {
                 phase.file_name()
             );
         }
+        if matches!(phase, DayReportShot::OverEncounter)
+            && (self.encounter.is_none()
+                || !self
+                    .day_report_nodes
+                    .as_ref()
+                    .is_some_and(day_report::scrim_shown))
+        {
+            self.smoke_ok = false;
+            godot_print!("Day-report smoke: the over-encounter frame is not dimmed.");
+        }
         if matches!(phase, DayReportShot::OverScreen) {
             let dimmed = self
                 .day_report_nodes
@@ -8994,7 +9021,10 @@ impl PortlightGame {
         // encounter plate/button ink gate (no side plate on this panel).
         // A dimmed desk behind the card is mostly one ink colour, so that
         // frame takes its own gate.
-        let gate = if matches!(phase, DayReportShot::OverScreen) {
+        let gate = if matches!(
+            phase,
+            DayReportShot::OverScreen | DayReportShot::OverEncounter
+        ) {
             ShotGate::Dimmed
         } else {
             ShotGate::Chart
@@ -9029,8 +9059,23 @@ impl PortlightGame {
                 true
             }
             DayReportShot::OverScreen => {
+                // Same card, now over an open encounter: the Approach card dims.
                 self.close_day_report();
                 self.close_contracts();
+                self.open_scripted_approach();
+                let day = self
+                    .session
+                    .as_ref()
+                    .map(|session| session.world().day)
+                    .unwrap_or(1);
+                self.open_day_report_doc(day_report::smoke_deadline_document(day));
+                self.day_report_shot = Some(DayReportShot::OverEncounter);
+                self.capture_frames = 4;
+                true
+            }
+            DayReportShot::OverEncounter => {
+                self.close_day_report();
+                self.leave_encounter();
                 // Quiet-day hide is a smoke assertion, not a committed frame (§13.5).
                 let departed = self
                     .session
@@ -10607,6 +10652,126 @@ impl PortlightGame {
             );
         }
         self.close_contracts();
+    }
+
+    /// The second desk for the over-screen smoke: the card over the open
+    /// Harbour dims it, holds the keyboard on Close, and Escape closes the
+    /// card only.
+    fn check_report_over_harbour(&mut self, day: i64) {
+        self.open_harbour();
+        if !self.harbour_open {
+            self.fail_day_report("Day-report smoke: Harbour did not open for the desk check.");
+            return;
+        }
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        let (dimmed, stops, trapped, focused) = self
+            .day_report_nodes
+            .as_ref()
+            .map(|nodes| {
+                (
+                    day_report::scrim_shown(nodes),
+                    nodes.scrim.get_mouse_filter() == MouseFilter::STOP,
+                    day_report::keyboard_trapped(nodes),
+                    nodes.close.has_focus(),
+                )
+            })
+            .unwrap_or_default();
+        if !(dimmed && stops && trapped && focused) {
+            self.fail_day_report(format!(
+                "Day-report smoke: over Harbour, dimmed {dimmed}, stops clicks {stops}, keyboard held {trapped}, Close focused {focused}."
+            ));
+        }
+        self.dismiss_cancel();
+        let dim_gone = self.day_report_nodes.as_ref().is_some_and(|nodes| {
+            !day_report::scrim_shown(nodes) && day_report::keyboard_free(nodes)
+        });
+        if self.day_report_open || !self.harbour_open || !dim_gone {
+            self.fail_day_report(format!(
+                "Day-report smoke: Escape over Harbour: report open {}, desk open {}, dim gone {dim_gone}.",
+                self.day_report_open, self.harbour_open
+            ));
+        } else {
+            godot_print!(
+                "day report over Harbour: dimmed, keyboard held, Escape closes the card only"
+            );
+        }
+        self.close_harbour();
+    }
+
+    /// A Next day that expires a contract and opens a sea encounter: the
+    /// report opens first over the Approach card (dimmed, input refused), the
+    /// expiry is still in the Log, and Close gives the Approach card back.
+    /// Runs on a fresh scripted session through the same `open_sea_agency`
+    /// the Next day path calls; the smoke's own state is put back after.
+    fn check_report_same_tick_encounter(&mut self) {
+        let saved = (
+            self.session.clone(),
+            self.log_lines.clone(),
+            self.encounter.clone(),
+            self.scripted_captain.clone(),
+        );
+        let ok = self.run_report_same_tick_encounter();
+        self.session = saved.0;
+        self.log_lines = saved.1;
+        self.encounter = saved.2;
+        self.scripted_captain = saved.3;
+        self.close_day_report();
+        self.refresh();
+        if !ok {
+            self.fail_day_report("Day-report smoke: same-tick expiry plus encounter check failed.");
+        }
+    }
+
+    fn run_report_same_tick_encounter(&mut self) -> bool {
+        let mut session =
+            match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
+                Ok(session) => session,
+                Err(_) => return false,
+            };
+        if session.accept_bounty(SCRIPTED_CAPTAIN).is_err() {
+            return false;
+        }
+        let Ok(state) = session.hunt_bounty(SCRIPTED_CAPTAIN) else {
+            return false;
+        };
+        let day = session.world().day;
+        self.session = Some(session);
+        self.encounter = None;
+        self.log_lines.clear();
+        let expiry = "Contract expired: Grain for Corsair's Rest".to_string();
+        self.push_log(expiry.clone());
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        self.open_sea_agency(state, String::new());
+        self.refresh();
+        let report_first = self.day_report_open
+            && self.encounter.is_some()
+            && self.day_report_nodes.as_ref().is_some_and(|nodes| {
+                day_report::scrim_shown(nodes) && day_report::keyboard_trapped(nodes)
+            });
+        let refused = self.playtest_choose("encounter.choice.fight").to_string();
+        let still_approach = self.phase_is(ScreenPhase::Approach) && self.day_report_open;
+        self.dismiss_cancel();
+        let offered = offered_choices(&self.offer_root())
+            .iter()
+            .any(|(id, _)| id.starts_with("encounter.choice."));
+        let logged = self.log_lines.contains(&expiry);
+        let ok = report_first
+            && !refused.is_empty()
+            && still_approach
+            && !self.day_report_open
+            && offered
+            && logged;
+        if ok {
+            godot_print!(
+                "day report over a same-tick encounter: report first, choices refused ({refused}), Close restores the Approach card, expiry kept in the Log"
+            );
+        } else {
+            godot_print!(
+                "same-tick: report_first {report_first}, refused {refused:?}, still_approach {still_approach}, report_open {}, offered {offered}, logged {logged}",
+                self.day_report_open
+            );
+        }
+        ok
     }
 
     /// A Day's report raised over an open encounter dims it and takes its

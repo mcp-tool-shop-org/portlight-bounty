@@ -1599,6 +1599,19 @@ mod tests {
         }
     }
 
+    /// The Day's report is offered alone over every blocking screen, the
+    /// encounter included (a same-tick expiry shows first).
+    #[test]
+    fn report_outranks_every_blocking_screen() {
+        for overlay in BLOCKING_DRAW_ORDER {
+            assert_eq!(
+                offer_scope(Some(overlay), true, false),
+                OfferScope::Only(OfferLayer::DayReport),
+                "{overlay:?}"
+            );
+        }
+    }
+
     /// F10-3: one layer at a time. The Day's report over an encounter is the
     /// only layer offered; the encounter returns once the report closes.
     #[test]
