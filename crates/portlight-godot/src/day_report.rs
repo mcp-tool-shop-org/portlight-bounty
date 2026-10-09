@@ -335,7 +335,7 @@ pub(crate) fn apply_document(nodes: &mut DayReportNodes, doc: &DayReportDocument
             } else {
                 CREAM
             };
-            box_node.add_child(&text_label(&line.text, 15, color, true));
+            box_node.add_child(&body_line_label(&line.text, color));
         }
         nodes.body.add_child(&box_node);
     }
@@ -1025,13 +1025,35 @@ pub(crate) fn price_lines(session: &Session, before: &HashMap<String, i64>) -> V
         .into_iter()
         .map(|(good_id, delta, now)| {
             let good = good_name(&good_id);
-            let sign = if delta > 0 { "+" } else { "" };
+            let old = now - delta;
             DayReportLine {
-                text: format!("{good} at {port_name} {sign}{delta} (now {now})"),
-                notable: true,
+                text: price_line_text(&good, &port_name, old, now),
+                notable: price_move_is_notable(old, delta),
             }
         })
         .collect()
+}
+
+/// F8: `{Good} at {Port} {old} to {new} ({+pct}%)`, the Arrival mover rounding.
+/// R4: a move that rounds to 0% drops the parenthetical.
+pub(crate) fn price_line_text(good: &str, port: &str, old: i64, now: i64) -> String {
+    let pct = price_move_pct(old, now);
+    if pct == 0 {
+        format!("{good} at {port} {old} to {now}")
+    } else {
+        format!("{good} at {port} {old} to {now} ({pct:+}%)")
+    }
+}
+
+fn price_move_pct(old: i64, now: i64) -> i64 {
+    (((now - old) as f64) / (old.max(1) as f64) * 100.0).round() as i64
+}
+
+/// Q1: a price line opens the report only on a move of at least 10% and at
+/// least 5 silver. Smaller picked moves still print when something else opens it.
+pub(crate) fn price_move_is_notable(old: i64, delta: i64) -> bool {
+    let rel = (delta.abs() as f64) / (old.max(1) as f64);
+    rel >= 0.10 && delta.abs() >= 5
 }
 
 pub(crate) fn bounty_lines(
@@ -1045,7 +1067,7 @@ pub(crate) fn bounty_lines(
     let claimed: HashSet<String> = world.captain.claimed_bounties.iter().cloned().collect();
     let mut lines = Vec::new();
 
-    // C1: Claim ready first (only actionable), then claimed, then accepted.
+    // C1: Claim ready first (only actionable), then claimed.
     let claimables = claimable_ids(session);
     for id in &claimables {
         let name = hunt_screen::display_name(id, known);
@@ -1069,14 +1091,9 @@ pub(crate) fn bounty_lines(
             });
         }
     }
-    for id in active.difference(&memory.active_bounties) {
-        let name = hunt_screen::display_name(id, known);
-        lines.push(DayReportLine {
-            text: format!("Bounty accepted: {name}."),
-            notable: true,
-        });
-    }
-
+    // F5: no `Bounty accepted` line. The player accepted it at the Hunt desk,
+    // which has its own notice. The memory still tracks actives for the
+    // claimed diff.
     memory.active_bounties = active;
     lines
 }
@@ -1380,6 +1397,85 @@ fn port_label(world: &portlight_sim::model::World, id: &str) -> String {
         .unwrap_or_else(|| id.to_string())
 }
 
+/// Label meta holding a body line's copy when the drawn text carries a
+/// separator break (`\n`). Readers use [`label_copy`].
+pub(crate) const COPY_META: &str = "portlight_copy";
+
+/// The copy a label shows: the [`COPY_META`] text when set, else its text.
+pub(crate) fn label_copy(label: &Gd<Label>) -> String {
+    if label.has_meta(COPY_META) {
+        label.get_meta(COPY_META).to_string()
+    } else {
+        label.get_text().to_string()
+    }
+}
+
+/// A wrapped 15 px body line. When the card's own word wrap would end a row
+/// on a ` - ` separator (`... - 5/23 -`), the row breaks at that separator
+/// instead and the dash is dropped (AD #62 soft 2). Re-run on every resize
+/// from the original copy, which stays in [`COPY_META`].
+fn body_line_label(text: &str, color: Color) -> Gd<Label> {
+    let mut label = text_label(text, 15, color, true);
+    label.set_meta(COPY_META, &text.to_variant());
+    let copy = text.to_string();
+    let mut target = label.clone();
+    label.signals().resized().connect(move || {
+        let width = target.get_size().x;
+        if width < 50.0 {
+            return;
+        }
+        let Some(font) = target.get_theme_font("font") else {
+            return;
+        };
+        let size = target.get_theme_font_size("font_size");
+        let drawn = separator_wrap(&copy, width, |row| {
+            font.get_string_size_ex(row).font_size(size).done().x
+        });
+        if target.get_text().to_string() != drawn {
+            target.set_text(&drawn);
+        }
+    });
+    label
+}
+
+/// Greedy word wrap of `text` at `width` (as the Label does). Where a row
+/// would end with the separator dash of ` - `, the row ends before the
+/// separator and the next row starts after it (the dash is dropped). Text
+/// with no such row comes back unchanged, without `\n`.
+pub(crate) fn separator_wrap(text: &str, width: f32, measure: impl Fn(&str) -> f32) -> String {
+    let words: Vec<&str> = text.split(' ').collect();
+    let mut rows: Vec<String> = Vec::new();
+    let mut moved = false;
+    let mut row: Vec<&str> = Vec::new();
+    let mut index = 0;
+    while index < words.len() {
+        let word = words[index];
+        let mut candidate = row.clone();
+        candidate.push(word);
+        if row.is_empty() || measure(&candidate.join(" ")) <= width {
+            row = candidate;
+            index += 1;
+            continue;
+        }
+        // `word` starts the next row. A row ending on the separator dash
+        // gives the dash back and breaks before it.
+        if row.len() > 1 && row.last() == Some(&"-") {
+            row.pop();
+            moved = true;
+        }
+        rows.push(row.join(" "));
+        row = Vec::new();
+    }
+    if !row.is_empty() {
+        rows.push(row.join(" "));
+    }
+    if moved {
+        rows.join("\n")
+    } else {
+        text.to_string()
+    }
+}
+
 fn text_label(text: &str, size: i32, color: Color, wrap: bool) -> Gd<Label> {
     let mut label = Label::new_alloc();
     label.set_text(text);
@@ -1404,7 +1500,7 @@ fn clear_children(node: &mut Gd<VBoxContainer>) {
 /// tone checks). `None` when no such label exists.
 pub(crate) fn label_color(node: &Gd<godot::classes::Node>, text: &str) -> Option<Color> {
     if let Ok(label) = node.clone().try_cast::<Label>() {
-        if label.get_text() == text {
+        if label_copy(&label) == text {
             return Some(label.get_theme_color("font_color"));
         }
     }
@@ -1415,7 +1511,7 @@ pub(crate) fn label_color(node: &Gd<godot::classes::Node>, text: &str) -> Option
 
 fn collect_text(node: &Gd<godot::classes::Node>, parts: &mut Vec<String>) {
     if let Ok(label) = node.clone().try_cast::<Label>() {
-        let text = label.get_text().to_string();
+        let text = label_copy(&label);
         if !text.is_empty() {
             parts.push(text);
         }
@@ -1451,7 +1547,7 @@ pub(crate) fn smoke_full_document(day: i64) -> DayReportDocument {
                 id: "prices",
                 title: "Prices",
                 lines: vec![DayReportLine {
-                    text: "Grain at Al-Manar +12 (now 84)".into(),
+                    text: "Grain at Al-Manar 72 to 84 (+17%)".into(),
                     notable: true,
                 }],
             },
@@ -1603,7 +1699,7 @@ fn smoke_arrival_sections(movers: &[DayReportLine]) -> Vec<DayReportSection> {
     ]
 }
 
-/// Seed-1 probe numbers for the expired frame and tests: Famine relief, grain
+/// Seed-1 probe numbers for the expired smoke and tests: Famine relief, grain
 /// x23 to Corsair's Rest, deadline 19, reward 552; part sold 5/23 pays 60.
 pub(crate) const SMOKE_EXPIRED_TITLE: &str = "Famine relief: grain to Corsair's Rest";
 
@@ -1611,6 +1707,7 @@ pub(crate) const SMOKE_EXPIRED_TITLE: &str = "Famine relief: grain to Corsair's 
 /// 3 days out, so it is on the card's Deadlines and drives Next.
 pub(crate) const SMOKE_EXPIRED_FRAME_DAY: i64 = 23;
 
+#[cfg(test)]
 pub(crate) fn smoke_expired_outcome(day: i64, delivered: i64, silver: i64) -> ContractOutcome {
     ContractOutcome {
         contract_id: "71773aae754b".into(),
@@ -1631,21 +1728,16 @@ pub(crate) fn smoke_expired_outcome(day: i64, delivered: i64, silver: i64) -> Co
     }
 }
 
-/// Forced document for CI frame `day-report-expired.png`: the staged F2
-/// failure line (DUE, pinned) built through the real formatter, above the
-/// live board's deadline lines (CREAM) for `session`'s day. The Next line is
-/// live (`next_facts`); Week is the staged window. The smoke accepts the real
-/// seed-1 Spice contract, so the strip shows it beside the card.
-pub(crate) fn smoke_expired_document(session: &Session) -> DayReportDocument {
+/// Forced document for CI frame `day-report-expired.png`: `failure` (the
+/// real expiry line the smoke read off the Day 21 card; DUE, pinned) above
+/// the live board's deadline lines (CREAM) for `session`'s day. The Next line
+/// is live (`next_facts`); Week is the staged window. The smoke accepts the
+/// real seed-1 Spice contract, so the strip shows it beside the card.
+pub(crate) fn smoke_expired_document(session: &Session, failure: &str) -> DayReportDocument {
     let world = session.world();
     let day = world.day;
     let failure = DayReportLine {
-        text: expired_line(
-            &smoke_expired_outcome(day, 5, 60),
-            Some(SMOKE_EXPIRED_TITLE),
-            22,
-            0,
-        ),
+        text: failure.to_string(),
         notable: true,
     };
     let deadlines = deadline_lines(&session.board().active, day, world, None);
@@ -1767,12 +1859,92 @@ mod tests {
             }
             let rel = (delta.abs() as f64) / (prev.max(1) as f64);
             if rel >= 0.10 || delta.abs() >= 2 {
-                moves.push(format!("{id} {delta:+} (now {now})"));
+                moves.push(price_line_text(&good_name(id), "Al-Manar", prev, now));
             }
         }
-        assert!(moves.iter().any(|line| line.contains("grain +12")));
-        assert!(moves.iter().any(|line| line.contains("timber -3")));
-        assert!(!moves.iter().any(|line| line.contains("spice")));
+        assert!(moves.contains(&"Grain at Al-Manar 72 to 84 (+17%)".to_string()));
+        assert!(moves.contains(&"Timber at Al-Manar 10 to 7 (-30%)".to_string()));
+        assert!(!moves.iter().any(|line| line.contains("Spice")));
+    }
+
+    /// F8: old to new with the Arrival rounding; a 0% move drops the parenthetical.
+    #[test]
+    fn price_line_states_old_new_and_percent() {
+        assert_eq!(
+            price_line_text("Silk", "Corsair's Rest", 227, 170),
+            "Silk at Corsair's Rest 227 to 170 (-25%)"
+        );
+        assert_eq!(
+            price_line_text("Silk", "Corsair's Rest", 500, 502),
+            "Silk at Corsair's Rest 500 to 502"
+        );
+        assert_eq!(
+            price_line_text("Pelts", "Porto Novo", 6, 7),
+            "Pelts at Porto Novo 6 to 7 (+17%)"
+        );
+        for text in [
+            price_line_text("Silk", "Corsair's Rest", 227, 170),
+            price_line_text("Grain", "Al-Manar", 0, 3),
+        ] {
+            assert!(text.is_ascii() && !text.contains("(now") && !text.contains("+0"));
+        }
+    }
+
+    /// AD #62 soft 2: a row never ends on the ` - ` separator dash.
+    #[test]
+    fn separator_wrap_breaks_before_a_trailing_dash() {
+        // One char = one unit of width.
+        let measure = |row: &str| row.len() as f32;
+        let line = "Contract expired: Famine relief - 0/23 - Guarantee +105";
+        // Width 40: the plain wrap would end row 1 on `0/23 -`.
+        assert_eq!(
+            separator_wrap(line, 40.0, measure),
+            "Contract expired: Famine relief - 0/23\nGuarantee +105"
+        );
+        // Fits on one row, or the wrap falls inside a term: unchanged.
+        assert_eq!(separator_wrap(line, 80.0, measure), line);
+        let week = "Spice restock - 3 days left - 0/8 - sell 8 more Spice at Al-Manar";
+        assert_eq!(separator_wrap(week, 50.0, measure), week);
+        // Every row is checked, and no row ends or starts with the dash.
+        let long = "aaaa - bbbb - cccc - dddd";
+        let wrapped = separator_wrap(long, 6.0, measure);
+        for row in wrapped.split('\n') {
+            assert!(
+                !row.ends_with(" -") && !row.starts_with("- "),
+                "{wrapped:?}"
+            );
+        }
+        assert!(separator_wrap("Al-Manar", 3.0, measure) == "Al-Manar");
+    }
+
+    /// Q1: notable only at >= 10% and >= 5 silver.
+    #[test]
+    fn price_notable_needs_ten_percent_and_five_silver() {
+        // Pelts 6 to 7: 17% but 1 silver - prints, never opens the report.
+        assert!(!price_move_is_notable(6, 1));
+        // Silk 227 to 170: notable.
+        assert!(price_move_is_notable(227, -57));
+        // 5 silver on 500 is 1%: not notable.
+        assert!(!price_move_is_notable(500, 5));
+        // Exactly 10% and 5 silver: notable.
+        assert!(price_move_is_notable(50, 5));
+        assert!(!price_move_is_notable(50, 4));
+        // A report whose only lines are non-notable price lines does not open.
+        let sections = cap_sections(vec![(
+            "prices",
+            "Prices",
+            vec![
+                line(
+                    "Pelts at Porto Novo 6 to 7 (+17%)",
+                    price_move_is_notable(6, 1),
+                ),
+                line(
+                    "Silk at Porto Novo 500 to 502",
+                    price_move_is_notable(500, 2),
+                ),
+            ],
+        )]);
+        assert!(sections.is_empty(), "{sections:?}");
     }
 
     #[test]
@@ -1788,7 +1960,7 @@ mod tests {
             notable: true,
         }];
         let prices = vec![DayReportLine {
-            text: "Grain at Al-Manar +12 (now 84)".into(),
+            text: "Grain at Al-Manar 72 to 84 (+17%)".into(),
             notable: true,
         }];
         let bounties = vec![DayReportLine {
@@ -1993,9 +2165,9 @@ mod tests {
             .count()
     }
 
-    /// C1: Claim ready / claimed / accepted push order inside Bounties.
+    /// C1: Claim ready then claimed inside Bounties. F5: no accepted line.
     #[test]
-    fn bounty_lines_order_claim_ready_then_claimed_then_accepted() {
+    fn bounty_lines_order_claim_ready_then_claimed_no_accepted() {
         // Live Session: raj stays claimable, scarlet_ana is claimed this day,
         // the_butcher is newly accepted. Memory holds last Next day's actives.
         let mut session = session_with_defeated(&["raj_the_quiet", "scarlet_ana"]);
@@ -2009,7 +2181,7 @@ mod tests {
         let kinds: Vec<&str> = live
             .iter()
             .map(|l| {
-                ["Claim ready:", "Bounty claimed:", "Bounty accepted:"]
+                ["Claim ready:", "Bounty claimed:"]
                     .into_iter()
                     .find(|prefix| l.text.starts_with(prefix))
                     .unwrap_or(l.text.as_str())
@@ -2017,33 +2189,25 @@ mod tests {
             .collect();
         assert_eq!(
             kinds,
-            vec!["Claim ready:", "Bounty claimed:", "Bounty accepted:"],
+            vec!["Claim ready:", "Bounty claimed:"],
             "bounty_lines order: {live:?}"
         );
+        assert!(memory.active_bounties.contains("the_butcher"));
 
-        // A fresh accept without a defeat is accepted only, never claimable.
+        // F5: a fresh accept prints nothing (the Hunt desk already said it),
+        // but memory still tracks it for the claimed diff.
         let mut fresh = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
         fresh.accept_bounty("the_butcher").unwrap();
         let mut fresh_memory = DayReportMemory::default();
         let accepted_only = bounty_lines(&fresh, &mut fresh_memory, false, &known);
-        assert!(
-            accepted_only
-                .iter()
-                .any(|l| l.text.starts_with("Bounty accepted:")),
-            "new accept yields Bounty accepted"
-        );
-        assert!(
-            !accepted_only
-                .iter()
-                .any(|l| l.text.starts_with("Claim ready:")),
-            "fresh accept without defeat is not claimable"
-        );
+        assert!(accepted_only.is_empty(), "{accepted_only:?}");
+        assert!(fresh_memory.active_bounties.contains("the_butcher"));
 
         // Cap guarantee with mixed ordered bounty lines (Claim ready first).
         let ordered = vec![
             line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true),
             line("Bounty claimed: Old Salt.", true),
-            line("Bounty accepted: Red Sails.", true),
+            line("Bounty claimed: Red Sails.", true),
         ];
         let sections = cap_sections(vec![
             (
@@ -2056,8 +2220,8 @@ mod tests {
                 "prices",
                 "Prices",
                 vec![
-                    line("Grain at Al-Manar +12 (now 84)", true),
-                    line("Spice at Al-Manar -3 (now 37)", true),
+                    line("Grain at Al-Manar 72 to 84 (+17%)", true),
+                    line("Spice at Al-Manar 40 to 37 (-8%)", true),
                 ],
             ),
             ("bounties", "Bounties", ordered),
@@ -2087,11 +2251,16 @@ mod tests {
             .collect();
         let health = vec![line("Healed: Cut hand.", true)];
         let prices = (0..4)
-            .map(|i| line(&format!("good{i} at Port +{i} (now {i})"), true))
+            .map(|i| {
+                line(
+                    &format!("Good{i} at Port {i} to {} (+{}%)", i + 1, 100 / (i + 1)),
+                    true,
+                )
+            })
             .collect();
         let bounties = vec![
             line("Claim ready: Raj the Quiet (120 silver) - open Hunt.", true),
-            line("Bounty accepted: Red Sails.", true),
+            line("Bounty claimed: Red Sails.", true),
         ];
         let sections = cap_sections(vec![
             ("deadlines", "Deadlines", deadlines),
@@ -2162,7 +2331,7 @@ mod tests {
         let bounties = vec![
             line("Claim ready: A (1 silver) - open Hunt.", true),
             line("Bounty claimed: B.", true),
-            line("Bounty accepted: C.", true),
+            line("Bounty claimed: C.", true),
         ];
         let sections = cap_sections(vec![
             ("deadlines", "Deadlines", deadlines),
@@ -2537,8 +2706,8 @@ mod tests {
                 id: "bounties",
                 title: "Bounties",
                 lines: vec![
-                    line("Bounty accepted: Scarlet Ana.", true),
-                    line("Bounty accepted: Raj the Quiet.", true),
+                    line("Bounty claimed: Scarlet Ana.", true),
+                    line("Bounty claimed: Raj the Quiet.", true),
                 ],
             },
         ];
@@ -3355,7 +3524,7 @@ mod tests {
                     "Bounties",
                     vec![
                         line("Claim ready: A (1 silver) - open Hunt.", true),
-                        line("Bounty accepted: B.", true),
+                        line("Bounty claimed: B.", true),
                     ],
                 ),
             ],
@@ -3517,7 +3686,7 @@ mod tests {
                 (
                     "prices",
                     "Prices",
-                    vec![line("Grain at Porto Novo +3 (now 21)", true)],
+                    vec![line("Grain at Porto Novo 18 to 21 (+17%)", true)],
                 ),
             ],
             vec![f2],
@@ -3729,7 +3898,8 @@ mod tests {
         while session.world().day < SMOKE_EXPIRED_FRAME_DAY {
             session.advance().unwrap();
         }
-        let doc = smoke_expired_document(&session);
+        let insured = format!("{EXPIRED_PREFIX}{SMOKE_EXPIRED_TITLE} - 0/23 - Guarantee +105");
+        let doc = smoke_expired_document(&session, &insured);
         assert_eq!(doc.title, "Day 23");
         assert!(doc.has_notable());
         let texts: Vec<&str> = doc.sections[0]
@@ -3741,7 +3911,7 @@ mod tests {
         assert_eq!(
             texts,
             [
-                "Contract expired: Famine relief: grain to Corsair's Rest - 5/23 - Silver +60 - 22 Grain still aboard",
+                "Contract expired: Famine relief: grain to Corsair's Rest - 0/23 - Guarantee +105",
                 "Spice restock run to Al-Manar - 3 days left - 0/8 - sell 8 more Spice at Al-Manar",
             ]
         );

@@ -12,7 +12,8 @@ use portlight_sim::session::Session;
 
 use crate::contracts_screen::{ascii_sentence, meta_color, progress_text};
 use crate::day_report::deadline_timing;
-use crate::logic::ascii_label;
+use crate::departure_check::title_names_port;
+use crate::logic::display_or_humanized;
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
@@ -230,15 +231,17 @@ fn segment_with_destination(
 ) -> StripSegment {
     let mut segment = segment_for(contract, day, world, true);
     let port = port_label(world, &contract.destination_port_id);
-    segment.text = format!("{} - to {port}", segment.text);
+    // Drop `to {Port}` when the title already names the port (the Departure
+    // check's elsewhere-line rule).
+    if !title_names_port(&ascii_sentence(&contract.title), &port) {
+        segment.text = format!("{} - to {port}", segment.text);
+    }
     segment
 }
 
 fn port_label(world: &portlight_sim::model::World, id: &str) -> String {
-    world
-        .port(id)
-        .map(|port| ascii_label(&port.name, &port.id).to_string())
-        .unwrap_or_else(|| id.to_string())
+    let name = world.port(id).map(|port| port.name.as_str());
+    display_or_humanized(name, id)
 }
 
 fn clear_children(node: &mut Gd<HBoxContainer>) {
@@ -294,6 +297,36 @@ fn test_contract(
 mod tests {
     use super::*;
     use portlight_sim::session::Session;
+
+    /// #63 GD note 5: the single-contract `- to {Port}` tail drops when the
+    /// title already names the port (case-insensitive), else it stays.
+    #[test]
+    fn single_contract_drops_the_port_the_title_names() {
+        let session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let world = session.world();
+        let named = test_contract(
+            "Famine relief: grain to Corsair's Rest",
+            5,
+            0,
+            23,
+            "corsairs_rest",
+        );
+        let doc = build_document_from_active(&[named], 1, world).unwrap();
+        assert_eq!(doc.segments.len(), 1);
+        assert!(
+            !doc.segments[0].text.contains("- to "),
+            "{}",
+            doc.segments[0].text
+        );
+        assert_eq!(doc.segments[0].text.matches("Corsair's Rest").count(), 1);
+        let plain = test_contract("Grain run", 5, 0, 5, "corsairs_rest");
+        let doc = build_document_from_active(&[plain], 1, world).unwrap();
+        assert!(
+            doc.segments[0].text.ends_with(" - to Corsair's Rest"),
+            "{}",
+            doc.segments[0].text
+        );
+    }
 
     #[test]
     fn empty_active_hides() {

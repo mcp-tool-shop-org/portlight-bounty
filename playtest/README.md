@@ -26,6 +26,8 @@ node ../ai-playtest/dist/cli.js check playtest/portlight-godot.playtest.json
 Run that from the repo root after `ai-playtest` has been built. The probe, also from the repo root:
 
 ```
+cargo build -p portlight-godot
+godot --headless --path godot --import --quit
 node playtest/probe-bridge.mjs
 ```
 
