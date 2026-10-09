@@ -151,7 +151,7 @@ bounty_claim_sail.txt.
 
 ## Parity harness
 
-**CLI-vs-oracle naval RNG stream.** The real Python CLI seeds naval rounds from a per-turn `random.Random(seed + day×1000 + naval_turns + 7777)` (cli.py:2105-2108). The TUI uses `seed + day×1000 + naval_turns + duel_turns`. The parity oracle and Rust use the session stream. Rust matches the oracle, not the CLI's naval RNG.
+**CLI-vs-oracle naval RNG stream.** The real Python CLI seeds naval rounds from a per-turn `random.Random(seed + day x 1000 + naval_turns + 7777)` (cli.py:2105-2108). The TUI uses `seed + day x 1000 + naval_turns + duel_turns`. The parity oracle and Rust use the session stream. Rust matches the oracle, not the CLI's naval RNG.
 
 
 Regenerate content and goldens from a Python checkout of commit `9b02494`:

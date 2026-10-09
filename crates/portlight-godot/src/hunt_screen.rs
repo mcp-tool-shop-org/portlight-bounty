@@ -17,7 +17,7 @@ use portlight_sim::model::VoyageStatus;
 use portlight_sim::Session;
 
 use crate::encounter_screen;
-use crate::logic::{ascii_label, faction_name};
+use crate::logic::{ascii_label, captain_display_name, faction_name, humanize_id};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -315,13 +315,27 @@ pub(crate) fn catalog_card(id: &str) -> Option<BountyCard> {
 pub(crate) fn card_from_target(target: &BountyTarget) -> BountyCard {
     BountyCard {
         captain_id: target.captain_id.clone(),
-        captain_name: ascii_label(&target.captain_name, &target.captain_id).to_string(),
-        faction_id: ascii_label(&target.faction_id, &target.captain_id).to_string(),
+        // Live name, else catalog name, else humanised id; never the raw id.
+        captain_name: captain_display_name(&target.captain_name, &target.captain_id),
+        // An id for `faction_name` (catalog, else humanised). An empty or
+        // non-ASCII faction falls back to the catalog captain's faction, never
+        // to the captain id.
+        faction_id: target_faction_id(target),
         region: ascii_label(&target.region, "").to_string(),
         reward: target.reward,
         difficulty: ascii_label(&target.difficulty, "").to_string(),
         description: ascii_text(&target.description),
     }
+}
+
+fn target_faction_id(target: &BountyTarget) -> String {
+    if !target.faction_id.is_empty() && target.faction_id.is_ascii() {
+        return target.faction_id.clone();
+    }
+    portlight_sim::content::content()
+        .pirate(&target.captain_id)
+        .map(|pirate| pirate.faction_id.clone())
+        .unwrap_or_default()
 }
 
 pub(crate) fn remember(known: &mut Vec<BountyTarget>, target: BountyTarget) {
@@ -444,7 +458,7 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
             world
                 .port(id)
                 .map(|port| port.name.clone())
-                .unwrap_or_else(|| id.to_string()),
+                .unwrap_or_else(|| humanize_id(id)),
         )
     };
     let morale = world.captain.ship.as_ref().map(|ship| ship.morale);
@@ -635,7 +649,7 @@ fn resolve_card(id: &str, known: &[BountyTarget]) -> BountyCard {
     }
     catalog_card(id).unwrap_or_else(|| BountyCard {
         captain_id: id.to_string(),
-        captain_name: id.to_string(),
+        captain_name: captain_display_name("", id),
         faction_id: String::new(),
         region: String::new(),
         reward: 0,
@@ -753,6 +767,46 @@ fn ascii_text(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn source_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if path.is_dir() {
+                if !name.starts_with('.') && name != "assets" {
+                    source_files(&path, out);
+                }
+            } else if matches!(path.extension().and_then(|e| e.to_str()), Some("rs" | "gd")) {
+                out.push(path);
+            }
+        }
+    }
+
+    /// Hunt crew-loss acceptance test 12: the cap comes from
+    /// `naval::hunt_crew_loss_cap`; Godot code never re-derives it.
+    #[test]
+    fn hunt_crew_formula_lives_only_in_the_sim() {
+        let crate_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut files = Vec::new();
+        source_files(&crate_dir.join("src"), &mut files);
+        source_files(&crate_dir.join("../../godot"), &mut files);
+        assert!(files.len() > 10, "source scan found {} files", files.len());
+        // Split so this test does not match itself.
+        let banned = [["0.0", "3"].concat(), ["ce", "il"].concat()];
+        for path in &files {
+            let text = std::fs::read_to_string(path).unwrap_or_default();
+            for word in &banned {
+                assert!(
+                    !text.contains(word.as_str()),
+                    "{word:?} in {}: the hunt cap belongs to portlight_sim::naval",
+                    path.display()
+                );
+            }
+        }
+    }
 
     #[test]
     fn hunt_confirm_states_crew_against_the_sail_minimum() {

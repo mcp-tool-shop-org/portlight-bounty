@@ -252,10 +252,41 @@ pub(crate) fn at_sea(session: &Session) -> bool {
 /// Sentence [`Session`] already produced. Empty when both fields are empty.
 pub(crate) fn session_text(message: &str, flavor: &str) -> String {
     if !message.is_empty() {
-        message.to_string()
+        ascii_punctuation(message)
     } else {
-        flavor.to_string()
+        ascii_punctuation(flavor)
     }
+}
+
+/// Display filter for sim text (GD (c)): an em or en dash becomes the ASCII
+/// ` - ` separator, a Unicode minus becomes `-`, curly quotes become straight
+/// quotes, an ellipsis becomes `...` and a middle dot becomes ` - `. Letters
+/// are left alone, so a name keeps its accents.
+pub(crate) fn ascii_punctuation(text: &str) -> String {
+    if text.is_ascii() {
+        return text.to_string();
+    }
+    let mut out = String::with_capacity(text.len());
+    for ch in text.chars() {
+        match ch {
+            '\u{2014}' | '\u{2013}' | '\u{00b7}' => {
+                let trimmed = out.trim_end_matches(' ').len();
+                out.truncate(trimmed);
+                out.push_str(" - ");
+            }
+            '\u{2212}' | '\u{2010}' | '\u{2011}' => out.push('-'),
+            '\u{2018}' | '\u{2019}' => out.push('\''),
+            '\u{201c}' | '\u{201d}' => out.push('"'),
+            '\u{2026}' => out.push_str("..."),
+            '\u{00a0}' => out.push(' '),
+            c => out.push(c),
+        }
+    }
+    // ` - ` already carries its spaces; fold the doubled ones it made.
+    while out.contains("-  ") {
+        out = out.replace("-  ", "- ");
+    }
+    out.trim_start_matches(" - ").to_string()
 }
 
 /// `SimError::InvalidAction` lists the actions [`Session`] would accept.
@@ -397,6 +428,28 @@ pub(crate) fn encounter_end(step: &EncounterStep, pending_victory: bool) -> Opti
     }
 }
 
+/// A pirate captain's name for player copy: the live name when it is ASCII,
+/// else the catalog name, else [`humanize_id`]. Never the raw id.
+pub(crate) fn captain_display_name(name: &str, captain_id: &str) -> String {
+    if !name.is_empty() && name.is_ascii() {
+        name.to_string()
+    } else {
+        encounter_end_name(captain_id)
+    }
+}
+
+/// A ship's name for player copy: its own name when it is ASCII, else the
+/// catalog hull name, else [`humanize_id`] of the template id.
+pub(crate) fn ship_display_name(name: &str, template_id: &str) -> String {
+    if !name.is_empty() && name.is_ascii() {
+        return name.to_string();
+    }
+    let catalog = portlight_sim::content::content()
+        .ship(template_id)
+        .map(|template| template.name.as_str());
+    display_or_humanized(catalog, template_id)
+}
+
 /// `{Name}` in the non-win receipt: the catalog display name, or
 /// [`humanize_id`] when the catalog has none or it isn't ASCII. Never the
 /// raw id. Empty only when the id is empty.
@@ -407,7 +460,8 @@ pub(crate) fn encounter_end_name(captain_id: &str) -> String {
     display_or_humanized(catalog, captain_id)
 }
 
-fn display_or_humanized(display: Option<&str>, id: &str) -> String {
+/// A display name, else [`humanize_id`]. Never the raw id.
+pub(crate) fn display_or_humanized(display: Option<&str>, id: &str) -> String {
     match display {
         Some(name) if !name.is_empty() && name.is_ascii() => name.to_string(),
         _ => humanize_id(id),
@@ -1251,7 +1305,7 @@ pub(crate) fn shipyard_model(session: &Session) -> Option<ShipyardModel> {
     }
     let port = world.port(&world.voyage.destination_id)?;
     let ship = world.captain.ship.as_ref()?;
-    let port_name = ascii_label(&port.name, &port.id).to_string();
+    let port_name = display_or_humanized(Some(&port.name), &port.id);
     let has_shipyard = port.has_feature("shipyard");
     let trust = world.captain.standing.commercial_trust;
     let fleet_len = world.captain.fleet.len();
@@ -1277,7 +1331,7 @@ pub(crate) fn shipyard_model(session: &Session) -> Option<ShipyardModel> {
                 .map(|template| template.ship_class.as_str())
                 .unwrap_or("");
             FleetCard {
-                name: ascii_label(&owned.ship.name, &owned.ship.template_id).to_string(),
+                name: ship_display_name(&owned.ship.name, &owned.ship.template_id),
                 template_id: owned.ship.template_id.clone(),
                 class_label: class_label(class_name),
                 hull: owned.ship.hull,
@@ -1299,7 +1353,7 @@ pub(crate) fn shipyard_model(session: &Session) -> Option<ShipyardModel> {
         buying_sells_flagship: buying_sells_flagship(fleet_len, trust),
         flagship: FlagshipCard {
             template_id: ship.template_id.clone(),
-            name: ascii_label(&ship.name, &ship.template_id).to_string(),
+            name: ship_display_name(&ship.name, &ship.template_id),
             class_label: class_label(class_name),
             hull: ship.hull,
             hull_max: ship.hull_max,
@@ -1312,7 +1366,7 @@ pub(crate) fn shipyard_model(session: &Session) -> Option<ShipyardModel> {
             .filter(|template| template.id != ship.template_id)
             .map(|template| HullOffer {
                 id: template.id.clone(),
-                name: ascii_label(&template.name, &template.id).to_string(),
+                name: display_or_humanized(Some(&template.name), &template.id),
                 class_label: class_label(&template.ship_class),
                 price: template.price,
                 cargo: template.cargo_capacity,
@@ -1327,7 +1381,7 @@ pub(crate) fn shipyard_model(session: &Session) -> Option<ShipyardModel> {
             .filter(|upgrade| !installed.contains(&upgrade.id.as_str()))
             .map(|upgrade| UpgradeOffer {
                 id: upgrade.id.clone(),
-                name: ascii_label(&upgrade.name, &upgrade.id).to_string(),
+                name: display_or_humanized(Some(&upgrade.name), &upgrade.id),
                 price: upgrade.price,
                 summary: upgrade_summary(upgrade),
             })
@@ -1845,9 +1899,9 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                 .map(|trainer| trainer.max_teach_level)
                 .max()
                 .unwrap_or(0);
-            let trainer_names: Vec<&str> = trainers
+            let trainer_names: Vec<String> = trainers
                 .iter()
-                .map(|trainer| ascii_label(&trainer.name, &trainer.id))
+                .map(|trainer| display_or_humanized(Some(&trainer.name), &trainer.id))
                 .collect();
             let next = skill.levels.get(current as usize);
             let can_train = next.is_some() && current < skill.max_level && current < max_teach;
@@ -1947,14 +2001,22 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
 
 /// Chart duel prompt for `World.pending_duel`. Faction by catalog name,
 /// ASCII ` - ` separators.
+/// Empty facts are dropped with their separator, so an empty region never
+/// leaves `strength 3 - .`.
 pub(crate) fn duel_prompt(duel: &portlight_sim::model::PendingDuel) -> String {
-    format!(
-        "Duel: {}.\nFaction {} - {} - strength {} - {}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
-        duel.captain_name,
+    let facts = [
         faction_name(&duel.faction_id),
         humanize_id(&duel.personality),
-        duel.strength,
-        duel.region
+        format!("strength {}", duel.strength),
+        duel.region.trim().to_string(),
+    ]
+    .into_iter()
+    .filter(|fact| !fact.is_empty())
+    .collect::<Vec<_>>()
+    .join(" - ");
+    format!(
+        "Duel: {}.\nFaction {facts}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
+        duel.captain_name,
     )
 }
 
@@ -2041,6 +2103,53 @@ mod tests {
     use portlight_sim::session::VictoryReceipt;
 
     use super::*;
+
+    /// Copy batch: an empty region leaves no `- .` tail in the duel prompt.
+    #[test]
+    fn duel_prompt_drops_an_empty_region() {
+        let duel = portlight_sim::model::PendingDuel {
+            captain_id: "c".into(),
+            captain_name: "Bram".into(),
+            faction_id: "iron_wolves".into(),
+            personality: "aggressive".into(),
+            strength: 3,
+            region: " ".into(),
+        };
+        let text = duel_prompt(&duel);
+        assert!(
+            text.contains("Faction The Iron Wolves - Aggressive - strength 3.\n"),
+            "{text}"
+        );
+        assert!(!text.contains("- ."), "{text}");
+    }
+
+    /// Copy batch raw-id fallbacks: live name, else catalog, else humanized.
+    #[test]
+    fn display_names_never_fall_back_to_raw_ids() {
+        assert_eq!(captain_display_name("Old Coral", "old_coral"), "Old Coral");
+        assert_eq!(captain_display_name("", "raj_the_quiet"), "Raj the Quiet");
+        assert_eq!(
+            captain_display_name("", "salt_widow_kell"),
+            "Salt Widow Kell"
+        );
+        assert_eq!(
+            captain_display_name("Ra\u{e9}l", "salt_widow_kell"),
+            "Salt Widow Kell"
+        );
+        assert_eq!(ship_display_name("Gull", "swift_cutter"), "Gull");
+        let catalog = portlight_sim::content::content()
+            .ship("swift_cutter")
+            .map(|t| t.name.clone())
+            .unwrap();
+        assert_eq!(ship_display_name("", "swift_cutter"), catalog);
+        assert_eq!(ship_display_name("", "river_barge_x"), "River Barge X");
+        for name in [
+            captain_display_name("", "salt_widow_kell"),
+            ship_display_name("", "river_barge_x"),
+        ] {
+            assert!(!name.contains('_') && name.is_ascii(), "{name}");
+        }
+    }
 
     #[test]
     fn humanize_id_title_cases_snake_case_ids() {
@@ -3765,6 +3874,39 @@ mod tests {
         assert_eq!((master.cost, master.days), (400, 8));
         assert!(!master.can_train);
         assert!(master.next_text.contains("Master"));
+    }
+
+    #[test]
+    fn ascii_punctuation_maps_dashes_and_minus() {
+        assert_eq!(
+            ascii_punctuation("A gunshot cracks \u{2014} 6 damage!"),
+            "A gunshot cracks - 6 damage!"
+        );
+        assert_eq!(ascii_punctuation("Hull\u{2013}crew"), "Hull - crew");
+        assert_eq!(ascii_punctuation("Crew \u{2212}"), "Crew -");
+        assert_eq!(
+            ascii_punctuation("\u{201c}Fair winds\u{201d} \u{2026} it\u{2019}s"),
+            "\"Fair winds\" ... it's"
+        );
+        assert_eq!(
+            ascii_punctuation("Your hull 18/20 \u{00b7} crew 4"),
+            "Your hull 18/20 - crew 4"
+        );
+        assert_eq!(ascii_punctuation("Plain text - 3"), "Plain text - 3");
+        assert_eq!(ascii_punctuation("Tom\u{00e1}s"), "Tom\u{00e1}s");
+        for text in [
+            "a \u{2014} b",
+            "a\u{2014}b",
+            "\u{2212}5",
+            "x \u{2013} y \u{2026}",
+        ] {
+            assert!(ascii_punctuation(text).is_ascii(), "{text}");
+            assert!(!ascii_punctuation(text).contains("  "), "{text}");
+        }
+        assert_eq!(
+            session_text("", "Shot \u{2014} 6 damage!"),
+            "Shot - 6 damage!"
+        );
     }
 
     #[test]

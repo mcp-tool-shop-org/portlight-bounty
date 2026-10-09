@@ -360,6 +360,37 @@ pub(crate) fn choice_cell(mut button: Gd<Button>, lines: &[&str]) -> Gd<VBoxCont
     cell
 }
 
+/// Padding added to the widest Outcome column (GD ruling: widest label plus
+/// padding, even gap).
+pub(crate) const CHOICE_COLUMN_PAD: f32 = 12.0;
+
+/// Width every Outcome column gets: the widest column's own minimum width plus
+/// [`CHOICE_COLUMN_PAD`].
+pub(crate) fn choice_column_width(widths: &[f32]) -> f32 {
+    widths.iter().copied().fold(0.0_f32, f32::max).round() + CHOICE_COLUMN_PAD
+}
+
+/// Give each column in an Outcome row the same minimum width so the buttons
+/// start at even steps. Call after the row is in the tree (fonts resolve).
+pub(crate) fn even_choice_columns(row: &Gd<HBoxContainer>) {
+    let mut cells: Vec<Gd<Control>> = row
+        .get_children()
+        .iter_shared()
+        .filter_map(|child| child.try_cast::<Control>().ok())
+        .collect();
+    for cell in cells.iter_mut() {
+        cell.set_custom_minimum_size(Vector2::ZERO);
+    }
+    let widths: Vec<f32> = cells
+        .iter()
+        .map(|cell| cell.get_combined_minimum_size().x)
+        .collect();
+    let width = choice_column_width(&widths);
+    for cell in cells.iter_mut() {
+        cell.set_custom_minimum_size(Vector2::new(width, 0.0));
+    }
+}
+
 /// Tan fill, 2 px gold border, 8 px margin. Cream at rest. Dark ink on hover
 /// and focus: cream on the hover fill is 2.76:1, and this ink is 5.08:1.
 /// The chart panel does not use this style.
@@ -403,6 +434,17 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 mod tests {
     use super::{placeholder_minimum_size, plate_caption};
     use crate::logic::{encounter_plate, ui_plate_panel};
+
+    /// GD: every Outcome column is the widest column plus the pad.
+    #[test]
+    fn choice_columns_take_the_widest_plus_pad() {
+        use super::{choice_column_width, CHOICE_COLUMN_PAD};
+        assert_eq!(
+            choice_column_width(&[80.0, 132.4, 96.0]),
+            132.0 + CHOICE_COLUMN_PAD
+        );
+        assert_eq!(choice_column_width(&[]), CHOICE_COLUMN_PAD);
+    }
 
     #[test]
     fn plate_caption_names_each_class_and_falls_back() {

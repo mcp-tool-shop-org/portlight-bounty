@@ -366,7 +366,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         let name = ascii_copy(&spec.name);
         let mut block = check_license_eligibility(infra, spec, standing)
             .err()
-            .map(|err| ascii_copy(&err.to_string()))
+            .map(|err| trust_block(&ascii_copy(&err.to_string()), &spec.required_trust_tier))
             .unwrap_or_default();
         if block.is_empty() && spec.purchase_cost > silver {
             block = format!("Need {} silver, have {silver}", spec.purchase_cost);
@@ -379,11 +379,10 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         license_offers.push(ActionRow {
             title: name,
             detail: format!(
-                "{} silver. Upkeep {}/day. Trust {}. Standing {}. Scope {scope}. {}",
+                "{} silver. Upkeep {}/day. {}Scope {scope}. {}",
                 spec.purchase_cost,
                 spec.upkeep_per_day,
-                ascii_copy(&spec.required_trust_tier),
-                spec.required_standing,
+                requirement_terms(&spec.required_trust_tier, spec.required_standing),
                 ascii_copy(&spec.description)
             ),
             button: "Buy".to_string(),
@@ -429,7 +428,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         let mut owned = infra.clone();
         let mut block = infrastructure::check_credit_eligibility(&mut owned, spec, standing)
             .err()
-            .map(|err| ascii_copy(&err.to_string()))
+            .map(|err| trust_block(&ascii_copy(&err.to_string()), &spec.required_trust_tier))
             .unwrap_or_default();
         if block.is_empty() && active_tier.is_some() && active_rank >= credit_rank(&spec.tier) {
             let current = active_tier
@@ -440,12 +439,11 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         credit_offers.push(ActionRow {
             title: name.clone(),
             detail: format!(
-                "Limit {}. Interest {:.0}% each {} days. Trust {}. Standing {}. {}",
+                "Limit {}. Interest {:.0}% each {} days. {}{}",
                 spec.credit_limit,
                 spec.interest_rate * 100.0,
                 spec.interest_period,
-                ascii_copy(&spec.required_trust_tier),
-                spec.required_standing,
+                requirement_terms(&spec.required_trust_tier, spec.required_standing),
                 ascii_copy(&spec.description)
             ),
             button: "Open".to_string(),
@@ -465,7 +463,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         let mut owned = infra.clone();
         infrastructure::check_credit_eligibility(&mut owned, spec, standing)
             .err()
-            .map(|err| ascii_copy(&err.to_string()))
+            .map(|err| trust_block(&ascii_copy(&err.to_string()), &spec.required_trust_tier))
             .unwrap_or_default()
     } else {
         format!("Unknown credit tier: {draw_tier}")
@@ -521,21 +519,13 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         .claims
         .iter()
         .map(|claim| {
-            if claim.denied {
-                format!(
-                    "Day {}: {} denied. {}",
-                    claim.day,
-                    ascii_copy(&claim.incident_type),
-                    ascii_copy(&claim.denial_reason)
-                )
-            } else {
-                format!(
-                    "Day {}: {} payout {}.",
-                    claim.day,
-                    ascii_copy(&claim.incident_type),
-                    claim.payout
-                )
-            }
+            claim_line(
+                claim.day,
+                &claim.incident_type,
+                claim.denied,
+                &claim.denial_reason,
+                claim.payout,
+            )
         })
         .collect();
 
@@ -855,7 +845,7 @@ fn good_name(id: &str) -> String {
         .good(id)
         .map(|good| ascii_copy(&good.name))
         .filter(|name| !name.is_empty())
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn yes_no(active: bool) -> &'static str {
@@ -882,6 +872,49 @@ fn credit_tier_name(tier: &str) -> String {
         .credit_tier(tier)
         .map(|spec| ascii_copy(&spec.name))
         .unwrap_or_else(|| humanize_id(tier))
+}
+
+/// One Harbour claims row. A paid contract guarantee reads
+/// `Day 21: contract guarantee paid 105.` (no currency word); any other
+/// incident is humanised, never a raw id (`Day 5: Storm payout 40.`).
+fn claim_line(day: i64, incident: &str, denied: bool, reason: &str, payout: i64) -> String {
+    let name = humanize_id(&ascii_copy(incident));
+    if denied {
+        format!("Day {day}: {name} denied. {}", ascii_copy(reason))
+    } else if incident == "contract_failure" {
+        format!("Day {day}: contract guarantee paid {payout}.")
+    } else {
+        format!("Day {day}: {name} payout {payout}.")
+    }
+}
+
+/// `Trust Trusted. Standing 3. ` for an offer's detail line. The tier goes
+/// through the humaniser; a zero standing is omitted (R4).
+fn requirement_terms(tier: &str, standing: i64) -> String {
+    let mut out = format!("Trust {}. ", humanize_id(&ascii_copy(tier)));
+    if standing != 0 {
+        out.push_str(&format!("Standing {standing}. "));
+    }
+    out
+}
+
+/// AD nit: the sim refusal `Requires trusted trust (currently credible)` reads
+/// `Requires trust tier Trusted - you are Credible`. Guarded format of the one
+/// fixed sim template: only when the text starts with the exact prefix built
+/// from the same spec and ends with `)`. Any other refusal prints unchanged.
+pub(crate) fn trust_block(sim_text: &str, required_tier: &str) -> String {
+    let prefix = format!("Requires {required_tier} trust (currently ");
+    let current = sim_text
+        .strip_prefix(prefix.as_str())
+        .and_then(|rest| rest.strip_suffix(')'));
+    match current {
+        Some(current) if !current.is_empty() && !current.contains(['(', ')']) => format!(
+            "Requires trust tier {} - you are {}",
+            humanize_id(required_tier),
+            humanize_id(current)
+        ),
+        _ => sim_text.to_string(),
+    }
 }
 
 /// The credit half of the desk status line: `Merchant Line outstanding 40`.
@@ -970,6 +1003,60 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// AD nit (friction call): exact copy, both tiers humanized; any other
+    /// refusal prints unchanged.
+    #[test]
+    fn trust_block_rewrites_only_the_fixed_sim_template() {
+        assert_eq!(
+            trust_block("Requires trusted trust (currently credible)", "trusted"),
+            "Requires trust tier Trusted - you are Credible"
+        );
+        for other in [
+            "Requires 10 standing in Mediterranean",
+            "Requires trusted trust",
+            "Requires trusted trust (currently )",
+            "Requires credible trust (currently unknown)",
+        ] {
+            assert_eq!(trust_block(other, "trusted"), other);
+        }
+        let text = trust_block("Requires trusted trust (currently credible)", "trusted");
+        assert!(!text.contains("trusted trust") && text.is_ascii());
+    }
+
+    /// `Standing 0.` is omitted (R4); the tier is humanized.
+    #[test]
+    fn requirement_terms_omit_zero_standing() {
+        assert_eq!(requirement_terms("trusted", 0), "Trust Trusted. ");
+        assert_eq!(
+            requirement_terms("credible", 3),
+            "Trust Credible. Standing 3. "
+        );
+    }
+
+    /// Claims ledger rows: the contract guarantee reads in GD's words; other
+    /// incidents are humanized, never raw ids.
+    #[test]
+    fn claim_lines_name_the_guarantee() {
+        assert_eq!(
+            claim_line(21, "contract_failure", false, "", 105),
+            "Day 21: contract guarantee paid 105."
+        );
+        assert_eq!(
+            claim_line(4, "storm_damage", false, "", 30),
+            "Day 4: Storm Damage payout 30."
+        );
+        assert_eq!(
+            claim_line(4, "storm_damage", true, "Policy lapsed.", 0),
+            "Day 4: Storm Damage denied. Policy lapsed."
+        );
+        for line in [
+            claim_line(21, "contract_failure", false, "", 105),
+            claim_line(4, "storm_damage", true, "x", 0),
+        ] {
+            assert!(!line.contains('_') && line.is_ascii(), "{line}");
+        }
+    }
 
     #[test]
     fn credit_status_uses_the_catalog_tier_name() {

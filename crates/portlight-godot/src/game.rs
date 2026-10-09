@@ -78,11 +78,11 @@ use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
 use crate::hunt_screen::{self, HuntAction, HuntConfirm, HuntDesk};
 use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
-    action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
-    buy_confirm_line, buy_result_line, captain_button_label, capture_frame_rejected,
-    chart_host_width, crew_desk, cycle_index, day_log_lines, dock_confirm_line,
-    duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
-    facts_from_step, frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm,
+    action_caption, action_list_from_error, at_sea, board_confirm_line, buy_confirm_line,
+    buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
+    cycle_index, day_log_lines, display_or_humanized, dock_confirm_line, duel_button_enabled,
+    encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
+    frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id,
     install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
     present, recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line,
     session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
@@ -643,6 +643,9 @@ struct PortlightGame {
     day_report_memory: DayReportMemory,
     day_report_checked: bool,
     day_report_shot_dir: Option<String>,
+    /// The insured expiry line the expired smoke saw on the real Day 21 card;
+    /// the `day-report-expired.png` frame leads with it (AD #62 soft).
+    expired_frame_line: Option<String>,
     day_report_shot: Option<DayReportShot>,
     contract_strip_nodes: Option<ContractStripNodes>,
     contract_strip_checked: bool,
@@ -816,6 +819,7 @@ impl IControl for PortlightGame {
             day_report_memory: DayReportMemory::default(),
             day_report_checked: false,
             day_report_shot_dir: None,
+            expired_frame_line: None,
             day_report_shot: None,
             contract_strip_nodes: None,
             contract_strip_checked: false,
@@ -925,7 +929,7 @@ impl IControl for PortlightGame {
                 self.capture_frames = 2;
             }
         } else if user_arg("--day-report-arrival") {
-            // Arrival variant: real Session sail→dock smoke, then forced frame.
+            // Arrival variant: real Session sail->dock smoke, then forced frame.
             self.smoke = true;
             self.day_report_checked = true;
             let capture = day_report_frames_requested(self.shot_path.is_some());
@@ -2569,8 +2573,8 @@ impl PortlightGame {
             .ports
             .iter()
             .find(|port| port.id == self.draft.home_port_id)
-            .map(|port| ascii_label(&port.name, &port.id).to_string())
-            .unwrap_or_else(|| self.draft.home_port_id.clone());
+            .map(|port| display_or_humanized(Some(&port.name), &port.id))
+            .unwrap_or_else(|| humanize_id(&self.draft.home_port_id));
         self.choice_row(
             actions,
             game_id,
@@ -2794,7 +2798,7 @@ impl PortlightGame {
                     .ship
                     .as_ref()
                     .map(|ship| ship.name.clone())
-                    .unwrap_or_else(|| ship_id.to_string());
+                    .unwrap_or_else(|| humanize_id(ship_id));
                 buy_result_line(
                     &bought,
                     &previous_name,
@@ -2808,8 +2812,8 @@ impl PortlightGame {
     fn install_hull_upgrade(&mut self, upgrade_id: &str) -> String {
         let name = portlight_sim::content::content()
             .upgrade(upgrade_id)
-            .map(|upgrade| ascii_label(&upgrade.name, upgrade_id).to_string())
-            .unwrap_or_else(|| upgrade_id.to_string());
+            .map(|upgrade| display_or_humanized(Some(&upgrade.name), upgrade_id))
+            .unwrap_or_else(|| humanize_id(upgrade_id));
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return "No game".to_string();
@@ -2962,12 +2966,18 @@ impl PortlightGame {
         edit.set_max_length(30);
         newgame_screen::style_field(&mut edit);
         body.add_child(&edit);
+        // F13: `Rename`, disabled until the trimmed field differs from the
+        // flagship's name. Typing toggles only this button (no refresh), so
+        // focus stays in the field.
+        let mut rename = encounter_button("Rename", game_id, Action::ShipyardRename);
+        rename.set_disabled(!rename_ready(&self.rename_draft, &model.flagship.name));
+        let current = model.flagship.name.clone();
+        let mut toggle = rename.clone();
+        edit.signals().text_changed().connect(move |text: GString| {
+            toggle.set_disabled(!rename_ready(&text.to_string(), &current));
+        });
         self.rename_edit = Some(edit);
-        body.add_child(&encounter_button(
-            "Confirm rename",
-            game_id,
-            Action::ShipyardRename,
-        ));
+        body.add_child(&rename);
 
         let yard = body_label("Yard", 16, GOLD);
         self.yard_mark = Some(yard.clone().upcast());
@@ -3979,6 +3989,11 @@ impl PortlightGame {
             self.hunt_open = false;
             self.hunt_desk.confirm = None;
         }
+        // #63 follow-up: the Market box closes too (same as its own toggle).
+        if self.market_open {
+            self.market_open = false;
+            self.market_notice.clear();
+        }
     }
 
     fn sync_departure_check(&mut self) {
@@ -4025,7 +4040,7 @@ impl PortlightGame {
                     .world()
                     .port(dest)
                     .map(|port| port.name.clone())
-                    .unwrap_or_else(|| dest.to_string())
+                    .unwrap_or_else(|| humanize_id(dest))
             })
         };
         match result {
@@ -4079,7 +4094,7 @@ impl PortlightGame {
                             .find(|lane| lane.destination_id == id)
                             .map(lane_inspect)
                     })
-                    .unwrap_or(id);
+                    .unwrap_or_else(|| humanize_id(&id));
                 self.push_log(format!("Selected {text}. Click the port again to sail."));
             }
         }
@@ -5887,7 +5902,7 @@ impl PortlightGame {
                     .find(|contract| contract.offer_id == id)
                     .map(|contract| contract.title.clone())
             })
-            .unwrap_or_else(|| id.to_string());
+            .unwrap_or_else(|| humanize_id(id));
         self.contracts_confirm = Some(id.to_string());
         self.contracts_notice = contracts_screen::abandon_prompt(&title);
         self.refresh();
@@ -6710,8 +6725,8 @@ impl PortlightGame {
             .map(|ship| {
                 let class = content::content()
                     .ship(&ship.template_id)
-                    .map(|template| template.ship_class.as_str())
-                    .unwrap_or(ship.template_id.as_str());
+                    .map(|template| template.ship_class.clone())
+                    .unwrap_or_else(|| humanize_id(&ship.template_id));
                 format!(
                     "{}   {class}   hull {}/{}   crew {}",
                     ship.name, ship.hull, ship.hull_max, ship.crew
@@ -6862,8 +6877,11 @@ impl PortlightGame {
 
     fn push_log(&mut self, line: impl Into<String>) {
         // R12: sim flavour carries `[bold]` / `[dim]` tags; a Label prints them.
-        self.log_lines
-            .push(crate::logic::strip_markup(&line.into()));
+        // GD (c): sim em / en dashes and other non-ASCII punctuation print as
+        // ASCII (` - `), after the markup is gone.
+        self.log_lines.push(crate::logic::ascii_punctuation(
+            &crate::logic::strip_markup(&line.into()),
+        ));
         if self.log_lines.len() > 8 {
             let extra = self.log_lines.len() - 8;
             self.log_lines.drain(0..extra);
@@ -7395,23 +7413,31 @@ impl PortlightGame {
                 }
                 None => {
                     // Beside a preview cell, a bare button (Capture) keeps its
-                    // own height instead of stretching to the cell's.
+                    // own height instead of stretching to the cell's, and sits
+                    // in a column of its own like the preview cells.
                     if preview.is_some() {
                         button.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+                        row.add_child(&encounter_screen::choice_cell(button, &[]));
+                    } else {
+                        row.add_child(&button);
                     }
-                    row.add_child(&button);
                 }
             }
             count += 1;
         }
         if count > 0 {
             box_node.add_child(&row);
+            // GD Outcome ruling: every column gets one fixed minimum width (the
+            // widest cell plus padding), so the gaps are even. Order unchanged.
+            if preview.is_some() {
+                encounter_screen::even_choice_columns(&row);
+            }
         }
         if show_crew {
             let mut crew_row = HBoxContainer::new_alloc();
             crew_row.add_theme_constant_override("separation", 8);
             crew_row.add_child(&encounter_button(
-                "Crew −",
+                "Crew -",
                 game_id,
                 Action::CaptureCrew(-1),
             ));
@@ -8022,7 +8048,9 @@ impl PortlightGame {
             .map(day_report::overlay_text)
             .unwrap_or_default();
         let footer = self.day_report_footer_now();
-        if !self.day_report_open || !text.contains("Deadlines") || !text.contains("Bounty accepted")
+        // F5: the bounty taken at left == 4 still counts in Week (`bounty +1`),
+        // but the report no longer prints a `Bounty accepted` line.
+        if !self.day_report_open || !text.contains("Deadlines") || text.contains("Bounty accepted")
         {
             self.fail_day_report(format!("Day-report week: notable body missing: {text:?}"));
             return false;
@@ -8109,7 +8137,7 @@ impl PortlightGame {
             self.fail_day_report("Day-report arrival: visit memory missing after undock.");
             return false;
         }
-        // Advance until sailed→InPort at Al-Manar.
+        // Advance until sailed->InPort at Al-Manar.
         let mut arrived = false;
         for _ in 0..60 {
             self.close_day_report();
@@ -8381,6 +8409,7 @@ impl PortlightGame {
         if !self.expect_expired_card(&insured_want) {
             return false;
         }
+        self.expired_frame_line = Some(insured_want.clone());
         self.close_day_report();
         if !self.expect_expired_recent("Expired: Guarantee +105 - Grain for Corsair's Rest - 0/23")
         {
@@ -8637,12 +8666,17 @@ impl PortlightGame {
         self.smoke_ok
     }
 
-    /// Frame doc for `day-report-expired.png` (forced, real formatters).
+    /// Frame doc for `day-report-expired.png`: the real insured expiry line
+    /// from the Day 21 card above the live Deadlines.
     fn open_expired_frame_doc(&mut self) {
+        let Some(line) = self.expired_frame_line.clone() else {
+            self.fail_day_report("Day-report expired: no real expiry line for the frame.");
+            return;
+        };
         let doc = self
             .session
             .as_ref()
-            .map(day_report::smoke_expired_document);
+            .map(|session| day_report::smoke_expired_document(session, &line));
         if let Some(doc) = doc {
             self.open_day_report_doc(doc);
         }
@@ -8804,10 +8838,26 @@ impl PortlightGame {
         if !text_one.contains(" - ") {
             self.fail_contract_strip("Contract-strip smoke: missing ASCII separator.");
         }
-        // Destination hint on single segment.
-        if !text_one.contains(" - to ") {
+        // Destination hint on single segment: the port shows exactly once,
+        // as `- to {Port}` or in the title (#63 GD note 5).
+        let port = self
+            .session
+            .as_ref()
+            .and_then(|session| {
+                let id = session.board().active.first()?.destination_port_id.clone();
+                session.world().port(&id).map(|port| port.name.clone())
+            })
+            .unwrap_or_default();
+        let title_names = text_one
+            .split(" - ")
+            .next()
+            .is_some_and(|title| departure_check::title_names_port(title, &port));
+        if port.is_empty()
+            || text_one.matches(port.as_str()).count() != 1
+            || text_one.contains(" - to ") == title_names
+        {
             self.fail_contract_strip(format!(
-                "Contract-strip smoke: single segment missing destination: {text_one}"
+                "Contract-strip smoke: single segment destination {port:?}: {text_one}"
             ));
         }
         self.assert_contract_strip_fits();
@@ -9126,6 +9176,24 @@ impl PortlightGame {
         if shown.as_deref() != Some(paid.as_str()) {
             self.fail_trade(format!(
                 "Trade smoke: the Market box did not lead with the notice ({shown:?})."
+            ));
+        }
+        // The sale's Log line is the same field-built line, never the sim's
+        // `Delivered ...` summary.
+        let logged = self
+            .log_lines
+            .iter()
+            .rev()
+            .find(|line| line.starts_with("Contract paid: "))
+            .cloned()
+            .unwrap_or_default();
+        if !logged.starts_with("Contract paid: Silver +")
+            || !logged.contains(" - 23 Grain to Corsair's Rest")
+            || self.log_lines.iter().any(|line| line.contains("Delivered"))
+        {
+            self.fail_trade(format!(
+                "Trade smoke: sale Log line was {logged:?} ({:?}).",
+                self.log_lines
             ));
         }
         true
@@ -9738,7 +9806,7 @@ impl PortlightGame {
         ok
     }
 
-    /// Scripted approach → naval → board → lose the duel. Leaves Outcome up
+    /// Scripted approach -> naval -> board -> lose the duel. Leaves Outcome up
     /// with a section 10.3 non-win receipt that includes a Crew term.
     fn run_loss_outcome_to_card(&mut self) -> bool {
         self.prepare_scripted_voyage();
@@ -10243,7 +10311,7 @@ fn good_name(id: &str) -> String {
     content::content()
         .good(id)
         .map(|good| good.name.clone())
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 struct ListedOffer {
@@ -10295,13 +10363,15 @@ fn contract_listing(session: &Session) -> ContractListing {
                     contracts_screen::ascii_sentence(&destination),
                     contracts_screen::reward_text(offer.reward_silver, offer.bonus_reward)
                 ),
+                // F7: `{days}   {requirement}`. The sim `offer_reason` is not
+                // shown: it says `Deliver` and the detail line already names
+                // the good and the port.
                 meta: format!(
-                    "{days}   {}   {}",
+                    "{days}   {}",
                     contracts_screen::requirement_text(
                         &offer.required_trust_tier,
                         offer.required_standing
-                    ),
-                    contracts_screen::ascii_sentence(&offer.offer_reason)
+                    )
                 ),
                 due,
                 availability: contracts_screen::availability_tag(docked_market, &offer.good_id),
@@ -10466,12 +10536,26 @@ fn receipt_line(receipt: &TradeReceipt) -> String {
     )
 }
 
+/// The receipt, then one Log line per settled contract in the same field-built
+/// form as the Market notice (`Contract paid: Silver +615 - 23 Grain to
+/// Corsair's Rest`), with the desk budget instead of the notice trim. No sim
+/// `Delivered ...` summary.
+/// F13: the Rename button is live once the trimmed draft is non-empty and is
+/// not the current flagship name.
+pub(crate) fn rename_ready(draft: &str, current: &str) -> bool {
+    let draft = draft.trim();
+    !draft.is_empty() && draft != current.trim()
+}
+
 fn sale_lines(sale: &Sale) -> Vec<String> {
     let mut lines = vec![receipt_line(&sale.receipt)];
     for contract in &sale.contracts {
-        if !contract.summary.is_empty() {
-            lines.push(contracts_screen::outcome_summary(contract));
-        }
+        lines.push(contracts_screen::outcome_line(
+            contracts_screen::notice_label(contract),
+            contract,
+            0,
+            contracts_screen::DESK_CHARS,
+        ));
     }
     lines
 }
@@ -10650,8 +10734,8 @@ fn named_or_none(choices: &[portlight_sim::custom_captain::NamedChoice], id: &st
     choices
         .iter()
         .find(|choice| choice.id == id)
-        .map(|choice| ascii_label(&choice.name, &choice.id).to_string())
-        .unwrap_or_else(|| id.to_string())
+        .map(|choice| display_or_humanized(Some(&choice.name), &choice.id))
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn mentor_or_none(choices: &[portlight_sim::custom_captain::MentorChoice], id: &str) -> String {
@@ -10661,8 +10745,8 @@ fn mentor_or_none(choices: &[portlight_sim::custom_captain::MentorChoice], id: &
     choices
         .iter()
         .find(|choice| choice.id == id)
-        .map(|choice| ascii_label(&choice.name, &choice.id).to_string())
-        .unwrap_or_else(|| id.to_string())
+        .map(|choice| display_or_humanized(Some(&choice.name), &choice.id))
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn docs_capture() -> bool {
@@ -11152,7 +11236,7 @@ fn port_name(world: &portlight_sim::model::World, id: &str) -> String {
     world
         .port(id)
         .map(|port| port.name.clone())
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn title_label(text: &str, size: i32, color: Color) -> Gd<Label> {
@@ -11592,11 +11676,21 @@ impl PortlightGame {
             self.fail_departure(format!("Departure smoke: context '{context}'."));
         }
         let lines = self.departure_lines();
-        if !lines
-            .first()
-            .is_some_and(|line| line.ends_with("1 day left - will be late"))
-        {
-            self.fail_departure(format!("Departure smoke: lines {lines:?}."));
+        let want_line = "Famine relief: grain to Corsair's Rest - 1 day left - will be late";
+        if lines.len() != 1 || lines.first().map(String::as_str) != Some(want_line) {
+            self.fail_departure(format!(
+                "Departure smoke: lines {lines:?}, want exactly [{want_line:?}]."
+            ));
+        }
+        let buttons = self
+            .departure_nodes
+            .as_ref()
+            .map(departure_check::button_texts)
+            .unwrap_or_default();
+        if buttons != [departure_check::STAY_TEXT, departure_check::SAIL_TEXT] {
+            self.fail_departure(format!(
+                "Departure smoke: button order {buttons:?}, want [Stay in port, Sail anyway]."
+            ));
         }
         for text in lines.iter().chain([&title, &context]) {
             if !text.is_ascii()
@@ -11747,8 +11841,53 @@ impl PortlightGame {
         {
             self.fail_departure("Departure smoke: no 'Departed for Sun Harbor.' log line.");
         }
+        self.check_departure_worst_case();
         self.departure_checked = true;
         false
+    }
+
+    /// #63 follow-up (AD soft): the tallest document the panel can draw
+    /// (cap lines that each wrap to two rows, plus `+N more`) still fits the
+    /// height cap. The panel is closed and the frame is already taken; the
+    /// nodes are cleared again after.
+    fn check_departure_worst_case(&mut self) {
+        let Some(mut nodes) = self.departure_nodes.clone() else {
+            self.fail_departure("Departure smoke: no panel nodes for the worst case.");
+            return;
+        };
+        let doc = departure_check::worst_case_document();
+        departure_check::apply_document(&mut nodes, &doc);
+        let min = nodes.root.get_combined_minimum_size();
+        let drawn = departure_check::line_texts(&nodes);
+        let want_more = departure_check::more_text(doc.more);
+        if drawn.len() != departure_check::DEPARTURE_LINE_CAP + 1
+            || drawn.last() != Some(&want_more)
+        {
+            self.fail_departure(format!(
+                "Departure smoke: worst case drew {drawn:?}, want {} lines then {want_more:?}.",
+                departure_check::DEPARTURE_LINE_CAP
+            ));
+        }
+        if min.y > departure_check::PANEL_MAX_H {
+            self.fail_departure(format!(
+                "Departure smoke: worst-case panel needs {} px, over {}.",
+                min.y,
+                departure_check::PANEL_MAX_H
+            ));
+        } else {
+            godot_print!(
+                "Departure smoke: worst-case panel {} px (cap {})",
+                min.y,
+                departure_check::PANEL_MAX_H
+            );
+        }
+        let empty = departure_check::DepartureDoc {
+            title: String::new(),
+            context: String::new(),
+            lines: Vec::new(),
+            more: 0,
+        };
+        departure_check::apply_document(&mut nodes, &empty);
     }
 }
 
@@ -11833,5 +11972,62 @@ mod fight_end_tests {
                 lines[0]
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod copy_batch_tests {
+    use super::rename_ready;
+
+    /// F13: Rename is live only for a trimmed, non-empty, different name.
+    #[test]
+    fn rename_needs_a_new_non_empty_name() {
+        assert!(!rename_ready("", "Sea Lark"));
+        assert!(!rename_ready("   ", "Sea Lark"));
+        assert!(!rename_ready("Sea Lark", "Sea Lark"));
+        assert!(!rename_ready("  Sea Lark ", "Sea Lark"));
+        assert!(rename_ready("Gull", "Sea Lark"));
+        assert!(rename_ready(" Gull ", "Sea Lark"));
+    }
+}
+
+#[cfg(test)]
+mod catalog_fallback_tests {
+    use super::{good_name, mentor_or_none, named_or_none, port_name};
+    use crate::logic::{SCRIPTED_CAPTAIN_TYPE, SCRIPTED_NAME, SCRIPTED_SEED};
+    use portlight_sim::content;
+    use portlight_sim::custom_captain::{MentorChoice, NamedChoice};
+    use portlight_sim::session::Session;
+
+    /// A catalog miss reads as humanized copy, never the raw id; a known id
+    /// keeps its catalog name.
+    #[test]
+    fn catalog_misses_never_print_raw_ids() {
+        let session = Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None)
+            .expect("scripted session");
+        let world = session.world();
+        assert_eq!(port_name(world, "salt_spit_cove"), "Salt Spit Cove");
+        let known_port = world.port("porto_novo").expect("porto_novo");
+        assert_eq!(port_name(world, "porto_novo"), known_port.name);
+
+        assert_eq!(good_name("salt_spit_cove"), "Salt Spit Cove");
+        let grain = content::content().good("grain").expect("grain");
+        assert_eq!(good_name("grain"), grain.name);
+
+        let named = [NamedChoice {
+            id: "iron_bloc".to_string(),
+            name: "Iron Bloc".to_string(),
+        }];
+        assert_eq!(named_or_none(&named, "iron_bloc"), "Iron Bloc");
+        assert_eq!(named_or_none(&named, "salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(named_or_none(&named, ""), "none");
+        let mentors = [MentorChoice {
+            id: "old_vane".to_string(),
+            name: "Old Vane".to_string(),
+            port_id: "porto_novo".to_string(),
+        }];
+        assert_eq!(mentor_or_none(&mentors, "old_vane"), "Old Vane");
+        assert_eq!(mentor_or_none(&mentors, "salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(mentor_or_none(&mentors, ""), "none");
     }
 }

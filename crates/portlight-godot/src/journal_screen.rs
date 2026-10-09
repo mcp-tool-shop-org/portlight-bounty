@@ -17,6 +17,7 @@ use portlight_sim::session::Session;
 use portlight_sim::{campaign::HouseBooks, content};
 
 use crate::encounter_screen::{self, style_encounter_button};
+use crate::logic::{display_or_humanized, encounter_end_name};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -431,16 +432,7 @@ fn entry_place(session: &Session, entry: &JournalEntry) -> Option<String> {
     let port = if entry.port_id.is_empty() {
         String::new()
     } else {
-        let name = session
-            .world()
-            .port(&entry.port_id)
-            .map(|port| port.name.as_str())
-            .unwrap_or(entry.port_id.as_str());
-        fold_ascii(if name.is_ascii() && !name.is_empty() {
-            name
-        } else {
-            entry.port_id.as_str()
-        })
+        port_label(session.world(), &entry.port_id)
     };
     let region = fold_ascii(&entry.region);
     match (port.is_empty(), region.is_empty()) {
@@ -634,25 +626,14 @@ fn journal_notice(session: &Session) -> String {
 }
 
 fn port_label(world: &portlight_sim::model::World, id: &str) -> String {
-    let name = world.port(id).map(|port| port.name.as_str()).unwrap_or(id);
-    fold_ascii(if name.is_ascii() && !name.is_empty() {
-        name
-    } else {
-        id
-    })
+    fold_ascii(&display_or_humanized(
+        world.port(id).map(|port| port.name.as_str()),
+        id,
+    ))
 }
 
 fn pirate_name(id: &str) -> String {
-    content::content()
-        .pirate(id)
-        .map(|captain| {
-            if !captain.name.is_empty() && captain.name.is_ascii() {
-                captain.name.clone()
-            } else {
-                id.to_string()
-            }
-        })
-        .unwrap_or_else(|| id.to_string())
+    encounter_end_name(id)
 }
 
 fn festival_name(id: &str) -> String {
@@ -1092,5 +1073,26 @@ mod tests {
         assert!(text.contains("Spared 1. Defeated them 2. They defeated you 0."));
         assert!(text.contains("Respect 4. Fear 0. Grudge 3. Familiarity 0."));
         assert!(text.is_ascii());
+    }
+
+    /// A catalog miss reads as humanized copy, never the raw id.
+    #[test]
+    fn catalog_misses_never_print_raw_ids() {
+        let session = Session::new(
+            crate::logic::SCRIPTED_NAME,
+            crate::logic::SCRIPTED_CAPTAIN_TYPE,
+            crate::logic::SCRIPTED_SEED,
+            None,
+        )
+        .expect("scripted session");
+        let world = session.world();
+        assert_eq!(super::port_label(world, "salt_spit_cove"), "Salt Spit Cove");
+        let known = world.port("porto_novo").expect("porto_novo");
+        assert_eq!(super::port_label(world, "porto_novo"), known.name);
+        assert_eq!(super::pirate_name("salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(
+            super::pirate_name(crate::logic::SCRIPTED_CAPTAIN),
+            crate::logic::encounter_end_name(crate::logic::SCRIPTED_CAPTAIN)
+        );
     }
 }

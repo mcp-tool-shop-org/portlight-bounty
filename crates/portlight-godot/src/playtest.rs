@@ -871,7 +871,9 @@ fn find_named(root: &Gd<Node>, name: &str) -> Option<Gd<Node>> {
 fn collect_labels(node: &Gd<Node>, out: &mut Vec<String>) {
     if let Ok(label) = node.clone().try_cast::<Label>() {
         if label.is_visible_in_tree() {
-            let text = label.get_text().to_string();
+            // A Day's report body line keeps its copy in meta when the drawn
+            // text breaks at a separator.
+            let text = crate::day_report::label_copy(&label);
             if !text.is_empty() {
                 out.push(text);
             }

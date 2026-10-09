@@ -176,14 +176,12 @@ pub(crate) fn reward_text(silver: i64, bonus: i64) -> String {
     }
 }
 
-/// `due soon` through two days left. Later deadlines stay `N days left`.
+/// Desk timing words come from [`day_report::deadline_timing`], the same as
+/// the strip, the Day's report and the Departure check (Q2: `due soon` is
+/// retired). Two days left or fewer still tints DUE.
 pub(crate) fn days_left_text(day: i64, deadline: i64) -> (String, bool) {
     let left = deadline - day;
-    if left <= 2 {
-        ("due soon".to_string(), true)
-    } else {
-        (format!("{left} days left"), false)
-    }
+    (crate::day_report::deadline_timing(left), left <= 2)
 }
 
 pub(crate) fn requirement_text(tier: &str, standing: i64) -> String {
@@ -213,8 +211,8 @@ pub(crate) fn abandon_prompt(title: &str) -> String {
 /// runaway tail; no catalog outcome reaches it.
 pub(crate) const DESK_CHARS: usize = 96;
 
-/// Contracts desk notice after Complete or Abandon, in the Market paid-notice
-/// form: `Contract abandoned: Grain for Corsair's Rest`.
+/// Contracts desk notice after an abandon (or a desk settle), in the Market
+/// paid-notice form: `Contract abandoned: Grain for Corsair's Rest`.
 pub(crate) fn outcome_notice(outcome: &ContractOutcome) -> String {
     outcome_line(notice_label(outcome), outcome, 0, DESK_CHARS)
 }
@@ -373,32 +371,6 @@ fn trim_tail(tail: &str, room: usize) -> String {
     format!("{}...", cut.trim_end_matches([' ', '-']))
 }
 
-/// The engine summary with its raw ids named: the destination port and the
-/// good by their display names, any other `snake_id` title-cased.
-pub(crate) fn outcome_summary(outcome: &ContractOutcome) -> String {
-    let words: Vec<String> = outcome
-        .summary
-        .split(' ')
-        .map(|word| {
-            let core = word.trim_end_matches(['.', ',', ')', ':', ';']);
-            let tail = &word[core.len()..];
-            let name = if core.is_empty() {
-                return word.to_string();
-            } else if core == outcome.destination_port_id {
-                port_display_name(core)
-            } else if core == outcome.good_id {
-                good_display_name(core)
-            } else if is_snake_id(core) {
-                humanize_id(core)
-            } else {
-                return word.to_string();
-            };
-            format!("{name}{tail}")
-        })
-        .collect();
-    ascii_sentence(&words.join(" "))
-}
-
 /// T-S. One muted fact about the docked port's market for a board card.
 /// `None` when not docked. No remote prices, no advice.
 pub(crate) fn availability_tag(
@@ -425,13 +397,6 @@ pub(crate) fn good_display_name(id: &str) -> String {
         .good(id)
         .map(|good| good.name.clone())
         .unwrap_or_else(|| humanize_id(id))
-}
-
-fn is_snake_id(word: &str) -> bool {
-    word.contains('_')
-        && word
-            .chars()
-            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
 }
 
 /// Desk Recent row, same builder as the notices: `Paid: Silver +612 - 23
@@ -489,9 +454,8 @@ mod tests {
     use super::{
         abandon_notice, abandon_prompt, aboard_clause, ascii_sentence, availability_tag,
         can_complete, days_left_text, failure_terms, is_failure_notice, notice_color, outcome_line,
-        outcome_notice, outcome_summary, outcome_terms, progress_text, recent_line,
-        requirement_text, reward_text, BOARD_CARD, CAP_FULL, CREAM, DESK_CHARS, DUE, EMPTY_OFFERS,
-        MAX_ACTIVE,
+        outcome_notice, outcome_terms, progress_text, recent_line, requirement_text, reward_text,
+        BOARD_CARD, CAP_FULL, CREAM, DESK_CHARS, DUE, EMPTY_OFFERS, MAX_ACTIVE,
     };
 
     #[test]
@@ -514,9 +478,15 @@ mod tests {
 
     #[test]
     fn days_reward_and_complete_follow_the_obligation() {
-        assert_eq!(days_left_text(1, 3), ("due soon".to_string(), true));
-        assert_eq!(days_left_text(1, 2), ("due soon".to_string(), true));
+        assert_eq!(days_left_text(1, 3), ("2 days left".to_string(), true));
+        assert_eq!(days_left_text(1, 2), ("1 day left".to_string(), true));
+        assert_eq!(days_left_text(1, 1), ("due today".to_string(), true));
+        assert_eq!(days_left_text(2, 1), ("overdue".to_string(), true));
+        assert_eq!(days_left_text(1, 4), ("3 days left".to_string(), false));
         assert_eq!(days_left_text(1, 12), ("11 days left".to_string(), false));
+        for (day, deadline) in [(1, 3), (1, 2), (1, 1), (2, 1), (1, 12)] {
+            assert!(!days_left_text(day, deadline).0.contains("due soon"));
+        }
         assert_eq!(reward_text(480, 0), "480 silver");
         assert_eq!(reward_text(480, 60), "480 silver + 60 bonus");
         assert_eq!(requirement_text("unproven", 0), "trust unproven");
@@ -657,38 +627,6 @@ mod tests {
             deadline_day: 19,
             reward_silver: 552,
         }
-    }
-
-    #[test]
-    fn outcome_summary_names_the_port_and_good() {
-        let outcome = delivered("Delivered 23 grain to corsairs_rest (early bonus: +63 silver)");
-        assert_eq!(
-            outcome_summary(&outcome),
-            "Delivered 23 Grain to Corsair's Rest (early bonus: +63 silver)"
-        );
-        let defaulted = delivered("Contract defaulted: failed to deliver grain to corsairs_rest");
-        assert_eq!(
-            outcome_summary(&defaulted),
-            "Contract defaulted: failed to deliver Grain to Corsair's Rest"
-        );
-        // An id content does not know is title-cased; plain words stay.
-        // `saltmarsh_guild` is in no catalog, so this is the humanize path.
-        let odd = delivered("Settled with saltmarsh_guild today.");
-        assert_eq!(outcome_summary(&odd), "Settled with Saltmarsh Guild today.");
-        // A destination port and a good content does not list fall back too.
-        let mut unknown = delivered("Delivered 4 whale_oil to drowned_quay.");
-        unknown.good_id = "whale_oil".into();
-        unknown.destination_port_id = "drowned_quay".into();
-        assert!(portlight_sim::content::content()
-            .port("drowned_quay")
-            .is_none());
-        assert!(portlight_sim::content::content()
-            .good("whale_oil")
-            .is_none());
-        assert_eq!(
-            outcome_summary(&unknown),
-            "Delivered 4 Whale Oil to Drowned Quay."
-        );
     }
 
     fn bonus_paid() -> ContractOutcome {

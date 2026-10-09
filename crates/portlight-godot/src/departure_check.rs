@@ -31,7 +31,9 @@ const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
 const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 
 /// Warning lines shown before `+N more`. The context line is outside the cap.
-pub(crate) const DEPARTURE_LINE_CAP: usize = 5;
+/// Four (AD #63 soft): four two-row lines plus `+N more` stay under
+/// [`PANEL_MAX_H`]; five did not. Play reaches four lines at most today.
+pub(crate) const DEPARTURE_LINE_CAP: usize = 4;
 /// `at risk` band for a contract due at the destination: `0 <= left - E <= 1`.
 pub(crate) const AT_RISK_SLACK: i64 = 1;
 
@@ -235,7 +237,9 @@ pub(crate) fn context_line(facts: &DepartureFacts) -> String {
     }
 }
 
-fn title_names_port(title: &str, port: &str) -> bool {
+/// True when the ASCII title already names the port (case-insensitive), so a
+/// `to {Port}` tail would repeat it. Shared with the contract strip.
+pub(crate) fn title_names_port(title: &str, port: &str) -> bool {
     !port.is_empty()
         && title
             .to_ascii_lowercase()
@@ -477,7 +481,45 @@ pub(crate) fn apply_document(nodes: &mut DepartureNodes, doc: &DepartureDoc) {
     if doc.more > 0 {
         nodes
             .lines
-            .add_child(&text_label(&format!("+{} more", doc.more), 15, MUTED));
+            .add_child(&text_label(&more_text(doc.more), 15, MUTED));
+    }
+}
+
+/// The MUTED overflow row: `+{n} more`.
+pub(crate) fn more_text(more: usize) -> String {
+    format!("+{more} more")
+}
+
+/// Drawn button labels left to right (the smoke pins `[Stay in port, Sail anyway]`).
+pub(crate) fn button_texts(nodes: &DepartureNodes) -> Vec<String> {
+    nodes
+        .stay
+        .get_parent()
+        .map(|row| {
+            row.get_children()
+                .iter_shared()
+                .filter_map(|child| child.try_cast::<Button>().ok())
+                .map(|button| button.get_text().to_string())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The tallest document the panel can get: a long title, the cap of
+/// two-row warning lines, and `+N more`. Used by the smoke's height check.
+pub(crate) fn worst_case_document() -> DepartureDoc {
+    let long = "Premium charter: black powder to Corsair's Rest - 0/40 - 1 day left - will be late";
+    DepartureDoc {
+        title: "Before you sail - Corsair's Rest".to_string(),
+        context: "Voyage 12 days - Hold 999.5/999".to_string(),
+        lines: (0..DEPARTURE_LINE_CAP)
+            .map(|_| DepartureLine {
+                text: format!("{long} - sell 40 more Black Powder"),
+                kind: DepartureKind::Late,
+                warn: true,
+            })
+            .collect(),
+        more: 9,
     }
 }
 
@@ -833,14 +875,13 @@ mod tests {
                 DepartureKind::Late,
                 DepartureKind::Late,
                 DepartureKind::Late,
-                DepartureKind::AtRisk,
             ]
         );
         assert!(doc.lines[1].text.starts_with("Early late - "));
         assert!(doc.lines[2].text.starts_with("Alpha late - "));
         assert!(doc.lines[3].text.starts_with("Bravo late - "));
-        // Stores and cargo sit past the cap.
-        assert_eq!(doc.more, 2);
+        // At risk, stores and cargo sit past the cap.
+        assert_eq!(doc.more, 3);
         facts
             .contracts
             .retain(|c| c.title.contains("late") || c.title == "Zeta cargo");
@@ -853,6 +894,18 @@ mod tests {
                 DepartureKind::Late,
                 DepartureKind::Late,
                 DepartureKind::Stores,
+            ]
+        );
+        assert_eq!(doc.more, 1);
+        facts.contracts.retain(|c| c.title != "Bravo late");
+        let doc = build_departure_check(&facts).unwrap();
+        let kinds = doc.lines.iter().map(|line| line.kind).collect::<Vec<_>>();
+        assert_eq!(
+            kinds,
+            vec![
+                DepartureKind::Late,
+                DepartureKind::Late,
+                DepartureKind::Stores,
                 DepartureKind::Cargo,
             ]
         );
@@ -861,19 +914,35 @@ mod tests {
 
     // 9
     #[test]
-    fn cap_is_five_plus_more() {
-        let six = (0..5)
+    fn cap_is_four_plus_more() {
+        assert_eq!(DEPARTURE_LINE_CAP, 4);
+        let four = (0..4)
             .map(|i| contract(&format!("Run {i}"), "al_manar", "Al-Manar", 11, 0))
             .collect::<Vec<_>>();
-        let mut facts = base_facts(six);
+        let mut facts = base_facts(four);
         facts.provisions = 1;
         let doc = build_departure_check(&facts).unwrap();
         assert_eq!(doc.lines.len(), DEPARTURE_LINE_CAP);
         assert_eq!(doc.more, 1);
         facts.provisions = 30;
         let doc = build_departure_check(&facts).unwrap();
-        assert_eq!(doc.lines.len(), 5);
+        assert_eq!(doc.lines.len(), 4);
         assert_eq!(doc.more, 0);
+    }
+
+    /// #63 follow-up: the drawn overflow row and the two button labels.
+    #[test]
+    fn more_row_and_button_labels() {
+        assert_eq!(more_text(1), "+1 more");
+        assert_eq!(more_text(12), "+12 more");
+        assert_eq!(STAY_TEXT, "Stay in port");
+        assert_eq!(SAIL_TEXT, "Sail anyway");
+        let worst = worst_case_document();
+        assert_eq!(worst.lines.len(), DEPARTURE_LINE_CAP);
+        assert!(worst.more > 0);
+        for text in worst.lines.iter().map(|line| &line.text) {
+            assert!(text.is_ascii() && text.len() > 64, "{text}");
+        }
     }
 
     // 10
