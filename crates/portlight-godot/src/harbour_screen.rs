@@ -31,7 +31,7 @@ pub(crate) const WAREHOUSE_LAPSE: &str =
     "Unpaid upkeep of 3 days closes the lease and can seize the goods. There is no cancel.";
 pub(crate) const OFFICE_LAPSE: &str =
     "Unpaid upkeep of 5 days closes the office. There is no cancel.";
-pub(crate) const INSURANCE_NOTE: &str = "Payouts arrive on Next day. There is no claim button.";
+pub(crate) const INSURANCE_NOTE: &str = "Payouts arrive on the next day. There is no claim button.";
 
 pub(crate) const ANCHOR_WAREHOUSE: &str = "HarbourWarehouse";
 pub(crate) const ANCHOR_BROKER: &str = "HarbourBroker";
