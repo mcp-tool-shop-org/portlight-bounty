@@ -370,11 +370,12 @@ pub(crate) fn outcome_line_with_tail(
     }
 }
 
-/// `early bonus +60` when the outcome paid an early bonus, else `None`.
-pub(crate) fn early_bonus_tail(outcome: &ContractOutcome) -> Option<String> {
+/// `incl. bonus +60` when the outcome paid an early bonus, else `None`. The
+/// Market notice tail; the Log and desk rows keep `early bonus +60`.
+pub(crate) fn notice_bonus_tail(outcome: &ContractOutcome) -> Option<String> {
     let bonus = outcome.silver_delta - outcome.reward_silver;
     (outcome.outcome_type == "completed_bonus" && bonus > 0)
-        .then(|| format!("early bonus +{bonus}"))
+        .then(|| format!("incl. bonus +{bonus}"))
 }
 
 /// `Contract progress - Grain for Corsair's Rest - 10/23`. The tail trims

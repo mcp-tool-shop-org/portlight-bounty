@@ -95,7 +95,7 @@ pub(crate) fn paid_notice_lines(outcomes: &[ContractOutcome]) -> Vec<String> {
     };
     // The bonus is the one thing a player earns by being early, so with a
     // bonus it is the tail; without one the field tail stands.
-    let tail = contracts_screen::early_bonus_tail(latest)
+    let tail = contracts_screen::notice_bonus_tail(latest)
         .unwrap_or_else(|| contracts_screen::outcome_tail(latest));
     vec![contracts_screen::outcome_line_with_tail(
         contracts_screen::notice_label(latest),
@@ -354,11 +354,11 @@ mod tests {
         real.reward_silver = 552;
         assert_eq!(
             paid_notice_lines(&[real.clone()]),
-            vec!["Contract paid: Silver +612 - early bonus +60"]
+            vec!["Contract paid: Silver +612 - incl. bonus +60"]
         );
         assert_eq!(
             paid_notice_lines(&smoke_paid_more(&real)),
-            vec!["Contract paid: Silver +612 (+1 more) - early bonus +60"]
+            vec!["Contract paid: Silver +612 (+1 more) - incl. bonus +60"]
         );
     }
 
@@ -373,7 +373,7 @@ mod tests {
     fn paid_notice_with_bonus_keeps_the_bonus() {
         assert_eq!(
             paid_notice_lines(&[bonus_paid()]),
-            vec!["Contract paid: Silver +612 - early bonus +60"]
+            vec!["Contract paid: Silver +612 - incl. bonus +60"]
         );
     }
 
@@ -382,7 +382,7 @@ mod tests {
         let line = &paid_notice_lines(&smoke_paid_more(&bonus_paid()))[0];
         assert_eq!(
             line,
-            "Contract paid: Silver +612 (+1 more) - early bonus +60"
+            "Contract paid: Silver +612 (+1 more) - incl. bonus +60"
         );
         assert!(line.len() <= PAID_NOTICE_CHARS, "{line}");
         let mut big = bonus_paid();
@@ -395,6 +395,20 @@ mod tests {
             line.starts_with("Contract paid: Silver +99999 (+9 more)"),
             "{line}"
         );
+    }
+
+    #[test]
+    fn paid_notice_worst_case_with_bonus_is_exactly_the_budget() {
+        let mut big = bonus_paid();
+        big.silver_delta = 9_999;
+        big.reward_silver = 9_879;
+        let many: Vec<_> = (0..10).map(|_| big.clone()).collect();
+        let line = &paid_notice_lines(&many)[0];
+        assert_eq!(
+            line,
+            "Contract paid: Silver +9999 (+9 more) - incl. bonus +120"
+        );
+        assert_eq!(line.len(), PAID_NOTICE_CHARS);
     }
 
     #[test]

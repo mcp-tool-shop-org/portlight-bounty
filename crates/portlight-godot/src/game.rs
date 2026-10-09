@@ -698,10 +698,8 @@ struct PortlightGame {
     /// T-N. GOLD paid lines at the top of the Market box until the next
     /// trade, Market close, undock or Next day.
     market_notice: Vec<String>,
-    /// The Market notice after the first partial sale in the trade smoke.
-    progress_notice: Vec<String>,
-    /// The settle notice, held while the progress frame is shot.
-    paid_notice_held: Vec<String>,
+    /// Offer id of a trade settle paused after its first partial sale.
+    settle_resume: Option<String>,
     /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
     trade_checked: bool,
     market_paid_shot_dir: Option<String>,
@@ -875,8 +873,7 @@ impl IControl for PortlightGame {
             departure_shot_dir: None,
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
-            progress_notice: Vec::new(),
-            paid_notice_held: Vec::new(),
+            settle_resume: None,
             trade_checked: false,
             market_paid_shot_dir: None,
             market_paid_shot: None,
@@ -1039,19 +1036,17 @@ impl IControl for PortlightGame {
             self.smoke = true;
             self.trade_checked = true;
             let capture = market_paid_frames_requested(self.shot_path.is_some());
-            if self.run_trade_settle() {
-                self.check_market_notice_leads("single");
+            // The real settle, paused after the first partial sale for the
+            // progress frame, then finished for the paid frames.
+            if self.run_trade_settle_to(capture) {
                 if capture {
+                    self.check_market_notice_leads("progress");
                     self.market_paid_shot_dir =
                         Some(market_paid_shot_dir(self.shot_path.as_deref()));
-                    // First frame: the progress notice from the first partial sale.
-                    self.paid_notice_held =
-                        std::mem::replace(&mut self.market_notice, self.progress_notice.clone());
-                    self.refresh();
-                    self.check_market_notice_leads("progress");
                     self.market_paid_shot = Some(MarketPaidShot::Progress);
                     self.capture_frames = 4;
                 } else {
+                    self.check_market_notice_leads("single");
                     self.stage_market_paid_more();
                     self.capture_frames = 2;
                 }
@@ -9291,6 +9286,13 @@ impl PortlightGame {
     /// contract and the Market leads with the paid notice. False when the
     /// run could not get that far; a failed copy check still returns true.
     fn run_trade_settle(&mut self) -> bool {
+        self.run_trade_settle_to(false)
+    }
+
+    /// With `pause`, returns right after the first partial sale (the contract
+    /// still open, the real Log) so a frame can be shot; `resume_trade_settle`
+    /// then finishes the settle.
+    fn run_trade_settle_to(&mut self, pause: bool) -> bool {
         self.start_game();
         if self.trade_qty != 1 {
             self.fail_trade("Trade smoke: a new game did not start at Qty 1.");
@@ -9361,6 +9363,18 @@ impl PortlightGame {
         }
         self.close_day_report();
         self.market_open = true;
+        self.trade_sell_loop(offer_id, 0, pause)
+    }
+
+    /// Finishes the settle that [`Self::run_trade_settle_to`] paused.
+    fn resume_trade_settle(&mut self) -> bool {
+        match self.settle_resume.take() {
+            Some(offer_id) => self.trade_sell_loop(offer_id, 1, false),
+            None => false,
+        }
+    }
+
+    fn trade_sell_loop(&mut self, offer_id: String, start: usize, pause: bool) -> bool {
         let active = |game: &Self| {
             game.session.as_ref().is_some_and(|session| {
                 session
@@ -9370,7 +9384,7 @@ impl PortlightGame {
                     .any(|contract| contract.offer_id == offer_id)
             })
         };
-        for press in 0..6 {
+        for press in start..6 {
             if !active(self) {
                 break;
             }
@@ -9409,7 +9423,10 @@ impl PortlightGame {
                     ));
                 } else {
                     godot_print!("trade smoke progress notice: {want}");
-                    self.progress_notice = self.market_notice.clone();
+                }
+                if pause && self.smoke_ok {
+                    self.settle_resume = Some(offer_id);
+                    return true;
                 }
             } else if press == 1 && self.market_notice.len() != 1 {
                 self.fail_trade("Trade smoke: a second partial sale lost its notice.");
@@ -9423,7 +9440,7 @@ impl PortlightGame {
         godot_print!("trade smoke paid notice: {paid}");
         if self.market_notice.len() != 1
             || !paid.starts_with("Contract paid: Silver +")
-            || !(paid.contains(" - 23 Grain to ") || paid.contains(" - early bonus +"))
+            || !(paid.contains(" - 23 Grain to ") || paid.contains(" - incl. bonus +"))
             || paid.len() > market::PAID_NOTICE_CHARS
             || paid.contains("Delivered")
             || paid.contains("(+")
@@ -9568,8 +9585,11 @@ impl PortlightGame {
         }
         match phase {
             MarketPaidShot::Progress => {
-                self.market_notice = std::mem::take(&mut self.paid_notice_held);
-                self.refresh();
+                if !self.resume_trade_settle() {
+                    self.capture_failed = true;
+                    return false;
+                }
+                self.check_market_notice_leads("single");
                 self.market_paid_shot = Some(MarketPaidShot::Single);
                 self.capture_frames = 4;
                 true
