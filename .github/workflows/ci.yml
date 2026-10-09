@@ -790,7 +790,7 @@ jobs:
             echo "market-paid frame capture did not report ok"
             exit 1
           fi
-          for name in market-contract-paid.png market-contract-paid-more.png; do
+          for name in market-contract-progress.png market-contract-paid.png market-contract-paid-more.png; do
             if [ ! -f "/tmp/market-paid-shots/${name}" ]; then
               echo "market-paid capture did not write /tmp/market-paid-shots/${name}"
               exit 1
@@ -850,6 +850,7 @@ jobs:
           cmp_committed day-report-expired.png /tmp/day-report-shots/day-report-expired.png
           cmp_committed contract-strip-active.png /tmp/contract-strip-shots/contract-strip-active.png
           cmp_committed contract-strip-urgent.png /tmp/contract-strip-shots/contract-strip-urgent.png
+          cmp_committed market-contract-progress.png /tmp/market-paid-shots/market-contract-progress.png
           cmp_committed market-contract-paid.png /tmp/market-paid-shots/market-contract-paid.png
           cmp_committed market-contract-paid-more.png /tmp/market-paid-shots/market-contract-paid-more.png
           cmp_committed departure-check.png /tmp/departure-check-shots/departure-check.png
