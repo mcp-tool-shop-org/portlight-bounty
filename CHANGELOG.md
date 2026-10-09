@@ -14,7 +14,7 @@ First GitHub release of the Rust port and the Godot chart.
 - The simulation crate, checked against the Python game at `9b02494`.
 - A command-line runner: `new`, `script`, and `load`.
 - The Godot 4.7 chart: new game, save and load, sail, market, contracts, crew, shipyard, harbour, hunt, journal, the day's report, and sea fights.
-- The landing bundle at manifest 0.4.3. The pictures are not part of the MIT grant.
+- The landing bundle at manifest 0.4.3. The v0.1.0 tag said the pictures were outside the MIT grant. That sentence was wrong. See Unreleased.
 - A landing page and a handbook.
 - Patch coverage fails under 90%. The repository-wide percentage aims at 90% and stays informational. The Godot crate is outside that report.
 
@@ -23,3 +23,7 @@ First GitHub release of the Rust port and the Godot chart.
 - `portlight --help` lists the script commands the runner actually accepts, and the exit codes it uses.
 
 ## [Unreleased]
+
+### Fixed
+
+- The pictures are under the MIT license with the rest of the repository. The barrel, bollard, cart, crate, and torch are built by `build_prop()` in ai-rpg-stage, commit `55ac9b2`. The v0.1.0 preface said the record did not name who made them.

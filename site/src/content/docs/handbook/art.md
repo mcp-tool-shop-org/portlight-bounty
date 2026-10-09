@@ -1,21 +1,21 @@
 ---
 title: Pictures and the license
-description: What MIT covers, and what it does not.
+description: The pictures are MIT, and where the deck props came from.
 sidebar:
   order: 4
 ---
 
-The MIT license covers the source code: the Rust crates, the Godot scripts, the tools, and the prose. It does not cover the pictures. That is `godot/assets/` and `docs/screenshots/`. You may look at them in this repository. You may not take them for another project. No art license is offered.
+The MIT license covers this repository, including the pictures in `godot/assets/` and `docs/screenshots/`.
 
 ## What we know
 
 The landing bundle is manifest 0.4.3. The manifest file is the list.
 
+The barrel, bollard, cart, crate, and torch are built by `build_prop()` in ai-rpg-stage, file `assets/dimetric/camera/dimetric_60_45.py`, from Blender primitives. That function landed in commit `55ac9b2`. The plates were copied into this bundle and not remade. The manifest called that copy a vendor drop.
+
 The three quay flags were painted on a local ComfyUI setup. The recorded pipeline is a procedural base, an img2img pass with a Qwen Image weight and the Salt Road LoRA, then a fixed color map applied with no new generation. The manifest does not call that pass Comfy Cloud.
 
-The five deck props (barrel, bollard, cart, crate, and torch) are Blender 5.2 EEVEE plates that were vendored in, not remade. The commit that landed them does not name a modeler and does not name a license. Until that record exists, they stay outside the MIT grant with the rest of the pictures.
-
-There is no ElevenLabs voice in this release. Account terms at a generator bind the account that made a file. They are not permission for anyone else.
+There is no ElevenLabs voice in this release.
 
 ## Credit
 

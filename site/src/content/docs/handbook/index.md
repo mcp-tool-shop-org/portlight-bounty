@@ -27,4 +27,4 @@ Draft pull requests that add extra fight and contract lines are not in this tag.
 
 ## What it does not do
 
-It does not phone home. It does not have an account. It does not send telemetry. It does not offer the pictures under the MIT grant. A macOS build has not been run for this release.
+It does not phone home. It does not have an account. It does not send telemetry. A macOS build has not been run for this release.

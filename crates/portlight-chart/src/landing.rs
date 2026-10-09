@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-const MANIFEST_SHA256: &str = "c990b4c050fa7a6d0cd0998c0b46241f7ba086b8ef527f6882ad671bc0be8bdb";
+const MANIFEST_SHA256: &str = "16661b56a83487a385ee04fc208c155450a3abeee9d10c80a446b0068a1907b1";
 
 fn landing_dir() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot/assets/landing")

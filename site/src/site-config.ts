@@ -8,7 +8,7 @@ export const config: SiteConfig = {
   brandName: 'Portlight Bounty',
   repoUrl: 'https://github.com/mcp-tool-shop-org/portlight-bounty',
   footerText:
-    'Code is MIT. Pictures are not. Built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
+    'MIT license. Built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
     badge: 'v0.1.0',
@@ -50,8 +50,8 @@ export const config: SiteConfig = {
           desc: 'The simulation is checked against the Python game at commit 9b02494. A number both sides agree on stays.',
         },
         {
-          title: 'Pictures you can look at',
-          desc: 'The plates ship in the repository. The MIT grant does not cover them. They are not free to reuse.',
+          title: 'Pictures you can use',
+          desc: 'The plates ship in the repository, under the same MIT license as the code.',
         },
       ],
     },
