@@ -930,8 +930,7 @@ fn push_party(spans: &mut Vec<DeltaSpan>, parts: Vec<DeltaSpan>) {
     }
 }
 
-/// One ASCII line from the step deltas already stored on `facts`.
-/// Zero values are dropped. Hull clauses use ` | `; crew and HP list each side.
+/// The delta line as one string: the span texts joined, as the card draws them.
 pub(crate) fn delta_text(facts: &EncounterFacts) -> String {
     delta_spans(facts)
         .iter()
@@ -939,6 +938,8 @@ pub(crate) fn delta_text(facts: &EncounterFacts) -> String {
         .collect()
 }
 
+/// One ASCII line from the step deltas already stored on `facts`.
+/// Zero values are dropped. Hull clauses use ` | `; crew and HP list each side.
 fn delta_spans(facts: &EncounterFacts) -> Vec<DeltaSpan> {
     let mut spans = Vec::new();
     let mut any = false;
