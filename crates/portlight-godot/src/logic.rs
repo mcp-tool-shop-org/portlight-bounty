@@ -384,6 +384,8 @@ pub(crate) enum ScreenAction {
 #[derive(Debug, Clone)]
 pub(crate) struct EncounterFacts {
     pub phase: String,
+    /// `EncounterStep.turn` of the last step; 0 before any step.
+    pub round: i64,
     pub kind: String,
     pub captain_id: String,
     pub captain_name: String,
@@ -728,6 +730,7 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
             .unwrap_or_default()
     };
     let mut facts = facts_shell(&step.phase, &step.kind, input.ship, input.at_sea);
+    facts.round = step.turn;
     facts.captain_id = step.enemy_captain_id.clone();
     facts.captain_name = step.enemy_captain_name.clone();
     facts.faction_id = faction_id;
@@ -929,6 +932,13 @@ fn push_party(spans: &mut Vec<DeltaSpan>, parts: Vec<DeltaSpan>) {
 
 /// One ASCII line from the step deltas already stored on `facts`.
 /// Zero values are dropped. Hull clauses use ` | `; crew and HP list each side.
+pub(crate) fn delta_text(facts: &EncounterFacts) -> String {
+    delta_spans(facts)
+        .iter()
+        .map(|span| span.text.as_str())
+        .collect()
+}
+
 fn delta_spans(facts: &EncounterFacts) -> Vec<DeltaSpan> {
     let mut spans = Vec::new();
     let mut any = false;
@@ -1043,6 +1053,7 @@ pub(crate) fn faction_name(faction_id: &str) -> String {
 fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) -> EncounterFacts {
     EncounterFacts {
         phase: phase.to_string(),
+        round: 0,
         kind: kind.to_string(),
         captain_id: String::new(),
         captain_name: String::new(),

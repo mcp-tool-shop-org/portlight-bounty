@@ -14,6 +14,9 @@ OpenRouter is off. Seats stay dark. Do not `ai-playtest run` until the GPU is cl
 - `contract_board` — Contracts board cards, `{id, title, detail, meta, actions}`. Empty unless the Contracts desk is open.
 - `contracts_active` — Contracts active rows, same shape; `actions` holds the row's Complete and Abandon ids. Empty unless the desk is open.
 - `day_report` — the Day's report card, `{title, eyebrow, sections: [{id, title, lines}], footer}`. `footer` holds the Captain's week rows when they show. `null` when no Day's report is showing.
+- `encounter` — the encounter card, `{phase, round, boarding, delta, log}`. `phase` is the card's phase (`approach`, `naval`, `boarding`, `personal`, `outcome`), `round` is the last step's turn (0 before any step), `delta` is the step's delta line as drawn, `log` is the card's log text. `boarding` is always `null` for now. `null` when no encounter card is up, and while the Day's report is on top.
+- `log_tail` — the side Log, oldest first, at most 8 lines, ASCII. `null` before a session exists.
+- `voyage` — `{at_sea, progress, distance, eta_days}` from the voyage. `eta_days` is always `null` for now. `null` before a session exists.
 - `journal` — the Journal, `{title, notice, sections: [{id, title, lines}]}`. A section's `lines` are its labels and beat buttons in draw order. `null` unless the Journal is open.
 
 `text` carries the same facts before `Actions:`: a `Contract strip:` line when the strip shows, `Board:` / `Active:` lists while the desk is open, and `Day's report: {title}` with each section's `{Title}:` / `- {line}` (then `Footer:`) while the card shows, and `Journal: {title}` with each section while the Journal is open.
