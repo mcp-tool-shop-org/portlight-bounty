@@ -10321,9 +10321,83 @@ impl PortlightGame {
             .is_some_and(|view| view.phase == phase)
     }
 
+    /// The bridge keys, read through `augment` as the bridge reads them, must
+    /// equal what the screen holds: the encounter card text, the side Log and
+    /// the voyage.
+    fn check_bridge_keys(&mut self, label: &str) {
+        let observation = self.playtest_observation_dict();
+        let node: Gd<Node> = self.base().clone().upcast();
+        let result = crate::playtest::PortlightPlaytestLens::augment(Some(node), observation);
+        let state = result
+            .get("state")
+            .and_then(|value| value.try_to::<VarDictionary>().ok())
+            .unwrap_or_default();
+        let mut problems = Vec::new();
+        let tail: Vec<String> = state
+            .get("log_tail")
+            .and_then(|value| value.try_to::<VarArray>().ok())
+            .map(|array| {
+                array
+                    .iter_shared()
+                    .map(|v| v.to::<GString>().to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+        if tail != self.log_lines || tail.len() > 8 || !tail.iter().all(|line| line.is_ascii()) {
+            problems.push(format!("log_tail {tail:?} vs Log {:?}", self.log_lines));
+        }
+        let voyage = state
+            .get("voyage")
+            .and_then(|value| value.try_to::<VarDictionary>().ok());
+        let want = self.session.as_ref().map(|session| {
+            let v = &session.world().voyage;
+            (at_sea(session), v.progress, v.distance)
+        });
+        let got = voyage.as_ref().map(|dict| {
+            (
+                dict.get("at_sea").is_some_and(|v| v.to::<bool>()),
+                dict.get("progress").map(|v| v.to::<i64>()).unwrap_or(-1),
+                dict.get("distance").map(|v| v.to::<i64>()).unwrap_or(-1),
+                dict.get("eta_days").is_some_and(|v| v.is_nil()),
+            )
+        });
+        if want.map(|w| (w.0, w.1, w.2, true)) != got {
+            problems.push(format!("voyage {got:?} vs {want:?}"));
+        }
+        let encounter = state
+            .get("encounter")
+            .and_then(|value| value.try_to::<VarDictionary>().ok());
+        let shown = self.encounter.as_ref().and_then(crate::logic::present);
+        match (&encounter, &shown) {
+            (Some(dict), Some(view)) => {
+                let log = dict.get("log").map(|v| v.to::<GString>().to_string());
+                let round = dict.get("round").map(|v| v.to::<i64>());
+                let facts = self.encounter.as_ref();
+                if log.as_deref() != Some(view.log.as_str())
+                    || round != facts.map(|f| f.round)
+                    || dict.get("boarding").is_none_or(|v| !v.is_nil())
+                {
+                    problems.push(format!(
+                        "encounter {log:?} round {round:?} vs {:?}",
+                        view.log
+                    ));
+                }
+            }
+            (None, None) => {}
+            _ => problems.push(format!("encounter key {encounter:?} vs card {shown:?}")),
+        }
+        if problems.is_empty() {
+            godot_print!("Bridge keys ({label}): encounter, log_tail and voyage match the screen");
+        } else {
+            self.smoke_ok = false;
+            godot_print!("Bridge keys ({label}) mismatch: {problems:?}");
+        }
+    }
+
     fn expect_phase(&mut self, phase: ScreenPhase, label: &str) {
         if self.phase_is(phase) {
             godot_print!("encounter phase {label}");
+            self.check_bridge_keys(label);
             return;
         }
         self.smoke_ok = false;
@@ -11615,6 +11689,30 @@ impl PortlightGame {
         state.set("place", place.as_str());
         state.set("open", &open);
         state.set("hire_on_screen", hire);
+        match crate::playtest::encounter_key(self.encounter.as_ref(), self.day_report_open) {
+            Some(key) => state.set("encounter", &key.to_dictionary()),
+            None => state.set("encounter", &Variant::nil()),
+        }
+        match self.session.as_ref() {
+            Some(session) => {
+                let mut tail = VarArray::new();
+                for line in crate::playtest::log_tail(&self.log_lines) {
+                    tail.push(line.as_str());
+                }
+                state.set("log_tail", &tail);
+                let voyage = &session.world().voyage;
+                let key = crate::playtest::VoyageKey {
+                    at_sea: at_sea(session),
+                    progress: voyage.progress,
+                    distance: voyage.distance,
+                };
+                state.set("voyage", &key.to_dictionary());
+            }
+            None => {
+                state.set("log_tail", &Variant::nil());
+                state.set("voyage", &Variant::nil());
+            }
+        }
         let mut result = VarDictionary::new();
         result.set("text", text.as_str());
         result.set("state", &state);
@@ -12552,6 +12650,7 @@ impl PortlightGame {
             )),
         }
         self.check_at_sea_copy();
+        self.check_bridge_keys("departure");
         self.check_departure_worst_case();
         self.departure_checked = true;
         if capture {
