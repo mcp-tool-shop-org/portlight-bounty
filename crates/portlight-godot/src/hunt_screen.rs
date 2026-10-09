@@ -367,7 +367,7 @@ pub(crate) fn forage_notice(result: &HuntResult) -> String {
 /// and hull are costs, so they read as negatives. All zero is one line.
 pub(crate) fn forage_deltas(result: &HuntResult) -> String {
     let terms = [
-        ("Provisions", result.provisions_gained),
+        ("Stores", result.provisions_gained),
         ("Pelts", result.pelts_gained),
         ("Silver", result.silver_gained),
         ("Morale", -result.morale_cost),
@@ -916,7 +916,7 @@ mod tests {
         };
         let notice = forage_notice(&sample);
         assert!(notice.contains("empty nets"));
-        assert!(!notice.contains("Provisions"));
+        assert!(!notice.contains("Stores"));
         assert!(notice.ends_with("\nMorale -3."));
         assert!(!notice.to_lowercase().contains("hunt bounty"));
         assert_eq!(FORAGE_BUTTON, "Forage");
@@ -948,10 +948,7 @@ mod tests {
     #[test]
     fn forage_deltas_mixed_drops_zero_terms() {
         let sample = forage_sample([4, 1, 0, 2, 0, 0]);
-        assert_eq!(
-            forage_deltas(&sample),
-            "Provisions +4. Pelts +1. Morale -2."
-        );
+        assert_eq!(forage_deltas(&sample), "Stores +4. Pelts +1. Morale -2.");
         let silver = forage_sample([0, 0, 7, 0, 0, 0]);
         assert_eq!(forage_deltas(&silver), "Silver +7.");
         assert!(!forage_deltas(&sample).contains("-0"));
@@ -959,11 +956,20 @@ mod tests {
     }
 
     #[test]
+    fn forage_deltas_say_stores() {
+        let gain = forage_deltas(&forage_sample([4, 0, 0, 0, 0, 0]));
+        let loss = forage_deltas(&forage_sample([-2, 0, 0, 0, 0, 0]));
+        assert_eq!(gain, "Stores +4.");
+        assert_eq!(loss, "Stores -2.");
+        assert!(!gain.contains("Provisions") && !loss.contains("Provisions"));
+    }
+
+    #[test]
     fn forage_deltas_all_loss_reads_negative() {
         let sample = forage_sample([-2, 0, -5, 3, 1, 4]);
         assert_eq!(
             forage_deltas(&sample),
-            "Provisions -2. Silver -5. Morale -3. Crew -1. Hull -4."
+            "Stores -2. Silver -5. Morale -3. Crew -1. Hull -4."
         );
         assert!(!forage_deltas(&sample).contains('+'));
     }
@@ -1052,7 +1058,7 @@ mod tests {
         assert_eq!(session.world().captain.day, day + 1);
         assert!(session.world().pending_duel.is_none());
         let notice = forage_notice(&result);
-        assert!(notice.contains("Provisions"));
+        assert!(notice.contains("Stores"));
         let mut desk = HuntDesk {
             board: session.bounty_board(),
             posted: true,
