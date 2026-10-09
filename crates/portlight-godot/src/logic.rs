@@ -61,6 +61,41 @@ pub(crate) fn duel_button_enabled(pending: bool) -> bool {
     pending
 }
 
+/// The lane box at sea. Sailing is refused there, so the note points at the
+/// one action that moves the voyage.
+pub(crate) const AT_SEA_LANE_NOTE: &str = "At sea. Use Next day to continue.";
+
+/// A docked port that offers no lane. Not reachable with the shipped
+/// content; a neutral line so the box is never left blank or wrong.
+pub(crate) const NO_LANES_NOTE: &str = "No lanes from here.";
+
+/// What the lane box says when the chart has no lane to list: the at-sea
+/// note while a voyage is on, else the neutral docked line.
+pub(crate) fn empty_lane_note(voyage_present: bool) -> &'static str {
+    if voyage_present {
+        AT_SEA_LANE_NOTE
+    } else {
+        NO_LANES_NOTE
+    }
+}
+
+/// First line of the chart status block. The resource is called Stores, as
+/// on the Stores button, with the count last.
+pub(crate) fn status_header(
+    day: i64,
+    season: &str,
+    captain: &str,
+    silver: i64,
+    stores: i64,
+) -> String {
+    format!("Day {day}   {season}   {captain}   {silver} silver   Stores {stores}")
+}
+
+/// The docked price line under the port row.
+pub(crate) fn services_line(sailor_cost: i64, stores_cost: i64) -> String {
+    format!("Sailor listed {sailor_cost} silver. Stores listed {stores_cost} silver a day.")
+}
+
 /// A captured window is useless when one colour covers almost every sample.
 /// The broken 1280×720 chart shot was the clear colour below a 28 px strip.
 pub(crate) fn frame_mostly_flat(samples: &[[u8; 3]]) -> bool {
@@ -4041,5 +4076,35 @@ mod tests {
         {
             assert!(!text.contains('_'), "{text}");
         }
+    }
+
+    #[test]
+    fn at_sea_lane_note_is_the_binding_text() {
+        assert_eq!(AT_SEA_LANE_NOTE, "At sea. Use Next day to continue.");
+        assert!(AT_SEA_LANE_NOTE.is_ascii());
+        assert!(!AT_SEA_LANE_NOTE.contains("Advance"));
+        assert_eq!(empty_lane_note(true), AT_SEA_LANE_NOTE);
+        assert_eq!(empty_lane_note(false), "No lanes from here.");
+        assert!(NO_LANES_NOTE.is_ascii());
+    }
+
+    #[test]
+    fn status_header_says_stores_not_provisions() {
+        let line = status_header(2, "spring", "Ada", 89, 9);
+        assert_eq!(line, "Day 2   spring   Ada   89 silver   Stores 9");
+        assert!(line.is_ascii());
+        assert!(line.contains("Stores 9"));
+        assert!(!line.contains("provisions"));
+    }
+
+    #[test]
+    fn price_line_says_stores_listed() {
+        let line = services_line(4, 1);
+        assert_eq!(
+            line,
+            "Sailor listed 4 silver. Stores listed 1 silver a day."
+        );
+        assert!(line.is_ascii());
+        assert!(!line.to_lowercase().contains("provisions"));
     }
 }

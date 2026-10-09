@@ -81,17 +81,18 @@ use crate::logic::{
     action_caption, action_list_from_error, at_sea, board_confirm_line, buy_confirm_line,
     buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
     cycle_index, day_log_lines, display_or_humanized, dock_confirm_line, duel_button_enabled,
-    encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id,
-    install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
-    present, recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line,
-    session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
-    template_player_ship, train_confirm_line, ui_sentence, victory_receipt_lines, CrewDesk,
-    CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel,
-    StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER,
-    NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
-    SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
-    SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    empty_lane_note, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
+    facts_from_step, frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm,
+    humanize_id, install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected,
+    player_ship, present, recruit_confirm_line, save_confirm_title, save_slot_label,
+    sell_confirm_line, services_line, session_text, shipyard_frame_rejected, shipyard_model,
+    skill_confirm_line, stance_duel_visible, status_header, template_player_ship,
+    train_confirm_line, ui_sentence, victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts,
+    NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE,
+    NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE,
+    NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+    SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H,
+    WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -870,6 +871,7 @@ impl IControl for PortlightGame {
         self.save_base = std::path::PathBuf::from(resolve_repo_path("."));
         self.build_ui();
         self.check_layer_order();
+        self.check_scrim_above_chrome();
         if user_arg("--newgame-screen") {
             self.smoke = true;
             let capture = newgame_frames_requested(self.shot_path.is_some());
@@ -1614,6 +1616,25 @@ impl PortlightGame {
         encounter_screen::fill_parent(&mut encounter_screen.root);
         self.encounter_nodes = Some(encounter_screen);
 
+        // The strip is added before the Day's report so the report's dim and
+        // card draw above it: a dimmed screen must not leave the strip lit.
+        let mut contract_strip = contract_strip::build_contract_strip();
+        stamp_playtest_id(&mut contract_strip.hit, "chart.contract_strip");
+        contract_strip
+            .hit
+            .set_meta("playtest_label", &"Contract strip".to_variant());
+        let strip_click = game_id;
+        contract_strip.hit.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(strip_click) else {
+                return;
+            };
+            // Docked: open Contracts (closes day report). At sea: open_contracts no-ops.
+            gd.bind_mut().perform(Action::OpenContracts);
+        });
+        self.base_mut().add_child(&contract_strip.root);
+        contract_strip::place_strip(&mut contract_strip.root);
+        self.contract_strip_nodes = Some(contract_strip);
+
         let mut day_report = day_report::build_day_report_screen();
         stamp_playtest_id(
             &mut day_report.close,
@@ -1633,23 +1654,6 @@ impl PortlightGame {
         self.base_mut().add_child(&day_report.root);
         day_report::place_card(&mut day_report.root);
         self.day_report_nodes = Some(day_report);
-
-        let mut contract_strip = contract_strip::build_contract_strip();
-        stamp_playtest_id(&mut contract_strip.hit, "chart.contract_strip");
-        contract_strip
-            .hit
-            .set_meta("playtest_label", &"Contract strip".to_variant());
-        let strip_click = game_id;
-        contract_strip.hit.signals().pressed().connect(move || {
-            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(strip_click) else {
-                return;
-            };
-            // Docked: open Contracts (closes day report). At sea: open_contracts no-ops.
-            gd.bind_mut().perform(Action::OpenContracts);
-        });
-        self.base_mut().add_child(&contract_strip.root);
-        contract_strip::place_strip(&mut contract_strip.root);
-        self.contract_strip_nodes = Some(contract_strip);
 
         let mut departure = departure_check::build_departure_screen();
         for (button, action) in [
@@ -6607,7 +6611,8 @@ impl PortlightGame {
             return;
         };
         if chart.lanes.is_empty() {
-            box_node.add_child(&body_label("At sea. Advance the day to sail.", 14, CREAM));
+            let note = empty_lane_note(chart.leg.is_some());
+            box_node.add_child(&body_label(note, 14, CREAM));
             return;
         }
         // F9: below the crew minimum the Sail press is refused; say so first.
@@ -6799,14 +6804,14 @@ impl PortlightGame {
             .unwrap_or_default();
         let ledger = ledger_line(session);
         let paths = victory_line(session);
-        format!(
-            "Day {}   {}   {}   {} silver   {} provisions\n{place}\n{ship_line}\n{ledger}\n{paths}",
+        let header = status_header(
             world.day,
             content::season_name(world.day),
-            world.captain.name,
+            &world.captain.name,
             world.captain.silver,
-            world.captain.provisions
-        )
+            world.captain.provisions,
+        );
+        format!("{header}\n{place}\n{ship_line}\n{ledger}\n{paths}")
     }
 
     fn chart_now(&self) -> Option<ChartModel> {
@@ -10694,10 +10699,7 @@ impl PortlightGame {
         let Some(port) = session.world().port(id) else {
             return String::new();
         };
-        format!(
-            "Sailor listed {} silver. Provisions listed {} silver a day.",
-            port.crew_cost, port.provision_cost
-        )
+        services_line(port.crew_cost, port.provision_cost)
     }
 }
 
@@ -11166,6 +11168,45 @@ impl PortlightGame {
             .collect();
         let overlay = blocking_overlay(&open)?;
         self.blocking_root(overlay).map(|root| (overlay, root))
+    }
+
+    /// Index of the direct child of this node that holds `node`.
+    fn top_level_index(&self, node: Option<Gd<Control>>) -> Option<i32> {
+        let me = self.base().clone().upcast::<Node>();
+        let mut current = node?.upcast::<Node>();
+        while let Some(parent) = current.get_parent() {
+            if parent == me {
+                return Some(current.get_index());
+            }
+            current = parent;
+        }
+        None
+    }
+
+    /// Smoke: the Day's report dim is drawn above the contract strip and the
+    /// side panel, so under it neither is lit or clickable.
+    fn check_scrim_above_chrome(&mut self) {
+        let scrim = self
+            .day_report_nodes
+            .as_ref()
+            .and_then(|nodes| self.top_level_index(Some(nodes.scrim.clone().upcast::<Control>())));
+        let strip = self.top_level_index(
+            self.contract_strip_nodes
+                .as_ref()
+                .map(|nodes| nodes.root.clone().upcast::<Control>()),
+        );
+        let panel = self.top_level_index(
+            self.status
+                .as_ref()
+                .map(|label| label.clone().upcast::<Control>()),
+        );
+        let above = |low: Option<i32>| matches!((scrim, low), (Some(s), Some(l)) if s > l);
+        if !(above(strip) && above(panel)) {
+            self.smoke_ok = false;
+            godot_print!(
+                "Layer order: report dim index {scrim:?}, contract strip {strip:?}, side panel {panel:?}; the dim must be above both."
+            );
+        }
     }
 
     /// Smoke: the blocking screens are drawn in [`BLOCKING_DRAW_ORDER`] (top
@@ -12235,8 +12276,37 @@ impl PortlightGame {
         {
             self.fail_departure("Departure smoke: no 'Departed for Sun Harbor.' log line.");
         }
+        self.check_at_sea_copy();
         self.check_departure_worst_case();
         self.departure_checked = true;
+    }
+
+    /// Right after Sail anyway the lane box points at Next day, and the
+    /// status block names the resource Stores, as the button does.
+    fn check_at_sea_copy(&mut self) {
+        let labels: Vec<String> = self
+            .lane_box
+            .as_ref()
+            .map(|node| {
+                labels_under_box(node)
+                    .iter()
+                    .map(|label| label.get_text().to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+        if !labels.iter().any(|text| text == AT_SEA_LANE_NOTE) {
+            self.fail_departure(format!(
+                "Departure smoke: at sea the lane box read {labels:?}, want '{AT_SEA_LANE_NOTE}'."
+            ));
+        }
+        let status = self.status_text();
+        if !status.contains("Stores ") || status.contains("provisions") {
+            self.fail_departure(format!(
+                "Departure smoke: at sea the status block did not say Stores: {status}"
+            ));
+        } else {
+            godot_print!("at-sea copy: lane note and Stores status ok");
+        }
     }
 
     /// The tallest document the panel can draw
