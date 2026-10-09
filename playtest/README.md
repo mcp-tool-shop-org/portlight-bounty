@@ -24,7 +24,7 @@ OpenRouter is off. Seats stay dark. Do not `ai-playtest run` until the GPU is cl
   - F10-1: the top screen's own buttons are always offered.
   - F10-2: an input-blocking screen hides the chart. The blocking screens are an encounter, Hunt, Crew, Contracts, Shipyard, Harbour, Journal, and the new-game pages, with the encounter first.
   - F10-3: one layer at a time. When the Day's report or the Departure check sits over a blocking screen, only that overlay's buttons are offered.
-  - F10-4: with nothing blocking, the Departure check and the Day's report keep the chart offered. A chart press counts as Stay in port or closes the card first, and never departs.
+  - F10-4: with nothing blocking, the Departure check and the Day's report keep the chart offered. A chart press counts as Stay in port or closes the card first, so it never confirms the Departure check's lane. A `chart.sail.<port_id>` press is then a fresh Sail: the same lane re-opens the check, and another lane runs its own check and departs if that check is clean.
   - A `choose` for anything not offered answers `not on screen`.
 - **Labels.** `label` is the button text, except `chart.sail.<port_id>`, which reads `Sail - {Port}`. The button on screen still says `Sail`. `chart.contract_strip` (label `Contract strip`) is the strip on the chart. It opens Contracts when docked and does nothing at sea.
 - **Insurance ids.** Empty segments are dropped. The forms are `harbour.prepare.insurance.{policy}`, `.{policy}.{target}`, or `.{policy}.{origin}.{destination}`. Any other mix keeps all four segments. For one release, the old form with trailing empty segments still parses.

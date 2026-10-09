@@ -12,12 +12,12 @@ use godot::classes::{
     VBoxContainer,
 };
 use godot::prelude::*;
-use portlight_sim::model::{CaptainMemory, JournalEntry, VoyageStatus};
+use portlight_sim::model::{CaptainMemory, ContractOutcome, JournalEntry, VoyageStatus};
 use portlight_sim::session::Session;
 use portlight_sim::{campaign::HouseBooks, content};
 
 use crate::encounter_screen::{self, style_encounter_button};
-use crate::logic::{display_or_humanized, encounter_end_name};
+use crate::logic::{display_or_humanized, encounter_end_name, humanize_id};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -396,10 +396,11 @@ fn chronicle_rows(session: &Session, expanded: &[String]) -> Vec<JournalRow> {
     if narrative.journal.is_empty() {
         rows.push(line("No chronicle entries yet.", false));
     } else {
+        let dropped = contract_failure_was_dropped(&session.board().completed);
         for entry in narrative.journal.iter().rev() {
             let place = entry_place(session, entry);
             let open = expanded.iter().any(|id| id == &entry.beat_id);
-            rows.extend(chronicle_entry_rows(entry, place.as_deref(), open));
+            rows.extend(chronicle_entry_rows(entry, place.as_deref(), open, dropped));
         }
     }
     rows.push(line(
@@ -409,14 +410,36 @@ fn chronicle_rows(session: &Session, expanded: &[String]) -> Vec<JournalRow> {
     rows
 }
 
+/// The `contract_failed` beat fires once, on the first contract that ended
+/// without delivery. It reads from the first `expired` or `abandoned` entry
+/// on the board: `true` when that entry is an abandon.
+pub(crate) fn contract_failure_was_dropped(completed: &[ContractOutcome]) -> bool {
+    completed
+        .iter()
+        .find(|outcome| matches!(outcome.outcome_type.as_str(), "expired" | "abandoned"))
+        .is_some_and(|outcome| outcome.outcome_type == "abandoned")
+}
+
+/// Title and text for the abandon form of the `contract_failed` beat. The
+/// expiry form keeps the sim copy ("Broken Promise").
+const DROPPED_CONTRACT_TITLE: &str = "Dropped Contract";
+const DROPPED_CONTRACT_TEXT: &str = "You walked away from a promise. Word gets around.";
+
 fn chronicle_entry_rows(
     entry: &JournalEntry,
     place: Option<&str>,
     expanded: bool,
+    dropped: bool,
 ) -> Vec<JournalRow> {
+    let dropped = dropped && entry.beat_id == "contract_failed";
+    let title = if dropped {
+        DROPPED_CONTRACT_TITLE.to_string()
+    } else {
+        beat_title(&entry.beat_id)
+    };
     let mut rows = vec![JournalRow::Beat {
         id: entry.beat_id.clone(),
-        label: format!("Day {} - {}", entry.day, beat_title(&entry.beat_id)),
+        label: format!("Day {} - {}", entry.day, title),
     }];
     if let Some(place) = place {
         if !place.is_empty() {
@@ -424,7 +447,12 @@ fn chronicle_entry_rows(
         }
     }
     if expanded {
-        if let Some(text) = beat_text(&entry.beat_id) {
+        let text = if dropped {
+            Some(DROPPED_CONTRACT_TEXT.to_string())
+        } else {
+            beat_text(&entry.beat_id)
+        };
+        if let Some(text) = text {
             rows.push(line(text, false));
         }
     }
@@ -525,7 +553,7 @@ fn milestone_rows(books: &HouseBooks) -> Vec<JournalRow> {
         rows.push(line(
             format!(
                 "{}  day {}",
-                fold_ascii(&milestone.milestone_id),
+                milestone_name(&milestone.milestone_id),
                 milestone.completed_day
             ),
             false,
@@ -639,16 +667,25 @@ fn pirate_name(id: &str) -> String {
     encounter_end_name(id)
 }
 
-fn festival_name(id: &str) -> String {
-    for region in &content::content().culture.regions {
-        if let Some(festival) = region.festivals.iter().find(|festival| festival.id == id) {
-            if !festival.name.is_empty() && festival.name.is_ascii() {
-                return festival.name.clone();
-            }
-            return id.to_string();
-        }
-    }
-    id.to_string()
+/// Catalog festival name, else the humanized id (never the raw id).
+pub(crate) fn festival_name(id: &str) -> String {
+    let name = content::content()
+        .culture
+        .regions
+        .iter()
+        .find_map(|region| region.festivals.iter().find(|festival| festival.id == id))
+        .map(|festival| festival.name.as_str());
+    display_or_humanized(name, id)
+}
+
+/// Catalog milestone name, else the humanized id (never the raw id).
+pub(crate) fn milestone_name(id: &str) -> String {
+    display_or_humanized(
+        content::content()
+            .milestone(id)
+            .map(|spec| spec.name.as_str()),
+        id,
+    )
 }
 
 fn path_name(id: &str) -> String {
@@ -657,7 +694,7 @@ fn path_name(id: &str) -> String {
         "shadow_network" => "Shadow Network".to_string(),
         "oceanic_reach" => "Oceanic Reach".to_string(),
         "commercial_empire" => "Commercial Empire".to_string(),
-        other => fold_ascii(&other.replace('_', " ")),
+        other => humanize_id(&fold_ascii(other)),
     }
 }
 
@@ -673,7 +710,7 @@ pub(crate) fn beat_title(id: &str) -> String {
         .iter()
         .find(|beat| beat.id == id)
         .map(|beat| beat.title.to_string())
-        .unwrap_or_else(|| id.replace('_', " "))
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn beat_text(id: &str) -> Option<String> {
@@ -707,8 +744,11 @@ struct BeatCopy {
 
 /// Titles and texts copied from `crates/portlight-sim/src/narrative.rs` `BEATS`
 /// at `2d3d8b32b7806b547ea101fb28e0ddb0388dcd26`. Em dashes in that catalog
-/// are ASCII hyphens here. Follow-on: public `narrative::beat(id)` should
-/// replace this table so Godot does not keep a second copy.
+/// are ASCII hyphens here. One wording differs on purpose: the first-contract
+/// beat reads `Arrive on time` (the sim copy says `Deliver on time`), so the
+/// player sees no `Deliver` step cue outside the contract rows. Follow-on: a
+/// public `narrative::beat(id)` should replace this table so Godot does not
+/// keep a second copy.
 const BEATS: &[BeatCopy] = &[
     BeatCopy {
         id: "first_trade",
@@ -733,7 +773,7 @@ const BEATS: &[BeatCopy] = &[
     BeatCopy {
         id: "first_contract",
         title: "A Binding Word",
-        text: "You sign your name on a contract for the first time. The obligation weighs heavier than any cargo. Deliver on time, and doors open. Fail, and they close.",
+        text: "You sign your name on a contract for the first time. The obligation weighs heavier than any cargo. Arrive on time, and doors open. Fail, and they close.",
     },
     BeatCopy {
         id: "ship_upgrade",
@@ -965,7 +1005,7 @@ mod tests {
         assert_eq!(ids.len(), 45);
         assert_eq!(beat_title("first_trade"), "The First Deal");
         assert_eq!(beat_title("faction_diplomat"), "The Pirate's Diplomat");
-        assert_eq!(beat_title("not_a_real_beat"), "not a real beat");
+        assert_eq!(beat_title("not_a_real_beat"), "Not A Real Beat");
         let text = beat_text("first_trade").unwrap();
         assert!(text.contains("single trade"));
         assert!(text.is_ascii());
@@ -1042,12 +1082,14 @@ mod tests {
             &entry,
             Some("Porto Novo, Mediterranean"),
             false,
+            false,
         ));
         assert_eq!(closed, "Day 4 - The First Deal\nPorto Novo, Mediterranean");
         let open = row_text(&chronicle_entry_rows(
             &entry,
             Some("Porto Novo, Mediterranean"),
             true,
+            false,
         ));
         assert!(open.contains("single trade"));
         let unknown = JournalEntry {
@@ -1056,8 +1098,8 @@ mod tests {
             port_id: String::new(),
             region: String::new(),
         };
-        let rows = row_text(&chronicle_entry_rows(&unknown, None, true));
-        assert_eq!(rows, "Day 2 - made up beat");
+        let rows = row_text(&chronicle_entry_rows(&unknown, None, true, true));
+        assert_eq!(rows, "Day 2 - Made Up Beat");
     }
 
     #[test]
@@ -1097,5 +1139,77 @@ mod tests {
             super::pirate_name(crate::logic::SCRIPTED_CAPTAIN),
             crate::logic::encounter_end_name(crate::logic::SCRIPTED_CAPTAIN)
         );
+        assert_eq!(super::festival_name("salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(super::milestone_name("salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(super::path_name("salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(super::beat_title("salt_spit_cove"), "Salt Spit Cove");
+        let catalog = portlight_sim::content::content();
+        let spec = catalog.campaign.milestones.first().expect("a milestone");
+        assert_eq!(super::milestone_name(&spec.id), spec.name);
+        let festival = catalog
+            .culture
+            .regions
+            .iter()
+            .find_map(|region| region.festivals.first())
+            .expect("a festival");
+        assert_eq!(super::festival_name(&festival.id), festival.name);
+    }
+
+    /// The `contract_failed` beat follows the first contract that ended
+    /// without delivery: an expiry keeps `Broken Promise`, an abandon reads
+    /// `Dropped Contract`.
+    #[test]
+    fn contract_failed_beat_follows_the_first_failure() {
+        use portlight_sim::model::ContractOutcome;
+        let outcome = |kind: &str| ContractOutcome {
+            contract_id: format!("c_{kind}"),
+            outcome_type: kind.to_string(),
+            silver_delta: 0,
+            trust_delta: 0,
+            standing_delta: 0,
+            heat_delta: 0,
+            completion_day: 1,
+            summary: String::new(),
+            family: String::new(),
+            good_id: String::new(),
+            required_quantity: 0,
+            delivered_quantity: 0,
+            destination_port_id: String::new(),
+            deadline_day: 1,
+            reward_silver: 0,
+        };
+        let delivered = outcome("completed");
+        let expired = outcome("expired");
+        let abandoned = outcome("abandoned");
+        assert!(!super::contract_failure_was_dropped(&[]));
+        assert!(!super::contract_failure_was_dropped(&[
+            delivered.clone(),
+            expired.clone(),
+            abandoned.clone()
+        ]));
+        assert!(super::contract_failure_was_dropped(&[
+            delivered, abandoned, expired
+        ]));
+
+        let entry = JournalEntry {
+            beat_id: "contract_failed".to_string(),
+            day: 9,
+            port_id: String::new(),
+            region: String::new(),
+        };
+        let broken = row_text(&chronicle_entry_rows(&entry, None, true, false));
+        assert!(broken.starts_with("Day 9 - Broken Promise\n"));
+        let dropped = row_text(&chronicle_entry_rows(&entry, None, true, true));
+        assert_eq!(
+            dropped,
+            "Day 9 - Dropped Contract\nYou walked away from a promise. Word gets around."
+        );
+        assert!(dropped.is_ascii());
+        let other = JournalEntry {
+            beat_id: "first_trade".to_string(),
+            ..entry
+        };
+        let rows = row_text(&chronicle_entry_rows(&other, None, false, true));
+        assert_eq!(rows, "Day 9 - The First Deal");
     }
 }

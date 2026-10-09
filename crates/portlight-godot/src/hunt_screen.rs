@@ -794,18 +794,42 @@ mod tests {
         source_files(&crate_dir.join("src"), &mut files);
         source_files(&crate_dir.join("../../godot"), &mut files);
         assert!(files.len() > 10, "source scan found {} files", files.len());
-        // Split so this test does not match itself.
-        let banned = [["0.0", "3"].concat(), ["ce", "il"].concat()];
+        // Split so this test does not match itself. The rate is a literal
+        // (substring match); the rounding call is a whole identifier token,
+        // so words such as `ceiling` stay allowed.
+        let rate = ["0.0", "3"].concat();
+        let rounding = ["ce", "il"].concat();
         for path in &files {
             let text = std::fs::read_to_string(path).unwrap_or_default();
-            for word in &banned {
-                assert!(
-                    !text.contains(word.as_str()),
-                    "{word:?} in {}: the hunt cap belongs to portlight_sim::naval",
-                    path.display()
-                );
-            }
+            assert!(
+                !text.contains(rate.as_str()),
+                "{rate:?} in {}: the hunt cap belongs to portlight_sim::naval",
+                path.display()
+            );
+            assert!(
+                !has_token(&text, &rounding),
+                "{rounding:?} in {}: the hunt cap belongs to portlight_sim::naval",
+                path.display()
+            );
         }
+    }
+
+    /// True when `word` appears as a whole identifier token (a run of ASCII
+    /// letters, digits and `_`), not as part of a longer word.
+    fn has_token(text: &str, word: &str) -> bool {
+        text.split(|ch: char| !(ch.is_ascii_alphanumeric() || ch == '_'))
+            .any(|token| token == word)
+    }
+
+    #[test]
+    fn the_rounding_guard_matches_whole_tokens_only() {
+        let rounding = ["ce", "il"].concat();
+        let call = format!("let crew = (x * rate).{rounding}() as i64;");
+        assert!(has_token(&call, &rounding));
+        assert!(has_token(&format!("f64::{rounding}(x)"), &rounding));
+        assert!(!has_token("The ceiling holds.", &rounding));
+        assert!(!has_token(&format!("{rounding}ing"), &rounding));
+        assert!(!has_token(&format!("{rounding}_crew"), &rounding));
     }
 
     #[test]

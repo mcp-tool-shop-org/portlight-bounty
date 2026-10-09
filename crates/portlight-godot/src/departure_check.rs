@@ -32,7 +32,8 @@ const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 
 /// Warning lines shown before `+N more`. The context line is outside the cap.
 /// Four (AD #63 soft): four two-row lines plus `+N more` stay under
-/// [`PANEL_MAX_H`]; five did not. Play reaches four lines at most today.
+/// [`PANEL_MAX_H`] with [`WORST_CASE_HEADROOM`] to spare. Play reaches four
+/// lines at most today.
 pub(crate) const DEPARTURE_LINE_CAP: usize = 4;
 /// `at risk` band for a contract due at the destination: `0 <= left - E <= 1`.
 pub(crate) const AT_RISK_SLACK: i64 = 1;
@@ -42,7 +43,11 @@ pub(crate) const PANEL_X: f32 = 170.0;
 pub(crate) const PANEL_Y: f32 = 40.0;
 pub(crate) const PANEL_W: f32 = 520.0;
 pub(crate) const PANEL_MIN_H: f32 = 160.0;
-pub(crate) const PANEL_MAX_H: f32 = 380.0;
+/// Height cap. The worst case (four two-row lines plus `+N more`) needs
+/// about 373 px, so 420 leaves room for a font or wrap change.
+pub(crate) const PANEL_MAX_H: f32 = 420.0;
+/// Room the worst-case smoke requires under [`PANEL_MAX_H`].
+pub(crate) const WORST_CASE_HEADROOM: f32 = 32.0;
 const PANEL_MARGIN: f32 = 18.0;
 /// Text column width inside the 2 px border and 18 px margin.
 const COLUMN_W: f32 = PANEL_W - 2.0 * PANEL_MARGIN;
@@ -446,7 +451,7 @@ pub(crate) fn build_departure_screen() -> DepartureNodes {
 }
 
 /// Day's report slot, height fit to content (min 160). The cap keeps it
-/// under 380; the smoke asserts that.
+/// under [`PANEL_MAX_H`]; the smoke asserts that.
 pub(crate) fn place_panel(root: &mut Gd<PanelContainer>) {
     root.set_anchors_and_offsets_preset(LayoutPreset::TOP_LEFT);
     root.set_position(Vector2::new(PANEL_X, PANEL_Y));
