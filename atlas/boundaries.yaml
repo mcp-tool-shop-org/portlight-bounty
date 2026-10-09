@@ -36,6 +36,14 @@ boundaries:
     globs:
       - "*"
     role: config
+  - name: scripts
+    globs:
+      - scripts/**
+    role: code
+  - name: site
+    globs:
+      - site/**
+    role: code
   - name: tools
     globs:
       - tools/**

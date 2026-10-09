@@ -1,3 +1,17 @@
+The MIT license below covers the source code: the Rust crates, the
+Godot project scripts, the tools, and the prose in this repository.
+
+It does not cover the pictures. That includes godot/assets/ and
+docs/screenshots/. Those files are not offered for reuse. No separate
+art license is granted.
+
+The five deck props (barrel, bollard, cart, crate, and torch) were
+vendored as Blender EEVEE plates. The record does not name who made
+the meshes, or under what terms. The three quay flags were painted on
+a local ComfyUI setup and retoned with a fixed color map. Account
+terms at a generator bind the account that made a file. They are not
+a license for anyone else to take the pictures.
+
 MIT License
 
 Copyright (c) 2026 mcp-tool-shop
