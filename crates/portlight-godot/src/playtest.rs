@@ -1621,6 +1621,40 @@ mod tests {
         );
     }
 
+    /// A chart press under the Day's report closes the card first and then
+    /// runs. When the action fails, the sim's own failure text is what lands
+    /// in the log (markup and dashes cleaned, nothing dropped), so the close
+    /// never swallows it.
+    #[test]
+    fn failed_press_after_close_first_keeps_its_failure_text() {
+        use portlight_sim::Session;
+        // The press is a known chart action under an open card: close first.
+        let command = parse_playtest_id("chart.provisions").expect("known id");
+        assert!(matches!(
+            command,
+            PlaytestCommand::Action(Action::Provision)
+        ));
+        assert_eq!(
+            implicit_dismiss(false, true, false, false),
+            Some(ImplicitDismiss::CloseDayReport)
+        );
+        // Then the action fails: a docked captain with no silver for Stores.
+        let mut session = Session::new("Ada", "merchant", 1, None).expect("session");
+        while session.provision(5).is_ok() {}
+        let err = session
+            .provision(5)
+            .expect_err("no silver left")
+            .to_string();
+        assert!(
+            err.starts_with("Need ") && err.contains("provisions"),
+            "{err}"
+        );
+        // The log line the game pushes is that text, cleaned, and non-empty.
+        let logged = crate::logic::ascii_punctuation(&crate::logic::strip_markup(&err));
+        assert_eq!(logged, err);
+        assert!(logged.is_ascii());
+    }
+
     /// F10-4: Departure and the Day's report over the chart keep the chart
     /// offered, and a chart press counts as Stay / close first.
     #[test]

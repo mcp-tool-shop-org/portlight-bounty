@@ -355,7 +355,7 @@ pub(crate) fn choice_cell(mut button: Gd<Button>, lines: &[&str]) -> Gd<VBoxCont
 }
 
 /// Capture's prize-crew controls, under the Capture button in its own
-/// column: a `Crew -` / `Crew +` row, then `Crew to the prize  N`.
+/// column: a `Crew -` / `Crew +` row, then `Crew to the prize N`.
 pub(crate) fn add_capture_crew(
     cell: &mut Gd<VBoxContainer>,
     minus: Gd<Button>,
@@ -371,8 +371,9 @@ pub(crate) fn add_capture_crew(
     cell.add_child(&text_label(&capture_crew_text(crew), 14, MUTED));
 }
 
+/// One space before the count, like every other label.
 pub(crate) fn capture_crew_text(crew: i64) -> String {
-    format!("Crew to the prize  {crew}")
+    format!("Crew to the prize {crew}")
 }
 
 /// Padding added to the widest Outcome column: every column is the widest
