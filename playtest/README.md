@@ -20,7 +20,7 @@ OpenRouter is off. Seats stay dark. Do not `ai-playtest run` until the GPU is cl
 
 ## Offered choices
 
-- **Layers (F10).** These are GD's four rules in `design-signoff-pr64.md`:
+- **Layers (F10).** Four rules:
   - F10-1: the top screen's own buttons are always offered.
   - F10-2: an input-blocking screen hides the chart. The blocking screens are an encounter, Hunt, Crew, Contracts, Shipyard, Harbour, Journal, and the new-game pages, with the encounter first.
   - F10-3: one layer at a time. When the Day's report or the Departure check sits over a blocking screen, only that overlay's buttons are offered.
