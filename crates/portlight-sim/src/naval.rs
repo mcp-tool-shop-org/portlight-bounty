@@ -365,7 +365,7 @@ pub fn hunt_crew_loss_cap(crew: i64, crew_min: i64) -> i64 {
 }
 
 /// Raw hunt boarding loss from the player roll (section 9 formula without the
-/// outer `min(cap, …, r)`). `r == 0` is no loss. Integer form of
+/// outer `min(cap, ..., r)`). `r == 0` is no loss. Integer form of
 /// `floor(0.15 + 0.025*crew + (r - lo + 0.5)/n)`.
 pub fn hunt_boarding_loss(r: i64, lo: i64, hi: i64, crew: i64) -> i64 {
     if r == 0 {
@@ -859,11 +859,12 @@ mod tests {
 
     #[test]
     fn hunt_and_python_boarding_consume_the_same_rng() {
-        // Draw preservation: same PyRandom state after both paths, equal enemy loss.
+        // Draw preservation (acceptance tests 3 and 4): 10,000 seeds, same
+        // PyRandom state after both paths, equal enemy loss.
         let crews = [3, 4, 5, 8, 12, 20, 25, 40, 50, 60, 68];
         let enemies = [16, 20, 23, 28, 38];
         let mins = [3, 3, 5, 3, 5, 8, 15, 15, 25, 25, 25];
-        for seed in 0i128..200 {
+        for seed in 0i128..10_000 {
             for (i, &crew) in crews.iter().enumerate() {
                 let crew_min = mins[i];
                 for &enemy in &enemies {

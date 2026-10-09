@@ -874,9 +874,6 @@ impl Session {
         }
     }
 
-    /// One naval action: `broadside`, `close`, `evade`, `rake`, or `flee`.
-    ///
-    /// Stops when the enemy sinks or the boarding threshold is met.
     /// Hunt-fight marker: the enemy is an active, unclaimed bounty. Returns the
     /// flagship's template crew minimum when the fight is a hunt, else `None`.
     /// Derived from saved state; no new Session field.
@@ -898,6 +895,9 @@ impl Session {
         }
     }
 
+    /// One naval action: `broadside`, `close`, `evade`, `rake`, or `flee`.
+    ///
+    /// Stops when the enemy sinks or the boarding threshold is met.
     /// [`Session::resolve_boarding`] resolves the deck melee. Cannon math uses the
     /// session RNG.
     pub fn naval_round(&mut self, action: &str) -> Result<EncounterStep, SimError> {
@@ -4423,43 +4423,135 @@ mod tests {
         );
     }
 
-    #[test]
-    fn hunt_rake_costs_no_crew_but_keeps_hull_damage() {
-        // Privateer cutter at crew_min 5. Force an enemy rake by closing until
-        // a naval step reports a crew delta of 0 and a hull drop when the enemy
-        // raked (or keep closing; hunt marker zeros crew delta).
+    /// Fight Raj on a fresh privateer hunt (seed 4) up to the naval phase.
+    fn privateer_hunting_raj() -> Session {
         let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
-        let start_crew = session.world.captain.ship.as_ref().unwrap().crew;
-        assert_eq!(start_crew, 5);
+        assert_eq!(session.world.captain.ship.as_ref().unwrap().crew, 5);
         session.accept_bounty("raj_the_quiet").unwrap();
         session.hunt_bounty("raj_the_quiet").unwrap();
         session.encounter_choice("fight").unwrap();
-        let mut saw_rake = false;
-        let mut hull_before = session.world.captain.ship.as_ref().unwrap().hull;
+        session
+    }
+
+    fn in_naval(session: &Session) -> bool {
+        session.encounter.as_ref().map(|e| e.phase.as_str()) == Some("naval")
+    }
+
+    /// The same session with the bounty marker off: the Python path (no hunt
+    /// rule), same RNG state and encounter.
+    fn python_twin(session: &Session) -> Session {
+        let mut twin = session.clone();
+        twin.world
+            .captain
+            .active_bounties
+            .retain(|id| id != "raj_the_quiet");
+        assert_eq!(twin.hunt_crew_min(), None);
+        twin
+    }
+
+    /// Acceptance test 6. Seed 4 with `evade`: Raj rakes on steps 5, 8 and 10
+    /// (the last for 3 hull). Each step is replayed on the Python twin.
+    #[test]
+    fn hunt_rake_costs_no_crew_but_keeps_hull_damage() {
+        let mut session = privateer_hunting_raj();
+        let start_crew = session.world.captain.ship.as_ref().unwrap().crew;
+        let mut rakes = 0;
+        let mut rake_hull = 0;
+        let mut twin_crew_lost = 0;
         for _ in 0..12 {
-            let phase = session
-                .encounter
-                .as_ref()
-                .map(|e| e.phase.as_str())
-                .unwrap_or("");
-            if phase != "naval" {
+            if !in_naval(&session) {
                 break;
             }
-            let step = session.naval_round("close").unwrap();
-            let hull_after = session.world.captain.ship.as_ref().unwrap().hull;
-            let crew_after = session.world.captain.ship.as_ref().unwrap().crew;
-            assert_eq!(crew_after, start_crew, "hunt rake must not cost crew");
+            let mut twin = python_twin(&session);
+            let twin_crew_before = twin.world.captain.ship.as_ref().unwrap().crew;
+            let twin_step = twin.naval_round("evade").unwrap();
+            let hull_before = session.world.captain.ship.as_ref().unwrap().hull;
+            let step = session.naval_round("evade").unwrap();
+            let ship = session.world.captain.ship.as_ref().unwrap();
+            let twin_ship = twin.world.captain.ship.as_ref().unwrap();
+            assert_eq!(ship.crew, start_crew, "hunt rake must not cost crew");
             assert_eq!(step.player_crew_delta, 0);
+            // Same draws as Python: same enemy action, same hull drop.
+            assert_eq!(step.enemy_action, twin_step.enemy_action);
+            assert_eq!(step.player_hull_delta, twin_step.player_hull_delta);
+            assert_eq!(ship.hull, twin_ship.hull);
+            assert_eq!(ship.hull, hull_before + step.player_hull_delta);
             if step.enemy_action == "rake" {
-                saw_rake = true;
-                // Hull may or may not drop (randint hull 0/1); crew never does.
-                let _ = (hull_before, hull_after);
+                rakes += 1;
+                rake_hull += step.player_hull_delta;
+                twin_crew_lost += twin_crew_before - twin_ship.crew;
             }
-            hull_before = hull_after;
         }
-        // Not every seed sees a rake; the assertion that matters is crew unchanged
-        // on every naval step above. Record whether we saw one for coverage.
-        let _ = saw_rake;
+        assert_eq!(rakes, 3, "seed 4 / evade should see Raj rake");
+        assert!(rake_hull < 0, "a rake should land hull damage");
+        // The Python path loses crew to the same rakes.
+        assert!(twin_crew_lost > 0);
+    }
+
+    /// Acceptance test 8: a claimed target is not a hunt, so the Python rule
+    /// applies (the rake costs crew like the twin with no bounty at all).
+    #[test]
+    fn claimed_target_fight_uses_the_python_rule() {
+        let mut session = privateer_hunting_raj();
+        assert_eq!(session.hunt_crew_min(), Some(5));
+        session
+            .world
+            .captain
+            .claimed_bounties
+            .push("raj_the_quiet".into());
+        assert_eq!(session.hunt_crew_min(), None);
+        let mut crew_lost = 0;
+        for _ in 0..12 {
+            if !in_naval(&session) {
+                break;
+            }
+            let mut twin = python_twin(&session);
+            let twin_step = twin.naval_round("evade").unwrap();
+            let step = session.naval_round("evade").unwrap();
+            assert_eq!(step.player_crew_delta, twin_step.player_crew_delta);
+            assert_eq!(
+                session
+                    .world
+                    .captain
+                    .ship
+                    .as_ref()
+                    .map(|s| (s.crew, s.hull)),
+                twin.world.captain.ship.as_ref().map(|s| (s.crew, s.hull))
+            );
+            crew_lost -= step.player_crew_delta;
+        }
+        assert!(crew_lost > 0, "claimed-target rakes should cost crew");
+    }
+
+    /// Acceptance test 10: a mid-hunt (naval) save reloads with the hunt marker
+    /// (derived from saved state) and the next boarding uses the hunt rule.
+    #[test]
+    fn mid_hunt_save_roundtrip_keeps_the_hunt_rule() {
+        let mut session = privateer_hunting_raj();
+        session.naval_round("close").unwrap();
+        assert!(in_naval(&session));
+        let dir = std::env::temp_dir().join(format!("portlight-hunt-save-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        session.save(&dir, "mid_hunt").unwrap();
+        let mut loaded = Session::load(&dir, "mid_hunt").unwrap().unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(in_naval(&loaded));
+        assert_eq!(loaded.hunt_crew_min(), Some(5));
+        for _ in 0..12 {
+            if !in_naval(&loaded) {
+                break;
+            }
+            let step = loaded.naval_round("close").unwrap();
+            assert_eq!(step.player_crew_delta, 0);
+        }
+        assert_eq!(
+            loaded.encounter.as_ref().map(|e| e.phase.as_str()),
+            Some("boarding")
+        );
+        let step = loaded.resolve_boarding().unwrap();
+        assert_eq!(step.player_crew_lost, 0);
+        assert_eq!(loaded.world.captain.ship.as_ref().unwrap().crew, 5);
     }
 
     #[test]
