@@ -5974,20 +5974,25 @@ impl PortlightGame {
     }
 
     fn arm_abandon(&mut self, id: &str) {
-        let title = self
-            .session
-            .as_ref()
-            .and_then(|session| {
-                session
-                    .board()
-                    .active
-                    .iter()
-                    .find(|contract| contract.offer_id == id)
-                    .map(|contract| contract.title.clone())
-            })
-            .unwrap_or_else(|| humanize_id(id));
+        let found = self.session.as_ref().and_then(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .find(|contract| contract.offer_id == id)
+                .map(|contract| {
+                    (
+                        contract.title.clone(),
+                        (contract.delivered_quantity, contract.required_quantity),
+                    )
+                })
+        });
+        let (title, progress) = match found {
+            Some((title, progress)) => (title, Some(progress)),
+            None => (humanize_id(id), None),
+        };
         self.contracts_confirm = Some(id.to_string());
-        self.contracts_notice = contracts_screen::abandon_prompt(&title);
+        self.contracts_notice = contracts_screen::abandon_prompt(&title, progress);
         self.refresh();
     }
 
@@ -6309,7 +6314,119 @@ impl PortlightGame {
         if !self.board_is_empty() {
             self.fail_contracts("Contracts smoke: the board still had offers.");
         }
+        self.check_abandon_with_progress();
         self.finish_contracts_smoke();
+    }
+
+    /// Abandon after a real partial sale: the prompt names the lost progress,
+    /// and the notice and its Log line carry `d/r` before the aboard clause.
+    /// Runs on a fresh game and puts the smoke's own state back after.
+    fn check_abandon_with_progress(&mut self) {
+        let saved = (
+            self.session.clone(),
+            self.log_lines.clone(),
+            self.contracts_notice.clone(),
+            self.trade_qty,
+            self.market_open,
+        );
+        let ok = self.run_abandon_with_progress();
+        self.session = saved.0;
+        self.log_lines = saved.1;
+        self.contracts_notice = saved.2;
+        self.trade_qty = saved.3;
+        self.market_open = saved.4;
+        self.contracts_confirm = None;
+        if !ok {
+            self.smoke_ok = false;
+        }
+        self.refresh();
+    }
+
+    fn run_abandon_with_progress(&mut self) -> bool {
+        match Session::new(
+            FIRST_PLAYABLE_NAME,
+            FIRST_PLAYABLE_CAPTAIN,
+            FIRST_PLAYABLE_SEED,
+            None,
+        ) {
+            Ok(session) => self.session = Some(session),
+            Err(_) => return false,
+        }
+        self.log_lines.clear();
+        self.trade_qty = 10;
+        let offer = self.session.as_mut().and_then(|session| {
+            session
+                .available_contracts()
+                .into_iter()
+                .find(|offer| {
+                    offer.good_id == "grain" && offer.destination_port_id == "corsairs_rest"
+                })
+                .map(|offer| (offer.id, offer.quantity))
+        });
+        let Some((offer_id, required)) = offer else {
+            godot_print!("Abandon smoke: no grain offer for Corsair's Rest.");
+            return false;
+        };
+        self.accept_contract_offer(&offer_id);
+        self.market_open = true;
+        for _ in 0..6 {
+            if self.held("grain") >= required + 5 {
+                break;
+            }
+            self.perform(Action::Buy("grain".into()));
+        }
+        self.depart_now("corsairs_rest");
+        for _ in 0..40 {
+            if self.docked_id() == Some("corsairs_rest") {
+                break;
+            }
+            self.close_day_report();
+            self.encounter = None;
+            self.next_day();
+        }
+        if self.docked_id() != Some("corsairs_rest") {
+            godot_print!("Abandon smoke: never docked at Corsair's Rest.");
+            return false;
+        }
+        self.close_day_report();
+        self.perform(Action::Sell("grain".into()));
+        let credited = self.session.as_ref().and_then(|session| {
+            session
+                .board()
+                .active
+                .iter()
+                .find(|contract| contract.offer_id == offer_id)
+                .map(|c| (c.delivered_quantity, c.required_quantity))
+        });
+        let Some((done, need)) = credited.filter(|(done, _)| *done > 0) else {
+            godot_print!("Abandon smoke: the partial sale credited nothing ({credited:?}).");
+            return false;
+        };
+        let token = format!("{done}/{need}");
+        self.arm_abandon(&offer_id);
+        let prompt = self.contracts_notice.clone();
+        let want_prompt = format!("Progress {token} is lost. Confirm to drop it.");
+        if !prompt.starts_with("Abandon ") || !prompt.ends_with(&want_prompt) {
+            godot_print!("Abandon smoke: prompt was {prompt:?}.");
+            return false;
+        }
+        self.confirm_abandon();
+        let notice = self.contracts_notice.clone();
+        let held = self.held("grain");
+        let want_tail = format!(" - {token} - {held} Grain still aboard");
+        if !notice.starts_with("Contract abandoned: ")
+            || !notice.ends_with(&want_tail)
+            || notice.contains("Silver")
+            || self.log_lines.last() != Some(&notice)
+        {
+            godot_print!(
+                "Abandon smoke: notice was {notice:?}, log {:?}.",
+                self.log_lines.last()
+            );
+            return false;
+        }
+        godot_print!("Abandon smoke: prompt {prompt:?}; notice {notice:?}");
+        true
     }
 
     fn finish_contracts_smoke(&mut self) {
