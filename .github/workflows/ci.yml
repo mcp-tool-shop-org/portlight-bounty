@@ -814,6 +814,10 @@ jobs:
             echo "departure-check capture did not write /tmp/departure-check-shots/departure-check-worst.png"
             exit 1
           fi
+          if [ ! -f /tmp/departure-check-shots/chart-at-sea-first.png ]; then
+            echo "departure-check capture did not write /tmp/departure-check-shots/chart-at-sea-first.png"
+            exit 1
+          fi
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -854,6 +858,7 @@ jobs:
           cmp_committed market-contract-paid-more.png /tmp/market-paid-shots/market-contract-paid-more.png
           cmp_committed departure-check.png /tmp/departure-check-shots/departure-check.png
           cmp_committed departure-check-worst.png /tmp/departure-check-shots/departure-check-worst.png
+          cmp_committed chart-at-sea-first.png /tmp/departure-check-shots/chart-at-sea-first.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
           cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png
