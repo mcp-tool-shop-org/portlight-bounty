@@ -54,6 +54,37 @@ jobs:
       - name: Parity allowlist
         run: python3 tools/parity/test_check.py
 
+  # Patch coverage fails under 90%. The gate is codecov.yml. This job
+  # measures the Rust crates except portlight-godot, which the godot job
+  # builds. Upload uses OIDC. No token is stored in the repo.
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@861a07ce7084f55488e375df125cdc99bba60eb7
+        with:
+          tool: cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+      - name: Test with coverage
+        run: |
+          mkdir -p coverage
+          cargo llvm-cov --locked --workspace --exclude portlight-godot --lcov --output-path coverage/lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          version: v11.3.1
+          use_oidc: true
+          fail_ci_if_error: true
+          disable_search: true
+          files: coverage/lcov.info
+
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.
   oracle:
@@ -884,3 +915,15 @@ jobs:
           cmp_committed quay-paving-z072.png /tmp/seam-shots/quay-paving-z072.png
           cmp_committed flat-deck-z100.png /tmp/seam-shots/flat-deck-z100.png
           cmp_committed flat-deck-z072.png /tmp/seam-shots/flat-deck-z072.png
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
