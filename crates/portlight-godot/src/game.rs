@@ -80,18 +80,18 @@ use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, at_sea, board_confirm_line, buy_confirm_line,
     buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
-    cycle_index, day_log_lines, display_or_humanized, dock_confirm_line, duel_button_enabled,
-    encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id,
-    install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
-    present, recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line,
-    session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
-    template_player_ship, train_confirm_line, ui_sentence, victory_receipt_lines, CrewDesk,
-    CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel,
-    StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER,
-    NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
-    SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
-    SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    cycle_index, day_log_lines, dimmed_frame_rejected, display_or_humanized, dock_confirm_line,
+    duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
+    facts_from_step, frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm,
+    humanize_id, install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected,
+    player_ship, present, recruit_confirm_line, save_confirm_title, save_slot_label,
+    sell_confirm_line, session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line,
+    stance_duel_visible, template_player_ship, train_confirm_line, ui_sentence,
+    victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool,
+    ScreenAction, ScreenPhase, ShipyardModel, StepInput, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
+    NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W,
+    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
+    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -429,6 +429,17 @@ impl HuntShot {
     }
 }
 
+/// Which rule accepts a captured frame.
+#[derive(Clone, Copy)]
+enum ShotGate {
+    /// Ink ground with a plate and a filled button.
+    Ink,
+    /// Chart: no colour over most of the frame.
+    Chart,
+    /// A desk dimmed behind a card: mostly ink, but never one flat colour.
+    Dimmed,
+}
+
 #[derive(Clone, Copy)]
 enum DayReportShot {
     Full,
@@ -437,6 +448,8 @@ enum DayReportShot {
     Arrival,
     /// Contract fail: pinned DUE expiry line, forced card on live Day 23.
     Expired,
+    /// The card over an open desk (Contracts): the desk is dimmed behind it.
+    OverScreen,
 }
 
 impl DayReportShot {
@@ -447,6 +460,7 @@ impl DayReportShot {
             Self::Week => "day-report-week.png",
             Self::Arrival => "day-report-arrival.png",
             Self::Expired => "day-report-expired.png",
+            Self::OverScreen => "day-report-over-screen.png",
         }
     }
 }
@@ -6966,6 +6980,17 @@ impl PortlightGame {
     /// is a failed capture. Headless Godot cannot produce this image; call
     /// this only from a real GL context (`PORTLIGHT_SHOT` set).
     fn save_shot(&self, path: &str, encounter: bool) -> bool {
+        self.save_shot_as(
+            path,
+            if encounter {
+                ShotGate::Ink
+            } else {
+                ShotGate::Chart
+            },
+        )
+    }
+
+    fn save_shot_as(&self, path: &str, gate: ShotGate) -> bool {
         let image = self.base().get_viewport().and_then(|viewport| {
             viewport
                 .get_texture()
@@ -6987,10 +7012,11 @@ impl PortlightGame {
         // The encounter ground is ink. Chart and harbour shots keep the 80% rule.
         // The mode is the capture, not the filename: `/tmp/galleon1.png` is
         // still an encounter frame.
-        let rejected = if encounter {
-            encounter_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples)
-        } else {
-            capture_frame_rejected(width, height, WINDOW_W as i32, WINDOW_H as i32, &samples)
+        let (w, h) = (WINDOW_W as i32, WINDOW_H as i32);
+        let rejected = match gate {
+            ShotGate::Ink => encounter_frame_rejected(width, height, w, h, &samples),
+            ShotGate::Chart => capture_frame_rejected(width, height, w, h, &samples),
+            ShotGate::Dimmed => dimmed_frame_rejected(width, height, w, h, &samples),
         };
         godot_print!(
             "screenshot {path} {width}x{height} samples={} flat={flat} error={err:?}",
@@ -7944,6 +7970,7 @@ impl PortlightGame {
             self.fail_day_report("Day-report smoke: Hunt left the report open.");
         }
         self.close_hunt();
+        self.check_report_over_desk(day);
         self.check_failed_press_after_close(day);
         // Quiet day at sea: Prices stay empty (§13.2); no deadline/heal/claimable.
         let departed = {
@@ -8854,12 +8881,31 @@ impl PortlightGame {
                 phase.file_name()
             );
         }
+        if matches!(phase, DayReportShot::OverScreen) {
+            let dimmed = self
+                .day_report_nodes
+                .as_ref()
+                .is_some_and(day_report::scrim_shown);
+            if !dimmed || !self.contracts_open {
+                self.smoke_ok = false;
+                godot_print!(
+                    "Day-report smoke: the over-screen frame is not dimmed over Contracts."
+                );
+            }
+        }
         // Laid out and drawn: the open card must still be 520x380 with Close inside.
         self.assert_day_report_fits(phase.file_name());
         let path = format!("{dir}/{}", phase.file_name());
         // Compact card over the chart: use the chart flat-frame check, not the
         // encounter plate/button ink gate (no side plate on this panel).
-        if !self.save_shot(&path, false) {
+        // A dimmed desk behind the card is mostly one ink colour, so that
+        // frame takes its own gate.
+        let gate = if matches!(phase, DayReportShot::OverScreen) {
+            ShotGate::Dimmed
+        } else {
+            ShotGate::Chart
+        };
+        if !self.save_shot_as(&path, gate) {
             self.capture_failed = true;
         }
         match phase {
@@ -8875,7 +8921,22 @@ impl PortlightGame {
                 true
             }
             DayReportShot::Deadline => {
+                // Same card, now over the open Contracts desk: the dim frame.
                 self.close_day_report();
+                self.open_contracts();
+                let day = self
+                    .session
+                    .as_ref()
+                    .map(|session| session.world().day)
+                    .unwrap_or(1);
+                self.open_day_report_doc(day_report::smoke_deadline_document(day));
+                self.day_report_shot = Some(DayReportShot::OverScreen);
+                self.capture_frames = 4;
+                true
+            }
+            DayReportShot::OverScreen => {
+                self.close_day_report();
+                self.close_contracts();
                 // Quiet-day hide is a smoke assertion, not a committed frame (§13.5).
                 let departed = self
                     .session
@@ -10330,6 +10391,52 @@ impl PortlightGame {
         self.expect_no_end_receipt("Encounter smoke");
     }
 
+    /// The report over an open desk (Contracts): the desk is dimmed and takes
+    /// no clicks, the keyboard stays on the card, and Escape closes only the
+    /// card, leaving the desk open and untouched.
+    fn check_report_over_desk(&mut self, day: i64) {
+        self.open_contracts();
+        if !self.contracts_open {
+            self.fail_day_report("Day-report smoke: Contracts did not open for the desk check.");
+            return;
+        }
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        let (dimmed, stops, trapped, focused) = self
+            .day_report_nodes
+            .as_ref()
+            .map(|nodes| {
+                (
+                    day_report::scrim_shown(nodes),
+                    nodes.scrim.get_mouse_filter() == MouseFilter::STOP,
+                    day_report::keyboard_trapped(nodes),
+                    nodes.close.has_focus(),
+                )
+            })
+            .unwrap_or_default();
+        if !(dimmed && stops && trapped && focused) {
+            self.fail_day_report(format!(
+                "Day-report smoke: over Contracts, dimmed {dimmed}, stops clicks {stops}, keyboard held {trapped}, Close focused {focused}."
+            ));
+        }
+        let notice = self.contracts_notice.clone();
+        self.dismiss_cancel();
+        let report_closed = !self.day_report_open;
+        let desk_open = self.contracts_open;
+        let dim_gone = self.day_report_nodes.as_ref().is_some_and(|nodes| {
+            !day_report::scrim_shown(nodes) && day_report::keyboard_free(nodes)
+        });
+        if !(report_closed && desk_open && dim_gone && self.contracts_notice == notice) {
+            self.fail_day_report(format!(
+                "Day-report smoke: Escape over Contracts: report closed {report_closed}, desk open {desk_open}, dim gone {dim_gone}."
+            ));
+        } else {
+            godot_print!(
+                "day report over Contracts: dimmed, keyboard held, Escape closes the card only"
+            );
+        }
+        self.close_contracts();
+    }
+
     /// A Day's report raised over an open encounter dims it and takes its
     /// input: the scrim is up and stops clicks, and Close holds the focus.
     /// Closing the report gives the encounter back.
@@ -10348,7 +10455,7 @@ impl PortlightGame {
                 (
                     day_report::scrim_shown(nodes),
                     nodes.scrim.get_mouse_filter() == MouseFilter::STOP,
-                    nodes.close.has_focus(),
+                    nodes.close.has_focus() && day_report::keyboard_trapped(nodes),
                 )
             })
             .unwrap_or_default();

@@ -79,6 +79,22 @@ pub(crate) fn capture_frame_rejected(
     samples.is_empty() || width != expect_w || height != expect_h || frame_mostly_flat(samples)
 }
 
+/// A desk dimmed behind a card is mostly the ink ground (about 90%), so the
+/// 80% flat rule would reject a good frame. It still fails when it is empty,
+/// the wrong size, or one colour over almost every sample (a blank frame).
+pub(crate) fn dimmed_frame_rejected(
+    width: i32,
+    height: i32,
+    expect_w: i32,
+    expect_h: i32,
+    samples: &[[u8; 3]],
+) -> bool {
+    samples.is_empty()
+        || width != expect_w
+        || height != expect_h
+        || dominant_color_fraction(samples) >= 0.97
+}
+
 /// Plate-panel fill, `Color::from_rgb(0.72, 0.58, 0.36)`.
 const ENCOUNTER_PLATE_RGB: [u8; 3] = [184, 148, 92];
 /// Action-button fill, `Color::from_rgb(0.55, 0.42, 0.24)`.
@@ -1438,31 +1454,31 @@ pub(crate) fn class_label(class_name: &str) -> String {
 pub(crate) fn upgrade_summary(def: &portlight_sim::content::UpgradeDef) -> String {
     let mut parts = Vec::new();
     if def.speed_bonus != 0.0 {
-        parts.push(format!("speed +{}", format_amount(def.speed_bonus)));
+        parts.push(format!("Speed +{}", format_amount(def.speed_bonus)));
     }
     if def.speed_penalty != 0.0 {
-        parts.push(format!("speed -{}", format_amount(def.speed_penalty)));
+        parts.push(format!("Speed -{}", format_amount(def.speed_penalty)));
     }
     if def.hull_max_bonus != 0 {
-        parts.push(format!("hull +{}", def.hull_max_bonus));
+        parts.push(format!("Hull +{}", def.hull_max_bonus));
     }
     if def.cargo_bonus != 0 {
-        parts.push(format!("cargo +{}", def.cargo_bonus));
+        parts.push(format!("Cargo +{}", def.cargo_bonus));
     }
     if def.cannon_bonus != 0 {
-        parts.push(format!("cannons +{}", def.cannon_bonus));
+        parts.push(format!("Cannons +{}", def.cannon_bonus));
     }
     if def.maneuver_bonus != 0.0 {
-        parts.push(format!("maneuver +{}", format_amount(def.maneuver_bonus)));
+        parts.push(format!("Maneuver +{}", format_amount(def.maneuver_bonus)));
     }
     if def.storm_resist_bonus != 0.0 {
-        parts.push(format!("storm +{}", format_amount(def.storm_resist_bonus)));
+        parts.push(format!("Storm +{}", format_amount(def.storm_resist_bonus)));
     }
     if def.crew_max_bonus != 0 {
-        parts.push(format!("crew +{}", def.crew_max_bonus));
+        parts.push(format!("Crew +{}", def.crew_max_bonus));
     }
-    // The special is an id (`chain_shot`); it reads as a proper name
-    // (`Chain Shot`).
+    // Every term is title case: stat names (`Hull +15`) and the special's
+    // name (`Chain Shot`, from the id `chain_shot`).
     if !def.special.is_empty() && def.special.is_ascii() {
         parts.push(humanize_id(&def.special));
     }
@@ -3509,13 +3525,23 @@ mod tests {
             .iter()
             .find(|upgrade| upgrade.id == "iron_strapping")
             .unwrap();
-        assert_eq!(strapping.summary, "hull +15");
+        assert_eq!(strapping.summary, "Hull +15");
         let nest = model
             .upgrades
             .iter()
             .find(|upgrade| upgrade.id == "crows_nest")
             .unwrap();
-        assert_eq!(nest.summary, "maneuver +0.05, Danger Reduction");
+        assert_eq!(nest.summary, "Maneuver +0.05, Danger Reduction");
+        // One casing for every upgrade summary: each term starts with a capital.
+        for upgrade in &model.upgrades {
+            for term in upgrade.summary.split(", ") {
+                assert!(
+                    term.chars().next().is_some_and(|c| c.is_ascii_uppercase()),
+                    "{}: {term}",
+                    upgrade.id
+                );
+            }
+        }
         for line in model.flagship.lines(model.silver, &model.fleet_label) {
             assert!(line.is_ascii(), "{line}");
         }
@@ -4041,5 +4067,18 @@ mod tests {
         {
             assert!(!text.contains('_'), "{text}");
         }
+    }
+
+    #[test]
+    fn dimmed_frame_gate_accepts_a_mostly_ink_frame_with_a_card() {
+        let ink = [20, 28, 41];
+        let text = [94, 82, 64];
+        let mut dimmed = vec![ink; 90];
+        dimmed.extend(vec![text; 10]);
+        assert!(frame_mostly_flat(&dimmed));
+        assert!(!dimmed_frame_rejected(1280, 720, 1280, 720, &dimmed));
+        assert!(dimmed_frame_rejected(1280, 720, 1280, 720, &[ink; 100]));
+        assert!(dimmed_frame_rejected(1280, 800, 1280, 720, &dimmed));
+        assert!(dimmed_frame_rejected(0, 0, 1280, 720, &[]));
     }
 }

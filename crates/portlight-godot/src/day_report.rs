@@ -18,10 +18,11 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use godot::builtin::Side;
 use godot::classes::control::{LayoutPreset, MouseFilter, SizeFlags};
 use godot::classes::text_server::{AutowrapMode, OverrunBehavior};
 use godot::classes::{
-    Button, ColorRect, Label, PanelContainer, ScrollContainer, StyleBoxFlat, VBoxContainer,
+    Button, ColorRect, Control, Label, PanelContainer, ScrollContainer, StyleBoxFlat, VBoxContainer,
 };
 use godot::prelude::*;
 use portlight_sim::content;
@@ -325,6 +326,10 @@ fn build_scrim() -> Gd<ColorRect> {
 
 /// Show or hide the dim behind the card. While shown it stops every click
 /// that misses the card.
+///
+/// It also keeps the keyboard on the card: while the dim is up, Tab, Shift+Tab
+/// and the arrow keys all land back on Close, so no key reaches a button on
+/// the screen underneath. Escape closes the card and nothing else.
 pub(crate) fn set_scrim(nodes: &mut DayReportNodes, on: bool) {
     nodes.scrim.set_visible(on);
     nodes.scrim.set_mouse_filter(if on {
@@ -332,6 +337,40 @@ pub(crate) fn set_scrim(nodes: &mut DayReportNodes, on: bool) {
     } else {
         MouseFilter::IGNORE
     });
+    // `.` names the control itself; an empty path restores the default order.
+    let target = if on {
+        NodePath::from(".")
+    } else {
+        NodePath::default()
+    };
+    nodes.close.set_focus_next(&target);
+    nodes.close.set_focus_previous(&target);
+    for side in KEY_SIDES {
+        nodes.close.set_focus_neighbor(side, &target);
+    }
+}
+
+const KEY_SIDES: [Side; 4] = [Side::LEFT, Side::TOP, Side::RIGHT, Side::BOTTOM];
+
+/// True when Close is back to the default focus order (no trap).
+pub(crate) fn keyboard_free(nodes: &DayReportNodes) -> bool {
+    nodes.close.get_focus_next().is_empty()
+        && nodes.close.get_focus_previous().is_empty()
+        && KEY_SIDES
+            .into_iter()
+            .all(|side| nodes.close.get_focus_neighbor(side).is_empty())
+}
+
+/// True when every focus move from Close (Tab, Shift+Tab, four arrows) comes
+/// straight back to Close.
+pub(crate) fn keyboard_trapped(nodes: &DayReportNodes) -> bool {
+    let close = nodes.close.clone().upcast::<Control>();
+    let same = |found: Option<Gd<Control>>| found.is_some_and(|node| node == close);
+    same(nodes.close.find_next_valid_focus())
+        && same(nodes.close.find_prev_valid_focus())
+        && KEY_SIDES
+            .into_iter()
+            .all(|side| same(nodes.close.find_valid_focus_neighbor(side)))
 }
 
 pub(crate) fn scrim_shown(nodes: &DayReportNodes) -> bool {
