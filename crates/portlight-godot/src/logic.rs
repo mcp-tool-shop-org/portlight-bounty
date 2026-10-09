@@ -519,6 +519,16 @@ pub(crate) fn display_or_humanized(display: Option<&str>, id: &str) -> String {
     }
 }
 
+/// The Log line at departure. A paid port fee is named; a zero fee (never
+/// today) reads as the plain form.
+pub(crate) fn departed_line(name: &str, fee: i64) -> String {
+    if fee > 0 {
+        format!("Departed for {name} - Port fee {fee} silver")
+    } else {
+        format!("Departed for {name}.")
+    }
+}
+
 /// One plain receipt line for a fight that ended without a win. Terms in
 /// order Silver, Crew, Hull, Cargo; zero terms omitted (R4). No odds, no
 /// advice, no Trust or Standing.
@@ -4170,5 +4180,34 @@ mod tests {
         assert!(dimmed_frame_rejected(1280, 720, 1280, 720, &[ink; 100]));
         assert!(dimmed_frame_rejected(1280, 800, 1280, 720, &dimmed));
         assert!(dimmed_frame_rejected(0, 0, 1280, 720, &[]));
+    }
+
+    #[test]
+    fn departed_line_names_the_fee() {
+        assert_eq!(
+            departed_line("Silva Bay", 5),
+            "Departed for Silva Bay - Port fee 5 silver"
+        );
+        assert_eq!(
+            departed_line("Silva Bay", 1),
+            "Departed for Silva Bay - Port fee 1 silver"
+        );
+    }
+
+    #[test]
+    fn departed_line_omits_a_zero_fee() {
+        assert_eq!(departed_line("Silva Bay", 0), "Departed for Silva Bay.");
+        assert_eq!(departed_line("Silva Bay", -3), "Departed for Silva Bay.");
+    }
+
+    #[test]
+    fn departed_line_is_ascii_and_uses_the_display_name() {
+        let name = display_or_humanized(Some("Silva B\u{e1}y"), "silva_bay");
+        assert_eq!(name, "Silva Bay");
+        let line = departed_line(&name, 5);
+        assert!(line.is_ascii(), "{line}");
+        assert!(!line.contains('_'), "{line}");
+        let missing = departed_line(&display_or_humanized(None, "salt_spit_cove"), 5);
+        assert_eq!(missing, "Departed for Salt Spit Cove - Port fee 5 silver");
     }
 }

@@ -80,19 +80,20 @@ use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, at_sea, board_confirm_line, buy_confirm_line,
     buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
-    cycle_index, day_log_lines, dimmed_frame_rejected, display_or_humanized, dock_confirm_line,
-    duel_button_enabled, empty_lane_note, encounter_frame_rejected, facts_for_catalog_captain,
-    facts_from_agency, facts_from_step, frame_mostly_flat, frame_samples, hire_confirm_line,
-    hire_needs_confirm, humanize_id, install_confirm_line, layout_fits_window, newgame_copy,
-    newgame_frame_rejected, player_ship, present, recruit_confirm_line, save_confirm_title,
-    save_slot_label, sell_confirm_line, services_line, session_text, shipyard_frame_rejected,
-    shipyard_model, skill_confirm_line, stance_duel_visible, status_header, template_player_ship,
-    train_confirm_line, ui_sentence, victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts,
-    NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE,
-    CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD, NEWGAME_SHOT_H,
-    NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY,
-    PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
-    SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    cycle_index, day_log_lines, departed_line, dimmed_frame_rejected, display_or_humanized,
+    dock_confirm_line, duel_button_enabled, empty_lane_note, encounter_frame_rejected,
+    facts_for_catalog_captain, facts_from_agency, facts_from_step, frame_mostly_flat,
+    frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id, install_confirm_line,
+    layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship, present,
+    recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line, services_line,
+    session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
+    status_header, template_player_ship, train_confirm_line, ui_sentence, victory_receipt_lines,
+    CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase,
+    ShipyardModel, StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE,
+    CREW_STORES_SUBHEAD, NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE,
+    NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION,
+    SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
+    SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -689,6 +690,8 @@ struct PortlightGame {
     departure_checked: bool,
     /// `--departure-check-screen` waits for layout at step 3, then finishes.
     departure_pending: Option<DepartureSmoke>,
+    /// `chart-at-sea-first.png`: 2 = wait for the chart to redraw, 1 = shoot.
+    at_sea_shot_pending: u8,
     departure_shot_dir: Option<String>,
     /// T-Q. Units per Buy/Sell press. Godot memory only; never saved.
     trade_qty: i64,
@@ -868,6 +871,7 @@ impl IControl for PortlightGame {
             departure_dest: None,
             departure_checked: false,
             departure_pending: None,
+            at_sea_shot_pending: 0,
             departure_shot_dir: None,
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
@@ -1110,6 +1114,9 @@ impl IControl for PortlightGame {
             return;
         }
         if self.advance_departure_smoke() {
+            return;
+        }
+        if self.advance_at_sea_shot() {
             return;
         }
         if self.advance_loss_outcome_shot() {
@@ -4118,23 +4125,23 @@ impl PortlightGame {
                     .insert(port_id, prices);
             }
         }
+        let silver_before = self.smoke_silver();
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
             };
             session.depart(dest).map(|_| {
-                session
-                    .world()
-                    .port(dest)
-                    .map(|port| port.name.clone())
-                    .unwrap_or_else(|| humanize_id(dest))
+                let display = session.world().port(dest).map(|port| port.name.as_str());
+                display_or_humanized(display, dest)
             })
         };
         match result {
             Ok(name) => {
                 self.market_notice.clear();
                 self.play_sfx("sfx_chart_sail_depart");
-                self.push_log(format!("Departed for {name}."));
+                // The fee is what the session took: silver before less after.
+                let fee = silver_before - self.smoke_silver();
+                self.push_log(departed_line(&name, fee));
             }
             Err(err) => self.push_log(err.to_string()),
         }
@@ -12366,7 +12373,7 @@ impl PortlightGame {
             self.shoot_departure_worst_case(smoke.capture);
             self.departure_doc = smoke.real_doc.take();
             self.sync_departure_check();
-            self.finish_departure_smoke(smoke.silver);
+            self.finish_departure_smoke(smoke.silver, smoke.capture);
             return false;
         }
         self.assert_departure_check_fits();
@@ -12424,7 +12431,7 @@ impl PortlightGame {
     }
 
     /// Steps 4-7 on the real panel document.
-    fn finish_departure_smoke(&mut self, silver: i64) {
+    fn finish_departure_smoke(&mut self, silver: i64, capture: bool) {
         let log = self.log_lines.clone();
 
         // Step 4: Escape is Stay in port.
@@ -12483,6 +12490,17 @@ impl PortlightGame {
         }
 
         // Step 7: Sail anyway departs (same day).
+        let silver_before = self.smoke_silver();
+        let catalog_fee = self
+            .session
+            .as_ref()
+            .and_then(|session| {
+                let world = session.world();
+                world
+                    .port(&world.voyage.destination_id)
+                    .map(|port| port.port_fee)
+            })
+            .unwrap_or(0);
         self.perform(Action::DepartureSail);
         self.expect_departure_closed("Sail anyway");
         let dest = self
@@ -12497,16 +12515,49 @@ impl PortlightGame {
                 self.smoke_day()
             ));
         }
-        if !self
-            .log_lines
-            .iter()
-            .any(|line| line == "Departed for Sun Harbor.")
-        {
-            self.fail_departure("Departure smoke: no 'Departed for Sun Harbor.' log line.");
+        let dropped = silver_before - self.smoke_silver();
+        let fee_line = self.log_lines.iter().find_map(|line| {
+            line.strip_prefix("Departed for Sun Harbor - Port fee ")
+                .and_then(|rest| rest.strip_suffix(" silver"))
+                .and_then(|n| n.parse::<i64>().ok())
+        });
+        match fee_line {
+            // The captain's pricing modifier can lower the catalog fee (never raise it).
+            Some(fee) if fee == dropped && (1..=catalog_fee.max(1)).contains(&fee) => {
+                godot_print!("Departure smoke: departed line names the port fee {fee}");
+            }
+            other => self.fail_departure(format!(
+                "Departure smoke: departed line fee {other:?}, silver dropped {dropped}, catalog fee {catalog_fee}; log {:?}.",
+                self.log_lines
+            )),
         }
         self.check_at_sea_copy();
         self.check_departure_worst_case();
         self.departure_checked = true;
+        if capture {
+            // The chart right after Sail anyway: status, lane note, Log line.
+            self.at_sea_shot_pending = 2;
+        }
+    }
+
+    /// Saves `chart-at-sea-first.png` once the chart has drawn after Sail
+    /// anyway.
+    fn advance_at_sea_shot(&mut self) -> bool {
+        match self.at_sea_shot_pending {
+            0 => return false,
+            2 => {
+                self.at_sea_shot_pending = 1;
+                self.capture_frames = DEPARTURE_WORST_FRAMES;
+                return true;
+            }
+            _ => self.at_sea_shot_pending = 0,
+        }
+        if let Some(dir) = self.departure_shot_dir.clone() {
+            if !self.save_shot(&format!("{dir}/chart-at-sea-first.png"), false) {
+                self.capture_failed = true;
+            }
+        }
+        false
     }
 
     /// Right after Sail anyway the lane box points at Next day, and the
