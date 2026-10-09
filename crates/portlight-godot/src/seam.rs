@@ -5,7 +5,7 @@
 //! Those close-ups are [`portlight_chart::quay_paving_crop`]: zoom 1 is
 //! `(340, 160, 360, 340)`, and zoom 0.72 is that same world window.
 //! The flat deck close-ups `flat-deck-z100.png` and `flat-deck-z072.png`
-//! (Addendum X) are [`portlight_chart::flat_deck_crop`]: zoom 1 is
+//! are [`portlight_chart::flat_deck_crop`]: zoom 1 is
 //! `(224, 72, 432, 352)`, and zoom 0.72 is that same world window.
 //!
 //! The layout is validated before any PNG is written. An illegal layout
@@ -153,7 +153,7 @@ impl HarbourSeam {
         self.save_closeup(name, quay_paving_crop(zoom));
     }
 
-    /// Flat deck close-up (Addendum X), same rules as the quay close-up.
+    /// Flat deck close-up, same rules as the quay close-up.
     fn save_flat_deck_closeup(&mut self, name: &str, zoom: f32) {
         self.save_closeup(name, flat_deck_crop(zoom));
     }

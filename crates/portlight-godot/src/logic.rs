@@ -86,7 +86,7 @@ const ENCOUNTER_BUTTON_RGB: [u8; 3] = [140, 107, 61];
 
 /// Encounter captures do not use [`capture_frame_rejected`].
 ///
-/// Addendum M.1 shrink-wraps the plate, so the ink ground `(20, 28, 41)`
+/// The UI plate layout shrink-wraps the plate, so the ink ground `(20, 28, 41)`
 /// covers most of a 1280×720 frame (measured at about 93%). That is the
 /// signed-off layout, not a blank shot. A frame still fails when it is empty,
 /// the wrong size, or missing the plate panel and a filled button.
@@ -187,7 +187,7 @@ pub(crate) fn stance_duel_visible(screen_open: bool, pending_duel: bool) -> bool
     pending_duel && !screen_open
 }
 
-/// Exact integer scale for a plate in a UI panel. Addendum M.1.
+/// Exact integer scale for a plate in a UI panel.
 pub(crate) const UI_PLATE_SCALE: i32 = 2;
 /// Padding on each side of that plate. A 64×64 sloop is a 168×168 panel.
 pub(crate) const UI_PLATE_PAD: i32 = 20;
@@ -258,7 +258,7 @@ pub(crate) fn session_text(message: &str, flavor: &str) -> String {
     }
 }
 
-/// Display filter for sim text (GD (c)): an em or en dash becomes the ASCII
+/// Display filter for sim text: an em or en dash becomes the ASCII
 /// ` - ` separator, a Unicode minus becomes `-`, curly quotes become straight
 /// quotes, an ellipsis becomes `...` and a middle dot becomes ` - `. Letters
 /// are left alone, so a name keeps its accents.
@@ -1461,11 +1461,10 @@ pub(crate) fn upgrade_summary(def: &portlight_sim::content::UpgradeDef) -> Strin
     if def.crew_max_bonus != 0 {
         parts.push(format!("crew +{}", def.crew_max_bonus));
     }
-    if !def.special.is_empty() {
-        let words = def.special.replace('_', " ");
-        if words.is_ascii() {
-            parts.push(words);
-        }
+    // The special is an id (`chain_shot`); it reads as a proper name
+    // (`Chain Shot`).
+    if !def.special.is_empty() && def.special.is_ascii() {
+        parts.push(humanize_id(&def.special));
     }
     if parts.is_empty() {
         "Fitted upgrade".to_string()
@@ -3516,7 +3515,7 @@ mod tests {
             .iter()
             .find(|upgrade| upgrade.id == "crows_nest")
             .unwrap();
-        assert_eq!(nest.summary, "maneuver +0.05, danger reduction");
+        assert_eq!(nest.summary, "maneuver +0.05, Danger Reduction");
         for line in model.flagship.lines(model.silver, &model.fleet_label) {
             assert!(line.is_ascii(), "{line}");
         }

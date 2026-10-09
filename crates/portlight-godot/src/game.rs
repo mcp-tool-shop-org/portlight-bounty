@@ -98,7 +98,7 @@ use crate::newgame_screen::{self, NewgameNodes};
 use crate::playtest::{
     action_playtest_id, blocking_overlay, hunt_playtest_id, implicit_dismiss, offer_scope,
     parse_playtest_id, sail_offer_label, BlockingOverlay, ImplicitDismiss, OfferLayer, OfferScope,
-    PlaytestCommand,
+    PlaytestCommand, BLOCKING_DRAW_ORDER,
 };
 use crate::shipyard_screen::{self, ShipyardNodes};
 
@@ -656,7 +656,7 @@ struct PortlightGame {
     day_report_checked: bool,
     day_report_shot_dir: Option<String>,
     /// The insured expiry line the expired smoke saw on the real Day 21 card;
-    /// the `day-report-expired.png` frame leads with it (AD #62 soft).
+    /// the `day-report-expired.png` frame leads with it.
     expired_frame_line: Option<String>,
     day_report_shot: Option<DayReportShot>,
     contract_strip_nodes: Option<ContractStripNodes>,
@@ -681,7 +681,7 @@ struct PortlightGame {
     trade_checked: bool,
     market_paid_shot_dir: Option<String>,
     market_paid_shot: Option<MarketPaidShot>,
-    /// AD frame: Outcome card after a scripted non-win (section 10.3 receipt).
+    /// Frame: Outcome card after a scripted non-win (section 10.3 receipt).
     loss_outcome_checked: bool,
     loss_outcome_shot_dir: Option<String>,
     loss_outcome_pending: bool,
@@ -692,6 +692,7 @@ enum HarbourShot {
     Warehouse,
     Broker,
     Finance,
+    Insurance,
 }
 
 impl HarbourShot {
@@ -700,6 +701,7 @@ impl HarbourShot {
             Self::Warehouse => "harbour-warehouse.png",
             Self::Broker => "harbour-broker.png",
             Self::Finance => "harbour-finance.png",
+            Self::Insurance => "harbour-insurance.png",
         }
     }
 
@@ -708,6 +710,7 @@ impl HarbourShot {
             Self::Warehouse => harbour_screen::ANCHOR_WAREHOUSE,
             Self::Broker => harbour_screen::ANCHOR_BROKER,
             Self::Finance => harbour_screen::ANCHOR_FINANCE,
+            Self::Insurance => harbour_screen::ANCHOR_INSURANCE,
         }
     }
 }
@@ -866,6 +869,7 @@ impl IControl for PortlightGame {
             .map(|path| resolve_repo_path(&path));
         self.save_base = std::path::PathBuf::from(resolve_repo_path("."));
         self.build_ui();
+        self.check_layer_order();
         if user_arg("--newgame-screen") {
             self.smoke = true;
             let capture = newgame_frames_requested(self.shot_path.is_some());
@@ -1042,6 +1046,11 @@ impl IControl for PortlightGame {
         self.capture_frames -= 1;
         if self.capture_frames == 2 {
             self.apply_shipyard_scroll();
+            // A desk rebuilt for the next shot has laid out by now; scroll
+            // again so the section sits at the top of the frame.
+            if let Some(phase) = self.harbour_shot {
+                self.scroll_harbour(phase.anchor());
+            }
         }
         if self.capture_frames > 0 {
             return;
@@ -1219,7 +1228,7 @@ impl IControl for PortlightGame {
 impl PortlightGame {
     fn launch_scripted(&mut self) {
         if user_arg("--encounter-loss-outcome") {
-            // AD: Outcome card with a section 10.3 non-win receipt (Crew term).
+            // Outcome card with a non-win receipt (Crew term).
             self.smoke = true;
             self.loss_outcome_checked = true;
             let capture = loss_outcome_frames_requested(self.shot_path.is_some());
@@ -1533,11 +1542,6 @@ impl PortlightGame {
         column.add_child(&log);
         self.log_label = Some(log);
 
-        let mut encounter_screen = encounter_screen::build_encounter_screen();
-        self.base_mut().add_child(&encounter_screen.root);
-        encounter_screen::fill_parent(&mut encounter_screen.root);
-        self.encounter_nodes = Some(encounter_screen);
-
         let mut newgame = newgame_screen::build_newgame_screen();
         self.base_mut().add_child(&newgame.root);
         newgame_screen::fill_parent(&mut newgame.root);
@@ -1604,6 +1608,12 @@ impl PortlightGame {
         hunt_screen::fill_parent(&mut hunt.root);
         self.hunt_nodes = Some(hunt);
 
+        // The encounter is drawn above every desk (see BLOCKING_DRAW_ORDER).
+        let mut encounter_screen = encounter_screen::build_encounter_screen();
+        self.base_mut().add_child(&encounter_screen.root);
+        encounter_screen::fill_parent(&mut encounter_screen.root);
+        self.encounter_nodes = Some(encounter_screen);
+
         let mut day_report = day_report::build_day_report_screen();
         stamp_playtest_id(
             &mut day_report.close,
@@ -1616,6 +1626,10 @@ impl PortlightGame {
             };
             gd.bind_mut().perform(Action::CloseDayReport);
         });
+        self.base_mut().add_child(&day_report.scrim);
+        day_report
+            .scrim
+            .set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
         self.base_mut().add_child(&day_report.root);
         day_report::place_card(&mut day_report.root);
         self.day_report_nodes = Some(day_report);
@@ -2355,8 +2369,12 @@ impl PortlightGame {
         let next = match phase {
             HarbourShot::Warehouse => Some(HarbourShot::Broker),
             HarbourShot::Broker => Some(HarbourShot::Finance),
-            HarbourShot::Finance => None,
+            HarbourShot::Finance => Some(HarbourShot::Insurance),
+            HarbourShot::Insurance => None,
         };
+        if matches!(next, Some(HarbourShot::Insurance)) {
+            self.stage_harbour_insurance();
+        }
         if let Some(next) = next {
             self.scroll_harbour(next.anchor());
             self.harbour_shot = Some(next);
@@ -2365,6 +2383,23 @@ impl PortlightGame {
         } else {
             self.harbour_shot = None;
             false
+        }
+    }
+
+    /// Insurance frame: swap in the staged session (a voyage policy and a
+    /// guarantee on a settled contract) and reopen the desk on it.
+    fn stage_harbour_insurance(&mut self) {
+        match harbour_screen::insurance_stage_session() {
+            Ok(session) => {
+                self.close_harbour();
+                self.session = Some(session);
+                self.open_harbour();
+                let text = self.harbour_body_text();
+                if !text.contains(" to Corsair's Rest.") || !text.contains(" Target ") {
+                    self.fail_harbour("Harbour smoke: insurance stage rows missing.");
+                }
+            }
+            Err(err) => self.fail_harbour(format!("Harbour smoke: insurance stage: {err}")),
         }
     }
 
@@ -4366,7 +4401,7 @@ impl PortlightGame {
                     })
                     .unwrap_or((0, 0));
                 self.push_log(format!(
-                    "Hired 1 sailor. Crew {crew}. Silver {} -> {silver}.",
+                    "Hired 1 sailor. Crew {crew}. Silver {} to {silver}.",
                     before.unwrap_or(silver)
                 ));
             }
@@ -4404,7 +4439,7 @@ impl PortlightGame {
                     })
                     .unwrap_or((0, 0));
                 self.push_log(format!(
-                    "Bought provisions. Days {} -> {days}. Silver {silver}.",
+                    "Bought provisions. Days {} to {days}. Silver {silver}.",
                     before.unwrap_or(days)
                 ));
             }
@@ -4821,7 +4856,9 @@ impl PortlightGame {
         });
         body.add_child(&emergency_button);
 
-        body.add_child(&harbour_screen::section_label("Insurance"));
+        let mut insurance = harbour_screen::section_label("Insurance");
+        insurance.set_name(harbour_screen::ANCHOR_INSURANCE);
+        body.add_child(&insurance);
         for line in &model.policy_lines {
             body.add_child(&harbour_screen::cream_label(line));
         }
@@ -6729,7 +6766,7 @@ impl PortlightGame {
         let ship = world.captain.ship.as_ref();
         let place = match world.voyage.status {
             VoyageStatus::AtSea => format!(
-                "At sea  {} -> {}  {}/{}",
+                "At sea  {} to {}  {}/{}",
                 port_name(world, &world.voyage.origin_id),
                 port_name(world, &world.voyage.destination_id),
                 world.voyage.progress,
@@ -6913,7 +6950,7 @@ impl PortlightGame {
 
     fn push_log(&mut self, line: impl Into<String>) {
         // R12: sim flavour carries `[bold]` / `[dim]` tags; a Label prints them.
-        // GD (c): sim em / en dashes and other non-ASCII punctuation print as
+        // Sim em / en dashes and other non-ASCII punctuation print as
         // ASCII (` - `), after the markup is gone.
         self.log_lines.push(crate::logic::ascii_punctuation(
             &crate::logic::strip_markup(&line.into()),
@@ -7461,7 +7498,7 @@ impl PortlightGame {
         }
         if count > 0 {
             box_node.add_child(&row);
-            // GD Outcome ruling: every column gets one fixed minimum width (the
+            // Outcome layout: every column gets one fixed minimum width (the
             // widest cell plus padding), so the gaps are even. Order unchanged.
             if preview.is_some() {
                 encounter_screen::even_choice_columns(&row);
@@ -7812,6 +7849,17 @@ impl PortlightGame {
             return;
         };
         day_report::set_open(&mut nodes, open);
+        // Over a blocking screen the card dims and blocks it: no clicks reach
+        // the screen behind, and keyboard focus moves to the card's Close.
+        let over_blocking = open && self.top_blocking().is_some();
+        let was_dimmed = day_report::scrim_shown(&nodes);
+        day_report::set_scrim(&mut nodes, over_blocking);
+        if over_blocking && !was_dimmed {
+            if let Some(mut viewport) = self.base().get_viewport() {
+                viewport.gui_release_focus();
+            }
+            nodes.close.grab_focus();
+        }
         if !open {
             return;
         }
@@ -7841,6 +7889,13 @@ impl PortlightGame {
                 .is_none_or(|nodes| !day_report::overlay_visible(nodes))
         {
             self.fail_day_report("Day-report smoke: forced full card was not visible.");
+        }
+        if self
+            .day_report_nodes
+            .as_ref()
+            .is_some_and(day_report::scrim_shown)
+        {
+            self.fail_day_report("Day-report smoke: the card dimmed the chart.");
         }
         let text = self
             .day_report_nodes
@@ -7889,6 +7944,7 @@ impl PortlightGame {
             self.fail_day_report("Day-report smoke: Hunt left the report open.");
         }
         self.close_hunt();
+        self.check_failed_press_after_close(day);
         // Quiet day at sea: Prices stay empty (§13.2); no deadline/heal/claimable.
         let departed = {
             let Some(session) = self.session.as_mut() else {
@@ -7911,6 +7967,59 @@ impl PortlightGame {
             self.push_log(
                 "Day-report smoke: full, deadline, overlay-close, quiet hide.".to_string(),
             );
+        }
+    }
+
+    /// A bridge chart press under the report closes the card first. When the
+    /// action then fails, its failure line still shows in the log and in the
+    /// observation text: the close never swallows the failure.
+    fn check_failed_press_after_close(&mut self, day: i64) {
+        // Runs on a copy of the session: the rest of the smoke keeps its silver.
+        let saved = self.session.clone();
+        let saved_log = self.log_lines.clone();
+        self.check_failed_press_on_copy(day);
+        self.session = saved;
+        self.log_lines = saved_log;
+        self.refresh();
+    }
+
+    fn check_failed_press_on_copy(&mut self, day: i64) {
+        // Spend down to less than one Stores +5, so the press fails.
+        for _ in 0..1000 {
+            let Some(session) = self.session.as_mut() else {
+                break;
+            };
+            if session.provision(5).is_err() {
+                break;
+            }
+        }
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        let prior_ok = self.smoke_ok;
+        let lines_before = self.log_lines.len();
+        let reply = self.playtest_choose("chart.provisions").to_string();
+        self.smoke_ok = prior_ok;
+        let failure = self.log_lines.last().cloned().unwrap_or_default();
+        let observed = self
+            .playtest_observation_dict()
+            .get("text")
+            .map(|text| text.to::<GString>().to_string())
+            .unwrap_or_default();
+        if !reply.is_empty() {
+            self.fail_day_report(format!(
+                "Day-report smoke: Stores press under the card was refused: {reply}"
+            ));
+        } else if self.day_report_open {
+            self.fail_day_report("Day-report smoke: a chart press left the card open.");
+        } else if self.log_lines.len() == lines_before
+            || !failure.starts_with("Need ")
+            || !failure.contains("provisions")
+            || !observed.contains(&failure)
+        {
+            self.fail_day_report(format!(
+                "Day-report smoke: failure after close not shown (last log '{failure}')."
+            ));
+        } else {
+            godot_print!("day report closed first; failed press still showed: {failure}");
         }
     }
 
@@ -8321,7 +8430,7 @@ impl PortlightGame {
             self.fail_day_report("Day-report expired: failure line before the expiry.");
             return false;
         }
-        // GD OQ2: the grace-day hint names the sale, not the desk.
+        // The grace-day hint names the sale, not the desk.
         let grace_next = self
             .session
             .as_ref()
@@ -8371,7 +8480,7 @@ impl PortlightGame {
             self.fail_day_report("Day-report expired: Escape left the card up.");
             return false;
         }
-        // The desk Recent row (GD #62: from fields, `{d}/{r}`, MUTED).
+        // The desk Recent row (from fields, `{d}/{r}`, MUTED).
         if !self.expect_expired_recent("Expired: Grain for Corsair's Rest - 0/23") {
             return false;
         }
@@ -8862,7 +8971,7 @@ impl PortlightGame {
             self.fail_contract_strip("Contract-strip smoke: missing ASCII separator.");
         }
         // Destination hint on single segment: the port shows exactly once,
-        // as `- to {Port}` or in the title (#63 GD note 5).
+        // as `- to {Port}` or in the title.
         let port = self
             .session
             .as_ref()
@@ -10221,6 +10330,48 @@ impl PortlightGame {
         self.expect_no_end_receipt("Encounter smoke");
     }
 
+    /// A Day's report raised over an open encounter dims it and takes its
+    /// input: the scrim is up and stops clicks, and Close holds the focus.
+    /// Closing the report gives the encounter back.
+    fn check_report_dims_encounter(&mut self) {
+        let prior_doc = self.day_report_doc.clone();
+        let day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(1);
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        let (dimmed, stops, focused) = self
+            .day_report_nodes
+            .as_ref()
+            .map(|nodes| {
+                (
+                    day_report::scrim_shown(nodes),
+                    nodes.scrim.get_mouse_filter() == MouseFilter::STOP,
+                    nodes.close.has_focus(),
+                )
+            })
+            .unwrap_or_default();
+        if dimmed && stops && focused {
+            godot_print!("day report over encounter: dimmed, blocks clicks, Close focused");
+        } else {
+            self.smoke_ok = false;
+            self.push_log(format!(
+                "Report over encounter: dimmed {dimmed}, stops clicks {stops}, Close focused {focused}."
+            ));
+        }
+        self.close_day_report();
+        self.day_report_doc = prior_doc;
+        let still = self
+            .day_report_nodes
+            .as_ref()
+            .is_some_and(day_report::scrim_shown);
+        if still {
+            self.smoke_ok = false;
+            self.push_log("Report over encounter: the dim stayed after Close.".to_string());
+        }
+    }
+
     fn report_encounter_smoke(&mut self) {
         self.run_bounty_encounter();
         self.encounter_checked = true;
@@ -10258,6 +10409,7 @@ impl PortlightGame {
         }
         self.open_bounty_hunt(SCRIPTED_CAPTAIN);
         self.expect_phase(ScreenPhase::Approach, "bounty approach");
+        self.check_report_dims_encounter();
         let pending = self
             .session
             .as_ref()
@@ -10955,91 +11107,83 @@ impl PortlightGame {
 
     /// F10: the node whose buttons are offered. Under a blocking overlay
     /// only that overlay's actions are offered; otherwise everything drawn.
-    /// Departure check and Day's report never narrow the offer.
+    /// Departure check and Day's report never narrow the offer on their own.
     fn offer_root(&self) -> Gd<Node> {
-        let shown = |root: Option<Gd<Control>>| root.is_some_and(|root| root.is_visible_in_tree());
-        let encounter = self
-            .encounter_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let hunt = self
-            .hunt_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let crew = self
-            .crew_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let contracts = self
-            .contracts_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let shipyard = self
-            .shipyard_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let harbour = self
-            .harbour_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let journal = self
-            .journal_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let newgame = self
-            .newgame_nodes
-            .as_ref()
-            .map(|nodes| nodes.root.clone().upcast::<Control>());
-        let encounter_open = self.encounter.as_ref().and_then(present).is_some();
-        let open = [
-            (
-                BlockingOverlay::Encounter,
-                encounter_open && shown(encounter.clone()),
-            ),
-            (BlockingOverlay::Hunt, self.hunt_open && shown(hunt.clone())),
-            (BlockingOverlay::Crew, self.crew_open && shown(crew.clone())),
-            (
-                BlockingOverlay::Contracts,
-                self.contracts_open && shown(contracts.clone()),
-            ),
-            (
-                BlockingOverlay::Shipyard,
-                self.shipyard_open && shown(shipyard.clone()),
-            ),
-            (
-                BlockingOverlay::Harbour,
-                self.harbour_open && shown(harbour.clone()),
-            ),
-            (
-                BlockingOverlay::Journal,
-                self.journal_open && shown(journal.clone()),
-            ),
-            (
-                BlockingOverlay::Newgame,
-                self.newgame_page != NewgamePage::Hidden && shown(newgame.clone()),
-            ),
-        ];
+        let top = self.top_blocking();
         let root = match offer_scope(
-            blocking_overlay(&open),
+            top.as_ref().map(|(overlay, _)| *overlay),
             self.day_report_shown(),
             self.departure_shown(),
         ) {
             OfferScope::Everything => None,
             OfferScope::Only(OfferLayer::Departure) => self.departure_root(),
             OfferScope::Only(OfferLayer::DayReport) => self.day_report_root(),
-            OfferScope::Only(OfferLayer::Blocking(overlay)) => match overlay {
-                BlockingOverlay::Encounter => encounter,
-                BlockingOverlay::Hunt => hunt,
-                BlockingOverlay::Crew => crew,
-                BlockingOverlay::Contracts => contracts,
-                BlockingOverlay::Shipyard => shipyard,
-                BlockingOverlay::Harbour => harbour,
-                BlockingOverlay::Journal => journal,
-                BlockingOverlay::Newgame => newgame,
-            },
+            OfferScope::Only(OfferLayer::Blocking(_)) => top.map(|(_, root)| root),
         };
         root.map(|root| root.upcast::<Node>())
             .unwrap_or_else(|| self.to_gd().upcast::<Node>())
+    }
+
+    /// Root node of each input-blocking screen.
+    fn blocking_root(&self, overlay: BlockingOverlay) -> Option<Gd<Control>> {
+        fn up<T: Inherits<Control>>(root: &Gd<T>) -> Gd<Control> {
+            root.clone().upcast::<Control>()
+        }
+        match overlay {
+            BlockingOverlay::Encounter => self.encounter_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Hunt => self.hunt_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Crew => self.crew_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Contracts => self.contracts_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Shipyard => self.shipyard_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Harbour => self.harbour_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Journal => self.journal_nodes.as_ref().map(|n| up(&n.root)),
+            BlockingOverlay::Newgame => self.newgame_nodes.as_ref().map(|n| up(&n.root)),
+        }
+    }
+
+    /// The topmost open, drawn input-blocking screen and its root.
+    fn top_blocking(&self) -> Option<(BlockingOverlay, Gd<Control>)> {
+        let encounter_open = self.encounter.as_ref().and_then(present).is_some();
+        let open: Vec<(BlockingOverlay, bool)> = BLOCKING_DRAW_ORDER
+            .into_iter()
+            .map(|overlay| {
+                let flag = match overlay {
+                    BlockingOverlay::Encounter => encounter_open,
+                    BlockingOverlay::Hunt => self.hunt_open,
+                    BlockingOverlay::Crew => self.crew_open,
+                    BlockingOverlay::Contracts => self.contracts_open,
+                    BlockingOverlay::Shipyard => self.shipyard_open,
+                    BlockingOverlay::Harbour => self.harbour_open,
+                    BlockingOverlay::Journal => self.journal_open,
+                    BlockingOverlay::Newgame => self.newgame_page != NewgamePage::Hidden,
+                };
+                let shown = flag
+                    && self
+                        .blocking_root(overlay)
+                        .is_some_and(|root| root.is_visible_in_tree());
+                (overlay, shown)
+            })
+            .collect();
+        let overlay = blocking_overlay(&open)?;
+        self.blocking_root(overlay).map(|root| (overlay, root))
+    }
+
+    /// Smoke: the blocking screens are drawn in [`BLOCKING_DRAW_ORDER`] (top
+    /// first), so the screen the bridge offers is the one on top.
+    fn check_layer_order(&mut self) {
+        let indices: Vec<(BlockingOverlay, i32)> = BLOCKING_DRAW_ORDER
+            .into_iter()
+            .filter_map(|overlay| {
+                self.blocking_root(overlay)
+                    .map(|root| (overlay, root.get_index()))
+            })
+            .collect();
+        let ordered = indices.len() == BLOCKING_DRAW_ORDER.len()
+            && indices.windows(2).all(|pair| pair[0].1 > pair[1].1);
+        if !ordered {
+            self.smoke_ok = false;
+            godot_print!("Layer order: blocking screens drawn as {indices:?}, want top first");
+        }
     }
 
     fn departure_root(&self) -> Option<Gd<Control>> {
@@ -11303,7 +11447,7 @@ impl PortlightGame {
         let place = if docked.is_empty() {
             match world.voyage.status {
                 VoyageStatus::AtSea => format!(
-                    "{} -> {}",
+                    "{} to {}",
                     port_name(world, &world.voyage.origin_id),
                     port_name(world, &world.voyage.destination_id)
                 ),
@@ -12095,7 +12239,7 @@ impl PortlightGame {
         self.departure_checked = true;
     }
 
-    /// #63 follow-up (AD soft): the tallest document the panel can draw
+    /// The tallest document the panel can draw
     /// (cap lines that each wrap to two rows, plus `+N more`) still fits the
     /// height cap. The panel is closed and the frame is already taken; the
     /// nodes are cleared again after.

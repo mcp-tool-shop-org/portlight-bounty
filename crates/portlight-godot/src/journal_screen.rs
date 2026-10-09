@@ -743,10 +743,8 @@ struct BeatCopy {
 }
 
 /// Titles and texts copied from `crates/portlight-sim/src/narrative.rs` `BEATS`
-/// at `2d3d8b32b7806b547ea101fb28e0ddb0388dcd26`. Em dashes in that catalog
-/// are ASCII hyphens here. One wording differs on purpose: the first-contract
-/// beat reads `Arrive on time` (the sim copy says `Deliver on time`), so the
-/// player sees no `Deliver` step cue outside the contract rows. Follow-on: a
+/// (first copied at `2d3d8b32b7806b547ea101fb28e0ddb0388dcd26`, kept in step
+/// since). Em dashes in that catalog are ASCII hyphens here. Follow-on: a
 /// public `narrative::beat(id)` should replace this table so Godot does not
 /// keep a second copy.
 const BEATS: &[BeatCopy] = &[

@@ -6,11 +6,11 @@
 //! The pier plate is the exact corner set facing the quay, and that cell is
 //! water. Pilings sit on a different open water cell.
 //!
-//! Behind the join quay a quay deck shows flat cells (Addendum X). A kerb of
+//! Behind the join quay a quay deck shows flat cells. A kerb of
 //! `quay_1111` blocks runs along row `1` (cols `-7..=-1`, beside the join
 //! quay) and along col `0` (rows `-8..=0`). Behind it every cell with col
 //! `-7..=-1` and row `-8..=0` is flat deck with no block, drawing the locked
-//! `quay_flag_*` plates the same way a block top does. Addendum X.1: the deck
+//! `quay_flag_*` plates the same way a block top does. The deck
 //! runs past the widest capture view, so no flat back edge meets open water
 //! on camera, and the far kerb ends are off camera too. The camera still
 //! frames the quay, pier, and pilings only, so the deck adds pixels without
@@ -38,9 +38,9 @@ pub fn seam_deck_blocks() -> Vec<(i32, i32)> {
     blocks
 }
 
-/// Flat quay deck cells with no raised block (Addendum X). Both front
+/// Flat quay deck cells with no raised block. Both front
 /// neighbours of each are a quay block or another deck cell, and each back
-/// edge is another deck cell or off camera (Addendum X.1).
+/// edge is another deck cell or off camera.
 pub fn seam_flat_deck() -> Vec<(i32, i32)> {
     let (col_min, col_max) = SEAM_DECK_COLS;
     let (row_min, row_max) = SEAM_DECK_ROWS;
@@ -175,12 +175,11 @@ pub fn seam_camera_center() -> (i32, i32) {
 }
 
 /// The camera's works, the kerb blocks in front of the flat deck, then deck
-/// props (art-gate Y.1).
+/// props.
 ///
-/// The kerb already holds Y.1's back quay `(0,0)` and side kerb `(-1,1)`, so
-/// each block is placed once. Pier root stays water cell `(0,2)` (Addendum
-/// E). The pier head gets bollard+torch; the join, back, and side quays each
-/// get one cargo prop.
+/// The kerb already holds the back quay `(0,0)` and side kerb `(-1,1)`, so
+/// each block is placed once. Pier root stays water cell `(0,2)`. The pier head gets bollard+torch;
+/// the join, back, and side quays each get one cargo prop.
 fn seam_works() -> Vec<HarbourTile> {
     let quay_join = (0, 1);
     let quay_back = (0, 0);
@@ -196,7 +195,7 @@ fn seam_works() -> Vec<HarbourTile> {
         ));
     }
     works.extend([
-        // Pier head: bollard + torch (Y.1 density exception).
+        // Pier head: bollard + torch (the one density exception).
         harbour_prop_tile(pier.0, pier.1, prop_path("bollard_1x1")),
         harbour_prop_tile(pier.0, pier.1, prop_path("torch_1x1")),
         // One prop per quay cell, near the water kerb cells.
@@ -453,7 +452,7 @@ mod tests {
             assert_eq!(tile.screen_x, sx);
             let ground_y = sy + HARBOUR_CELL_H / 2;
             let screen_y = if matches!(tile.layer, HarbourLayer::Land | HarbourLayer::Prop) {
-                // U.4 / P3 land offset 0. Sea datum stays on water and works.
+                // Land offset 0. Sea datum stays on water and works.
                 ground_y
             } else {
                 ground_y - WATER_DATUM_Y
@@ -535,7 +534,7 @@ mod tests {
         assert!(!pier.path.contains("UL_UR"));
         assert_eq!((pilings.col, pilings.row), (2, 0));
         assert!(pilings.col != pier.col || pilings.row != pier.row);
-        // Y.1 prop map: pier head bollard+torch; one cargo prop per quay cell.
+        // Prop map: pier head bollard+torch; one cargo prop per quay cell.
         let props: Vec<_> = tiles
             .iter()
             .filter(|tile| tile.kind == Some(WorkKind::Prop))
@@ -547,7 +546,7 @@ mod tests {
         assert!(props.contains(&((0, 0), "res://assets/landing/props/crate_1x1/beauty.png")));
         assert!(props.contains(&((-1, 1), "res://assets/landing/props/cart_1x1/beauty.png")));
         assert_eq!(props.len(), 5);
-        // Join quay plus the 16-block kerb (Addendum X.1). Y.1's back `(0,0)`
+        // Join quay plus the 16-block kerb. The back `(0,0)`
         // and side `(-1,1)` quays are kerb cells and are placed once.
         assert_eq!(
             tiles
@@ -608,7 +607,7 @@ mod tests {
     #[test]
     fn seam_flat_deck_cells_carry_the_hashed_flag() {
         let tiles = harbour_seam().expect("seam layout");
-        // Cell -> flag pins (Addendum X). A hash change or a moved cell fails here.
+        // Cell -> flag pins. A hash change or a moved cell fails here.
         let pins = [
             ((-2, 0), "quay_flag_a", true),
             ((-1, 0), "quay_flag_b", true),
@@ -631,7 +630,8 @@ mod tests {
                 tile.path.ends_with(&format!("ground/{id}.png")),
                 "({col}, {row})"
             );
-            let want = crate::harbour::harbour_quay_paving_tile(col, row).expect("U.4");
+            let want =
+                crate::harbour::harbour_quay_paving_tile(col, row).expect("quay paving tile");
             assert_eq!(
                 (
                     tile.path,
@@ -717,7 +717,8 @@ mod tests {
                 "zoom {zoom}"
             );
             for (col, row) in [(-1, 0), (-2, 0)] {
-                let tile = crate::harbour::harbour_quay_paving_tile(col, row).expect("U.4");
+                let tile =
+                    crate::harbour::harbour_quay_paving_tile(col, row).expect("quay paving tile");
                 let view = |wx: i32, wy: i32| {
                     (
                         ((wx - cx) as f32 * zoom + 640.0).round() as i32,
@@ -739,7 +740,7 @@ mod tests {
 
     #[test]
     fn seam_flat_deck_has_no_open_back_edge_on_camera() {
-        // Addendum X.1: every flat deck cell is placed like a block top, its
+        // Every flat deck cell is placed like a block top, its
         // fronts are deck height, and each back edge is deck height or lies
         // wholly outside the widest capture view (so outside z1 and both
         // close-ups too).
@@ -785,7 +786,8 @@ mod tests {
                 .filter(|t| t.layer == HarbourLayer::Land && (t.col, t.row) == (col, row))
                 .collect();
             assert_eq!(land.len(), 1, "one flag on flat ({col}, {row})");
-            let want = crate::harbour::harbour_quay_paving_tile(col, row).expect("U.4");
+            let want =
+                crate::harbour::harbour_quay_paving_tile(col, row).expect("quay paving tile");
             assert_eq!(
                 (land[0].path, land[0].screen_x, land[0].screen_y),
                 (want.path, want.screen_x, want.screen_y)

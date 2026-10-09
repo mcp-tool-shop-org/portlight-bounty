@@ -1,4 +1,6 @@
 {
+  "_source": "python-oracle",
+  "_note": "Python oracle snapshot (narrow; wide keys stripped). Not the Rust snapshot. The next-voyage policy expiry note at $.log[5].notes[0] names the policy by its catalog name in Rust; Python prints the spec id. Pinned in parity/expected_divergences.json.",
   "seed": 1,
   "day": 4,
   "trade_seq": 0,

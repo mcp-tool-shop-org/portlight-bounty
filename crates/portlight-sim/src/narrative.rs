@@ -60,7 +60,7 @@ const BEATS: &[BeatDef] = &[
         id: "first_contract",
         phase: "threshold",
         title: "A Binding Word",
-        text: "You sign your name on a contract for the first time. The obligation weighs heavier than any cargo. Deliver on time, and doors open. Fail, and they close.",
+        text: "You sign your name on a contract for the first time. The obligation weighs heavier than any cargo. Arrive on time, and doors open. Fail, and they close.",
         flavor: "",
         hint: "",
     },

@@ -405,7 +405,7 @@ pub(crate) fn good_display_name(id: &str) -> String {
 /// Desk Recent row, same builder as the notices: `Paid: Silver +612 - 23
 /// Grain to Corsair's Rest - early bonus +60`, `Abandoned: Grain for
 /// Corsair's Rest`. No raw outcome type, no sim summary. An expiry adds its
-/// failure terms and progress (GD #62):
+/// failure terms and progress:
 /// `Expired: Silver +60 - Guarantee +105 - Grain for Corsair's Rest - 5/23`.
 /// `guarantee` is the contract-guarantee silver paid for this contract; only
 /// expired rows read it.
@@ -669,7 +669,7 @@ mod tests {
         }
     }
 
-    /// GD M2 ruling: the one shared helper prints Silver only. Trust, standing
+    /// The one shared helper prints Silver only. Trust, standing
     /// and heat are never applied by the sim (nor by Python), so no outcome
     /// surface shows them. Zero silver is omitted (R4).
     #[test]
@@ -687,7 +687,7 @@ mod tests {
         assert_eq!(outcome_terms(&outcome), "");
     }
 
-    /// GD final wording: silver first, `(+N more)`, then the tail from fields.
+    /// Silver first, `(+N more)`, then the tail from fields.
     #[test]
     fn outcome_line_leads_with_silver_and_more_then_the_field_tail() {
         let paid = bonus_paid();
@@ -791,7 +791,7 @@ mod tests {
         }
     }
 
-    /// GD R5: Recent rows use the same builder, no raw type or sim summary.
+    /// Recent rows use the same builder, no raw type or sim summary.
     #[test]
     fn recent_line_is_built_from_fields() {
         assert_eq!(
@@ -810,7 +810,7 @@ mod tests {
             recent_line(&failed("abandoned", -40), 0),
             "Abandoned: Silver -40 - Grain for Corsair's Rest"
         );
-        // Abandoned rows never read the guarantee (GD #62: unchanged).
+        // Abandoned rows never read the guarantee.
         assert_eq!(
             recent_line(&failed("abandoned", 0), 105),
             "Abandoned: Grain for Corsair's Rest"
@@ -823,7 +823,7 @@ mod tests {
         }
     }
 
-    /// GD #62 blocker: expired Recent rows carry Silver, Guarantee and
+    /// Expired Recent rows carry Silver, Guarantee and
     /// `{d}/{r}`, zero terms omitted, catalog names, silver-first.
     #[test]
     fn expired_recent_row_has_terms_and_progress() {

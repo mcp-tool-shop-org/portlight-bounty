@@ -1,7 +1,7 @@
 //! Harbour placement shared by every harbour scene, including the seam plate.
 //!
 //! Water is one layer and does not Y-sort. Quay paving is land ground on the
-//! cells that hold a quay block: art-gate U.4 places it on layer Land at
+//! cells that hold a quay block: it sits on layer Land at
 //! offset `0,0` with y-sort origin `0`. That is the footprint bottom with no
 //! sea datum, so the flag diamond registers on the quay block's top face.
 //! Draw order on that cell is the block, then the paving, then any later
@@ -12,14 +12,14 @@
 //! inserted after the last quay block of its cell, so a deck prop still draws
 //! after the flag.
 //!
-//! Flat deck (art-gate Addendum X): a land cell at quay-top height with no
+//! Flat deck: a land cell at quay-top height with no
 //! raised block draws the same `quay_flag_*` plate, from the same
-//! [`harbour_quay_paving_tile`] (U.4 values and variant hash unchanged). It is
+//! [`harbour_quay_paving_tile`] (same Land values and variant hash). It is
 //! only legal where both front neighbours (`+col` and `+row`) are a quay
 //! block or another flat deck cell, so the diamond never hangs over water and
 //! never needs a front face of its own. It holds no pilings, pier, or quay.
 //!
-//! Addendum X.1: the flag has no wall face, so a flat deck edge against open
+//! The flag has no wall face, so a flat deck edge against open
 //! water reads paper-thin at sea level. Each back neighbour (`-col`, `-row`)
 //! must also be deck height, unless the caller passes a compare frame and
 //! that back edge lies wholly outside it (off camera). There is no edge
@@ -69,7 +69,7 @@ pub enum HarbourFault {
     /// A pier root has to be water, not the quay cell.
     PierOnQuay { col: i32, row: i32 },
     /// More than one prop on a cell that is not a pier head, or a pier-head
-    /// pair that is not bollard+torch (art-gate Y.1 density cap).
+    /// pair that is not bollard+torch (prop density cap).
     PropDensity { col: i32, row: i32, count: usize },
     /// A flat deck cell also holds pilings, a pier, or a quay block.
     FlatDeckOnWork { col: i32, row: i32 },
@@ -77,10 +77,10 @@ pub enum HarbourFault {
     /// deck height, so its flag would hang over water.
     FlatDeckOpenFront { col: i32, row: i32 },
     /// A flat deck cell has a back neighbour (`-col` or `-row`) that is not
-    /// deck height, and that edge shows in the compare frame (Addendum X.1:
-    /// no paper-thin deck rim against open water).
+    /// deck height, and that edge shows in the compare frame (no paper-thin
+    /// deck rim against open water).
     FlatDeckOpenBack { col: i32, row: i32 },
-    /// `quay_flag_*` is not art-gate U.4: layer Land, offset 0,0, y-sort 0.
+    /// `quay_flag_*` is not placed as quay paving: layer Land, offset 0,0, y-sort 0.
     QuayFlagPlacement {
         id: &'static str,
         layer: &'static str,
@@ -118,7 +118,7 @@ impl std::fmt::Display for HarbourFault {
                 y_sort,
             } => write!(
                 f,
-                "{id} must be layer Land, offset 0,0, y_sort 0 (art-gate U.4); \
+                "{id} must be layer Land, offset 0,0, y_sort 0 (quay paving rule); \
                  MANIFEST has layer {layer}, offset {offset_x},{offset_y}, y_sort {y_sort}"
             ),
         }
@@ -128,11 +128,11 @@ impl std::fmt::Display for HarbourFault {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HarbourLayer {
     Water,
-    /// Quay paving ground. U.4 land anchor, drawn after the quay block, or
+    /// Quay paving ground. Land anchor, drawn after the quay block, or
     /// on its own at footprint depth on a flat deck cell.
     Land,
     Work,
-    /// Deck prop at land offset 0 (art-gate P3 / Y.1). Parented under the
+    /// Deck prop at land offset 0. Parented under the
     /// pier or quay on the cell so Y-sort matches the structure and the prop
     /// draws after paving.
     Prop,
@@ -215,7 +215,7 @@ pub fn harbour_water_tile(col: i32, row: i32) -> HarbourTile {
 
 /// Quay paving for one cell. The plate is the manifest `quay_flag_*` entry
 /// for [`crate::assets::quay_flag_variant`]. Screen position is the footprint
-/// bottom plus that entry's layer offset (U.4 is `0,0`, so no sea datum).
+/// bottom plus that entry's layer offset (the Land offset is `0,0`, so no sea datum).
 /// Block tops and flat deck cells both use this one constructor.
 ///
 /// A plate that is not layer Land at offset `0,0` with y-sort `0` returns
@@ -239,7 +239,7 @@ pub fn harbour_quay_paving_tile(col: i32, row: i32) -> Result<HarbourTile, Harbo
     })
 }
 
-/// Art-gate U.4 for one manifest plate. Anything else is a fault the seam
+/// Quay paving placement for one manifest plate. Anything else is a fault the seam
 /// can print; it is not a panic.
 fn quay_flag_u4(plate: &crate::assets::QuayFlagPlate) -> Result<(), HarbourFault> {
     if plate.layer == "Land" && plate.offset_x == 0 && plate.offset_y == 0 && plate.y_sort == 0 {
@@ -272,7 +272,7 @@ pub fn harbour_work_tile(col: i32, row: i32, kind: WorkKind, path: &'static str)
 }
 
 /// Deck prop at land offset 0 (no sea datum). Same foot anchor as SeaWorks
-/// props (128, 255 on a 256×256 plate). Art-gate P3 / Y.1.
+/// props (128, 255 on a 256×256 plate).
 pub fn harbour_prop_tile(col: i32, row: i32, path: &'static str) -> HarbourTile {
     let (sx, sy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
     HarbourTile {
@@ -291,7 +291,7 @@ pub fn harbour_prop_tile(col: i32, row: i32, path: &'static str) -> HarbourTile 
 }
 
 /// Reject pilings co-placed with a pier, a pier co-placed with a quay, and
-/// over-dense props (Y.1: one prop per cell, or bollard+torch on a pier head).
+/// over-dense props (one prop per cell, or bollard+torch on a pier head).
 pub fn validate_harbour(works: &[HarbourTile]) -> Result<(), Vec<HarbourFault>> {
     let mut faults = Vec::new();
     let mut cells: Vec<((i32, i32), Vec<WorkKind>)> = Vec::new();
@@ -384,7 +384,7 @@ pub const FLAT_EDGE_PAD_PX: i32 = 2;
 
 /// Screen box of the two back edges of a flat deck diamond, with the
 /// neighbour each one faces. The land diamond spans `gy - 64 ..= gy + 64`
-/// around the grid centre `(gx, gy)`; U.4 puts no sea datum on it.
+/// around the grid centre `(gx, gy)`; the Land anchor puts no sea datum on it.
 pub fn flat_deck_back_edges(col: i32, row: i32) -> [((i32, i32), ScreenRect); 2] {
     let (gx, gy) = grid_to_screen(col, row, HARBOUR_CELL_W, HARBOUR_CELL_H);
     let half_w = HARBOUR_CELL_W / 2;
@@ -409,7 +409,7 @@ fn rects_overlap(a: &ScreenRect, b: &ScreenRect) -> bool {
 /// Flat deck cells must not share a cell with pilings, a pier, or a quay block,
 /// and each front neighbour (`+col`, `+row`) must be a quay block or deck.
 /// Each back neighbour (`-col`, `-row`) must be deck height too, unless
-/// `frame` is given and that edge lies wholly outside it (Addendum X.1).
+/// `frame` is given and that edge lies wholly outside it.
 /// With no frame every back edge counts, which is the production rule.
 pub fn validate_flat_deck(
     works: &[HarbourTile],
@@ -474,7 +474,7 @@ pub fn build_harbour(
     build_harbour_with_deck(water, works, &[], None)
 }
 
-/// [`build_harbour`] plus flat deck cells (Addendum X). Each deck cell gets
+/// [`build_harbour`] plus flat deck cells. Each deck cell gets
 /// the same `quay_flag_*` tile a block top would get, placed ahead of the
 /// first work whose depth is the same or greater. A repeated deck cell is one
 /// plate. Work faults and deck faults are reported together. `frame` is the
@@ -796,7 +796,7 @@ mod tests {
 
     #[test]
     fn flat_deck_reuses_the_block_flag_tile() {
-        // Addendum X: same plate, same U.4, same variant hash as a block top.
+        // Same plate, same Land placement, same variant hash as a block top.
         let built =
             build_harbour_with_deck(Vec::new(), ring(0, 0), &[(0, 0)], None).expect("legal");
         let flat = land_at(&built, 0, 0);
@@ -976,7 +976,7 @@ mod tests {
 
     #[test]
     fn flat_deck_back_edge_is_deck_height_or_off_frame() {
-        // Addendum X.1: no paper-thin deck rim against open water.
+        // No paper-thin deck rim against open water.
         let edges = flat_deck_back_edges(0, 0);
         assert_eq!(edges[0].0, (-1, 0), "upper-left edge faces -col");
         assert_eq!(edges[1].0, (0, -1), "upper-right edge faces -row");
@@ -1070,10 +1070,10 @@ mod tests {
             offset_y: -8,
             y_sort: 12,
         };
-        let fault = quay_flag_u4(&plate).expect_err("off U.4");
+        let fault = quay_flag_u4(&plate).expect_err("off the quay paving rule");
         assert_eq!(
             fault.to_string(),
-            "quay_flag_a must be layer Land, offset 0,0, y_sort 0 (art-gate U.4); \
+            "quay_flag_a must be layer Land, offset 0,0, y_sort 0 (quay paving rule); \
              MANIFEST has layer Water, offset 4,-8, y_sort 12"
         );
         assert!(quay_flag_u4(crate::assets::quay_flag_plate(1, 2)).is_ok());

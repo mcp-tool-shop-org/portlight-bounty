@@ -461,7 +461,7 @@ pub struct QuayFlagPlate {
     pub layer: &'static str,
     pub offset_x: i32,
     pub offset_y: i32,
-    /// Art-gate U.4 `y_sort_origin`. `0` is the footprint anchor, with no extra shift.
+    /// Quay paving `y_sort_origin`. `0` is the footprint anchor, with no extra shift.
     pub y_sort: i32,
 }
 
@@ -801,7 +801,7 @@ mod tests {
         );
     }
 
-    // Art-gate U.4. A layer, offset, or y-sort edit fails here with the
+    // Quay paving placement. A layer, offset, or y-sort edit fails here with the
     // plate id and the values the manifest actually has. Placement reports
     // that same mismatch as a harbour fault instead of panicking in-game.
     #[test]
@@ -825,7 +825,7 @@ mod tests {
             assert_eq!(
                 (layer, offset_x, offset_y, y_sort),
                 ("Land", Some(0), Some(0), Some(0)),
-                "{id} must be layer Land, offset 0,0, y_sort 0 (art-gate U.4); \
+                "{id} must be layer Land, offset 0,0, y_sort 0 (quay paving rule); \
                  MANIFEST has layer {layer}, offset {offset_x:?},{offset_y:?}, y_sort {y_sort:?}"
             );
         }

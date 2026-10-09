@@ -512,7 +512,7 @@ jobs:
             echo "encounter capture did not write /tmp/encounter-approach.png"
             exit 1
           fi
-          # AD: Outcome card with a section 10.3 non-win receipt (Crew term).
+          # Outcome card with a non-win receipt (Crew term).
           mkdir -p /tmp/loss-outcome-shots
           run_godot /tmp/godot-loss-outcome-frames.log \
             xvfb-run -a -s "-screen 0 1280x720x24" \
@@ -673,7 +673,7 @@ jobs:
             echo "harbour frame capture did not report ok"
             exit 1
           fi
-          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png; do
+          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png harbour-insurance.png; do
             if [ ! -f "/tmp/harbour-shots/${name}" ]; then
               echo "harbour capture did not write /tmp/harbour-shots/${name}"
               exit 1
@@ -832,6 +832,7 @@ jobs:
           cmp_committed harbour-warehouse.png /tmp/harbour-shots/harbour-warehouse.png
           cmp_committed harbour-broker.png /tmp/harbour-shots/harbour-broker.png
           cmp_committed harbour-finance.png /tmp/harbour-shots/harbour-finance.png
+          cmp_committed harbour-insurance.png /tmp/harbour-shots/harbour-insurance.png
           cmp_committed crew-roster.png /tmp/crew-shots/crew-roster.png
           cmp_committed crew-provisions.png /tmp/crew-shots/crew-provisions.png
           cmp_committed crew-training.png /tmp/crew-shots/crew-training.png

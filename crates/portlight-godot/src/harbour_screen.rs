@@ -36,6 +36,7 @@ pub(crate) const INSURANCE_NOTE: &str = "Payouts arrive on Next day. There is no
 pub(crate) const ANCHOR_WAREHOUSE: &str = "HarbourWarehouse";
 pub(crate) const ANCHOR_BROKER: &str = "HarbourBroker";
 pub(crate) const ANCHOR_FINANCE: &str = "HarbourCredit";
+pub(crate) const ANCHOR_INSURANCE: &str = "HarbourInsurance";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum HarbourIntent {
@@ -708,8 +709,20 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
             if target_id.is_empty() {
                 format!("Buy {name} for {premium} silver?")
             } else {
+                // The desk only offers guarantees for active contracts, whose
+                // title reads after "contract". Any other target (an offer, a
+                // settled contract) already names itself, so the word is dropped.
                 let target = contract_target_name(session, target_id);
-                format!("Buy {name} for contract {target} at {premium} silver?")
+                let active = session
+                    .board()
+                    .active
+                    .iter()
+                    .any(|contract| contract.offer_id == *target_id);
+                if active {
+                    format!("Buy {name} for contract {target} at {premium} silver?")
+                } else {
+                    format!("Buy {name} for {target} at {premium} silver?")
+                }
             }
         }
     }
@@ -945,6 +958,43 @@ pub(crate) fn contract_target_name(session: &Session, id: &str) -> String {
         .unwrap_or_else(|| SETTLED_CONTRACT.to_string())
 }
 
+/// Insurance-frame stage, built from `Session` verbs only: a merchant at the
+/// start port holds a voyage policy (start port to Corsair's Rest) and a
+/// contract guarantee whose contract has since expired undelivered, so the
+/// desk shows a `Voyage A to B` row, a settled-contract `Target` row and the
+/// guarantee's claim.
+pub(crate) fn insurance_stage_session() -> Result<Session, String> {
+    let mut session = Session::new("Ada", "merchant", 1, None).map_err(|err| err.to_string())?;
+    let here = session.world().voyage.destination_id.clone();
+    session
+        .buy_insurance("hull_basic", "", &here, "corsairs_rest")
+        .map_err(|err| format!("voyage policy: {err}"))?;
+    let offer = session
+        .board()
+        .offers
+        .first()
+        .cloned()
+        .ok_or_else(|| "no contract offer".to_string())?;
+    session
+        .accept_contract(&offer.id)
+        .map_err(|err| format!("accept: {err}"))?;
+    session
+        .buy_insurance("contract_basic", &offer.id, "", "")
+        .map_err(|err| format!("guarantee: {err}"))?;
+    for _ in 0..80 {
+        session.advance().map_err(|err| format!("advance: {err}"))?;
+        let settled = session
+            .board()
+            .completed
+            .iter()
+            .any(|outcome| outcome.contract_id == offer.id);
+        if settled {
+            return Ok(session);
+        }
+    }
+    Err("the guaranteed contract never settled".to_string())
+}
+
 /// Port name for a policy voyage end, else the humanized id.
 fn port_name(session: &Session, id: &str) -> String {
     catalog_or_humanized(session.world().port(id).map(|port| port.name.as_str()), id)
@@ -974,7 +1024,7 @@ fn requirement_terms(tier: &str, standing: i64) -> String {
     out
 }
 
-/// AD nit: the sim refusal `Requires trusted trust (currently credible)` reads
+/// The sim refusal `Requires trusted trust (currently credible)` reads
 /// `Requires trust tier Trusted - you are Credible`. Guarded format of the one
 /// fixed sim template: only when the text starts with the exact prefix built
 /// from the same spec and ends with `)`. Any other refusal prints unchanged.
@@ -1080,7 +1130,7 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 mod tests {
     use super::*;
 
-    /// AD nit (friction call): exact copy, both tiers humanized; any other
+    /// Exact copy, both tiers humanized; any other
     /// refusal prints unchanged.
     #[test]
     fn trust_block_rewrites_only_the_fixed_sim_template() {
@@ -1110,7 +1160,7 @@ mod tests {
         );
     }
 
-    /// Claims ledger rows: the contract guarantee reads in GD's words; other
+    /// Claims ledger rows: the contract guarantee reads in the agreed words; other
     /// incidents are humanized, never raw ids.
     #[test]
     fn claim_lines_name_the_guarantee() {
@@ -1420,5 +1470,67 @@ mod tests {
             contract_target_name(&session, &offer.id),
             ascii_copy(&offer.title)
         );
+    }
+
+    /// An offered contract not yet accepted reads by its offer title.
+    #[test]
+    fn offered_contract_reads_its_offer_title() {
+        let session = merchant();
+        let offer = session.board().offers.first().cloned().expect("an offer");
+        assert!(session
+            .board()
+            .active
+            .iter()
+            .all(|contract| contract.offer_id != offer.id));
+        let title = ascii_copy(&offer.title).trim().to_string();
+        assert!(!title.is_empty());
+        assert_eq!(contract_target_name(&session, &offer.id), title);
+    }
+
+    /// A guarantee target that is not an active contract (an offer, a settled
+    /// contract) drops the word "contract": `Buy {name} for {target} at N silver?`.
+    #[test]
+    fn insurance_prompt_without_an_active_target() {
+        let session = merchant();
+        let offer = session.board().offers.first().cloned().expect("an offer");
+        let intent = |target: &str| HarbourIntent::BuyInsurance {
+            policy_id: "contract_basic".into(),
+            target_id: target.into(),
+            origin: String::new(),
+            destination: String::new(),
+        };
+        let name = policy_name("contract_basic");
+        let offered = confirm_prompt(&session, &intent(&offer.id));
+        let title = ascii_copy(&offer.title).trim().to_string();
+        assert!(
+            offered.starts_with(&format!("Buy {name} for {title} at ")),
+            "{offered}"
+        );
+        assert!(offered.ends_with(" silver?"), "{offered}");
+        assert!(!offered.contains("for contract "), "{offered}");
+        let settled = confirm_prompt(&session, &intent("b21e3e594ab0"));
+        assert!(
+            settled.starts_with(&format!("Buy {name} for {SETTLED_CONTRACT} at ")),
+            "{settled}"
+        );
+        assert!(!settled.contains("b21e3e594ab0"), "{settled}");
+    }
+
+    /// The insurance-frame stage shows both rows the frame exists for: the
+    /// voyage policy in words and the settled contract by good and port.
+    #[test]
+    fn insurance_stage_shows_voyage_and_settled_rows() {
+        let session = insurance_stage_session().expect("stage");
+        let model = harbour_model(&session).expect("docked desk");
+        let lines = model.policy_lines.join("\n");
+        assert!(lines.contains(" to Corsair's Rest."), "{lines}");
+        let target = model
+            .policy_lines
+            .iter()
+            .find(|line| line.contains(" Target "))
+            .expect("guarantee row");
+        assert!(target.contains(" for "), "{target}");
+        assert!(!target.contains(SETTLED_CONTRACT), "{target}");
+        assert!(lines.is_ascii(), "{lines}");
     }
 }
