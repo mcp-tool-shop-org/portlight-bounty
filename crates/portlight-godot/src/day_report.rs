@@ -33,7 +33,7 @@ use crate::contracts_screen::{
 };
 use crate::encounter_screen::style_encounter_button;
 use crate::hunt_screen;
-use crate::logic::ascii_label;
+use crate::logic::display_or_humanized;
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -997,7 +997,7 @@ pub(crate) fn price_lines(session: &Session, before: &HashMap<String, i64>) -> V
     let Some(port) = world.port(port_id) else {
         return Vec::new();
     };
-    let port_name = ascii_label(&port.name, &port.id).to_string();
+    let port_name = display_or_humanized(Some(&port.name), &port.id);
     let mut strong = Vec::new();
     let mut modest = Vec::new();
     for slot in &port.market {
@@ -1377,24 +1377,19 @@ pub(crate) fn failure_lines(
 }
 
 fn good_name(id: &str) -> String {
-    content::content()
-        .good(id)
-        .map(|good| ascii_label(&good.name, id).to_string())
-        .unwrap_or_else(|| id.to_string())
+    let catalog = content::content().good(id).map(|good| good.name.as_str());
+    display_or_humanized(catalog, id)
 }
 
 fn injury_name(id: &str) -> String {
-    content::content()
+    let catalog = content::content()
         .injury(id)
-        .map(|injury| ascii_label(&injury.name, id).to_string())
-        .unwrap_or_else(|| id.to_string())
+        .map(|injury| injury.name.as_str());
+    display_or_humanized(catalog, id)
 }
 
 fn port_label(world: &portlight_sim::model::World, id: &str) -> String {
-    world
-        .port(id)
-        .map(|port| ascii_label(&port.name, &port.id).to_string())
-        .unwrap_or_else(|| id.to_string())
+    display_or_humanized(world.port(id).map(|port| port.name.as_str()), id)
 }
 
 /// Label meta holding a body line's copy when the drawn text carries a
@@ -3946,5 +3941,26 @@ mod tests {
             next_line(&facts).as_deref(),
             Some("Next: Contract overdue - sell at Corsair's Rest.")
         );
+    }
+
+    /// A catalog miss reads as humanized copy, never the raw id; a known id
+    /// keeps its catalog name.
+    #[test]
+    fn catalog_misses_never_print_raw_ids() {
+        assert_eq!(good_name("salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(injury_name("salt_spit_cove"), "Salt Spit Cove");
+        let grain = content::content().good("grain").expect("grain");
+        assert_eq!(good_name("grain"), grain.name);
+        let session = portlight_sim::session::Session::new(
+            crate::logic::SCRIPTED_NAME,
+            crate::logic::SCRIPTED_CAPTAIN_TYPE,
+            crate::logic::SCRIPTED_SEED,
+            None,
+        )
+        .expect("scripted session");
+        let world = session.world();
+        assert_eq!(port_label(world, "salt_spit_cove"), "Salt Spit Cove");
+        let known = world.port("porto_novo").expect("porto_novo");
+        assert_eq!(port_label(world, "porto_novo"), known.name);
     }
 }

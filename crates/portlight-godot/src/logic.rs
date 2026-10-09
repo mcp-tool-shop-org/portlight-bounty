@@ -1899,9 +1899,9 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                 .map(|trainer| trainer.max_teach_level)
                 .max()
                 .unwrap_or(0);
-            let trainer_names: Vec<&str> = trainers
+            let trainer_names: Vec<String> = trainers
                 .iter()
-                .map(|trainer| ascii_label(&trainer.name, &trainer.id))
+                .map(|trainer| display_or_humanized(Some(&trainer.name), &trainer.id))
                 .collect();
             let next = skill.levels.get(current as usize);
             let can_train = next.is_some() && current < skill.max_level && current < max_teach;

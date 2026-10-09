@@ -845,7 +845,7 @@ fn good_name(id: &str) -> String {
         .good(id)
         .map(|good| ascii_copy(&good.name))
         .filter(|name| !name.is_empty())
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn yes_no(active: bool) -> &'static str {
@@ -874,15 +874,15 @@ fn credit_tier_name(tier: &str) -> String {
         .unwrap_or_else(|| humanize_id(tier))
 }
 
-/// One Harbour claims row. A paid contract guarantee reads like the contract
-/// fail sentence (`Day 20: Contract guarantee paid 105 silver.`); any other
+/// One Harbour claims row. A paid contract guarantee reads
+/// `Day 21: contract guarantee paid 105.` (no currency word); any other
 /// incident is humanised, never a raw id (`Day 5: Storm payout 40.`).
 fn claim_line(day: i64, incident: &str, denied: bool, reason: &str, payout: i64) -> String {
     let name = humanize_id(&ascii_copy(incident));
     if denied {
         format!("Day {day}: {name} denied. {}", ascii_copy(reason))
     } else if incident == "contract_failure" {
-        format!("Day {day}: Contract guarantee paid {payout} silver.")
+        format!("Day {day}: contract guarantee paid {payout}.")
     } else {
         format!("Day {day}: {name} payout {payout}.")
     }
@@ -1040,7 +1040,7 @@ mod tests {
     fn claim_lines_name_the_guarantee() {
         assert_eq!(
             claim_line(21, "contract_failure", false, "", 105),
-            "Day 21: Contract guarantee paid 105 silver."
+            "Day 21: contract guarantee paid 105."
         );
         assert_eq!(
             claim_line(4, "storm_damage", false, "", 30),

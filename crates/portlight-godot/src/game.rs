@@ -78,11 +78,11 @@ use crate::harbour_screen::{self, HarbourIntent, HarbourModel, HarbourNodes};
 use crate::hunt_screen::{self, HuntAction, HuntConfirm, HuntDesk};
 use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
-    action_caption, action_list_from_error, ascii_label, at_sea, board_confirm_line,
-    buy_confirm_line, buy_result_line, captain_button_label, capture_frame_rejected,
-    chart_host_width, crew_desk, cycle_index, day_log_lines, dock_confirm_line,
-    duel_button_enabled, encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency,
-    facts_from_step, frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm,
+    action_caption, action_list_from_error, at_sea, board_confirm_line, buy_confirm_line,
+    buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
+    cycle_index, day_log_lines, display_or_humanized, dock_confirm_line, duel_button_enabled,
+    encounter_frame_rejected, facts_for_catalog_captain, facts_from_agency, facts_from_step,
+    frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id,
     install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
     present, recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line,
     session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
@@ -2573,8 +2573,8 @@ impl PortlightGame {
             .ports
             .iter()
             .find(|port| port.id == self.draft.home_port_id)
-            .map(|port| ascii_label(&port.name, &port.id).to_string())
-            .unwrap_or_else(|| self.draft.home_port_id.clone());
+            .map(|port| display_or_humanized(Some(&port.name), &port.id))
+            .unwrap_or_else(|| humanize_id(&self.draft.home_port_id));
         self.choice_row(
             actions,
             game_id,
@@ -2798,7 +2798,7 @@ impl PortlightGame {
                     .ship
                     .as_ref()
                     .map(|ship| ship.name.clone())
-                    .unwrap_or_else(|| ship_id.to_string());
+                    .unwrap_or_else(|| humanize_id(ship_id));
                 buy_result_line(
                     &bought,
                     &previous_name,
@@ -2812,8 +2812,8 @@ impl PortlightGame {
     fn install_hull_upgrade(&mut self, upgrade_id: &str) -> String {
         let name = portlight_sim::content::content()
             .upgrade(upgrade_id)
-            .map(|upgrade| ascii_label(&upgrade.name, upgrade_id).to_string())
-            .unwrap_or_else(|| upgrade_id.to_string());
+            .map(|upgrade| display_or_humanized(Some(&upgrade.name), upgrade_id))
+            .unwrap_or_else(|| humanize_id(upgrade_id));
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return "No game".to_string();
@@ -4040,7 +4040,7 @@ impl PortlightGame {
                     .world()
                     .port(dest)
                     .map(|port| port.name.clone())
-                    .unwrap_or_else(|| dest.to_string())
+                    .unwrap_or_else(|| humanize_id(dest))
             })
         };
         match result {
@@ -4094,7 +4094,7 @@ impl PortlightGame {
                             .find(|lane| lane.destination_id == id)
                             .map(lane_inspect)
                     })
-                    .unwrap_or(id);
+                    .unwrap_or_else(|| humanize_id(&id));
                 self.push_log(format!("Selected {text}. Click the port again to sail."));
             }
         }
@@ -5902,7 +5902,7 @@ impl PortlightGame {
                     .find(|contract| contract.offer_id == id)
                     .map(|contract| contract.title.clone())
             })
-            .unwrap_or_else(|| id.to_string());
+            .unwrap_or_else(|| humanize_id(id));
         self.contracts_confirm = Some(id.to_string());
         self.contracts_notice = contracts_screen::abandon_prompt(&title);
         self.refresh();
@@ -6725,8 +6725,8 @@ impl PortlightGame {
             .map(|ship| {
                 let class = content::content()
                     .ship(&ship.template_id)
-                    .map(|template| template.ship_class.as_str())
-                    .unwrap_or(ship.template_id.as_str());
+                    .map(|template| template.ship_class.clone())
+                    .unwrap_or_else(|| humanize_id(&ship.template_id));
                 format!(
                     "{}   {class}   hull {}/{}   crew {}",
                     ship.name, ship.hull, ship.hull_max, ship.crew
@@ -10311,7 +10311,7 @@ fn good_name(id: &str) -> String {
     content::content()
         .good(id)
         .map(|good| good.name.clone())
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 struct ListedOffer {
@@ -10734,8 +10734,8 @@ fn named_or_none(choices: &[portlight_sim::custom_captain::NamedChoice], id: &st
     choices
         .iter()
         .find(|choice| choice.id == id)
-        .map(|choice| ascii_label(&choice.name, &choice.id).to_string())
-        .unwrap_or_else(|| id.to_string())
+        .map(|choice| display_or_humanized(Some(&choice.name), &choice.id))
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn mentor_or_none(choices: &[portlight_sim::custom_captain::MentorChoice], id: &str) -> String {
@@ -10745,8 +10745,8 @@ fn mentor_or_none(choices: &[portlight_sim::custom_captain::MentorChoice], id: &
     choices
         .iter()
         .find(|choice| choice.id == id)
-        .map(|choice| ascii_label(&choice.name, &choice.id).to_string())
-        .unwrap_or_else(|| id.to_string())
+        .map(|choice| display_or_humanized(Some(&choice.name), &choice.id))
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn docs_capture() -> bool {
@@ -11236,7 +11236,7 @@ fn port_name(world: &portlight_sim::model::World, id: &str) -> String {
     world
         .port(id)
         .map(|port| port.name.clone())
-        .unwrap_or_else(|| id.to_string())
+        .unwrap_or_else(|| humanize_id(id))
 }
 
 fn title_label(text: &str, size: i32, color: Color) -> Gd<Label> {
@@ -11988,5 +11988,46 @@ mod copy_batch_tests {
         assert!(!rename_ready("  Sea Lark ", "Sea Lark"));
         assert!(rename_ready("Gull", "Sea Lark"));
         assert!(rename_ready(" Gull ", "Sea Lark"));
+    }
+}
+
+#[cfg(test)]
+mod catalog_fallback_tests {
+    use super::{good_name, mentor_or_none, named_or_none, port_name};
+    use crate::logic::{SCRIPTED_CAPTAIN_TYPE, SCRIPTED_NAME, SCRIPTED_SEED};
+    use portlight_sim::content;
+    use portlight_sim::custom_captain::{MentorChoice, NamedChoice};
+    use portlight_sim::session::Session;
+
+    /// A catalog miss reads as humanized copy, never the raw id; a known id
+    /// keeps its catalog name.
+    #[test]
+    fn catalog_misses_never_print_raw_ids() {
+        let session = Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None)
+            .expect("scripted session");
+        let world = session.world();
+        assert_eq!(port_name(world, "salt_spit_cove"), "Salt Spit Cove");
+        let known_port = world.port("porto_novo").expect("porto_novo");
+        assert_eq!(port_name(world, "porto_novo"), known_port.name);
+
+        assert_eq!(good_name("salt_spit_cove"), "Salt Spit Cove");
+        let grain = content::content().good("grain").expect("grain");
+        assert_eq!(good_name("grain"), grain.name);
+
+        let named = [NamedChoice {
+            id: "iron_bloc".to_string(),
+            name: "Iron Bloc".to_string(),
+        }];
+        assert_eq!(named_or_none(&named, "iron_bloc"), "Iron Bloc");
+        assert_eq!(named_or_none(&named, "salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(named_or_none(&named, ""), "none");
+        let mentors = [MentorChoice {
+            id: "old_vane".to_string(),
+            name: "Old Vane".to_string(),
+            port_id: "porto_novo".to_string(),
+        }];
+        assert_eq!(mentor_or_none(&mentors, "old_vane"), "Old Vane");
+        assert_eq!(mentor_or_none(&mentors, "salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(mentor_or_none(&mentors, ""), "none");
     }
 }

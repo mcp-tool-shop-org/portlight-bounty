@@ -17,7 +17,7 @@ use portlight_sim::model::VoyageStatus;
 use portlight_sim::Session;
 
 use crate::encounter_screen;
-use crate::logic::{ascii_label, captain_display_name, faction_name};
+use crate::logic::{ascii_label, captain_display_name, faction_name, humanize_id};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -458,7 +458,7 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
             world
                 .port(id)
                 .map(|port| port.name.clone())
-                .unwrap_or_else(|| id.to_string()),
+                .unwrap_or_else(|| humanize_id(id)),
         )
     };
     let morale = world.captain.ship.as_ref().map(|ship| ship.morale);
