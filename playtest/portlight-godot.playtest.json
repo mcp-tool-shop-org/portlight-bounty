@@ -75,7 +75,7 @@
     },
     {
       "id": "journal-closure",
-      "check": "After at least one voyage beat, Journal opens and the Victory section is readable with requirements vs status, not an empty dead end. Covers Fix A hint 3 (victory → Journal)."
+      "check": "After at least one voyage beat, Journal opens and the Victory section is readable with requirements vs status, not an empty dead end. Covers Fix A hint 3 (victory → Journal). On the rpc driver, read the Journal from state.journal (sections and lines as drawn)."
     },
     {
       "id": "escape-closes-overlay",

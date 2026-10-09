@@ -71,9 +71,12 @@ pub(crate) fn build_journal_screen() -> JournalNodes {
     row.add_child(&column);
 
     column.add_child(&text_label("Journal", 14, MUTED, false));
-    let title = text_label("", 28, GOLD, false);
+    let mut title = text_label("", 28, GOLD, false);
+    // The playtest Journal lens reads these by name.
+    title.set_name("JournalTitle");
     column.add_child(&title);
-    let notice = text_label("", 16, CREAM, true);
+    let mut notice = text_label("", 16, CREAM, true);
+    notice.set_name("JournalNotice");
     column.add_child(&notice);
 
     let mut scroll = ScrollContainer::new_alloc();
