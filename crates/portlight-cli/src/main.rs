@@ -35,35 +35,41 @@ fn main() -> ExitCode {
 fn print_help() {
     println!(
         "\
-portlight — trade simulation CLI
+portlight {version} - trade simulation CLI
+
+The Godot chart is the game. This binary runs the same simulation
+from a script, for checks and for people who want the numbers.
 
 Usage:
-  portlight new --captain merchant --name Ada --seed 42 [--json]
+  portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]
   portlight script <file> [--save-dir DIR --slot NAME]
   portlight script -          read the script from stdin
-  portlight load <dir> <slot> print the snapshot of a version-12 slot
+  portlight load <dir> <slot>
+  portlight help
 
-Script commands:
-  new <captain_type> <name> <seed> [port]
-  buy <good> <qty>
-  sell <good> <qty>
-  depart <port_id>
-  advance
-  accept_contract <offer_id>
-  complete_contract <offer_id>
-  abandon_contract <offer_id>
-  repair [points]
-  rename_ship <new_name> [ship]
-  dock_current_ship
-  board_fleet_ship <ship>
-  sell_fleet_ship <ship>
-  fire <count> [role]
-  train <style_id>
-  recruit <companion_id>
-  skill <skill_id>
-  remember <captain_id> <outcome>
-  agency
-"
+new defaults: captain merchant, name Captain, seed 1.
+--json prints the canonical snapshot. Without it, new prints a short summary.
+load prints a version-12 save.
+
+Exit codes: 0 ok, 1 the simulation or a file failed, 2 the command was not understood.
+Errors are sentences. There is no --debug flag and no log level.
+
+Script commands, one per line:
+  new, custom, buy, sell, depart, advance
+  arrival_narrative, evaluate_consequences
+  accept_contract, complete_contract, abandon_contract
+  buy_infrastructure, take_credit, buy_insurance
+  deposit, withdraw, repay_credit, save, load
+  hire, provision, work, duel, resolve_duel
+  encounter, naval, board, fight, capture, spare, take_all
+  train, recruit, skill, remember, agency, gear
+  buy_ship, upgrade, form_convoy, repair_fleet, repair
+  rename_ship, dock_current_ship, board_fleet_ship, sell_fleet_ship
+  fire, transfer, maintain, hunt, bounty, wanted
+
+bounty takes accept, hunt, or claim, then a captain id.
+",
+        version = env!("CARGO_PKG_VERSION"),
     );
 }
 

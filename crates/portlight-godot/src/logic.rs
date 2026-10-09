@@ -1834,13 +1834,13 @@ fn role_name(role: &str) -> String {
         .unwrap_or_else(|| humanize_id(role))
 }
 
-/// Docked crew desk from `session.world()` and the embedded catalogs.
-/// Does not call hire, fire, provision, train, recruit, or skill.
 /// Crew desk stores block: the subhead and the two buy buttons.
 pub(crate) const CREW_STORES_SUBHEAD: &str = "Stores";
 pub(crate) const CREW_STORES_PLUS_FIVE: &str = "Stores +5";
 pub(crate) const CREW_STORES_PLUS_ONE: &str = "Stores +1";
 
+/// Docked crew desk from `session.world()` and the embedded catalogs.
+/// Does not call hire, fire, provision, train, recruit, or skill.
 pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
     let world = session.world();
     if world.voyage.status != portlight_sim::model::VoyageStatus::InPort {
