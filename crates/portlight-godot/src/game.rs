@@ -89,10 +89,11 @@ use crate::logic::{
     session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
     status_header, template_player_ship, train_confirm_line, ui_sentence, victory_receipt_lines,
     CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase,
-    ShipyardModel, StepInput, AT_SEA_LANE_NOTE, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
-    NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W,
-    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
-    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    ShipyardModel, StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE,
+    CREW_STORES_SUBHEAD, NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE,
+    NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION,
+    SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
+    SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -4463,7 +4464,7 @@ impl PortlightGame {
                     })
                     .unwrap_or((0, 0));
                 self.push_log(format!(
-                    "Bought provisions. Days {} to {days}. Silver {silver}.",
+                    "Bought stores. Days {} to {days}. Silver {silver}.",
                     before.unwrap_or(days)
                 ));
             }
@@ -5041,8 +5042,7 @@ impl PortlightGame {
                         )
                     })
                     .unwrap_or((0, 0));
-                self.crew_notice =
-                    format!("Bought provisions. Stores {provisions}. Silver {silver}.");
+                self.crew_notice = format!("Bought stores. Stores {provisions}. Silver {silver}.");
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -5322,13 +5322,13 @@ impl PortlightGame {
             roster.add_child(&crew_muted(officer));
         }
         let mut provisions = crew_section(crew_screen::SECTION_PROVISIONS);
-        provisions.add_child(&crew_subhead("Provisions"));
+        provisions.add_child(&crew_subhead(CREW_STORES_SUBHEAD));
         provisions.add_child(&crew_copy(&desk.provision_text));
         let mut provision_buttons = HBoxContainer::new_alloc();
         provision_buttons.add_theme_constant_override("separation", 8);
-        let mut plus_five = crew_button("Provisions +5", game_id, Action::CrewProvision(5));
+        let mut plus_five = crew_button(CREW_STORES_PLUS_FIVE, game_id, Action::CrewProvision(5));
         plus_five.set_disabled(locked);
-        let mut plus_one = crew_button("Provisions +1", game_id, Action::CrewProvision(1));
+        let mut plus_one = crew_button(CREW_STORES_PLUS_ONE, game_id, Action::CrewProvision(1));
         plus_one.set_disabled(locked);
         provision_buttons.add_child(&plus_five);
         provision_buttons.add_child(&plus_one);
@@ -7598,7 +7598,7 @@ impl PortlightGame {
                 && session.world().captain.day == day + 1
                 && session.world().pending_duel.is_none()
         });
-        if !sailed || self.encounter.is_some() || !self.hunt_desk.notice.contains("Provisions") {
+        if !sailed || self.encounter.is_some() || !self.hunt_desk.notice.contains("Stores") {
             self.fail_hunt(
                 "Hunt smoke: forage did not advance the day, or it opened a fight.".to_string(),
             );
@@ -9993,7 +9993,7 @@ impl PortlightGame {
             .map(|session| session.world().captain.active_bounties.len())
             .unwrap_or(0);
         let ok = match phase {
-            HuntShot::Forage => open && notice.contains("Provisions") && self.encounter.is_none(),
+            HuntShot::Forage => open && notice.contains("Stores") && self.encounter.is_none(),
             HuntShot::Board => open && (1..=3).contains(&offers),
             HuntShot::Active => open && active >= 1,
             HuntShot::Confirm => {

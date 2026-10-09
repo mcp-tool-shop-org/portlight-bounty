@@ -1825,6 +1825,11 @@ fn role_name(role: &str) -> String {
 
 /// Docked crew desk from `session.world()` and the embedded catalogs.
 /// Does not call hire, fire, provision, train, recruit, or skill.
+/// Crew desk stores block: the subhead and the two buy buttons.
+pub(crate) const CREW_STORES_SUBHEAD: &str = "Stores";
+pub(crate) const CREW_STORES_PLUS_FIVE: &str = "Stores +5";
+pub(crate) const CREW_STORES_PLUS_ONE: &str = "Stores +1";
+
 pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
     let world = session.world();
     if world.voyage.status != portlight_sim::model::VoyageStatus::InPort {
@@ -1844,9 +1849,9 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
     let silver = world.captain.silver;
     let provisions = world.captain.provisions;
     let status = if ship.is_none() {
-        format!("Silver {silver}. Provisions {provisions}. No ship.")
+        format!("Silver {silver}. Stores {provisions}. No ship.")
     } else {
-        format!("Silver {silver}. Provisions {provisions}. Crew {crew}/{crew_max}.")
+        format!("Silver {silver}. Stores {provisions}. Crew {crew}/{crew_max}.")
     };
     let provision_per_day =
         effective_provision_per_day(port.provision_cost, &world.captain.standing, port_id);
@@ -3861,6 +3866,26 @@ mod tests {
         assert!(desk.officers[0].contains("Gunner"));
         assert!(desk.officers[0].contains(" - "));
         desk_strings_are_ascii(&desk);
+    }
+
+    #[test]
+    fn crew_desk_text_says_stores_everywhere() {
+        let session =
+            Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None).unwrap();
+        let desk = crew_desk(&session).unwrap();
+        for text in [
+            desk.status.as_str(),
+            desk.provision_text.as_str(),
+            CREW_STORES_SUBHEAD,
+            CREW_STORES_PLUS_FIVE,
+            CREW_STORES_PLUS_ONE,
+        ] {
+            assert!(!text.to_lowercase().contains("provision"), "{text}");
+            assert!(text.is_ascii(), "{text}");
+        }
+        assert!(desk.status.contains("Stores "), "{}", desk.status);
+        assert_eq!(CREW_STORES_PLUS_FIVE, "Stores +5");
+        assert_eq!(CREW_STORES_PLUS_ONE, "Stores +1");
     }
 
     #[test]
