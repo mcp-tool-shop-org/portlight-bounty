@@ -412,6 +412,9 @@ pub(crate) struct EncounterFacts {
     pub at_sea: bool,
     /// `false` until [`Session::encounter_choice_with`] has opened it.
     pub on_session: bool,
+    /// Boarding meter from the step: progress and threshold. `None` when the
+    /// step has no threshold (not a naval fight).
+    pub boarding: Option<(i64, i64)>,
     pub naval_actions: Vec<String>,
     pub combat_actions: Vec<String>,
     /// World reading taken when the encounter opened (section 10.3). Godot
@@ -756,6 +759,8 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     // Damage amounts are non-negative. The line shows them as signed HP changes.
     facts.player_hp_delta = -step.damage_to_player;
     facts.opponent_hp_delta = -step.damage_to_opponent;
+    facts.boarding =
+        (step.boarding_threshold > 0).then_some((step.boarding_progress, step.boarding_threshold));
     facts.naval_actions = input.naval_actions.to_vec();
     facts.combat_actions = input.combat_actions.to_vec();
     facts
@@ -985,6 +990,11 @@ fn delta_spans(facts: &EncounterFacts) -> Vec<DeltaSpan> {
     spans
 }
 
+/// `Boarding 1/3`: the sim's own two numbers.
+pub(crate) fn boarding_line(progress: i64, threshold: i64) -> String {
+    format!("Boarding {progress}/{threshold}")
+}
+
 fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     let mut lines = Vec::new();
     if !facts.captain_name.is_empty() {
@@ -1016,6 +1026,12 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
                 Some(max) => format!("Enemy hull {hull}/{max} - crew {crew}"),
                 None => format!("Enemy hull {hull} - crew {crew}"),
             });
+        }
+    }
+    // State, not a delta: shown at 0/N too. Naval phase only.
+    if phase == ScreenPhase::Naval {
+        if let Some((progress, threshold)) = facts.boarding.filter(|(_, max)| *max > 0) {
+            lines.push(boarding_line(progress, threshold));
         }
     }
     if phase == ScreenPhase::Personal && facts.kind == "fight" {
@@ -1066,6 +1082,7 @@ fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) 
         pending_victory: false,
         at_sea,
         on_session: false,
+        boarding: None,
         naval_actions: Vec::new(),
         combat_actions: Vec::new(),
         baseline: None,
@@ -3136,6 +3153,64 @@ mod tests {
         );
     }
 
+    fn naval_facts() -> EncounterFacts {
+        let mut facts = facts_for_catalog_captain(
+            "raj_the_quiet",
+            Some(PlayerShip {
+                hull: 18,
+                hull_max: 20,
+                crew: 4,
+            }),
+            true,
+        )
+        .unwrap();
+        facts.enemy_hull = Some(40);
+        facts.enemy_hull_max = Some(50);
+        facts.enemy_crew = Some(8);
+        facts
+    }
+
+    #[test]
+    fn naval_card_shows_boarding_progress() {
+        let mut facts = naval_facts();
+        facts.boarding = Some((0, 3));
+        let card = card_text(&facts, ScreenPhase::Naval);
+        assert!(card.lines().any(|line| line == "Boarding 0/3"), "{card}");
+        facts.boarding = Some((2, 3));
+        let card = card_text(&facts, ScreenPhase::Naval);
+        let lines: Vec<&str> = card.lines().collect();
+        assert_eq!(lines.last(), Some(&"Boarding 2/3"), "{card}");
+        // After the enemy hull line.
+        let enemy = lines
+            .iter()
+            .position(|l| l.starts_with("Enemy hull"))
+            .unwrap();
+        assert_eq!(lines[enemy + 1], "Boarding 2/3");
+    }
+
+    #[test]
+    fn boarding_line_hidden_outside_naval() {
+        let mut facts = naval_facts();
+        facts.boarding = Some((1, 3));
+        for phase in [
+            ScreenPhase::Approach,
+            ScreenPhase::Boarding,
+            ScreenPhase::Personal,
+            ScreenPhase::Outcome,
+        ] {
+            assert!(!card_text(&facts, phase).contains("Boarding "), "{phase:?}");
+        }
+    }
+
+    #[test]
+    fn boarding_line_hidden_at_threshold_zero() {
+        let mut facts = naval_facts();
+        facts.boarding = Some((0, 0));
+        assert!(!card_text(&facts, ScreenPhase::Naval).contains("Boarding "));
+        facts.boarding = None;
+        assert!(!card_text(&facts, ScreenPhase::Naval).contains("Boarding "));
+    }
+
     #[test]
     fn card_text_is_ascii_in_every_phase() {
         let mut facts = facts_for_catalog_captain(
@@ -3154,6 +3229,7 @@ mod tests {
         facts.enemy_crew = Some(8);
         facts.player_hp = 12;
         facts.opponent_hp = 9;
+        facts.boarding = Some((1, 3));
         for phase in [
             ScreenPhase::Approach,
             ScreenPhase::Naval,

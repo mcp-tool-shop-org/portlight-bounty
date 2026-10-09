@@ -698,6 +698,8 @@ struct PortlightGame {
     /// T-N. GOLD paid lines at the top of the Market box until the next
     /// trade, Market close, undock or Next day.
     market_notice: Vec<String>,
+    /// Highest boarding progress read off the naval card in the smoke.
+    boarding_seen: i64,
     /// Offer id of a trade settle paused after its first partial sale.
     settle_resume: Option<String>,
     /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
@@ -873,6 +875,7 @@ impl IControl for PortlightGame {
             departure_shot_dir: None,
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
+            boarding_seen: 0,
             settle_resume: None,
             trade_checked: false,
             market_paid_shot_dir: None,
@@ -10255,15 +10258,17 @@ impl PortlightGame {
         self.encounter = None;
         self.scripted_captain = None;
         match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
-            Ok(mut session) => match session.depart(SCRIPTED_DEPART) {
-                Ok(()) => {
-                    let place = session
-                        .world()
-                        .port(SCRIPTED_DEPART)
-                        .map(|port| port.name.clone())
-                        .unwrap_or_else(|| SCRIPTED_DEPART.to_string());
+            Ok(mut session) => match scripted_depart(&mut session) {
+                Ok(fee) => {
+                    let place = display_or_humanized(
+                        session
+                            .world()
+                            .port(SCRIPTED_DEPART)
+                            .map(|port| port.name.as_str()),
+                        SCRIPTED_DEPART,
+                    );
                     self.session = Some(session);
-                    self.push_log(format!("Departed for {place}."));
+                    self.push_log(departed_line(&place, fee));
                 }
                 Err(err) => {
                     self.smoke_ok = false;
@@ -10288,6 +10293,42 @@ impl PortlightGame {
                 return;
             }
             self.play_naval(action);
+            self.check_boarding_meter(action);
+        }
+    }
+
+    /// While the card is still the Naval one, it shows `Boarding p/t`, and
+    /// progress never goes down across rounds.
+    fn check_boarding_meter(&mut self, action: &str) {
+        if !self.phase_is(ScreenPhase::Naval) {
+            return;
+        }
+        let card = self
+            .encounter_nodes
+            .as_ref()
+            .map(|nodes| nodes.card.get_text().to_string())
+            .unwrap_or_default();
+        let progress = card
+            .lines()
+            .find_map(|line| line.strip_prefix("Boarding "))
+            .and_then(|rest| rest.split_once('/'))
+            .and_then(|(done, max)| Some((done.parse::<i64>().ok()?, max.parse::<i64>().ok()?)));
+        match progress {
+            Some((done, max)) if done >= self.boarding_seen && max > 0 && done <= max => {
+                self.boarding_seen = done;
+                godot_print!(
+                    "Encounter smoke: after {action} the card reads Boarding {done}/{max}"
+                );
+            }
+            other => {
+                self.smoke_ok = false;
+                let line = format!(
+                    "Encounter smoke: after {action} the naval card boarding line was {other:?} (was {}): {card:?}",
+                    self.boarding_seen
+                );
+                godot_print!("{line}");
+                self.push_log(line);
+            }
         }
     }
 
@@ -11041,6 +11082,13 @@ fn contract_strip_frames_requested(shot_set: bool) -> bool {
 
 fn contract_strip_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
+}
+
+/// Departs for the scripted port and returns the fee the session took.
+fn scripted_depart(session: &mut Session) -> Result<i64, portlight_sim::error::SimError> {
+    let silver_before = session.world().captain.silver;
+    session.depart(SCRIPTED_DEPART)?;
+    Ok(silver_before - session.world().captain.silver)
 }
 
 fn market_paid_frames_requested(shot_set: bool) -> bool {
