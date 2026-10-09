@@ -560,6 +560,23 @@ pub(crate) fn encounter_end_line(
     line
 }
 
+/// The Log line for what a won fight cost: `Fight cost - Hull -12 - Crew -1`.
+/// Hull then crew, losses only (a gain is not a cost), zero terms left out;
+/// `None` when nothing was lost. Silver and cargo are not terms: a win prints
+/// its own silver and spends no cargo. `deltas` is `[silver, crew, hull,
+/// cargo]` as [`EncounterBaseline::deltas`] returns it.
+pub(crate) fn fight_cost_line(deltas: [i64; 4]) -> Option<String> {
+    let mut line = String::from("Fight cost");
+    let mut any = false;
+    for (term, value) in [("Hull", deltas[2]), ("Crew", deltas[1])] {
+        if value < 0 {
+            line.push_str(&format!(" - {term} {}", signed_delta(value)));
+            any = true;
+        }
+    }
+    any.then_some(line)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct EncounterView {
     pub phase: ScreenPhase,
@@ -4209,5 +4226,46 @@ mod tests {
         assert!(!line.contains('_'), "{line}");
         let missing = departed_line(&display_or_humanized(None, "salt_spit_cove"), 5);
         assert_eq!(missing, "Departed for Salt Spit Cove - Port fee 5 silver");
+    }
+
+    #[test]
+    fn fight_cost_line_lists_hull_then_crew() {
+        assert_eq!(
+            fight_cost_line([40, -1, -12, 0]).as_deref(),
+            Some("Fight cost - Hull -12 - Crew -1")
+        );
+        assert_eq!(
+            fight_cost_line([0, 0, -12, 0]).as_deref(),
+            Some("Fight cost - Hull -12")
+        );
+        assert_eq!(
+            fight_cost_line([0, -2, 0, 0]).as_deref(),
+            Some("Fight cost - Crew -2")
+        );
+    }
+
+    #[test]
+    fn fight_cost_line_drops_gains_and_zeros() {
+        assert_eq!(
+            fight_cost_line([0, 3, -5, 0]).as_deref(),
+            Some("Fight cost - Hull -5")
+        );
+        // Silver and cargo never appear.
+        let line = fight_cost_line([-30, -1, -2, -9]).unwrap();
+        assert_eq!(line, "Fight cost - Hull -2 - Crew -1");
+        assert!(!line.contains("Silver") && !line.contains("Cargo"));
+    }
+
+    #[test]
+    fn fight_cost_line_is_none_when_nothing_was_lost() {
+        assert_eq!(fight_cost_line([0, 0, 0, 0]), None);
+        assert_eq!(fight_cost_line([100, 2, 4, -3]), None);
+    }
+
+    #[test]
+    fn fight_cost_line_is_ascii() {
+        let line = fight_cost_line([0, -1, -12, 0]).unwrap();
+        assert!(line.is_ascii(), "{line}");
+        assert!(!line.contains('\u{2212}'), "{line}");
     }
 }

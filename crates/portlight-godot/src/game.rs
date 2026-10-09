@@ -7250,6 +7250,38 @@ impl PortlightGame {
         self.finish_victory(true);
     }
 
+    /// Smoke: Spare on a won fight logs exactly one `Fight cost - ` line when
+    /// the fight cost hull or crew, equal to the baseline diff, and none when
+    /// it cost neither.
+    fn spare_enemy_checked(&mut self) {
+        let expected = self
+            .encounter
+            .as_ref()
+            .and_then(|facts| facts.baseline)
+            .and_then(|baseline| {
+                let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
+                crate::logic::fight_cost_line(baseline.deltas(&now))
+            });
+        self.spare_enemy();
+        let found: Vec<&String> = self
+            .log_lines
+            .iter()
+            .filter(|line| line.starts_with("Fight cost - "))
+            .collect();
+        let ok = match &expected {
+            Some(line) => found.len() == 1 && found[0] == line,
+            None => found.is_empty(),
+        };
+        if ok {
+            godot_print!("Encounter smoke: win cost line {expected:?}");
+        } else {
+            self.smoke_ok = false;
+            let line = format!("Encounter smoke: win cost line {found:?}, want {expected:?}.");
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+    }
+
     fn take_prize(&mut self) {
         self.finish_victory(false);
     }
@@ -7270,6 +7302,16 @@ impl PortlightGame {
                 let lines = victory_receipt_lines(&receipt);
                 for line in &lines {
                     self.push_log(line.clone());
+                }
+                // What the fight cost, after the receipt lines; the baseline
+                // is taken so it prints once.
+                let cost = self.encounter.as_mut().and_then(|facts| {
+                    let baseline = facts.baseline.take()?;
+                    let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
+                    crate::logic::fight_cost_line(baseline.deltas(&now))
+                });
+                if let Some(line) = cost {
+                    self.push_log(line);
                 }
                 if let Some(facts) = self.encounter.as_mut() {
                     facts.pending_victory = false;
@@ -7390,9 +7432,22 @@ impl PortlightGame {
         });
         facts.baseline = baseline;
         let receipt = self.encounter_end_receipt(&step, pending, &mut facts);
+        // A win by sinking with no spare/take-all choice to come: log what the
+        // fight cost. A pending victory logs it in `finish_victory` instead.
+        let cost = if step.enemy_sunk && !pending && receipt.is_none() {
+            facts.baseline.take().and_then(|baseline| {
+                let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
+                crate::logic::fight_cost_line(baseline.deltas(&now))
+            })
+        } else {
+            None
+        };
         self.encounter = Some(facts);
         if let Some(receipt) = receipt {
             self.push_log(receipt);
+        }
+        if let Some(line) = cost {
+            self.push_log(line);
         }
     }
 
@@ -10064,6 +10119,15 @@ impl PortlightGame {
             ));
             return false;
         }
+        if self
+            .log_lines
+            .iter()
+            .any(|line| line.starts_with("Fight cost - "))
+        {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: a lost fight logged a win cost line.".to_string());
+            return false;
+        }
         godot_print!("loss-outcome phase outcome");
         true
     }
@@ -10098,7 +10162,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Outcome, "outcome");
         self.expect_duel_logged("encounter");
         self.expect_outcome_actions();
-        self.spare_enemy();
+        self.spare_enemy_checked();
         self.expect_returned();
         self.leave_encounter();
         self.report_encounter_smoke();
@@ -10144,7 +10208,7 @@ impl PortlightGame {
             }
             ShotPhase::Outcome => {
                 self.expect_outcome_actions();
-                self.spare_enemy();
+                self.spare_enemy_checked();
                 self.expect_returned();
                 self.leave_encounter();
                 self.report_encounter_smoke();
