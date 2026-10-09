@@ -1407,30 +1407,68 @@ pub(crate) fn label_copy(label: &Gd<Label>) -> String {
 
 /// A wrapped 15 px body line. When the card's own word wrap would end a row
 /// on a ` - ` separator (`... - 5/23 -`), the row breaks at that separator
-/// instead and the dash is dropped (AD #62 soft 2). Re-run on every resize
-/// from the original copy, which stays in [`COPY_META`].
+/// instead and the dash is dropped (#62). See
+/// [`set_separator_copy`] and [`watch_separator_wrap`].
 fn body_line_label(text: &str, color: Color) -> Gd<Label> {
     let mut label = text_label(text, 15, color, true);
-    label.set_meta(COPY_META, &text.to_variant());
-    let copy = text.to_string();
+    set_separator_copy(&mut label, text);
+    watch_separator_wrap(&label);
+    label
+}
+
+/// Shared by the Day's report card and the chart's side Log: set `copy` on a
+/// word-wrapped label so that no row ends on a ` - ` separator dash. The
+/// copy stays in [`COPY_META`] (readers use [`label_copy`]); the drawn text
+/// is [`separator_wrap_lines`] of it at the label's width, or the copy itself
+/// until the label has a width.
+pub(crate) fn set_separator_copy(label: &mut Gd<Label>, copy: &str) {
+    label.set_meta(COPY_META, &copy.to_variant());
+    let drawn = separator_drawn(label, copy).unwrap_or_else(|| copy.to_string());
+    if label.get_text().to_string() != drawn {
+        label.set_text(&drawn);
+    }
+}
+
+/// Re-run the separator wrap from the [`COPY_META`] copy on every resize.
+/// Connect once per label; later copy changes go through
+/// [`set_separator_copy`].
+pub(crate) fn watch_separator_wrap(label: &Gd<Label>) {
     let mut target = label.clone();
     label.signals().resized().connect(move || {
-        let width = target.get_size().x;
-        if width < 50.0 {
-            return;
-        }
-        let Some(font) = target.get_theme_font("font") else {
-            return;
-        };
-        let size = target.get_theme_font_size("font_size");
-        let drawn = separator_wrap(&copy, width, |row| {
-            font.get_string_size_ex(row).font_size(size).done().x
-        });
-        if target.get_text().to_string() != drawn {
-            target.set_text(&drawn);
+        let copy = label_copy(&target);
+        if let Some(drawn) = separator_drawn(&target, &copy) {
+            if target.get_text().to_string() != drawn {
+                target.set_text(&drawn);
+            }
         }
     });
-    label
+}
+
+/// The drawn text for `copy` at the label's current width and font. `None`
+/// before the label is laid out (narrower than 50 px or no font yet).
+fn separator_drawn(label: &Gd<Label>, copy: &str) -> Option<String> {
+    let width = label.get_size().x;
+    if width < 50.0 {
+        return None;
+    }
+    let font = label.get_theme_font("font")?;
+    let size = label.get_theme_font_size("font_size");
+    Some(separator_wrap_lines(copy, width, |row| {
+        font.get_string_size_ex(row).font_size(size).done().x
+    }))
+}
+
+/// [`separator_wrap`] on each `\n` line of `text` (the side Log holds one
+/// line per entry).
+pub(crate) fn separator_wrap_lines(
+    text: &str,
+    width: f32,
+    measure: impl Fn(&str) -> f32,
+) -> String {
+    text.split('\n')
+        .map(|line| separator_wrap(line, width, &measure))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Greedy word wrap of `text` at `width` (as the Label does). Where a row
@@ -1910,6 +1948,14 @@ mod tests {
             );
         }
         assert!(separator_wrap("Al-Manar", 3.0, measure) == "Al-Manar");
+        // The side Log: each entry line wraps on its own; lines with no
+        // separator row stay unchanged.
+        let log = format!("{line}\nShort.");
+        assert_eq!(
+            separator_wrap_lines(&log, 40.0, measure),
+            format!("{}\nShort.", separator_wrap(line, 40.0, measure))
+        );
+        assert_eq!(separator_wrap_lines("A.\nB.", 40.0, measure), "A.\nB.");
     }
 
     /// Q1: notable only at >= 10% and >= 5 silver.

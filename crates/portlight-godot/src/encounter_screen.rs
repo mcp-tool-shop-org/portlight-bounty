@@ -38,7 +38,6 @@ pub(crate) struct EncounterNodes {
     pub delta: Gd<HBoxContainer>,
     pub log: Gd<Label>,
     pub actions: Gd<VBoxContainer>,
-    pub crew: Gd<Label>,
     pub plate: Gd<TextureRect>,
     pub plate_panel: Gd<PanelContainer>,
     pub plate_caption: Gd<Label>,
@@ -104,10 +103,6 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     actions.add_theme_constant_override("separation", 8);
     column.add_child(&actions);
 
-    let mut crew = text_label("Crew to the prize  0", 14, MUTED);
-    crew.set_visible(false);
-    column.add_child(&crew);
-
     EncounterNodes {
         root,
         title,
@@ -116,7 +111,6 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
         delta,
         log,
         actions,
-        crew,
         plate,
         plate_panel,
         plate_caption,
@@ -358,6 +352,27 @@ pub(crate) fn choice_cell(mut button: Gd<Button>, lines: &[&str]) -> Gd<VBoxCont
         cell.add_child(&line);
     }
     cell
+}
+
+/// Capture's prize-crew controls, under the Capture button in its own
+/// column: a `Crew -` / `Crew +` row, then `Crew to the prize  N`.
+pub(crate) fn add_capture_crew(
+    cell: &mut Gd<VBoxContainer>,
+    minus: Gd<Button>,
+    plus: Gd<Button>,
+    crew: i64,
+) {
+    let mut row = HBoxContainer::new_alloc();
+    row.set_name("CaptureCrew");
+    row.add_theme_constant_override("separation", 8);
+    row.add_child(&minus);
+    row.add_child(&plus);
+    cell.add_child(&row);
+    cell.add_child(&text_label(&capture_crew_text(crew), 14, MUTED));
+}
+
+pub(crate) fn capture_crew_text(crew: i64) -> String {
+    format!("Crew to the prize  {crew}")
 }
 
 /// Padding added to the widest Outcome column (GD ruling: widest label plus

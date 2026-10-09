@@ -31,8 +31,8 @@ const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
 const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 
 /// Warning lines shown before `+N more`. The context line is outside the cap.
-/// Four (AD #63 soft): four two-row lines plus `+N more` stay under
-/// [`PANEL_MAX_H`]; five did not. Play reaches four lines at most today.
+/// Four (#63): four two-row lines plus `+N more` stay under
+/// [`WORST_CASE_MAX_H`]. Play reaches four lines at most today.
 pub(crate) const DEPARTURE_LINE_CAP: usize = 4;
 /// `at risk` band for a contract due at the destination: `0 <= left - E <= 1`.
 pub(crate) const AT_RISK_SLACK: i64 = 1;
@@ -42,7 +42,13 @@ pub(crate) const PANEL_X: f32 = 170.0;
 pub(crate) const PANEL_Y: f32 = 40.0;
 pub(crate) const PANEL_W: f32 = 520.0;
 pub(crate) const PANEL_MIN_H: f32 = 160.0;
-pub(crate) const PANEL_MAX_H: f32 = 380.0;
+/// Height cap (clamp). A safety ceiling only: content is held to
+/// [`WORST_CASE_MAX_H`] by the smoke, so the clamp never cuts content.
+pub(crate) const PANEL_MAX_H: f32 = 420.0;
+/// Most height the worst case (four two-row lines plus `+N more`, about
+/// 373 px today) may need. It keeps the panel inside the Day's report card
+/// area (same slot, 380 px tall); the smoke fails above it.
+pub(crate) const WORST_CASE_MAX_H: f32 = 380.0;
 const PANEL_MARGIN: f32 = 18.0;
 /// Text column width inside the 2 px border and 18 px margin.
 const COLUMN_W: f32 = PANEL_W - 2.0 * PANEL_MARGIN;
@@ -446,7 +452,7 @@ pub(crate) fn build_departure_screen() -> DepartureNodes {
 }
 
 /// Day's report slot, height fit to content (min 160). The cap keeps it
-/// under 380; the smoke asserts that.
+/// under [`PANEL_MAX_H`]; the smoke asserts that.
 pub(crate) fn place_panel(root: &mut Gd<PanelContainer>) {
     root.set_anchors_and_offsets_preset(LayoutPreset::TOP_LEFT);
     root.set_position(Vector2::new(PANEL_X, PANEL_Y));

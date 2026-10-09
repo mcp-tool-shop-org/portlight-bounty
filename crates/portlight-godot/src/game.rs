@@ -467,11 +467,19 @@ impl ContractStripShot {
 }
 
 /// `--departure-check-screen` state held across the layout wait at step 3.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct DepartureSmoke {
     capture: bool,
     silver: i64,
+    /// The worst-case document is on the panel; its frame is next.
+    worst_shown: bool,
+    /// The real panel document while the worst case is shown.
+    real_doc: Option<DepartureDoc>,
 }
+
+/// Frames the worst-case document gets to lay out (rebuild, wrap sort,
+/// re-fit) before its frame is taken.
+const DEPARTURE_WORST_FRAMES: i32 = 4;
 
 /// T-N frames: the GOLD paid notice at the top of the Market box.
 #[derive(Clone, Copy)]
@@ -1520,6 +1528,8 @@ impl PortlightGame {
         column.add_child(&body_label("Log", 14, GOLD));
         let mut log = body_label("", 13, CREAM);
         log.set_autowrap_mode(AutowrapMode::WORD_SMART);
+        // Same separator wrap as the Day's report card: no row ends on ` - `.
+        day_report::watch_separator_wrap(&log);
         column.add_child(&log);
         self.log_label = Some(log);
 
@@ -2967,7 +2977,7 @@ impl PortlightGame {
             body.add_child(&label);
         }
         body.add_child(&encounter_button("Repair", game_id, Action::ShipyardRepair));
-        body.add_child(&body_label("Rename", 14, MUTED));
+        body.add_child(&body_label("Ship name", 14, MUTED));
         let mut edit = LineEdit::new_alloc();
         edit.set_text(&self.rename_draft);
         edit.set_placeholder("New name");
@@ -3804,8 +3814,10 @@ impl PortlightGame {
     }
 
     fn perform(&mut self, action: Action) {
-        // Departure check: any other input is an implicit Stay in port. A
-        // Sail press then re-checks from scratch, so it never departs here.
+        // Departure check: any other input is an implicit Stay in port, so
+        // nothing but `Sail anyway` confirms the panel's lane. A Sail press
+        // then runs as a fresh Sail with its own check: the same lane re-opens
+        // the panel, and another lane departs only if its own check is clean.
         if self.departure_open && !matches!(action, Action::DepartureSail | Action::DepartureStay) {
             self.stay_in_port();
         }
@@ -4458,17 +4470,21 @@ impl PortlightGame {
                     session
                         .buy_infrastructure(kind, &arg_refs)
                         .map(|()| match &intent {
-                            HarbourIntent::LeaseWarehouse(tier) => format!("Leased {tier}."),
-                            HarbourIntent::OpenBroker { region, tier } => {
-                                format!("Opened {tier} broker in {region}.")
+                            HarbourIntent::LeaseWarehouse(tier) => {
+                                format!("Leased {}.", harbour_screen::warehouse_name(tier))
                             }
-                            HarbourIntent::BuyLicense(id) => format!("Bought license {id}."),
+                            HarbourIntent::OpenBroker { region, tier } => {
+                                format!("Opened {}.", harbour_screen::broker_name(region, tier))
+                            }
+                            HarbourIntent::BuyLicense(id) => {
+                                format!("Bought {}.", harbour_screen::license_name(id))
+                            }
                             _ => "Done.".to_string(),
                         })
                 }
                 HarbourIntent::OpenCredit(tier) => session
                     .take_credit(tier, 0)
-                    .map(|_| format!("Opened {tier}.")),
+                    .map(|_| format!("Opened {}.", harbour_screen::credit_tier_name(tier))),
                 HarbourIntent::Draw { tier, amount } => session
                     .take_credit(tier, *amount)
                     .map(|received| format!("Drew {received} silver.")),
@@ -4482,7 +4498,7 @@ impl PortlightGame {
                     destination,
                 } => session
                     .buy_insurance(policy_id, target_id, origin, destination)
-                    .map(|()| format!("Bought {policy_id}.")),
+                    .map(|()| format!("Bought {}.", harbour_screen::policy_name(policy_id))),
             }
         };
         match outcome {
@@ -5714,9 +5730,7 @@ impl PortlightGame {
         if let Some(label) = self.status.as_mut() {
             label.set_text(&status_text);
         }
-        if let Some(label) = self.log_label.as_mut() {
-            label.set_text(&self.log_lines.join("\n"));
-        }
+        self.sync_log();
         self.rebuild_lanes();
         self.rebuild_market();
         if let Some(chart) = self.chart_now() {
@@ -6888,6 +6902,15 @@ impl PortlightGame {
         ok
     }
 
+    /// The side Log shows the last eight lines through the Day's report
+    /// separator wrap ([`day_report::set_separator_copy`]).
+    fn sync_log(&mut self) {
+        let copy = self.log_lines.join("\n");
+        if let Some(label) = self.log_label.as_mut() {
+            day_report::set_separator_copy(label, &copy);
+        }
+    }
+
     fn push_log(&mut self, line: impl Into<String>) {
         // R12: sim flavour carries `[bold]` / `[dim]` tags; a Label prints them.
         // GD (c): sim em / en dashes and other non-ASCII punctuation print as
@@ -6899,9 +6922,7 @@ impl PortlightGame {
             let extra = self.log_lines.len() - 8;
             self.log_lines.drain(0..extra);
         }
-        if let Some(label) = self.log_label.as_mut() {
-            label.set_text(&self.log_lines.join("\n"));
-        }
+        self.sync_log();
     }
 
     /// Saves the window. An empty image or a frame that is mostly one colour
@@ -7382,14 +7403,6 @@ impl PortlightGame {
         nodes.card.set_text(&view.card);
         encounter_screen::set_delta_line(&mut nodes.delta, &view.delta);
         nodes.log.set_text(&view.log);
-        let show_crew = view
-            .actions
-            .iter()
-            .any(|action| matches!(action, ScreenAction::Capture));
-        nodes.crew.set_visible(show_crew);
-        nodes
-            .crew
-            .set_text(&format!("Crew to the prize  {crew_count}"));
         let actions = view.actions.clone();
         let preview = view.choice_preview.clone();
         let mut box_node = nodes.actions.clone();
@@ -7405,6 +7418,7 @@ impl PortlightGame {
                 count = 0;
             }
             let caption = action_caption(&action);
+            let capture = matches!(action, ScreenAction::Capture);
             let line = preview
                 .as_ref()
                 .and_then(|preview| preview.line_for(&action))
@@ -7424,17 +7438,24 @@ impl PortlightGame {
                 Some(line) => {
                     row.add_child(&encounter_screen::choice_cell(button, &[line.as_str()]))
                 }
-                None => {
+                None if capture || preview.is_some() => {
                     // Beside a preview cell, a bare button (Capture) keeps its
                     // own height instead of stretching to the cell's, and sits
-                    // in a column of its own like the preview cells.
-                    if preview.is_some() {
-                        button.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
-                        row.add_child(&encounter_screen::choice_cell(button, &[]));
-                    } else {
-                        row.add_child(&button);
+                    // in a column of its own like the preview cells. Capture's
+                    // crew controls sit under it in that same column.
+                    button.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+                    let mut cell = encounter_screen::choice_cell(button, &[]);
+                    if capture {
+                        encounter_screen::add_capture_crew(
+                            &mut cell,
+                            encounter_button("Crew -", game_id, Action::CaptureCrew(-1)),
+                            encounter_button("Crew +", game_id, Action::CaptureCrew(1)),
+                            crew_count,
+                        );
                     }
+                    row.add_child(&cell);
                 }
+                None => row.add_child(&button),
             }
             count += 1;
         }
@@ -7445,17 +7466,6 @@ impl PortlightGame {
             if preview.is_some() {
                 encounter_screen::even_choice_columns(&row);
             }
-        }
-        if show_crew {
-            let mut crew_row = HBoxContainer::new_alloc();
-            crew_row.add_theme_constant_override("separation", 8);
-            crew_row.add_child(&encounter_button(
-                "Crew -",
-                game_id,
-                Action::CaptureCrew(-1),
-            ));
-            crew_row.add_child(&encounter_button("Crew +", game_id, Action::CaptureCrew(1)));
-            box_node.add_child(&crew_row);
         }
     }
 
@@ -10549,10 +10559,6 @@ fn receipt_line(receipt: &TradeReceipt) -> String {
     )
 }
 
-/// The receipt, then one Log line per settled contract in the same field-built
-/// form as the Market notice (`Contract paid: Silver +615 - 23 Grain to
-/// Corsair's Rest`), with the desk budget instead of the notice trim. No sim
-/// `Delivered ...` summary.
 /// F13: the Rename button is live once the trimmed draft is non-empty and is
 /// not the current flagship name.
 pub(crate) fn rename_ready(draft: &str, current: &str) -> bool {
@@ -10560,6 +10566,10 @@ pub(crate) fn rename_ready(draft: &str, current: &str) -> bool {
     !draft.is_empty() && draft != current.trim()
 }
 
+/// The receipt, then one Log line per settled contract in the same field-built
+/// form as the Market notice (`Contract paid: Silver +615 - 23 Grain to
+/// Corsair's Rest`), with the desk budget instead of the notice trim. No sim
+/// `Delivered ...` summary.
 fn sale_lines(sale: &Sale) -> Vec<String> {
     let mut lines = vec![receipt_line(&sale.receipt)];
     for contract in &sale.contracts {
@@ -11881,7 +11891,12 @@ impl PortlightGame {
             }
         }
         self.expect_still_docked(18, silver, "panel open");
-        self.departure_pending = Some(DepartureSmoke { capture, silver });
+        self.departure_pending = Some(DepartureSmoke {
+            capture,
+            silver,
+            worst_shown: false,
+            real_doc: None,
+        });
     }
 
     fn expect_still_docked(&mut self, day: i64, silver: i64, step: &str) {
@@ -11928,11 +11943,19 @@ impl PortlightGame {
         self.assert_port_row_fits();
     }
 
-    /// After the layout wait: fit asserts, the frame, then steps 4-7.
+    /// After the layout wait: fit asserts and the frame; then the worst-case
+    /// document on the open panel and its frame; then steps 4-7.
     fn advance_departure_smoke(&mut self) -> bool {
-        let Some(smoke) = self.departure_pending.take() else {
+        let Some(mut smoke) = self.departure_pending.take() else {
             return false;
         };
+        if smoke.worst_shown {
+            self.shoot_departure_worst_case(smoke.capture);
+            self.departure_doc = smoke.real_doc.take();
+            self.sync_departure_check();
+            self.finish_departure_smoke(smoke.silver);
+            return false;
+        }
         self.assert_departure_check_fits();
         if smoke.capture {
             if let Some(dir) = self.departure_shot_dir.clone() {
@@ -11941,7 +11964,54 @@ impl PortlightGame {
                 }
             }
         }
-        let silver = smoke.silver;
+        // Show the tallest document on the open panel and let it lay out.
+        smoke.real_doc = self.departure_doc.take();
+        self.departure_doc = Some(departure_check::worst_case_document());
+        self.sync_departure_check();
+        smoke.worst_shown = true;
+        self.departure_pending = Some(smoke);
+        self.capture_frames = DEPARTURE_WORST_FRAMES;
+        true
+    }
+
+    /// The worst-case document drawn on the open panel: it must fit the panel
+    /// rules and stay within [`departure_check::WORST_CASE_MAX_H`] (inside the
+    /// Day's report card area). Saves `departure-check-worst.png` when
+    /// capturing.
+    fn shoot_departure_worst_case(&mut self, capture: bool) {
+        let Some(nodes) = self.departure_nodes.clone() else {
+            self.fail_departure("Departure smoke: no panel nodes for the worst-case frame.");
+            return;
+        };
+        if let Some(problem) = departure_check::panel_fit_error(&nodes) {
+            self.fail_departure(format!("Departure smoke: worst-case frame {problem}."));
+        }
+        let height = nodes.root.get_size().y;
+        if height > departure_check::WORST_CASE_MAX_H + 0.5 {
+            self.fail_departure(format!(
+                "Departure smoke: worst-case frame panel {height} px, over {}.",
+                departure_check::WORST_CASE_MAX_H
+            ));
+        }
+        let drawn = departure_check::line_texts(&nodes);
+        if drawn.len() != departure_check::DEPARTURE_LINE_CAP + 1 {
+            self.fail_departure(format!(
+                "Departure smoke: worst-case frame drew {} lines.",
+                drawn.len()
+            ));
+        }
+        godot_print!("Departure smoke: worst-case frame panel {height} px");
+        if capture {
+            if let Some(dir) = self.departure_shot_dir.clone() {
+                if !self.save_shot(&format!("{dir}/departure-check-worst.png"), false) {
+                    self.capture_failed = true;
+                }
+            }
+        }
+    }
+
+    /// Steps 4-7 on the real panel document.
+    fn finish_departure_smoke(&mut self, silver: i64) {
         let log = self.log_lines.clone();
 
         // Step 4: Escape is Stay in port.
@@ -11949,7 +12019,8 @@ impl PortlightGame {
         self.expect_departure_closed("Escape");
         self.expect_still_docked(18, silver, "Escape");
 
-        // Step 5: Sail again (twice: a repeat re-checks, never departs), then Stay.
+        // Step 5: Sail again (twice: a repeat to the same lane re-checks and
+        // does not depart), then Stay.
         self.perform(Action::Sail("corsairs_rest".into()));
         self.perform(Action::Sail("corsairs_rest".into()));
         if !self.departure_open {
@@ -12022,7 +12093,6 @@ impl PortlightGame {
         }
         self.check_departure_worst_case();
         self.departure_checked = true;
-        false
     }
 
     /// #63 follow-up (AD soft): the tallest document the panel can draw
@@ -12047,15 +12117,16 @@ impl PortlightGame {
                 departure_check::DEPARTURE_LINE_CAP
             ));
         }
-        if min.y > departure_check::PANEL_MAX_H {
+        let limit = departure_check::WORST_CASE_MAX_H;
+        if min.y > limit {
             self.fail_departure(format!(
-                "Departure smoke: worst-case panel needs {} px, over {}.",
+                "Departure smoke: worst-case panel needs {} px, over {limit} (clamp {}).",
                 min.y,
                 departure_check::PANEL_MAX_H
             ));
         } else {
             godot_print!(
-                "Departure smoke: worst-case panel {} px (cap {})",
+                "Departure smoke: worst-case panel {} px (limit {limit}, clamp {})",
                 min.y,
                 departure_check::PANEL_MAX_H
             );

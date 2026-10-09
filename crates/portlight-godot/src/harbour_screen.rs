@@ -218,10 +218,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         .find(|lease| lease.port_id == port_id && lease.active);
     let mut warehouse_lines = Vec::new();
     if let Some(lease) = lease {
-        let name = catalog
-            .warehouse_tier(&lease.tier)
-            .map(|spec| ascii_copy(&spec.name))
-            .unwrap_or_else(|| ascii_copy(&lease.tier));
+        let name = warehouse_name(&lease.tier);
         let used: f64 = lease
             .inventory
             .iter()
@@ -317,13 +314,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
     }
     for office in active_brokers {
         let spec = catalog.broker(&office.region, &office.tier);
-        let name = spec.map(|spec| ascii_copy(&spec.name)).unwrap_or_else(|| {
-            format!(
-                "{} {}",
-                ascii_copy(&office.region),
-                ascii_copy(&office.tier)
-            )
-        });
+        let name = broker_name(&office.region, &office.tier);
         let upkeep = spec.map(|spec| spec.upkeep_per_day).unwrap_or(0);
         broker_lines.push(format!(
             "{name}. Active {active}. Upkeep {upkeep}/day.",
@@ -353,9 +344,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
     }
     for owned in held {
         let spec = catalog.license(&owned.license_id);
-        let name = spec
-            .map(|spec| ascii_copy(&spec.name))
-            .unwrap_or_else(|| ascii_copy(&owned.license_id));
+        let name = license_name(&owned.license_id);
         let upkeep = spec.map(|spec| spec.upkeep_per_day).unwrap_or(0);
         license_lines.push(format!("{name}. Upkeep {upkeep}/day."));
     }
@@ -493,22 +482,22 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         policy_lines.push("No active policy.".to_string());
     }
     for policy in &active_policies {
-        let name = catalog
-            .policy(&policy.spec_id)
-            .map(|spec| ascii_copy(&spec.name))
-            .unwrap_or_else(|| ascii_copy(&policy.spec_id));
+        let name = policy_name(&policy.spec_id);
         let mut line = format!(
             "{name}. Premium {}. Claims {}.",
             policy.premium_paid, policy.claims_made
         );
         if !policy.target_id.is_empty() {
-            line.push_str(&format!(" Target {}.", ascii_copy(&policy.target_id)));
+            line.push_str(&format!(
+                " Target {}.",
+                contract_target_name(session, &policy.target_id)
+            ));
         }
         if !policy.voyage_origin.is_empty() || !policy.voyage_destination.is_empty() {
             line.push_str(&format!(
-                " Voyage {} -> {}.",
-                ascii_copy(&policy.voyage_origin),
-                ascii_copy(&policy.voyage_destination)
+                " Voyage {} to {}.",
+                port_name(session, &policy.voyage_origin),
+                port_name(session, &policy.voyage_destination)
             ));
         }
         policy_lines.push(line);
@@ -666,9 +655,7 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
     match intent {
         HarbourIntent::LeaseWarehouse(tier) => {
             let spec = catalog.warehouse_tier(tier);
-            let name = spec
-                .map(|spec| ascii_copy(&spec.name))
-                .unwrap_or_else(|| ascii_copy(tier));
+            let name = warehouse_name(tier);
             let cost = spec.map(|spec| spec.lease_cost).unwrap_or(0);
             let upkeep = spec.map(|spec| spec.upkeep_per_day).unwrap_or(0);
             format!(
@@ -677,9 +664,7 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
         }
         HarbourIntent::OpenBroker { region, tier } => {
             let spec = catalog.broker(region, tier);
-            let name = spec
-                .map(|spec| ascii_copy(&spec.name))
-                .unwrap_or_else(|| format!("{} {tier}", ascii_copy(region)));
+            let name = broker_name(region, tier);
             let cost = spec.map(|spec| spec.purchase_cost).unwrap_or(0);
             let upkeep = spec.map(|spec| spec.upkeep_per_day).unwrap_or(0);
             format!(
@@ -688,9 +673,7 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
         }
         HarbourIntent::BuyLicense(id) => {
             let spec = catalog.license(id);
-            let name = spec
-                .map(|spec| ascii_copy(&spec.name))
-                .unwrap_or_else(|| ascii_copy(id));
+            let name = license_name(id);
             let cost = spec.map(|spec| spec.purchase_cost).unwrap_or(0);
             let upkeep = spec.map(|spec| spec.upkeep_per_day).unwrap_or(0);
             format!(
@@ -699,17 +682,12 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
         }
         HarbourIntent::OpenCredit(tier) => {
             let spec = catalog.credit_tier(tier);
-            let name = spec
-                .map(|spec| ascii_copy(&spec.name))
-                .unwrap_or_else(|| ascii_copy(tier));
+            let name = credit_tier_name(tier);
             let limit = spec.map(|spec| spec.credit_limit).unwrap_or(0);
             format!("Open {name}? Limit {limit}. No silver is drawn yet.")
         }
         HarbourIntent::Draw { tier, amount } => {
-            let name = catalog
-                .credit_tier(tier)
-                .map(|spec| ascii_copy(&spec.name))
-                .unwrap_or_else(|| ascii_copy(tier));
+            let name = credit_tier_name(tier);
             format!("Draw {amount} silver on {name}?")
         }
         HarbourIntent::Emergency(amount) => format!(
@@ -721,9 +699,7 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
             ..
         } => {
             let spec = catalog.policy(policy_id);
-            let name = spec
-                .map(|spec| ascii_copy(&spec.name))
-                .unwrap_or_else(|| ascii_copy(policy_id));
+            let name = policy_name(policy_id);
             let region = insurance_region(session);
             let heat = session.world().captain.standing.heat_of(&region);
             let premium = spec
@@ -732,7 +708,8 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
             if target_id.is_empty() {
                 format!("Buy {name} for {premium} silver?")
             } else {
-                format!("Buy {name} for contract {target_id} at {premium} silver?")
+                let target = contract_target_name(session, target_id);
+                format!("Buy {name} for contract {target} at {premium} silver?")
             }
         }
     }
@@ -867,11 +844,110 @@ fn format_units(value: f64) -> String {
 
 /// Player copy for a credit tier id: the catalog name (`premier_commercial`
 /// reads `Premier Commercial Line`), else [`humanize_id`].
-fn credit_tier_name(tier: &str) -> String {
-    content::content()
-        .credit_tier(tier)
-        .map(|spec| ascii_copy(&spec.name))
-        .unwrap_or_else(|| humanize_id(tier))
+pub(crate) fn credit_tier_name(tier: &str) -> String {
+    catalog_or_humanized(
+        content::content()
+            .credit_tier(tier)
+            .map(|spec| spec.name.as_str()),
+        tier,
+    )
+}
+
+/// A catalog name as ASCII copy (an em dash reads `-`), else the humanized
+/// id. Never the raw id.
+fn catalog_or_humanized(name: Option<&str>, id: &str) -> String {
+    name.map(ascii_copy)
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| humanize_id(&ascii_copy(id)))
+}
+
+/// License name (`med_trade_charter` reads `Mediterranean Trade Charter`).
+pub(crate) fn license_name(id: &str) -> String {
+    catalog_or_humanized(
+        content::content()
+            .license(id)
+            .map(|spec| spec.name.as_str()),
+        id,
+    )
+}
+
+/// Insurance policy name (`hull_basic` reads `Basic Hull Insurance`).
+pub(crate) fn policy_name(id: &str) -> String {
+    catalog_or_humanized(
+        content::content().policy(id).map(|spec| spec.name.as_str()),
+        id,
+    )
+}
+
+/// Warehouse tier name (`depot` reads `Small Depot`).
+pub(crate) fn warehouse_name(tier: &str) -> String {
+    catalog_or_humanized(
+        content::content()
+            .warehouse_tier(tier)
+            .map(|spec| spec.name.as_str()),
+        tier,
+    )
+}
+
+/// Broker office name for a region and tier, else `{Region} {Tier}`.
+pub(crate) fn broker_name(region: &str, tier: &str) -> String {
+    match content::content().broker(region, tier) {
+        Some(spec) => catalog_or_humanized(Some(&spec.name), tier),
+        None => format!(
+            "{} {}",
+            humanize_id(&ascii_copy(region)),
+            humanize_id(&ascii_copy(tier))
+        ),
+    }
+}
+
+/// Neutral name for an insured contract that is on no board list.
+pub(crate) const SETTLED_CONTRACT: &str = "a settled contract";
+
+/// The contract an insurance policy targets, by the id the policy holds
+/// (the offer id):
+/// - an active or offered contract: its board title;
+/// - a resolved one (delivered, expired, abandoned) in `board.completed`:
+///   `{Good} for {Port}` from catalog names;
+/// - none of these: [`SETTLED_CONTRACT`]. Contract ids are hashes, so the id
+///   is never shown, not even humanized.
+pub(crate) fn contract_target_name(session: &Session, id: &str) -> String {
+    let board = session.board();
+    let title = board
+        .active
+        .iter()
+        .find(|contract| contract.offer_id == id)
+        .map(|contract| contract.title.as_str())
+        .or_else(|| {
+            board
+                .offers
+                .iter()
+                .find(|offer| offer.id == id)
+                .map(|offer| offer.title.as_str())
+        })
+        .map(|title| ascii_copy(title).trim().to_string())
+        .filter(|title| !title.is_empty());
+    if let Some(title) = title {
+        return title;
+    }
+    board
+        .completed
+        .iter()
+        .find(|outcome| outcome.contract_id == id)
+        .map(|outcome| {
+            format!(
+                "{} for {}",
+                good_name(&outcome.good_id),
+                port_name(session, &outcome.destination_port_id)
+            )
+        })
+        .unwrap_or_else(|| SETTLED_CONTRACT.to_string())
+}
+
+/// Port name for a policy voyage end, else the humanized id.
+fn port_name(session: &Session, id: &str) -> String {
+    catalog_or_humanized(session.world().port(id).map(|port| port.name.as_str()), id)
 }
 
 /// One Harbour claims row. A paid contract guarantee reads
@@ -1190,5 +1266,159 @@ mod tests {
             }
         }
         assert!(saw, "expected a credit or upkeep note from advance");
+    }
+
+    /// A catalog miss reads as humanized copy, never the raw id; a known id
+    /// keeps its catalog name (ASCII).
+    #[test]
+    fn catalog_misses_never_print_raw_ids() {
+        let session = merchant();
+        let miss = "salt_spit_cove";
+        let human = "Salt Spit Cove";
+        assert_eq!(license_name(miss), human);
+        assert_eq!(policy_name(miss), human);
+        assert_eq!(warehouse_name(miss), human);
+        assert_eq!(credit_tier_name(miss), human);
+        assert_eq!(broker_name("salt_spit", "cove"), human);
+        assert_eq!(contract_target_name(&session, miss), SETTLED_CONTRACT);
+        assert_eq!(
+            contract_target_name(&session, "b21e3e594ab0"),
+            SETTLED_CONTRACT
+        );
+        assert_eq!(port_name(&session, miss), human);
+
+        assert_eq!(
+            license_name("med_trade_charter"),
+            "Mediterranean Trade Charter"
+        );
+        assert_eq!(policy_name("contract_basic"), "Contract Guarantee - Basic");
+        assert_eq!(warehouse_name("depot"), "Small Depot");
+        assert_eq!(
+            broker_name("Mediterranean", "local"),
+            "Mediterranean Local Broker"
+        );
+        assert_eq!(port_name(&session, "porto_novo"), "Porto Novo");
+
+        for intent in [
+            HarbourIntent::LeaseWarehouse(miss.into()),
+            HarbourIntent::OpenBroker {
+                region: "salt_spit".into(),
+                tier: "cove".into(),
+            },
+            HarbourIntent::BuyLicense(miss.into()),
+            HarbourIntent::OpenCredit(miss.into()),
+            HarbourIntent::Draw {
+                tier: miss.into(),
+                amount: 10,
+            },
+            HarbourIntent::BuyInsurance {
+                policy_id: miss.into(),
+                target_id: String::new(),
+                origin: String::new(),
+                destination: String::new(),
+            },
+        ] {
+            let prompt = confirm_prompt(&session, &intent);
+            assert!(!prompt.contains('_'), "{prompt}");
+            assert!(
+                prompt.contains(human) || prompt.contains("Salt Spit"),
+                "{prompt}"
+            );
+            assert!(prompt.is_ascii(), "{prompt}");
+        }
+    }
+
+    /// A voyage policy row names both ports in words, no arrow.
+    #[test]
+    fn voyage_policy_row_reads_port_to_port() {
+        let mut session = merchant();
+        let here = session.world().voyage.destination_id.clone();
+        session
+            .buy_insurance("hull_basic", "", &here, "corsairs_rest")
+            .expect("voyage policy");
+        let model = harbour_model(&session).expect("docked desk");
+        let here_name = port_name(&session, &here);
+        let line = model
+            .policy_lines
+            .iter()
+            .find(|line| line.contains(" Voyage "))
+            .expect("voyage row");
+        assert!(
+            line.ends_with(&format!(" Voyage {here_name} to Corsair's Rest.")),
+            "{line}"
+        );
+        assert!(!line.contains("->"), "{line}");
+    }
+
+    /// A guarantee whose contract has expired names it from the settled
+    /// outcome (`{Good} for {Port}`), never the hash id.
+    #[test]
+    fn settled_insured_contract_reads_good_for_port() {
+        let mut session = merchant();
+        let offer = session.board().offers.first().cloned().expect("an offer");
+        session.accept_contract(&offer.id).expect("accept");
+        session
+            .buy_insurance("contract_basic", &offer.id, "", "")
+            .expect("guarantee");
+        // Stay docked past the deadline: the contract expires undelivered.
+        let mut outcome = None;
+        for _ in 0..80 {
+            session.advance().expect("advance");
+            outcome = session
+                .board()
+                .completed
+                .iter()
+                .find(|outcome| outcome.contract_id == offer.id)
+                .cloned();
+            if outcome.is_some() {
+                break;
+            }
+        }
+        let outcome = outcome.expect("settled outcome");
+        assert_eq!(outcome.outcome_type, "expired");
+        let want = format!(
+            "{} for {}",
+            good_name(&outcome.good_id),
+            port_name(&session, &outcome.destination_port_id)
+        );
+        assert_eq!(contract_target_name(&session, &offer.id), want);
+        let model = harbour_model(&session).expect("docked desk");
+        let row = model
+            .policy_lines
+            .iter()
+            .find(|line| line.contains(" Target "))
+            .expect("guarantee row");
+        assert!(row.contains(&format!(" Target {want}.")), "{row}");
+        assert!(!row.contains(&offer.id), "{row}");
+        assert!(
+            !row.to_lowercase().contains(&offer.id.to_lowercase()),
+            "{row}"
+        );
+    }
+
+    /// The insurance prompt names the target contract by its title.
+    #[test]
+    fn insurance_prompt_names_the_contract_title() {
+        let mut session = merchant();
+        let offer = session.board().offers.first().cloned().expect("an offer");
+        session.accept_contract(&offer.id).expect("accept");
+        let prompt = confirm_prompt(
+            &session,
+            &HarbourIntent::BuyInsurance {
+                policy_id: "contract_basic".into(),
+                target_id: offer.id.clone(),
+                origin: String::new(),
+                destination: String::new(),
+            },
+        );
+        assert!(
+            prompt.contains(&format!("for contract {}", ascii_copy(&offer.title))),
+            "{prompt}"
+        );
+        assert!(!prompt.contains(&offer.id), "{prompt}");
+        assert_eq!(
+            contract_target_name(&session, &offer.id),
+            ascii_copy(&offer.title)
+        );
     }
 }

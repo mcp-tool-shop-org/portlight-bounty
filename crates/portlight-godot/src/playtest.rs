@@ -466,8 +466,9 @@ fn insurance_from(rest: &str) -> Option<HarbourIntent> {
 }
 
 /// F10: an overlay that takes the whole offer while it is open. Departure
-/// check and Day's report are not here: GD ruled them non-blocking, so they
-/// never narrow what is offered.
+/// check and Day's report are not here: they are non-blocking overlays (the
+/// chart stays usable under them), so on their own they never narrow what is
+/// offered.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum BlockingOverlay {
     Encounter,
@@ -521,14 +522,15 @@ pub(crate) enum OfferScope {
     Only(OfferLayer),
 }
 
-/// GD's F10 rules (design-signoff-pr64.md section 4):
+/// The F10 layer rules for what the bridge offers:
 /// - F10-1: the top screen's own actions are always offered.
 /// - F10-2: an input-blocking screen hides the chart behind it.
 /// - F10-3: one layer at a time. A non-blocking overlay over a blocking
 ///   screen (the Day's report over an encounter) is the only layer offered.
 /// - F10-4: with nothing blocking, Departure and the Day's report keep the
 ///   chart offered. A chart press counts as Stay / close first
-///   ([`implicit_dismiss`]).
+///   ([`implicit_dismiss`]), so it never confirms the Departure check's lane;
+///   a Sail to another lane runs that lane's own check.
 ///
 /// Draw order (top first): Departure, Day's report, then the blocking
 /// screens.
@@ -1247,12 +1249,12 @@ mod tests {
         let labels = vec![
             "Grain for Al-Manar".to_string(),
             "Grain x5 to Al-Manar   120 silver".to_string(),
-            "9 days left   trust unproven   Shortage".to_string(),
+            "9 days left   Trust Unproven   Shortage".to_string(),
         ];
         let board = contract_row(&labels, vec!["contracts.accept.abc123".into()]);
         assert_eq!(board.id, "abc123");
         assert_eq!(board.title, "Grain for Al-Manar");
-        assert_eq!(board.meta, "9 days left   trust unproven   Shortage");
+        assert_eq!(board.meta, "9 days left   Trust Unproven   Shortage");
         let active = contract_row(
             &labels[..2],
             vec![

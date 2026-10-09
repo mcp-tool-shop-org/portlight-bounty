@@ -1760,7 +1760,7 @@ fn role_name(role: &str) -> String {
         .iter()
         .find(|spec| spec.id == role)
         .map(|spec| spec.name.to_string())
-        .unwrap_or_else(|| ascii_owned(role, "officer"))
+        .unwrap_or_else(|| humanize_id(role))
 }
 
 /// Docked crew desk from `session.world()` and the embedded catalogs.
@@ -1772,7 +1772,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
     }
     let port_id = world.voyage.destination_id.as_str();
     let port = world.port(port_id)?;
-    let port_name = ascii_owned(&port.name, port_id);
+    let port_name = display_or_humanized(Some(&port.name), port_id);
     let catalog = portlight_sim::content::content();
     let ship = world.captain.ship.as_ref();
     let (crew, crew_max, space) = ship
@@ -1840,7 +1840,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         .into_iter()
         .filter_map(|id| {
             let style = catalog.fighting_style(&id)?;
-            let name = ascii_owned(&style.name, &style.id);
+            let name = display_or_humanized(Some(&style.name), &style.id);
             let known = learned.iter().any(|learned_id| learned_id == &id);
             let known_word = if known { "yes" } else { "no" };
             Some(CrewStyleLine {
@@ -1862,10 +1862,10 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         let names: Vec<String> = learned
             .iter()
             .map(|id| {
-                catalog
-                    .fighting_style(id)
-                    .map(|style| ascii_owned(&style.name, id))
-                    .unwrap_or_else(|| ascii_owned(id, "style"))
+                display_or_humanized(
+                    catalog.fighting_style(id).map(|style| style.name.as_str()),
+                    id,
+                )
             })
             .collect();
         format!("Known styles: {}", names.join(", "))
@@ -1875,7 +1875,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         .skills
         .iter()
         .map(|skill| {
-            let skill_name = ascii_owned(&skill.name, &skill.id);
+            let skill_name = display_or_humanized(Some(&skill.name), &skill.id);
             let display = portlight_sim::skills::skill_display(&world.captain.skills, &skill.id);
             let display = ascii_owned(&display, "Untrained");
             let current = portlight_sim::skills::skill_level(&world.captain.skills, &skill.id);
@@ -1942,14 +1942,18 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         .companions
         .iter()
         .map(|member| {
-            let name = catalog
-                .companion(&member.companion_id)
-                .map(|comp| ascii_owned(&comp.name, &member.companion_id))
-                .unwrap_or_else(|| ascii_owned(&member.companion_id, "companion"));
-            let role = catalog
-                .companion_role(&member.role_id)
-                .map(|role| ascii_owned(&role.name, &member.role_id))
-                .unwrap_or_else(|| ascii_owned(&member.role_id, "role"));
+            let name = display_or_humanized(
+                catalog
+                    .companion(&member.companion_id)
+                    .map(|comp| comp.name.as_str()),
+                &member.companion_id,
+            );
+            let role = display_or_humanized(
+                catalog
+                    .companion_role(&member.role_id)
+                    .map(|role| role.name.as_str()),
+                &member.role_id,
+            );
             format!("{name}  {role}  morale {}", member.morale)
         })
         .collect();
@@ -1966,11 +1970,13 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         })
         .filter(|comp| !party.departed.iter().any(|id| id == &comp.id))
         .map(|comp| {
-            let name = ascii_owned(&comp.name, &comp.id);
-            let role = catalog
-                .companion_role(&comp.role_id)
-                .map(|role| ascii_owned(&role.name, &comp.role_id))
-                .unwrap_or_else(|| ascii_owned(&comp.role_id, "role"));
+            let name = display_or_humanized(Some(&comp.name), &comp.id);
+            let role = display_or_humanized(
+                catalog
+                    .companion_role(&comp.role_id)
+                    .map(|role| role.name.as_str()),
+                &comp.role_id,
+            );
             let region = ascii_owned(&comp.region, "region");
             CrewOfferLine {
                 id: comp.id.clone(),
@@ -4004,5 +4010,37 @@ mod tests {
         );
         assert!(!text.contains("aggressive"), "{text}");
         assert!(!text.contains("iron_wolves"), "{text}");
+    }
+
+    /// Crew desk names: a catalog miss reads as humanized copy, never the
+    /// raw id; a known id keeps its catalog name.
+    #[test]
+    fn catalog_misses_never_print_raw_ids() {
+        assert_eq!(role_name("salt_spit_cove"), "Salt Spit Cove");
+        assert_eq!(
+            display_or_humanized(None, "salt_spit_cove"),
+            "Salt Spit Cove"
+        );
+        assert_eq!(
+            display_or_humanized(Some("Caf\u{e9}"), "salt_spit_cove"),
+            "Salt Spit Cove"
+        );
+        assert_eq!(display_or_humanized(Some("Raj"), "raj_the_quiet"), "Raj");
+        let session = Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None)
+            .expect("scripted session");
+        let desk = crew_desk(&session).expect("docked desk");
+        let port = session
+            .world()
+            .port(&session.world().voyage.destination_id)
+            .expect("port");
+        assert_eq!(desk.port_name, port.name);
+        for text in desk
+            .party
+            .iter()
+            .chain(desk.offers.iter().map(|offer| &offer.text))
+            .chain(std::iter::once(&desk.known_styles))
+        {
+            assert!(!text.contains('_'), "{text}");
+        }
     }
 }
