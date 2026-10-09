@@ -314,13 +314,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
     }
     for office in active_brokers {
         let spec = catalog.broker(&office.region, &office.tier);
-        let name = spec.map(|spec| ascii_copy(&spec.name)).unwrap_or_else(|| {
-            format!(
-                "{} {}",
-                ascii_copy(&office.region),
-                ascii_copy(&office.tier)
-            )
-        });
+        let name = broker_name(&office.region, &office.tier);
         let upkeep = spec.map(|spec| spec.upkeep_per_day).unwrap_or(0);
         broker_lines.push(format!(
             "{name}. Active {active}. Upkeep {upkeep}/day.",
@@ -501,7 +495,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         }
         if !policy.voyage_origin.is_empty() || !policy.voyage_destination.is_empty() {
             line.push_str(&format!(
-                " Voyage {} -> {}.",
+                " Voyage {} to {}.",
                 port_name(session, &policy.voyage_origin),
                 port_name(session, &policy.voyage_destination)
             ));
@@ -908,8 +902,16 @@ pub(crate) fn broker_name(region: &str, tier: &str) -> String {
     }
 }
 
-/// The title of the contract an insurance policy targets (active board
-/// entry, else a settled one), else the humanized id.
+/// Neutral name for an insured contract that is on no board list.
+pub(crate) const SETTLED_CONTRACT: &str = "a settled contract";
+
+/// The contract an insurance policy targets, by the id the policy holds
+/// (the offer id):
+/// - an active or offered contract: its board title;
+/// - a resolved one (delivered, expired, abandoned) in `board.completed`:
+///   `{Good} for {Port}` from catalog names;
+/// - none of these: [`SETTLED_CONTRACT`]. Contract ids are hashes, so the id
+///   is never shown, not even humanized.
 pub(crate) fn contract_target_name(session: &Session, id: &str) -> String {
     let board = session.board();
     let title = board
@@ -923,8 +925,24 @@ pub(crate) fn contract_target_name(session: &Session, id: &str) -> String {
                 .iter()
                 .find(|offer| offer.id == id)
                 .map(|offer| offer.title.as_str())
-        });
-    catalog_or_humanized(title, id)
+        })
+        .map(|title| ascii_copy(title).trim().to_string())
+        .filter(|title| !title.is_empty());
+    if let Some(title) = title {
+        return title;
+    }
+    board
+        .completed
+        .iter()
+        .find(|outcome| outcome.contract_id == id)
+        .map(|outcome| {
+            format!(
+                "{} for {}",
+                good_name(&outcome.good_id),
+                port_name(session, &outcome.destination_port_id)
+            )
+        })
+        .unwrap_or_else(|| SETTLED_CONTRACT.to_string())
 }
 
 /// Port name for a policy voyage end, else the humanized id.
@@ -1262,7 +1280,11 @@ mod tests {
         assert_eq!(warehouse_name(miss), human);
         assert_eq!(credit_tier_name(miss), human);
         assert_eq!(broker_name("salt_spit", "cove"), human);
-        assert_eq!(contract_target_name(&session, miss), human);
+        assert_eq!(contract_target_name(&session, miss), SETTLED_CONTRACT);
+        assert_eq!(
+            contract_target_name(&session, "b21e3e594ab0"),
+            SETTLED_CONTRACT
+        );
         assert_eq!(port_name(&session, miss), human);
 
         assert_eq!(
@@ -1295,12 +1317,6 @@ mod tests {
                 origin: String::new(),
                 destination: String::new(),
             },
-            HarbourIntent::BuyInsurance {
-                policy_id: "contract_basic".into(),
-                target_id: miss.into(),
-                origin: String::new(),
-                destination: String::new(),
-            },
         ] {
             let prompt = confirm_prompt(&session, &intent);
             assert!(!prompt.contains('_'), "{prompt}");
@@ -1310,6 +1326,74 @@ mod tests {
             );
             assert!(prompt.is_ascii(), "{prompt}");
         }
+    }
+
+    /// A voyage policy row names both ports in words, no arrow.
+    #[test]
+    fn voyage_policy_row_reads_port_to_port() {
+        let mut session = merchant();
+        let here = session.world().voyage.destination_id.clone();
+        session
+            .buy_insurance("hull_basic", "", &here, "corsairs_rest")
+            .expect("voyage policy");
+        let model = harbour_model(&session).expect("docked desk");
+        let here_name = port_name(&session, &here);
+        let line = model
+            .policy_lines
+            .iter()
+            .find(|line| line.contains(" Voyage "))
+            .expect("voyage row");
+        assert!(
+            line.ends_with(&format!(" Voyage {here_name} to Corsair's Rest.")),
+            "{line}"
+        );
+        assert!(!line.contains("->"), "{line}");
+    }
+
+    /// A guarantee whose contract has expired names it from the settled
+    /// outcome (`{Good} for {Port}`), never the hash id.
+    #[test]
+    fn settled_insured_contract_reads_good_for_port() {
+        let mut session = merchant();
+        let offer = session.board().offers.first().cloned().expect("an offer");
+        session.accept_contract(&offer.id).expect("accept");
+        session
+            .buy_insurance("contract_basic", &offer.id, "", "")
+            .expect("guarantee");
+        // Stay docked past the deadline: the contract expires undelivered.
+        let mut outcome = None;
+        for _ in 0..80 {
+            session.advance().expect("advance");
+            outcome = session
+                .board()
+                .completed
+                .iter()
+                .find(|outcome| outcome.contract_id == offer.id)
+                .cloned();
+            if outcome.is_some() {
+                break;
+            }
+        }
+        let outcome = outcome.expect("settled outcome");
+        assert_eq!(outcome.outcome_type, "expired");
+        let want = format!(
+            "{} for {}",
+            good_name(&outcome.good_id),
+            port_name(&session, &outcome.destination_port_id)
+        );
+        assert_eq!(contract_target_name(&session, &offer.id), want);
+        let model = harbour_model(&session).expect("docked desk");
+        let row = model
+            .policy_lines
+            .iter()
+            .find(|line| line.contains(" Target "))
+            .expect("guarantee row");
+        assert!(row.contains(&format!(" Target {want}.")), "{row}");
+        assert!(!row.contains(&offer.id), "{row}");
+        assert!(
+            !row.to_lowercase().contains(&offer.id.to_lowercase()),
+            "{row}"
+        );
     }
 
     /// The insurance prompt names the target contract by its title.

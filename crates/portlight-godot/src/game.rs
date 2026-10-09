@@ -467,11 +467,19 @@ impl ContractStripShot {
 }
 
 /// `--departure-check-screen` state held across the layout wait at step 3.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct DepartureSmoke {
     capture: bool,
     silver: i64,
+    /// The worst-case document is on the panel; its frame is next.
+    worst_shown: bool,
+    /// The real panel document while the worst case is shown.
+    real_doc: Option<DepartureDoc>,
 }
+
+/// Frames the worst-case document gets to lay out (rebuild, wrap sort,
+/// re-fit) before its frame is taken.
+const DEPARTURE_WORST_FRAMES: i32 = 4;
 
 /// T-N frames: the GOLD paid notice at the top of the Market box.
 #[derive(Clone, Copy)]
@@ -11883,7 +11891,12 @@ impl PortlightGame {
             }
         }
         self.expect_still_docked(18, silver, "panel open");
-        self.departure_pending = Some(DepartureSmoke { capture, silver });
+        self.departure_pending = Some(DepartureSmoke {
+            capture,
+            silver,
+            worst_shown: false,
+            real_doc: None,
+        });
     }
 
     fn expect_still_docked(&mut self, day: i64, silver: i64, step: &str) {
@@ -11930,11 +11943,19 @@ impl PortlightGame {
         self.assert_port_row_fits();
     }
 
-    /// After the layout wait: fit asserts, the frame, then steps 4-7.
+    /// After the layout wait: fit asserts and the frame; then the worst-case
+    /// document on the open panel and its frame; then steps 4-7.
     fn advance_departure_smoke(&mut self) -> bool {
-        let Some(smoke) = self.departure_pending.take() else {
+        let Some(mut smoke) = self.departure_pending.take() else {
             return false;
         };
+        if smoke.worst_shown {
+            self.shoot_departure_worst_case(smoke.capture);
+            self.departure_doc = smoke.real_doc.take();
+            self.sync_departure_check();
+            self.finish_departure_smoke(smoke.silver);
+            return false;
+        }
         self.assert_departure_check_fits();
         if smoke.capture {
             if let Some(dir) = self.departure_shot_dir.clone() {
@@ -11943,7 +11964,54 @@ impl PortlightGame {
                 }
             }
         }
-        let silver = smoke.silver;
+        // Show the tallest document on the open panel and let it lay out.
+        smoke.real_doc = self.departure_doc.take();
+        self.departure_doc = Some(departure_check::worst_case_document());
+        self.sync_departure_check();
+        smoke.worst_shown = true;
+        self.departure_pending = Some(smoke);
+        self.capture_frames = DEPARTURE_WORST_FRAMES;
+        true
+    }
+
+    /// The worst-case document drawn on the open panel: it must fit the panel
+    /// rules and stay within [`departure_check::WORST_CASE_MAX_H`] (inside the
+    /// Day's report card area). Saves `departure-check-worst.png` when
+    /// capturing.
+    fn shoot_departure_worst_case(&mut self, capture: bool) {
+        let Some(nodes) = self.departure_nodes.clone() else {
+            self.fail_departure("Departure smoke: no panel nodes for the worst-case frame.");
+            return;
+        };
+        if let Some(problem) = departure_check::panel_fit_error(&nodes) {
+            self.fail_departure(format!("Departure smoke: worst-case frame {problem}."));
+        }
+        let height = nodes.root.get_size().y;
+        if height > departure_check::WORST_CASE_MAX_H + 0.5 {
+            self.fail_departure(format!(
+                "Departure smoke: worst-case frame panel {height} px, over {}.",
+                departure_check::WORST_CASE_MAX_H
+            ));
+        }
+        let drawn = departure_check::line_texts(&nodes);
+        if drawn.len() != departure_check::DEPARTURE_LINE_CAP + 1 {
+            self.fail_departure(format!(
+                "Departure smoke: worst-case frame drew {} lines.",
+                drawn.len()
+            ));
+        }
+        godot_print!("Departure smoke: worst-case frame panel {height} px");
+        if capture {
+            if let Some(dir) = self.departure_shot_dir.clone() {
+                if !self.save_shot(&format!("{dir}/departure-check-worst.png"), false) {
+                    self.capture_failed = true;
+                }
+            }
+        }
+    }
+
+    /// Steps 4-7 on the real panel document.
+    fn finish_departure_smoke(&mut self, silver: i64) {
         let log = self.log_lines.clone();
 
         // Step 4: Escape is Stay in port.
@@ -12025,7 +12093,6 @@ impl PortlightGame {
         }
         self.check_departure_worst_case();
         self.departure_checked = true;
-        false
     }
 
     /// #63 follow-up (AD soft): the tallest document the panel can draw
@@ -12050,20 +12117,18 @@ impl PortlightGame {
                 departure_check::DEPARTURE_LINE_CAP
             ));
         }
-        let limit = departure_check::PANEL_MAX_H - departure_check::WORST_CASE_HEADROOM;
+        let limit = departure_check::WORST_CASE_MAX_H;
         if min.y > limit {
             self.fail_departure(format!(
-                "Departure smoke: worst-case panel needs {} px, over {limit} ({} cap less {} headroom).",
+                "Departure smoke: worst-case panel needs {} px, over {limit} (clamp {}).",
                 min.y,
-                departure_check::PANEL_MAX_H,
-                departure_check::WORST_CASE_HEADROOM
+                departure_check::PANEL_MAX_H
             ));
         } else {
             godot_print!(
-                "Departure smoke: worst-case panel {} px (cap {}, headroom {})",
+                "Departure smoke: worst-case panel {} px (limit {limit}, clamp {})",
                 min.y,
-                departure_check::PANEL_MAX_H,
-                departure_check::PANEL_MAX_H - min.y
+                departure_check::PANEL_MAX_H
             );
         }
         let empty = departure_check::DepartureDoc {

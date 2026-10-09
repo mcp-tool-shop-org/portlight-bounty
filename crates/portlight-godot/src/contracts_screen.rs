@@ -184,13 +184,13 @@ pub(crate) fn days_left_text(day: i64, deadline: i64) -> (String, bool) {
     (crate::day_report::deadline_timing(left), left <= 2)
 }
 
-/// Board meta requirement, e.g. `Trust Credible  Standing 10`. Same casing as
+/// Board meta requirement, e.g. `Trust Credible - Standing 10`. Same casing as
 /// the Harbour offer line (`Trust Credible. Standing 3.`): the tier is a
 /// title-cased name, never the raw id.
 pub(crate) fn requirement_text(tier: &str, standing: i64) -> String {
     let tier = humanize_id(&ascii_sentence(tier));
     if standing > 0 {
-        format!("Trust {tier}  Standing {standing}")
+        format!("Trust {tier} - Standing {standing}")
     } else {
         format!("Trust {tier}")
     }
@@ -495,7 +495,7 @@ mod tests {
         assert_eq!(requirement_text("unproven", 0), "Trust Unproven");
         assert_eq!(
             requirement_text("credible", 10),
-            "Trust Credible  Standing 10"
+            "Trust Credible - Standing 10"
         );
         assert_eq!(progress_text(0, 23), "0/23");
         assert!(!can_complete("accepted", 0, 23));
