@@ -1,4 +1,6 @@
 {
+  "_source": "python-oracle",
+  "_note": "Python oracle snapshot. Rust naval flavour text is ASCII where Python has an em dash; those paths are pinned in parity/expected_divergences.json.",
   "seed": 4,
   "day": 2,
   "trade_seq": 0,

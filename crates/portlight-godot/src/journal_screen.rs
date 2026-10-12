@@ -397,10 +397,15 @@ fn chronicle_rows(session: &Session, expanded: &[String]) -> Vec<JournalRow> {
         rows.push(line("No chronicle entries yet.", false));
     } else {
         let dropped = contract_failure_was_dropped(&session.board().completed);
+        let stores_low = session.world().captain.provisions <= crate::day_report::STORES_LOW;
         for entry in narrative.journal.iter().rev() {
             let place = entry_place(session, entry);
             let open = expanded.iter().any(|id| id == &entry.beat_id);
-            rows.extend(chronicle_entry_rows(entry, place.as_deref(), open, dropped));
+            rows.extend(
+                chronicle_entry_rows(entry, place.as_deref(), open, dropped)
+                    .into_iter()
+                    .map(|row| stores_checked(row, stores_low)),
+            );
         }
     }
     rows.push(line(
@@ -424,6 +429,28 @@ pub(crate) fn contract_failure_was_dropped(completed: &[ContractOutcome]) -> boo
 /// expiry form keeps the sim copy ("Broken Promise").
 const DROPPED_CONTRACT_TITLE: &str = "Dropped Contract";
 const DROPPED_CONTRACT_TEXT: &str = "You walked away from a promise. Word gets around.";
+
+/// The sim's `near_bankruptcy` beat fires on silver alone. Its stores clause
+/// shows only when the hold is low too (and says Stores, like the rest of
+/// the UI); otherwise it is dropped.
+const STORES_CLAUSE: &str = " Provisions: running low.";
+
+fn stores_checked(row: JournalRow, stores_low: bool) -> JournalRow {
+    match row {
+        JournalRow::Line { text, muted } if text.contains(STORES_CLAUSE) => JournalRow::Line {
+            text: text.replace(
+                STORES_CLAUSE,
+                if stores_low {
+                    " Stores: running low."
+                } else {
+                    ""
+                },
+            ),
+            muted,
+        },
+        other => other,
+    }
+}
 
 fn chronicle_entry_rows(
     entry: &JournalEntry,
@@ -992,6 +1019,24 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("\n")
+    }
+
+    #[test]
+    fn bankruptcy_beat_names_stores_only_when_the_hold_is_low() {
+        let text = super::beat_text("near_bankruptcy").unwrap();
+        let low = row_text(&[super::stores_checked(
+            super::line(text.clone(), false),
+            true,
+        )]);
+        let full = row_text(&[super::stores_checked(super::line(text, false), false)]);
+        assert!(
+            low.starts_with("Silver: almost nothing. Stores: running low. The crew"),
+            "{low:?}"
+        );
+        assert!(
+            full.starts_with("Silver: almost nothing. The crew"),
+            "{full:?}"
+        );
     }
 
     #[test]

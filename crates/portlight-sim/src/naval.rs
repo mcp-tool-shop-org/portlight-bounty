@@ -207,17 +207,22 @@ fn bump(weights: &mut [(&str, f64)], action: &str, extra: f64) {
     }
 }
 
-fn naval_flavor(player: &str, enemy: &str) -> &'static str {
+/// Round flavour. `player_hull_delta` picks the evade line: an evade only
+/// halves a broadside, so the text follows the damage actually taken.
+fn naval_flavor(player: &str, enemy: &str, player_hull_delta: i64) -> &'static str {
     match (player, enemy) {
+        ("evade", "broadside") if player_hull_delta < 0 => {
+            "You turn hard. Their broadside still clips your hull."
+        }
         ("broadside", "broadside") => {
-            "Cannons roar from both ships — smoke and splinters fill the air."
+            "Cannons roar from both ships - smoke and splinters fill the air."
         }
         ("broadside", "close") => {
             "Your broadside catches them closing. Wood splinters fly as they press forward."
         }
         ("broadside", "evade") => "They weave hard but your guns still find timber.",
         ("broadside", "rake") => {
-            "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck."
+            "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
         }
         ("close", "broadside") => {
             "You press forward through their broadside. Iron and wood fly past your bow."
@@ -234,7 +239,7 @@ fn naval_flavor(player: &str, enemy: &str) -> &'static str {
         }
         ("rake", "close") => "Your crew-killing shot catches them as they close.",
         ("rake", "evade") => "They evade but your grapeshot still finds a few sailors.",
-        ("rake", "rake") => "Both ships fire high — crew on both sides fall to grapeshot.",
+        ("rake", "rake") => "Both ships fire high - crew on both sides fall to grapeshot.",
         _ => "The ships maneuver across the waves.",
     }
 }
@@ -306,7 +311,7 @@ pub fn resolve_naval_round(
         player_crew_delta: p_crew_delta,
         enemy_crew_delta: e_crew_delta,
         boarding_progress: new_boarding,
-        flavor: naval_flavor(player_action, enemy_action).to_string(),
+        flavor: naval_flavor(player_action, enemy_action, p_hull_delta).to_string(),
     }
 }
 
@@ -647,6 +652,26 @@ pub fn capture_prize(
 mod tests {
     use super::*;
     use crate::model::Ship;
+
+    #[test]
+    fn evade_flavor_follows_the_damage_taken() {
+        assert_eq!(
+            naval_flavor("evade", "broadside", 0),
+            "You turn hard. Their broadside catches only wake and spray."
+        );
+        assert_eq!(
+            naval_flavor("evade", "broadside", -3),
+            "You turn hard. Their broadside still clips your hull."
+        );
+        let actions = ["broadside", "close", "evade", "rake"];
+        for player in actions {
+            for enemy in actions {
+                for damage in [0, -3] {
+                    assert!(naval_flavor(player, enemy, damage).is_ascii());
+                }
+            }
+        }
+    }
 
     fn cutter() -> Ship {
         Ship {

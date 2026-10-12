@@ -1,0 +1,4 @@
+# Privateer vs Raj the Quiet. One evade into their broadside that still lands hull damage.
+new privateer Ada 4
+encounter fight raj_the_quiet
+naval evade
