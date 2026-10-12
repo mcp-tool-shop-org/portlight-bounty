@@ -1020,15 +1020,26 @@ pub(crate) fn encounter_key(
     }
     let facts = facts?;
     let view = crate::logic::present(facts)?;
+    let recap = crate::recap::outcome_recap(facts);
     Some(EncounterKey {
         phase: format!("{:?}", view.phase).to_lowercase(),
         round: facts.round,
         boarding: facts.boarding.filter(|(_, threshold)| {
             view.phase == crate::logic::ScreenPhase::Naval && *threshold > 0
         }),
-        delta: crate::logic::delta_text(facts),
-        log: view.log,
+        delta: if recap.is_some() {
+            String::new()
+        } else {
+            crate::logic::delta_text(facts)
+        },
+        log: encounter_log_text(recap.as_ref(), view.log),
     })
+}
+
+/// `state.encounter.log`: what the card shows in the Log slot. While the
+/// recap draws there it is the recap's text, else the card's log text.
+pub(crate) fn encounter_log_text(recap: Option<&crate::recap::Recap>, log: String) -> String {
+    recap.map(crate::recap::recap_text).unwrap_or(log)
 }
 
 /// `state.log_tail`: the side Log, oldest first, at most [`LOG_TAIL_MAX`],

@@ -910,6 +910,7 @@ jobs:
           cmp_committed encounter-boarding.png /tmp/encounter-boarding.png
           cmp_committed encounter-fight.png /tmp/encounter-fight.png
           cmp_committed encounter-outcome.png /tmp/encounter-outcome.png
+          cmp_committed encounter-recap-won.png /tmp/encounter-recap-won.png
           cmp_committed encounter-loss-outcome.png /tmp/loss-outcome-shots/encounter-loss-outcome.png
           cmp_committed harbour-seam-z100.png /tmp/seam-shots/harbour-seam-z100.png
           cmp_committed harbour-seam-z072.png /tmp/seam-shots/harbour-seam-z072.png

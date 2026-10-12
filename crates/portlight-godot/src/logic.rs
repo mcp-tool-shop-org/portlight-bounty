@@ -801,15 +801,13 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
 /// Buttons and copy for one phase. `None` leaves the chart (and any stance
 /// duel) in charge.
 pub(crate) fn present(facts: &EncounterFacts) -> Option<EncounterView> {
+    // A won duel offers Spare and Take all only: the sim captures a ship
+    // only from `capture_available`, which a naval sinking sets.
     if facts.pending_victory {
         return Some(view(
             ScreenPhase::Outcome,
             facts,
-            vec![
-                ScreenAction::Spare,
-                ScreenAction::Capture,
-                ScreenAction::TakeAll,
-            ],
+            vec![ScreenAction::Spare, ScreenAction::TakeAll],
         ));
     }
     let phase = match facts.phase.as_str() {
@@ -3187,11 +3185,7 @@ mod tests {
         assert!(!view.card.contains("Enemy hull"));
         assert_eq!(
             view.actions,
-            vec![
-                ScreenAction::Spare,
-                ScreenAction::Capture,
-                ScreenAction::TakeAll,
-            ]
+            vec![ScreenAction::Spare, ScreenAction::TakeAll]
         );
     }
 
@@ -3453,11 +3447,7 @@ mod tests {
         assert_eq!(outcome.phase, ScreenPhase::Outcome);
         assert_eq!(
             outcome.actions,
-            vec![
-                ScreenAction::Spare,
-                ScreenAction::Capture,
-                ScreenAction::TakeAll,
-            ]
+            vec![ScreenAction::Spare, ScreenAction::TakeAll]
         );
         assert_eq!(outcome.log, facts.log);
         assert!(!outcome.log.is_empty());
