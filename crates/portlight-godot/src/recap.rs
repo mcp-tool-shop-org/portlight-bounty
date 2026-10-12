@@ -1145,6 +1145,10 @@ mod tests {
             prize_reason: String::new(),
             player_stamina: 0,
             player_stamina_max: 0,
+            towed_to: String::new(),
+            sink_silver_lost: 0,
+            sink_cargo_lost: Vec::new(),
+            hull_after: 0,
         }
     }
 

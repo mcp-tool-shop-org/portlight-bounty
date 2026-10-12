@@ -31,6 +31,8 @@ Boarding progress rises when either ship closes and the other does not evade. Yo
 
 The line that opens the fight names the threshold as a number of close actions. It does not say whose closes those are. Read the count as either ship, not as your button alone.
 
+If your hull reaches 0 you are sunk - you lose 30% of your silver and three quarters of each cargo stack, then you are towed to the nearer end of your voyage with a tenth of your hull. Cargo insurance pays for the goods.
+
 ## The day's report
 
 When the day has something to say, the report opens over the chart. A press on the chart closes the card first. A quiet day hides it. The report can also open over the Contracts desk, which is dimmed and does not take clicks until the card closes.

@@ -763,3 +763,38 @@ fn short_stress_scenarios_hold_invariants() {
 fn full_stress_sweep_holds_invariants() {
     run_scenarios(|scenario| scenario.max_days);
 }
+
+/// After any sinking the ship is docked at the tow port with hull >= 1,
+/// and every other invariant still holds.
+#[test]
+fn a_sinking_leaves_the_ship_docked_and_afloat() {
+    let mut sinks = 0;
+    for seed in 0..40 {
+        let mut session = Session::new("Ada", "merchant", seed, None).expect("game");
+        let _ = session.buy("grain", 4);
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        session.depart(&lane).expect("depart");
+        if session.encounter_choice("fight").is_err() {
+            continue;
+        }
+        for _ in 0..80 {
+            let Ok(step) = session.naval_round("evade") else {
+                break;
+            };
+            if step.phase != "resolved" {
+                continue;
+            }
+            if step.player_sunk {
+                sinks += 1;
+                assert_eq!(session.world().voyage.status, VoyageStatus::InPort);
+                let ship = session.world().captain.ship.as_ref().expect("ship");
+                assert!(ship.hull >= 1, "hull {}", ship.hull);
+                assert_eq!(step.towed_to, session.world().voyage.destination_id);
+                let hits = check_all(&session);
+                assert!(hits.is_empty(), "seed {seed}: {}", hits.len());
+            }
+            break;
+        }
+    }
+    assert!(sinks > 0, "no sinking in 40 seeds");
+}

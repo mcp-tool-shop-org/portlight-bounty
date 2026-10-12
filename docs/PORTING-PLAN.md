@@ -141,6 +141,17 @@ Random sea encounters, scripted encounters and claimed-target fights keep
 Python. Pinned in parity/expected_divergences.json: bounty_claim.txt and
 bounty_claim_sail.txt.
 
+**Sinking (Rust only).** Python only prints "Your ship is sinking!" and the
+ship stays at sea at hull 0. In Rust, a ship sunk in a naval round or a failed
+flee loses 30% of its silver and three quarters of each cargo stack (both
+rounded down, cargo first, no cap), files one cargo insurance claim per lost
+good (incident `pirates`, no hull claim), and is towed the same day to the
+nearer end of its voyage (route distance remaining; a tie goes to the origin)
+with hull raised to max(1, hull_max / 10). The tow docks through
+`voyage::arrive`. No RNG draw, no save change (`Session::sink_and_tow`).
+Silver and cargo loss and tow have no Python equivalent; no parity script
+reaches a player sinking, so expected_divergences.json has no entry for it.
+
 
 ## Porting order
 
