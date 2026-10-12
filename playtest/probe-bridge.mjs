@@ -332,6 +332,16 @@ async function huntEncounter(socket, docked, notes) {
     assert(chartOrPier(fight).length === 0, `F10-2: chart/pier offered under the hunt encounter (${chartOrPier(fight).join(', ')})`, fight);
     notes.f10Encounter = true;
   }
+  if (String(fight?.state?.screen) === 'encounter') {
+    // boarding is {progress, threshold} only on the Naval card, else null.
+    const enc = fight?.state?.encounter;
+    const b = enc?.boarding;
+    const shapeOk = enc?.phase === 'naval'
+      ? b === null || (Number.isInteger(b.progress) && Number.isInteger(b.threshold) && b.progress <= b.threshold)
+      : b === null;
+    assert(enc && shapeOk, 'state.encounter.boarding has the wrong shape for its phase', fight);
+    notes.boarding = b === null ? 'null' : `${b.progress}/${b.threshold}`;
+  }
   notes.hunt = `hunt ${target} encounter`;
   here = await clearOverlays(socket, fight, notes);
   // Sail home so the rest of the spine runs docked.

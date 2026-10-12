@@ -7566,13 +7566,142 @@ impl PortlightGame {
 
     fn capture_prize(&mut self) {
         let crew = self.capture_crew;
+        // What the fight cost, read before the capture so the crew sent to
+        // the prize is not counted as a loss.
+        let fight_end = self
+            .session
+            .as_ref()
+            .map(|session| crate::logic::EncounterBaseline::read(session.world()));
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
             };
             session.capture(crew)
         };
+        let won = result.is_ok();
         self.ingest(result);
+        // A capture (or letting the prize go under) ends a won fight without
+        // `finish_victory`. The baseline is taken so the line prints once.
+        if won {
+            let cost = self.encounter.as_mut().and_then(|facts| {
+                let baseline = facts.baseline.take()?;
+                crate::logic::capture_cost_line(&baseline, &fight_end?)
+            });
+            if let Some(line) = cost {
+                self.push_log(line);
+                self.refresh();
+            }
+        }
+    }
+
+    /// Smoke: a Capture win logs exactly one `Fight cost - ` line, equal to
+    /// the baseline diff at the fight end, after the capture's own lines and
+    /// not at the sinking. Replays the `capture_prize` parity script (seed 4,
+    /// a strength-1 sloop) through the screen's own verbs on a fresh game, then
+    /// puts the smoke's state back.
+    fn check_capture_cost(&mut self) {
+        let saved = (
+            self.session.clone(),
+            self.log_lines.clone(),
+            self.encounter.clone(),
+            self.capture_crew,
+            self.scripted_captain.clone(),
+        );
+        let ok = self.run_capture_cost();
+        self.session = saved.0;
+        self.log_lines = saved.1;
+        self.encounter = saved.2;
+        self.capture_crew = saved.3;
+        self.scripted_captain = saved.4;
+        self.refresh();
+        if !ok {
+            self.smoke_ok = false;
+        }
+    }
+
+    fn run_capture_cost(&mut self) -> bool {
+        const SCRIPT: &str = include_str!("../../../parity/scripts/capture_prize.txt");
+        let mut session = match Session::new("Ada", "privateer", 4, None) {
+            Ok(session) => session,
+            Err(_) => return false,
+        };
+        if session.hire_crew(6, "sailor").is_err() {
+            return false;
+        }
+        self.session = Some(session);
+        self.log_lines.clear();
+        self.encounter = None;
+        self.open_named_approach(SCRIPTED_CAPTAIN);
+        let opened = self
+            .session
+            .as_mut()
+            .map(|session| session.encounter_choice_with("fight", None, Some(1)));
+        let Some(opened) = opened else {
+            return false;
+        };
+        self.ingest(opened);
+        let baseline = self.encounter.as_ref().and_then(|facts| facts.baseline);
+        let cost_lines = |lines: &[String]| {
+            lines
+                .iter()
+                .filter(|line| line.starts_with("Fight cost - "))
+                .count()
+        };
+        let mut sunk_clean = false;
+        for line in SCRIPT.lines() {
+            let Some(action) = line.strip_prefix("naval ") else {
+                continue;
+            };
+            self.play_naval(action.trim());
+            if self.encounter.as_ref().map(|facts| facts.phase.as_str())
+                == Some("capture_available")
+            {
+                sunk_clean = cost_lines(&self.log_lines) == 0;
+                break;
+            }
+        }
+        let fight_end = self
+            .session
+            .as_ref()
+            .map(|session| crate::logic::EncounterBaseline::read(session.world()));
+        let expected = baseline
+            .zip(fight_end)
+            .and_then(|(start, end)| crate::logic::capture_cost_line(&start, &end));
+        self.capture_crew = 3;
+        self.capture_prize();
+        let spent = self
+            .encounter
+            .as_ref()
+            .is_none_or(|facts| facts.baseline.is_none());
+        let last = self.log_lines.last().cloned();
+        // This replay sinks the sloop at no hull or crew cost, so the right
+        // answer is no line: the 3 crew sent to the prize are not a loss.
+        // When the fight did cost something the line is the last one, once.
+        let crew_moved = fight_end
+            .zip(self.session.as_ref())
+            .is_some_and(|(end, session)| {
+                crate::logic::EncounterBaseline::read(session.world()).crew < end.crew
+            });
+        let placed = match &expected {
+            Some(line) => last.as_ref() == Some(line) && cost_lines(&self.log_lines) == 1,
+            None => cost_lines(&self.log_lines) == 0,
+        };
+        let captured = last
+            .as_deref()
+            .is_some_and(|line| line.starts_with("Prize captured!"))
+            || expected.is_some();
+        let ok = sunk_clean && placed && spent && crew_moved && captured;
+        if ok {
+            godot_print!(
+                "Encounter smoke: capture cost line {expected:?} (prize crew moved, not counted)"
+            );
+        } else {
+            godot_print!(
+                "Encounter smoke: capture cost sunk_clean {sunk_clean}, want {expected:?}, last {last:?}, crew_moved {crew_moved}, log {:?}",
+                self.log_lines
+            );
+        }
+        ok
     }
 
     fn leave_encounter(&mut self) {
@@ -7669,8 +7798,13 @@ impl PortlightGame {
         facts.baseline = baseline;
         let receipt = self.encounter_end_receipt(&step, pending, &mut facts);
         // A win by sinking with no spare/take-all choice to come: log what the
-        // fight cost. A pending victory logs it in `finish_victory` instead.
-        let cost = if step.enemy_sunk && !pending && receipt.is_none() {
+        // fight cost. A pending victory logs it in `finish_victory` instead,
+        // and a sinking that offers a capture logs it in `capture_prize`.
+        let cost = if step.enemy_sunk
+            && !pending
+            && receipt.is_none()
+            && step.phase != "capture_available"
+        {
             facts.baseline.take().and_then(|baseline| {
                 let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
                 crate::logic::fight_cost_line(baseline.deltas(&now))
@@ -10491,6 +10625,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Outcome, "outcome");
         self.expect_duel_logged("encounter");
         self.expect_outcome_actions();
+        self.check_capture_cost();
         self.spare_enemy_checked();
         self.expect_returned();
         self.leave_encounter();
@@ -10715,7 +10850,18 @@ impl PortlightGame {
                 let facts = self.encounter.as_ref();
                 if log.as_deref() != Some(view.log.as_str())
                     || round != facts.map(|f| f.round)
-                    || dict.get("boarding").is_none_or(|v| !v.is_nil())
+                    || dict.get("boarding").map(|v| {
+                        v.try_to::<VarDictionary>().ok().map(|b| {
+                            (
+                                b.get("progress").map(|x| x.to::<i64>()).unwrap_or(-1),
+                                b.get("threshold").map(|x| x.to::<i64>()).unwrap_or(-1),
+                            )
+                        })
+                    }) != Some(
+                        facts
+                            .and_then(|f| f.boarding)
+                            .filter(|(_, t)| view.phase == ScreenPhase::Naval && *t > 0),
+                    )
                 {
                     problems.push(format!(
                         "encounter {log:?} round {round:?} vs {:?}",

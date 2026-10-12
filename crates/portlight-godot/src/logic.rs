@@ -565,6 +565,16 @@ pub(crate) fn encounter_end_line(
     line
 }
 
+/// The cost line for a capture: the diff from the fight's baseline to the
+/// state read just before the capture, so crew sent to the prize is not a
+/// loss.
+pub(crate) fn capture_cost_line(
+    baseline: &EncounterBaseline,
+    fight_end: &EncounterBaseline,
+) -> Option<String> {
+    fight_cost_line(baseline.deltas(fight_end))
+}
+
 /// The Log line for what a won fight cost: `Fight cost - Hull -12 - Crew -1`.
 /// Hull then crew, losses only (a gain is not a cost), zero terms left out;
 /// `None` when nothing was lost. Silver and cargo are not terms: a win prints
@@ -4355,5 +4365,53 @@ mod tests {
         let line = fight_cost_line([0, -1, -12, 0]).unwrap();
         assert!(line.is_ascii(), "{line}");
         assert!(!line.contains('\u{2212}'), "{line}");
+    }
+
+    #[test]
+    fn capture_cost_line_uses_the_fight_end_not_the_prize_crew() {
+        let baseline = EncounterBaseline {
+            silver: 100,
+            crew: 12,
+            hull: 60,
+            cargo_units: 5,
+        };
+        let fight_end = EncounterBaseline {
+            silver: 140,
+            crew: 10,
+            hull: 48,
+            cargo_units: 5,
+        };
+        assert_eq!(
+            capture_cost_line(&baseline, &fight_end).as_deref(),
+            Some("Fight cost - Hull -12 - Crew -2")
+        );
+        // After 3 crew go to the prize the diff would read Crew -5, which is
+        // why the fight end is read before the capture.
+        let after = EncounterBaseline {
+            crew: 7,
+            ..fight_end
+        };
+        assert_eq!(
+            fight_cost_line(baseline.deltas(&after)).as_deref(),
+            Some("Fight cost - Hull -12 - Crew -5")
+        );
+    }
+
+    #[test]
+    fn capture_cost_line_is_none_when_the_fight_cost_nothing() {
+        let baseline = EncounterBaseline {
+            silver: 100,
+            crew: 12,
+            hull: 60,
+            cargo_units: 5,
+        };
+        assert_eq!(capture_cost_line(&baseline, &baseline), None);
+        let gains = EncounterBaseline {
+            silver: 150,
+            crew: 13,
+            hull: 60,
+            cargo_units: 7,
+        };
+        assert_eq!(capture_cost_line(&baseline, &gains), None);
     }
 }
