@@ -16,6 +16,7 @@ use crate::logic::{
     encounter_plate, ui_plate_panel, DeltaSpan, DeltaTone, PORTRAIT_PLACEHOLDER, UI_PLATE_PAD,
     UI_PLATE_SCALE,
 };
+use crate::recap::{Recap, RecapSection, RecapTone};
 
 const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
 const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
@@ -23,6 +24,8 @@ const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
 const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 /// Chart danger tone (`game.rs` voyage encounter label). Player loss on the delta line.
 const DANGER: Color = Color::from_rgb(0.93, 0.55, 0.42);
+/// Owed or lost (Contracts desk DUE): a recap loss headline and cost rows.
+const DUE: Color = Color::from_rgb(0.93, 0.55, 0.42);
 const PARCHMENT: Color = Color::from_rgb(0.72, 0.58, 0.36);
 const PLACEHOLDER_FILL: Color = Color::from_rgb(0.32, 0.24, 0.18);
 /// Untinted. A plate in a panel is not recoloured.
@@ -37,6 +40,9 @@ pub(crate) struct EncounterNodes {
     /// Signed-delta line between the card and the log. Hidden when empty.
     pub delta: Gd<HBoxContainer>,
     pub log: Gd<Label>,
+    /// The combat recap, in the Log label's slot. Hidden unless drawn.
+    pub recap: Gd<VBoxContainer>,
+    pub recap_spacer: Gd<Control>,
     pub actions: Gd<VBoxContainer>,
     pub plate: Gd<TextureRect>,
     pub plate_panel: Gd<PanelContainer>,
@@ -97,6 +103,21 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     log.set_autowrap_mode(AutowrapMode::WORD_SMART);
     log.set_v_size_flags(SizeFlags::EXPAND_FILL);
     column.add_child(&log);
+    let mut recap = VBoxContainer::new_alloc();
+    recap.set_name("RecapBlock");
+    recap.set_h_size_flags(SizeFlags::EXPAND_FILL);
+    recap.set_v_size_flags(SizeFlags::SHRINK_BEGIN);
+    recap.add_theme_constant_override("separation", 6);
+    recap.set_mouse_filter(MouseFilter::IGNORE);
+    recap.set_visible(false);
+    column.add_child(&recap);
+    // Takes the hidden Log label's stretch, so the action row stays put.
+    let mut recap_spacer = Control::new_alloc();
+    recap_spacer.set_name("RecapSpacer");
+    recap_spacer.set_v_size_flags(SizeFlags::EXPAND_FILL);
+    recap_spacer.set_mouse_filter(MouseFilter::IGNORE);
+    recap_spacer.set_visible(false);
+    column.add_child(&recap_spacer);
 
     let mut actions = VBoxContainer::new_alloc();
     actions.set_h_size_flags(SizeFlags::EXPAND_FILL);
@@ -110,11 +131,59 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
         card,
         delta,
         log,
+        recap,
+        recap_spacer,
         actions,
         plate,
         plate_panel,
         plate_caption,
         placeholder,
+    }
+}
+
+/// Draw `recap` into the block (headline, then one label per row), or hide
+/// it. Returns whether it is drawn. Read-only labels: no focus stop.
+pub(crate) fn set_recap_block(block: &mut Gd<VBoxContainer>, recap: Option<&Recap>) -> bool {
+    for mut child in block.get_children().iter_shared() {
+        block.remove_child(&child);
+        child.queue_free();
+    }
+    let Some(recap) = recap else {
+        block.set_visible(false);
+        return false;
+    };
+    block.set_visible(true);
+    let mut headline = text_label(&recap.headline, 22, tone_color(recap.headline_tone));
+    headline.set_name("RecapHeadline");
+    headline.set_autowrap_mode(AutowrapMode::WORD_SMART);
+    headline.set_mouse_filter(MouseFilter::IGNORE);
+    block.add_child(&headline);
+    for row in &recap.rows {
+        let (name, size, wrap) = match row.section {
+            RecapSection::Heading => ("RecapHeading", 14, false),
+            RecapSection::Note | RecapSection::RuleNote | RecapSection::Bounty => {
+                ("RecapNote", 14, true)
+            }
+            RecapSection::Net => ("RecapNet", 16, false),
+            _ => ("RecapRow", 16, false),
+        };
+        let mut label = text_label(&row.text, size, tone_color(row.tone));
+        label.set_name(name);
+        label.set_mouse_filter(MouseFilter::IGNORE);
+        if wrap {
+            label.set_autowrap_mode(AutowrapMode::WORD_SMART);
+        }
+        block.add_child(&label);
+    }
+    true
+}
+
+fn tone_color(tone: RecapTone) -> Color {
+    match tone {
+        RecapTone::Gold => GOLD,
+        RecapTone::Cream => CREAM,
+        RecapTone::Due => DUE,
+        RecapTone::Muted => MUTED,
     }
 }
 

@@ -215,14 +215,29 @@ fn caused(section: RecapSection, head: String, cause: Option<&str>, tone: RecapT
 }
 
 fn passthrough(section: RecapSection, text: &str, tone: RecapTone) -> RecapRow {
-    row(
-        section,
-        trim_tail(
-            ascii_punctuation(text).trim_end().trim_end_matches('.'),
-            ROW_CHARS,
-        ),
-        tone,
-    )
+    row(section, passthrough_text(text), tone)
+}
+
+/// A sim note or loot message as a row: one trailing full stop dropped (an
+/// ellipsis is kept whole), and a row over [`ROW_CHARS`] cut at a word with
+/// no `...`, so a trimmed row never ends in a stop.
+pub(crate) fn passthrough_text(text: &str) -> String {
+    let text = ascii_punctuation(text);
+    let text = text.trim_end();
+    let text = if text.ends_with("...") {
+        text
+    } else {
+        text.strip_suffix('.').unwrap_or(text)
+    };
+    if text.len() <= ROW_CHARS {
+        return text.to_string();
+    }
+    let mut cut = &text[..ROW_CHARS];
+    if let Some(space) = cut.rfind(' ').filter(|space| *space > 0) {
+        cut = &cut[..space];
+    }
+    cut.trim_end_matches([' ', '-', ',', ';', ':', '.'])
+        .to_string()
 }
 
 fn verdict(result: RecapResult, name: &str) -> String {
@@ -307,8 +322,12 @@ fn sole_cause<const N: usize>(
     }
 }
 
-pub(crate) fn combat_recap(facts: &CombatFacts) -> Recap {
-    let result = facts.result.unwrap_or(RecapResult::Drew);
+/// The combat recap, or `None` when the fight has no result yet (a missing
+/// result is never shown as a draw).
+pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
+    let result = facts
+        .result
+        .filter(|result| !matches!(result, RecapResult::Paid | RecapResult::Abandoned))?;
     let win = result.is_win();
     let mut headline = verdict(result, &facts.name);
     if let Some(clause) = decisive_clause(result, facts.sea, facts.decisive.as_ref()) {
@@ -532,13 +551,13 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Recap {
     }
     rows.extend(bounty);
     rows.extend(net);
-    Recap {
+    Some(Recap {
         kind: RecapKind::Combat,
         result,
         headline,
         headline_tone,
         rows,
-    }
+    })
 }
 
 /// `Silver net +N` / `-N` over the drawn `Silver` rows, only when one rose
@@ -570,8 +589,12 @@ fn is_paid(outcome: &ContractOutcome) -> bool {
 
 /// One card for a settling sale (paid, up to 3 contracts) or a confirmed
 /// abandon. The payout row is the net: there is no separate net row.
-pub(crate) fn contract_recap(outcomes: &[ContractOutcome], extras: &ContractExtras) -> Recap {
-    let paid = outcomes.first().is_none_or(is_paid);
+/// `None` for an empty list. The card's kind comes from the first outcome.
+pub(crate) fn contract_recap(
+    outcomes: &[ContractOutcome],
+    extras: &ContractExtras,
+) -> Option<Recap> {
+    let paid = is_paid(outcomes.first()?);
     let mut rows = Vec::new();
     for (i, outcome) in outcomes.iter().enumerate() {
         let good = good_display_name(&outcome.good_id);
@@ -639,18 +662,362 @@ pub(crate) fn contract_recap(outcomes: &[ContractOutcome], extras: &ContractExtr
     } else {
         (RecapResult::Abandoned, "Contract abandoned", RecapTone::Due)
     };
-    Recap {
+    Some(Recap {
         kind: RecapKind::Contract,
         result,
         headline: headline.to_string(),
         headline_tone: tone,
         rows,
+    })
+}
+
+/// What the encounter screen carries across a fight's steps so the recap can
+/// name its causes. Godot memory only: never saved, and a new encounter
+/// starts a new one. Carried in `adopt_step` the way the baseline is.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct RecapSeed {
+    /// A naval or boarding step was seen.
+    pub sea: bool,
+    /// Boarding meter of the last naval step that had one.
+    pub boarded: Option<(i64, i64)>,
+    pub decisive: Option<DecisiveMove>,
+    pub hull_by_cause: HullByCause,
+    pub crew_by_cause: CrewByCause,
+    pub plundered: bool,
+    pub injuries: Vec<String>,
+    /// Set once, when the fight resolves without a win.
+    pub result: Option<RecapResult>,
+    /// `[silver, crew, hull, cargo]` from a copy of the baseline, read when
+    /// the fight resolved.
+    pub deltas: Option<[i64; 4]>,
+    pub bounty_open: bool,
+}
+
+/// The non-win recap result for an encounter end.
+pub(crate) fn non_win_result(end: crate::logic::EncounterEnd) -> RecapResult {
+    use crate::logic::EncounterEnd;
+    match end {
+        EncounterEnd::LostFight | EncounterEnd::LostAtSea => RecapResult::Lost,
+        EncounterEnd::DrewFight => RecapResult::Drew,
+        EncounterEnd::BrokeAway => RecapResult::BrokeAway,
     }
+}
+
+fn hull_cause(enemy_action: &str) -> Option<usize> {
+    match enemy_action {
+        "broadside" => Some(0),
+        "rake" => Some(1),
+        _ => None,
+    }
+}
+
+/// The seed after one more step. Only step data is read; a loss with no
+/// named source is not summed, so its row renders plain.
+pub(crate) fn carry_seed(
+    previous: &RecapSeed,
+    step: &portlight_sim::session::EncounterStep,
+) -> RecapSeed {
+    let mut seed = previous.clone();
+    let flee = step.choice == "flee";
+    match step.kind.as_str() {
+        "naval" if flee => {
+            seed.sea = true;
+            if step.hull_damage > 0 {
+                // A break-away's damage is the parting shot; a failed flee
+                // is their broadside (the sim's own wording for each).
+                let cause = if step.escaped { 2 } else { 0 };
+                seed.hull_by_cause[cause] += step.hull_damage;
+            }
+        }
+        "naval" => {
+            seed.sea = true;
+            if step.player_hull_delta < 0 {
+                if let Some(cause) = hull_cause(&step.enemy_action) {
+                    seed.hull_by_cause[cause] += -step.player_hull_delta;
+                }
+            }
+            if step.player_crew_delta < 0 && step.enemy_action == "rake" {
+                seed.crew_by_cause[0] += -step.player_crew_delta;
+            }
+            if step.boarding_threshold > 0 {
+                seed.boarded = Some((step.boarding_progress, step.boarding_threshold));
+            }
+        }
+        "board" => {
+            seed.sea = true;
+            seed.crew_by_cause[1] += step.player_crew_lost;
+        }
+        "choice" if flee && step.escaped && step.hull_damage > 0 => {
+            seed.hull_by_cause[2] += step.hull_damage;
+        }
+        _ => {}
+    }
+    if !step.injury.is_empty() {
+        let name = portlight_sim::content::content()
+            .injury(&step.injury)
+            .map(|def| def.name.clone())
+            .unwrap_or_else(|| crate::logic::humanize_id(&step.injury));
+        if !seed.injuries.contains(&name) {
+            seed.injuries.push(name);
+        }
+    }
+    let decisive = match step.kind.as_str() {
+        "choice" if flee && step.escaped => Some(DecisiveMove::FledApproach),
+        "naval" if flee && step.escaped => Some(DecisiveMove::FledAtSea(step.turn)),
+        "naval" if step.player_sunk => Some(DecisiveMove::SunkBy(step.enemy_action.clone())),
+        "naval" if step.enemy_sunk => Some(DecisiveMove::Sank(step.player_action.clone())),
+        "naval" if step.phase == "resolved" && step.player_crew <= 0 => {
+            Some(DecisiveMove::CrewLost)
+        }
+        "naval" if step.boarding_triggered => Some(DecisiveMove::Boarded(
+            step.boarding_progress,
+            step.boarding_threshold,
+        )),
+        "fight" if !step.player_action.is_empty() => {
+            Some(DecisiveMove::FinalMove(step.player_action.clone()))
+        }
+        _ => None,
+    };
+    if decisive.is_some() {
+        seed.decisive = decisive;
+    }
+    if step.phase == "resolved" {
+        seed.plundered = step.player_crew <= 0 && !step.player_sunk;
+    }
+    seed
+}
+
+/// Combat facts for a resolved non-win, or `None` when the seed has no
+/// result (still running, a pending win, or a win, which is not drawn yet).
+pub(crate) fn non_win_facts(seed: &RecapSeed, name: &str) -> Option<CombatFacts> {
+    let result = seed.result?;
+    Some(CombatFacts {
+        result: Some(result),
+        sea: seed.sea,
+        name: name.to_string(),
+        decisive: seed.decisive.clone(),
+        deltas: seed.deltas?,
+        hull_by_cause: seed.hull_by_cause,
+        crew_by_cause: seed.crew_by_cause,
+        plundered: seed.plundered,
+        injuries: seed.injuries.clone(),
+        bounty_open: seed.bounty_open,
+        ..Default::default()
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use portlight_sim::session::EncounterStep;
+
+    fn combat(facts: &CombatFacts) -> Recap {
+        combat_recap(facts).expect("result set")
+    }
+
+    fn contract(outcomes: &[ContractOutcome], extras: &ContractExtras) -> Recap {
+        contract_recap(outcomes, extras).expect("non-empty")
+    }
+
+    fn step(kind: &str, phase: &str) -> EncounterStep {
+        let mut step = EncounterStep {
+            kind: kind.into(),
+            phase: phase.into(),
+            ..blank_step()
+        };
+        step.player_crew = 10;
+        step
+    }
+
+    fn blank_step() -> EncounterStep {
+        EncounterStep {
+            kind: String::new(),
+            phase: String::new(),
+            message: String::new(),
+            choice: String::new(),
+            success: false,
+            escaped: false,
+            hull_damage: 0,
+            enemy_captain_id: String::new(),
+            enemy_captain_name: String::new(),
+            enemy_strength: 0,
+            turn: 0,
+            player_action: String::new(),
+            enemy_action: String::new(),
+            player_hull_delta: 0,
+            enemy_hull_delta: 0,
+            player_crew_delta: 0,
+            enemy_crew_delta: 0,
+            boarding_progress: 0,
+            boarding_threshold: 0,
+            enemy_sunk: false,
+            player_sunk: false,
+            boarding_triggered: false,
+            flavor: String::new(),
+            player_hull: 0,
+            enemy_hull: 0,
+            player_crew: 0,
+            enemy_crew: 0,
+            player_crew_lost: 0,
+            enemy_crew_lost: 0,
+            player_advantage: false,
+            damage_to_opponent: 0,
+            damage_to_player: 0,
+            player_hp: 0,
+            opponent_hp: 0,
+            player_stamina_delta: 0,
+            opponent_stamina_delta: 0,
+            player_won: false,
+            draw: false,
+            injury: String::new(),
+            opponent_injury: String::new(),
+            style_effect: String::new(),
+            prize_ok: false,
+            prize_reason: String::new(),
+            player_stamina: 0,
+            player_stamina_max: 0,
+        }
+    }
+
+    fn naval(enemy_action: &str, hull: i64, crew: i64, progress: i64) -> EncounterStep {
+        let mut s = step("naval", "naval");
+        s.enemy_action = enemy_action.into();
+        s.player_action = "close".into();
+        s.player_hull_delta = hull;
+        s.player_crew_delta = crew;
+        s.boarding_progress = progress;
+        s.boarding_threshold = 3;
+        s
+    }
+
+    #[test]
+    fn recap_seed_survives_every_step() {
+        let mut seed = RecapSeed::default();
+        seed = carry_seed(&seed, &naval("broadside", -8, 0, 1));
+        seed = carry_seed(&seed, &naval("rake", -2, -1, 2));
+        let mut boarded = naval("broadside", -4, 0, 3);
+        boarded.phase = "boarding".into();
+        boarded.boarding_triggered = true;
+        seed = carry_seed(&seed, &boarded);
+        let mut board = step("board", "duel");
+        board.player_crew_lost = 2;
+        seed = carry_seed(&seed, &board);
+        let mut hit = step("fight", "duel");
+        hit.player_action = "thrust".into();
+        hit.injury = "no_such_wound".into();
+        seed = carry_seed(&seed, &hit);
+        let mut last = step("fight", "resolved");
+        last.player_action = "parry".into();
+        seed = carry_seed(&seed, &last);
+        assert!(seed.sea);
+        assert_eq!(seed.boarded, Some((3, 3)));
+        assert_eq!(seed.hull_by_cause, [12, 2, 0]);
+        assert_eq!(seed.crew_by_cause, [1, 2]);
+        assert_eq!(seed.injuries, vec!["No Such Wound".to_string()]);
+        assert_eq!(seed.decisive, Some(DecisiveMove::FinalMove("parry".into())));
+        assert!(!seed.plundered);
+        // An unnamed source is not summed, so the row stays plain.
+        let quiet = carry_seed(&RecapSeed::default(), &naval("evade", -5, -1, 0));
+        assert_eq!((quiet.hull_by_cause, quiet.crew_by_cause), ([0; 3], [0; 2]));
+    }
+
+    #[test]
+    fn seed_names_the_non_win_moves() {
+        let mut sunk = naval("broadside", -20, 0, 1);
+        sunk.phase = "resolved".into();
+        sunk.player_sunk = true;
+        let seed = carry_seed(&RecapSeed::default(), &sunk);
+        assert_eq!(
+            seed.decisive,
+            Some(DecisiveMove::SunkBy("broadside".into()))
+        );
+        assert!(!seed.plundered);
+        let mut crew = naval("rake", 0, -3, 1);
+        crew.phase = "resolved".into();
+        crew.player_crew = 0;
+        let seed = carry_seed(&RecapSeed::default(), &crew);
+        assert_eq!(seed.decisive, Some(DecisiveMove::CrewLost));
+        assert!(seed.plundered);
+        let mut away = step("naval", "resolved");
+        away.choice = "flee".into();
+        away.escaped = true;
+        away.turn = 4;
+        away.hull_damage = 6;
+        let seed = carry_seed(&RecapSeed::default(), &away);
+        assert_eq!(seed.decisive, Some(DecisiveMove::FledAtSea(4)));
+        assert_eq!(seed.hull_by_cause, [0, 0, 6]);
+        let mut failed = step("naval", "naval");
+        failed.choice = "flee".into();
+        failed.hull_damage = 5;
+        assert_eq!(
+            carry_seed(&RecapSeed::default(), &failed).hull_by_cause,
+            [5, 0, 0]
+        );
+        let mut early = step("choice", "resolved");
+        early.choice = "flee".into();
+        early.escaped = true;
+        early.hull_damage = 3;
+        let seed = carry_seed(&RecapSeed::default(), &early);
+        assert_eq!(seed.decisive, Some(DecisiveMove::FledApproach));
+        assert_eq!(seed.hull_by_cause, [0, 0, 3]);
+    }
+
+    #[test]
+    fn non_win_seed_builds_the_recap_rows() {
+        let seed = RecapSeed {
+            sea: true,
+            decisive: Some(DecisiveMove::FledAtSea(2)),
+            hull_by_cause: [0, 0, 4],
+            result: Some(RecapResult::BrokeAway),
+            deltas: Some([0, 0, -4, 0]),
+            ..Default::default()
+        };
+        let recap = combat(&non_win_facts(&seed, "Captain Vane").unwrap());
+        assert_eq!(
+            recap.headline,
+            "Broke away from Captain Vane - fled in round 2"
+        );
+        assert_eq!(texts(&recap), vec!["Cost", "Hull -4 - parting shot"]);
+        let drew = RecapSeed {
+            decisive: Some(DecisiveMove::FinalMove("parry".into())),
+            result: Some(RecapResult::Drew),
+            deltas: Some([0, -1, 0, 0]),
+            ..Default::default()
+        };
+        let recap = combat(&non_win_facts(&drew, "Captain Vane").unwrap());
+        assert_eq!(recap.headline, "Drew with Captain Vane");
+        assert_eq!(texts(&recap), vec!["Cost", "Crew -1"]);
+    }
+
+    #[test]
+    fn a_missing_result_draws_nothing() {
+        assert_eq!(non_win_facts(&RecapSeed::default(), "Captain Vane"), None);
+        let no_deltas = RecapSeed {
+            result: Some(RecapResult::Lost),
+            ..Default::default()
+        };
+        assert_eq!(non_win_facts(&no_deltas, "Captain Vane"), None);
+        assert_eq!(combat_recap(&CombatFacts::default()), None);
+        let mut contract_kind = loss();
+        contract_kind.result = Some(RecapResult::Paid);
+        assert_eq!(combat_recap(&contract_kind), None);
+    }
+
+    #[test]
+    fn an_empty_contract_list_draws_nothing() {
+        assert_eq!(contract_recap(&[], &ContractExtras::default()), None);
+    }
+
+    #[test]
+    fn passthrough_keeps_an_ellipsis_and_trims_without_dots() {
+        assert_eq!(passthrough_text("Tom waits..."), "Tom waits...");
+        assert_eq!(passthrough_text("Mara approves. "), "Mara approves");
+        let long = format!("{}end.", "Mara says the wind is turning. ".repeat(5));
+        let row = passthrough_text(&long);
+        assert!(row.len() <= ROW_CHARS, "{row}");
+        assert!(!row.ends_with('.'), "{row}");
+        assert!(long.starts_with(&row));
+    }
 
     fn texts(recap: &Recap) -> Vec<&str> {
         recap.rows.iter().map(|r| r.text.as_str()).collect()
@@ -718,15 +1085,15 @@ mod tests {
             facts.prize_ship = "Gull".into();
             facts.no_prize_reason = "Their hull was lost.".into();
             facts.standing = Some(("underworld".into(), 5));
-            out.push(combat_recap(&facts));
+            out.push(combat(&facts));
         }
-        out.push(combat_recap(&loss()));
-        out.push(combat_recap(&CombatFacts {
+        out.push(combat(&loss()));
+        out.push(combat(&CombatFacts {
             result: Some(RecapResult::Drew),
             name: "Captain Vane".into(),
             ..Default::default()
         }));
-        out.push(combat_recap(&CombatFacts {
+        out.push(combat(&CombatFacts {
             result: Some(RecapResult::BrokeAway),
             sea: true,
             name: "Captain Vane".into(),
@@ -740,18 +1107,18 @@ mod tests {
 
     fn all_contract() -> Vec<Recap> {
         vec![
-            contract_recap(
+            contract(
                 &[outcome("completed_bonus", 672, 612, 23)],
                 &ContractExtras::default(),
             ),
-            contract_recap(
+            contract(
                 &[
                     outcome("completed", 300, 300, 10),
                     outcome("completed", 200, 200, 5),
                 ],
                 &ContractExtras::default(),
             ),
-            contract_recap(
+            contract(
                 &[outcome("abandoned", 0, 612, 9)],
                 &ContractExtras { held: vec![22] },
             ),
@@ -843,14 +1210,10 @@ mod tests {
     fn clause_numbers_are_verbatim() {
         let mut facts = win(RecapResult::WonSpared);
         facts.decisive = Some(DecisiveMove::Boarded(7, 12));
-        assert!(combat_recap(&facts)
-            .headline
-            .ends_with(" - boarded at 7/12"));
+        assert!(combat(&facts).headline.ends_with(" - boarded at 7/12"));
         facts.result = Some(RecapResult::BrokeAway);
         facts.decisive = Some(DecisiveMove::FledAtSea(11));
-        assert!(combat_recap(&facts)
-            .headline
-            .ends_with(" - fled in round 11"));
+        assert!(combat(&facts).headline.ends_with(" - fled in round 11"));
     }
 
     #[test]
@@ -878,7 +1241,7 @@ mod tests {
         facts.standing = Some(("underworld".into(), 5));
         facts.notes = vec!["Mara approves.".into()];
         facts.injuries = vec!["Cracked rib".into()];
-        let recap = combat_recap(&facts);
+        let recap = combat(&facts);
         assert_eq!(
             texts(&recap),
             vec![
@@ -905,14 +1268,14 @@ mod tests {
     fn took_all_standing_cause() {
         let mut facts = win(RecapResult::WonTookAll);
         facts.standing = Some(("underworld".into(), 2));
-        assert!(texts(&combat_recap(&facts))
+        assert!(texts(&combat(&facts))
             .iter()
             .any(|t| t.ends_with(" +2 - took all")));
     }
 
     #[test]
     fn loss_rows_follow_the_order() {
-        let recap = combat_recap(&loss());
+        let recap = combat(&loss());
         assert_eq!(recap.headline_tone, RecapTone::Due);
         assert_eq!(
             texts(&recap),
@@ -929,7 +1292,7 @@ mod tests {
 
     #[test]
     fn zero_terms_are_omitted() {
-        let recap = combat_recap(&CombatFacts {
+        let recap = combat(&CombatFacts {
             result: Some(RecapResult::Drew),
             name: "Captain Vane".into(),
             ..Default::default()
@@ -939,14 +1302,14 @@ mod tests {
         facts.purse = 0;
         facts.deltas = [0, 0, 0, 0];
         facts.reached_boarding = false;
-        assert_eq!(texts(&combat_recap(&facts)), vec!["Spared"]);
+        assert_eq!(texts(&combat(&facts)), vec!["Spared"]);
     }
 
     #[test]
     fn a_win_shows_no_silver_or_cargo_cost() {
         let mut facts = win(RecapResult::WonPrize);
         facts.deltas = [-10, 0, 0, -3];
-        let rows = texts(&combat_recap(&facts)).join("|");
+        let rows = texts(&combat(&facts)).join("|");
         assert!(!rows.contains("Silver -10") && !rows.contains("Cargo"));
     }
 
@@ -958,20 +1321,20 @@ mod tests {
         facts.hull_by_cause = [20, 0, 10];
         facts.crew_by_cause = [1, 0];
         facts.plundered = false;
-        let rows = texts(&combat_recap(&facts)).join("|");
+        let rows = texts(&combat(&facts)).join("|");
         assert!(rows.contains("|Hull -30|"), "{rows}");
         assert!(rows.contains("|Crew -2|"), "{rows}");
         assert!(rows.contains("|Silver -40|"), "{rows}");
         let mut parting = win(RecapResult::WonSpared);
         parting.hull_by_cause = [0, 0, 12];
-        assert!(texts(&combat_recap(&parting)).contains(&"Hull -12 - parting shot"));
+        assert!(texts(&combat(&parting)).contains(&"Hull -12 - parting shot"));
     }
 
     #[test]
     fn loot_silver_is_counted_once() {
         let mut facts = win(RecapResult::WonTookAll);
         facts.loot = vec!["+12 silver".into(), "+8 silver".into()];
-        let recap = combat_recap(&facts);
+        let recap = combat(&facts);
         let rows = texts(&recap);
         assert_eq!(
             rows.iter()
@@ -991,7 +1354,7 @@ mod tests {
             "1 Spice".into(),
             "4 Iron".into(),
         ];
-        let recap = combat_recap(&facts);
+        let recap = combat(&facts);
         let rows = texts(&recap);
         assert!(
             rows.contains(&"2 Silk") && rows.contains(&"+2 more") && !rows.contains(&"1 Spice")
@@ -1054,7 +1417,7 @@ mod tests {
                 "22 Grain still aboard"
             ]
         );
-        let bare = contract_recap(
+        let bare = contract(
             &[outcome("abandoned", 0, 612, 0)],
             &ContractExtras::default(),
         );
@@ -1075,7 +1438,7 @@ mod tests {
         facts.injuries = vec!["Cut".into(), "Bruise".into()];
         // body: choice, purse, loot silver, 3 goods rows, standing, 2 notes,
         // hull, crew, 2 injuries = 13 > 9.
-        let recap = combat_recap(&facts);
+        let recap = combat(&facts);
         let body = recap
             .rows
             .iter()
@@ -1093,7 +1456,7 @@ mod tests {
         let mut facts = win(RecapResult::WonPrize);
         facts.prize_ship = "X".repeat(120);
         facts.loot = vec![format!("{} cargo", "word ".repeat(30))];
-        let recap = combat_recap(&facts);
+        let recap = combat(&facts);
         for row in &recap.rows {
             assert!(row.text.len() <= ROW_CHARS, "{}", row.text);
         }
@@ -1112,7 +1475,7 @@ mod tests {
         let mut facts = loss();
         facts.name = "Captain \u{2014} Vane".into();
         let mut recaps = all_combat();
-        recaps.push(combat_recap(&facts));
+        recaps.push(combat(&facts));
         recaps.extend(all_contract());
         for recap in &recaps {
             let all = std::iter::once(recap.headline.as_str())
@@ -1146,7 +1509,7 @@ mod tests {
             "Tom leaves. He wanted a bigger ship.".into(),
         ];
         passthrough.loot = vec!["Found: Compass.".into()];
-        let passthrough = combat_recap(&passthrough);
+        let passthrough = combat(&passthrough);
         let rows = texts(&passthrough);
         for want in [
             "Mara approves",
@@ -1179,9 +1542,9 @@ mod tests {
     fn sunk_without_a_reason_reads_plain() {
         let mut facts = win(RecapResult::WonSunk);
         facts.no_prize_reason = String::new();
-        assert_eq!(texts(&combat_recap(&facts))[0], "Sunk - no prize");
+        assert_eq!(texts(&combat(&facts))[0], "Sunk - no prize");
         facts.no_prize_reason = " . ".into();
-        assert_eq!(texts(&combat_recap(&facts))[0], "Sunk - no prize");
+        assert_eq!(texts(&combat(&facts))[0], "Sunk - no prize");
     }
 
     #[test]
@@ -1190,12 +1553,12 @@ mod tests {
         facts.sea = false;
         facts.decisive = Some(DecisiveMove::FinalMove("thrust".into()));
         assert_eq!(
-            combat_recap(&facts).headline,
+            combat(&facts).headline,
             "Won against Captain Vane - final move Thrust"
         );
         facts.name = String::new();
         facts.decisive = None;
-        assert_eq!(combat_recap(&facts).headline, "Won");
+        assert_eq!(combat(&facts).headline, "Won");
     }
 
     #[test]
