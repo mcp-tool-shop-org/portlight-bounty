@@ -10852,7 +10852,8 @@ impl PortlightGame {
         false
     }
 
-    /// Layout after a real frame: the block fits and Return clears the edge.
+    /// Layout after a real frame, for the loss and the won card: the block
+    /// fits and Return clears the edge.
     fn check_recap_layout(&mut self) {
         let Some(nodes) = self.encounter_nodes.as_ref() else {
             return;
@@ -10863,13 +10864,13 @@ impl PortlightGame {
         if block.size.y > 320.0 || bottom > 696.0 {
             self.smoke_ok = false;
             let line = format!(
-                "Loss-outcome smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
+                "Recap smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
                 block.size.y
             );
             godot_print!("{line}");
             self.push_log(line);
         } else {
-            godot_print!("loss-outcome recap layout ok height {}", block.size.y);
+            godot_print!("Recap smoke: layout ok height {}", block.size.y);
         }
     }
 
@@ -10964,6 +10965,7 @@ impl PortlightGame {
                 self.encounter_shot = Some(ShotPhase::RecapWon);
             }
             ShotPhase::RecapWon => {
+                self.check_recap_layout();
                 self.expect_returned();
                 self.leave_encounter();
                 self.report_encounter_smoke();

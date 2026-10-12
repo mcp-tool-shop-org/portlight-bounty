@@ -172,8 +172,6 @@ pub(crate) struct CombatFacts {
     pub standing: Option<(String, i64)>,
     /// Companion reactions and departures, passthrough.
     pub notes: Vec<String>,
-    /// A non-win's closing step text, drawn as its one note.
-    pub closing: String,
     pub deltas: [i64; 4],
     pub hull_by_cause: HullByCause,
     pub crew_by_cause: CrewByCause,
@@ -421,10 +419,11 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
             }
         }
     }
+    // A non-win draws no note: the step text stays in the Log.
     let source: Vec<&String> = if win {
         facts.notes.iter().collect()
     } else {
-        std::iter::once(&facts.closing).collect()
+        Vec::new()
     };
     let notes: Vec<RecapRow> = source
         .into_iter()
@@ -696,7 +695,6 @@ pub(crate) struct RecapSeed {
     /// A step triggered boarding or a boarding step ran.
     pub reached_boarding: bool,
     /// The resolving step's own text (non-wins draw it as a note).
-    pub closing: String,
     /// Win receipt: purse, loot messages, standing, reactions and departures.
     pub purse: i64,
     pub loot: Vec<String>,
@@ -749,7 +747,8 @@ pub(crate) fn seed_victory(
 
 /// Loot rows from the receipt's drops: silver drops summed into one
 /// `+N silver`, cargo drops of the same good folded into one `{n} {Good}`
-/// (first-seen order), then the sim's other loot messages (`Found: ...`).
+/// (first-seen order), ammo as `+{gained} {Ammo}`, then the sim's other
+/// loot messages (`Found: ...`).
 pub(crate) fn fold_loot(
     drops: &[portlight_sim::loot::LootDrop],
     messages: &[String],
@@ -775,6 +774,24 @@ pub(crate) fn fold_loot(
             .into_iter()
             .filter(|(_, quantity)| *quantity > 0)
             .map(|(id, quantity)| format!("{quantity} {}", good_display_name(&id))),
+    );
+    // Ammo: the sim's gained figure (catalog bundle size times the drop),
+    // folded per kind like cargo.
+    let mut ammo: Vec<(String, i64)> = Vec::new();
+    for drop in drops.iter().filter(|drop| drop.item_type == "ammo") {
+        let Some(def) = portlight_sim::content::content().ammo(&drop.item_id) else {
+            continue;
+        };
+        let gained = def.quantity * drop.quantity;
+        match ammo.iter_mut().find(|(name, _)| name == &def.name) {
+            Some((_, total)) => *total += gained,
+            None => ammo.push((def.name.clone(), gained)),
+        }
+    }
+    rows.extend(
+        ammo.into_iter()
+            .filter(|(_, gained)| *gained > 0)
+            .map(|(name, gained)| format!("+{gained} {name}")),
     );
     rows.extend(
         messages
@@ -900,14 +917,6 @@ pub(crate) fn carry_seed(
         seed.reached_boarding = true;
     }
     if step.phase == "resolved" {
-        seed.closing = crate::logic::session_text(&step.message, &step.flavor)
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty())
-            .collect::<Vec<_>>()
-            .join(" ");
-    }
-    if step.phase == "resolved" {
         seed.plundered = step.player_crew <= 0 && !step.player_sunk;
     }
     seed
@@ -928,7 +937,6 @@ pub(crate) fn seed_facts(seed: &RecapSeed, name: &str) -> Option<CombatFacts> {
         loot: seed.loot.clone(),
         standing: seed.standing.clone(),
         notes: seed.notes.clone(),
-        closing: seed.closing.clone(),
         deltas: seed.deltas?,
         hull_by_cause: seed.hull_by_cause,
         crew_by_cause: seed.crew_by_cause,
@@ -1181,6 +1189,22 @@ mod tests {
     }
 
     #[test]
+    fn ammo_drops_get_their_gained_row() {
+        let drops = vec![
+            drop("ammo", "pistol_shot", 1),
+            drop("ammo", "pistol_shot", 2),
+            drop("ammo", "no_such_ammo", 1),
+        ];
+        let def = portlight_sim::content::content()
+            .ammo("pistol_shot")
+            .unwrap();
+        assert_eq!(
+            fold_loot(&drops, &[]),
+            vec![format!("+{} {}", def.quantity * 3, def.name)]
+        );
+    }
+
+    #[test]
     fn same_good_loot_drops_fold_into_one_row() {
         let drops = vec![
             drop("cargo", "spice", 3),
@@ -1323,7 +1347,7 @@ mod tests {
     }
 
     #[test]
-    fn a_non_win_draws_its_closing_line() {
+    fn a_non_win_draws_no_note_row() {
         let mut last = step("fight", "resolved");
         last.player_action = "parry".into();
         last.message = "You raise your guard but the bullet punches through. 6 damage!".into();
@@ -1331,18 +1355,15 @@ mod tests {
         seed.result = Some(RecapResult::Lost);
         seed.deltas = Some([-30, 0, 0, 0]);
         let recap = combat(&seed_facts(&seed, "Raj the Quiet").unwrap());
-        assert_eq!(
-            texts(&recap),
-            vec![
-                "You raise your guard but the bullet punches through. 6 damage!",
-                "Cost",
-                "Silver -30",
-            ]
-        );
-        assert_eq!(
-            recap_text(&recap),
-            "Lost to Raj the Quiet\nYou raise your guard but the bullet punches through. 6 damage!\nCost\nSilver -30"
-        );
+        assert!(recap.rows.iter().all(|r| r.section != RecapSection::Note));
+        assert_eq!(texts(&recap), vec!["Cost", "Silver -30"]);
+        for result in [RecapResult::Lost, RecapResult::Drew, RecapResult::BrokeAway] {
+            let mut facts = loss();
+            facts.result = Some(result);
+            facts.notes = vec!["A note.".into()];
+            let recap = combat(&facts);
+            assert!(recap.rows.iter().all(|r| r.section != RecapSection::Note));
+        }
     }
 
     #[test]
