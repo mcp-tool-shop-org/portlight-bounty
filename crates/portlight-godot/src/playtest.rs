@@ -978,12 +978,14 @@ impl PortlightPlaytestLens {
 /// Most lines the side Log keeps, and so the most `state.log_tail` returns.
 pub(crate) const LOG_TAIL_MAX: usize = 8;
 
-/// `state.encounter`: what the encounter card shows. `boarding` is null
-/// until the boarding meter is on the card.
+/// `state.encounter`: what the encounter card shows. `boarding` is
+/// `{progress, threshold}` while the card draws the Boarding line (Naval
+/// phase, threshold above 0), else null.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct EncounterKey {
     pub phase: String,
     pub round: i64,
+    pub boarding: Option<(i64, i64)>,
     pub delta: String,
     pub log: String,
 }
@@ -996,7 +998,13 @@ impl EncounterKey {
             "delta" => self.delta.as_str(),
             "log" => self.log.as_str(),
         };
-        dict.set("boarding", &Variant::nil());
+        match self.boarding {
+            Some((progress, threshold)) => dict.set(
+                "boarding",
+                &vdict! { "progress" => progress, "threshold" => threshold },
+            ),
+            None => dict.set("boarding", &Variant::nil()),
+        }
         dict
     }
 }
@@ -1015,6 +1023,9 @@ pub(crate) fn encounter_key(
     Some(EncounterKey {
         phase: format!("{:?}", view.phase).to_lowercase(),
         round: facts.round,
+        boarding: facts.boarding.filter(|(_, threshold)| {
+            view.phase == crate::logic::ScreenPhase::Naval && *threshold > 0
+        }),
         delta: crate::logic::delta_text(facts),
         log: view.log,
     })
@@ -1274,6 +1285,23 @@ mod tests {
         assert_eq!(open.round, 0);
         assert_eq!(open.log, facts.log);
         assert_eq!(encounter_key(Some(&facts), true), None, "report on top");
+    }
+
+    #[test]
+    fn encounter_boarding_follows_the_naval_card() {
+        let mut facts =
+            crate::logic::facts_for_catalog_captain(crate::logic::SCRIPTED_CAPTAIN, None, true)
+                .expect("catalog captain");
+        facts.boarding = Some((1, 3));
+        // Approach: the card draws no Boarding line, so the key is null.
+        assert_eq!(encounter_key(Some(&facts), false).unwrap().boarding, None);
+        facts.phase = "naval".into();
+        assert_eq!(
+            encounter_key(Some(&facts), false).unwrap().boarding,
+            Some((1, 3))
+        );
+        facts.boarding = Some((0, 0));
+        assert_eq!(encounter_key(Some(&facts), false).unwrap().boarding, None);
     }
 
     #[test]

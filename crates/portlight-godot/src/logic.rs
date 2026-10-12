@@ -570,6 +570,16 @@ pub(crate) fn encounter_end_line(
 /// `None` when nothing was lost. Silver and cargo are not terms: a win prints
 /// its own silver and spends no cargo. `deltas` is `[silver, crew, hull,
 /// cargo]` as [`EncounterBaseline::deltas`] returns it.
+/// The cost line for a capture: the diff from the fight's baseline to the
+/// state read just before the capture, so crew sent to the prize is not a
+/// loss.
+pub(crate) fn capture_cost_line(
+    baseline: &EncounterBaseline,
+    fight_end: &EncounterBaseline,
+) -> Option<String> {
+    fight_cost_line(baseline.deltas(fight_end))
+}
+
 pub(crate) fn fight_cost_line(deltas: [i64; 4]) -> Option<String> {
     let mut line = String::from("Fight cost");
     let mut any = false;
