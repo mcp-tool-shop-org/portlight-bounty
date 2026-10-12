@@ -10525,7 +10525,18 @@ impl PortlightGame {
                 let facts = self.encounter.as_ref();
                 if log.as_deref() != Some(view.log.as_str())
                     || round != facts.map(|f| f.round)
-                    || dict.get("boarding").is_none_or(|v| !v.is_nil())
+                    || dict.get("boarding").map(|v| {
+                        v.try_to::<VarDictionary>().ok().map(|b| {
+                            (
+                                b.get("progress").map(|x| x.to::<i64>()).unwrap_or(-1),
+                                b.get("threshold").map(|x| x.to::<i64>()).unwrap_or(-1),
+                            )
+                        })
+                    }) != Some(
+                        facts
+                            .and_then(|f| f.boarding)
+                            .filter(|(_, t)| view.phase == ScreenPhase::Naval && *t > 0),
+                    )
                 {
                     problems.push(format!(
                         "encounter {log:?} round {round:?} vs {:?}",
