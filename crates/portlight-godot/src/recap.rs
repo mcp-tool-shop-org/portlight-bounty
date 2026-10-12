@@ -222,13 +222,11 @@ fn passthrough(section: RecapSection, text: &str, tone: RecapTone) -> RecapRow {
     )
 }
 
-fn verdict(result: RecapResult, sea: bool, name: &str) -> String {
-    let (head, joiner) = match (result, sea) {
-        (r, true) if r.is_win() => ("Won the sea fight", "with"),
-        (r, false) if r.is_win() => ("Won the fight", "with"),
-        (RecapResult::Lost, true) => ("Lost the sea fight", "with"),
-        (RecapResult::Lost, false) => ("Lost the fight", "with"),
-        (RecapResult::Drew, _) => ("Drew the fight", "with"),
+fn verdict(result: RecapResult, name: &str) -> String {
+    let (head, joiner) = match result {
+        r if r.is_win() => ("Won", "against"),
+        RecapResult::Lost => ("Lost", "to"),
+        RecapResult::Drew => ("Drew", "with"),
         _ => ("Broke away", "from"),
     };
     if name.is_empty() {
@@ -309,7 +307,7 @@ fn sole_cause<const N: usize>(
 pub(crate) fn combat_recap(facts: &CombatFacts) -> Recap {
     let result = facts.result.unwrap_or(RecapResult::Drew);
     let win = result.is_win();
-    let mut headline = verdict(result, facts.sea, &facts.name);
+    let mut headline = verdict(result, &facts.name);
     if let Some(clause) = decisive_clause(result, facts.sea, facts.decisive.as_ref()) {
         headline = format!("{headline} - {clause}");
     }
@@ -321,16 +319,24 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Recap {
     };
 
     let choice = match result {
-        RecapResult::WonSpared => Some(format!("Spared {}", facts.name)),
-        RecapResult::WonTookAll => Some(format!("Took all from {}", facts.name)),
+        RecapResult::WonSpared => Some("Spared".to_string()),
+        RecapResult::WonTookAll => Some("Took all - hold and purse".to_string()),
         RecapResult::WonPrize => Some(format!(
             "Prize taken - {} added to your fleet",
             facts.prize_ship
         )),
-        RecapResult::WonSunk => Some(format!(
-            "No prize - {}",
-            facts.no_prize_reason.trim().trim_end_matches('.')
-        )),
+        RecapResult::WonSunk => {
+            let reason = facts
+                .no_prize_reason
+                .trim()
+                .trim_end_matches('.')
+                .trim_end();
+            Some(if reason.is_empty() {
+                "Sunk - no prize".to_string()
+            } else {
+                format!("Sunk - no prize - {reason}")
+            })
+        }
         _ => None,
     };
 
@@ -759,40 +765,28 @@ mod tests {
         assert_eq!(
             heads,
             vec![
-                (
-                    "won_spared",
-                    "Won the sea fight with Captain Vane - boarded at 3/3"
-                ),
-                (
-                    "won_took_all",
-                    "Won the sea fight with Captain Vane - boarded at 3/3"
-                ),
-                (
-                    "won_prize",
-                    "Won the sea fight with Captain Vane - boarded at 3/3"
-                ),
-                (
-                    "won_sunk",
-                    "Won the sea fight with Captain Vane - boarded at 3/3"
-                ),
-                (
-                    "lost",
-                    "Lost the sea fight with Captain Vane - sunk by their broadside"
-                ),
-                ("drew", "Drew the fight with Captain Vane"),
+                ("won_spared", "Won against Captain Vane - boarded at 3/3"),
+                ("won_took_all", "Won against Captain Vane - boarded at 3/3"),
+                ("won_prize", "Won against Captain Vane - boarded at 3/3"),
+                ("won_sunk", "Won against Captain Vane - boarded at 3/3"),
+                ("lost", "Lost to Captain Vane - sunk by their broadside"),
+                ("drew", "Drew with Captain Vane"),
                 (
                     "broke_away",
                     "Broke away from Captain Vane - fled in round 2"
                 ),
             ]
         );
-        assert_eq!(texts(&recaps[0])[0], "Spared Captain Vane");
-        assert_eq!(texts(&recaps[1])[0], "Took all from Captain Vane");
+        assert_eq!(texts(&recaps[0])[0], "Spared");
+        assert_eq!(texts(&recaps[1])[0], "Took all - hold and purse");
         assert_eq!(
             texts(&recaps[2])[0],
             "Prize taken - Gull added to your fleet"
         );
-        assert_eq!(texts(&recaps[3])[0], "No prize - Their hull was lost");
+        assert_eq!(
+            texts(&recaps[3])[0],
+            "Sunk - no prize - Their hull was lost"
+        );
     }
 
     #[test]
@@ -885,7 +879,7 @@ mod tests {
         assert_eq!(
             texts(&recap),
             vec![
-                "Spared Captain Vane",
+                "Spared",
                 "Earned",
                 "Silver +120 - purse",
                 "Silver +12 - loot",
@@ -942,7 +936,7 @@ mod tests {
         facts.purse = 0;
         facts.deltas = [0, 0, 0, 0];
         facts.reached_boarding = false;
-        assert_eq!(texts(&combat_recap(&facts)), vec!["Spared Captain Vane"]);
+        assert_eq!(texts(&combat_recap(&facts)), vec!["Spared"]);
     }
 
     #[test]
@@ -1139,6 +1133,43 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn no_trailing_period_on_headlines_or_rows() {
+        for recap in all_combat().iter().chain(all_contract().iter()) {
+            assert!(!recap.headline.ends_with('.'), "{}", recap.headline);
+            for row in recap
+                .rows
+                .iter()
+                .filter(|r| r.section != RecapSection::RuleNote)
+            {
+                assert!(!row.text.ends_with('.'), "{}", row.text);
+            }
+        }
+    }
+
+    #[test]
+    fn sunk_without_a_reason_reads_plain() {
+        let mut facts = win(RecapResult::WonSunk);
+        facts.no_prize_reason = String::new();
+        assert_eq!(texts(&combat_recap(&facts))[0], "Sunk - no prize");
+        facts.no_prize_reason = " . ".into();
+        assert_eq!(texts(&combat_recap(&facts))[0], "Sunk - no prize");
+    }
+
+    #[test]
+    fn personal_and_empty_name_headlines() {
+        let mut facts = win(RecapResult::WonSpared);
+        facts.sea = false;
+        facts.decisive = Some(DecisiveMove::FinalMove("thrust".into()));
+        assert_eq!(
+            combat_recap(&facts).headline,
+            "Won against Captain Vane - final move Thrust"
+        );
+        facts.name = String::new();
+        facts.decisive = None;
+        assert_eq!(combat_recap(&facts).headline, "Won");
     }
 
     #[test]
