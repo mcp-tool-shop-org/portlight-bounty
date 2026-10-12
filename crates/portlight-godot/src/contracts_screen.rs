@@ -205,8 +205,19 @@ pub(crate) fn progress_text(delivered: i64, required: i64) -> String {
     format!("{delivered}/{required}")
 }
 
-pub(crate) fn abandon_prompt(title: &str) -> String {
-    format!("Abandon {}? Confirm to drop it.", ascii_sentence(title))
+/// `Abandon {title}? Confirm to drop it.`; with credited quantity the loss is
+/// named at the moment of the decision: `... Progress 10/23 is lost. Confirm
+/// to drop it.` `progress` is `(delivered, required)`; zero delivered leaves
+/// the prompt as it was.
+pub(crate) fn abandon_prompt(title: &str, progress: Option<(i64, i64)>) -> String {
+    let title = ascii_sentence(title);
+    match progress.filter(|(delivered, _)| *delivered > 0) {
+        Some((delivered, required)) => format!(
+            "Abandon {title}? Progress {} is lost. Confirm to drop it.",
+            progress_text(delivered, required)
+        ),
+        None => format!("Abandon {title}? Confirm to drop it."),
+    }
 }
 
 /// Char budget for one Contracts desk line (notice 16 px, Recent 14 px). The
@@ -265,13 +276,41 @@ pub(crate) fn aboard_clause(good_id: &str, held: i64) -> String {
 /// so the whole line stays within [`DESK_CHARS`].
 pub(crate) fn abandon_notice(outcome: &ContractOutcome, held: i64) -> String {
     let aboard = aboard_clause(&outcome.good_id, held);
-    let line = outcome_line(
+    let line = progress_outcome_line(
         notice_label(outcome),
         outcome,
-        0,
         DESK_CHARS.saturating_sub(aboard.len()),
     );
     format!("{line}{aboard}")
+}
+
+/// An outcome line with the credited progress after the tail:
+/// `Contract abandoned: Grain for Corsair's Rest - 10/23`. Order is head
+/// (label and any silver), tail, `{d}/{r}`. The head and the token are never
+/// trimmed; the tail gives way first. With nothing delivered it is exactly
+/// [`outcome_line`].
+fn progress_outcome_line(label: &str, outcome: &ContractOutcome, budget: usize) -> String {
+    if outcome.delivered_quantity <= 0 {
+        return outcome_line(label, outcome, 0, budget);
+    }
+    let mut head = format!("{label}:");
+    let silver = outcome_terms(outcome);
+    if !silver.is_empty() {
+        head.push(' ');
+        head.push_str(&silver);
+    }
+    let token = format!(
+        " - {}",
+        progress_text(outcome.delivered_quantity, outcome.required_quantity)
+    );
+    let sep = if head.ends_with(':') { " " } else { " - " };
+    let room = budget.saturating_sub(head.len() + sep.len() + token.len());
+    let tail = trim_tail(&outcome_tail(outcome), room);
+    if tail.is_empty() {
+        format!("{head}{token}")
+    } else {
+        format!("{head}{sep}{tail}{token}")
+    }
 }
 
 /// A desk notice for a failure outcome (abandon, or an expiry if one is ever
@@ -486,6 +525,8 @@ pub(crate) fn good_display_name(id: &str) -> String {
 pub(crate) fn recent_line(outcome: &ContractOutcome, guarantee: i64) -> String {
     if outcome.outcome_type == "expired" {
         expired_recent_line(outcome, guarantee)
+    } else if outcome.outcome_type == "abandoned" {
+        progress_outcome_line(recent_label(outcome), outcome, DESK_CHARS)
     } else {
         outcome_line(recent_label(outcome), outcome, 0, DESK_CHARS)
     }
@@ -582,7 +623,7 @@ mod tests {
     #[test]
     fn abandon_prompt_and_outcome_print_only_applied_terms() {
         assert_eq!(
-            abandon_prompt("Grain for Corsair's Rest"),
+            abandon_prompt("Grain for Corsair's Rest", None),
             "Abandon Grain for Corsair's Rest? Confirm to drop it."
         );
         let outcome = ContractOutcome {
@@ -1020,7 +1061,7 @@ mod tests {
         for other in [
             outcome_notice(&bonus_paid()),
             "Accepted Famine relief: grain to Corsair's Rest.".to_string(),
-            abandon_prompt("Grain for Corsair's Rest"),
+            abandon_prompt("Grain for Corsair's Rest", None),
             "Contract is not yet fulfilled".to_string(),
             String::new(),
         ] {
@@ -1065,6 +1106,26 @@ mod tests {
         }
     }
 
+    fn abandoned_with(done: i64) -> ContractOutcome {
+        let mut outcome = failed("abandoned", 0);
+        outcome.delivered_quantity = done;
+        outcome
+    }
+
+    #[test]
+    fn abandon_prompt_names_lost_progress_only_when_credited() {
+        assert_eq!(
+            abandon_prompt("Grain for Corsair's Rest", Some((10, 23))),
+            "Abandon Grain for Corsair's Rest? Progress 10/23 is lost. Confirm to drop it."
+        );
+        for none in [None, Some((0, 23))] {
+            assert_eq!(
+                abandon_prompt("Grain for Corsair's Rest", none),
+                "Abandon Grain for Corsair's Rest? Confirm to drop it."
+            );
+        }
+    }
+
     fn active(offer: &str, good: &str, port: &str, done: i64, need: i64) -> ActiveContract {
         ActiveContract {
             offer_id: offer.into(),
@@ -1083,6 +1144,62 @@ mod tests {
             source_port: None,
             inspection_modifier: 1.0,
             status: "active".into(),
+        }
+    }
+
+    #[test]
+    fn abandon_notice_carries_progress_before_the_aboard_clause() {
+        assert_eq!(
+            abandon_notice(&abandoned_with(10), 12),
+            "Contract abandoned: Grain for Corsair's Rest - 10/23 - 12 Grain still aboard"
+        );
+        // No credit: unchanged.
+        assert_eq!(
+            abandon_notice(&abandoned_with(0), 23),
+            "Contract abandoned: Grain for Corsair's Rest - 23 Grain still aboard"
+        );
+        // A runaway tail trims; the head, the token and the aboard count stay whole.
+        let mut long = abandoned_with(10);
+        long.destination_port_id =
+            "the_very_long_and_winding_harbour_of_the_far_southern_reaches_beyond".into();
+        let notice = abandon_notice(&long, 12);
+        assert!(
+            notice.starts_with("Contract abandoned: Grain for "),
+            "{notice}"
+        );
+        assert!(
+            notice.ends_with("... - 10/23 - 12 Grain still aboard"),
+            "{notice}"
+        );
+        assert!(notice.len() <= DESK_CHARS, "{notice}");
+    }
+
+    #[test]
+    fn abandon_recent_row_carries_progress() {
+        assert_eq!(
+            recent_line(&abandoned_with(10), 0),
+            "Abandoned: Grain for Corsair's Rest - 10/23"
+        );
+        assert_eq!(
+            recent_line(&abandoned_with(0), 0),
+            "Abandoned: Grain for Corsair's Rest"
+        );
+    }
+
+    #[test]
+    fn abandon_lines_stay_silver_free_and_clean() {
+        let lines = [
+            abandon_prompt("Grain for Corsair's Rest", Some((10, 23))),
+            abandon_notice(&abandoned_with(10), 12),
+            recent_line(&abandoned_with(10), 0),
+        ];
+        for line in lines {
+            assert_clean(&line);
+            for term in [
+                "Silver", "Trust", "Standing", "Heat", "Complete", "Deliver", "wanted",
+            ] {
+                assert!(!line.contains(term), "{line}");
+            }
         }
     }
 
