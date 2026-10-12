@@ -217,7 +217,10 @@ fn caused(section: RecapSection, head: String, cause: Option<&str>, tone: RecapT
 fn passthrough(section: RecapSection, text: &str, tone: RecapTone) -> RecapRow {
     row(
         section,
-        trim_tail(&ascii_punctuation(text), ROW_CHARS),
+        trim_tail(
+            ascii_punctuation(text).trim_end().trim_end_matches('.'),
+            ROW_CHARS,
+        ),
         tone,
     )
 }
@@ -888,7 +891,7 @@ mod tests {
                     "Underworld standing {} +5 - spared",
                     faction_name("underworld")
                 ),
-                "Mara approves.",
+                "Mara approves",
                 "Cost",
                 "Hull -12 - their broadside",
                 "Crew -1 - boarding melee",
@@ -1137,7 +1140,30 @@ mod tests {
 
     #[test]
     fn no_trailing_period_on_headlines_or_rows() {
-        for recap in all_combat().iter().chain(all_contract().iter()) {
+        let mut passthrough = win(RecapResult::WonTookAll);
+        passthrough.notes = vec![
+            "Mara approves.".into(),
+            "Tom leaves. He wanted a bigger ship.".into(),
+        ];
+        passthrough.loot = vec!["Found: Compass.".into()];
+        let passthrough = combat_recap(&passthrough);
+        let rows = texts(&passthrough);
+        for want in [
+            "Mara approves",
+            "Tom leaves. He wanted a bigger ship",
+            "Found: Compass",
+        ] {
+            assert!(rows.contains(&want), "{want} in {rows:?}");
+        }
+        assert!(
+            rows.contains(&RULE_NOTE),
+            "the rule note keeps its full stop"
+        );
+        for recap in all_combat()
+            .iter()
+            .chain(all_contract().iter())
+            .chain(std::iter::once(&passthrough))
+        {
             assert!(!recap.headline.ends_with('.'), "{}", recap.headline);
             for row in recap
                 .rows
