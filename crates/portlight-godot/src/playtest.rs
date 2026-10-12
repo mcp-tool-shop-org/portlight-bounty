@@ -928,7 +928,7 @@ impl PortlightPlaytestLens {
     /// and it and its nested `state` are updated in place. The bridge builds
     /// a fresh observation for every call, so nothing else sees the change.
     #[func]
-    fn augment(game: Option<Gd<Node>>, observation: VarDictionary) -> VarDictionary {
+    pub(crate) fn augment(game: Option<Gd<Node>>, observation: VarDictionary) -> VarDictionary {
         let Some(game) = game else {
             return observation;
         };
@@ -972,6 +972,87 @@ impl PortlightPlaytestLens {
         let spliced = splice_text(&text, &extra);
         result.set("text", spliced.as_str());
         result
+    }
+}
+
+/// Most lines the side Log keeps, and so the most `state.log_tail` returns.
+pub(crate) const LOG_TAIL_MAX: usize = 8;
+
+/// `state.encounter`: what the encounter card shows. `boarding` is null
+/// until the boarding meter is on the card.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct EncounterKey {
+    pub phase: String,
+    pub round: i64,
+    pub delta: String,
+    pub log: String,
+}
+
+impl EncounterKey {
+    pub(crate) fn to_dictionary(&self) -> VarDictionary {
+        let mut dict = vdict! {
+            "phase" => self.phase.as_str(),
+            "round" => self.round,
+            "delta" => self.delta.as_str(),
+            "log" => self.log.as_str(),
+        };
+        dict.set("boarding", &Variant::nil());
+        dict
+    }
+}
+
+/// Null when no encounter card is up, and while the Day's report is the top
+/// layer (the card is behind it).
+pub(crate) fn encounter_key(
+    facts: Option<&crate::logic::EncounterFacts>,
+    report_open: bool,
+) -> Option<EncounterKey> {
+    if report_open {
+        return None;
+    }
+    let facts = facts?;
+    let view = crate::logic::present(facts)?;
+    Some(EncounterKey {
+        phase: format!("{:?}", view.phase).to_lowercase(),
+        round: facts.round,
+        delta: crate::logic::delta_text(facts),
+        log: view.log,
+    })
+}
+
+/// `state.log_tail`: the side Log, oldest first, at most [`LOG_TAIL_MAX`],
+/// ASCII.
+pub(crate) fn log_tail(lines: &[String]) -> Vec<String> {
+    let start = lines.len().saturating_sub(LOG_TAIL_MAX);
+    lines[start..]
+        .iter()
+        .map(|line| crate::logic::ascii_punctuation(line))
+        .collect()
+}
+
+/// `state.voyage`: `eta_days` is always null in this version.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct VoyageKey {
+    pub at_sea: bool,
+    pub progress: i64,
+    pub distance: i64,
+}
+
+impl VoyageKey {
+    /// Always null in this version.
+    pub(crate) const ETA_DAYS: Option<i64> = None;
+
+    pub(crate) fn to_dictionary(self) -> VarDictionary {
+        let mut dict = vdict! {
+            "at_sea" => self.at_sea,
+            "progress" => self.progress,
+            "distance" => self.distance,
+        };
+        match Self::ETA_DAYS {
+            Some(days) => dict.set("eta_days", days),
+            None => dict.set("eta_days", &Variant::nil()),
+        }
+        dict
     }
 }
 
@@ -1181,6 +1262,45 @@ fn collect_actions(node: &Gd<Node>, out: &mut Vec<String>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn encounter_state_is_null_when_closed() {
+        assert_eq!(encounter_key(None, false), None);
+        let facts =
+            crate::logic::facts_for_catalog_captain(crate::logic::SCRIPTED_CAPTAIN, None, true);
+        let facts = facts.expect("catalog captain");
+        let open = encounter_key(Some(&facts), false).expect("card is up");
+        assert_eq!(open.phase, "approach");
+        assert_eq!(open.round, 0);
+        assert_eq!(open.log, facts.log);
+        assert_eq!(encounter_key(Some(&facts), true), None, "report on top");
+    }
+
+    #[test]
+    fn voyage_state_reports_progress_and_null_eta() {
+        let key = VoyageKey {
+            at_sea: true,
+            progress: 3,
+            distance: 9,
+        };
+        assert_eq!((key.at_sea, key.progress, key.distance), (true, 3, 9));
+        assert_eq!(
+            VoyageKey::ETA_DAYS,
+            None,
+            "eta is not filled in this version"
+        );
+    }
+
+    #[test]
+    fn log_tail_is_capped_at_eight_and_ascii() {
+        let lines: Vec<String> = (0..12).map(|n| format!("line {n} \u{2014} x")).collect();
+        let tail = log_tail(&lines);
+        assert_eq!(tail.len(), LOG_TAIL_MAX);
+        assert!(tail[0].starts_with("line 4"), "oldest first, newest kept");
+        assert!(tail[7].starts_with("line 11"));
+        assert!(tail.iter().all(|line| line.is_ascii()), "{tail:?}");
+        assert!(log_tail(&[]).is_empty());
+    }
 
     fn roundtrip_action(action: Action) {
         let id = action_playtest_id(&action);
