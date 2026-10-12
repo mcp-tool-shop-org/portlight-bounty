@@ -180,6 +180,7 @@ async function clearOverlays(socket, result, notes) {
         const leaked = ids(current).filter((id) => id !== 'chart.day_report.close');
         assert(ids(current).includes('chart.day_report.close'), 'F10-1: report Close not offered over the encounter', current);
         assert(leaked.length === 0, `F10-3: report over encounter also offered ${leaked.join(', ')}`, current);
+        assert(current?.state?.encounter === null, 'state.encounter must be null while the report is on top', current);
         notes.f10Layer = true;
       }
       const after = await call(socket, 'act', { kind: 'key', key: 'escape' });
@@ -512,6 +513,11 @@ async function voyage(socket, chart) {
   assert(!isDayReport(here), 'Escape left the arrival card open', here);
   assert(!ids(here).includes('chart.day_report.close'), 'day-report Close still offered after dismiss', here);
   assert(here?.state?.day_report == null, 'state.day_report still reported after dismiss', here);
+  const tail = here?.state?.log_tail;
+  assert(Array.isArray(tail) && tail.length <= 8 && tail.every((l) => /^[\x00-\x7f]*$/.test(l)), 'state.log_tail is not an ASCII array of at most 8 lines', here);
+  const voyage = here?.state?.voyage;
+  assert(voyage && typeof voyage.at_sea === 'boolean' && Number.isInteger(voyage.progress) && Number.isInteger(voyage.distance) && voyage.eta_days === null, 'state.voyage has the wrong shape', here);
+  assert(here?.state?.encounter === null, 'state.encounter is not null with no encounter up', here);
   here = await clearOverlays(socket, here, notes);
   assert(String(here?.state?.docked) === terms.port, `dismiss left ${terms.destination}`, here);
   assert(Number(here?.state?.day) > startDay, 'the day counter did not advance', here);

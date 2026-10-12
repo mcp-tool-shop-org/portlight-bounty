@@ -384,6 +384,8 @@ pub(crate) enum ScreenAction {
 #[derive(Debug, Clone)]
 pub(crate) struct EncounterFacts {
     pub phase: String,
+    /// `EncounterStep.turn` of the last step; 0 before any step.
+    pub round: i64,
     pub kind: String,
     pub captain_id: String,
     pub captain_name: String,
@@ -412,6 +414,9 @@ pub(crate) struct EncounterFacts {
     pub at_sea: bool,
     /// `false` until [`Session::encounter_choice_with`] has opened it.
     pub on_session: bool,
+    /// Boarding meter from the step: progress and threshold. `None` when the
+    /// step has no threshold (not a naval fight).
+    pub boarding: Option<(i64, i64)>,
     pub naval_actions: Vec<String>,
     pub combat_actions: Vec<String>,
     /// World reading taken when the encounter opened (section 10.3). Godot
@@ -558,6 +563,23 @@ pub(crate) fn encounter_end_line(
         line.push_str(" - the bounty stays open");
     }
     line
+}
+
+/// The Log line for what a won fight cost: `Fight cost - Hull -12 - Crew -1`.
+/// Hull then crew, losses only (a gain is not a cost), zero terms left out;
+/// `None` when nothing was lost. Silver and cargo are not terms: a win prints
+/// its own silver and spends no cargo. `deltas` is `[silver, crew, hull,
+/// cargo]` as [`EncounterBaseline::deltas`] returns it.
+pub(crate) fn fight_cost_line(deltas: [i64; 4]) -> Option<String> {
+    let mut line = String::from("Fight cost");
+    let mut any = false;
+    for (term, value) in [("Hull", deltas[2]), ("Crew", deltas[1])] {
+        if value < 0 {
+            line.push_str(&format!(" - {term} {}", signed_delta(value)));
+            any = true;
+        }
+    }
+    any.then_some(line)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -728,6 +750,7 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
             .unwrap_or_default()
     };
     let mut facts = facts_shell(&step.phase, &step.kind, input.ship, input.at_sea);
+    facts.round = step.turn;
     facts.captain_id = step.enemy_captain_id.clone();
     facts.captain_name = step.enemy_captain_name.clone();
     facts.faction_id = faction_id;
@@ -756,6 +779,8 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     // Damage amounts are non-negative. The line shows them as signed HP changes.
     facts.player_hp_delta = -step.damage_to_player;
     facts.opponent_hp_delta = -step.damage_to_opponent;
+    facts.boarding =
+        (step.boarding_threshold > 0).then_some((step.boarding_progress, step.boarding_threshold));
     facts.naval_actions = input.naval_actions.to_vec();
     facts.combat_actions = input.combat_actions.to_vec();
     facts
@@ -927,6 +952,14 @@ fn push_party(spans: &mut Vec<DeltaSpan>, parts: Vec<DeltaSpan>) {
     }
 }
 
+/// The delta line as one string: the span texts joined, as the card draws them.
+pub(crate) fn delta_text(facts: &EncounterFacts) -> String {
+    delta_spans(facts)
+        .iter()
+        .map(|span| span.text.as_str())
+        .collect()
+}
+
 /// One ASCII line from the step deltas already stored on `facts`.
 /// Zero values are dropped. Hull clauses use ` | `; crew and HP list each side.
 fn delta_spans(facts: &EncounterFacts) -> Vec<DeltaSpan> {
@@ -985,6 +1018,11 @@ fn delta_spans(facts: &EncounterFacts) -> Vec<DeltaSpan> {
     spans
 }
 
+/// `Boarding 1/3`: the sim's own two numbers.
+pub(crate) fn boarding_line(progress: i64, threshold: i64) -> String {
+    format!("Boarding {progress}/{threshold}")
+}
+
 fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     let mut lines = Vec::new();
     if !facts.captain_name.is_empty() {
@@ -1018,6 +1056,12 @@ fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
             });
         }
     }
+    // State, not a delta: shown at 0/N too. Naval phase only.
+    if phase == ScreenPhase::Naval {
+        if let Some((progress, threshold)) = facts.boarding.filter(|(_, max)| *max > 0) {
+            lines.push(boarding_line(progress, threshold));
+        }
+    }
     if phase == ScreenPhase::Personal && facts.kind == "fight" {
         lines.push(format!(
             "Your HP {} - opponent {}",
@@ -1043,6 +1087,7 @@ pub(crate) fn faction_name(faction_id: &str) -> String {
 fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) -> EncounterFacts {
     EncounterFacts {
         phase: phase.to_string(),
+        round: 0,
         kind: kind.to_string(),
         captain_id: String::new(),
         captain_name: String::new(),
@@ -1066,6 +1111,7 @@ fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) 
         pending_victory: false,
         at_sea,
         on_session: false,
+        boarding: None,
         naval_actions: Vec::new(),
         combat_actions: Vec::new(),
         baseline: None,
@@ -3136,6 +3182,64 @@ mod tests {
         );
     }
 
+    fn naval_facts() -> EncounterFacts {
+        let mut facts = facts_for_catalog_captain(
+            "raj_the_quiet",
+            Some(PlayerShip {
+                hull: 18,
+                hull_max: 20,
+                crew: 4,
+            }),
+            true,
+        )
+        .unwrap();
+        facts.enemy_hull = Some(40);
+        facts.enemy_hull_max = Some(50);
+        facts.enemy_crew = Some(8);
+        facts
+    }
+
+    #[test]
+    fn naval_card_shows_boarding_progress() {
+        let mut facts = naval_facts();
+        facts.boarding = Some((0, 3));
+        let card = card_text(&facts, ScreenPhase::Naval);
+        assert!(card.lines().any(|line| line == "Boarding 0/3"), "{card}");
+        facts.boarding = Some((2, 3));
+        let card = card_text(&facts, ScreenPhase::Naval);
+        let lines: Vec<&str> = card.lines().collect();
+        assert_eq!(lines.last(), Some(&"Boarding 2/3"), "{card}");
+        // After the enemy hull line.
+        let enemy = lines
+            .iter()
+            .position(|l| l.starts_with("Enemy hull"))
+            .unwrap();
+        assert_eq!(lines[enemy + 1], "Boarding 2/3");
+    }
+
+    #[test]
+    fn boarding_line_hidden_outside_naval() {
+        let mut facts = naval_facts();
+        facts.boarding = Some((1, 3));
+        for phase in [
+            ScreenPhase::Approach,
+            ScreenPhase::Boarding,
+            ScreenPhase::Personal,
+            ScreenPhase::Outcome,
+        ] {
+            assert!(!card_text(&facts, phase).contains("Boarding "), "{phase:?}");
+        }
+    }
+
+    #[test]
+    fn boarding_line_hidden_at_threshold_zero() {
+        let mut facts = naval_facts();
+        facts.boarding = Some((0, 0));
+        assert!(!card_text(&facts, ScreenPhase::Naval).contains("Boarding "));
+        facts.boarding = None;
+        assert!(!card_text(&facts, ScreenPhase::Naval).contains("Boarding "));
+    }
+
     #[test]
     fn card_text_is_ascii_in_every_phase() {
         let mut facts = facts_for_catalog_captain(
@@ -3154,6 +3258,7 @@ mod tests {
         facts.enemy_crew = Some(8);
         facts.player_hp = 12;
         facts.opponent_hp = 9;
+        facts.boarding = Some((1, 3));
         for phase in [
             ScreenPhase::Approach,
             ScreenPhase::Naval,
@@ -4209,5 +4314,46 @@ mod tests {
         assert!(!line.contains('_'), "{line}");
         let missing = departed_line(&display_or_humanized(None, "salt_spit_cove"), 5);
         assert_eq!(missing, "Departed for Salt Spit Cove - Port fee 5 silver");
+    }
+
+    #[test]
+    fn fight_cost_line_lists_hull_then_crew() {
+        assert_eq!(
+            fight_cost_line([40, -1, -12, 0]).as_deref(),
+            Some("Fight cost - Hull -12 - Crew -1")
+        );
+        assert_eq!(
+            fight_cost_line([0, 0, -12, 0]).as_deref(),
+            Some("Fight cost - Hull -12")
+        );
+        assert_eq!(
+            fight_cost_line([0, -2, 0, 0]).as_deref(),
+            Some("Fight cost - Crew -2")
+        );
+    }
+
+    #[test]
+    fn fight_cost_line_drops_gains_and_zeros() {
+        assert_eq!(
+            fight_cost_line([0, 3, -5, 0]).as_deref(),
+            Some("Fight cost - Hull -5")
+        );
+        // Silver and cargo never appear.
+        let line = fight_cost_line([-30, -1, -2, -9]).unwrap();
+        assert_eq!(line, "Fight cost - Hull -2 - Crew -1");
+        assert!(!line.contains("Silver") && !line.contains("Cargo"));
+    }
+
+    #[test]
+    fn fight_cost_line_is_none_when_nothing_was_lost() {
+        assert_eq!(fight_cost_line([0, 0, 0, 0]), None);
+        assert_eq!(fight_cost_line([100, 2, 4, -3]), None);
+    }
+
+    #[test]
+    fn fight_cost_line_is_ascii() {
+        let line = fight_cost_line([0, -1, -12, 0]).unwrap();
+        assert!(line.is_ascii(), "{line}");
+        assert!(!line.contains('\u{2212}'), "{line}");
     }
 }

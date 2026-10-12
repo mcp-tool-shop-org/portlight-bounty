@@ -12,7 +12,6 @@ Portlight Bounty is a public game. Issues and pull requests are welcome.
 
 ## What we will not take in this release
 
-- A claim that the pictures are MIT, or free to reuse.
 - A generated plate with a baked shadow and no transparency, dropped in as a finished prop.
 - A translation pass. English is the source until a later release says otherwise.
 

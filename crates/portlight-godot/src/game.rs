@@ -463,6 +463,8 @@ enum DayReportShot {
     Expired,
     /// The card over an open desk (Contracts): the desk is dimmed behind it.
     OverScreen,
+    /// The card over an open encounter: the Approach card is dimmed behind it.
+    OverEncounter,
 }
 
 impl DayReportShot {
@@ -474,6 +476,7 @@ impl DayReportShot {
             Self::Arrival => "day-report-arrival.png",
             Self::Expired => "day-report-expired.png",
             Self::OverScreen => "day-report-over-screen.png",
+            Self::OverEncounter => "day-report-over-encounter.png",
         }
     }
 }
@@ -710,6 +713,8 @@ struct PortlightGame {
     /// T-N. GOLD paid lines at the top of the Market box until the next
     /// trade, Market close, undock or Next day.
     market_notice: Vec<String>,
+    /// Highest boarding progress read off the naval card in the smoke.
+    boarding_seen: i64,
     /// Offer id of a trade settle paused after its first partial sale.
     settle_resume: Option<String>,
     /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
@@ -886,6 +891,7 @@ impl IControl for PortlightGame {
             departure_shot_dir: None,
             trade_qty: market::TRADE_QTYS[0],
             market_notice: Vec::new(),
+            boarding_seen: 0,
             settle_resume: None,
             trade_checked: false,
             market_paid_shot_dir: None,
@@ -4303,10 +4309,7 @@ impl PortlightGame {
             );
         }
         if let Some((state, log)) = opened {
-            if !log.is_empty() {
-                self.push_log(log.clone());
-            }
-            self.open_agency(state, log);
+            self.open_sea_agency(state, log);
         }
         self.refresh();
     }
@@ -7334,6 +7337,21 @@ impl PortlightGame {
 
     fn open_agency(&mut self, state: EncounterState, log: String) {
         self.close_day_report();
+        self.open_agency_screen(state, log);
+    }
+
+    /// The sea agency a Next day opens. Unlike [`Self::open_agency`] it leaves
+    /// the Day's report up: the card opens first over the Approach card
+    /// (dimmed, input blocked) and Close gives the encounter back, so an
+    /// expiry from the same tick is never lost behind it.
+    fn open_sea_agency(&mut self, state: EncounterState, log: String) {
+        if !log.is_empty() {
+            self.push_log(log.clone());
+        }
+        self.open_agency_screen(state, log);
+    }
+
+    fn open_agency_screen(&mut self, state: EncounterState, log: String) {
         let (ship, sailing) = self
             .session
             .as_ref()
@@ -7468,6 +7486,38 @@ impl PortlightGame {
         self.finish_victory(true);
     }
 
+    /// Smoke: Spare on a won fight logs exactly one `Fight cost - ` line when
+    /// the fight cost hull or crew, equal to the baseline diff, and none when
+    /// it cost neither.
+    fn spare_enemy_checked(&mut self) {
+        let expected = self
+            .encounter
+            .as_ref()
+            .and_then(|facts| facts.baseline)
+            .and_then(|baseline| {
+                let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
+                crate::logic::fight_cost_line(baseline.deltas(&now))
+            });
+        self.spare_enemy();
+        let found: Vec<&String> = self
+            .log_lines
+            .iter()
+            .filter(|line| line.starts_with("Fight cost - "))
+            .collect();
+        let ok = match &expected {
+            Some(line) => found.len() == 1 && found[0] == line,
+            None => found.is_empty(),
+        };
+        if ok {
+            godot_print!("Encounter smoke: win cost line {expected:?}");
+        } else {
+            self.smoke_ok = false;
+            let line = format!("Encounter smoke: win cost line {found:?}, want {expected:?}.");
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+    }
+
     fn take_prize(&mut self) {
         self.finish_victory(false);
     }
@@ -7488,6 +7538,16 @@ impl PortlightGame {
                 let lines = victory_receipt_lines(&receipt);
                 for line in &lines {
                     self.push_log(line.clone());
+                }
+                // What the fight cost, after the receipt lines; the baseline
+                // is taken so it prints once.
+                let cost = self.encounter.as_mut().and_then(|facts| {
+                    let baseline = facts.baseline.take()?;
+                    let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
+                    crate::logic::fight_cost_line(baseline.deltas(&now))
+                });
+                if let Some(line) = cost {
+                    self.push_log(line);
                 }
                 if let Some(facts) = self.encounter.as_mut() {
                     facts.pending_victory = false;
@@ -7608,9 +7668,22 @@ impl PortlightGame {
         });
         facts.baseline = baseline;
         let receipt = self.encounter_end_receipt(&step, pending, &mut facts);
+        // A win by sinking with no spare/take-all choice to come: log what the
+        // fight cost. A pending victory logs it in `finish_victory` instead.
+        let cost = if step.enemy_sunk && !pending && receipt.is_none() {
+            facts.baseline.take().and_then(|baseline| {
+                let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
+                crate::logic::fight_cost_line(baseline.deltas(&now))
+            })
+        } else {
+            None
+        };
         self.encounter = Some(facts);
         if let Some(receipt) = receipt {
             self.push_log(receipt);
+        }
+        if let Some(line) = cost {
+            self.push_log(line);
         }
     }
 
@@ -8200,6 +8273,8 @@ impl PortlightGame {
         }
         self.close_hunt();
         self.check_report_over_desk(day);
+        self.check_report_over_harbour(day);
+        self.check_report_same_tick_encounter();
         self.check_failed_press_after_close(day);
         // Quiet day at sea: Prices stay empty (§13.2); no deadline/heal/claimable.
         let departed = {
@@ -9110,6 +9185,16 @@ impl PortlightGame {
                 phase.file_name()
             );
         }
+        if matches!(phase, DayReportShot::OverEncounter)
+            && (self.encounter.is_none()
+                || !self
+                    .day_report_nodes
+                    .as_ref()
+                    .is_some_and(day_report::scrim_shown))
+        {
+            self.smoke_ok = false;
+            godot_print!("Day-report smoke: the over-encounter frame is not dimmed.");
+        }
         if matches!(phase, DayReportShot::OverScreen) {
             let dimmed = self
                 .day_report_nodes
@@ -9129,7 +9214,10 @@ impl PortlightGame {
         // encounter plate/button ink gate (no side plate on this panel).
         // A dimmed desk behind the card is mostly one ink colour, so that
         // frame takes its own gate.
-        let gate = if matches!(phase, DayReportShot::OverScreen) {
+        let gate = if matches!(
+            phase,
+            DayReportShot::OverScreen | DayReportShot::OverEncounter
+        ) {
             ShotGate::Dimmed
         } else {
             ShotGate::Chart
@@ -9164,8 +9252,23 @@ impl PortlightGame {
                 true
             }
             DayReportShot::OverScreen => {
+                // Same card, now over an open encounter: the Approach card dims.
                 self.close_day_report();
                 self.close_contracts();
+                self.open_scripted_approach();
+                let day = self
+                    .session
+                    .as_ref()
+                    .map(|session| session.world().day)
+                    .unwrap_or(1);
+                self.open_day_report_doc(day_report::smoke_deadline_document(day));
+                self.day_report_shot = Some(DayReportShot::OverEncounter);
+                self.capture_frames = 4;
+                true
+            }
+            DayReportShot::OverEncounter => {
+                self.close_day_report();
+                self.leave_encounter();
                 // Quiet-day hide is a smoke assertion, not a committed frame (§13.5).
                 let departed = self
                     .session
@@ -10345,6 +10448,15 @@ impl PortlightGame {
             ));
             return false;
         }
+        if self
+            .log_lines
+            .iter()
+            .any(|line| line.starts_with("Fight cost - "))
+        {
+            self.smoke_ok = false;
+            self.push_log("Loss-outcome smoke: a lost fight logged a win cost line.".to_string());
+            return false;
+        }
         godot_print!("loss-outcome phase outcome");
         true
     }
@@ -10379,7 +10491,7 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Outcome, "outcome");
         self.expect_duel_logged("encounter");
         self.expect_outcome_actions();
-        self.spare_enemy();
+        self.spare_enemy_checked();
         self.expect_returned();
         self.leave_encounter();
         self.report_encounter_smoke();
@@ -10425,7 +10537,7 @@ impl PortlightGame {
             }
             ShotPhase::Outcome => {
                 self.expect_outcome_actions();
-                self.spare_enemy();
+                self.spare_enemy_checked();
                 self.expect_returned();
                 self.leave_encounter();
                 self.report_encounter_smoke();
@@ -10445,15 +10557,17 @@ impl PortlightGame {
         self.encounter = None;
         self.scripted_captain = None;
         match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
-            Ok(mut session) => match session.depart(SCRIPTED_DEPART) {
-                Ok(()) => {
-                    let place = session
-                        .world()
-                        .port(SCRIPTED_DEPART)
-                        .map(|port| port.name.clone())
-                        .unwrap_or_else(|| SCRIPTED_DEPART.to_string());
+            Ok(mut session) => match scripted_depart(&mut session) {
+                Ok(fee) => {
+                    let place = display_or_humanized(
+                        session
+                            .world()
+                            .port(SCRIPTED_DEPART)
+                            .map(|port| port.name.as_str()),
+                        SCRIPTED_DEPART,
+                    );
                     self.session = Some(session);
-                    self.push_log(format!("Departed for {place}."));
+                    self.push_log(departed_line(&place, fee));
                 }
                 Err(err) => {
                     self.smoke_ok = false;
@@ -10478,6 +10592,42 @@ impl PortlightGame {
                 return;
             }
             self.play_naval(action);
+            self.check_boarding_meter(action);
+        }
+    }
+
+    /// While the card is still the Naval one, it shows `Boarding p/t`, and
+    /// progress never goes down across rounds.
+    fn check_boarding_meter(&mut self, action: &str) {
+        if !self.phase_is(ScreenPhase::Naval) {
+            return;
+        }
+        let card = self
+            .encounter_nodes
+            .as_ref()
+            .map(|nodes| nodes.card.get_text().to_string())
+            .unwrap_or_default();
+        let progress = card
+            .lines()
+            .find_map(|line| line.strip_prefix("Boarding "))
+            .and_then(|rest| rest.split_once('/'))
+            .and_then(|(done, max)| Some((done.parse::<i64>().ok()?, max.parse::<i64>().ok()?)));
+        match progress {
+            Some((done, max)) if done >= self.boarding_seen && max > 0 && done <= max => {
+                self.boarding_seen = done;
+                godot_print!(
+                    "Encounter smoke: after {action} the card reads Boarding {done}/{max}"
+                );
+            }
+            other => {
+                self.smoke_ok = false;
+                let line = format!(
+                    "Encounter smoke: after {action} the naval card boarding line was {other:?} (was {}): {card:?}",
+                    self.boarding_seen
+                );
+                godot_print!("{line}");
+                self.push_log(line);
+            }
         }
     }
 
@@ -10511,9 +10661,83 @@ impl PortlightGame {
             .is_some_and(|view| view.phase == phase)
     }
 
+    /// The bridge keys, read through `augment` as the bridge reads them, must
+    /// equal what the screen holds: the encounter card text, the side Log and
+    /// the voyage.
+    fn check_bridge_keys(&mut self, label: &str) {
+        let observation = self.playtest_observation_dict();
+        let node: Gd<Node> = self.base().clone().upcast();
+        let result = crate::playtest::PortlightPlaytestLens::augment(Some(node), observation);
+        let state = result
+            .get("state")
+            .and_then(|value| value.try_to::<VarDictionary>().ok())
+            .unwrap_or_default();
+        let mut problems = Vec::new();
+        let tail: Vec<String> = state
+            .get("log_tail")
+            .and_then(|value| value.try_to::<VarArray>().ok())
+            .map(|array| {
+                array
+                    .iter_shared()
+                    .map(|v| v.to::<GString>().to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+        if tail != self.log_lines || tail.len() > 8 || !tail.iter().all(|line| line.is_ascii()) {
+            problems.push(format!("log_tail {tail:?} vs Log {:?}", self.log_lines));
+        }
+        let voyage = state
+            .get("voyage")
+            .and_then(|value| value.try_to::<VarDictionary>().ok());
+        let want = self.session.as_ref().map(|session| {
+            let v = &session.world().voyage;
+            (at_sea(session), v.progress, v.distance)
+        });
+        let got = voyage.as_ref().map(|dict| {
+            (
+                dict.get("at_sea").is_some_and(|v| v.to::<bool>()),
+                dict.get("progress").map(|v| v.to::<i64>()).unwrap_or(-1),
+                dict.get("distance").map(|v| v.to::<i64>()).unwrap_or(-1),
+                dict.get("eta_days").is_some_and(|v| v.is_nil()),
+            )
+        });
+        if want.map(|w| (w.0, w.1, w.2, true)) != got {
+            problems.push(format!("voyage {got:?} vs {want:?}"));
+        }
+        let encounter = state
+            .get("encounter")
+            .and_then(|value| value.try_to::<VarDictionary>().ok());
+        let shown = self.encounter.as_ref().and_then(crate::logic::present);
+        match (&encounter, &shown) {
+            (Some(dict), Some(view)) => {
+                let log = dict.get("log").map(|v| v.to::<GString>().to_string());
+                let round = dict.get("round").map(|v| v.to::<i64>());
+                let facts = self.encounter.as_ref();
+                if log.as_deref() != Some(view.log.as_str())
+                    || round != facts.map(|f| f.round)
+                    || dict.get("boarding").is_none_or(|v| !v.is_nil())
+                {
+                    problems.push(format!(
+                        "encounter {log:?} round {round:?} vs {:?}",
+                        view.log
+                    ));
+                }
+            }
+            (None, None) => {}
+            _ => problems.push(format!("encounter key {encounter:?} vs card {shown:?}")),
+        }
+        if problems.is_empty() {
+            godot_print!("Bridge keys ({label}): encounter, log_tail and voyage match the screen");
+        } else {
+            self.smoke_ok = false;
+            godot_print!("Bridge keys ({label}) mismatch: {problems:?}");
+        }
+    }
+
     fn expect_phase(&mut self, phase: ScreenPhase, label: &str) {
         if self.phase_is(phase) {
             godot_print!("encounter phase {label}");
+            self.check_bridge_keys(label);
             return;
         }
         self.smoke_ok = false;
@@ -10733,6 +10957,126 @@ impl PortlightGame {
             );
         }
         self.close_contracts();
+    }
+
+    /// The second desk for the over-screen smoke: the card over the open
+    /// Harbour dims it, holds the keyboard on Close, and Escape closes the
+    /// card only.
+    fn check_report_over_harbour(&mut self, day: i64) {
+        self.open_harbour();
+        if !self.harbour_open {
+            self.fail_day_report("Day-report smoke: Harbour did not open for the desk check.");
+            return;
+        }
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        let (dimmed, stops, trapped, focused) = self
+            .day_report_nodes
+            .as_ref()
+            .map(|nodes| {
+                (
+                    day_report::scrim_shown(nodes),
+                    nodes.scrim.get_mouse_filter() == MouseFilter::STOP,
+                    day_report::keyboard_trapped(nodes),
+                    nodes.close.has_focus(),
+                )
+            })
+            .unwrap_or_default();
+        if !(dimmed && stops && trapped && focused) {
+            self.fail_day_report(format!(
+                "Day-report smoke: over Harbour, dimmed {dimmed}, stops clicks {stops}, keyboard held {trapped}, Close focused {focused}."
+            ));
+        }
+        self.dismiss_cancel();
+        let dim_gone = self.day_report_nodes.as_ref().is_some_and(|nodes| {
+            !day_report::scrim_shown(nodes) && day_report::keyboard_free(nodes)
+        });
+        if self.day_report_open || !self.harbour_open || !dim_gone {
+            self.fail_day_report(format!(
+                "Day-report smoke: Escape over Harbour: report open {}, desk open {}, dim gone {dim_gone}.",
+                self.day_report_open, self.harbour_open
+            ));
+        } else {
+            godot_print!(
+                "day report over Harbour: dimmed, keyboard held, Escape closes the card only"
+            );
+        }
+        self.close_harbour();
+    }
+
+    /// A Next day that expires a contract and opens a sea encounter: the
+    /// report opens first over the Approach card (dimmed, input refused), the
+    /// expiry is still in the Log, and Close gives the Approach card back.
+    /// Runs on a fresh scripted session through the same `open_sea_agency`
+    /// the Next day path calls; the smoke's own state is put back after.
+    fn check_report_same_tick_encounter(&mut self) {
+        let saved = (
+            self.session.clone(),
+            self.log_lines.clone(),
+            self.encounter.clone(),
+            self.scripted_captain.clone(),
+        );
+        let ok = self.run_report_same_tick_encounter();
+        self.session = saved.0;
+        self.log_lines = saved.1;
+        self.encounter = saved.2;
+        self.scripted_captain = saved.3;
+        self.close_day_report();
+        self.refresh();
+        if !ok {
+            self.fail_day_report("Day-report smoke: same-tick expiry plus encounter check failed.");
+        }
+    }
+
+    fn run_report_same_tick_encounter(&mut self) -> bool {
+        let mut session =
+            match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
+                Ok(session) => session,
+                Err(_) => return false,
+            };
+        if session.accept_bounty(SCRIPTED_CAPTAIN).is_err() {
+            return false;
+        }
+        let Ok(state) = session.hunt_bounty(SCRIPTED_CAPTAIN) else {
+            return false;
+        };
+        let day = session.world().day;
+        self.session = Some(session);
+        self.encounter = None;
+        self.log_lines.clear();
+        let expiry = "Contract expired: Grain for Corsair's Rest".to_string();
+        self.push_log(expiry.clone());
+        self.open_day_report_doc(day_report::smoke_deadline_document(day));
+        self.open_sea_agency(state, String::new());
+        self.refresh();
+        let report_first = self.day_report_open
+            && self.encounter.is_some()
+            && self.day_report_nodes.as_ref().is_some_and(|nodes| {
+                day_report::scrim_shown(nodes) && day_report::keyboard_trapped(nodes)
+            });
+        let refused = self.playtest_choose("encounter.choice.fight").to_string();
+        let still_approach = self.phase_is(ScreenPhase::Approach) && self.day_report_open;
+        self.dismiss_cancel();
+        let offered = offered_choices(&self.offer_root())
+            .iter()
+            .any(|(id, _)| id.starts_with("encounter.choice."));
+        let logged = self.log_lines.contains(&expiry);
+        let ok = report_first
+            && !refused.is_empty()
+            && still_approach
+            && !self.day_report_open
+            && offered
+            && logged;
+        if ok {
+            godot_print!(
+                "day report over a same-tick encounter: report first, choices refused ({refused}), Close restores the Approach card, expiry kept in the Log"
+            );
+        } else {
+            godot_print!(
+                "same-tick: report_first {report_first}, refused {refused:?}, still_approach {still_approach}, report_open {}, offered {offered}, logged {logged}",
+                self.day_report_open
+            );
+        }
+        ok
     }
 
     /// A Day's report raised over an open encounter dims it and takes its
@@ -11231,6 +11575,13 @@ fn contract_strip_frames_requested(shot_set: bool) -> bool {
 
 fn contract_strip_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
+}
+
+/// Departs for the scripted port and returns the fee the session took.
+fn scripted_depart(session: &mut Session) -> Result<i64, portlight_sim::error::SimError> {
+    let silver_before = session.world().captain.silver;
+    session.depart(SCRIPTED_DEPART)?;
+    Ok(silver_before - session.world().captain.silver)
 }
 
 fn market_paid_frames_requested(shot_set: bool) -> bool {
@@ -11805,6 +12156,30 @@ impl PortlightGame {
         state.set("place", place.as_str());
         state.set("open", &open);
         state.set("hire_on_screen", hire);
+        match crate::playtest::encounter_key(self.encounter.as_ref(), self.day_report_open) {
+            Some(key) => state.set("encounter", &key.to_dictionary()),
+            None => state.set("encounter", &Variant::nil()),
+        }
+        match self.session.as_ref() {
+            Some(session) => {
+                let mut tail = VarArray::new();
+                for line in crate::playtest::log_tail(&self.log_lines) {
+                    tail.push(line.as_str());
+                }
+                state.set("log_tail", &tail);
+                let voyage = &session.world().voyage;
+                let key = crate::playtest::VoyageKey {
+                    at_sea: at_sea(session),
+                    progress: voyage.progress,
+                    distance: voyage.distance,
+                };
+                state.set("voyage", &key.to_dictionary());
+            }
+            None => {
+                state.set("log_tail", &Variant::nil());
+                state.set("voyage", &Variant::nil());
+            }
+        }
         let mut result = VarDictionary::new();
         result.set("text", text.as_str());
         result.set("state", &state);
@@ -12742,6 +13117,7 @@ impl PortlightGame {
             )),
         }
         self.check_at_sea_copy();
+        self.check_bridge_keys("departure");
         self.check_departure_worst_case();
         self.departure_checked = true;
         if capture {

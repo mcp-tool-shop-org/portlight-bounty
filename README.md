@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/portlight-bounty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/portlight-bounty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://codecov.io/gh/mcp-tool-shop-org/portlight-bounty"><img src="https://codecov.io/gh/mcp-tool-shop-org/portlight-bounty/branch/main/graph/badge.svg" alt="Coverage"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/code-MIT-blue" alt="The code is MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
   <a href="https://mcp-tool-shop-org.github.io/portlight-bounty/"><img src="https://img.shields.io/badge/docs-landing%20page-b08900" alt="Landing page"></a>
 </p>
 
@@ -58,9 +58,11 @@ Draft pull requests for extra fight and contract lines are not in this tag.
 
 ## Pictures
 
-The MIT license covers the code. It does not cover the pictures under `godot/assets/` or `docs/screenshots/`. You can look at them here. You cannot take them for another project. No art license is offered.
+The pictures in `godot/assets/` and `docs/screenshots/` are under the same MIT license as the code.
 
-The five deck props (barrel, bollard, cart, crate, torch) are Blender EEVEE plates that were vendored in. The record does not say who modeled them. The three quay flags were painted on a local ComfyUI setup (a Qwen Image weight and the Salt Road LoRA) and then retoned with a fixed color map. They were not a Comfy Cloud job. Generator account terms bind the account that made a file. They do not make the file free for anyone else.
+The barrel, bollard, cart, crate, and torch are built by `build_prop()` in [ai-rpg-stage](https://github.com/mcp-tool-shop-org/ai-rpg-stage) (`assets/dimetric/camera/dimetric_60_45.py`) from Blender primitives. That function landed in `55ac9b2`. The manifest called the copy a vendor drop. That meant copied from our own repository, not remade.
+
+The three quay flags were painted on a local ComfyUI setup (a Qwen Image weight and the Salt Road LoRA) and then retoned with a fixed color map.
 
 There is no ElevenLabs voice in this release.
 
@@ -72,6 +74,6 @@ Report a vulnerability in private on this repository. See [SECURITY.md](SECURITY
 
 ## Support
 
-0.1.0 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code is MIT. The pictures are not.
+0.1.0 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
 
 Built by [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code and art: mcp-tool-shop contributors.
