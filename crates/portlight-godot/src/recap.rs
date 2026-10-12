@@ -578,7 +578,9 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
         + notes.len()
         + goods.len()
         + usize::from(standing.is_some())
-        + usize::from(bounty.is_some());
+        + usize::from(bounty.is_some())
+        + usize::from(bare_hull.is_some())
+        + usize::from(bare_crew.is_some());
     let split = extra_split > 0 && all + extra_split <= BODY_ROW_CAP;
     let mut losses: Vec<RecapRow> = Vec::new();
     if split {
@@ -1560,6 +1562,8 @@ mod tests {
         facts.injuries = vec!["A".into(), "B".into()];
         facts.notes = vec![];
         facts.bounty_open = true;
+        facts.decisive = Some(DecisiveMove::SunkBy("broadside".into()));
+        facts.hull_max = Some(60);
         let recap = combat(&facts);
         let rows = texts(&recap);
         let body = recap
@@ -1568,6 +1572,13 @@ mod tests {
             .filter(|r| r.section.counts_toward_cap())
             .count();
         assert!(body <= BODY_ROW_CAP, "{rows:?}");
+        assert_eq!(
+            rows.iter()
+                .filter(|row| row.starts_with("Hull "))
+                .collect::<Vec<_>>(),
+            vec![&"Hull -30"],
+            "{rows:?}"
+        );
     }
 
     #[test]

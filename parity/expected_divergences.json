@@ -259,7 +259,7 @@
     {
       "script": "capture_decline.txt",
       "check": "oracle",
-      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:219",
       "paths": [
@@ -298,7 +298,7 @@
     {
       "script": "capture_fleet_full.txt",
       "check": "oracle",
-      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:219",
       "paths": [
@@ -371,7 +371,7 @@
     {
       "script": "capture_too_few.txt",
       "check": "oracle",
-      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:219",
       "paths": [
@@ -410,7 +410,7 @@
     {
       "script": "capture_too_many.txt",
       "check": "oracle",
-      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:219",
       "paths": [
@@ -449,7 +449,7 @@
     {
       "script": "upgrade_naval.txt",
       "check": "oracle",
-      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:219",
       "paths": [
@@ -463,7 +463,7 @@
     {
       "script": "boarding.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -520,7 +520,7 @@
     {
       "script": "capture_spare_prefix.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -539,7 +539,7 @@
     {
       "script": "gear_armor.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -558,7 +558,7 @@
     {
       "script": "injury_heal.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -577,7 +577,7 @@
     {
       "script": "naval_combat.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -596,7 +596,7 @@
     {
       "script": "victory_provenance.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -615,7 +615,7 @@
     {
       "script": "victory_spare.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -634,7 +634,7 @@
     {
       "script": "victory_takeall.txt",
       "check": "oracle",
-      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file is the Python snapshot.",
       "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
       "python": "src/portlight/engine/naval.py:217-231",
       "paths": [
@@ -647,6 +647,20 @@
           "path": "$.log[3].encounter.flavor",
           "python": "Cannons roar from both ships — smoke and splinters fill the air.",
           "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "naval_evade_clip.txt",
+      "check": "oracle",
+      "summary": "An evade against their broadside only halves the damage. When the hull still drops, Rust reads \"You turn hard. Their broadside still clips your hull.\"; Python keeps \"catches only wake and spray\". Player copy only; every number agrees. The golden file is the Python snapshot.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:224",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "You turn hard. Their broadside catches only wake and spray.",
+          "rust": "You turn hard. Their broadside still clips your hull."
         }
       ]
     }
