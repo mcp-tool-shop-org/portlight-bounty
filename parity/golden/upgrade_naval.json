@@ -1670,7 +1670,7 @@
         "enemy_sunk": false,
         "player_sunk": false,
         "boarding_triggered": false,
-        "flavor": "Both ships fire \u2014 your broadside hammers their hull while their high shot sweeps your deck.",
+        "flavor": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck.",
         "player_hull": 54,
         "enemy_hull": 109,
         "player_crew": 2,

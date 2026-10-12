@@ -255,6 +255,400 @@
       "rust": "crates/portlight-sim/src/infrastructure.rs (expire_voyage_policies)",
       "python": "src/portlight/engine/infrastructure.py:951",
       "oracle": "tools/parity/oracle.py:485"
+    },
+    {
+      "script": "capture_decline.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:219",
+      "paths": [
+        {
+          "path": "$.log[46].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[67].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[69].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[76].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[115].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[116].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        }
+      ]
+    },
+    {
+      "script": "capture_fleet_full.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:219",
+      "paths": [
+        {
+          "path": "$.log[37].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[42].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[46].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[68].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[77].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        }
+      ]
+    },
+    {
+      "script": "capture_prize.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file stays the Python snapshot.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:219",
+      "paths": [
+        {
+          "path": "$.log[46].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[67].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[69].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[76].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[115].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[116].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        }
+      ]
+    },
+    {
+      "script": "capture_too_few.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:219",
+      "paths": [
+        {
+          "path": "$.log[46].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[67].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[69].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[76].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[115].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[116].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        }
+      ]
+    },
+    {
+      "script": "capture_too_many.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:219",
+      "paths": [
+        {
+          "path": "$.log[46].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[67].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[69].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[76].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[115].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        },
+        {
+          "path": "$.log[116].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        }
+      ]
+    },
+    {
+      "script": "upgrade_naval.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour for a broadside against their high shot: Rust drops the em dash (\"Both ships fire. Your broadside ...\"), Python keeps \"Both ships fire — your broadside ...\". Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:219",
+      "paths": [
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Both ships fire — your broadside hammers their hull while their high shot sweeps your deck.",
+          "rust": "Both ships fire. Your broadside hammers their hull while their high shot sweeps your deck."
+        }
+      ]
+    },
+    {
+      "script": "boarding.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "bounty_claim.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file stays the Python snapshot.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[4].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[5].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "bounty_claim_sail.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file stays the Python snapshot.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[4].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[5].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "capture_spare_prefix.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "gear_armor.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[4].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "injury_heal.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "naval_combat.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "victory_provenance.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[4].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "victory_spare.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
+    },
+    {
+      "script": "victory_takeall.txt",
+      "check": "oracle",
+      "summary": "Naval round flavour: Rust uses an ASCII \" - \" where Python has an em dash (\"Cannons roar from both ships - smoke ...\" / \"Both ships fire high - crew ...\"). Player copy only; every number agrees. The golden file follows Rust.",
+      "rust": "crates/portlight-sim/src/naval.rs (naval_flavor)",
+      "python": "src/portlight/engine/naval.py:217-231",
+      "paths": [
+        {
+          "path": "$.log[2].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        },
+        {
+          "path": "$.log[3].encounter.flavor",
+          "python": "Cannons roar from both ships — smoke and splinters fill the air.",
+          "rust": "Cannons roar from both ships - smoke and splinters fill the air."
+        }
+      ]
     }
   ]
 }

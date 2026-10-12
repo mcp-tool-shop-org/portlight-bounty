@@ -536,27 +536,34 @@ pub(crate) fn departed_line(name: &str, fee: i64) -> String {
     }
 }
 
-/// One plain receipt line for a fight that ended without a win. Terms in
-/// order Silver, Crew, Hull, Cargo; zero terms omitted (R4). No odds, no
-/// advice, no Trust or Standing.
+/// One plain receipt line for a fight that ended without a win. Heads match
+/// the recap card ("Lost to", "Drew with", "Broke away from"); terms in the
+/// card's order Hull, Crew, Silver, Cargo; zero terms omitted (R4). An empty
+/// name keeps a bare head. `deltas` is [Silver, Crew, Hull, Cargo] as
+/// `EncounterBaseline::deltas` returns it. No odds, no advice.
 pub(crate) fn encounter_end_line(
     end: EncounterEnd,
     name: &str,
     deltas: [i64; 4],
     bounty_open: bool,
 ) -> String {
-    let (head, joiner) = match end {
-        EncounterEnd::LostFight => ("Lost the fight", "with"),
-        EncounterEnd::DrewFight => ("Drew the fight", "with"),
-        EncounterEnd::LostAtSea => ("Lost the sea fight", "with"),
-        EncounterEnd::BrokeAway => ("Broke away", "from"),
+    let (named, bare) = match end {
+        EncounterEnd::LostFight | EncounterEnd::LostAtSea => ("Lost to", "Lost the fight"),
+        EncounterEnd::DrewFight => ("Drew with", "Drew the fight"),
+        EncounterEnd::BrokeAway => ("Broke away from", "Broke away"),
     };
     let mut line = if name.is_empty() {
-        head.to_string()
+        bare.to_string()
     } else {
-        format!("{head} {joiner} {name}")
+        format!("{named} {name}")
     };
-    for (term, value) in ["Silver", "Crew", "Hull", "Cargo"].iter().zip(deltas) {
+    let [silver, crew, hull, cargo] = deltas;
+    for (term, value) in [
+        ("Hull", hull),
+        ("Crew", crew),
+        ("Silver", silver),
+        ("Cargo", cargo),
+    ] {
         if value != 0 {
             line.push_str(&format!(" - {term} {}", signed_delta(value)));
         }
@@ -649,19 +656,19 @@ pub(crate) fn take_all_purse(strength: i64) -> i64 {
     strength.saturating_mul(7).saturating_add(20)
 }
 
-/// `+32 silver - Underworld +5.` for Strength 4. ASCII only.
+/// `Silver +32 - Underworld +5` for Strength 4. ASCII only.
 pub(crate) fn spare_preview(strength: i64) -> String {
     format!(
-        "{} silver - Underworld {}.",
+        "Silver {} - Underworld {}",
         signed_delta(spare_purse(strength)),
         signed_delta(SPARE_STANDING)
     )
 }
 
-/// `+48 silver - Underworld +2 - loot unknown.` for Strength 4. ASCII only.
+/// `Silver +48 - Underworld +2 - loot unknown` for Strength 4. ASCII only.
 pub(crate) fn take_all_preview(strength: i64) -> String {
     format!(
-        "{} silver - Underworld {} - loot unknown.",
+        "Silver {} - Underworld {} - loot unknown",
         signed_delta(take_all_purse(strength)),
         signed_delta(TAKE_ALL_STANDING)
     )
@@ -777,7 +784,13 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     facts.player_crew = step.player_crew;
     facts.player_hp = step.player_hp;
     facts.opponent_hp = step.opponent_hp;
-    facts.player_hull_delta = step.player_hull_delta;
+    // A flee reports its hit as hull_damage, not a delta field; show it.
+    facts.player_hull_delta =
+        if step.player_hull_delta == 0 && step.choice == "flee" && step.hull_damage > 0 {
+            -step.hull_damage
+        } else {
+            step.player_hull_delta
+        };
     facts.enemy_hull_delta = step.enemy_hull_delta;
     if step.kind == "board" {
         // `board_step` sets only the `*_crew_lost` amounts and leaves the
@@ -2708,7 +2721,7 @@ mod tests {
                 [-30, -3, 0, 0],
                 true
             ),
-            "Lost the fight with Raj the Quiet - Silver -30 - Crew -3 - the bounty stays open"
+            "Lost to Raj the Quiet - Crew -3 - Silver -30 - the bounty stays open"
         );
         assert_eq!(
             encounter_end_line(
@@ -2717,7 +2730,7 @@ mod tests {
                 [0, -3, 0, 0],
                 false
             ),
-            "Drew the fight with Raj the Quiet - Crew -3"
+            "Drew with Raj the Quiet - Crew -3"
         );
         assert_eq!(
             encounter_end_line(
@@ -2726,7 +2739,7 @@ mod tests {
                 [-55, -4, -20, -12],
                 false
             ),
-            "Lost the sea fight with The Butcher - Silver -55 - Crew -4 - Hull -20 - Cargo -12"
+            "Lost to The Butcher - Hull -20 - Crew -4 - Silver -55 - Cargo -12"
         );
         assert_eq!(
             encounter_end_line(EncounterEnd::BrokeAway, "Typhoon Mei", [0, 0, -4, 0], false),
@@ -2754,7 +2767,7 @@ mod tests {
         // A gain keeps its sign; zero never prints.
         assert_eq!(
             encounter_end_line(EncounterEnd::LostAtSea, "X", [0, 0, 2, 0], false),
-            "Lost the sea fight with X - Hull +2"
+            "Lost to X - Hull +2"
         );
         for end in [
             EncounterEnd::LostFight,
@@ -3007,13 +3020,15 @@ mod tests {
         step.enemy_hull_delta = -12;
         assert_eq!(line_for(&session, &step).0, "Enemy hull -12");
 
-        // Flee reports hull_damage in the log. It is not a delta field.
+        // A flee's hit is hull_damage, not a delta field; the line shows it.
         step = cleared_deltas(&base);
+        step.choice = "flee".to_string();
         step.hull_damage = 4;
         step.message = "A parting shot catches your hull for 4 damage.".to_string();
         let facts = adopt(&session, &step, None, &[], &[]);
         let view = present(&facts).unwrap();
-        assert!(view.delta.is_empty());
+        assert_eq!(delta_text(&view.delta), "Your hull -4");
+        assert_eq!(line_for(&session, &step).0, "Your hull -4");
         assert!(view.log.contains('4'));
     }
 
@@ -3304,22 +3319,22 @@ mod tests {
     #[test]
     fn choice_preview_copy_is_the_binding_text() {
         // Brief example: Strength 4.
-        assert_eq!(spare_preview(4), "+32 silver - Underworld +5.");
+        assert_eq!(spare_preview(4), "Silver +32 - Underworld +5");
         assert_eq!(
             take_all_preview(4),
-            "+48 silver - Underworld +2 - loot unknown."
+            "Silver +48 - Underworld +2 - loot unknown"
         );
         // Strength 0 still pays the base 20.
-        assert_eq!(spare_preview(0), "+20 silver - Underworld +5.");
+        assert_eq!(spare_preview(0), "Silver +20 - Underworld +5");
         assert_eq!(
             take_all_preview(0),
-            "+20 silver - Underworld +2 - loot unknown."
+            "Silver +20 - Underworld +2 - loot unknown"
         );
         // Plain integers, no thousands separator (matches the receipt).
-        assert_eq!(spare_preview(1000), "+3020 silver - Underworld +5.");
+        assert_eq!(spare_preview(1000), "Silver +3020 - Underworld +5");
         assert_eq!(
             take_all_preview(1000),
-            "+7020 silver - Underworld +2 - loot unknown."
+            "Silver +7020 - Underworld +2 - loot unknown"
         );
         let preview = choice_preview(4);
         assert_eq!(preview.spare, spare_preview(4));
@@ -3337,7 +3352,7 @@ mod tests {
                 );
                 assert!(!line.contains("--"), "{line}");
                 assert!(line.contains(" - "), "{line}");
-                assert!(line.ends_with('.'), "{line}");
+                assert!(!line.ends_with('.'), "{line}");
                 assert!(!line.contains("Purse"), "{line}");
                 assert!(!line.to_ascii_lowercase().contains("win"), "{line}");
                 assert!(!line.contains('_'), "{line}");
@@ -3351,11 +3366,11 @@ mod tests {
         let preview = choice_preview(4);
         assert_eq!(
             preview.line_for(&ScreenAction::Spare),
-            Some("+32 silver - Underworld +5.")
+            Some("Silver +32 - Underworld +5")
         );
         assert_eq!(
             preview.line_for(&ScreenAction::TakeAll),
-            Some("+48 silver - Underworld +2 - loot unknown.")
+            Some("Silver +48 - Underworld +2 - loot unknown")
         );
         assert_eq!(preview.line_for(&ScreenAction::Capture), None);
         assert_eq!(
@@ -3458,7 +3473,7 @@ mod tests {
         assert_eq!(
             preview.spare,
             format!(
-                "+{} silver - Underworld +{}.",
+                "Silver +{} - Underworld +{}",
                 receipt.silver_delta, receipt.standing_delta
             )
         );
@@ -3571,7 +3586,7 @@ mod tests {
         assert_eq!(
             preview.take_all,
             format!(
-                "+{} silver - Underworld +{} - loot unknown.",
+                "Silver +{} - Underworld +{} - loot unknown",
                 receipt.silver_delta, receipt.standing_delta
             )
         );

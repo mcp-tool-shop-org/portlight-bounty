@@ -1941,7 +1941,7 @@ impl PortlightGame {
     fn load_slot(&mut self, slot: &str) {
         match Session::load(&self.save_base, slot) {
             Ok(Some(session)) => {
-                let place = docked_name(&session).unwrap_or_else(|| "a port".to_string());
+                let where_line = load_place_line(&session);
                 self.drop_encounter_baseline();
                 self.log_lines.clear();
                 self.market_open = false;
@@ -1951,7 +1951,7 @@ impl PortlightGame {
                 self.reset_departure();
                 self.reset_trade();
                 self.session = Some(session);
-                self.push_log(format!("Loaded slot {slot}. Docked at {place}."));
+                self.push_log(format!("Loaded slot {slot}. {where_line}"));
                 self.play_sfx("sfx_ui_newgame_start");
                 self.newgame_page = NewgamePage::Hidden;
                 self.newgame_built = None;
@@ -10744,7 +10744,7 @@ impl PortlightGame {
             .as_ref()
             .map(|facts| facts.log.clone())
             .unwrap_or_default();
-        if !log.contains("Lost the fight") || !log.contains("Crew") {
+        if !log.contains("Lost to") || !log.contains("Crew") {
             self.smoke_ok = false;
             self.push_log(format!(
                 "Loss-outcome smoke: receipt missing Lost/Crew ({log:?})."
@@ -11318,6 +11318,8 @@ impl PortlightGame {
     fn expect_no_end_receipt(&mut self, scope: &str) {
         let is_receipt = |line: &str| {
             line.starts_with("Lost the ")
+                || line.starts_with("Lost to ")
+                || line.starts_with("Drew with ")
                 || line.starts_with("Drew the ")
                 || line.starts_with("Broke away")
         };
@@ -12862,6 +12864,23 @@ fn docked_port_id(session: &Session) -> Option<&str> {
     }
 }
 
+/// Where a loaded game stands: `Docked at {Port}.`, or at sea `At sea, bound
+/// for {Port}.` (`At sea.` with no destination).
+fn load_place_line(session: &Session) -> String {
+    if let Some(place) = docked_name(session) {
+        return format!("Docked at {place}.");
+    }
+    let destination = &session.world().voyage.destination_id;
+    if destination.is_empty() {
+        "At sea.".to_string()
+    } else {
+        format!(
+            "At sea, bound for {}.",
+            port_name(session.world(), destination)
+        )
+    }
+}
+
 fn docked_name(session: &Session) -> Option<String> {
     let id = docked_port_id(session)?;
     Some(session.world().port(id)?.name.clone())
@@ -13722,8 +13741,8 @@ mod fight_end_tests {
                 resolved(|step| step.player_won = true),
                 "Won the duel",
             ),
-            ("loss", resolved(|_| {}), "Lost the fight"),
-            ("draw", resolved(|step| step.draw = true), "Drew the fight"),
+            ("loss", resolved(|_| {}), "Lost "),
+            ("draw", resolved(|step| step.draw = true), "Drew "),
             (
                 "break-away",
                 resolved(|step| {
@@ -13799,5 +13818,24 @@ mod catalog_fallback_tests {
         assert_eq!(mentor_or_none(&mentors, "old_vane"), "Old Vane");
         assert_eq!(mentor_or_none(&mentors, "salt_spit_cove"), "Salt Spit Cove");
         assert_eq!(mentor_or_none(&mentors, ""), "none");
+    }
+}
+
+#[cfg(test)]
+mod load_line_tests {
+    use super::load_place_line;
+    use portlight_sim::session::Session;
+
+    #[test]
+    fn a_load_at_sea_names_the_destination() {
+        let mut session = Session::new("Low", "merchant", 1, None).unwrap();
+        assert!(load_place_line(&session).starts_with("Docked at "));
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        session.depart(&lane).unwrap();
+        let name = session.world().port(&lane).unwrap().name.clone();
+        assert_eq!(
+            load_place_line(&session),
+            format!("At sea, bound for {name}.")
+        );
     }
 }

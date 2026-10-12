@@ -138,6 +138,8 @@ pub(crate) enum DecisiveMove {
     SunkBy(String),
     /// The crew reached 0 without the ship sinking.
     CrewLost,
+    /// The personal duel resolved as a loss.
+    BestedInDuel,
     /// Fled at the approach.
     FledApproach,
     /// Fled at sea in this naval round.
@@ -180,6 +182,8 @@ pub(crate) struct CombatFacts {
     pub injuries: Vec<String>,
     pub reached_boarding: bool,
     pub bounty_open: bool,
+    /// The player's hull max, for the `Your hull 0/{max}` row after a sinking.
+    pub hull_max: Option<i64>,
 }
 
 /// Extras a contract card needs beyond the outcome: units of the good still
@@ -281,6 +285,9 @@ pub(crate) fn decisive_clause(
             }
         }
         DecisiveMove::CrewLost if result == RecapResult::Lost && sea => Some("crew lost".into()),
+        DecisiveMove::BestedInDuel if result == RecapResult::Lost => {
+            Some("bested in the duel".into())
+        }
         DecisiveMove::FledApproach if result == RecapResult::BrokeAway => {
             Some("fled before the guns".into())
         }
@@ -320,6 +327,59 @@ fn sole_cause<const N: usize>(
         [only] if sums[*only] == loss => Some(labels[*only]),
         _ => None,
     }
+}
+
+const HULL_CAUSES: [&str; 3] = ["their broadside", "their grapeshot", "parting shot"];
+const CREW_CAUSES: [&str; 2] = ["their grapeshot", "boarding melee"];
+
+/// The per-cause sums with a sinking's overkill taken off its own cause:
+/// the hull stops at 0, so the last hit can claim more than the hull lost.
+/// Only the sinking cause is reduced, and only when that alone makes the
+/// sums meet the real loss.
+fn clamp_hull_sums(
+    loss: i64,
+    mut sums: HullByCause,
+    decisive: Option<&DecisiveMove>,
+) -> HullByCause {
+    let over = sums.iter().sum::<i64>() - loss;
+    if over > 0 {
+        if let Some(DecisiveMove::SunkBy(action)) = decisive {
+            if let Some(cause) = hull_cause(action) {
+                if sums[cause] > over {
+                    sums[cause] -= over;
+                }
+            }
+        }
+    }
+    sums
+}
+
+/// Loss rows for one term: one row per cause when the named sums add up to
+/// the whole loss (`{term} -N - {cause}` each, in cause order), else `None`
+/// so the caller draws the single row.
+fn split_rows<const N: usize>(
+    term: &str,
+    loss: i64,
+    sums: [i64; N],
+    labels: [&'static str; N],
+) -> Option<Vec<RecapRow>> {
+    let named: Vec<usize> = (0..N).filter(|i| sums[*i] > 0).collect();
+    if named.len() < 2 || named.iter().map(|i| sums[*i]).sum::<i64>() != loss {
+        return None;
+    }
+    Some(
+        named
+            .into_iter()
+            .map(|i| {
+                caused(
+                    RecapSection::Cost,
+                    format!("{term} -{}", sums[i]),
+                    Some(labels[i]),
+                    RecapTone::Due,
+                )
+            })
+            .collect(),
+    )
 }
 
 /// The combat recap, or `None` when the fight has no result yet (a missing
@@ -435,37 +495,41 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     // Cost: Hull, Crew, Silver, Cargo, Injury. A win shows Hull, Crew and
     // Injury only.
     let [silver, crew, hull, cargo] = facts.deltas;
-    let mut cost = Vec::new();
-    if hull < 0 {
-        cost.push(caused(
+    let hull_sums = clamp_hull_sums(-hull, facts.hull_by_cause, facts.decisive.as_ref());
+    let bare_hull = (hull < 0).then(|| {
+        caused(
             RecapSection::Cost,
             format!("Hull {hull}"),
-            sole_cause(
-                -hull,
-                facts.hull_by_cause,
-                ["their broadside", "their grapeshot", "parting shot"],
-            ),
+            sole_cause(-hull, hull_sums, HULL_CAUSES),
             RecapTone::Due,
-        ));
-    }
-    if crew < 0 {
-        cost.push(caused(
+        )
+    });
+    let bare_crew = (crew < 0).then(|| {
+        caused(
             RecapSection::Cost,
             format!("Crew {crew}"),
-            sole_cause(
-                -crew,
-                facts.crew_by_cause,
-                ["their grapeshot", "boarding melee"],
-            ),
+            sole_cause(-crew, facts.crew_by_cause, CREW_CAUSES),
             RecapTone::Due,
-        ));
-    }
+        )
+    });
+    let split_hull = (hull < 0)
+        .then(|| split_rows("Hull", -hull, hull_sums, HULL_CAUSES))
+        .flatten();
+    let split_crew = (crew < 0)
+        .then(|| split_rows("Crew", -crew, facts.crew_by_cause, CREW_CAUSES))
+        .flatten();
+    let extra_split = split_hull.as_ref().map_or(0, |rows| rows.len() - 1)
+        + split_crew.as_ref().map_or(0, |rows| rows.len() - 1);
+    let mut cost = Vec::new();
     let plunder = (facts.plundered && result == RecapResult::Lost).then_some("plundered");
+    let forfeit = (result == RecapResult::Lost
+        && matches!(facts.decisive, Some(DecisiveMove::BestedInDuel)))
+    .then_some("duel forfeit");
     if !win && silver < 0 {
         cost.push(caused(
             RecapSection::Cost,
             format!("Silver {silver}"),
-            plunder,
+            plunder.or(forfeit),
             RecapTone::Due,
         ));
     }
@@ -484,6 +548,15 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
             RecapTone::Cream,
         ));
     }
+    if matches!(facts.decisive, Some(DecisiveMove::SunkBy(_))) {
+        if let Some(max) = facts.hull_max.filter(|max| *max > 0) {
+            cost.push(row(
+                RecapSection::Cost,
+                format!("Your hull 0/{max}"),
+                RecapTone::Muted,
+            ));
+        }
+    }
 
     let bounty = (!win && facts.bounty_open)
         .then(|| row(RecapSection::Bounty, BOUNTY_NOTE, RecapTone::Muted));
@@ -499,6 +572,33 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     let mut bounty = bounty;
     let fixed =
         usize::from(choice.is_some()) + earned.len() + cost.len() + usize::from(net.is_some());
+    // The split rows only when the whole card, notes and all, still fits;
+    // otherwise each term keeps its single row.
+    let all = fixed
+        + notes.len()
+        + goods.len()
+        + usize::from(standing.is_some())
+        + usize::from(bounty.is_some());
+    let split = extra_split > 0 && all + extra_split <= BODY_ROW_CAP;
+    let mut losses: Vec<RecapRow> = Vec::new();
+    if split {
+        losses.extend(
+            split_hull
+                .or_else(|| bare_hull.clone().map(|r| vec![r]))
+                .unwrap_or_default(),
+        );
+        losses.extend(
+            split_crew
+                .or_else(|| bare_crew.clone().map(|r| vec![r]))
+                .unwrap_or_default(),
+        );
+    } else {
+        losses.extend(bare_hull);
+        losses.extend(bare_crew);
+    }
+    let fixed = fixed + losses.len();
+    losses.extend(cost);
+    let cost = losses;
     let body = |notes: &[RecapRow],
                 goods: &[RecapRow],
                 standing: &Option<RecapRow>,
@@ -694,7 +794,6 @@ pub(crate) struct RecapSeed {
     pub bounty_open: bool,
     /// A step triggered boarding or a boarding step ran.
     pub reached_boarding: bool,
-    /// The resolving step's own text (non-wins draw it as a note).
     /// Win receipt: purse, loot messages, standing, reactions and departures.
     pub purse: i64,
     pub loot: Vec<String>,
@@ -877,8 +976,11 @@ pub(crate) fn carry_seed(
             seed.sea = true;
             seed.crew_by_cause[1] += step.player_crew_lost;
         }
-        "choice" if flee && step.escaped && step.hull_damage > 0 => {
-            seed.hull_by_cause[2] += step.hull_damage;
+        "choice" if flee && step.hull_damage > 0 => {
+            // Escaped: the parting shot. Caught at the approach: the sim
+            // runs a round of their broadside.
+            let cause = if step.escaped { 2 } else { 0 };
+            seed.hull_by_cause[cause] += step.hull_damage;
         }
         _ => {}
     }
@@ -903,6 +1005,9 @@ pub(crate) fn carry_seed(
             step.boarding_progress,
             step.boarding_threshold,
         )),
+        "fight" if step.phase == "resolved" && !step.player_won && !step.draw => {
+            Some(DecisiveMove::BestedInDuel)
+        }
         "fight" if !step.player_action.is_empty() => {
             Some(DecisiveMove::FinalMove(step.player_action.clone()))
         }
@@ -944,6 +1049,7 @@ pub(crate) fn seed_facts(seed: &RecapSeed, name: &str) -> Option<CombatFacts> {
         injuries: seed.injuries.clone(),
         reached_boarding: seed.reached_boarding,
         bounty_open: seed.bounty_open,
+        hull_max: None,
     })
 }
 
@@ -954,7 +1060,9 @@ pub(crate) fn outcome_recap(facts: &crate::logic::EncounterFacts) -> Option<Reca
         return None;
     }
     let name = crate::logic::captain_display_name(&facts.captain_name, &facts.captain_id);
-    combat_recap(&seed_facts(&facts.recap, &name)?)
+    let mut combat = seed_facts(&facts.recap, &name)?;
+    combat.hull_max = facts.player_hull_max;
+    combat_recap(&combat)
 }
 
 /// The drawn recap as text, one line per row, headline first.
@@ -1067,6 +1175,7 @@ mod tests {
         seed = carry_seed(&seed, &hit);
         let mut last = step("fight", "resolved");
         last.player_action = "parry".into();
+        last.player_won = true;
         seed = carry_seed(&seed, &last);
         assert!(seed.sea);
         assert_eq!(seed.boarded, Some((3, 3)));
@@ -1356,7 +1465,7 @@ mod tests {
         seed.deltas = Some([-30, 0, 0, 0]);
         let recap = combat(&seed_facts(&seed, "Raj the Quiet").unwrap());
         assert!(recap.rows.iter().all(|r| r.section != RecapSection::Note));
-        assert_eq!(texts(&recap), vec!["Cost", "Silver -30"]);
+        assert_eq!(texts(&recap), vec!["Cost", "Silver -30 - duel forfeit"]);
         for result in [RecapResult::Lost, RecapResult::Drew, RecapResult::BrokeAway] {
             let mut facts = loss();
             facts.result = Some(result);
@@ -1364,6 +1473,10 @@ mod tests {
             let recap = combat(&facts);
             assert!(recap.rows.iter().all(|r| r.section != RecapSection::Note));
         }
+        assert_eq!(
+            recap_text(&recap),
+            "Lost to Raj the Quiet - bested in the duel\nCost\nSilver -30 - duel forfeit"
+        );
     }
 
     #[test]
@@ -1414,6 +1527,108 @@ mod tests {
             bounty_open: true,
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn mixed_losses_split_into_one_row_per_cause() {
+        let mut facts = loss();
+        facts.decisive = Some(DecisiveMove::CrewLost);
+        facts.hull_by_cause = [18, 12, 0];
+        facts.crew_by_cause = [1, 1];
+        facts.bounty_open = false;
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        assert_eq!(
+            rows,
+            vec![
+                "Cost",
+                "Hull -18 - their broadside",
+                "Hull -12 - their grapeshot",
+                "Crew -1 - their grapeshot",
+                "Crew -1 - boarding melee",
+                "Silver -40 - plundered",
+                "Cargo -5 - plundered",
+            ]
+        );
+        // Sums that miss the loss keep the bare row.
+        facts.hull_by_cause = [18, 5, 0];
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        assert!(rows.contains(&"Hull -30"), "{rows:?}");
+        // A split that would push the body past the cap keeps the bare rows.
+        facts.hull_by_cause = [18, 12, 0];
+        facts.injuries = vec!["A".into(), "B".into()];
+        facts.notes = vec![];
+        facts.bounty_open = true;
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        let body = recap
+            .rows
+            .iter()
+            .filter(|r| r.section.counts_toward_cap())
+            .count();
+        assert!(body <= BODY_ROW_CAP, "{rows:?}");
+    }
+
+    #[test]
+    fn a_sinking_keeps_its_cause_and_shows_the_empty_hull() {
+        let mut facts = loss();
+        facts.plundered = false;
+        facts.deltas = [0, 0, -30, 0];
+        facts.crew_by_cause = [0, 0];
+        facts.hull_by_cause = [41, 0, 0];
+        facts.hull_max = Some(60);
+        facts.bounty_open = false;
+        let recap = combat(&facts);
+        assert_eq!(
+            recap.headline,
+            "Lost to Captain Vane - sunk by their broadside"
+        );
+        assert_eq!(
+            texts(&recap),
+            vec!["Cost", "Hull -30 - their broadside", "Your hull 0/60"]
+        );
+        let last = recap.rows.last().unwrap();
+        assert_eq!(last.tone, RecapTone::Muted);
+        // Mixed with an overkill last broadside: the clamp lands on that cause.
+        facts.hull_by_cause = [30, 6, 0];
+        assert_eq!(
+            texts(&combat(&facts))[1..3],
+            ["Hull -24 - their broadside", "Hull -6 - their grapeshot"]
+        );
+    }
+
+    #[test]
+    fn a_lost_duel_names_the_forfeit() {
+        let mut duel = step("fight", "resolved");
+        duel.player_action = "parry".into();
+        let seed = carry_seed(&RecapSeed::default(), &duel);
+        assert_eq!(seed.decisive, Some(DecisiveMove::BestedInDuel));
+        let facts = CombatFacts {
+            result: Some(RecapResult::Lost),
+            name: "Bram".into(),
+            decisive: seed.decisive,
+            deltas: [-36, 0, 0, 0],
+            ..Default::default()
+        };
+        let recap = combat(&facts);
+        assert_eq!(recap.headline, "Lost to Bram - bested in the duel");
+        assert_eq!(texts(&recap), vec!["Cost", "Silver -36 - duel forfeit"]);
+        // A draw gets no clause.
+        let draw = CombatFacts {
+            result: Some(RecapResult::Drew),
+            ..facts
+        };
+        assert_eq!(combat(&draw).headline, "Drew with Bram");
+    }
+
+    #[test]
+    fn a_failed_approach_flee_is_their_broadside() {
+        let mut flee = step("choice", "naval");
+        flee.choice = "flee".into();
+        flee.hull_damage = 7;
+        let seed = carry_seed(&RecapSeed::default(), &flee);
+        assert_eq!(seed.hull_by_cause, [7, 0, 0]);
     }
 
     fn outcome(kind: &str, silver: i64, reward: i64, delivered: i64) -> ContractOutcome {
@@ -1687,10 +1902,10 @@ mod tests {
 
     #[test]
     fn cause_only_from_data() {
-        // Mixed hull sources and a sum that disagrees with the diff both
-        // render plain.
+        // Sums that disagree with the diff render plain (mixed sums that
+        // agree split; see mixed_losses_split_into_one_row_per_cause).
         let mut facts = loss();
-        facts.hull_by_cause = [20, 0, 10];
+        facts.hull_by_cause = [20, 0, 5];
         facts.crew_by_cause = [1, 0];
         facts.plundered = false;
         let rows = texts(&combat(&facts)).join("|");
