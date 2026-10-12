@@ -153,7 +153,7 @@ pub(crate) fn set_recap_block(block: &mut Gd<VBoxContainer>, recap: Option<&Reca
         return false;
     };
     block.set_visible(true);
-    let mut headline = text_label(&recap.headline, 22, tone_color(recap.headline_tone));
+    let mut headline = text_label(&recap.headline, 24, tone_color(recap.headline_tone));
     headline.set_name("RecapHeadline");
     headline.set_autowrap_mode(AutowrapMode::WORD_SMART);
     headline.set_mouse_filter(MouseFilter::IGNORE);
