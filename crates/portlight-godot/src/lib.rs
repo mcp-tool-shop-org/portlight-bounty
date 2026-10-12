@@ -17,6 +17,7 @@ mod logic;
 mod market;
 mod newgame_screen;
 mod playtest;
+mod recap;
 mod seam;
 mod shipyard_screen;
 

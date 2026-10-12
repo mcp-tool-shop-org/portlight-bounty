@@ -434,7 +434,7 @@ pub(crate) fn progress_lines(
 
 /// ASCII `tail` cut to `room` chars: whole words, then `...`. Empty when
 /// not even one char and the dots fit.
-fn trim_tail(tail: &str, room: usize) -> String {
+pub(crate) fn trim_tail(tail: &str, room: usize) -> String {
     if tail.len() <= room {
         return tail.to_string();
     }

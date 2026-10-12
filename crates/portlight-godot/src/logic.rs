@@ -918,7 +918,7 @@ fn delta_span(text: impl Into<String>, tone: DeltaTone) -> DeltaSpan {
 }
 
 /// ASCII `+` / `-` only. Zero is omitted by the caller, so it is not formatted.
-fn signed_delta(value: i64) -> String {
+pub(crate) fn signed_delta(value: i64) -> String {
     if value > 0 {
         format!("+{value}")
     } else {
