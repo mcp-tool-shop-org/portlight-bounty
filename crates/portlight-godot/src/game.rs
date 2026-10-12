@@ -240,6 +240,7 @@ enum ShotPhase {
     Boarding,
     Personal,
     Outcome,
+    RecapWon,
 }
 
 impl ShotPhase {
@@ -249,6 +250,7 @@ impl ShotPhase {
             Self::Naval => "encounter-naval.png",
             Self::Boarding => "encounter-boarding.png",
             Self::Personal => "encounter-fight.png",
+            Self::RecapWon => "encounter-recap-won.png",
             Self::Outcome => "encounter-outcome.png",
         }
     }
@@ -260,6 +262,7 @@ impl ShotPhase {
             Self::Boarding => "boarding",
             Self::Personal => "personal fight",
             Self::Outcome => "outcome",
+            Self::RecapWon => "won recap",
         }
     }
 
@@ -269,7 +272,7 @@ impl ShotPhase {
             Self::Naval => ScreenPhase::Naval,
             Self::Boarding => ScreenPhase::Boarding,
             Self::Personal => ScreenPhase::Personal,
-            Self::Outcome => ScreenPhase::Outcome,
+            Self::Outcome | Self::RecapWon => ScreenPhase::Outcome,
         }
     }
 }
@@ -1274,17 +1277,6 @@ impl IControl for PortlightGame {
         }
         self.dismiss_cancel();
     }
-}
-
-/// The combat recap a resolved Outcome card draws: non-wins only for now.
-/// None while the fight runs, while a win is pending, and for any end the
-/// seed has no result for.
-fn encounter_recap(facts: &EncounterFacts) -> Option<crate::recap::Recap> {
-    if facts.phase != "resolved" || facts.pending_victory {
-        return None;
-    }
-    let name = crate::logic::captain_display_name(&facts.captain_name, &facts.captain_id);
-    crate::recap::combat_recap(&crate::recap::non_win_facts(&facts.recap, &name)?)
 }
 
 impl PortlightGame {
@@ -7527,6 +7519,128 @@ impl PortlightGame {
             godot_print!("{line}");
             self.push_log(line);
         }
+        self.check_won_recap(expected.as_deref());
+    }
+
+    /// Smoke items 1 and 5: the Spare recap after the scripted boarded
+    /// fight. Its cost rows are the `Fight cost` line's terms.
+    fn check_won_recap(&mut self, cost_line: Option<&str>) {
+        let mut problems = Vec::new();
+        let boarded = self
+            .encounter
+            .as_ref()
+            .and_then(|facts| match facts.recap.decisive {
+                Some(crate::recap::DecisiveMove::Boarded(p, t)) => Some((p, t)),
+                _ => None,
+            });
+        match self.recap_block_texts() {
+            None => problems.push("no RecapBlock after Spare".to_string()),
+            Some((headline, rows)) => {
+                if !headline.starts_with("Won against ") {
+                    problems.push(format!("headline {headline:?}"));
+                }
+                match boarded {
+                    Some((p, t)) if headline.ends_with(&format!(" - boarded at {p}/{t}")) => {}
+                    other => problems.push(format!("boarded clause {other:?} vs {headline:?}")),
+                }
+                if rows.first().map(String::as_str) != Some("Spared") {
+                    problems.push(format!("choice row {:?}", rows.first()));
+                }
+                if !rows.iter().any(|row| row.starts_with("Silver +")) {
+                    problems.push("no Silver + row".to_string());
+                }
+                if rows.iter().any(|row| row.contains("boarded at")) {
+                    problems.push("a row repeats the boarding clause".to_string());
+                }
+                if !rows.iter().any(|row| row == crate::recap::RULE_NOTE) {
+                    problems.push("no boarding rule note".to_string());
+                }
+                let terms: Vec<&str> = cost_line
+                    .map(|line| line.split(" - ").skip(1).collect())
+                    .unwrap_or_default();
+                let cost_rows = rows
+                    .iter()
+                    .filter(|row| row.starts_with("Hull ") || row.starts_with("Crew "))
+                    .count();
+                if cost_rows != terms.len()
+                    || terms.iter().any(|term| {
+                        !rows
+                            .iter()
+                            .any(|row| row == term || row.starts_with(&format!("{term} - ")))
+                    })
+                {
+                    problems.push(format!("cost rows {rows:?} vs {cost_line:?}"));
+                }
+            }
+        }
+        if let Some(nodes) = self.encounter_nodes.as_ref() {
+            if nodes.log.is_visible() || nodes.delta.is_visible() {
+                problems.push("Log label or DeltaLine drawn under the recap".to_string());
+            }
+        }
+        if problems.is_empty() {
+            godot_print!("Encounter smoke: won recap ok");
+        } else {
+            self.smoke_ok = false;
+            let line = format!("Encounter smoke: won recap {}", problems.join("; "));
+            godot_print!("{line}");
+            self.push_log(line);
+        }
+    }
+
+    /// A fresh scripted voyage driven to its end with the given approach
+    /// choice and naval actions, repeated until the fight resolves.
+    fn drive_scripted_fight(&mut self, choice: &str, naval: &str) -> Option<(String, Vec<String>)> {
+        self.leave_encounter();
+        self.prepare_scripted_voyage();
+        self.open_scripted_approach();
+        self.choose_encounter(choice);
+        for _ in 0..30 {
+            if self.phase_is(ScreenPhase::Outcome) || !self.phase_is(ScreenPhase::Naval) {
+                break;
+            }
+            self.play_naval(naval);
+        }
+        for _ in 0..20 {
+            if !self.phase_is(ScreenPhase::Personal) {
+                break;
+            }
+            self.play_fight("parry");
+        }
+        self.recap_block_texts()
+    }
+
+    /// Break-away and plundered-loss recaps on the real Session.
+    fn check_other_recaps(&mut self) {
+        let mut problems = Vec::new();
+        let away = self.drive_scripted_fight("flee", "flee");
+        godot_print!("recap route flee: {away:?}");
+        let lost = self.drive_scripted_fight("fight", "evade");
+        godot_print!("recap route evade: {lost:?}");
+        match &lost {
+            Some((headline, rows))
+                if headline.starts_with("Lost to ")
+                    && headline.ends_with(" - crew lost")
+                    && rows.iter().any(|row| {
+                        row.starts_with("Silver -") && row.ends_with(" - plundered")
+                    }) => {}
+            other => problems.push(format!("plundered recap {other:?}")),
+        }
+        match &away {
+            Some((headline, _))
+                if headline.starts_with("Broke away from ")
+                    && (headline.ends_with(" - fled before the guns")
+                        || headline.contains(" - fled in round ")) => {}
+            other => problems.push(format!("break-away recap {other:?}")),
+        }
+        if problems.is_empty() {
+            godot_print!("Encounter smoke: other recaps ok");
+        } else {
+            self.smoke_ok = false;
+            let line = format!("Encounter smoke: {}", problems.join("; "));
+            godot_print!("{line}");
+            self.push_log(line);
+        }
     }
 
     fn take_prize(&mut self) {
@@ -7552,10 +7666,15 @@ impl PortlightGame {
                 }
                 // What the fight cost, after the receipt lines; the baseline
                 // is taken so it prints once.
+                let now = self
+                    .session
+                    .as_ref()
+                    .map(|session| crate::logic::EncounterBaseline::read(session.world()));
                 let cost = self.encounter.as_mut().and_then(|facts| {
-                    let baseline = facts.baseline.take()?;
-                    let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
-                    crate::logic::fight_cost_line(baseline.deltas(&now))
+                    let deltas = facts.baseline.zip(now).map(|(base, now)| base.deltas(&now));
+                    crate::recap::seed_victory(&mut facts.recap, &receipt, deltas);
+                    facts.baseline.take()?;
+                    crate::logic::fight_cost_line(deltas?)
                 });
                 if let Some(line) = cost {
                     self.push_log(line);
@@ -7596,7 +7715,9 @@ impl PortlightGame {
         if won {
             let cost = self.encounter.as_mut().and_then(|facts| {
                 let baseline = facts.baseline.take()?;
-                crate::logic::capture_cost_line(&baseline, &fight_end?)
+                let fight_end = fight_end?;
+                facts.recap.deltas = Some(baseline.deltas(&fight_end));
+                crate::logic::capture_cost_line(&baseline, &fight_end)
             });
             if let Some(line) = cost {
                 self.push_log(line);
@@ -7771,11 +7892,8 @@ impl PortlightGame {
             .as_ref()
             .and_then(|facts| facts.enemy_hull_max);
         let baseline = self.encounter.as_ref().and_then(|facts| facts.baseline);
-        let seed = self
-            .encounter
-            .as_ref()
-            .map(|facts| crate::recap::carry_seed(&facts.recap, &step))
-            .unwrap_or_else(|| crate::recap::carry_seed(&Default::default(), &step));
+        let seed =
+            crate::recap::carry_seed(&crate::recap::seed_base(self.encounter.as_ref()), &step);
         let (pending, ship, sailing, naval_actions, combat_actions) = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -7822,6 +7940,23 @@ impl PortlightGame {
             && receipt.is_none()
             && step.phase != "capture_available"
         {
+            let now = self
+                .session
+                .as_ref()
+                .map(|session| crate::logic::EncounterBaseline::read(session.world()));
+            let deltas = facts.baseline.zip(now).map(|(base, now)| base.deltas(&now));
+            crate::recap::seed_sinking_win(&mut facts.recap, &step, deltas);
+            facts
+                .baseline
+                .take()
+                .and_then(|_| crate::logic::fight_cost_line(deltas?))
+        } else if step.kind == "capture" && step.phase == "resolved" {
+            // `capture_prize` fills the deltas from its pre-capture reading.
+            crate::recap::seed_sinking_win(&mut facts.recap, &step, None);
+            None
+        } else if step.choice == "negotiate" && step.success && step.phase == "resolved" {
+            // A negotiated peace logs what the fight cost too (nothing at
+            // zero). It draws no recap.
             facts.baseline.take().and_then(|baseline| {
                 let now = crate::logic::EncounterBaseline::read(self.session.as_ref()?.world());
                 crate::logic::fight_cost_line(baseline.deltas(&now))
@@ -7896,7 +8031,10 @@ impl PortlightGame {
                 .unwrap_or_default()
         };
         let view = self.encounter.as_ref().and_then(present);
-        let recap = self.encounter.as_ref().and_then(encounter_recap);
+        let recap = self
+            .encounter
+            .as_ref()
+            .and_then(crate::recap::outcome_recap);
         let bounty_marked = view.is_some() && self.bounty_badge_on();
         let Some(nodes) = self.encounter_nodes.as_mut() else {
             return;
@@ -10714,7 +10852,8 @@ impl PortlightGame {
         false
     }
 
-    /// Layout after a real frame: the block fits and Return clears the edge.
+    /// Layout after a real frame, for the loss and the won card: the block
+    /// fits and Return clears the edge.
     fn check_recap_layout(&mut self) {
         let Some(nodes) = self.encounter_nodes.as_ref() else {
             return;
@@ -10725,13 +10864,13 @@ impl PortlightGame {
         if block.size.y > 320.0 || bottom > 696.0 {
             self.smoke_ok = false;
             let line = format!(
-                "Loss-outcome smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
+                "Recap smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
                 block.size.y
             );
             godot_print!("{line}");
             self.push_log(line);
         } else {
-            godot_print!("loss-outcome recap layout ok height {}", block.size.y);
+            godot_print!("Recap smoke: layout ok height {}", block.size.y);
         }
     }
 
@@ -10777,6 +10916,8 @@ impl PortlightGame {
         self.spare_enemy_checked();
         self.expect_returned();
         self.leave_encounter();
+        self.check_other_recaps();
+        self.leave_encounter();
         self.report_encounter_smoke();
     }
 
@@ -10821,6 +10962,10 @@ impl PortlightGame {
             ShotPhase::Outcome => {
                 self.expect_outcome_actions();
                 self.spare_enemy_checked();
+                self.encounter_shot = Some(ShotPhase::RecapWon);
+            }
+            ShotPhase::RecapWon => {
+                self.check_recap_layout();
                 self.expect_returned();
                 self.leave_encounter();
                 self.report_encounter_smoke();
@@ -10996,7 +11141,11 @@ impl PortlightGame {
                 let log = dict.get("log").map(|v| v.to::<GString>().to_string());
                 let round = dict.get("round").map(|v| v.to::<i64>());
                 let facts = self.encounter.as_ref();
-                if log.as_deref() != Some(view.log.as_str())
+                let want_log = crate::playtest::encounter_log_text(
+                    facts.and_then(crate::recap::outcome_recap).as_ref(),
+                    view.log.clone(),
+                );
+                if log.as_deref() != Some(want_log.as_str())
                     || round != facts.map(|f| f.round)
                     || dict.get("boarding").map(|v| {
                         v.try_to::<VarDictionary>().ok().map(|b| {
@@ -11052,14 +11201,12 @@ impl PortlightGame {
             .and_then(present)
             .map(|view| view.actions)
             .unwrap_or_default();
-        let ok = actions.contains(&ScreenAction::Spare)
-            && actions.contains(&ScreenAction::Capture)
-            && actions.contains(&ScreenAction::TakeAll);
+        let ok = actions == [ScreenAction::Spare, ScreenAction::TakeAll];
         if !ok {
             self.smoke_ok = false;
-            self.push_log(
-                "Encounter smoke: outcome did not offer spare, capture, and take all.".to_string(),
-            );
+            self.push_log(format!(
+                "Encounter smoke: a won duel should offer only spare and take all, got {actions:?}."
+            ));
         }
         let pending = self
             .session
