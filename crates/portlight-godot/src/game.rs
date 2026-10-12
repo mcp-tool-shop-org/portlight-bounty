@@ -1276,6 +1276,17 @@ impl IControl for PortlightGame {
     }
 }
 
+/// The combat recap a resolved Outcome card draws: non-wins only for now.
+/// None while the fight runs, while a win is pending, and for any end the
+/// seed has no result for.
+fn encounter_recap(facts: &EncounterFacts) -> Option<crate::recap::Recap> {
+    if facts.phase != "resolved" || facts.pending_victory {
+        return None;
+    }
+    let name = crate::logic::captain_display_name(&facts.captain_name, &facts.captain_id);
+    crate::recap::combat_recap(&crate::recap::non_win_facts(&facts.recap, &name)?)
+}
+
 impl PortlightGame {
     fn launch_scripted(&mut self) {
         if user_arg("--encounter-loss-outcome") {
@@ -7760,6 +7771,11 @@ impl PortlightGame {
             .as_ref()
             .and_then(|facts| facts.enemy_hull_max);
         let baseline = self.encounter.as_ref().and_then(|facts| facts.baseline);
+        let seed = self
+            .encounter
+            .as_ref()
+            .map(|facts| crate::recap::carry_seed(&facts.recap, &step))
+            .unwrap_or_else(|| crate::recap::carry_seed(&Default::default(), &step));
         let (pending, ship, sailing, naval_actions, combat_actions) = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -7796,6 +7812,7 @@ impl PortlightGame {
             combat_actions: &combat_actions,
         });
         facts.baseline = baseline;
+        facts.recap = seed;
         let receipt = self.encounter_end_receipt(&step, pending, &mut facts);
         // A win by sinking with no spare/take-all choice to come: log what the
         // fight cost. A pending victory logs it in `finish_victory` instead,
@@ -7832,7 +7849,8 @@ impl PortlightGame {
     ) -> Option<String> {
         let end = crate::logic::encounter_end(step, pending)?;
         let session = self.session.as_ref()?;
-        let baseline = facts.baseline.take()?;
+        // The recap reads a copy of the baseline; the receipt then takes it.
+        let copy = facts.baseline?;
         let now = crate::logic::EncounterBaseline::read(session.world());
         let bounty_open = session
             .world()
@@ -7841,6 +7859,10 @@ impl PortlightGame {
             .iter()
             .any(|id| id == &facts.captain_id)
             && !day_report::claimable_ids(session).contains(&facts.captain_id);
+        facts.recap.result = Some(crate::recap::non_win_result(end));
+        facts.recap.deltas = Some(copy.deltas(&now));
+        facts.recap.bounty_open = bounty_open;
+        let baseline = facts.baseline.take()?;
         let name = crate::logic::encounter_end_name(&facts.captain_id);
         let line = crate::logic::encounter_end_line(end, &name, baseline.deltas(&now), bounty_open);
         facts.log = if facts.log.is_empty() {
@@ -7874,6 +7896,7 @@ impl PortlightGame {
                 .unwrap_or_default()
         };
         let view = self.encounter.as_ref().and_then(present);
+        let recap = self.encounter.as_ref().and_then(encounter_recap);
         let bounty_marked = view.is_some() && self.bounty_badge_on();
         let Some(nodes) = self.encounter_nodes.as_mut() else {
             return;
@@ -7902,6 +7925,14 @@ impl PortlightGame {
         nodes.card.set_text(&view.card);
         encounter_screen::set_delta_line(&mut nodes.delta, &view.delta);
         nodes.log.set_text(&view.log);
+        // A resolved non-win draws the recap where the Log label is, and the
+        // last step's DeltaLine is hidden. `facts.log` stays filled.
+        let drawn = encounter_screen::set_recap_block(&mut nodes.recap, recap.as_ref());
+        nodes.log.set_visible(!drawn);
+        nodes.recap_spacer.set_visible(drawn);
+        if drawn {
+            nodes.delta.set_visible(false);
+        }
         let actions = view.actions.clone();
         let preview = view.choice_preview.clone();
         let mut box_node = nodes.actions.clone();
@@ -10591,8 +10622,117 @@ impl PortlightGame {
             self.push_log("Loss-outcome smoke: a lost fight logged a win cost line.".to_string());
             return false;
         }
+        if !self.check_loss_recap(&log) {
+            return false;
+        }
         godot_print!("loss-outcome phase outcome");
         true
+    }
+
+    /// The drawn recap block: headline and row texts, or `None` when hidden.
+    fn recap_block_texts(&self) -> Option<(String, Vec<String>)> {
+        let nodes = self.encounter_nodes.as_ref()?;
+        if !nodes.recap.is_visible() {
+            return None;
+        }
+        let children = nodes.recap.get_children();
+        let mut texts = children
+            .iter_shared()
+            .filter_map(|child| child.try_cast::<Label>().ok())
+            .filter(|label| !label.is_queued_for_deletion())
+            .map(|label| label.get_text().to_string());
+        let headline = texts.next()?;
+        Some((headline, texts.collect()))
+    }
+
+    /// Smoke item 3: the lost fight's recap, checked against the side-Log
+    /// receipt line (both come from the baseline diff).
+    fn check_loss_recap(&mut self, receipt: &str) -> bool {
+        let receipt = receipt.lines().next().unwrap_or_default().to_string();
+        let mut problems = Vec::new();
+        match self.recap_block_texts() {
+            None => problems.push("no RecapBlock on the lost Outcome card".to_string()),
+            Some((headline, rows)) => {
+                if !headline.starts_with("Lost to ") {
+                    problems.push(format!("headline {headline:?}"));
+                }
+                if rows.iter().any(|row| row == "Earned") {
+                    problems.push("an Earned heading on a loss".to_string());
+                }
+                let terms: Vec<String> = receipt
+                    .split(" - ")
+                    .skip(1)
+                    .filter(|term| {
+                        ["Silver ", "Crew ", "Hull ", "Cargo "]
+                            .iter()
+                            .any(|head| term.starts_with(head))
+                    })
+                    .map(str::to_string)
+                    .collect();
+                if terms.is_empty() {
+                    problems.push(format!("receipt has no terms {receipt:?}"));
+                }
+                for term in &terms {
+                    let found = rows
+                        .iter()
+                        .any(|row| row == term || row.starts_with(&format!("{term} - ")));
+                    if !found {
+                        problems.push(format!("no Cost row for {term:?} in {rows:?}"));
+                    }
+                }
+                let cost_rows = rows
+                    .iter()
+                    .filter(|row| {
+                        ["Silver ", "Crew ", "Hull ", "Cargo "]
+                            .iter()
+                            .any(|head| row.starts_with(head))
+                    })
+                    .count();
+                if cost_rows != terms.len() {
+                    problems.push(format!("{cost_rows} cost rows for {} terms", terms.len()));
+                }
+                let bounty = receipt.contains("the bounty stays open");
+                if bounty != rows.iter().any(|row| row == "The bounty stays open") {
+                    problems.push(format!("bounty note vs receipt {receipt:?}"));
+                }
+            }
+        }
+        if let Some(nodes) = self.encounter_nodes.as_ref() {
+            if nodes.log.is_visible() {
+                problems.push("Log label drawn under the recap".to_string());
+            }
+            if nodes.delta.is_visible() {
+                problems.push("DeltaLine drawn under the recap".to_string());
+            }
+        }
+        if problems.is_empty() {
+            godot_print!("loss-outcome recap ok");
+            return true;
+        }
+        self.smoke_ok = false;
+        self.push_log(format!("Loss-outcome smoke: recap {}", problems.join("; ")));
+        false
+    }
+
+    /// Layout after a real frame: the block fits and Return clears the edge.
+    fn check_recap_layout(&mut self) {
+        let Some(nodes) = self.encounter_nodes.as_ref() else {
+            return;
+        };
+        let block = nodes.recap.get_global_rect();
+        let actions = nodes.actions.get_global_rect();
+        let bottom = actions.position.y + actions.size.y;
+        if block.size.y > 320.0 || bottom > 696.0 {
+            self.smoke_ok = false;
+            let line = format!(
+                "Loss-outcome smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
+                block.size.y
+            );
+            godot_print!("{line}");
+            self.push_log(line);
+        } else {
+            godot_print!("loss-outcome recap layout ok height {}", block.size.y);
+        }
     }
 
     fn advance_loss_outcome_shot(&mut self) -> bool {
@@ -10603,6 +10743,7 @@ impl PortlightGame {
             self.loss_outcome_pending = false;
             return false;
         };
+        self.check_recap_layout();
         let path = format!("{dir}/encounter-loss-outcome.png");
         if !self.save_shot(&path, true) {
             self.capture_failed = true;
@@ -10625,6 +10766,13 @@ impl PortlightGame {
         self.expect_phase(ScreenPhase::Outcome, "outcome");
         self.expect_duel_logged("encounter");
         self.expect_outcome_actions();
+        // Smoke item 4: no recap while Spare / Capture / Take all are offered.
+        if self.recap_block_texts().is_some() {
+            self.smoke_ok = false;
+            self.push_log(
+                "Encounter smoke: RecapBlock drawn during a pending victory.".to_string(),
+            );
+        }
         self.check_capture_cost();
         self.spare_enemy_checked();
         self.expect_returned();

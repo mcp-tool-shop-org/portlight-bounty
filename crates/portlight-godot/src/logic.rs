@@ -423,6 +423,8 @@ pub(crate) struct EncounterFacts {
     /// memory only, never saved. Carried across steps; taken (set to
     /// `None`) when the non-win receipt is logged, so it logs once.
     pub baseline: Option<EncounterBaseline>,
+    /// Recap seed carried across the fight's steps. Godot memory only.
+    pub recap: crate::recap::RecapSeed,
 }
 
 /// Silver, flagship crew and hull, and total cargo units when an encounter
@@ -1125,6 +1127,7 @@ fn facts_shell(phase: &str, kind: &str, ship: Option<PlayerShip>, at_sea: bool) 
         naval_actions: Vec::new(),
         combat_actions: Vec::new(),
         baseline: None,
+        recap: crate::recap::RecapSeed::default(),
     }
 }
 
