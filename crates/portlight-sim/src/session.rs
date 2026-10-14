@@ -5954,6 +5954,34 @@ mod sink_tests {
         );
     }
 
+    /// The day's own sea-event sinking, with a cargo policy aboard.
+    fn insured_sea_sink_pays(cause: &str) {
+        let (before, _, _) = sea_sink(cause);
+        let mut session = before.clone();
+        session.infra.policies = insured_at_sea(1, Vec::new()).0.infra.policies;
+        session.world.captain.cargo = vec![lot("grain", 23, 2300, 0)];
+        let claims_before = session.infra.claims.len();
+        let turn = session.advance().unwrap();
+        let sink = turn.sink.expect("same day, same sinking");
+        assert_eq!(sink.cause, cause);
+        let claims = &session.infra.claims[claims_before..];
+        let wreck: Vec<_> = claims.iter().filter(|c| c.incident_type == cause).collect();
+        assert!(!wreck.is_empty(), "{cause}: a cargo claim is filed");
+        assert!(sink.claims_paid > 0, "{cause}: the claim pays");
+        let grain = content::content().good("grain").unwrap().base_price;
+        assert!(wreck.iter().all(|c| c.loss_value <= (grain * 17).min(1700)));
+    }
+
+    #[test]
+    fn a_storm_on_the_day_pays_the_cargo_claim() {
+        insured_sea_sink_pays("storm");
+    }
+
+    #[test]
+    fn a_pirate_event_on_the_day_pays_the_cargo_claim() {
+        insured_sea_sink_pays("pirates");
+    }
+
     #[test]
     fn storm_sinking_pays_the_cargo_claim() {
         wreck_claim_pays_for("storm", "storm");
