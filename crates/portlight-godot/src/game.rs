@@ -193,6 +193,7 @@ pub(crate) enum Action {
     OpenJournal,
     CloseJournal,
     CloseDayReport,
+    CloseRecap,
     ToggleBeat(String),
     OpenHarbour,
     CloseHarbour,
@@ -369,6 +370,8 @@ enum ContractsShot {
     Active,
     /// The Abandon prompt armed on a contract with credited progress.
     Armed,
+    /// RC3b: the abandon card over the dimmed desk.
+    RecapAbandoned,
     Empty,
 }
 
@@ -378,6 +381,7 @@ impl ContractsShot {
             Self::Board => "contracts-board.png",
             Self::Active => "contracts-active.png",
             Self::Armed => "contracts-abandon-armed.png",
+            Self::RecapAbandoned => "contracts-recap-abandoned.png",
             Self::Empty => "contracts-empty.png",
         }
     }
@@ -546,6 +550,14 @@ enum MarketPaidShot {
     Single,
     /// Staged on top of that settle: two lines and `+1 more`.
     More,
+    /// RC3a: the paid card the real settle raised (one contract, bonus).
+    RecapPaid,
+    /// Not a frame: the card is still up after 3 s, then Escape.
+    RecapWait,
+    /// RC3a: two contracts settled by one real sale.
+    RecapPaidTwo,
+    /// Not a frame: the worst case (3 paid with bonus) for layout.
+    RecapWorst,
 }
 
 impl MarketPaidShot {
@@ -554,6 +566,9 @@ impl MarketPaidShot {
             Self::Progress => "market-contract-progress.png",
             Self::Single => "market-contract-paid.png",
             Self::More => "market-contract-paid-more.png",
+            Self::RecapPaid => "market-contract-recap-paid.png",
+            Self::RecapPaidTwo => "market-contract-recap-paid-two.png",
+            Self::RecapWait | Self::RecapWorst => "",
         }
     }
 }
@@ -712,6 +727,9 @@ struct PortlightGame {
     hunt_scrolled: bool,
     day_report_nodes: Option<DayReportNodes>,
     day_report_open: bool,
+    recap_card_nodes: Option<crate::recap_card::RecapCardNodes>,
+    /// Contract recap cards waiting to draw, oldest first (Godot memory).
+    recap_queue: crate::recap_card::RecapQueue,
     /// A storm or route-event sinking's recap, opened when the day's report closes.
     pending_sink_recap: Option<EncounterFacts>,
     day_report_doc: Option<DayReportDocument>,
@@ -746,6 +764,10 @@ struct PortlightGame {
     boarding_seen: i64,
     /// Offer id of a trade settle paused after its first partial sale.
     settle_resume: Option<String>,
+    /// Smoke: Close's rect on the first card checked; every card matches it.
+    recap_close_rect: Option<Rect2>,
+    /// Smoke: when the paid card went up (ms), for the 3 s check.
+    recap_up_ms: u64,
     /// `--trade-smoke`: Qty 10 buy, sail, Qty 10 sell that settles a contract.
     trade_checked: bool,
     market_paid_shot_dir: Option<String>,
@@ -915,6 +937,8 @@ impl IControl for PortlightGame {
             hunt_scrolled: false,
             day_report_nodes: None,
             day_report_open: false,
+            recap_card_nodes: None,
+            recap_queue: crate::recap_card::RecapQueue::default(),
             pending_sink_recap: None,
             day_report_doc: None,
             day_report_memory: DayReportMemory::default(),
@@ -938,6 +962,8 @@ impl IControl for PortlightGame {
             market_notice: Vec::new(),
             boarding_seen: 0,
             settle_resume: None,
+            recap_close_rect: None,
+            recap_up_ms: 0,
             trade_checked: false,
             market_paid_shot_dir: None,
             market_paid_shot: None,
@@ -1132,6 +1158,12 @@ impl IControl for PortlightGame {
     fn process(&mut self, _delta: f64) {
         if self.departure_open {
             self.fit_departure_panel();
+        }
+        // The card's minimum settles a frame after new rows; re-pin its size.
+        if self.recap_card_open() {
+            if let Some(mut root) = self.recap_card_nodes.as_ref().map(|n| n.root.clone()) {
+                crate::recap_card::place_card(&mut root);
+            }
         }
         if self.capture_frames <= 0 {
             return;
@@ -1770,6 +1802,27 @@ impl PortlightGame {
         contract_strip::place_strip(&mut contract_strip.root);
         self.contract_strip_nodes = Some(contract_strip);
 
+        // The contract recap card sits just under the Day's report.
+        let mut recap_card = crate::recap_card::build_recap_card();
+        stamp_playtest_id(
+            &mut recap_card.close,
+            &action_playtest_id(&Action::CloseRecap),
+        );
+        let close_recap = game_id;
+        recap_card.close.signals().pressed().connect(move || {
+            let Ok(mut gd) = Gd::<PortlightGame>::try_from_instance_id(close_recap) else {
+                return;
+            };
+            gd.bind_mut().perform(Action::CloseRecap);
+        });
+        self.base_mut().add_child(&recap_card.scrim);
+        recap_card
+            .scrim
+            .set_anchors_and_offsets_preset(LayoutPreset::FULL_RECT);
+        self.base_mut().add_child(&recap_card.root);
+        crate::recap_card::place_card(&mut recap_card.root);
+        self.recap_card_nodes = Some(recap_card);
+
         let mut day_report = day_report::build_day_report_screen();
         stamp_playtest_id(
             &mut day_report.close,
@@ -1820,6 +1873,7 @@ impl PortlightGame {
         self.hunt_open = false;
         self.hunt_desk = HuntDesk::default();
         self.reset_day_report();
+        self.recap_queue.reset();
         self.reset_departure();
         self.reset_trade();
         self.encounter = None;
@@ -2001,6 +2055,7 @@ impl PortlightGame {
         self.armed_sail = None;
         self.stances.clear();
         self.reset_day_report();
+        self.recap_queue.reset();
         self.reset_departure();
         self.reset_trade();
         self.session = Some(session);
@@ -2031,6 +2086,7 @@ impl PortlightGame {
                 self.armed_sail = None;
                 self.stances.clear();
                 self.reset_day_report();
+                self.recap_queue.reset();
                 self.reset_departure();
                 self.reset_trade();
                 self.session = Some(session);
@@ -4257,6 +4313,7 @@ impl PortlightGame {
             Action::OpenJournal => self.open_journal(),
             Action::CloseJournal => self.close_journal(),
             Action::CloseDayReport => self.close_day_report(),
+            Action::CloseRecap => self.close_recap(),
             Action::ToggleBeat(id) => self.toggle_beat(&id),
             Action::OpenHarbour => self.open_harbour(),
             Action::CloseHarbour => self.close_harbour(),
@@ -4610,6 +4667,8 @@ impl PortlightGame {
                 let before = session.board().active.clone();
                 match session.sell(good, qty) {
                     Ok(sale) => {
+                        // RC3a: a sale that settles contracts opens one card.
+                        self.recap_queue.push(crate::recap_card::sale_card(&sale));
                         let mut lines = sale_lines(&sale);
                         let mut paid = market::paid_notice_lines(&sale.contracts);
                         // A partial credit to a contract still open: Log
@@ -6237,6 +6296,7 @@ impl PortlightGame {
         self.sync_crew();
         self.sync_hunt();
         self.sync_day_report();
+        self.sync_recap_card();
         self.sync_contract_strip();
         self.sync_departure_check();
     }
@@ -6445,6 +6505,9 @@ impl PortlightGame {
                     .as_ref()
                     .map(|session| cargo_held(&session.world().captain.cargo, &outcome.good_id))
                     .unwrap_or(0);
+                // RC3b: the confirmed abandon raises its card over the desk.
+                self.recap_queue
+                    .push(crate::recap_card::abandon_card(&outcome, held));
                 self.contracts_notice = contracts_screen::abandon_notice(&outcome, held);
                 self.push_log(self.contracts_notice.clone());
             }
@@ -6662,7 +6725,9 @@ impl PortlightGame {
         };
         let mut scroll = nodes.scroll.clone();
         let target = match shot {
-            ContractsShot::Active | ContractsShot::Armed => "AbandonButton",
+            ContractsShot::Active | ContractsShot::Armed | ContractsShot::RecapAbandoned => {
+                "AbandonButton"
+            }
             ContractsShot::Board | ContractsShot::Empty => "ContractList",
         };
         if shot == ContractsShot::Board || shot == ContractsShot::Empty {
@@ -6694,7 +6759,13 @@ impl PortlightGame {
             self.capture_failed = true;
         }
         let path = format!("{dir}/{}", phase.file_name());
-        if !self.save_shot(&path, true) {
+        // The abandon card dims the desk, as the report does over a screen.
+        let gate = if phase == ContractsShot::RecapAbandoned {
+            ShotGate::Dimmed
+        } else {
+            ShotGate::Ink
+        };
+        if !self.save_shot_as(&path, gate) {
             self.capture_failed = true;
         }
         match phase {
@@ -6710,6 +6781,8 @@ impl PortlightGame {
             ContractsShot::Active => {
                 self.prove_unfilled_complete_and_abandon();
                 self.drain_contract_board();
+                // The desk frames are shot after Close.
+                self.recap_queue.reset();
                 self.contracts_notice.clear();
                 self.contracts_confirm = None;
                 // The armed prompt is staged on a fresh game; the Empty frame
@@ -6722,6 +6795,12 @@ impl PortlightGame {
                 self.contracts_shot = Some(ContractsShot::Armed);
             }
             ContractsShot::Armed => {
+                // RC3b: confirm the armed abandon; its card goes up over the desk.
+                self.confirm_abandon();
+                self.contracts_shot = Some(ContractsShot::RecapAbandoned);
+            }
+            ContractsShot::RecapAbandoned => {
+                self.check_abandon_card_close();
                 if let Some(saved) = self.armed_saved.take() {
                     self.restore_staging(saved);
                 }
@@ -6756,6 +6835,8 @@ impl PortlightGame {
         }
         self.prove_unfilled_complete_and_abandon();
         self.drain_contract_board();
+        self.recap_queue.reset();
+        self.refresh();
         if !self.board_is_empty() {
             self.fail_contracts("Contracts smoke: the board still had offers.");
         }
@@ -6775,6 +6856,7 @@ impl PortlightGame {
             self.market_open,
         );
         let ok = self.run_abandon_with_progress();
+        self.recap_queue.reset();
         self.session = saved.0;
         self.log_lines = saved.1;
         self.contracts_notice = saved.2;
@@ -7168,6 +7250,11 @@ impl PortlightGame {
                     self.fail_contracts(format!(
                         "Contracts smoke: the armed frame had prompt {prompt:?}."
                     ));
+                    return false;
+                }
+            }
+            ContractsShot::RecapAbandoned => {
+                if !self.check_recap_card("contracts-recap-abandoned.png", "abandoned", None) {
                     return false;
                 }
             }
@@ -8894,6 +8981,45 @@ impl PortlightGame {
         self.day_report_doc = Some(doc);
         self.day_report_open = true;
         self.refresh();
+    }
+
+    /// Close the drawn contract card; a queued one draws next.
+    fn close_recap(&mut self) {
+        if self.recap_queue.pop().is_none() {
+            return;
+        }
+        self.refresh();
+    }
+
+    fn sync_recap_card(&mut self) {
+        let Some(mut nodes) = self.recap_card_nodes.clone() else {
+            return;
+        };
+        // One layer at a time: under the Day's report the card waits.
+        let open = self.recap_card_open() && !self.day_report_open;
+        crate::recap_card::set_open(&mut nodes, open);
+        // Modal: the layer behind the card always stops input; it draws the
+        // dim only for the abandon card over the Contracts desk.
+        let dim = open
+            && self
+                .recap_queue
+                .front()
+                .is_some_and(|recap| recap.result == crate::recap::RecapResult::Abandoned);
+        let was_up = crate::recap_card::scrim_shown(&nodes);
+        crate::recap_card::set_scrim(&mut nodes, open, dim);
+        if open && !was_up {
+            if let Some(mut viewport) = self.base().get_viewport() {
+                viewport.gui_release_focus();
+            }
+            nodes.close.grab_focus();
+        }
+        if !open {
+            return;
+        }
+        if let Some(recap) = self.recap_queue.front() {
+            crate::recap_card::apply(&mut nodes, recap);
+        }
+        crate::recap_card::place_card(&mut nodes.root);
     }
 
     fn close_day_report(&mut self) {
@@ -10662,11 +10788,35 @@ impl PortlightGame {
         let Some(dir) = self.market_paid_shot_dir.clone() else {
             return false;
         };
-        if !self.market_open || self.market_notice.is_empty() {
+        if matches!(phase, MarketPaidShot::RecapWait) {
+            return self.advance_recap_wait();
+        }
+        if matches!(phase, MarketPaidShot::RecapWorst) {
+            self.check_recap_card("worst", "paid", None);
+            self.recap_queue.reset();
+            self.refresh();
+            self.market_paid_shot = None;
+            return false;
+        }
+        if matches!(
+            phase,
+            MarketPaidShot::RecapPaid | MarketPaidShot::RecapPaidTwo
+        ) {
+            if !self.check_recap_card(phase.file_name(), "paid", None) {
+                self.capture_failed = true;
+            }
+        } else if !self.market_open || self.market_notice.is_empty() {
             self.fail_trade(format!(
                 "Market paid frames: {} had no open Market notice.",
                 phase.file_name()
             ));
+        }
+        if !matches!(
+            phase,
+            MarketPaidShot::RecapPaid | MarketPaidShot::RecapPaidTwo
+        ) && self.recap_card_open()
+        {
+            self.fail_trade("Market paid frames: a recap card was up for a notice frame.");
         }
         let path = format!("{dir}/{}", phase.file_name());
         if !self.save_shot(&path, false) {
@@ -10674,15 +10824,32 @@ impl PortlightGame {
         }
         match phase {
             MarketPaidShot::Progress => {
+                if self.recap_card_open() {
+                    self.fail_trade("Recap smoke: a partial sale raised a card.");
+                }
                 if !self.resume_trade_settle() {
                     self.capture_failed = true;
                     return false;
                 }
                 self.check_market_notice_leads("single");
-                self.market_paid_shot = Some(MarketPaidShot::Single);
+                self.check_paid_card_raised();
+                self.market_paid_shot = Some(MarketPaidShot::RecapPaid);
                 self.capture_frames = 4;
                 true
             }
+            MarketPaidShot::RecapPaid => {
+                self.recap_up_ms = godot::classes::Time::singleton().get_ticks_msec();
+                self.market_paid_shot = Some(MarketPaidShot::RecapWait);
+                self.capture_frames = 2;
+                true
+            }
+            MarketPaidShot::RecapPaidTwo => {
+                self.stage_recap_worst();
+                self.market_paid_shot = Some(MarketPaidShot::RecapWorst);
+                self.capture_frames = 4;
+                true
+            }
+            MarketPaidShot::RecapWait | MarketPaidShot::RecapWorst => false,
             MarketPaidShot::Single => {
                 self.stage_market_paid_more();
                 self.market_paid_shot = Some(MarketPaidShot::More);
@@ -10690,8 +10857,15 @@ impl PortlightGame {
                 true
             }
             MarketPaidShot::More => {
-                self.market_paid_shot = None;
-                false
+                self.check_report_then_sell();
+                if !self.stage_recap_paid_two() {
+                    self.capture_failed = true;
+                    self.market_paid_shot = None;
+                    return false;
+                }
+                self.market_paid_shot = Some(MarketPaidShot::RecapPaidTwo);
+                self.capture_frames = 4;
+                true
             }
         }
     }
@@ -11374,6 +11548,11 @@ impl PortlightGame {
     /// Layout after a real frame, for the loss and the won card: the block
     /// fits and Return clears the edge.
     fn check_recap_layout(&mut self) {
+        // RC3: the contract card has its own frame and caps.
+        if self.recap_card_shown() {
+            self.check_recap_card_layout();
+            return;
+        }
         let Some(nodes) = self.encounter_nodes.as_ref() else {
             return;
         };
@@ -11393,6 +11572,491 @@ impl PortlightGame {
                 "Recap smoke: layout ok height {} bottom {bottom}",
                 block.size.y
             );
+        }
+    }
+
+    /// The bridge's `state.recap`, or `None` when it is null.
+    fn state_recap(&self) -> Option<VarDictionary> {
+        self.playtest_observation()
+            .get("state")
+            .and_then(|state| state.try_to::<VarDictionary>().ok())
+            .and_then(|state| state.get("recap"))
+            .and_then(|recap| recap.try_to::<VarDictionary>().ok())
+    }
+
+    fn recap_fail(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+    }
+
+    /// The contract card's caps: content <= 320, card <= 380, Close inside
+    /// the card with >= 12 px to its foot, and the same Close rect on every
+    /// card. Prints the measures.
+    fn check_recap_card_layout(&mut self) -> bool {
+        let Some(nodes) = self.recap_card_nodes.clone() else {
+            return false;
+        };
+        let card = nodes.root.get_global_rect();
+        let content = nodes.content.get_global_rect();
+        let close = nodes.close.get_global_rect();
+        let card_bottom = card.position.y + card.size.y;
+        let close_bottom = close.position.y + close.size.y;
+        godot_print!(
+            "Recap card smoke: card {:?} h {} content h {} close {:?} foot gap {}",
+            card.position,
+            card.size.y,
+            content.size.y,
+            close,
+            card_bottom - close_bottom
+        );
+        let mut problems = Vec::new();
+        if card.position != Vector2::new(crate::recap_card::CARD_X, crate::recap_card::CARD_Y)
+            || card.size.x != crate::recap_card::CARD_W
+        {
+            problems.push(format!("card at {card:?}"));
+        }
+        if card.size.y > crate::recap_card::CARD_H {
+            problems.push(format!("card h {}", card.size.y));
+        }
+        if content.size.y > crate::recap_card::CONTENT_MAX_H {
+            problems.push(format!("content h {}", content.size.y));
+        }
+        if card_bottom - close_bottom < 12.0 || close.position.y < content.position.y {
+            problems.push(format!("close {close:?} in card {card:?}"));
+        }
+        match self.recap_close_rect {
+            None => self.recap_close_rect = Some(close),
+            Some(first) if first != close => {
+                problems.push(format!("close {close:?} differs from {first:?}"))
+            }
+            Some(_) => {}
+        }
+        if problems.is_empty() {
+            return true;
+        }
+        self.recap_fail(format!("Recap card smoke: layout {}", problems.join("; ")));
+        false
+    }
+
+    /// One contract card as drawn: frame, theme, copy rules, layout, the
+    /// modal layer (dim only on the abandon card), and `state.recap` equal to
+    /// the drawn texts. `rows`, when given, is the exact body.
+    fn check_recap_card(&mut self, frame: &str, result: &str, rows: Option<&[&str]>) -> bool {
+        let Some(nodes) = self.recap_card_nodes.clone() else {
+            self.recap_fail("Recap card smoke: no card nodes.");
+            return false;
+        };
+        let mut problems = Vec::new();
+        if !self.recap_card_shown() {
+            self.recap_fail(format!("Recap card smoke: {frame} card not shown."));
+            return false;
+        }
+        let ok_layout = self.check_recap_card_layout();
+        // Frame: INK fill and the report border.
+        let panel = nodes
+            .root
+            .get_theme_stylebox("panel")
+            .and_then(|style| style.try_cast::<StyleBoxFlat>().ok());
+        let frame_ok = panel.is_some_and(|style| {
+            style.get_bg_color() == crate::recap_card::INK
+                && style.get_border_color() == crate::recap_card::GOLD
+                && style.get_border_width(godot::builtin::Side::LEFT) == 2
+                && style.get_border_width(godot::builtin::Side::BOTTOM) == 2
+        });
+        if !frame_ok {
+            problems.push("card frame".to_string());
+        }
+        let normal = nodes
+            .close
+            .get_theme_stylebox("normal")
+            .and_then(|style| style.try_cast::<StyleBoxFlat>().ok());
+        if !normal.is_some_and(|style| {
+            style.get_border_color() == crate::recap_card::GOLD
+                && style.get_border_width(godot::builtin::Side::TOP) == 2
+                && style.get_bg_color().a > 0.0
+        }) {
+            problems.push("Close fill or border".to_string());
+        }
+        // Theme: headline 24 GOLD (paid) or DUE (abandoned); bonus 14 MUTED.
+        let want_head = if result == "paid" {
+            crate::recap_card::GOLD
+        } else {
+            crate::recap_card::DUE
+        };
+        let (headline, drawn) = crate::recap_card::drawn_texts(&nodes);
+        for child in nodes.content.get_children().iter_shared() {
+            let Ok(label) = child.try_cast::<Label>() else {
+                continue;
+            };
+            let text = label.get_text().to_string();
+            let size = label.get_theme_font_size("font_size");
+            let color = label.get_theme_color("font_color");
+            if label.get_name() == "RecapHeadline" {
+                if size != crate::recap_card::HEADLINE_SIZE || color != want_head {
+                    problems.push(format!("headline {size} {color:?}"));
+                }
+            } else if text.starts_with(crate::recap_card::BONUS_PREFIX)
+                && (size != crate::recap_card::BONUS_SIZE || color != crate::recap_card::MUTED)
+            {
+                problems.push(format!("bonus row {size} {color:?}"));
+            }
+        }
+        // Copy rules on the drawn texts.
+        for text in std::iter::once(&headline).chain(drawn.iter()) {
+            if !text.is_ascii()
+                || text.ends_with('.')
+                || ["Trust", "Standing", "Heat", "Complete", "Deliver", "+0"]
+                    .iter()
+                    .any(|banned| text.contains(banned))
+            {
+                problems.push(format!("copy {text:?}"));
+            }
+        }
+        if let Some(rows) = rows {
+            if drawn != rows {
+                problems.push(format!("rows {drawn:?}"));
+            }
+        }
+        // The modal layer: always up and stopping clicks; dim only on abandon.
+        if !crate::recap_card::scrim_shown(&nodes)
+            || nodes.scrim.get_mouse_filter() != MouseFilter::STOP
+        {
+            problems.push("no modal layer".to_string());
+        }
+        if crate::recap_card::scrim_dimmed(&nodes) != (result == "abandoned") {
+            problems.push("dim on the wrong card".to_string());
+        }
+        if !crate::recap_card::keyboard_trapped(&nodes) {
+            problems.push("focus not trapped on Close".to_string());
+        }
+        let offered: Vec<String> = offered_choices(&self.offer_root())
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        if offered != ["recap.close"] {
+            problems.push(format!("offered {offered:?}"));
+        }
+        // Paid cards keep clear of the Market pane.
+        if result == "paid" {
+            if let Some(pane) = self.market_scroll.as_ref() {
+                let pane = pane.get_global_rect();
+                let card = nodes.root.get_global_rect();
+                godot_print!("Recap card smoke: market pane {pane:?}");
+                if pane.intersects(card) {
+                    problems.push(format!("card overlaps the Market pane {pane:?}"));
+                }
+            }
+        }
+        // RC4: state.recap is the drawn card.
+        let key = self.state_recap();
+        match key {
+            None => problems.push("state.recap null".to_string()),
+            Some(key) => {
+                let text = |dict: &VarDictionary, name: &str| {
+                    dict.get(name)
+                        .and_then(|value| value.try_to::<GString>().ok())
+                        .map(|value| value.to_string())
+                        .unwrap_or_default()
+                };
+                let state_rows: Vec<String> = key
+                    .get("rows")
+                    .and_then(|value| value.try_to::<VarArray>().ok())
+                    .map(|rows| {
+                        rows.iter_shared()
+                            .filter_map(|row| row.try_to::<VarDictionary>().ok())
+                            .map(|row| text(&row, "text"))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                if text(&key, "kind") != "contract"
+                    || text(&key, "result") != result
+                    || text(&key, "headline") != headline
+                    || state_rows != drawn
+                {
+                    problems.push(format!("state.recap {state_rows:?} vs drawn {drawn:?}"));
+                }
+            }
+        }
+        if problems.is_empty() && ok_layout {
+            godot_print!("Recap card smoke: {frame} ok - {headline:?} {drawn:?}");
+            return true;
+        }
+        self.recap_fail(format!("Recap card smoke: {frame} {}", problems.join("; ")));
+        false
+    }
+
+    /// RC3a: the settling sale raised exactly one paid card, built from the
+    /// real outcome; the Market notice and Log are unchanged by it.
+    fn check_paid_card_raised(&mut self) {
+        let last = self
+            .session
+            .as_ref()
+            .and_then(|session| session.board().completed.last().cloned());
+        let want = last.and_then(|outcome| {
+            crate::recap::contract_recap(
+                std::slice::from_ref(&outcome),
+                &crate::recap::ContractExtras::default(),
+            )
+        });
+        let up = self.recap_queue.front().cloned();
+        let bonus = up.as_ref().is_some_and(|recap| {
+            recap
+                .rows
+                .iter()
+                .any(|row| row.text.starts_with(crate::recap_card::BONUS_PREFIX))
+        });
+        if up.is_none() || up != want || !bonus {
+            self.recap_fail(format!("Recap smoke: settle raised {up:?}, want {want:?}"));
+        }
+    }
+
+    /// RC3a: click to continue. Still up after 3 s; then Escape closes the
+    /// card and only the card.
+    fn advance_recap_wait(&mut self) -> bool {
+        let now = godot::classes::Time::singleton().get_ticks_msec();
+        if now.saturating_sub(self.recap_up_ms) < 3000 {
+            self.capture_frames = 2;
+            return true;
+        }
+        let state_up = self.state_recap().is_some();
+        if !self.recap_card_shown() || !state_up {
+            self.recap_fail("Recap smoke: the paid card did not stay up for 3 s.");
+        }
+        // Modal: a Market sell is not on screen under the card.
+        let reply = self.playtest_choose("chart.sell.grain").to_string();
+        if !reply.contains("is not on screen") {
+            self.recap_fail(format!(
+                "Recap smoke: a sell under the card said {reply:?}."
+            ));
+        }
+        let notice = self.market_notice.clone();
+        let log = self.log_lines.clone();
+        self.dismiss_cancel();
+        let state_up = self.state_recap().is_some();
+        if self.recap_card_open()
+            || state_up
+            || !self.market_open
+            || self.market_notice != notice
+            || self.log_lines != log
+        {
+            self.recap_fail("Recap smoke: Escape did more than close the paid card.");
+        } else {
+            godot_print!("Recap smoke: up after 3 s, modal, Escape closes only the card");
+        }
+        self.market_paid_shot = Some(MarketPaidShot::Single);
+        self.capture_frames = 4;
+        true
+    }
+
+    /// Smoke item 9 (GD ruling): with the Day's report up, a Market sell
+    /// closes the report and the sale goes through; it settles nothing, so
+    /// `state.recap` stays null.
+    fn check_report_then_sell(&mut self) {
+        let Some(port) = self.docked_id().map(str::to_string) else {
+            self.recap_fail("Recap smoke item 9: not docked.");
+            return;
+        };
+        self.trade_qty = market::TRADE_QTYS[0];
+        let goods: Vec<String> = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().port(&port))
+            .map(|port| {
+                port.market
+                    .iter()
+                    .map(|slot| slot.good_id.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut good = None;
+        for id in goods {
+            let before = self.held(&id);
+            self.perform(Action::Buy(id.clone()));
+            if self.held(&id) > before {
+                good = Some(id);
+                break;
+            }
+        }
+        let Some(good) = good else {
+            self.recap_fail("Recap smoke item 9: nothing to buy.");
+            return;
+        };
+        let day = self.session.as_ref().map(|s| s.world().day).unwrap_or(1);
+        self.open_day_report_doc(day_report::smoke_full_document(day));
+        let before = self.held(&good);
+        let reply = self
+            .playtest_choose(&format!("chart.sell.{good}"))
+            .to_string();
+        let state_up = self.state_recap().is_some();
+        if !reply.is_empty() || self.day_report_open || self.held(&good) != before - 1 || state_up {
+            self.recap_fail(format!(
+                "Recap smoke item 9: reply {reply:?}, report {}, held {} of {before}, recap up {state_up}.",
+                self.day_report_open,
+                self.held(&good)
+            ));
+        } else {
+            godot_print!("Recap smoke item 9: report closed, sale went through, recap null");
+        }
+    }
+
+    /// RC3a two-contract card through real verbs: smuggler seed 86 takes the
+    /// two Rum orders for Sun Harbor (8 and 9), buys, sails, then sells at
+    /// Qty 5, 1, 1 (progress only) and Qty 10, which settles both at once.
+    fn stage_recap_paid_two(&mut self) -> bool {
+        self.recap_queue.reset();
+        let Ok(mut session) = Session::new("Ada", "smuggler", 86, None) else {
+            self.recap_fail("Recap smoke two: no seed-86 session.");
+            return false;
+        };
+        let ids: Vec<String> = session
+            .available_contracts()
+            .into_iter()
+            .filter(|o| o.good_id == "rum" && o.destination_port_id == "sun_harbor")
+            .map(|o| o.id)
+            .collect();
+        self.session = Some(session);
+        self.log_lines.clear();
+        self.market_notice.clear();
+        self.encounter = None;
+        if ids.len() != 2 {
+            self.recap_fail(format!("Recap smoke two: {} Rum offers.", ids.len()));
+            return false;
+        }
+        for id in &ids {
+            self.accept_contract_offer(id);
+        }
+        self.contracts_notice.clear();
+        self.market_open = true;
+        self.trade_qty = market::TRADE_QTYS[0];
+        for _ in 0..40 {
+            if self.held("rum") >= 22 {
+                break;
+            }
+            let before = self.held("rum");
+            self.perform(Action::Buy("rum".into()));
+            if self.held("rum") <= before {
+                break;
+            }
+        }
+        self.depart_now("sun_harbor");
+        for _ in 0..40 {
+            if self.docked_id() == Some("sun_harbor") {
+                break;
+            }
+            self.close_day_report();
+            self.encounter = None;
+            self.next_day();
+        }
+        self.close_day_report();
+        if self.docked_id() != Some("sun_harbor") {
+            self.recap_fail("Recap smoke two: never docked at Sun Harbor.");
+            return false;
+        }
+        self.market_open = true;
+        for qty in [5, 1, 1] {
+            self.trade_qty = qty;
+            self.perform(Action::Sell("rum".into()));
+            if self.recap_card_open() {
+                self.recap_fail(format!("Recap smoke two: a Qty {qty} sale raised a card."));
+                return false;
+            }
+        }
+        self.trade_qty = 10;
+        self.perform(Action::Sell("rum".into()));
+        let card = self.recap_queue.front().cloned();
+        let blocks = card
+            .as_ref()
+            .map(|recap| {
+                recap
+                    .rows
+                    .iter()
+                    .filter(|row| row.text.contains(" Rum to Sun Harbor"))
+                    .count()
+            })
+            .unwrap_or(0);
+        if card.as_ref().map(|recap| recap.headline.as_str())
+            != Some("Contracts paid - settled by one sale")
+            || blocks != 2
+            || card.as_ref().is_some_and(|recap| {
+                recap
+                    .rows
+                    .iter()
+                    .any(|row| row.text.starts_with("Silver net"))
+            })
+        {
+            self.recap_fail(format!("Recap smoke two: card {card:?}."));
+            return false;
+        }
+        self.market_open = true;
+        self.refresh();
+        true
+    }
+
+    /// Layout only: three paid contracts with bonus (9 rows) on the card.
+    fn stage_recap_worst(&mut self) {
+        let Some(last) = self
+            .session
+            .as_ref()
+            .and_then(|session| session.board().completed.last().cloned())
+        else {
+            self.recap_fail("Recap smoke worst: no outcome to stage from.");
+            return;
+        };
+        let bonus = |good: &str, qty: i64| portlight_sim::model::ContractOutcome {
+            outcome_type: "completed_bonus".into(),
+            good_id: good.into(),
+            required_quantity: qty,
+            delivered_quantity: qty,
+            silver_delta: 660,
+            reward_silver: 600,
+            ..last.clone()
+        };
+        let staged = crate::recap::contract_recap(
+            &[bonus("grain", 23), bonus("weapons", 12), bonus("silk", 20)],
+            &crate::recap::ContractExtras::default(),
+        );
+        if staged.as_ref().map(|recap| recap.rows.len()) != Some(9) {
+            self.recap_fail(format!("Recap smoke worst: staged {staged:?}."));
+        }
+        self.recap_queue.reset();
+        self.recap_queue.push(staged);
+        self.refresh();
+    }
+
+    /// RC3b: Escape on the abandon card closes the card only; the desk stays
+    /// open with its notice byte-identical, and the dim goes.
+    fn check_abandon_card_close(&mut self) {
+        let notice = self.contracts_notice.clone();
+        let focus_on_close = self
+            .base()
+            .get_viewport()
+            .and_then(|viewport| viewport.gui_get_focus_owner())
+            .zip(
+                self.recap_card_nodes
+                    .as_ref()
+                    .map(|n| n.close.clone().upcast::<Control>()),
+            )
+            .is_some_and(|(owner, close)| owner == close);
+        if !focus_on_close {
+            self.recap_fail("Recap smoke: focus was not on the abandon card's Close.");
+        }
+        self.dismiss_cancel();
+        let dimmed = self
+            .recap_card_nodes
+            .as_ref()
+            .is_some_and(crate::recap_card::scrim_shown);
+        let state_up = self.state_recap().is_some();
+        if self.recap_card_open()
+            || dimmed
+            || state_up
+            || !self.contracts_open
+            || self.contracts_notice != notice
+        {
+            self.recap_fail("Recap smoke: Escape on the abandon card did more than close it.");
+        } else {
+            godot_print!("Recap smoke: Escape closed the abandon card; desk and notice kept");
         }
     }
 
@@ -11642,7 +12306,6 @@ impl PortlightGame {
             at(&|r| r.starts_with("Silver net ")),
         ];
         let mut problems = Vec::new();
-        godot_print!("encounter-sunk full rows {rows:?}");
         if !(headline.starts_with("Lost to ") && headline.ends_with(" - sunk by their broadside")) {
             problems.push(format!("headline {headline:?}"));
         }
@@ -12956,8 +13619,6 @@ fn hunt_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
 }
 
-/// The save text with the flagship's `"hull"` set (the first `"hull":` after
-/// `"ship": {`). Smoke only.
 /// Full-receipt sinking stage, through the public save path: a merchant
 /// sloop out of Porto Novo for Silva Bay under a cargo_standard policy, with
 /// 500 silver, grain 23, silk 20 and spice 4 aboard (two goods rows and a
@@ -13035,6 +13696,8 @@ fn with_captain_cargo(text: &str, cargo: &str) -> Option<String> {
     Some(format!("{}{cargo}{}", &text[..key], &text[end?..]))
 }
 
+/// The save text with the flagship's `"hull"` set (the first `"hull":` after
+/// `"ship": {`). Smoke only.
 fn with_flagship_hull(text: &str, hull: i64) -> Option<String> {
     let ship = text.find("\"ship\": {")?;
     let at = ship + text[ship..].find("\"hull\": ")? + "\"hull\": ".len();
@@ -13244,6 +13907,13 @@ impl PortlightGame {
             if let Some(mut viewport) = self.base().get_viewport() {
                 viewport.set_input_as_handled();
             }
+            return;
+        }
+        if self.recap_card_open() {
+            self.close_recap();
+            if let Some(mut viewport) = self.base().get_viewport() {
+                viewport.set_input_as_handled();
+            }
         }
     }
 
@@ -13313,10 +13983,12 @@ impl PortlightGame {
             top.as_ref().map(|(overlay, _)| *overlay),
             self.day_report_shown(),
             self.departure_shown(),
+            self.recap_card_shown(),
         ) {
             OfferScope::Everything => None,
             OfferScope::Only(OfferLayer::Departure) => self.departure_root(),
             OfferScope::Only(OfferLayer::DayReport) => self.day_report_root(),
+            OfferScope::Only(OfferLayer::Recap) => self.recap_card_root(),
             OfferScope::Only(OfferLayer::Blocking(_)) => top.map(|(_, root)| root),
         };
         root.map(|root| root.upcast::<Node>())
@@ -13488,6 +14160,35 @@ impl PortlightGame {
                 .is_some_and(|root| root.is_visible_in_tree())
     }
 
+    fn recap_card_root(&self) -> Option<Gd<Control>> {
+        self.recap_card_nodes
+            .as_ref()
+            .map(|nodes| nodes.root.clone().upcast::<Control>())
+    }
+
+    fn recap_card_open(&self) -> bool {
+        self.recap_queue.front().is_some()
+    }
+
+    fn recap_card_shown(&self) -> bool {
+        self.recap_card_open()
+            && self
+                .recap_card_root()
+                .is_some_and(|root| root.is_visible_in_tree())
+    }
+
+    /// The recap drawn now: the contract card, else the combat block on the
+    /// Outcome card. `None` when neither draws.
+    fn drawn_recap(&self) -> Option<crate::recap::Recap> {
+        if self.recap_card_shown() {
+            return self.recap_queue.front().cloned();
+        }
+        self.recap_block_texts()?;
+        self.encounter
+            .as_ref()
+            .and_then(crate::recap::outcome_recap)
+    }
+
     fn day_report_shown(&self) -> bool {
         self.day_report_open
             && self
@@ -13527,7 +14228,14 @@ impl PortlightGame {
             Some(ImplicitDismiss::StayInPort) if matches!(command, PlaytestCommand::Hunt(_)) => {
                 self.stay_in_port();
             }
-            Some(ImplicitDismiss::CloseDayReport) => self.close_day_report(),
+            Some(ImplicitDismiss::CloseDayReport) => {
+                self.close_day_report();
+                // A card waiting under the report is up now, and modal: the
+                // press only closed the report.
+                if self.recap_card_open() && !Self::owns_choice(self.recap_card_root(), id) {
+                    return GString::new();
+                }
+            }
             _ => {}
         }
         match command {
@@ -13605,6 +14313,10 @@ impl PortlightGame {
         match crate::playtest::encounter_key(self.encounter.as_ref(), self.day_report_open) {
             Some(key) => state.set("encounter", &key.to_dictionary()),
             None => state.set("encounter", &Variant::nil()),
+        }
+        match crate::playtest::recap_key(self.drawn_recap().as_ref()) {
+            Some(key) => state.set("recap", &key.to_dictionary()),
+            None => state.set("recap", &Variant::nil()),
         }
         match self.session.as_ref() {
             Some(session) => {

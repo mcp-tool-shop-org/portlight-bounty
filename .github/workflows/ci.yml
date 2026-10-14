@@ -686,7 +686,7 @@ jobs:
             echo "contracts frame capture did not report ok"
             exit 1
           fi
-          for name in contracts-board.png contracts-active.png contracts-abandon-armed.png contracts-empty.png; do
+          for name in contracts-board.png contracts-active.png contracts-abandon-armed.png contracts-recap-abandoned.png contracts-empty.png; do
             if [ ! -f "/tmp/contracts-shots/${name}" ]; then
               echo "contracts capture did not write /tmp/contracts-shots/${name}"
               exit 1
@@ -852,7 +852,7 @@ jobs:
             echo "market-paid frame capture did not report ok"
             exit 1
           fi
-          for name in market-contract-progress.png market-contract-paid.png market-contract-paid-more.png; do
+          for name in market-contract-progress.png market-contract-paid.png market-contract-paid-more.png market-contract-recap-paid.png market-contract-recap-paid-two.png; do
             if [ ! -f "/tmp/market-paid-shots/${name}" ]; then
               echo "market-paid capture did not write /tmp/market-paid-shots/${name}"
               exit 1
@@ -895,6 +895,7 @@ jobs:
           cmp_committed contracts-board.png /tmp/contracts-shots/contracts-board.png
           cmp_committed contracts-active.png /tmp/contracts-shots/contracts-active.png
           cmp_committed contracts-abandon-armed.png /tmp/contracts-shots/contracts-abandon-armed.png
+          cmp_committed contracts-recap-abandoned.png /tmp/contracts-shots/contracts-recap-abandoned.png
           cmp_committed contracts-empty.png /tmp/contracts-shots/contracts-empty.png
           cmp_committed harbour-warehouse.png /tmp/harbour-shots/harbour-warehouse.png
           cmp_committed harbour-broker.png /tmp/harbour-shots/harbour-broker.png
@@ -923,6 +924,8 @@ jobs:
           cmp_committed market-contract-progress.png /tmp/market-paid-shots/market-contract-progress.png
           cmp_committed market-contract-paid.png /tmp/market-paid-shots/market-contract-paid.png
           cmp_committed market-contract-paid-more.png /tmp/market-paid-shots/market-contract-paid-more.png
+          cmp_committed market-contract-recap-paid.png /tmp/market-paid-shots/market-contract-recap-paid.png
+          cmp_committed market-contract-recap-paid-two.png /tmp/market-paid-shots/market-contract-recap-paid-two.png
           cmp_committed departure-check.png /tmp/departure-check-shots/departure-check.png
           cmp_committed departure-check-worst.png /tmp/departure-check-shots/departure-check-worst.png
           cmp_committed chart-at-sea-first.png /tmp/departure-check-shots/chart-at-sea-first.png

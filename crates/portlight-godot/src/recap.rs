@@ -2864,6 +2864,63 @@ mod tests {
         assert!(!texts(recap).iter().any(|t| t.contains("net")));
     }
 
+    /// RC4: `state.recap` mirrors the drawn card: no headings, the rule note
+    /// as a `note`, folds and the bounty row as drawn; null with no card.
+    #[test]
+    fn state_recap_key() {
+        use crate::playtest::recap_key;
+        assert_eq!(recap_key(None), None);
+
+        let mut facts = win(RecapResult::WonTookAll);
+        facts.loot = vec!["+12 silver".into(), "Found: Compass".into()];
+        let short = combat(&facts);
+        let key = recap_key(Some(&short)).unwrap();
+        assert_eq!((key.kind, key.result), ("combat", "won_took_all"));
+        assert_eq!(key.headline, short.headline);
+        assert!(
+            key.rows.contains(&("note", RULE_NOTE.to_string())),
+            "{key:?}"
+        );
+
+        facts.deltas = [facts.purse + 12 - 30, -1, -12, -4];
+        facts.standing = Some(("underworld".into(), 5));
+        facts.notes = vec!["Mara approves".into()];
+        facts.bounty_ready = true;
+        let over = combat(&facts);
+        let key = recap_key(Some(&over)).unwrap();
+        let drawn: Vec<(&str, String)> = over
+            .rows
+            .iter()
+            .filter(|r| r.section != RecapSection::Heading)
+            .map(|r| (r.section.bridge_name(), r.text.clone()))
+            .collect();
+        assert_eq!(key.rows, drawn);
+        assert!(over.rows.iter().any(|r| r.section == RecapSection::Heading));
+        assert!(!key.rows.iter().any(|(_, t)| t == "Cost"), "{key:?}");
+        assert!(key
+            .rows
+            .contains(&("earned", "Loot - 1 item - Silver +12".to_string())));
+        assert!(
+            key.rows.contains(&("note", BOUNTY_READY.to_string())),
+            "{key:?}"
+        );
+
+        let cards = all_contract();
+        let paid = recap_key(Some(&cards[0])).unwrap();
+        assert_eq!((paid.kind, paid.result), ("contract", "paid"));
+        assert_eq!(paid.headline, "Contract paid - settled by your sale");
+        assert_eq!(paid.rows.len(), cards[0].rows.len());
+        let gone = recap_key(Some(&cards[2])).unwrap();
+        assert_eq!((gone.kind, gone.result), ("contract", "abandoned"));
+        assert_eq!(
+            gone.rows
+                .iter()
+                .map(|(_, t)| t.as_str())
+                .collect::<Vec<_>>(),
+            texts(&cards[2])
+        );
+    }
+
     #[test]
     fn several_paid_contracts_share_one_card() {
         let recap = &all_contract()[1];
