@@ -1074,9 +1074,6 @@ pub(crate) fn boarding_line(progress: i64, threshold: i64) -> String {
 
 fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     let mut lines = Vec::new();
-    if sea_event_card(facts) {
-        lines.push("At sea".to_string());
-    }
     if !facts.captain_name.is_empty() {
         lines.push(facts.captain_name.clone());
     }
@@ -4481,7 +4478,8 @@ mod tests {
         facts.recap.sea = true;
         facts.recap.towed_to = "porto_novo".into();
         let view = view(ScreenPhase::Outcome, &facts, vec![ScreenAction::BackToPort]);
-        assert!(view.card.starts_with("At sea"));
+        assert!(sea_event_card(&facts));
+        assert!(!view.card.contains("At sea"));
         assert!(!view.portrait_placeholder);
         assert_eq!(action_caption(&ScreenAction::BackToPort), "Back to port");
     }

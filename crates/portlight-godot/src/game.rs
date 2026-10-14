@@ -8108,8 +8108,19 @@ impl PortlightGame {
             &mut nodes.plate_caption,
             &template_id,
         );
+        // Hidden in place: the column keeps its width, so the card does not
+        // shift left.
         let show_portrait = view.as_ref().is_none_or(|view| view.portrait_placeholder);
-        nodes.placeholder.set_visible(show_portrait);
+        nodes.placeholder.set_modulate(if show_portrait {
+            godot::builtin::Color::WHITE
+        } else {
+            godot::builtin::Color::from_rgba(1.0, 1.0, 1.0, 0.0)
+        });
+        nodes.eyebrow.set_text(if show_portrait {
+            encounter_screen::EYEBROW_ENCOUNTER
+        } else {
+            encounter_screen::EYEBROW_AT_SEA
+        });
         let open = view.is_some();
         nodes.root.set_visible(open);
         nodes.root.set_mouse_filter(if open {
