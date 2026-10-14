@@ -1,7 +1,7 @@
 # Corsair's Rest (corsairs_rest)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Weapons | military | 45 | 1.5 | 20 | 2.5 | exporter |
@@ -32,7 +32,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Opium | contraband | 85 | 0.7 | 4 | 0.3 | importer |
 | Silk | luxury | 70 | 0.5 | 5 | 0.5 | importer |
 | Medicines | medicine | 35 | 0.5 | 6 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:459-553. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Timber, Iron Ore, Cotton, Dyes, Spice, Porcelain, Tea, Pearls.
@@ -68,7 +68,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The cove is the town: Corsair's Rest is cliff, tavern and hidden berths, and nothing is built where the sea can see it. Landmark [cite]: "The Cliff Tavern - carved into the rock face, visible only from the sea." (C:12036 area). Cited buildings: The Cove Mouth (harbor_master, C:7654); The Whisper Market (exchange, C:7664); The Crimson Chair (governor, C:7674); Mama Lucia's Kitchen (tavern, C:7684); The Surgery (apothecary, C:7694); The Cliff Caves (broker, C:7704); The Cliff Watch (customs, C:7714). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Weapons, Rum, Tobacco, Pelts, Black Powder, Stolen Cargo; scarce or luxury (imports): Silk, Medicines, Grain, Opium (section A). Atmosphere [cite]: "Torch smoke, cheap rum, and the clink of coins changing hands under the table." (C:12036 area). Climate: section G.
@@ -100,9 +100,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | hostile (C:13746) | 18, sloop, 0.18 (C:1955) | Pelts | Grain | - |
@@ -124,7 +124,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13858) | - | Pelts, Rum, Weapons | Medicines | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13858) | - | Pelts, Rum | - | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13858) | - | Pelts, Weapons | - | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Shadow Lane": "Every merchant denies using it. Every merchant uses it. The line between trade and smuggling runs through these waters." (C:1955).
 - Lane lore: "The Smuggler's Run": "Only the desperate or the bold sail this direct. Pirate kings once controlled both ends." (C:2288).
@@ -140,13 +140,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: Mediterranean, but the cliffs keep the cove in shadow by mid-afternoon. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879). Home port [invented]: The Crimson Tide - The cove's governor is 'The Tide's Voice' and Scarlet Ana is sighted off the Rest.
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** cliff-enclosed cove, close and muffled; torch crackle; "the clink of coins changing hands under the table"; a single rowboat's oars.
 - **Signature:** small silver coins palmed (dull, low clink - darker than `ui_trade_coin`); torch sputter; oarlock creak of the fee boy's rowboat.
 - **Music/work songs (NOTE ONLY):** none - the Brotherhood is "a silence"; absence is the design.
 - **Vs neighbours:** the one Med port with no flags and no voices - intimate and furtive vs Porto Novo's open quays.
-- **Fragments:** `place.hidden_cove`, `src.silver_palmed`, `src.oarlock_rowboat`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `place.hidden_cove`, `src.silver_palmed`, `src.oarlock_rowboat`.
 - Cited hooks: atmosphere "Torch smoke, cheap rum, and the clink of coins changing hands under the table."; dock scene "Ships anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee - payable in silver, no questions." (C:12036 area).
 - Invented bed idea: water slapping in caves; low talk; no bells. No assets are requested.
 

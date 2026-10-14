@@ -1,7 +1,7 @@
 # Al-Manar (al_manar)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Spice | luxury | 55 | 1.5 | 25 | 2.5 | exporter |
@@ -31,7 +31,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Porcelain | luxury | 60 | 0.55 | 8 | 0.8 | importer |
 | Iron Ore | commodity | 25 | 0.55 | 8 | 0.8 | importer |
 | Grain | commodity | 12 | 0.5 | 15 | 1.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:291-375. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Timber, Cotton, Dyes, Pearls, Tobacco, Weapons, Opium, Black Powder, Stolen Cargo.
@@ -69,7 +69,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Bazaar is the town: Al-Manar is a covered market with a harbour attached. Landmark [cite]: "The Spice Bazaar - a covered market where a hundred aromas compete for your attention." (C:12016 area). Cited buildings: The Harbor of Arrivals (harbor_master, C:7186); The Spice Bazaar (exchange, C:7196); The Khoury Palace (governor, C:7206); The Amber Glass (tavern, C:7216); The Scales of Truth (customs, C:7226); The Apothecary House (apothecary, C:7236); The Broker's Alcove (broker, C:7246). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Spice, Medicines; scarce or luxury (imports): Silk, Grain, Porcelain, Rum, Tea, Iron Ore, Pelts (section A). Atmosphere [cite]: "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers." (C:12016 area). Climate: section G.
@@ -100,9 +100,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | same bloc | 24, sloop, 0.12 (C:1928) | - | Grain, Rum | C:11520, C:11592, C:11664 |
@@ -124,7 +124,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13753) | - | - | Iron Ore | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13753) | - | Medicines | - | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13753) | - | - | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Grain Road": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory." (C:1928).
 - Lane lore: "The Monsoon Shortcut": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown." (C:2279).
@@ -139,13 +139,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: hot dry summers; the bazaar roof is built for shade. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** hushed, dense - "the murmur of a hundred negotiations conducted in whispers"; porters' feet on worn marble steps; felucca lateen canvas luffing.
 - **Signature:** brass-bound spice chest set down on marble; tea cup on saucer (custom: bargaining begins with tea); scoop of dry spice into a scale pan.
 - **Music/work songs (NOTE ONLY):** none in canon; at most a far auctioneer's cadence from the Spice Merchants' Circle - spoken, not sung.
 - **Vs neighbours:** quietest Mediterranean market - stone and whispers, where Porto Novo is shouting and Silva Bay is hammering.
-- **Fragments:** `mat.marble_step`, `src.spice_chest_brass`, `src.tea_cup_saucer`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `mat.marble_step`, `src.spice_chest_brass`, `src.tea_cup_saucer`.
 - Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers."; dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12016 area).
 - Invented bed idea: tea-pouring before bargaining; a hundred voices under one roof. No assets are requested.
 

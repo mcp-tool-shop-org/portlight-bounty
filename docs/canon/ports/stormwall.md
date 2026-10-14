@@ -1,7 +1,7 @@
 # Stormwall (stormwall)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Medicines | medicine | 35 | 1.4 | 12 | 1.5 | exporter |
@@ -30,7 +30,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Tobacco | provision | 28 | 0.55 | 10 | 0.8 | importer |
 | Rum | provision | 20 | 0.5 | 12 | 1.0 | importer |
 | Silk | luxury | 70 | 0.5 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:645-721. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Iron Ore, Cotton, Dyes, Spice, Porcelain, Tea, Pearls, Opium, Black Powder, Stolen Cargo.
@@ -67,7 +67,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Fortress is the town: Stormwall is a garrison with a harbour, not a harbour with a fort. Landmark [cite]: "The Fortress - grey stone walls rising from the sea, older than anyone remembers." (C:12056 area). Cited buildings: The Fortress Gate (harbor_master, C:8122); The Supply Depot (exchange, C:8132); The Commander's Office (governor, C:8142); The Garrison Infirmary (apothecary, C:8152); The Watchtower (tavern, C:8162); The Inspection Hall (customs, C:8172); The Trade Liaison Office (broker, C:8182). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Weapons, Grain, Medicines; scarce or luxury (imports): Rum, Tobacco, Pelts, Silk (section A). Atmosphere [cite]: "Salt wind, military drums from the garrison, and the creak of heavy gates." (C:12056 area). Climate: section G.
@@ -97,9 +97,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | allied (C:13718) | - | - | Rum | - |
@@ -121,7 +121,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13788) | - | Grain, Weapons | - | C:11472 |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13788) | - | Grain, Medicines | - | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13788) | - | Grain, Weapons | Rum, Tobacco | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Iron Strait": "Iron from the foundries, soldiers from the fortress. This lane never sleeps." (C:1973).
 - Lane lore: "The Tea and Tobacco Road": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade." (C:1991).
@@ -136,13 +136,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: grey northern straits; gales and short winter days. Regional weather [cite]: "Grey skies press low. The Atlantic rolls in long, heavy swells." (C:11782 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879), The Iron Wolves (C:2905).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "salt wind, military drums from the garrison, and the creak of heavy gates"; boots of grey-coat patrols; paper checked against sealed orders.
 - **Signature:** heavy gate hinge creak; manifest page flipped and stamped; drum is ambient-distant only.
 - **Music/work songs (NOTE ONLY):** garrison drums are canon - treat as far, unpitched military cadence if music ever opens.
 - **Vs neighbours:** ordered and watched; vs Ironhaven's roar and Thornport's homely sheds. Contrast with Dragon's Gate: wind + gates here, chains + tea there.
-- **Fragments:** `src.heavy_gate`, `src.inspection_stamp`, `place.garrison_quay`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.heavy_gate`, `src.inspection_stamp`, `place.garrison_quay`.
 - Cited hooks: atmosphere "Salt wind, military drums from the garrison, and the creak of heavy gates."; dock scene "Navy vessels line the inner harbor. Soldiers in grey coats patrol the docks, checking manifests against sealed orders. Everything is orderly. Everything is watched." (C:12056 area).
 - Invented bed idea: the watch bell, inspectors calling manifests, gulls and gale. No assets are requested.
 

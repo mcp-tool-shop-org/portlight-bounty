@@ -1,7 +1,7 @@
 # Thornport (thornport)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -18,7 +18,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Tobacco | provision | 28 | 1.6 | 25 | 3.0 | exporter |
@@ -29,7 +29,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Spice | luxury | 55 | 0.5 | 6 | 0.6 | importer |
 | Porcelain | luxury | 60 | 0.5 | 4 | 0.3 | importer |
 | Medicines | medicine | 35 | 0.45 | 8 | 0.8 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:724-800. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Grain, Iron Ore, Cotton, Dyes, Pearls, Rum, Weapons, Opium, Black Powder, Stolen Cargo.
@@ -65,7 +65,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Whale Arch is the town's gate: Thornport is a whaling town that learned to trade. Landmark [cite]: "The Whale Arch - a jawbone arch spanning the harbor entrance, bleached white by decades of salt." (C:12066 area). Cited buildings: The Whale Dock (harbor_master, C:8328); The Blending Room (exchange, C:8338); The Meeting Bench (governor, C:8348); The Whale Bone (tavern, C:8358); Bones' Boat Yard (shipyard, C:8368); The Stamp Desk (customs, C:8378); Erik's Desk (broker, C:8388). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Tea, Tobacco, Timber, Pelts; scarce or luxury (imports): Medicines, Silk, Spice, Porcelain (section A). Atmosphere [cite]: "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds." (C:12066 area). Climate: section G.
@@ -95,9 +95,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13739) | - | Pelts, Timber | - | - |
@@ -119,7 +119,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13851) | - | Pelts, Timber | Medicines | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13851) | - | Pelts | Spice | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13851) | - | Pelts, Tea | - | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Tea and Tobacco Road": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade." (C:1991).
 
@@ -133,13 +133,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: cold coast, fog banks, long summer light. Regional weather [cite]: "Grey skies press low. The Atlantic rolls in long, heavy swells." (C:11782 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879), The Iron Wolves (C:2905).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** smoky whaling pier; wood-smoke crackle; fish racks in wind; tea brewing beside crates.
 - **Signature:** harpoon set on rack (wood shaft, iron head); tea kettle on a wooden crate; tobacco leaf rustle in curing sheds.
 - **Music/work songs (NOTE ONLY):** none in canon (shanties would be invented - avoid).
 - **Vs neighbours:** domestic, slower North Atlantic port; no forge (Ironhaven), no drums (Stormwall).
-- **Fragments:** `src.harpoon_rack`, `src.kettle_crate`, `mat.tobacco_leaf`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.harpoon_rack`, `src.kettle_crate`, `mat.tobacco_leaf`.
 - Cited hooks: atmosphere "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds."; dock scene "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers." (C:12066 area).
 - Invented bed idea: the creak of the boat yard; Old Magnus telling stories. No assets are requested.
 

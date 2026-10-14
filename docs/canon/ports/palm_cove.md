@@ -1,7 +1,7 @@
 # Palm Cove (palm_cove)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Rum | provision | 20 | 1.7 | 35 | 3.0 | exporter |
@@ -30,7 +30,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Timber | commodity | 18 | 0.6 | 10 | 1.0 | importer |
 | Iron Ore | commodity | 25 | 0.6 | 8 | 0.8 | importer |
 | Silk | luxury | 70 | 0.5 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:882-958. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Dyes, Spice, Porcelain, Tea, Pearls, Weapons, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -66,7 +66,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: Distillery Row is the town: seven rum houses and the cove that serves them. Landmark [cite]: "The Distillery Row - seven rum houses, each with its own secret recipe and fierce pride." (C:12086 area). Cited buildings: The Hammock Dock (harbor_master, C:8796); The Third Distillery (exchange, C:8806); The Council Shade (governor, C:8816); The Rum House (tavern, C:8826); The Working Dock (shipyard, C:8836); The Stamp Table (customs, C:8846); Chioma's Table (broker, C:8856). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Rum, Cotton, Tobacco; scarce or luxury (imports): Grain, Timber, Pelts, Silk, Iron Ore (section A). Atmosphere [cite]: "Sweet molasses, fermenting sugar cane, and the lazy hum of bees." (C:12086 area). Climate: section G.
@@ -96,9 +96,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13725) | - | Cotton | Grain | - |
@@ -120,7 +120,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | allied (C:13816) | - | Cotton, Rum | Iron Ore | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | allied (C:13816) | - | Rum | Timber | - |
 | Coral Throne | South Seas | The Coral Crown | allied (C:13816) | - | - | - | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 
 ## G. World details (undefined in data; all [invented] unless cited)
@@ -133,13 +133,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: sheltered and humid; palms break the wind. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** sheltered, lazy; "the lazy hum of bees"; small boats bobbing; children diving for coins.
 - **Signature:** rum barrel rolling down a wooden ramp; coin plop into shallow water; cup of rum poured (custom).
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the softest, warmest bed on the coast; no singing (Sun Harbor), no silence ritual (Pearl Shallows).
-- **Fragments:** `src.barrel_ramp`, `src.coin_water_plop`, `place.sheltered_cove`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.barrel_ramp`, `src.coin_water_plop`, `place.sheltered_cove`.
 - Cited hooks: atmosphere "Sweet molasses, fermenting sugar cane, and the lazy hum of bees."; dock scene "Small boats bob in the sheltered cove. Rum barrels roll down wooden ramps from the hilltop distilleries. Children dive for coins tossed by arriving crews." (C:12086 area).
 - Invented bed idea: cask hammering, laughter, a cup offered to every stranger. No assets are requested.
 

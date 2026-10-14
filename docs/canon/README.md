@@ -1,12 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284. Phase 1: ports. Status: draft for Coordinator's draft PR (docs/canon/). Seat: Game Designer, 2026-10-14. Inputs:
-- canon-skeleton.md;
-- canon-port-template-silva_bay.md;
-- Scholar's canon-inventory-ports.md;
-- AD's canon-port-silva_bay-visual.md;
-- Analogist's canon-port-silva_bay-analogies.md;
-- content.json and the sim.
+Base commit: 143e284. Phase 1: ports. Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus studio research notes (not in this repo).
 
 ## Purpose
 
@@ -22,7 +16,7 @@ The canon is the single written reference for what Portlight's ports are like: p
 
    Canon loses every tie.
 2. Every grounded fact carries a cite. `C:n` means crates/portlight-sim/data/content.json line n at the base commit; source files are cited by path:line. Anything else is marked [invented].
-3. When lore and the game disagree, canon resolves it in lore where it can (and says so in the port file's section J). Data contradictions go to canon-data-fixes.md with file:line and a proposed fix. Canon never edits the game.
+3. When lore and the game disagree, canon resolves it in lore where it can (and says so in the port file's section J). Data contradictions go to data-fixes.md with file:line and a proposed fix. Canon never edits the game.
 4. Data with no mechanic behind it (bloc loyalty numbers, sacred goods, timber grades) is written as [flavour, no mechanic].
 5. Copy rules:
    - ASCII, with ' - ' as the separator;
@@ -32,33 +26,33 @@ The canon is the single written reference for what Portlight's ports are like: p
    - 'silver' is the only currency word;
    - house style: proper names keep their data spelling (Sun Harbor); the common noun is 'harbour' (DF-9);
    - 'the Gold Coast' is the region and 'the Compact' is the bloc (DF-10).
-6. Holds: canon commissions no art, sound or spend. The character hold stands. `man_of_war` art is held (PB-002 Addendum A), although the ship exists in lore and in the sim.
+6. Holds: canon commissions no art, sound or spend. The character hold stands. `man_of_war` art is held (art hold), although the ship exists in lore and in the sim.
 
 ## Halfway-world rule
 
-No canon rule names a fixed list of ports, blocs, goods or regions. The port set is content.json `ports[*].id`. Section 0, A and F tables and relations-matrix.md are generated from content.json. A new port appears in the tables when they are regenerated; its lore cells start empty.
+No canon rule names a fixed list of ports, blocs, goods or regions. The port set is content.json `ports[*].id`. Section 0, A and F tables and relations-matrix.md are hand-maintained from content.json (there is no generator). A new port appears in the tables when they are updated by hand; its lore cells start empty.
 
 ## How to add a port
 
 1. Add the port to the sim first (content.json ports, routes, port_politics, culture, institutions), through a sim PR with its parity note. Canon never introduces a port.
 2. Create ports/<port_id>.md from any existing port file. Keep sections 0, A-J.
-3. Regenerate the generated tables and the matrix.
+3. Update the hand-maintained tables and the matrix from content.json.
 4. Write sections B-E and G-I from cited data. Mark every invention. Place the port's history on the shared timeline below; add a timeline row only if no existing one fits.
-5. Add contradictions to canon-data-fixes.md. Never fix the data in the canon PR.
-6. Review: Game Designer (canon), Art Director (section C), Analogist (section D), Sound (section I).
+5. Add contradictions to data-fixes.md. Never fix the data in the canon PR.
+6. Review: design review (canon), art review (section C), analogy review (section D), sound review (section I).
 
 ## Port file sections
 
-0 at a glance (generated) | A trade goods (generated plus prose) | B people | C visual identity (AD pattern) | D analogies (Analogist pattern; at most three plus one contrast) | E governance | F relations with every other port (generated) | G world details (history, population, language, currency, religion, climate, pirates; invented and marked) | H extra depth (thin ports only) | I sound placeholder | J flags.
+0 at a glance (hand-maintained) | A trade goods (hand-maintained plus prose) | B people | C visual identity (visual pattern) | D analogies (analogy pattern; at most three plus one contrast) | E governance | F relations with every other port (hand-maintained) | G world details (history, population, language, currency, religion, climate, pirates; invented and marked) | H extra depth (thin ports only) | I sound and ambience | J flags.
 
-## Shared visual blocks (section C refers here; from canon-port-silva_bay-visual.md)
+## Shared visual blocks (section C refers here)
 
 - Camera: dimetric 2:1, plate camera euler (60, 0, 45), tile 256x128, sun euler (73.4, 0, -54.9), Blender 5.2 EEVEE. sx = 128(X+Y), sy = 64 + 64(X-Y). Any new plate matches this camera or is re-gated.
 - Envelope: judge colour in sRGB with `hdr_2d = false`. Luma p2 65, median 102, p98 141; chroma median 11, p98 35.
   - A swatch outside this range is labelled 'mood, not values'.
   - Accents up to chroma 64 are allowed in small areas only.
   - World palettes are references, not UI tokens. UI stays INK / GOLD / CREAM / MUTED / DUE.
-- Do: compose from the 14 will-use plates; keep `hdr_2d = false`; send any new plate through ANDON and the AD gate with exact 2x (Addendum M.1).
+- Do: compose from the 14 will-use plates; keep `hdr_2d = false`; send any new plate through ANDON and the art gate with exact 2x (Addendum M.1).
 - Don't:
   - use the forbidden paths (`assets/iso/`, `_rejected/`, `assets/rooms/`, `assets/floors/`, `assets/tilesets/`, `stage/room_stage.gd`);
   - use `man_of_war` art (held);
@@ -66,7 +60,7 @@ No canon rule names a fixed list of ports, blocs, goods or regions. The port set
   - put painterly props in the iso harbour;
   - draw character figures or portraits;
   - resample chart water;
-  - spend or open a harbour set without the operator via Coordinator.
+  - spend or open a harbour set without the operator.
 - Signage: ASCII only, at most one cited motto on the landmark, and no world text that duplicates UI copy.
 
 ## Shared timeline (all [invented] unless a cite is named; years before the game's Day 1, 'BS')
@@ -112,6 +106,6 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - README.md (this file)
 - ports/<port_id>.md, one per content.json port
 - relations-matrix.md
-- Outside the tree: canon-data-fixes.md (proposals for the game, not canon)
+- data-fixes.md (proposals for the game, not canon; DF-n items)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.

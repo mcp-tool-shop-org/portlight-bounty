@@ -1,7 +1,7 @@
 # Sun Harbor (sun_harbor)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -18,7 +18,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Cotton | commodity | 15 | 1.5 | 30 | 3.0 | exporter |
@@ -29,7 +29,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Porcelain | luxury | 60 | 0.55 | 5 | 0.5 | importer |
 | Silk | luxury | 70 | 0.5 | 5 | 0.5 | importer |
 | Spice | luxury | 55 | 0.5 | 8 | 0.8 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:803-879. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Grain, Timber, Tea, Pearls, Tobacco, Weapons, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -68,7 +68,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Cotton Steps are the town: Sun Harbor is a marketplace on stairs. Landmark [cite]: "The Cotton Steps - wide stone stairs where cotton bales are displayed and auctioned." (C:12076 area). Cited buildings: The Welcome Dock (harbor_master, C:8562); The Cotton Steps (exchange, C:8572); The Acacia Throne (governor, C:8582); The Cotton House (shipyard, C:8592); Yusuf's Table (tavern, C:8602); The Honest Scale (customs, C:8612); The Contract Mat (broker, C:8622). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Cotton, Iron Ore, Dyes, Pelts; scarce or luxury (imports): Silk, Spice, Rum, Porcelain (section A). Atmosphere [cite]: "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales." (C:12076 area). Climate: section G.
@@ -85,7 +85,7 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## D. Historical analogies (feed [invented] prose; never a cite)
 
-- **Medieval Kano-style cloth markets, as a market function.** Fits: a port where cotton and dyes are weighed and auctioned in public (Cotton 1.5, Dyes 1.4). Suggests: elders bless the first trade; weighers are trusted officials. Limit: borrow the market function only (Analogist risk 1). Avoid: costume or ethnic coding of any kind.
+- **Medieval Kano-style cloth markets, as a market function.** Fits: a port where cotton and dyes are weighed and auctioned in public (Cotton 1.5, Dyes 1.4). Suggests: elders bless the first trade; weighers are trusted officials. Limit: borrow the market function only (analogy rule 1). Avoid: costume or ethnic coding of any kind.
 
 ## E. Governance
 
@@ -98,9 +98,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13725) | 40, cutter, 0.12 (C:2027) | Cotton, Dyes, Pelts | Rum | C:11412 |
@@ -122,7 +122,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | allied (C:13816) | - | Cotton, Pelts | - | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | allied (C:13816) | - | Pelts | Spice | - |
 | Coral Throne | South Seas | The Coral Crown | allied (C:13816) | - | Pelts | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Cotton Crossing": "Mediterranean grain south, Gold Coast cotton north. The route that clothed an empire." (C:2027).
 - Lane lore: "The Long Crossing": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive." (C:2099).
@@ -137,13 +137,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: hot, humid, a wet season of heavy rain; bright sun on the steps. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "the rhythmic singing of dockworkers loading bales"; bales thumping; scales creaking.
 - **Signature:** cotton bale onto a stack (soft, heavy); beam scale settling; morning blessing is a quiet beat.
 - **Music/work songs (NOTE ONLY):** canon's strongest work song - the Weighers "carrying the count in song". Flag for MUSIC when the hold lifts; never as SFX (no voice).
 - **Vs neighbours:** the singing port; soft-fibre thuds vs Iron Point's metal.
-- **Fragments:** `src.cotton_bale`, `src.beam_scale`, `place.bale_quay`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.cotton_bale`, `src.beam_scale`, `place.bale_quay`.
 - Cited hooks: atmosphere "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales."; dock scene "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song." (C:12076 area).
 - Invented bed idea: auction calls on the steps, the elder's blessing at dawn. No assets are requested.
 

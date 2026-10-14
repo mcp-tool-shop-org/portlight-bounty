@@ -1,7 +1,7 @@
 # Ember Isle (ember_isle)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H adds extra invented depth.
 
 ## 0. At a glance
@@ -19,7 +19,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Medicines | medicine | 35 | 1.6 | 20 | 2.5 | exporter |
@@ -31,7 +31,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 | Grain | commodity | 12 | 0.5 | 8 | 0.5 | importer |
 | Timber | commodity | 18 | 0.5 | 8 | 0.5 | importer |
 | Weapons | military | 45 | 0.5 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1663-1747. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Spice, Silk, Porcelain, Tea, Pearls, Tobacco, Opium, Black Powder, Stolen Cargo.
@@ -66,7 +66,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The mountain is the town: Ember Isle lives by what the volcano gives. Landmark [cite]: "Ember Peak - the smoldering volcano visible from fifty leagues, its glow a navigator's beacon." (C:12176 area). Cited buildings: The Black Sand Harbor (harbor_master, C:10828); The Volcanic Garden (exchange, C:10838); The Hot Springs Throne (governor, C:10848); The Healing Springs (tavern, C:10858); The Pigment Cave (shipyard, C:10868); The Export Hut (broker, C:10878). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Medicines, Dyes, Iron Ore; scarce or luxury (imports): Grain, Timber, Weapons, Rum, Pelts, Cotton (section A). Atmosphere [cite]: "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps." (C:12176 area). Climate: section G.
@@ -99,9 +99,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13753) | - | Dyes | Grain, Rum | - |
@@ -123,7 +123,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Spice Narrows | East Indies | The Shadow Ports | neutral (C:13858) | 48, galleon, 0.18 (C:2234) | - | - | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | same bloc | 24, sloop, 0.14 (C:2252) | Medicines | Timber | C:11580 |
 | Coral Throne | South Seas | The Coral Crown | same bloc | 28, sloop, 0.15 (C:2261) | - | Rum | C:11640 |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Volcanic Passage": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days." (C:2234).
 
@@ -143,13 +143,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the Keepers of the mountain, the herbalists and the harbour. Kai's reading of the volcano outranks trade every time.
 - A local law [invented]: no medicine recipe is written down for an outsider; captains carry finished medicine, never the knowledge.
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "the low rumble of a volcano that never fully sleeps"; hot-spring steam vents.
 - **Signature:** steam vent hiss; obsidian scree underfoot; stone placed at the volcano's base (custom).
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the only geological bed (sub rumble); vs Coral Throne's drums and Typhoon's wind.
-- **Fragments:** `src.steam_vent`, `mat.obsidian_scree`, `src.stone_placed`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.steam_vent`, `mat.obsidian_scree`, `src.stone_placed`.
 - Cited hooks: atmosphere "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps."; dock scene "Black sand beaches and obsidian-sharp rocks frame the harbor. Steam rises from hot springs near the dock. Herbalists sort medicinal plants in the warm volcanic soil." (C:12176 area).
 - Invented bed idea: the mountain's rumble, hot springs hissing. No assets are requested.
 

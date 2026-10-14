@@ -1,6 +1,6 @@
 # Cross-port relations matrix
 
-Base commit: 143e284. Generated from content.json (port_politics.relationships, routes, ports[*].market, cross_port_networks), so no port list is hand-typed. Regenerate whenever content.json changes.
+Base commit: 143e284. Hand-maintained from content.json (port_politics.relationships, routes, ports[*].market, cross_port_networks); there is no generator. Update by hand whenever content.json changes.
 
 Cell format: `{disposition}{lane}{flow}{net}`.
 - disposition: S same bloc | A allied | N neutral | R rival | H hostile (bloc to bloc; symmetric in data);
@@ -8,9 +8,9 @@ Cell format: `{disposition}{lane}{flow}{net}`.
 - flow: ` - x{n}`, the number of goods row exports (affinity > 1) that column imports (affinity < 1); directional by nature, so x(row, col) need not equal x(col, row);
 - net: ` - *` when a cross_port_networks link joins the two ports (symmetric).
 
-Column keys: PN = Porto Novo, AM = Al-Manar, SB = Silva Bay, CR = Corsair's Rest, I = Ironhaven, S = Stormwall, T = Thornport, SH = Sun Harbor, PC = Palm Cove, IP = Iron Point, PS = Pearl Shallows, JP = Jade Port, MR = Monsoon Reach, SH = Silk Haven, CI = Crosswind Isle, DG = Dragon's Gate, SN = Spice Narrows, EI = Ember Isle, TA = Typhoon Anchorage, CT = Coral Throne
+Column keys: PN = Porto Novo, AM = Al-Manar, SB = Silva Bay, CR = Corsair's Rest, I = Ironhaven, S = Stormwall, T = Thornport, SH = Sun Harbor, PC = Palm Cove, IP = Iron Point, PS = Pearl Shallows, JP = Jade Port, MR = Monsoon Reach, SK = Silk Haven, CI = Crosswind Isle, DG = Dragon's Gate, SN = Spice Narrows, EI = Ember Isle, TA = Typhoon Anchorage, CT = Coral Throne
 
-| from \ to | PN | AM | SB | CR | I | S | T | SH | PC | IP | PS | JP | MR | SH | CI | DG | SN | EI | TA | CT |
+| from \ to | PN | AM | SB | CR | I | S | T | SH | PC | IP | PS | JP | MR | SK | CI | DG | SN | EI | TA | CT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Porto Novo | . | S - L24s - x2 - * | S - L16s - x2 - * | H - L18s - x1 | A - L36c - x2 | A - x1 | N | N - L40c - x1 - * | N - x1 | N - x2 | N - x2 | R - x2 | N - x2 | R - x2 - * | N - * | R - x1 - * | H - x2 | N - x2 | N - x2 | N - x1 |
 | Al-Manar | S - L24s - * | . | S - L20s | H - x1 | A | A | N - x2 | N - L48b - x1 | N | N - x1 | N - x1 | R | N - L72g - x1 - * | R - x1 | N | R - x1 | H | N | N - x1 | N |
@@ -33,7 +33,7 @@ Column keys: PN = Porto Novo, AM = Al-Manar, SB = Silva Bay, CR = Corsair's Rest
 | Typhoon Anchorage | N - x1 | N | N | N | N - x1 | N | N - x1 | A - x1 | A - x1 | A - x1 | A | A | N - L52g - x1 | A - x1 | N | A | N | S - L24s - x1 - * | . | S - L22b |
 | Coral Throne | N | N - x1 | N - x1 | N | N - x2 | N - x2 | N | A - x1 | A | A - x1 | A - L68g - x1 | A - x1 | N - x1 | A - x1 | N | A - x2 | N - x1 | S - L28s - x1 - * | S - L22b - x1 | . |
 
-Symmetry check (generated): disposition, lane and network parts are identical in (row, col) and (col, row) for every pair. Flow parts differ by design.
+Symmetry check (hand-checked): disposition, lane and network parts are identical in (row, col) and (col, row) for every pair. Flow parts differ by design.
 
 ## Asymmetries in data (flagged, not changed)
 
@@ -42,7 +42,7 @@ Symmetry check (generated): disposition, lane and network parts are identical in
 - Spice Narrows names Jade Port as local rival (C:13680); Jade Port names none (C:13615). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
 - The Silk Circle lists The Iron Pact in `hostile_to` (C:13453) but not the reverse (C:13410); the relationships table says `hostile` (C:13767).
 
-## Per-bloc summary (generated)
+## Per-bloc summary (hand-maintained)
 
 - The Exchange Alliance: Porto Novo, Al-Manar, Silva Bay. Partners The Iron Pact; rivals The Silk Circle; hostile to The Shadow Ports (C:13388).
 - The Iron Pact: Ironhaven, Stormwall. Partners The Exchange Alliance; rivals The Gold Coast Compact; hostile to The Shadow Ports (C:13410).

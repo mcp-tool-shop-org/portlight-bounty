@@ -1,7 +1,7 @@
 # Iron Point (iron_point)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -18,7 +18,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Iron Ore | commodity | 25 | 1.7 | 45 | 4.0 | exporter |
@@ -29,7 +29,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Porcelain | luxury | 60 | 0.55 | 4 | 0.5 | importer |
 | Grain | commodity | 12 | 0.5 | 12 | 1.0 | importer |
 | Medicines | medicine | 35 | 0.5 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:961-1037. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Cotton, Dyes, Spice, Silk, Tea, Pearls, Tobacco, Opium, Black Powder, Stolen Cargo.
@@ -63,7 +63,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The mines are the town: Iron Point lives in the red cliffs and sells what it digs. Landmark [cite]: "The River Mouth Mines - tunnels carved into red cliffs where the river meets the sea." (C:12096 area). Cited buildings: The River Mouth Dock (harbor_master, C:9030); The Assay Office (exchange, C:9040); The Foreman's Post (governor, C:9050); The Mine Kitchen (tavern, C:9060); The Dock Desk (customs, C:9070); Yaa's Wall (broker, C:9080). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Iron Ore; scarce or luxury (imports): Grain, Timber, Porcelain, Weapons, Rum, Medicines, Pelts (section A). Atmosphere [cite]: "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts." (C:12096 area). Climate: section G.
@@ -94,9 +94,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13725) | - | - | Grain, Rum | - |
@@ -118,7 +118,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | allied (C:13816) | - | - | Medicines | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | allied (C:13816) | - | - | Timber | - |
 | Coral Throne | South Seas | The Coral Crown | allied (C:13816) | - | - | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 
 ## G. World details (undefined in data; all [invented] unless cited)
@@ -131,13 +131,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: hot, humid river mouth; red dust in the dry season. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** river-mouth mining town; "the echo of picks from the mine shafts"; ore carts rattling down tracks.
 - **Signature:** ore cart on rails; ore tipped into a hold; spit-and-clasp hands (custom) - very close, optional.
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the only percussive-industrial West Africa port; vs Ironhaven, it is open-air picks and rails, not furnaces.
-- **Fragments:** `src.ore_cart_rail`, `src.pick_far`, `place.river_mouth`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.ore_cart_rail`, `src.pick_far`, `place.river_mouth`.
 - Cited hooks: atmosphere "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts."; dock scene "Ore carts rattle down tracks to the loading docks. The river runs red with mine runoff. Everything here - the buildings, the clothes, the skin - is stained rust." (C:12096 area).
 - Invented bed idea: pick work echoing in tunnels, ore carts on rails. No assets are requested.
 

@@ -1,7 +1,7 @@
 # Silva Bay (silva_bay)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Timber | commodity | 18 | 1.6 | 40 | 3.5 | exporter |
@@ -30,7 +30,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Cotton | commodity | 15 | 0.6 | 10 | 1.0 | importer |
 | Weapons | military | 45 | 0.55 | 8 | 0.8 | importer |
 | Silk | luxury | 70 | 0.5 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:378-456. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Dyes, Spice, Porcelain, Tea, Pearls, Tobacco, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -66,7 +66,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The yard is the town (C:7414, 'The yard IS the town'). Landmark [cite]: "The Master Shipyard - where the finest hulls in the Mediterranean take shape." (C:12026 area). Cited buildings: The Master Shipyard (shipyard, C:7420); The Working Harbor (harbor_master, C:7430); The Timber Yard (exchange, C:7440); The Brotherhood Hall (governor, C:7450); The Dry Dock (tavern, C:7460); The Customs Shed (customs, C:7470); The Broker's Bench (broker, C:7480). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Timber, Iron Ore, Pelts; scarce or luxury (imports): Grain, Cotton, Weapons, Rum, Silk (section A). Atmosphere [cite]: "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels." (C:12026 area). Climate: section G.
@@ -74,13 +74,13 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | weathered tarred timber | (104, 86, 66) #685642 | 88 / 38 | mood, not values | plank walls, roofs, slipways (AD value) |
-| Secondary 1 | forest canopy green | (70, 90, 64) #465A40 | 84 / 26 | in range | 'dense forests' (AD value) |
-| Secondary 2 | fieldstone and wet quay grey | (118, 116, 108) #76746C | 116 / 10 | in range | footings and quay (AD value) |
-| Accent | fresh-cut oak and sawdust | (166, 140, 102) #A68C66 | 143 / 64 | mood, not values | fresh cuts and sawdust only (AD value) |
+| Dominant | weathered tarred timber | (104, 86, 66) #685642 | 88 / 38 | mood, not values | plank walls, roofs, slipways (art-reviewed value) |
+| Secondary 1 | forest canopy green | (70, 90, 64) #465A40 | 84 / 26 | in range | 'dense forests' (art-reviewed value) |
+| Secondary 2 | fieldstone and wet quay grey | (118, 116, 108) #76746C | 116 / 10 | in range | footings and quay (art-reviewed value) |
+| Accent | fresh-cut oak and sawdust | (166, 140, 102) #A68C66 | 143 / 64 | mood, not values | fresh cuts and sawdust only (art-reviewed value) |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: timber grade chalk marks A, B, C; a keel-section silhouette; an adze. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: low serrated shed ridges stepping back from the quay, warehouses behind, the forest band beyond; the slipway with a half-built hull's ribs is the only tall shape. 7. Do and don't: README shared list.
-Man-of-war note (Coordinator rule 2): the Royal Man-of-War stays in lore as a Silva Bay yard product, since the sim sells it at every shipyard (crates/portlight-sim/src/session.rs:3037-3043; C:193). No plate art exists for it (PB-002 Addendum A holds `man_of_war`), so no art depicts it until that hold lifts.
+Man-of-war note (design ruling 2): the Royal Man-of-War stays in lore as a Silva Bay yard product, since the sim sells it at every shipyard (crates/portlight-sim/src/session.rs:3037-3043; C:193). No plate art exists for it (PB-002 Addendum A holds `man_of_war`), so no art depicts it until that hold lifts.
 
 ## D. Historical analogies (feed [invented] prose; never a cite)
 
@@ -100,9 +100,9 @@ Man-of-war note (Coordinator rule 2): the Royal Man-of-War stays in lore as a Si
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | same bloc | 16, sloop, 0.08 (C:1937) | Pelts, Timber | Grain, Rum | C:11604 |
@@ -124,7 +124,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13753) | - | Pelts, Timber | - | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13753) | - | Pelts | - | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13753) | - | Pelts | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Timber Run": "Short and safe - the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet." (C:1937).
 
@@ -138,13 +138,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: Mediterranean coast with a wetter forested hinterland; morning sea fog over the mast pond. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** forest-backed bay; "the rhythmic sound of adzes shaping keels"; sawdust-soft quay; hot pitch bubbling.
 - **Signature:** adze bite into green timber; mallet on treenail; pitch pot simmer.
 - **Music/work songs (NOTE ONLY):** none in canon; adze rhythm is the work-song stand-in.
 - **Vs neighbours:** wood-on-wood (Ironhaven is iron-on-iron); a working yard, not a market.
-- **Fragments:** reuse `place.dockside_yard`, `place.timber_quay`; new `src.adze_keel`, `src.pitch_pot`.
+- **Fragments [proposal; no fragment or asset exists yet]:** proposed `place.dockside_yard`, `place.timber_quay`, `src.adze_keel`, `src.pitch_pot`.
 - Cited hooks: atmosphere "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels."; dock scene "Sawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish." (C:12026 area).
 - Invented bed idea: adzes, saws and mallets; the Hall bell opening council; timber barges at dawn. No assets are requested.
 
@@ -157,6 +157,6 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - DF-12: Rosa and Ingrid network says 'Northern solidarity'
 - DF-13: Silva Bay 'cheapest repairs' is a tie
 - DF-14: Brotherhood 'never builds warships' conflicts with the sim
-- Resolved in lore: Warships (Coordinator rule 2): the yard builds single hulls of every class, including the Royal Man-of-War, for any captain at its own slipways. It refuses to build a war fleet to any power's order; that was the Iron Pact refusal (T15). Data wording: DF-14.
+- Resolved in lore: Warships (design ruling 2): the yard builds single hulls of every class, including the Royal Man-of-War, for any captain at its own slipways. It refuses to build a war fleet to any power's order; that was the Iron Pact refusal (T15). Data wording: DF-14.
 - Resolved in lore: The tavern rumour about storm-lost captains is an unreliable rumour. Elena builds for anyone who respects ships.
 - Resolved in lore: Rosa's network text: canon treats her as Mediterranean (DF-12).

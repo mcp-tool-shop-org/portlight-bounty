@@ -1,7 +1,7 @@
 # Coral Throne (coral_throne)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H adds extra invented depth.
 
 ## 0. At a glance
@@ -19,7 +19,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Pearls | luxury | 95 | 1.5 | 10 | 1.5 | exporter |
@@ -31,7 +31,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 | Porcelain | luxury | 60 | 0.45 | 4 | 0.3 | importer |
 | Weapons | military | 45 | 0.4 | 4 | 0.3 | importer |
 | Silk | luxury | 70 | 0.4 | 4 | 0.3 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1839-1923. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Timber, Iron Ore, Cotton, Dyes, Spice, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -67,7 +67,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Palace is the kingdom: Coral Throne is the Coral King's court with a harbour attached. Landmark [cite]: "The Coral Palace - grown over centuries from living reef, rising from the lagoon like a crown." (C:12196 area). Cited buildings: The Lagoon Entrance (harbor_master, C:11220); The Pearl Hall (exchange, C:11230); The Coral Palace (governor, C:11240); The Drum Circle (tavern, C:11250); The War Canoe Dock (customs, C:11260); The Royal Trading Post (broker, C:11270). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Pearls, Tobacco, Rum; scarce or luxury (imports): Weapons, Silk, Tea, Grain, Pelts, Porcelain (section A). Atmosphere [cite]: "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums." (C:12196 area). Climate: section G.
@@ -84,7 +84,7 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## D. Historical analogies (feed [invented] prose; never a cite)
 
-- **Tribute courts, as an institution.** Fits: a court that requires tribute before trade (custom). Suggests: tribute first, then business; refusal is exile. Limit: institution only; not any real people (Analogist risk 1). Avoid: exotic-kingdom costume.
+- **Tribute courts, as an institution.** Fits: a court that requires tribute before trade (custom). Suggests: tribute first, then business; refusal is exile. Limit: institution only; not any real people (analogy rule 1). Avoid: exotic-kingdom costume.
 - **Reef-built lagoon towns, as architecture.** Fits: a palace grown from living reef (landmark). Suggests: building as slow cultivation; the reef pilot as gatekeeper. Limit: architecture only. Avoid: no real place named.
 - **Ceremonial drum courts, as a calendar.** Fits: a Drum Keeper keeps traditions (NPC). Suggests: drums announce tribute, judgments and arrivals. Limit: calendar function only.
 - Contrast, not model: Crosswind Isle has no master; Coral Throne has nothing else.
@@ -100,9 +100,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13753) | - | - | Grain | - |
@@ -124,7 +124,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Spice Narrows | East Indies | The Shadow Ports | neutral (C:13858) | - | Rum | - | - |
 | Ember Isle | South Seas | The Coral Crown | same bloc | 28, sloop, 0.15 (C:2261) | Rum | - | C:11640 |
 | Typhoon Anchorage | South Seas | The Coral Crown | same bloc | 22, brigantine, 0.13 (C:2270) | Rum | - | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Deep South Run": "Pearl to pearl. The divers of the shallows and the divers of the reef - same craft, different kingdoms." (C:2306).
 
@@ -144,16 +144,16 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the king's household, the war chief's guard and the reef pilots. The pilots are quietly the most powerful, because no ship enters the lagoon without one.
 - A local law [invented]: a refused tribute ends in exile from the lagoon (custom, cited), never in a fight in harbour.
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** lagoon calm; "the distant beat of ceremonial drums"; crushed coral underfoot; war-canoe escort paddles.
 - **Signature:** footstep on crushed coral; war-canoe paddle strokes in unison; tribute chest set before the court.
 - **Music/work songs (NOTE ONLY):** ceremonial drums are canon - strongest drum note after Stormwall; keep distinct (royal, slow) if music opens.
 - **Vs neighbours:** ceremonial court; vs Ember Isle's geology, vs Typhoon's wind.
-- **Fragments:** `mat.crushed_coral`, `src.war_canoe_paddles`, `place.lagoon`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `mat.crushed_coral`, `src.war_canoe_paddles`, `place.lagoon`.
 - Cited hooks: atmosphere "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums."; dock scene "The lagoon entrance is narrow and treacherous - local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock." (C:12196 area).
 - Invented bed idea: drums from the palace, surf on the outer reef. No assets are requested.
 
 ## J. Flags for this port
 
-- none beyond the shared ones in canon-data-fixes.md.
+- none beyond the shared ones in data-fixes.md.

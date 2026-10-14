@@ -1,7 +1,7 @@
 # Pearl Shallows (pearl_shallows)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -18,7 +18,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Pearls | luxury | 95 | 1.7 | 12 | 1.5 | exporter |
@@ -29,7 +29,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Rum | provision | 20 | 0.7 | 8 | 0.8 | importer |
 | Silk | luxury | 70 | 0.5 | 5 | 0.5 | importer |
 | Medicines | medicine | 35 | 0.45 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1040-1116. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Timber, Iron Ore, Spice, Porcelain, Tea, Tobacco, Weapons, Opium, Black Powder, Stolen Cargo.
@@ -63,7 +63,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Blessing Pool is the town's heart: Pearl Shallows waits on its divers. Landmark [cite]: "The Blessing Pool - a tidal pool where divers pray before descending." (C:12106 area). Cited buildings: The Reef Approach (harbor_master, C:9226); The Grading Stone (exchange, C:9236); The Blessing Pool (governor, C:9246); The Color Workshop (shipyard, C:9256); The Pool's Edge (tavern, C:9266); The Pearl Mat (broker, C:9276). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Pearls, Cotton, Dyes; scarce or luxury (imports): Medicines, Grain, Silk, Rum (section A). Atmosphere [cite]: "Warm shallow water, coral sand, and the silence of divers preparing their breath." (C:12106 area). Climate: section G.
@@ -94,9 +94,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13725) | - | Cotton, Dyes | Grain, Rum | - |
@@ -118,7 +118,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | allied (C:13816) | - | Cotton | Medicines | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | allied (C:13816) | - | - | - | - |
 | Coral Throne | South Seas | The Coral Crown | allied (C:13816) | 68, galleon, 0.2 (C:2306) | - | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Deep South Run": "Pearl to pearl. The divers of the shallows and the divers of the reef - same craft, different kingdoms." (C:2306).
 
@@ -132,13 +132,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: warm, still shallows; calm seas most of the year. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** near-silent - "the silence of divers preparing their breath"; canoe paddles; shallow lapping.
 - **Signature:** diver surfacing exhale; pearl pouch untied; paddle dip.
 - **Music/work songs (NOTE ONLY):** none - sacred quiet is the design; leave space.
 - **Vs neighbours:** quietest port in the game; vs Typhoon/Coral pearls, this is calm and patient.
-- **Fragments:** `src.diver_breath` (breath only, no voice), `src.canoe_paddle`, `place.warm_shallows`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.diver_breath` (breath only, no voice), `src.canoe_paddle`, `place.warm_shallows`.
 - Cited hooks: atmosphere "Warm shallow water, coral sand, and the silence of divers preparing their breath."; dock scene "Canoes glide in from the reef. Divers emerge glistening, pouches of pearls tied to their wrists. An elder sits under a baobab tree, examining each pearl by sunlight." (C:12106 area).
 - Invented bed idea: water lapping, quiet prayer, divers' breath counts. No assets are requested.
 

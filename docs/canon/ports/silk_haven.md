@@ -1,7 +1,7 @@
 # Silk Haven (silk_haven)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H adds extra invented depth.
 
 ## 0. At a glance
@@ -19,7 +19,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Silk | luxury | 70 | 1.7 | 35 | 3.5 | exporter |
@@ -31,7 +31,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 | Dyes | commodity | 22 | 0.5 | 5 | 0.5 | importer |
 | Iron Ore | commodity | 25 | 0.5 | 5 | 0.5 | importer |
 | Rum | provision | 20 | 0.45 | 8 | 0.8 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1295-1379. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Timber, Tea, Pearls, Tobacco, Weapons, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -68,7 +68,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Loom Quarter is the town: Silk Haven measures time in weaving patterns a thousand years old. Landmark [cite]: "The Loom Quarter - where silk is woven in patterns a thousand years old." (C:12136 area). Cited buildings: The Arranged Harbor (harbor_master, C:9892); The Loom Quarter (exchange, C:9902); The Silk Court (governor, C:9912); The Brush and Bowl (tavern, C:9922); The Silk Warehouse (shipyard, C:9932); The Touch Room (customs, C:9942); The Story Room (broker, C:9952). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Silk, Porcelain; scarce or luxury (imports): Spice, Rum, Dyes, Iron Ore, Cotton, Grain, Pelts (section A). Atmosphere [cite]: "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam." (C:12136 area). Climate: section G.
@@ -102,9 +102,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | rival (C:13732) | - | Porcelain | Grain, Rum | C:11628 |
@@ -126,7 +126,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | allied (C:13837) | - | - | Dyes, Iron Ore | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | allied (C:13837) | - | Porcelain, Silk | Spice | - |
 | Coral Throne | South Seas | The Coral Crown | allied (C:13837) | - | Porcelain, Silk | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Silk Road by Sea": "Where porcelain meets silk. The two oldest trades in the East, connected by the shortest route." (C:2171).
 - Asymmetry flag: Silk Haven names Jade Port as local rival (C:13624); Jade Port names none (C:13615). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
@@ -147,13 +147,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the Weavers' Guild, the Circle Magistrate and the merchant factors. The guild outranks the factors on any question of quality.
 - A local law [invented]: no bolt leaves without the inspector's seal; rolled silk is refused at the quay (custom extends this).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "the rhythmic clack of a hundred looms, the rustle of silk, and green tea steam"; sampans gliding.
 - **Signature:** loom shuttle clack; silk bolt unfolded (custom: folded, never rolled); tea steam hiss.
 - **Music/work songs (NOTE ONLY):** none; loom rhythm is the pulse.
 - **Vs neighbours:** soft fabric + wood looms vs Jade Port's ceramic taps.
-- **Fragments:** `src.loom_shuttle`, `mat.silk_fold`, `src.sampan_scull`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.loom_shuttle`, `mat.silk_fold`, `src.sampan_scull`.
 - Cited hooks: atmosphere "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam."; dock scene "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch." (C:12136 area).
 - Invented bed idea: hundreds of looms clacking; the calligrapher's brush. No assets are requested.
 

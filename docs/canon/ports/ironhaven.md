@@ -1,7 +1,7 @@
 # Ironhaven (ironhaven)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -18,7 +18,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Iron Ore | commodity | 25 | 1.7 | 45 | 4.0 | exporter |
@@ -30,7 +30,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Grain | commodity | 12 | 0.55 | 15 | 1.0 | importer |
 | Cotton | commodity | 15 | 0.5 | 12 | 1.0 | importer |
 | Silk | luxury | 70 | 0.45 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:556-642. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Dyes, Spice, Porcelain, Tea, Pearls, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -69,7 +69,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Foundry is the town: its chimney is the port's lighthouse. Landmark [cite]: "The Great Foundry - its chimney visible twenty leagues at sea, glowing red at night." (C:12046 area). Cited buildings: The Iron Dock (harbor_master, C:7888); The Great Foundry (exchange, C:7898); The Pact Office (governor, C:7908); The Deep Forge (shipyard, C:7918); The Forge & Anchor (tavern, C:7928); The Weapons Registry (customs, C:7938); The Contract Hall (broker, C:7948). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Iron Ore, Weapons, Pelts; scarce or luxury (imports): Timber, Grain, Cotton, Tobacco, Silk, Rum (section A). Atmosphere [cite]: "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces." (C:12046 area). Climate: section G.
@@ -101,9 +101,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | allied (C:13718) | 36, cutter, 0.12 (C:2000) | Pelts | Grain, Rum | - |
@@ -125,7 +125,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13788) | - | Pelts, Weapons | - | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13788) | - | Pelts | Timber | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13788) | - | Pelts, Weapons | Rum, Tobacco | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Iron Strait": "Iron from the foundries, soldiers from the fortress. This lane never sleeps." (C:1973).
 - Lane lore: "The Northern Passage": "Iron west, porcelain east. The longest profitable route in the world." (C:2297).
@@ -140,13 +140,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: cold, wet, smoky; snow on the foundry roofs in winter. Regional weather [cite]: "Grey skies press low. The Atlantic rolls in long, heavy swells." (C:11782 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879), The Iron Wolves (C:2905).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "ringing hammers, and the deep bass hum of bellows forcing air into furnaces"; crane chains; spark crackle.
 - **Signature:** hammer on anvil (short, dry - no ring-out per section 1); bellows breath; ingot set on barge deck.
 - **Music/work songs (NOTE ONLY):** none; northern reticence (custom: a nod, not words).
 - **Vs neighbours:** the only metal-industrial bed; Stormwall is military order, Thornport is wood smoke and fish.
-- **Fragments:** `src.anvil_hammer`, `src.bellows`, `place.foundry_quay`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.anvil_hammer`, `src.bellows`, `place.foundry_quay`.
 - Cited hooks: atmosphere "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces."; dock scene "Iron-hulled barges sit low in the water. Cranes swing overhead, loading ingots onto merchant vessels. Sparks drift from the foundry like orange snowflakes." (C:12046 area).
 - Invented bed idea: trip hammers, bellows, the foundry horn at shift change. No assets are requested.
 

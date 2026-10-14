@@ -1,7 +1,7 @@
 # Spice Narrows (spice_narrows)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H adds extra invented depth.
 
 ## 0. At a glance
@@ -19,7 +19,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Spice | luxury | 55 | 1.8 | 40 | 4.0 | exporter |
@@ -32,7 +32,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 | Black Powder | contraband | 65 | 0.6 | 4 | 0.3 | importer |
 | Weapons | military | 45 | 0.5 | 5 | 0.5 | importer |
 | Grain | commodity | 12 | 0.5 | 8 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1566-1660. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Timber, Iron Ore, Cotton, Dyes, Porcelain, Tea, Tobacco, Medicines.
@@ -67,7 +67,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Hanging Market is the town: everything in Spice Narrows hangs over water and can be cut loose. Landmark [cite]: "The Hanging Market - stalls suspended on ropes between cliff faces above the water." (C:12166 area). Cited buildings: The Volcanic Channel (harbor_master, C:10594); The Dark Room (exchange, C:10604); The Deep Throne (governor, C:10614); Mama Smoke's Cave (tavern, C:10624); The Intelligence Cave (customs, C:10634); The Poison Lab (apothecary, C:10644); The Contract Wall (broker, C:10654). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Spice, Pearls, Opium; scarce or luxury (imports): Silk, Weapons, Grain, Rum, Pelts, Black Powder (section A). Atmosphere [cite]: "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes." (C:12166 area). Climate: section G.
@@ -101,9 +101,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | hostile (C:13746) | - | - | Grain, Rum | - |
@@ -125,7 +125,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13858) | 48, galleon, 0.18 (C:2234) | - | - | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13858) | - | - | - | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13858) | - | - | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Volcanic Passage": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days." (C:2234).
 - Lane lore: "The Smuggler's Run": "Only the desperate or the bold sail this direct. Pirate kings once controlled both ends." (C:2288).
@@ -147,13 +147,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the Spice Lords own the anchorage. The Monsoon Syndicate is a tenant that pays in silence, and the Weigher's word ends every dispute.
 - A local law [invented]: a whispered price is binding; a spoken one is an insult and voids the deal.
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** hidden between volcanic cliffs; "prices are whispered ... the water carries sound"; rope ladders; vertical market overhead.
 - **Signature:** rope ladder rung creak; basket hauled up on rope; whisper-close cloth rustle (no voice).
 - **Music/work songs (NOTE ONLY):** none - silence is canon.
 - **Vs neighbours:** echoing, vertical; vs Al-Manar's whispers on marble, this is rope and cliff echo. (Only port where a short cliff echo is canon-justified - a deliberate section 1 exception if ever used.)
-- **Fragments:** `src.rope_ladder`, `src.basket_haul`, `place.cliff_anchorage`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.rope_ladder`, `src.basket_haul`, `place.cliff_anchorage`.
 - Cited hooks: atmosphere "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes."; dock scene "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical - everything climbs." (C:12166 area).
 - Invented bed idea: whispers, ropes creaking, water below. No assets are requested.
 

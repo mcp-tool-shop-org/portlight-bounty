@@ -1,7 +1,7 @@
 # Dragon's Gate (dragons_gate)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H adds extra invented depth.
 
 ## 0. At a glance
@@ -19,7 +19,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Tea | luxury | 40 | 1.5 | 25 | 3.0 | exporter |
@@ -30,7 +30,7 @@ Depth: one of the five thinnest ports in data (inventory 'Undefined'); section H
 | Iron Ore | commodity | 25 | 0.5 | 8 | 0.8 | importer |
 | Tobacco | provision | 28 | 0.5 | 6 | 0.5 | importer |
 | Medicines | medicine | 35 | 0.4 | 5 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1487-1563. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Grain, Timber, Dyes, Spice, Silk, Pearls, Weapons, Opium, Black Powder, Stolen Cargo.
@@ -65,7 +65,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Gate is the town: Dragon's Gate exists to open or close a strait. Landmark [cite]: "The Gate Fortress - twin stone towers flanking the strait, chains ready to close the passage." (C:12156 area). Cited buildings: The Chain Harbor (harbor_master, C:10360); The Tea Terraces (exchange, C:10370); The Gate Command (governor, C:10380); The Gate Inn (tavern, C:10390); The Strip Room (customs, C:10400); The Strait Infirmary (apothecary, C:10410); The Permitted Desk (broker, C:10420). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Tea, Porcelain; scarce or luxury (imports): Medicines, Iron Ore, Tobacco, Rum, Cotton, Pelts (section A). Atmosphere [cite]: "Military precision, jasmine tea, and the distant clank of the harbor chains." (C:12156 area). Climate: section G.
@@ -99,9 +99,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | rival (C:13732) | - | Porcelain | Rum | C:11712 |
@@ -123,7 +123,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | allied (C:13837) | - | - | Iron Ore, Medicines | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | allied (C:13837) | - | Porcelain | - | - |
 | Coral Throne | South Seas | The Coral Crown | allied (C:13837) | - | Porcelain, Tea | Rum, Tobacco | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 
 ## G. World details (undefined in data; all [invented] unless cited)
@@ -142,16 +142,16 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions inside the Gate [invented]: the tower crews, the inspectors and the inn keepers. The inspectors hold the real power because they decide what counts as a weapon.
 - A local law [invented]: medicines pass duty-free (consistent with 'medicines are gold', description). Weapons are declared or confiscated (custom, cited).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "military precision, jasmine tea, and the distant clank of the harbor chains"; lacquered armour moving.
 - **Signature:** harbour chain clank; lacquer-armour plate creak; tea poured on the inner docks.
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the strait fortress; chains + lacquer vs Stormwall's gates + drums; patience vs Crosswind's bustle.
-- **Fragments:** `src.harbour_chain`, `mat.lacquer_armour`, `place.strait_fort`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.harbour_chain`, `mat.lacquer_armour`, `place.strait_fort`.
 - Cited hooks: atmosphere "Military precision, jasmine tea, and the distant clank of the harbor chains."; dock scene "Soldiers in lacquered armor inspect every ship that passes the twin towers. Tea merchants wait patiently on the inner docks, knowing inspection takes time." (C:12156 area).
 - Invented bed idea: the chain winch, the tower gong at closing, inspectors' calls. No assets are requested.
 
 ## J. Flags for this port
 
-- none beyond the shared ones in canon-data-fixes.md.
+- none beyond the shared ones in data-fixes.md.

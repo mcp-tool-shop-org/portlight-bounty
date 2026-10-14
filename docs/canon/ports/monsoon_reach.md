@@ -1,7 +1,7 @@
 # Monsoon Reach (monsoon_reach)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Spice | luxury | 55 | 1.4 | 22 | 2.5 | exporter |
@@ -31,7 +31,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Grain | commodity | 12 | 0.6 | 10 | 1.0 | importer |
 | Cotton | commodity | 15 | 0.5 | 8 | 0.8 | importer |
 | Timber | commodity | 18 | 0.45 | 8 | 0.8 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1206-1292. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Iron Ore, Dyes, Tea, Pearls, Tobacco, Weapons, Opium, Black Powder, Stolen Cargo.
@@ -68,7 +68,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Wind Temple keeps the calendar: Monsoon Reach is a port timed by the monsoon. Landmark [cite]: "The Wind Temple - a pagoda on the headland where monks track the monsoon." (C:12126 area). Cited buildings: The Headland Harbor (harbor_master, C:9656); The Wind Temple (apothecary, C:9666); The Monsoon Yard (shipyard, C:9676); The Spice Crossroads (exchange, C:9686); The Temple Hall (governor, C:9696); The Flow Desk (customs, C:9706); The Bridge Desk (broker, C:9716). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Spice, Silk; scarce or luxury (imports): Cotton, Timber, Rum, Medicines, Grain, Porcelain, Pelts (section A). Atmosphere [cite]: "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging." (C:12126 area). Climate: section G.
@@ -98,9 +98,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13739) | - | - | Grain, Rum | - |
@@ -122,7 +122,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13851) | - | - | Medicines | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13851) | 52, galleon, 0.2 (C:2225) | Silk | Timber | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13851) | - | Silk | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "Typhoon Alley": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival." (C:2225).
 - Lane lore: "The Monsoon Shortcut": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown." (C:2279).
@@ -137,16 +137,16 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: two monsoons a year; dry clear months between. Regional weather [cite]: "Incense drifts from a passing junk. The air is thick with spice." (C:11892 area, weather_flavor).
 - Pirates in these waters [cite]: The Monsoon Syndicate (C:2888).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "salt spray, incense ... and the creak of monsoon-tested rigging"; wind round a headland.
 - **Signature:** heavy rigging creak under load; deep-keel hull settling; temple incense is smell only - no gong/bell (pitched).
 - **Music/work songs (NOTE ONLY):** monk chant would be invented; canon names forecasts, not chant - avoid.
 - **Vs neighbours:** wind-and-rope port; vs Typhoon Anchorage, steady seasonal wind, not storm.
-- **Fragments:** `src.rigging_strain`, `place.headland_harbour`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.rigging_strain`, `place.headland_harbour`.
 - Cited hooks: atmosphere "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging."; dock scene "The harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts - the monsoon demands it." (C:12126 area).
 - Invented bed idea: temple wind chimes, rain on palm roofs, the yard. No assets are requested.
 
 ## J. Flags for this port
 
-- none beyond the shared ones in canon-data-fixes.md.
+- none beyond the shared ones in data-fixes.md.

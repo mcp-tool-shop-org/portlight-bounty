@@ -1,7 +1,7 @@
 # Crosswind Isle (crosswind_isle)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Grain | commodity | 12 | 1.0 | 15 | 1.5 | neutral |
@@ -33,7 +33,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Tea | luxury | 40 | 1.0 | 8 | 0.8 | neutral |
 | Tobacco | provision | 28 | 1.0 | 8 | 0.8 | neutral |
 | Pelts | commodity | 8 | 0.9 | 8 | 1.0 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1382-1484. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Dyes, Pearls, Weapons, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -66,7 +66,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Bell is the law: Crosswind Isle is a meeting place with no master. Landmark [cite]: "The Free Port Bell - rung once for every ship that enters, never for one that leaves." (C:12146 area). Cited buildings: The Free Dock (harbor_master, C:10126); The Open Market (exchange, C:10136); The Captain's Table (governor, C:10146); The Bell and Board (tavern, C:10156); The Empty Chair (apothecary, C:10166); Hassan's Table (customs, C:10176); The Dock Scrum (broker, C:10186). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): none; scarce or luxury (imports): Pelts (section A). Atmosphere [cite]: "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade." (C:12146 area). Climate: section G.
@@ -96,9 +96,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13739) | - | - | - | C:11556 |
@@ -120,7 +120,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13851) | 56, galleon, 0.19 (C:2243) | - | - | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13851) | - | - | - | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13851) | - | - | - | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Long Crossing": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive." (C:2099).
 - Lane lore: "The Porcelain Lane": "From the free port to the kiln masters. Every piece of porcelain in the west passed through here." (C:2126).
@@ -135,13 +135,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: windy junction of the trade winds; squalls but rarely storms. Regional weather [cite]: "Incense drifts from a passing junk. The air is thick with spice." (C:11892 area, weather_flavor).
 - Pirates in these waters [cite]: The Monsoon Syndicate (C:2888).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** crowded free port; "a dozen languages", cooking smoke; ships jostling; flags snapping.
 - **Signature:** money-changer's coin table set down; many-flag halyard flap; the Free Port Bell tolling on entry (ambience only).
 - **Music/work songs (NOTE ONLY):** none; the language mix is walla - on hold.
 - **Vs neighbours:** busiest, most mixed East Indies bed; Dragon's Gate is disciplined, Spice Narrows is hushed.
-- **Fragments:** `src.changer_table`, `src.flag_snap`, `place.free_port_quay`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.changer_table`, `src.flag_snap`, `place.free_port_quay`.
 - Cited hooks: atmosphere "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade."; dock scene "Ships from every region jostle for berth. The Free Port Bell tolls as you enter. Money-changers set up tables on the dock before your anchor hits bottom." (C:12146 area).
 - Invented bed idea: the Free Port Bell for every arrival; many languages at once. No assets are requested.
 

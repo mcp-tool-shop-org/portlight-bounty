@@ -1,7 +1,7 @@
 # Porto Novo (porto_novo)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -19,7 +19,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Grain | commodity | 12 | 1.4 | 35 | 3.0 | exporter |
@@ -30,7 +30,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Cotton | commodity | 15 | 0.6 | 12 | 1.0 | importer |
 | Dyes | commodity | 22 | 0.6 | 10 | 1.0 | importer |
 | Porcelain | luxury | 60 | 0.55 | 6 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:210-288. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Spice, Silk, Tea, Pearls, Tobacco, Weapons, Medicines, Opium, Black Powder, Stolen Cargo.
@@ -42,7 +42,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 ## B. People
 
 - Cultural group: The Exchange Guild: "Keepers of the price - they set the dawn rates and arbitrate disputes." (C:12006 area).
-- Local custom: "Captains ring the harbor bell on first arrival. It's bad luck not to." (C:12006 area).
+- Local custom: "Captains ring the harbour bell on first arrival. It's bad luck not to." (C:12006 area).
 - Regional ethos: "Civilization is commerce. The law of contract binds harder than iron, and a merchant's word, once given, is recorded in stone." Greeting: "Welcome to port, Captain. Your cargo manifest, if you please." Proverb: "A contract honored is worth more than gold hoarded." (C:11728 area).
 - Tavern rumour (in-world, unreliable): "They say the Grain Exchange is built on the ruins of an older temple. Some nights the clerks hear chanting from beneath the floor." (C:12006 area).
 
@@ -74,7 +74,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Exchange is the town: every street runs downhill to the Grain Exchange, and the bell decides the day. Landmark [cite]: "The Grain Exchange - a columned hall where prices are read aloud at dawn." (C:12006 area). Cited buildings: The Harbor Master's Tower (harbor_master, C:6958); The Grain Exchange (exchange, C:6968); Andros & Sons Shipyard (shipyard, C:6978); The Governor's Residence (governor, C:6988); The Harbor Bell (tavern, C:6998); The Customs House (customs, C:7008); The Broker's Desk (broker, C:7018). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Grain, Rum; scarce or luxury (imports): Timber, Cotton, Dyes, Pelts, Porcelain (section A). Atmosphere [cite]: "Flour dust, sea salt, and the shouts of dockhands loading grain barges." (C:12006 area). Climate: section G.
@@ -85,7 +85,7 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 | Dominant | limewashed stone in shade | (120, 114, 104) #787268 | 115 / 16 | in range | the columned Grain Exchange |
 | Secondary 1 | grain-sack hemp | (128, 112, 86) #807056 | 114 / 42 | mood, not values | grain, its main export |
 | Secondary 2 | harbour slate | (92, 96, 98) #5C6062 | 95 / 6 | in range | quay and civic roofs |
-| Accent | Exchange brass | (150, 126, 80) #967E50 | 128 / 70 | mood, not values | the harbor bell and scale pans |
+| Accent | Exchange brass | (150, 126, 80) #967E50 | 128 / 70 | mood, not values | the harbour bell and scale pans |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a balance scale, wheat sheaf, the bell. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a columned hall on a rise with warehouses stepping down to the quay; the harbour bell tower is the tallest point. 7. Do and don't: README shared list.
 
@@ -106,9 +106,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Al-Manar | Mediterranean | The Exchange Alliance | same bloc | 24, sloop, 0.12 (C:1928) | Grain, Rum | - | C:11520, C:11592, C:11664 |
@@ -130,7 +130,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Ember Isle | South Seas | The Coral Crown | neutral (C:13753) | - | Grain, Rum | Dyes | - |
 | Typhoon Anchorage | South Seas | The Coral Crown | neutral (C:13753) | - | Grain, Rum | Timber | - |
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13753) | - | Grain | - | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "The Grain Road": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory." (C:1928).
 - Lane lore: "The Timber Run": "Short and safe - the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet." (C:1937).
@@ -148,13 +148,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: dry summers, wet winters; olive country inland. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** big, busy stone quays; "shouts of dockhands loading grain barges"; barges knocking fenders; sacks thudding.
 - **Signature:** heavy grain sack dropped on stone; stylus on wax tablet (clerks tallying bushels); the harbour bell rung on first arrival (custom) - port-ambience only.
 - **Music/work songs (NOTE ONLY):** dockhand call-and-response is plausible but canon says "shouts", not song - keep as shouts (and voice is on hold).
 - **Vs neighbours:** the loud, open, grain-dusty Med hub; Al-Manar whispers, Silva Bay is woodwork.
-- **Fragments:** `src.grain_sack_drop`, `mat.wax_tablet`, `place.stone_quay`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.grain_sack_drop`, `mat.wax_tablet`, `place.stone_quay`.
 - Cited hooks: atmosphere "Flour dust, sea salt, and the shouts of dockhands loading grain barges."; dock scene "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks." (C:12006 area).
 - Invented bed idea: dawn price-calling in the Exchange; the arrival bell; grain chutes. No assets are requested.
 

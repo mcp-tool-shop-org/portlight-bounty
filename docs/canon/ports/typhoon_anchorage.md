@@ -1,7 +1,7 @@
 # Typhoon Anchorage (typhoon_anchorage)
 
-Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Seat: Game Designer, 2026-10-14.
-Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (AD or Analogist pattern) | DF-n see canon-data-fixes.md | T-n see README shared timeline.
+Base commit: 143e284 (content.json unchanged since 45b7378). Status: draft canon, phase 1. Written 2026-10-14.
+Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] (design-notes pattern) | DF-n see data-fixes.md | T-n see README shared timeline.
 
 ## 0. At a glance
 
@@ -18,7 +18,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 
 ## A. Specialties and trade goods
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Good | Category | Base | Affinity | Stock target | Restock | Role |
 |---|---|---|---|---|---|---|
 | Pearls | luxury | 95 | 1.7 | 15 | 2.0 | exporter |
@@ -30,7 +30,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 143e284. Legend
 | Grain | commodity | 12 | 0.55 | 6 | 0.5 | importer |
 | Silk | luxury | 70 | 0.45 | 5 | 0.5 | importer |
 | Porcelain | luxury | 60 | 0.45 | 4 | 0.5 | importer |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 Market cite: C:1750-1836. Price rule: base x (target / stock) / affinity (crates/portlight-sim/src/economy.rs:37); affinity above 1 is cheap here.
 Not traded here: Iron Ore, Cotton, Dyes, Tea, Tobacco, Weapons, Opium, Black Powder, Stolen Cargo.
@@ -66,7 +66,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
-Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
+Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
 1. Architecture. Identity line [invented]: The Storm Wall is the town: a breakwater of dead ships that keeps the living ones afloat. Landmark [cite]: "The Storm Wall - a massive breakwater built from the hulls of ships that didn't make it." (C:12186 area). Cited buildings: The Chained Harbor (harbor_master, C:11024); The Deep Reef (exchange, C:11034); The Storm Wall (governor, C:11044); Hine's Storm Grill (tavern, C:11054); The Wreck Yard (shipyard, C:11064); Wiremu's Steady Desk (broker, C:11074). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
 2. Materials: local and abundant (exports): Pearls, Timber, Spice; scarce or luxury (imports): Silk, Porcelain, Medicines, Rum, Pelts, Grain (section A). Atmosphere [cite]: "Wind that never fully dies, salt-crusted everything, and the pride of survival." (C:12186 area). Climate: section G.
@@ -97,9 +97,9 @@ Pattern: canon-port-silva_bay-visual.md headings 1-7. Shared camera, envelope an
 
 ## F. Relations with every other port
 
-Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
+Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected; flows are directional by market affinity; networks are symmetric.
 
-<!-- generated:begin -->
+<!-- hand-maintained:begin -->
 | Port | Region | Bloc | Disposition | Lane (distance, min class, danger) | Flows out (they import) | Flows in (we import) | Network |
 |---|---|---|---|---|---|---|---|
 | Porto Novo | Mediterranean | The Exchange Alliance | neutral (C:13753) | - | Timber | Grain, Rum | - |
@@ -121,7 +121,7 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 | Spice Narrows | East Indies | The Shadow Ports | neutral (C:13858) | - | - | - | - |
 | Ember Isle | South Seas | The Coral Crown | same bloc | 24, sloop, 0.14 (C:2252) | Timber | Medicines | C:11580 |
 | Coral Throne | South Seas | The Coral Crown | same bloc | 22, brigantine, 0.13 (C:2270) | - | Rum | - |
-<!-- generated:end -->
+<!-- hand-maintained:end -->
 
 - Lane lore: "Typhoon Alley": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival." (C:2225).
 
@@ -135,13 +135,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: typhoon season every year; violent storms. Regional weather [cite]: "Turquoise water so clear you can see the reef below. Beautiful and deadly." (C:11950 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience 
+## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "wind that never fully dies"; ships "chained, not anchored" - chains straining; leeward cliff shelter.
 - **Signature:** mooring chain strain/snatch; salt-crusted timber creak; knife carving into the Storm Wall (custom).
 - **Music/work songs (NOTE ONLY):** none; stories as price of entry are voice - on hold.
 - **Vs neighbours:** constant wind + chain; vs Dragon's Gate chains (harbour boom, controlled) these are survival moorings.
-- **Fragments:** `src.mooring_chain_strain`, `src.carve_name`, `place.leeward_cliff`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `src.mooring_chain_strain`, `src.carve_name`, `place.leeward_cliff`.
 
 ---
 - Cited hooks: atmosphere "Wind that never fully dies, salt-crusted everything, and the pride of survival."; dock scene "The harbor is carved into the leeward cliff. Ships are chained, not anchored - anchors aren't enough here. Pearl divers work the outer reef between storms." (C:12186 area).
@@ -149,4 +149,4 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 
 ## J. Flags for this port
 
-- none beyond the shared ones in canon-data-fixes.md.
+- none beyond the shared ones in data-fixes.md.
