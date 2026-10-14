@@ -158,7 +158,7 @@ Where:
 - crates/portlight-sim/src/culture.rs:225-245 (price_multiplier reads loyalty_bonus and disloyalty_penalty; no live caller, only tests at :352-362)
 - spillover (relationships, from C:13718) has no reader
 
-Proposed fix: No data change. Add a content.rs doc comment saying these fields are unread (lore only) until a mechanic is briefed.
+Proposed fix: No data change. Add content.rs doc comments: on TradeBlocDef.loyalty_bonus and disloyalty_penalty (content.rs:666-667), that only culture::price_multiplier (culture.rs:225) reads them and it has no live caller (tests only); on BlocRelationshipDef.spillover (content.rs:687), that it is unread. Keep both comments until a mechanic is briefed.
 
 Why: the rates exist in code but no live path applies them, so copy and canon must not promise a price effect.
 
