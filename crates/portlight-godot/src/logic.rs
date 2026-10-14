@@ -86,9 +86,16 @@ pub(crate) fn status_header(
     season: &str,
     captain: &str,
     silver: i64,
+    banked: i64,
     stores: i64,
 ) -> String {
-    format!("Day {day}   {season}   {captain}   {silver} silver   Stores {stores}")
+    // The banked term is left out at 0.
+    let banked = if banked > 0 {
+        format!(" - banked {banked}")
+    } else {
+        String::new()
+    };
+    format!("Day {day}   {season}   {captain}   {silver} silver{banked}   Stores {stores}")
 }
 
 /// The docked price line under the port row.
@@ -4320,11 +4327,22 @@ mod tests {
 
     #[test]
     fn status_header_says_stores_not_provisions() {
-        let line = status_header(2, "spring", "Ada", 89, 9);
+        let line = status_header(2, "spring", "Ada", 89, 0, 9);
         assert_eq!(line, "Day 2   spring   Ada   89 silver   Stores 9");
         assert!(line.is_ascii());
         assert!(line.contains("Stores 9"));
         assert!(!line.contains("provisions"));
+    }
+
+    #[test]
+    fn status_line_banked_term_omitted_at_zero() {
+        assert_eq!(
+            status_header(2, "spring", "Ada", 1200, 5000, 9),
+            "Day 2   spring   Ada   1200 silver - banked 5000   Stores 9"
+        );
+        let line = status_header(2, "spring", "Ada", 1200, 0, 9);
+        assert!(!line.contains("banked"));
+        assert!(line.is_ascii());
     }
 
     #[test]

@@ -685,3 +685,32 @@ fn rust_v13_bank_round_trips() {
     );
     let _ = fs::remove_dir_all(&dir);
 }
+
+/// Written by the CLI one release before counting houses existed: the
+/// first from `PRE_BANK_SCRIPT`, the second by loading the first and saving
+/// it again (a load reprices the markets, so the two differ). A game with no
+/// account must still write both byte for byte.
+const PRE_BANK_SCRIPT: &str = "new merchant Ada 1\nbuy grain 5\nbuy_infrastructure warehouse depot\ndeposit grain 2\nbuy_insurance hull_basic\n";
+
+#[test]
+fn pre_bank_v12_save_is_byte_identical() {
+    let root = parity_root();
+    let fixture = fs::read(root.join("saves/pre_bank_v12.json")).unwrap();
+    let resaved_fixture = fs::read(root.join("saves/pre_bank_v12_resaved.json")).unwrap();
+    let dir = scratch("pre-bank-v12");
+    portlight_sim::script::run_and_save(PRE_BANK_SCRIPT, &dir, "pre_bank_v12").unwrap();
+    let written = fs::read(dir.join("saves").join("pre_bank_v12.json")).unwrap();
+    assert!(
+        written == fixture,
+        "a new game without an account wrote different bytes"
+    );
+    let mut loaded = Session::load(&root, "pre_bank_v12").unwrap().unwrap();
+    assert_eq!(loaded.banked_total(), 0);
+    loaded.save(&dir, "pre_bank_v12_resaved").unwrap();
+    let resaved = fs::read(dir.join("saves").join("pre_bank_v12_resaved.json")).unwrap();
+    assert!(
+        resaved == resaved_fixture,
+        "load and re-save wrote different bytes"
+    );
+    let _ = fs::remove_dir_all(&dir);
+}

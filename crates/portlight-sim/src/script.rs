@@ -813,7 +813,7 @@ mod tests {
         assert_eq!(errors[2], None);
         assert_eq!(
             errors[3].as_deref(),
-            Some("That account is here - withdraw instead")
+            Some("That account is here - withdraw instead.")
         );
         assert_eq!(snap.captain.silver, 550 - 300 + 99);
         let bank = &snap.infrastructure.as_ref().unwrap().bank;

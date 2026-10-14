@@ -332,20 +332,20 @@ impl fmt::Display for SimError {
             Self::UsageDeposit => write!(f, "Usage: deposit <good> <qty>"),
             Self::UsageWithdraw => write!(f, "Usage: withdraw <good> <qty> [source_port]"),
             Self::UsageRepayCredit => write!(f, "Usage: repay_credit <amount>"),
-            Self::MustBeDockedToBank => write!(f, "Must be docked to use a counting house"),
-            Self::NoCountingHouse => write!(f, "No counting house at this port"),
+            Self::MustBeDockedToBank => write!(f, "Must be docked to use a counting house."),
+            Self::NoCountingHouse => write!(f, "No counting house at this port."),
             Self::BelowBankMinimum { minimum } => {
-                write!(f, "Deposit at least {minimum} silver")
+                write!(f, "Deposit at least {minimum} silver.")
             }
             Self::InsufficientBalance { port, have } => {
-                write!(f, "Only {have} silver banked at {port}")
+                write!(f, "Only {have} silver banked at {port}.")
             }
-            Self::InsufficientSilver { have } => write!(f, "Only {have} silver on hand"),
+            Self::InsufficientSilver { have } => write!(f, "Only {have} silver on hand."),
             Self::BelowBankFee { fee } => {
-                write!(f, "Too little to cover the {fee} silver fee")
+                write!(f, "Too little to cover the {fee} silver fee.")
             }
             Self::LetterOnLocalAccount => {
-                write!(f, "That account is here - withdraw instead")
+                write!(f, "That account is here - withdraw instead.")
             }
             Self::UsageBankDeposit => write!(f, "Usage: bank_deposit <amount>"),
             Self::UsageBankWithdraw => write!(f, "Usage: bank_withdraw <amount>"),

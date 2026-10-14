@@ -143,8 +143,14 @@ pub(crate) enum Action {
     Provision,
     OpenCrew,
     CloseCrew,
-    CrewHire { role: String, count: i64 },
-    CrewFire { role: String, count: i64 },
+    CrewHire {
+        role: String,
+        count: i64,
+    },
+    CrewFire {
+        role: String,
+        count: i64,
+    },
     CrewProvision(i64),
     CrewTrain(String),
     CrewSkill(String),
@@ -199,6 +205,11 @@ pub(crate) enum Action {
     HarbourRepayAll,
     HarbourDraw,
     HarbourEmergency,
+    /// Counting house, amount from the bank field.
+    HarbourBankDeposit,
+    HarbourBankWithdraw,
+    /// Draw by letter on the account at this port id.
+    HarbourBankLetter(String),
 }
 
 #[derive(Clone)]
@@ -666,6 +677,7 @@ struct PortlightGame {
     harbour_pending: Option<HarbourIntent>,
     harbour_qty: Option<Gd<LineEdit>>,
     harbour_draw: Option<Gd<LineEdit>>,
+    harbour_bank: Option<Gd<LineEdit>>,
     harbour_repay: Option<Gd<LineEdit>>,
     harbour_emergency: Option<Gd<LineEdit>>,
     harbour_checked: bool,
@@ -742,6 +754,7 @@ enum HarbourShot {
     Broker,
     Finance,
     Insurance,
+    Bank,
 }
 
 impl HarbourShot {
@@ -751,6 +764,7 @@ impl HarbourShot {
             Self::Broker => "harbour-broker.png",
             Self::Finance => "harbour-finance.png",
             Self::Insurance => "harbour-insurance.png",
+            Self::Bank => "harbour-bank.png",
         }
     }
 
@@ -760,6 +774,7 @@ impl HarbourShot {
             Self::Broker => harbour_screen::ANCHOR_BROKER,
             Self::Finance => harbour_screen::ANCHOR_FINANCE,
             Self::Insurance => harbour_screen::ANCHOR_INSURANCE,
+            Self::Bank => harbour_screen::ANCHOR_BANK,
         }
     }
 }
@@ -859,6 +874,7 @@ impl IControl for PortlightGame {
             harbour_pending: None,
             harbour_qty: None,
             harbour_draw: None,
+            harbour_bank: None,
             harbour_repay: None,
             harbour_emergency: None,
             harbour_checked: false,
@@ -2466,10 +2482,17 @@ impl PortlightGame {
             HarbourShot::Warehouse => Some(HarbourShot::Broker),
             HarbourShot::Broker => Some(HarbourShot::Finance),
             HarbourShot::Finance => Some(HarbourShot::Insurance),
-            HarbourShot::Insurance => None,
+            HarbourShot::Insurance => Some(HarbourShot::Bank),
+            HarbourShot::Bank => None,
         };
         if matches!(next, Some(HarbourShot::Insurance)) {
             self.stage_harbour_insurance();
+        }
+        if matches!(next, Some(HarbourShot::Bank)) {
+            self.stage_harbour_bank();
+        }
+        if matches!(phase, HarbourShot::Bank) {
+            self.finish_harbour_bank();
         }
         if let Some(next) = next {
             self.scroll_harbour(next.anchor());
@@ -2496,6 +2519,81 @@ impl PortlightGame {
                 }
             }
             Err(err) => self.fail_harbour(format!("Harbour smoke: insurance stage: {err}")),
+        }
+    }
+
+    /// Bank frame: a fresh staged game with an account at Silva Bay. Bank
+    /// and withdraw here through the desk, then leave a letter from Silva Bay
+    /// on the Confirm row so the frame shows its fee.
+    fn stage_harbour_bank(&mut self) {
+        let session = match harbour_screen::bank_stage_session(&[("silva_bay", 300)]) {
+            Ok(session) => session,
+            Err(err) => return self.fail_harbour(format!("Harbour smoke: bank stage: {err}")),
+        };
+        self.close_harbour();
+        self.session = Some(session);
+        self.open_harbour();
+        let silver = |game: &Self| {
+            game.session
+                .as_ref()
+                .map_or(0, |session| session.world().captain.silver)
+        };
+        let start = silver(self);
+        self.set_bank_field("200");
+        self.perform(Action::HarbourBankDeposit);
+        if self.harbour_notice != "Bank 200 silver at Porto Novo? No fee." {
+            let notice = self.harbour_notice.clone();
+            return self.fail_harbour(format!("Harbour smoke: deposit prompt {notice:?}"));
+        }
+        self.perform(Action::HarbourConfirm);
+        self.set_bank_field("100");
+        self.perform(Action::HarbourBankWithdraw);
+        if !self.harbour_notice.contains("Fee 1 - you receive 99") {
+            let notice = self.harbour_notice.clone();
+            return self.fail_harbour(format!("Harbour smoke: withdraw prompt {notice:?}"));
+        }
+        self.perform(Action::HarbourConfirm);
+        if silver(self) != start - 200 + 99 {
+            return self.fail_harbour("Harbour smoke: bank silver did not add up.");
+        }
+        for row in [
+            "Banked 200 silver - Porto Novo",
+            "Withdrew 100 silver - Porto Novo - fee 1",
+        ] {
+            if !self.log_lines.iter().any(|line| line == row) {
+                return self.fail_harbour(format!("Harbour smoke: log row missing: {row}"));
+            }
+        }
+        if !self.status_text().contains(" - banked 400") {
+            return self.fail_harbour("Harbour smoke: status line has no banked term.");
+        }
+        let text = self.harbour_body_text();
+        if !text.contains("Counting house - Porto Novo") || !text.contains("Here: 100 silver") {
+            return self.fail_harbour("Harbour smoke: bank block rows missing.");
+        }
+        self.set_bank_field("100");
+        self.perform(Action::HarbourBankLetter("silva_bay".into()));
+        if !self.harbour_notice.contains("Fee 5 - you receive 95") {
+            let notice = self.harbour_notice.clone();
+            self.fail_harbour(format!("Harbour smoke: letter prompt {notice:?}"));
+        }
+    }
+
+    /// After the bank frame: confirm the letter and check its log row.
+    fn finish_harbour_bank(&mut self) {
+        self.perform(Action::HarbourConfirm);
+        let ok = self.log_lines.iter().any(|line| {
+            line.starts_with("Drew 100 silver by letter - ") && line.ends_with(" - fee 5")
+        });
+        if !ok {
+            return self.fail_harbour("Harbour smoke: letter log row missing.");
+        }
+        godot_print!("portlight harbour-bank smoke ok");
+    }
+
+    fn set_bank_field(&mut self, text: &str) {
+        if let Some(field) = self.harbour_bank.as_mut() {
+            field.set_text(text);
         }
     }
 
@@ -4057,6 +4155,14 @@ impl PortlightGame {
             Action::HarbourRepayAll => self.repay_all(),
             Action::HarbourDraw => self.draw_from_field(),
             Action::HarbourEmergency => self.emergency_from_field(),
+            Action::HarbourBankDeposit => self.bank_from_field(HarbourIntent::BankDeposit),
+            Action::HarbourBankWithdraw => self.bank_from_field(HarbourIntent::BankWithdraw),
+            Action::HarbourBankLetter(source) => {
+                self.bank_from_field(move |amount| HarbourIntent::BankLetter {
+                    source: source.clone(),
+                    amount,
+                })
+            }
         }
     }
 
@@ -4615,6 +4721,7 @@ impl PortlightGame {
     }
 
     fn apply_harbour(&mut self, intent: HarbourIntent) {
+        let mut log_row = None;
         let outcome = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -4659,8 +4766,30 @@ impl PortlightGame {
                 } => session
                     .buy_insurance(policy_id, target_id, origin, destination)
                     .map(|()| format!("Bought {}.", harbour_screen::policy_name(policy_id))),
+                HarbourIntent::BankDeposit(amount) => {
+                    let here = session.world().voyage.destination_id.clone();
+                    session.deposit_silver(*amount).map(|_| {
+                        log_row = harbour_screen::bank_log_row(session, &intent, 0);
+                        portlight_sim::bank::deposit_message(*amount, &here)
+                    })
+                }
+                HarbourIntent::BankWithdraw(amount) => {
+                    session.withdraw_silver(*amount).map(|(_, fee)| {
+                        log_row = harbour_screen::bank_log_row(session, &intent, fee);
+                        portlight_sim::bank::withdraw_message(*amount, fee)
+                    })
+                }
+                HarbourIntent::BankLetter { source, amount } => {
+                    session.draw_letter(source, *amount).map(|(_, fee)| {
+                        log_row = harbour_screen::bank_log_row(session, &intent, fee);
+                        portlight_sim::bank::letter_message(*amount, source, fee)
+                    })
+                }
             }
         };
+        if let Some(row) = log_row {
+            self.push_log(row);
+        }
         match outcome {
             Ok(line) => self.harbour_notice = line,
             Err(err) => self.harbour_notice = harbour_screen::ascii_copy(&err.to_string()),
@@ -4771,6 +4900,17 @@ impl PortlightGame {
         self.prepare_harbour(HarbourIntent::Draw { tier, amount });
     }
 
+    fn bank_from_field(&mut self, intent: impl Fn(i64) -> HarbourIntent) {
+        let text = edit_text(&self.harbour_bank);
+        match harbour_screen::parse_positive(&text) {
+            Ok(amount) => self.prepare_harbour(intent(amount)),
+            Err(_) => {
+                self.harbour_notice = "Amount must be positive.".to_string();
+                self.refresh();
+            }
+        }
+    }
+
     fn emergency_from_field(&mut self) {
         let text = edit_text(&self.harbour_emergency);
         match harbour_screen::parse_positive(&text) {
@@ -4859,6 +4999,7 @@ impl PortlightGame {
         clear_children(&mut body);
         self.harbour_qty = None;
         self.harbour_draw = None;
+        self.harbour_bank = None;
         self.harbour_repay = None;
         self.harbour_emergency = None;
         let game_id = self.instance_id();
@@ -4980,6 +5121,43 @@ impl PortlightGame {
             gd.bind_mut().perform(action.clone());
         });
         body.add_child(&emergency_button);
+
+        if let Some(bank) = &model.bank {
+            let mut header = harbour_screen::section_label(&bank.title);
+            header.set_name(harbour_screen::ANCHOR_BANK);
+            body.add_child(&header);
+            for line in &bank.lines {
+                body.add_child(&harbour_screen::cream_label(line));
+            }
+            body.add_child(&harbour_screen::muted_label("Amount"));
+            let mut amount = LineEdit::new_alloc();
+            amount.set_text("100");
+            newgame_screen::style_field(&mut amount);
+            body.add_child(&amount);
+            self.harbour_bank = Some(amount);
+            let mut row = HBoxContainer::new_alloc();
+            row.add_theme_constant_override("separation", 8);
+            row.add_child(&encounter_button(
+                "Deposit",
+                game_id,
+                Action::HarbourBankDeposit,
+            ));
+            let mut withdraw = encounter_button("Withdraw", game_id, Action::HarbourBankWithdraw);
+            if bank.here <= 0 {
+                withdraw.set_disabled(true);
+            }
+            row.add_child(&withdraw);
+            body.add_child(&row);
+            for (port, name) in &bank.letters {
+                self.harbour_good_row(
+                    &mut body,
+                    game_id,
+                    &format!("{name} account"),
+                    "Draw by letter",
+                    Action::HarbourBankLetter(port.clone()),
+                );
+            }
+        }
 
         let mut insurance = harbour_screen::section_label("Insurance");
         insurance.set_name(harbour_screen::ANCHOR_INSURANCE);
@@ -7106,6 +7284,7 @@ impl PortlightGame {
             content::season_name(world.day),
             &world.captain.name,
             world.captain.silver,
+            session.banked_total(),
             world.captain.provisions,
         );
         format!("{header}\n{place}\n{ship_line}\n{ledger}\n{paths}")
@@ -12970,6 +13149,15 @@ impl PortlightGame {
                     });
                 }
                 state.set("policies", &list);
+                let (total, accounts) = crate::playtest::banked_key(session);
+                let mut banked_accounts = VarArray::new();
+                for (port, silver) in &accounts {
+                    banked_accounts.push(&vdict! { "port" => port.as_str(), "silver" => *silver });
+                }
+                state.set(
+                    "banked",
+                    &vdict! { "total" => total, "accounts" => &banked_accounts.to_variant() },
+                );
                 match last {
                     Some((incident, payout, denied)) => state.set(
                         "last_claim",
@@ -12985,6 +13173,7 @@ impl PortlightGame {
                 state.set("hull", &Variant::nil());
                 state.set("crew", &Variant::nil());
                 state.set("policies", &Variant::nil());
+                state.set("banked", &Variant::nil());
                 state.set("last_claim", &Variant::nil());
             }
         }
