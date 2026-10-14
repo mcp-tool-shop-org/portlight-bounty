@@ -33,7 +33,7 @@ The line that opens the fight names the threshold as a number of close actions. 
 
 If your hull reaches 0, from a fight or from the sea, you are sunk - you lose 30% of your silver (uncapped) and about three quarters of each good, then you are towed to the nearer end of your voyage, patched just enough to ride out one storm or pirate attack, not a fight. The tow does not count as a visit. Cargo insurance pays for a wreck but not for a plunder. Any port can repair your hull - the recap shows the price. You cannot start a hunt until your hull is above the patched floor.
 
-Some ports keep a counting house on the Harbour desk. Silver banked there is not lost with a wreck; deposits are free, withdrawing at the same port costs 1%, drawing on another port's account by letter costs 5%, and the fee shows before you confirm.
+Seven ports keep a counting house on the Harbour desk. Silver banked there is safe from a wreck and from a plunder, and nothing spends it until you draw it. Deposits are free (at least 50 silver), withdrawing at the same port costs 1%, and drawing on another port's account by letter costs 5% - the fee shows before you confirm.
 
 ## The day's report
 

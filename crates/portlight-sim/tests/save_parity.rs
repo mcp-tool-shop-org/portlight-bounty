@@ -686,9 +686,10 @@ fn rust_v13_bank_round_trips() {
     let _ = fs::remove_dir_all(&dir);
 }
 
-/// Written by the CLI one release before counting houses existed: the
-/// first from `PRE_BANK_SCRIPT`, the second by loading the first and saving
-/// it again (a load reprices the markets, so the two differ). A game with no
+/// Written at commit e1ca59b33292bb8dc14701f304e403e7a51fd5a8 (the #85
+/// merge, the last main before counting houses existed): the first by
+/// `portlight script` from `PRE_BANK_SCRIPT`, the second by `Session::load`
+/// of the first and `Session::save` again (a load reprices the markets, so the two differ). A game with no
 /// account must still write both byte for byte.
 const PRE_BANK_SCRIPT: &str = "new merchant Ada 1\nbuy grain 5\nbuy_infrastructure warehouse depot\ndeposit grain 2\nbuy_insurance hull_basic\n";
 

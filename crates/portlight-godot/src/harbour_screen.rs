@@ -38,9 +38,11 @@ pub(crate) const ANCHOR_BROKER: &str = "HarbourBroker";
 pub(crate) const ANCHOR_FINANCE: &str = "HarbourCredit";
 pub(crate) const ANCHOR_INSURANCE: &str = "HarbourInsurance";
 pub(crate) const ANCHOR_BANK: &str = "HarbourBank";
-/// The counting house's one line of terms.
-pub(crate) const BANK_TERMS: &str =
-    "Deposits are free, at least 50 silver. Withdraw here for 1% (at least 1); draw on another port by letter for 5% (at least 5). No interest.";
+/// The counting house's terms, two lines.
+pub(crate) const BANK_TERMS: [&str; 2] = [
+    "Deposits are free, at least 50 silver",
+    "Withdraw here 1% (at least 1) - by letter 5% (at least 5) - no interest",
+];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum HarbourIntent {
@@ -161,7 +163,7 @@ pub(crate) fn bank_block(session: &Session) -> Option<BankBlock> {
         lines.push(format!("Elsewhere: {name} {silver}"));
         letters.push((port.clone(), name));
     }
-    lines.push(BANK_TERMS.to_string());
+    lines.extend(BANK_TERMS.iter().map(|line| line.to_string()));
     Some(BankBlock {
         title: format!("Counting house - {}", port_name(session, here_id)),
         lines,
@@ -171,6 +173,19 @@ pub(crate) fn bank_block(session: &Session) -> Option<BankBlock> {
 }
 
 /// The fee line shown before Confirm: `Fee {F} - you receive {N - F}`.
+/// Whether the desk may offer Confirm: a bank amount below the deposit
+/// minimum, or one the fee would swallow, shows its refusal with Confirm
+/// disabled. Every other intent is always confirmable.
+pub(crate) fn confirm_allowed(intent: &HarbourIntent) -> bool {
+    use portlight_sim::bank::{letter_fee, local_fee, BANK_MINIMUM};
+    match intent {
+        HarbourIntent::BankDeposit(amount) => *amount >= BANK_MINIMUM,
+        HarbourIntent::BankWithdraw(amount) => *amount > local_fee(*amount),
+        HarbourIntent::BankLetter { amount, .. } => *amount > letter_fee(*amount),
+        _ => true,
+    }
+}
+
 pub(crate) fn fee_line(amount: i64, fee: i64) -> String {
     format!("Fee {fee} - you receive {}", amount - fee)
 }
@@ -781,6 +796,12 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
             format!("Draw {amount} silver on {name}?")
         }
         HarbourIntent::BankDeposit(amount) => {
+            if *amount < portlight_sim::bank::BANK_MINIMUM {
+                return format!(
+                    "Deposit at least {} silver.",
+                    portlight_sim::bank::BANK_MINIMUM
+                );
+            }
             let here = port_name(session, &session.world().voyage.destination_id);
             format!("Bank {amount} silver at {here}? No fee.")
         }
@@ -1069,16 +1090,11 @@ pub(crate) fn contract_target_name(session: &Session, id: &str) -> String {
         .unwrap_or_else(|| SETTLED_CONTRACT.to_string())
 }
 
-/// Insurance-frame stage, built from `Session` verbs only: a merchant at the
-/// start port holds a voyage policy (start port to Corsair's Rest) and a
-/// contract guarantee whose contract has since expired undelivered, so the
-/// desk shows a `Voyage A to B` row, a settled-contract `Target` row and the
-/// guarantee's claim.
+static STAGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 /// Bank frame and tests: a seed-1 game at Porto Novo with `accounts` already
 /// open elsewhere. The sim only opens an account at the docked port, so the
 /// staged accounts go in through a saved game, the public save path.
-static STAGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-
 pub(crate) fn bank_stage_session(accounts: &[(&str, i64)]) -> Result<Session, String> {
     let session =
         Session::new("Ada", "merchant", 1, Some("porto_novo")).map_err(|e| e.to_string())?;
@@ -1111,6 +1127,10 @@ pub(crate) fn bank_stage_session(accounts: &[(&str, i64)]) -> Result<Session, St
     loaded
 }
 
+/// Insurance-frame stage, built from `Session` verbs only: a merchant at the
+/// start port holds a voyage policy (start port to Corsair's Rest) and a
+/// contract guarantee whose contract has since expired undelivered, so the
+/// desk shows a `Voyage A to B` row, a settled-contract `Target` row and the
 pub(crate) fn insurance_stage_session() -> Result<Session, String> {
     let mut session = Session::new("Ada", "merchant", 1, None).map_err(|err| err.to_string())?;
     let here = session.world().voyage.destination_id.clone();
@@ -1334,6 +1354,21 @@ mod tests {
             "Too little to cover the 1 silver fee."
         );
         assert_eq!(fee_line(100, 5), "Fee 5 - you receive 95");
+        assert_eq!(
+            confirm_prompt(&session, &HarbourIntent::BankDeposit(49)),
+            "Deposit at least 50 silver."
+        );
+        assert!(!confirm_allowed(&HarbourIntent::BankDeposit(49)));
+        assert!(confirm_allowed(&HarbourIntent::BankDeposit(50)));
+        assert!(!confirm_allowed(&HarbourIntent::BankWithdraw(1)));
+        assert!(confirm_allowed(&HarbourIntent::BankWithdraw(2)));
+        let letter = |amount| HarbourIntent::BankLetter {
+            source: "silva_bay".into(),
+            amount,
+        };
+        assert!(!confirm_allowed(&letter(5)));
+        assert!(confirm_allowed(&letter(6)));
+        assert!(confirm_allowed(&HarbourIntent::Emergency(1)));
     }
 
     #[test]

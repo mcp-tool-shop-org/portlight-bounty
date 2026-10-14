@@ -4717,6 +4717,9 @@ impl PortlightGame {
         let Some(intent) = self.harbour_pending.clone() else {
             return;
         };
+        if !harbour_screen::confirm_allowed(&intent) {
+            return;
+        }
         self.apply_harbour(intent);
     }
 
@@ -4975,13 +4978,11 @@ impl PortlightGame {
         let mut row = nodes.confirm_row.clone();
         clear_hbox(&mut row);
         let game_id = self.instance_id();
-        if self.harbour_pending.is_some() {
+        if let Some(intent) = self.harbour_pending.as_ref() {
             row.set_visible(true);
-            row.add_child(&encounter_button(
-                "Confirm",
-                game_id,
-                Action::HarbourConfirm,
-            ));
+            let mut confirm = encounter_button("Confirm", game_id, Action::HarbourConfirm);
+            confirm.set_disabled(!harbour_screen::confirm_allowed(intent));
+            row.add_child(&confirm);
             row.add_child(&encounter_button("Cancel", game_id, Action::HarbourCancel));
         } else {
             row.set_visible(false);
@@ -5131,7 +5132,7 @@ impl PortlightGame {
             }
             body.add_child(&harbour_screen::muted_label("Amount"));
             let mut amount = LineEdit::new_alloc();
-            amount.set_text("100");
+            amount.set_text("50");
             newgame_screen::style_field(&mut amount);
             body.add_child(&amount);
             self.harbour_bank = Some(amount);
