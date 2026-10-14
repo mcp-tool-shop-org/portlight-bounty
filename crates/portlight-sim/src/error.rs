@@ -24,6 +24,11 @@ pub enum SimError {
         need: i64,
         have: i64,
     },
+    /// A hunt needs more hull than the patched floor a tow leaves.
+    HullTooLowToHunt {
+        need: i64,
+        have: i64,
+    },
     NeedPortFee {
         fee: i64,
         have: i64,
@@ -155,6 +160,9 @@ impl fmt::Display for SimError {
                 write!(f, "Need at least {need} crew to sail, have {have}. Hire crew first.")
             }
             Self::NeedSilver { need, have } => write!(f, "Need {need} silver, have {have}"),
+            Self::HullTooLowToHunt { need, have } => {
+                write!(f, "Need at least {need} hull to hunt, have {have}. Repair first.")
+            }
             Self::NeedPortFee { fee, have } => {
                 write!(f, "Need {fee} silver for port fee, have {have}")
             }

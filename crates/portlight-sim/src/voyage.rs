@@ -17,6 +17,23 @@ use crate::ship::{
 };
 use crate::util::{py_round, py_trunc};
 
+/// Raw storm damage roll, before storm resistance.
+pub const STORM_RAW_MIN: i64 = 5;
+pub const STORM_RAW_MAX: i64 = 18;
+/// Raw route pirate-event hull damage roll, before storm resistance.
+pub const ROUTE_PIRATE_RAW_MIN: i64 = 3;
+pub const ROUTE_PIRATE_RAW_MAX: i64 = 12;
+
+/// Hull a storm takes from a raw roll.
+pub fn storm_damage(raw: i64, storm_resist: f64) -> i64 {
+    1.max(py_trunc(raw as f64 * (1.0 - storm_resist)))
+}
+
+/// Hull a route pirate event takes from a raw roll (half the storm resistance).
+pub fn route_pirate_damage(raw: i64, storm_resist: f64) -> i64 {
+    1.max(py_trunc(raw as f64 * (1.0 - storm_resist * 0.5)))
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventType {
     Storm,
@@ -180,8 +197,8 @@ fn resolve_event(
 
     Ok(match event_type {
         EventType::Storm => {
-            let raw = rng.randint(5, 18);
-            let dmg = 1.max(py_trunc(raw as f64 * (1.0 - storm_resist)));
+            let raw = rng.randint(STORM_RAW_MIN, STORM_RAW_MAX);
+            let dmg = storm_damage(raw, storm_resist);
             let msg = if storm_resist > 0.3 {
                 format!(
                     "A storm batters the ship. Your hull absorbs the worst of it. (-{dmg} hull)"
@@ -405,8 +422,8 @@ fn resolve_pirates(rng: &mut PyRandom, world: &World, storm_resist: f64) -> Voya
     let cargo_value: i64 = world.captain.cargo.iter().map(|c| c.quantity * 10).sum();
     let base_loss = rng.randint(10, 40);
     let silver_loss = (base_loss + cargo_value / 10).min(world.captain.silver);
-    let mut dmg = rng.randint(3, 12);
-    dmg = 1.max(py_trunc(dmg as f64 * (1.0 - storm_resist * 0.5)));
+    let raw = rng.randint(ROUTE_PIRATE_RAW_MIN, ROUTE_PIRATE_RAW_MAX);
+    let dmg = route_pirate_damage(raw, storm_resist);
     let mut ev = VoyageEvent::new(
         EventType::Pirates,
         format!("Pirates attack! You fight them off but lose {silver_loss} silver. (-{dmg} hull)"),
