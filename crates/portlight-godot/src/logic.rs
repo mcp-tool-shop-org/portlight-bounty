@@ -80,7 +80,9 @@ pub(crate) fn empty_lane_note(voyage_present: bool) -> &'static str {
 }
 
 /// First line of the chart status block. The resource is called Stores, as
-/// on the Stores button, with the count last.
+/// on the Stores button, with the count last. Banked silver, when there is
+/// any, is its own `Banked N` line directly under it, so the first line
+/// never wraps.
 pub(crate) fn status_header(
     day: i64,
     season: &str,
@@ -89,13 +91,13 @@ pub(crate) fn status_header(
     banked: i64,
     stores: i64,
 ) -> String {
-    // The banked term is left out at 0.
-    let banked = if banked > 0 {
-        format!(" - banked {banked}")
+    let line = format!("Day {day}   {season}   {captain}   {silver} silver   Stores {stores}");
+    // The banked line is left out at 0.
+    if banked > 0 {
+        format!("{line}\nBanked {banked}")
     } else {
-        String::new()
-    };
-    format!("Day {day}   {season}   {captain}   {silver} silver{banked}   Stores {stores}")
+        line
+    }
 }
 
 /// The docked price line under the port row.
@@ -4338,7 +4340,7 @@ mod tests {
     fn status_line_banked_term_omitted_at_zero() {
         assert_eq!(
             status_header(2, "spring", "Ada", 1200, 5000, 9),
-            "Day 2   spring   Ada   1200 silver - banked 5000   Stores 9"
+            "Day 2   spring   Ada   1200 silver   Stores 9\nBanked 5000"
         );
         let line = status_header(2, "spring", "Ada", 1200, 0, 9);
         assert!(!line.contains("banked"));
