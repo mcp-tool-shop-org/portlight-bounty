@@ -252,6 +252,9 @@ enum ShotPhase {
     Personal,
     Outcome,
     RecapWon,
+    /// Not saved: the won card again with a fight cost in silver and cargo,
+    /// checked against the recap height cap.
+    RecapWonCost,
 }
 
 impl ShotPhase {
@@ -262,6 +265,7 @@ impl ShotPhase {
             Self::Boarding => "encounter-boarding.png",
             Self::Personal => "encounter-fight.png",
             Self::RecapWon => "encounter-recap-won.png",
+            Self::RecapWonCost => "",
             Self::Outcome => "encounter-outcome.png",
         }
     }
@@ -274,6 +278,7 @@ impl ShotPhase {
             Self::Personal => "personal fight",
             Self::Outcome => "outcome",
             Self::RecapWon => "won recap",
+            Self::RecapWonCost => "won recap with cost",
         }
     }
 
@@ -283,7 +288,7 @@ impl ShotPhase {
             Self::Naval => ScreenPhase::Naval,
             Self::Boarding => ScreenPhase::Boarding,
             Self::Personal => ScreenPhase::Personal,
-            Self::Outcome | Self::RecapWon => ScreenPhase::Outcome,
+            Self::Outcome | Self::RecapWon | Self::RecapWonCost => ScreenPhase::Outcome,
         }
     }
 }
@@ -11283,10 +11288,10 @@ impl PortlightGame {
         let block = nodes.recap.get_global_rect();
         let actions = nodes.actions.get_global_rect();
         let bottom = actions.position.y + actions.size.y;
-        if block.size.y > 320.0 || bottom > 696.0 {
+        if block.size.y > 360.0 || bottom > 696.0 {
             self.smoke_ok = false;
             let line = format!(
-                "Recap smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
+                "Recap smoke: recap height {} (max 360), actions bottom {bottom} (max 696)",
                 block.size.y
             );
             godot_print!("{line}");
@@ -11532,9 +11537,11 @@ impl PortlightGame {
             return false;
         };
         self.expect_phase(phase.screen(), phase.label());
-        let path = format!("{dir}/{}", phase.file_name());
-        if !self.save_shot(&path, true) {
-            self.capture_failed = true;
+        if !phase.file_name().is_empty() {
+            let path = format!("{dir}/{}", phase.file_name());
+            if !self.save_shot(&path, true) {
+                self.capture_failed = true;
+            }
         }
         match phase {
             ShotPhase::Approach => {
@@ -11582,6 +11589,36 @@ impl PortlightGame {
                     godot_print!("Encounter shots: won recap bounty rows {rows:?}");
                 }
                 self.expect_returned();
+                // The same bounty win, as if the fight had also taken 30
+                // silver and 4 cargo: both Cost rows and the bounty row.
+                if let Some(facts) = self.encounter.as_mut() {
+                    let seed = &mut facts.recap;
+                    let loot: i64 = seed
+                        .loot
+                        .iter()
+                        .filter_map(|m| crate::recap::loot_silver(m))
+                        .sum();
+                    if let Some(deltas) = seed.deltas.as_mut() {
+                        deltas[0] = seed.purse + loot - 30;
+                        deltas[3] = -4;
+                    }
+                }
+                self.refresh();
+                self.encounter_shot = Some(ShotPhase::RecapWonCost);
+            }
+            ShotPhase::RecapWonCost => {
+                self.check_recap_layout();
+                let rows = self
+                    .recap_block_texts()
+                    .map(|(_, rows)| rows)
+                    .unwrap_or_default();
+                let has = |text: &str| rows.iter().any(|row| row == text);
+                if !(has("Silver -30") && has("Cargo -4") && has(crate::recap::BOUNTY_READY)) {
+                    self.smoke_ok = false;
+                    godot_print!("Encounter shots: won cost rows {rows:?}");
+                } else {
+                    godot_print!("Encounter shots: won cost rows ok");
+                }
                 self.leave_encounter();
                 self.report_encounter_smoke();
                 self.encounter_shot = None;

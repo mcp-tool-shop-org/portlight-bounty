@@ -774,7 +774,7 @@ fn active_text(card: &BountyCard, defeats: i64) -> String {
         if defeats == 0 {
             return card.captain_name.clone();
         }
-        return format!("{}\nDefeated {defeats}.", card.captain_name);
+        return format!("{}\nDefeated {defeats}", card.captain_name);
     }
     if defeats == 0 {
         return format!(
@@ -1253,7 +1253,7 @@ mod tests {
             ..BountyCard::default()
         };
         assert_eq!(active_text(&bare, 0), "Gnaw");
-        assert_eq!(active_text(&bare, 1), "Gnaw\nDefeated 1.");
+        assert_eq!(active_text(&bare, 1), "Gnaw\nDefeated 1");
         let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
         session.accept_bounty("gnaw").unwrap();
         let model = hunt_model(&session, &HuntDesk::default());
