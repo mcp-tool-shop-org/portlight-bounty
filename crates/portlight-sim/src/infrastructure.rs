@@ -784,7 +784,9 @@ fn settle_claim(
             "contract_guarantee" => incident_type == "contract_failure",
             _ => false,
         };
-        if !family_ok || (wreck && policy.family != "premium_cargo") {
+        // A sinking files the cargo claim whatever sank the ship.
+        let wreck_cargo = wreck && policy.family == "premium_cargo";
+        if wreck && !wreck_cargo || !wreck && !family_ok {
             continue;
         }
         if policy.scope == "named_contract"
@@ -803,7 +805,7 @@ fn settle_claim(
         let Some(spec) = catalog.policy(&policy.spec_id) else {
             continue;
         };
-        if !spec.covered_risks.iter().any(|risk| risk == incident_type) {
+        if !wreck_cargo && !spec.covered_risks.iter().any(|risk| risk == incident_type) {
             continue;
         }
         if spec.exclusions.iter().any(|item| item == "contraband") && cargo_category == "contraband"

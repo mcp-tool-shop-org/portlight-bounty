@@ -688,6 +688,8 @@ struct PortlightGame {
     hunt_scrolled: bool,
     day_report_nodes: Option<DayReportNodes>,
     day_report_open: bool,
+    /// A storm or route-event sinking's recap, opened when the day's report closes.
+    pending_sink_recap: Option<EncounterFacts>,
     day_report_doc: Option<DayReportDocument>,
     day_report_memory: DayReportMemory,
     day_report_checked: bool,
@@ -728,6 +730,10 @@ struct PortlightGame {
     loss_outcome_checked: bool,
     loss_outcome_shot_dir: Option<String>,
     loss_outcome_pending: bool,
+    /// `--encounter-sunk` / `--storm-sunk`: which sinking smoke ran.
+    sunk_smoke: Option<&'static str>,
+    sunk_shot_dir: Option<String>,
+    sunk_pending: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -874,6 +880,7 @@ impl IControl for PortlightGame {
             hunt_scrolled: false,
             day_report_nodes: None,
             day_report_open: false,
+            pending_sink_recap: None,
             day_report_doc: None,
             day_report_memory: DayReportMemory::default(),
             day_report_checked: false,
@@ -902,6 +909,9 @@ impl IControl for PortlightGame {
             loss_outcome_checked: false,
             loss_outcome_shot_dir: None,
             loss_outcome_pending: false,
+            sunk_smoke: None,
+            sunk_shot_dir: None,
+            sunk_pending: false,
         }
     }
 
@@ -1139,6 +1149,9 @@ impl IControl for PortlightGame {
         if self.advance_loss_outcome_shot() {
             return;
         }
+        if self.advance_sunk_shot() {
+            return;
+        }
         if self.advance_encounter_shot() {
             return;
         }
@@ -1170,6 +1183,7 @@ impl IControl for PortlightGame {
             && self.contract_strip_shot_dir.is_none()
             && self.market_paid_shot_dir.is_none()
             && self.loss_outcome_shot_dir.is_none()
+            && self.sunk_shot_dir.is_none()
             && self.departure_shot_dir.is_none()
         {
             if let Some(path) = self.shot_path.clone() {
@@ -1252,6 +1266,11 @@ impl IControl for PortlightGame {
                 "portlight loss-outcome smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
+        } else if let Some(kind) = self.sunk_smoke {
+            godot_print!(
+                "portlight {kind}-sunk smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
         } else {
             if self.encounter_checked {
                 godot_print!(
@@ -1281,7 +1300,28 @@ impl IControl for PortlightGame {
 
 impl PortlightGame {
     fn launch_scripted(&mut self) {
-        if user_arg("--encounter-loss-outcome") {
+        if user_arg("--encounter-sunk") || user_arg("--storm-sunk") {
+            let kind = if user_arg("--storm-sunk") {
+                "storm"
+            } else {
+                "encounter"
+            };
+            self.smoke = true;
+            self.sunk_smoke = Some(kind);
+            let capture = loss_outcome_frames_requested(self.shot_path.is_some());
+            let ready = if kind == "storm" {
+                self.run_storm_sunk_to_card()
+            } else {
+                self.run_encounter_sunk_to_card()
+            };
+            if ready && self.check_sunk_recap(kind) && capture {
+                self.sunk_shot_dir = Some(loss_outcome_shot_dir(self.shot_path.as_deref()));
+                self.sunk_pending = true;
+                self.capture_frames = 4;
+            } else {
+                self.capture_frames = 2;
+            }
+        } else if user_arg("--encounter-loss-outcome") {
             // Outcome card with a non-win receipt (Crew term).
             self.smoke = true;
             self.loss_outcome_checked = true;
@@ -4238,6 +4278,8 @@ impl PortlightGame {
             .map(day_report::FailureFacts::snapshot)
             .unwrap_or_default();
         let mut failures = Vec::new();
+        let sink_baseline = self.encounter_baseline_now();
+        let mut sea_sink = None;
         let notes = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -4248,6 +4290,7 @@ impl PortlightGame {
                     vec![err.to_string()]
                 }
                 Ok(turn) => {
+                    sea_sink = turn.sink.clone();
                     // One formatter for the card and the Log.
                     failures = day_report::failure_lines(session, &turn.contracts, &failure_facts);
                     let events: Vec<String> = turn
@@ -4304,12 +4347,22 @@ impl PortlightGame {
                     .session
                     .as_ref()
                     .is_some_and(|session| session.world().voyage.status == VoyageStatus::InPort);
+            let wreck = sea_sink.as_ref().map(|sink| sink.message.clone());
             self.show_day_report_after_advance(
                 &failures,
                 &injuries_before,
                 &prices_before,
                 arrival_day,
+                wreck.as_deref(),
             );
+        }
+        // A storm or route-event sinking: its recap opens after the report
+        // closes (one layer at a time), or now when no report is up.
+        if let Some(sink) = sea_sink {
+            self.pending_sink_recap = self.sea_sink_facts(&sink, sink_baseline);
+            if !self.day_report_open {
+                self.open_pending_sink_recap();
+            }
         }
         if let Some((state, log)) = opened {
             self.open_sea_agency(state, log);
@@ -7852,6 +7905,9 @@ impl PortlightGame {
         };
         match result {
             Ok(state) => self.open_agency(state, String::new()),
+            Err(err @ SimError::HullTooLowToHunt { .. }) => {
+                self.push_log(hunt_screen::hunt_refusal_text(&err));
+            }
             Err(err) => self.note_session_error(err),
         }
     }
@@ -7968,6 +8024,9 @@ impl PortlightGame {
         if let Some(receipt) = receipt {
             self.push_log(receipt);
         }
+        for note in &step.sink_notes {
+            self.push_log(note.clone());
+        }
         if let Some(line) = cost {
             self.push_log(line);
         }
@@ -7995,6 +8054,9 @@ impl PortlightGame {
             .any(|id| id == &facts.captain_id)
             && !day_report::claimable_ids(session).contains(&facts.captain_id);
         facts.recap.result = Some(crate::recap::non_win_result(end));
+        if step.player_sunk {
+            facts.recap.repair_price = crate::logic::full_repair_price(session.world());
+        }
         facts.recap.deltas = Some(copy.deltas(&now));
         facts.recap.bounty_open = bounty_open;
         let baseline = facts.baseline.take()?;
@@ -8046,6 +8108,19 @@ impl PortlightGame {
             &mut nodes.plate_caption,
             &template_id,
         );
+        // Hidden in place: the column keeps its width, so the card does not
+        // shift left.
+        let show_portrait = view.as_ref().is_none_or(|view| view.portrait_placeholder);
+        nodes.placeholder.set_modulate(if show_portrait {
+            godot::builtin::Color::WHITE
+        } else {
+            godot::builtin::Color::from_rgba(1.0, 1.0, 1.0, 0.0)
+        });
+        nodes.eyebrow.set_text(if show_portrait {
+            encounter_screen::EYEBROW_ENCOUNTER
+        } else {
+            encounter_screen::EYEBROW_AT_SEA
+        });
         let open = view.is_some();
         nodes.root.set_visible(open);
         nodes.root.set_mouse_filter(if open {
@@ -8099,7 +8174,7 @@ impl PortlightGame {
                 ScreenAction::Spare => Action::Spare,
                 ScreenAction::Capture => Action::Capture,
                 ScreenAction::TakeAll => Action::TakeAll,
-                ScreenAction::Return { .. } => Action::LeaveEncounter,
+                ScreenAction::Return { .. } | ScreenAction::BackToPort => Action::LeaveEncounter,
             };
             let mut button = encounter_button(&caption, game_id, command);
             match line {
@@ -8422,6 +8497,7 @@ impl PortlightGame {
         injuries_before: &[portlight_sim::model::Injury],
         prices_before: &std::collections::HashMap<String, i64>,
         arrival_day: bool,
+        wreck: Option<&str>,
     ) {
         let Some(session) = self.session.as_ref() else {
             return;
@@ -8438,6 +8514,9 @@ impl PortlightGame {
             arrival_day,
             &self.hunt_desk.known,
         );
+        if let Some(line) = wreck {
+            doc.push_wreck_line(line);
+        }
         if doc.has_notable() {
             // Ride-along only: the footer is attached after the notable gate.
             doc.footer = day_report::build_footer(session, &memory.week);
@@ -8471,7 +8550,70 @@ impl PortlightGame {
             return;
         }
         self.day_report_open = false;
+        self.open_pending_sink_recap();
         self.refresh();
+    }
+
+    fn open_pending_sink_recap(&mut self) {
+        if self.encounter.is_none() {
+            if let Some(facts) = self.pending_sink_recap.take() {
+                self.encounter = Some(facts);
+            }
+        }
+    }
+
+    /// Outcome facts for a sinking with no encounter (a storm or a route
+    /// event): a resolved naval loss whose recap names the event.
+    fn sea_sink_facts(
+        &self,
+        sink: &portlight_sim::session::SinkOutcome,
+        baseline: Option<crate::logic::EncounterBaseline>,
+    ) -> Option<EncounterFacts> {
+        let session = self.session.as_ref()?;
+        let step = EncounterStep {
+            kind: "naval".into(),
+            phase: "resolved".into(),
+            player_sunk: true,
+            message: sink.message.clone(),
+            towed_to: sink.towed_to.clone(),
+            sink_silver_lost: sink.silver_lost,
+            sink_cargo_lost: sink.cargo_lost.clone(),
+            hull_after: sink.hull_after,
+            sink_claims_paid: sink.claims_paid,
+            sink_cause: sink.cause.clone(),
+            sink_planned_destination: sink.planned_destination.clone(),
+            sink_notes: sink.notes.clone(),
+            player_hull: sink.hull_after,
+            player_crew: session
+                .world()
+                .captain
+                .ship
+                .as_ref()
+                .map_or(0, |ship| ship.crew),
+            ..Default::default()
+        };
+        let mut seed = crate::recap::carry_seed(&crate::recap::RecapSeed::default(), &step);
+        seed.sea = true;
+        seed.result = Some(crate::recap::RecapResult::Lost);
+        // Only the wreck's own terms: the day's wages and stores stay in the
+        // report, not on this card.
+        baseline?;
+        let units: i64 = sink.cargo_lost.iter().map(|(_, qty)| qty).sum();
+        seed.deltas = Some([sink.claims_paid - sink.silver_lost, 0, 0, -units]);
+        seed.repair_price = crate::logic::full_repair_price(session.world());
+        let mut facts = facts_from_step(StepInput {
+            step: &step,
+            previous_faction_id: "",
+            previous_enemy_hull_max: None,
+            pending_victory: false,
+            ship: player_ship(session),
+            at_sea: false,
+            naval_actions: &[],
+            combat_actions: &[],
+        });
+        facts.recap = seed;
+        facts.log = sink.message.clone();
+        Some(facts)
     }
 
     fn sync_day_report(&mut self) {
@@ -10496,7 +10638,7 @@ impl PortlightGame {
                 self.open_agency(state, String::new());
             }
             Err(err) => {
-                self.hunt_desk.notice = err.to_string();
+                self.hunt_desk.notice = hunt_screen::hunt_refusal_text(&err);
             }
         }
         self.refresh();
@@ -10872,6 +11014,178 @@ impl PortlightGame {
         } else {
             godot_print!("Recap smoke: layout ok height {}", block.size.y);
         }
+    }
+
+    /// The scripted voyage, reloaded from its own save with the flagship's
+    /// hull at `hull` (smoke only: the public save path, no sim hook).
+    fn sunk_fail(&mut self, line: &str) {
+        self.smoke_ok = false;
+        godot_print!("{line}");
+        self.push_log(line.to_string());
+    }
+
+    fn scripted_voyage_at_hull(&mut self, seed: i128, hull: i64) -> Option<Session> {
+        let mut session = Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, seed, None).ok()?;
+        scripted_depart(&mut session).ok()?;
+        let dir = std::env::temp_dir().join(format!("portlight-sunk-{}", std::process::id()));
+        let path = session.save(&dir, "sunk").ok()?;
+        let text = std::fs::read_to_string(&path).ok()?;
+        let text = with_flagship_hull(&text, hull)?;
+        std::fs::write(&path, text).ok()?;
+        let loaded = Session::load(&dir, "sunk").ok().flatten();
+        let _ = std::fs::remove_dir_all(&dir);
+        loaded
+    }
+
+    fn run_encounter_sunk_to_card(&mut self) -> bool {
+        self.prepare_scripted_voyage();
+        let Some(session) = self.scripted_voyage_at_hull(SCRIPTED_SEED, 1) else {
+            self.sunk_fail("Sunk smoke: could not set up the voyage.");
+            return false;
+        };
+        self.session = Some(session);
+        self.open_scripted_approach();
+        if !self.phase_is(ScreenPhase::Approach) {
+            self.sunk_fail("Sunk smoke: expected approach.");
+            return false;
+        }
+        self.choose_encounter("fight");
+        for _ in 0..40 {
+            if !self.phase_is(ScreenPhase::Naval) {
+                break;
+            }
+            self.play_naval("broadside");
+        }
+        if !self.phase_is(ScreenPhase::Outcome) {
+            self.sunk_fail("Sunk smoke: expected Outcome after the sinking.");
+            return false;
+        }
+        true
+    }
+
+    fn run_storm_sunk_to_card(&mut self) -> bool {
+        self.prepare_scripted_voyage();
+        // The first seed whose next day at hull 1 is a storm sinking (found
+        // on a copy, then played for real: same state, same draws).
+        let mut found = None;
+        for seed in 0..400 {
+            let Some(session) = self.scripted_voyage_at_hull(seed, 1) else {
+                continue;
+            };
+            let mut probe = session.clone();
+            if let Ok(turn) = probe.advance() {
+                if turn.sink.as_ref().is_some_and(|sink| sink.cause == "storm") {
+                    found = Some(session);
+                    break;
+                }
+            }
+        }
+        let Some(session) = found else {
+            self.sunk_fail("Storm smoke: no storm sinking in 400 seeds.");
+            return false;
+        };
+        self.session = Some(session);
+        self.next_day();
+        // One layer at a time: the report first, the recap after its Close.
+        if !self.day_report_open {
+            self.sunk_fail("Storm smoke: no day report after the storm.");
+            return false;
+        }
+        if self.encounter.is_some() || self.pending_sink_recap.is_none() {
+            self.sunk_fail("Storm smoke: recap drawn under the report.");
+            return false;
+        }
+        self.close_day_report();
+        if !self.phase_is(ScreenPhase::Outcome) {
+            self.sunk_fail("Storm smoke: no recap after the report closed.");
+            return false;
+        }
+        true
+    }
+
+    /// The sinking recap: headline, tow, wreck and patched-hull rows; no
+    /// `0/{max}` row; Return lands on the port screen.
+    fn check_sunk_recap(&mut self, kind: &str) -> bool {
+        let mut problems = Vec::new();
+        let floor = self
+            .session
+            .as_ref()
+            .and_then(|session| session.world().captain.ship.as_ref())
+            .map(|ship| (ship.hull, ship.hull_max));
+        match self.recap_block_texts() {
+            None => problems.push("no RecapBlock on the sunk Outcome card".to_string()),
+            Some((headline, rows)) => {
+                let head_ok = if kind == "storm" {
+                    headline == "Sunk by the storm"
+                } else {
+                    headline.starts_with("Lost to ") && headline.contains("sunk by")
+                };
+                if !head_ok {
+                    problems.push(format!("headline {headline:?}"));
+                }
+                if !rows.first().is_some_and(|row| row.starts_with("Towed to ")) {
+                    problems.push(format!("first row {:?}", rows.first()));
+                }
+                if let Some((hull, max)) = floor {
+                    let want = format!("Your hull {hull}/{max} - patched for the tow");
+                    if !rows.contains(&want) {
+                        problems.push(format!("no {want:?} in {rows:?}"));
+                    }
+                    if rows.iter().any(|row| row == &format!("Your hull 0/{max}")) {
+                        problems.push("a 0/max hull row".to_string());
+                    }
+                }
+                if !rows.iter().any(|row| row.ends_with("lost with the wreck")) {
+                    problems.push(format!("no wreck row in {rows:?}"));
+                }
+                if rows
+                    .iter()
+                    .any(|row| row.contains("plundered") || row.starts_with("Cargo "))
+                {
+                    problems.push(format!("plunder or Cargo row in {rows:?}"));
+                }
+                for row in std::iter::once(&headline).chain(rows.iter()) {
+                    if !row.is_ascii() || row.ends_with('.') {
+                        problems.push(format!("row {row:?}"));
+                    }
+                }
+            }
+        }
+        let docked = self
+            .session
+            .as_ref()
+            .is_some_and(|session| session.world().voyage.status == VoyageStatus::InPort);
+        if !docked {
+            problems.push("not docked after the tow".to_string());
+        }
+        if problems.is_empty() {
+            godot_print!("{kind}-sunk recap ok");
+            true
+        } else {
+            self.sunk_fail(&format!("Sunk smoke: {}", problems.join("; ")));
+            false
+        }
+    }
+
+    fn advance_sunk_shot(&mut self) -> bool {
+        if !self.sunk_pending {
+            return false;
+        }
+        self.sunk_pending = false;
+        let (Some(dir), Some(kind)) = (self.sunk_shot_dir.clone(), self.sunk_smoke) else {
+            return false;
+        };
+        self.check_recap_layout();
+        let path = format!("{dir}/{kind}-recap-sunk.png");
+        if !self.save_shot(&path, true) {
+            self.capture_failed = true;
+        }
+        // Return lands on the port screen (no arrival card).
+        self.leave_encounter();
+        if self.encounter.is_some() || self.day_report_open {
+            self.sunk_fail("Sunk smoke: Return did not land on the port screen.");
+        }
+        false
     }
 
     fn advance_loss_outcome_shot(&mut self) -> bool {
@@ -11303,7 +11617,7 @@ impl PortlightGame {
         } else {
             crate::logic::take_all_purse(strength)
         };
-        let receipt = format!("+{purse} silver.");
+        let receipt = format!("+{purse} silver");
         let logged = self
             .encounter
             .as_ref()
@@ -11974,6 +12288,8 @@ fn victory_line(session: &Session) -> String {
 
 fn scripted_launch() -> bool {
     user_arg("--encounter-screen")
+        || user_arg("--encounter-sunk")
+        || user_arg("--storm-sunk")
         || user_arg("--encounter-loss-outcome")
         || user_arg("--encounter-galleon")
         || user_arg("--encounter")
@@ -12037,6 +12353,15 @@ fn market_paid_shot_dir(shot: Option<&str>) -> String {
 
 fn hunt_shot_dir(shot: Option<&str>) -> String {
     newgame_shot_dir(shot)
+}
+
+/// The save text with the flagship's `"hull"` set (the first `"hull":` after
+/// `"ship": {`). Smoke only.
+fn with_flagship_hull(text: &str, hull: i64) -> Option<String> {
+    let ship = text.find("\"ship\": {")?;
+    let at = ship + text[ship..].find("\"hull\": ")? + "\"hull\": ".len();
+    let end = at + text[at..].find(|c: char| !c.is_ascii_digit() && c != '-')?;
+    Some(format!("{}{hull}{}", &text[..at], &text[end..]))
 }
 
 fn loss_outcome_frames_requested(shot_set: bool) -> bool {
@@ -12617,10 +12942,50 @@ impl PortlightGame {
                     distance: voyage.distance,
                 };
                 state.set("voyage", &key.to_dictionary());
+                let world = session.world();
+                let mut cargo = VarArray::new();
+                for (good, qty) in crate::playtest::cargo_key(&world.captain.cargo) {
+                    cargo.push(&vdict! { "good" => good.as_str(), "qty" => qty });
+                }
+                state.set("cargo", &cargo);
+                match world.captain.ship.as_ref() {
+                    Some(ship) => {
+                        state.set("hull", &vdict! { "h" => ship.hull, "max" => ship.hull_max });
+                        state.set("crew", ship.crew);
+                    }
+                    None => {
+                        state.set("hull", &Variant::nil());
+                        state.set("crew", &Variant::nil());
+                    }
+                }
+                let (policies, last) = crate::playtest::policies_key(session.infrastructure());
+                let mut list = VarArray::new();
+                for policy in &policies {
+                    list.push(&vdict! {
+                        "spec" => policy.spec.as_str(),
+                        "family" => policy.family.as_str(),
+                        "scope" => policy.scope.as_str(),
+                        "active" => policy.active,
+                        "paid_out" => policy.paid_out,
+                    });
+                }
+                state.set("policies", &list);
+                match last {
+                    Some((incident, payout, denied)) => state.set(
+                        "last_claim",
+                        &vdict! { "incident" => incident.as_str(), "payout" => payout, "denied" => denied },
+                    ),
+                    None => state.set("last_claim", &Variant::nil()),
+                }
             }
             None => {
                 state.set("log_tail", &Variant::nil());
                 state.set("voyage", &Variant::nil());
+                state.set("cargo", &Variant::nil());
+                state.set("hull", &Variant::nil());
+                state.set("crew", &Variant::nil());
+                state.set("policies", &Variant::nil());
+                state.set("last_claim", &Variant::nil());
             }
         }
         let mut result = VarDictionary::new();

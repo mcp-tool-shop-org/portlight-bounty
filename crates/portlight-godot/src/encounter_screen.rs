@@ -34,6 +34,8 @@ const PLATE_WHITE: Color = Color::from_rgb(1.0, 1.0, 1.0);
 pub(crate) struct EncounterNodes {
     pub root: Gd<PanelContainer>,
     pub title: Gd<Label>,
+    /// Muted top line: "Encounter", or "At sea" on a storm or route-event card.
+    pub eyebrow: Gd<Label>,
     /// Muted eyebrow. Hidden unless the live captain is an active bounty.
     pub bounty: Gd<Label>,
     pub card: Gd<Label>,
@@ -49,6 +51,9 @@ pub(crate) struct EncounterNodes {
     pub plate_caption: Gd<Label>,
     pub placeholder: Gd<PanelContainer>,
 }
+
+pub(crate) const EYEBROW_ENCOUNTER: &str = "Encounter";
+pub(crate) const EYEBROW_AT_SEA: &str = "At sea";
 
 pub(crate) fn build_encounter_screen() -> EncounterNodes {
     let mut root = PanelContainer::new_alloc();
@@ -79,7 +84,8 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     column.add_theme_constant_override("separation", 10);
     row.add_child(&column);
 
-    column.add_child(&text_label("Encounter", 14, MUTED));
+    let eyebrow = text_label(EYEBROW_ENCOUNTER, 14, MUTED);
+    column.add_child(&eyebrow);
     let mut bounty = text_label("Bounty", 14, MUTED);
     bounty.set_name("BountyBadge");
     bounty.set_visible(false);
@@ -125,6 +131,7 @@ pub(crate) fn build_encounter_screen() -> EncounterNodes {
     column.add_child(&actions);
 
     EncounterNodes {
+        eyebrow,
         root,
         title,
         bounty,

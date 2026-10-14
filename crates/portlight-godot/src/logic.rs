@@ -376,7 +376,11 @@ pub(crate) enum ScreenAction {
     Spare,
     Capture,
     TakeAll,
-    Return { at_sea: bool },
+    Return {
+        at_sea: bool,
+    },
+    /// The Outcome card after a tow: the ship is already docked.
+    BackToPort,
 }
 
 /// What the last Session call (or the content catalog) exposed.
@@ -474,6 +478,10 @@ pub(crate) enum EncounterEnd {
 pub(crate) fn encounter_end(step: &EncounterStep, pending_victory: bool) -> Option<EncounterEnd> {
     if step.phase != "resolved" || pending_victory || step.player_won || step.enemy_sunk {
         return None;
+    }
+    // A sinking is a loss at sea, even from a flee's shot.
+    if step.player_sunk {
+        return Some(EncounterEnd::LostAtSea);
     }
     if step.escaped {
         return Some(EncounterEnd::BrokeAway);
@@ -707,6 +715,7 @@ pub(crate) fn action_caption(action: &ScreenAction) -> String {
         ScreenAction::TakeAll => "Take all".to_string(),
         ScreenAction::Return { at_sea: true } => "Back to the voyage".to_string(),
         ScreenAction::Return { at_sea: false } => "Back to the chart".to_string(),
+        ScreenAction::BackToPort => "Back to port".to_string(),
     }
 }
 
@@ -780,7 +789,12 @@ pub(crate) fn facts_from_step(input: StepInput<'_>) -> EncounterFacts {
     facts.log = session_text(&step.message, &step.flavor);
     facts.pending_victory = input.pending_victory;
     facts.on_session = step.phase != "resolved" || input.pending_victory;
-    facts.player_hull = step.player_hull;
+    // After a tow the ship is at its patched floor, never 0/{max}.
+    facts.player_hull = if step.player_sunk && step.hull_after > 0 {
+        step.hull_after
+    } else {
+        step.player_hull
+    };
     facts.player_crew = step.player_crew;
     facts.player_hp = step.player_hp;
     facts.opponent_hp = step.opponent_hp;
@@ -854,6 +868,9 @@ pub(crate) fn present(facts: &EncounterFacts) -> Option<EncounterView> {
         ScreenPhase::Outcome if facts.phase == "capture_available" => {
             vec![ScreenAction::Capture]
         }
+        ScreenPhase::Outcome if !facts.recap.towed_to.is_empty() => {
+            vec![ScreenAction::BackToPort]
+        }
         ScreenPhase::Outcome => vec![ScreenAction::Return {
             at_sea: facts.at_sea,
         }],
@@ -871,8 +888,17 @@ fn view(phase: ScreenPhase, facts: &EncounterFacts, actions: Vec<ScreenAction>) 
         choice_preview: (phase == ScreenPhase::Outcome && facts.pending_victory)
             .then(|| choice_preview(facts.strength)),
         actions,
-        portrait_placeholder: true,
+        portrait_placeholder: !sea_event_card(facts),
     }
+}
+
+/// A sinking with no ship against you (a storm or a route event): the card
+/// says where it happened and shows no portrait slot.
+pub(crate) fn sea_event_card(facts: &EncounterFacts) -> bool {
+    facts.recap.sea
+        && facts.captain_id.is_empty()
+        && facts.captain_name.is_empty()
+        && !facts.recap.towed_to.is_empty()
 }
 
 /// ASCII receipt. Flavor and departure text are copied from the receipt.
@@ -884,7 +910,7 @@ pub(crate) fn victory_receipt_lines(receipt: &VictoryReceipt) -> Vec<String> {
         format!("Took all from {}.", receipt.enemy_captain_name)
     };
     push_receipt_line(&mut lines, header);
-    push_receipt_line(&mut lines, format!("+{} silver.", receipt.silver_delta));
+    push_receipt_line(&mut lines, format!("+{} silver", receipt.silver_delta));
     for message in &receipt.loot_messages {
         push_receipt_line(&mut lines, message.clone());
     }
@@ -1863,6 +1889,26 @@ pub(crate) fn effective_provision_per_day(
 ) -> i64 {
     let mult = portlight_sim::reputation::service_modifier(standing, port_id);
     1.max(portlight_sim::util::py_trunc(listed as f64 * mult))
+}
+
+/// What a full repair costs at the docked port, as `Session::repair`
+/// charges it (0 when the hull is whole or the ship is not docked).
+pub(crate) fn full_repair_price(world: &portlight_sim::model::World) -> i64 {
+    let Some(ship) = world.captain.ship.as_ref() else {
+        return 0;
+    };
+    if world.voyage.status != portlight_sim::model::VoyageStatus::InPort {
+        return 0;
+    }
+    let port_id = world.voyage.destination_id.as_str();
+    let Some(port) = world.port(port_id) else {
+        return 0;
+    };
+    let mult = portlight_sim::reputation::service_modifier(&world.captain.standing, port_id);
+    let per = 1.max(portlight_sim::util::py_trunc(
+        port.repair_cost as f64 * mult,
+    ));
+    0.max(ship.hull_max - ship.hull) * per
 }
 
 pub(crate) fn recruit_confirm_line(name: &str, cost: i64) -> String {
@@ -3481,7 +3527,7 @@ mod tests {
         assert!(lines.iter().any(|line| line.starts_with("Spared ")));
         assert!(lines
             .iter()
-            .any(|line| line == &format!("+{} silver.", receipt.silver_delta)));
+            .any(|line| line == &format!("+{} silver", receipt.silver_delta)));
         assert!(!session.pending_victory());
         assert!(session.world().captain.silver > silver);
         facts.pending_victory = false;
@@ -3812,7 +3858,7 @@ mod tests {
             victory_receipt_lines(&receipt),
             vec![
                 "Took all from Raj the Quiet.".to_string(),
-                "+55 silver.".to_string(),
+                "+55 silver".to_string(),
                 "+12 silver".to_string(),
                 "Found: Cutlass".to_string(),
                 "Underworld standing The Iron Wolves +2.".to_string(),
@@ -3830,7 +3876,7 @@ mod tests {
             victory_receipt_lines(&quiet),
             vec![
                 "Spared Raj the Quiet.".to_string(),
-                "+55 silver.".to_string(),
+                "+55 silver".to_string(),
             ]
         );
         let shocks = vec!["Shortage: silk scarce at Coral Throne".to_string()];
@@ -4421,5 +4467,43 @@ mod tests {
             cargo_units: 7,
         };
         assert_eq!(capture_cost_line(&baseline, &gains), None);
+    }
+
+    #[test]
+    fn a_storm_card_says_at_sea_and_hides_the_portrait() {
+        let mut facts = naval_facts();
+        facts.captain_id.clear();
+        facts.captain_name.clear();
+        facts.faction_id.clear();
+        facts.recap.sea = true;
+        facts.recap.towed_to = "porto_novo".into();
+        let view = view(ScreenPhase::Outcome, &facts, vec![ScreenAction::BackToPort]);
+        assert!(sea_event_card(&facts));
+        assert!(!view.card.contains("At sea"));
+        assert!(!view.portrait_placeholder);
+        assert_eq!(action_caption(&ScreenAction::BackToPort), "Back to port");
+    }
+
+    #[test]
+    fn a_towed_ship_shows_its_patched_hull() {
+        let step = portlight_sim::session::EncounterStep {
+            kind: "naval".into(),
+            phase: "resolved".into(),
+            player_sunk: true,
+            player_hull: 0,
+            hull_after: 19,
+            ..Default::default()
+        };
+        let facts = facts_from_step(StepInput {
+            step: &step,
+            previous_faction_id: "",
+            previous_enemy_hull_max: None,
+            pending_victory: false,
+            ship: None,
+            at_sea: false,
+            naval_actions: &[],
+            combat_actions: &[],
+        });
+        assert_eq!(facts.player_hull, 19);
     }
 }

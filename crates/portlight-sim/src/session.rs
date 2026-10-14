@@ -129,7 +129,7 @@ pub struct Sale {
 }
 
 /// One step of the approach, naval, boarding, or personal-fight machine.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EncounterStep {
     pub kind: String,
     pub phase: String,
@@ -188,6 +188,10 @@ pub struct EncounterStep {
     pub sink_claims_paid: i64,
     /// Sinking: `fight`, `parting_shot`, `storm`, `pirates` or `event`.
     pub sink_cause: String,
+    /// Sinking: the voyage's destination before the tow.
+    pub sink_planned_destination: String,
+    /// Sinking: the tow's arrival lines (expired policies, settled fees).
+    pub sink_notes: Vec<String>,
 }
 
 /// What [`Session::sink_and_tow`] did: the step fields of a fight sinking,
@@ -208,6 +212,9 @@ pub struct SinkOutcome {
     pub hull_after: i64,
     /// The sim log line(s): the wreck line, then the claim line when paid.
     pub message: String,
+    /// The tow's arrival lines: expired voyage policies and settled
+    /// deferred fees, in that order.
+    pub notes: Vec<String>,
 }
 
 /// Takes a wreck's cargo: per good, three quarters of its total across its
@@ -1755,9 +1762,29 @@ impl Session {
             hull_after = ship.hull;
         }
         // (6) Arrival bookkeeping; no visit is recorded.
+        let mut notes = Vec::new();
         if self.world.voyage.status == VoyageStatus::Arrived {
+            let fees_before: i64 = self
+                .world
+                .captain
+                .deferred_fees
+                .iter()
+                .map(|fee| fee.amount)
+                .sum();
+            let silver_before = self.world.captain.silver;
             let _ = voyage::arrive(&mut self.world);
-            let _ = infrastructure::expire_voyage_policies(&mut self.infra);
+            notes.extend(infrastructure::expire_voyage_policies(&mut self.infra));
+            let fees_after: i64 = self
+                .world
+                .captain
+                .deferred_fees
+                .iter()
+                .map(|fee| fee.amount)
+                .sum();
+            let paid = fees_before - fees_after;
+            if paid > 0 && silver_before - self.world.captain.silver == paid {
+                notes.push(format!("Paid {paid} silver in deferred fees."));
+            }
         }
         let cargo_lost: Vec<(String, i64)> =
             lost.into_iter().map(|(good, qty, _)| (good, qty)).collect();
@@ -1781,6 +1808,7 @@ impl Session {
             claims_paid,
             hull_after,
             message,
+            notes,
         }
     }
 
@@ -1796,6 +1824,8 @@ impl Session {
         step.hull_after = outcome.hull_after;
         step.sink_claims_paid = outcome.claims_paid;
         step.sink_cause = outcome.cause;
+        step.sink_planned_destination = outcome.planned_destination;
+        step.sink_notes = outcome.notes;
     }
 
     fn plunder(&mut self) {
@@ -2101,6 +2131,8 @@ impl Session {
             hull_after: 0,
             sink_claims_paid: 0,
             sink_cause: String::new(),
+            sink_planned_destination: String::new(),
+            sink_notes: Vec::new(),
         }
     }
 
@@ -2424,6 +2456,7 @@ impl Session {
                 let incident = event;
                 let outcome = self.sink_and_tow(cause, incident);
                 notes.push(outcome.message.clone());
+                notes.extend(outcome.notes.iter().cloned());
                 day_sink = Some(outcome);
             }
             if self.world.voyage.status == VoyageStatus::Arrived {
@@ -5897,6 +5930,74 @@ mod sink_tests {
         assert!(outcome.claims_paid > 0);
     }
 
+    fn wreck_claim_pays_for(cause: &str, incident: &str) {
+        let (mut session, _, lane) = insured_at_sea(7, vec![lot("grain", 23, 2300, 0)]);
+        let before = session.infra.claims.len();
+        let silver_before = session.world.captain.silver;
+        let outcome = session.sink_and_tow(cause, incident);
+        assert_eq!(outcome.towed_to, lane);
+        let claims = &session.infra.claims[before..];
+        assert_eq!(
+            claims.len(),
+            1,
+            "{incident}: one cargo claim, no hull claim"
+        );
+        assert_eq!(claims[0].incident_type, incident);
+        assert!(
+            claims[0].loss_value <= 1700,
+            "{incident}: capped at cost basis"
+        );
+        assert!(outcome.claims_paid > 0, "{incident}: the claim pays");
+        assert_eq!(
+            session.world.captain.silver,
+            silver_before - outcome.silver_lost + outcome.claims_paid
+        );
+    }
+
+    /// The day's own sea-event sinking, with a cargo policy aboard.
+    fn insured_sea_sink_pays(cause: &str) {
+        let (before, _, _) = sea_sink(cause);
+        let mut session = before.clone();
+        session.infra.policies = insured_at_sea(1, Vec::new()).0.infra.policies;
+        session.world.captain.cargo = vec![lot("grain", 23, 2300, 0)];
+        let claims_before = session.infra.claims.len();
+        let turn = session.advance().unwrap();
+        let sink = turn.sink.expect("same day, same sinking");
+        assert_eq!(sink.cause, cause);
+        let claims = &session.infra.claims[claims_before..];
+        let wreck: Vec<_> = claims.iter().filter(|c| c.incident_type == cause).collect();
+        assert!(!wreck.is_empty(), "{cause}: a cargo claim is filed");
+        assert!(sink.claims_paid > 0, "{cause}: the claim pays");
+        let grain = content::content().good("grain").unwrap().base_price;
+        assert!(wreck.iter().all(|c| c.loss_value <= (grain * 17).min(1700)));
+    }
+
+    #[test]
+    fn a_storm_on_the_day_pays_the_cargo_claim() {
+        insured_sea_sink_pays("storm");
+    }
+
+    #[test]
+    fn a_pirate_event_on_the_day_pays_the_cargo_claim() {
+        insured_sea_sink_pays("pirates");
+    }
+
+    #[test]
+    fn storm_sinking_pays_the_cargo_claim() {
+        wreck_claim_pays_for("storm", "storm");
+    }
+
+    #[test]
+    fn pirate_event_sinking_pays_the_cargo_claim() {
+        wreck_claim_pays_for("pirates", "pirates");
+    }
+
+    #[test]
+    fn other_event_sinking_pays_the_cargo_claim() {
+        wreck_claim_pays_for("event", "cargo_damaged");
+        wreck_claim_pays_for("event", "event");
+    }
+
     // S19
     #[test]
     fn claim_never_exceeds_cost_basis() {
@@ -6051,6 +6152,46 @@ mod sink_tests {
         assert!(session.naval_round("flee").is_err());
         assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
         assert_eq!(session.world.captain.silver, silver);
+    }
+
+    // K1: the tow's arrival lines reach the step and the day's notes.
+    #[test]
+    fn tow_logs_policy_expiry_and_fees() {
+        let (mut session, _origin, _lane) = insured_at_sea(2, vec![lot("grain", 4, 40, 0)]);
+        session.world.captain.deferred_fees = vec![DeferredFee {
+            fee_type: "port".into(),
+            amount: 25,
+            day: 1,
+        }];
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert!(
+            outcome
+                .notes
+                .iter()
+                .any(|n| n.starts_with("Voyage policy expired")),
+            "{:?}",
+            outcome.notes
+        );
+        assert_eq!(
+            outcome.notes.last().map(String::as_str),
+            Some("Paid 25 silver in deferred fees.")
+        );
+        let mut round = at_sea(1, 3);
+        let planned = round.world.voyage.destination_id.clone();
+        let step = sink_in_round(&mut round);
+        assert_eq!(step.sink_planned_destination, planned);
+        assert_ne!(step.towed_to, planned);
+    }
+
+    // K2: a storm on the arrival day tows to the destination.
+    #[test]
+    fn arrival_day_sink_tows_to_the_destination() {
+        let mut session = at_sea(1, 10);
+        let destination = session.world.voyage.destination_id.clone();
+        session.world.voyage.status = VoyageStatus::Arrived;
+        let outcome = session.sink_and_tow("storm", "storm");
+        assert_eq!(outcome.towed_to, destination);
+        assert_eq!(outcome.planned_destination, destination);
     }
 
     // S28

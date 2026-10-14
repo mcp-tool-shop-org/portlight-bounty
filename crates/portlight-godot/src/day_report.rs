@@ -199,11 +199,47 @@ impl WeekWindow {
 }
 
 impl DayReportDocument {
+    /// A storm or route-event sinking heads the report (and opens it): the
+    /// wreck line, ASCII and without its full stop.
+    pub(crate) fn push_wreck_line(&mut self, line: &str) {
+        let lines: Vec<String> = split_wreck_line(line)
+            .iter()
+            .map(|part| crate::recap::passthrough_text(part))
+            .filter(|part| !part.is_empty())
+            .collect();
+        if lines.is_empty() {
+            return;
+        }
+        self.sections.insert(
+            0,
+            DayReportSection {
+                id: "wreck",
+                title: "Wreck",
+                lines: lines
+                    .into_iter()
+                    .map(|text| DayReportLine {
+                        text,
+                        notable: true,
+                    })
+                    .collect(),
+            },
+        );
+    }
+
     pub(crate) fn has_notable(&self) -> bool {
         self.sections
             .iter()
             .flat_map(|section| section.lines.iter())
             .any(|line| line.notable)
+    }
+}
+
+/// The sinking line, and the insurance payout as its own line when a claim
+/// paid.
+fn split_wreck_line(text: &str) -> Vec<String> {
+    match text.split_once(" Insurance paid ") {
+        Some((wreck, paid)) => vec![wreck.to_string(), format!("Insurance paid {paid}")],
+        None => vec![text.to_string()],
     }
 }
 
@@ -4084,5 +4120,48 @@ mod tests {
         assert_eq!(port_label(world, "salt_spit_cove"), "Salt Spit Cove");
         let known = world.port("porto_novo").expect("porto_novo");
         assert_eq!(port_label(world, "porto_novo"), known.name);
+    }
+
+    #[test]
+    fn a_paid_claim_gets_its_own_wreck_line() {
+        let mut doc = DayReportDocument {
+            day: 4,
+            title: "Day 4".into(),
+            sections: Vec::new(),
+            footer: DayReportFooter::default(),
+        };
+        doc.push_wreck_line(
+            "The storm breaks your ship - towed to Porto Novo - lost 30 silver and 17 cargo. Insurance paid 120 silver for the wreck.",
+        );
+        let lines: Vec<&str> = doc.sections[0]
+            .lines
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect();
+        assert_eq!(
+            lines,
+            [
+                "The storm breaks your ship - towed to Porto Novo - lost 30 silver and 17 cargo",
+                "Insurance paid 120 silver for the wreck",
+            ]
+        );
+    }
+
+    #[test]
+    fn a_wreck_line_heads_and_opens_the_report() {
+        let mut doc = DayReportDocument {
+            day: 4,
+            title: "Day 4".into(),
+            sections: Vec::new(),
+            footer: DayReportFooter::default(),
+        };
+        assert!(!doc.has_notable());
+        doc.push_wreck_line("The storm breaks your ship - towed to Porto Novo - lost 30 silver.");
+        assert!(doc.has_notable());
+        assert_eq!(doc.sections[0].id, "wreck");
+        assert_eq!(
+            doc.sections[0].lines[0].text,
+            "The storm breaks your ship - towed to Porto Novo - lost 30 silver"
+        );
     }
 }

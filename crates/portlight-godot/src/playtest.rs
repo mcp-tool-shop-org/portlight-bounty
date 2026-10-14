@@ -988,6 +988,89 @@ pub(crate) struct EncounterKey {
     pub boarding: Option<(i64, i64)>,
     pub delta: String,
     pub log: String,
+    /// `state.encounter.sink` while a sinking's recap is up, else null.
+    pub sink: Option<SinkKey>,
+}
+
+/// `state.encounter.sink`: the wreck and tow behind the recap.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct SinkKey {
+    pub towed_to: String,
+    pub silver_lost: i64,
+    pub cargo_lost: Vec<(String, i64)>,
+    pub hull_after: i64,
+    pub claims_paid: i64,
+}
+
+impl SinkKey {
+    pub(crate) fn from_seed(seed: &crate::recap::RecapSeed) -> Option<Self> {
+        let wreck = !seed.towed_to.is_empty() || seed.wreck_silver > 0 || seed.hull_after > 0;
+        (wreck && seed.result.is_some()).then(|| Self {
+            towed_to: seed.towed_to.clone(),
+            silver_lost: seed.wreck_silver,
+            cargo_lost: seed.wreck_cargo.clone(),
+            hull_after: seed.hull_after,
+            claims_paid: seed.claims_paid,
+        })
+    }
+
+    pub(crate) fn to_dictionary(&self) -> VarDictionary {
+        let mut cargo = VarArray::new();
+        for (good, qty) in &self.cargo_lost {
+            cargo.push(&vdict! { "good" => good.as_str(), "qty" => *qty });
+        }
+        let mut dict = vdict! {
+            "towed_to" => self.towed_to.as_str(),
+            "silver_lost" => self.silver_lost,
+            "hull_after" => self.hull_after,
+            "claims_paid" => self.claims_paid,
+        };
+        dict.set("cargo_lost", &cargo);
+        dict
+    }
+}
+
+/// `state.cargo`: `[{good, qty}]`, one entry per good, in hold order.
+pub(crate) fn cargo_key(cargo: &[portlight_sim::model::CargoItem]) -> Vec<(String, i64)> {
+    let mut out: Vec<(String, i64)> = Vec::new();
+    for item in cargo {
+        match out.iter_mut().find(|(good, _)| *good == item.good_id) {
+            Some((_, qty)) => *qty += item.quantity,
+            None => out.push((item.good_id.clone(), item.quantity)),
+        }
+    }
+    out
+}
+
+/// `state.policies`: `[{spec, family, scope, active, paid_out}]`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PolicyKey {
+    pub spec: String,
+    pub family: String,
+    pub scope: String,
+    pub active: bool,
+    pub paid_out: i64,
+}
+
+pub(crate) fn policies_key(
+    infra: &portlight_sim::model::InfrastructureRecord,
+) -> (Vec<PolicyKey>, Option<(String, i64, bool)>) {
+    let policies = infra
+        .policies
+        .iter()
+        .map(|policy| PolicyKey {
+            spec: policy.spec_id.clone(),
+            family: policy.family.clone(),
+            scope: policy.scope.clone(),
+            active: policy.active,
+            paid_out: policy.total_paid_out,
+        })
+        .collect();
+    let last = infra
+        .claims
+        .last()
+        .map(|claim| (claim.incident_type.clone(), claim.payout, claim.denied));
+    (policies, last)
 }
 
 impl EncounterKey {
@@ -1004,6 +1087,10 @@ impl EncounterKey {
                 &vdict! { "progress" => progress, "threshold" => threshold },
             ),
             None => dict.set("boarding", &Variant::nil()),
+        }
+        match &self.sink {
+            Some(sink) => dict.set("sink", &sink.to_dictionary()),
+            None => dict.set("sink", &Variant::nil()),
         }
         dict
     }
@@ -1032,6 +1119,9 @@ pub(crate) fn encounter_key(
         } else {
             crate::logic::delta_text(facts)
         },
+        sink: recap
+            .as_ref()
+            .and_then(|_| SinkKey::from_seed(&facts.recap)),
         log: encounter_log_text(recap.as_ref(), view.log),
     })
 }
@@ -1856,5 +1946,57 @@ mod tests {
         );
         assert_eq!(implicit_dismiss(true, true, true, false), None);
         assert_eq!(implicit_dismiss(false, false, false, false), None);
+    }
+
+    #[test]
+    fn state_cargo_key() {
+        let lot = |good: &str, qty: i64| portlight_sim::model::CargoItem {
+            good_id: good.into(),
+            quantity: qty,
+            cost_basis: 0,
+            acquired_port: String::new(),
+            acquired_region: String::new(),
+            acquired_day: 0,
+        };
+        assert_eq!(
+            cargo_key(&[lot("grain", 2), lot("silk", 1), lot("grain", 3)]),
+            vec![("grain".to_string(), 5), ("silk".to_string(), 1)]
+        );
+    }
+
+    #[test]
+    fn state_encounter_sink_keys() {
+        let mut seed = crate::recap::RecapSeed::default();
+        assert_eq!(SinkKey::from_seed(&seed), None);
+        seed.result = Some(crate::recap::RecapResult::Lost);
+        seed.towed_to = "porto_novo".into();
+        seed.wreck_silver = 150;
+        seed.wreck_cargo = vec![("silk".into(), 15)];
+        seed.hull_after = 19;
+        seed.claims_paid = 40;
+        let key = SinkKey::from_seed(&seed).unwrap();
+        assert_eq!(key.towed_to, "porto_novo");
+        assert_eq!(key.hull_after, 19);
+        assert_eq!(key.claims_paid, 40);
+        assert_eq!(key.cargo_lost, vec![("silk".to_string(), 15)]);
+    }
+
+    #[test]
+    fn state_policies_key() {
+        let mut infra = portlight_sim::model::InfrastructureRecord::default();
+        assert_eq!(policies_key(&infra), (Vec::new(), None));
+        infra.claims.push(portlight_sim::model::InsuranceClaim {
+            policy_id: "p".into(),
+            day: 3,
+            incident_type: "pirates".into(),
+            loss_value: 50,
+            payout: 40,
+            denied: false,
+            denial_reason: String::new(),
+        });
+        assert_eq!(
+            policies_key(&infra).1,
+            Some(("pirates".to_string(), 40, false))
+        );
     }
 }

@@ -390,6 +390,21 @@ pub(crate) fn claim_notice(silver: i64) -> String {
     format!("Claimed {silver} silver.")
 }
 
+/// A refused hunt in player words: the patched-floor refusal gets
+/// `Too battered to hunt - repair above {floor} hull first`; anything else
+/// is the sim's own sentence.
+pub(crate) fn hunt_refusal_text(err: &portlight_sim::error::SimError) -> String {
+    match err {
+        portlight_sim::error::SimError::HullTooLowToHunt { need, .. } => {
+            format!(
+                "Too battered to hunt - repair above {} hull first",
+                need - 1
+            )
+        }
+        other => other.to_string(),
+    }
+}
+
 /// Hunt confirm. `crew` is `(crew, template_crew_min, cap)` where `cap` comes
 /// from [`portlight_sim::naval::hunt_crew_loss_cap`]. No odds.
 pub(crate) fn hunt_confirm_text(name: &str, crew: Option<(i64, i64, i64)>) -> String {
@@ -1111,5 +1126,17 @@ mod tests {
         assert!(row.text.contains("Gnaw"));
         assert!(row.text.contains("200 silver"));
         assert!(!row.claim_enabled);
+    }
+
+    #[test]
+    fn hunt_refusal_reason_line() {
+        let err = portlight_sim::error::SimError::HullTooLowToHunt { need: 20, have: 19 };
+        let text = hunt_refusal_text(&err);
+        assert_eq!(text, "Too battered to hunt - repair above 19 hull first");
+        assert!(text.is_ascii() && !text.ends_with('.'));
+        assert_eq!(
+            hunt_refusal_text(&portlight_sim::error::SimError::NoShip),
+            portlight_sim::error::SimError::NoShip.to_string()
+        );
     }
 }
