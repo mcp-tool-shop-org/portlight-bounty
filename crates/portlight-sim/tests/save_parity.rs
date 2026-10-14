@@ -833,3 +833,51 @@ fn lane_names_and_lane_encounters_survive_save_and_load() {
     assert!(seen_lane > 0, "no Timber Run encounter after a load");
     let _ = fs::remove_dir_all(&dir);
 }
+
+/// A saved route with no content match loads fine and keeps empty lane
+/// names; the matched routes still get theirs.
+#[test]
+fn unknown_lane_loads_with_empty_names() {
+    let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+    let dir = scratch("unknown-lane");
+    session.save(&dir, "unknown").unwrap();
+    // The slot file sits in the save dir or one folder below it.
+    let mut stack = vec![dir.clone()];
+    let mut file = None;
+    while let Some(at) = stack.pop() {
+        for entry in fs::read_dir(&at).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.file_name().is_some_and(|name| name == "unknown.json") {
+                file = Some(path);
+            }
+        }
+    }
+    let file = file.expect("unknown.json slot file");
+    let mut data: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
+    let routes = data
+        .pointer_mut("/routes")
+        .and_then(Value::as_array_mut)
+        .unwrap();
+    routes.push(serde_json::json!({
+        "port_a": "porto_novo",
+        "port_b": "nowhere",
+        "distance": 10,
+        "danger": 0.1,
+        "min_ship_class": "sloop"
+    }));
+    fs::write(&file, serde_json::to_string(&data).unwrap()).unwrap();
+    let loaded = Session::load(&dir, "unknown").unwrap().unwrap();
+    let unknown = loaded
+        .world()
+        .routes
+        .iter()
+        .find(|route| route.port_b == "nowhere")
+        .unwrap();
+    assert_eq!(unknown.lore_name, "");
+    assert_eq!(unknown.lore, "");
+    let grain = loaded.world().find_route("porto_novo", "al_manar").unwrap();
+    assert_eq!(grain.lore_name, "The Grain Road");
+    let _ = fs::remove_dir_all(&dir);
+}
