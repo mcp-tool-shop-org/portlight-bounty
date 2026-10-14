@@ -378,6 +378,18 @@ jobs:
           fi
           expect_explicit_headless_shot_fails /tmp/godot-headless-art-docs-loss-outcome.log \
             godot --headless --path godot -- --art-docs --encounter-loss-outcome
+          run_godot /tmp/godot-encounter-sunk-smoke.log \
+            godot --headless --path godot -- --encounter-sunk
+          if ! grep -q 'portlight encounter-sunk smoke ok' /tmp/godot-encounter-sunk-smoke.log; then
+            echo "encounter-sunk smoke did not report ok"
+            exit 1
+          fi
+          run_godot /tmp/godot-storm-sunk-smoke.log \
+            godot --headless --path godot -- --storm-sunk
+          if ! grep -q 'portlight storm-sunk smoke ok' /tmp/godot-storm-sunk-smoke.log; then
+            echo "storm-sunk smoke did not report ok"
+            exit 1
+          fi
           run_godot /tmp/godot-loss-outcome-smoke.log \
             godot --headless --path godot -- --encounter-loss-outcome
           if ! grep -q 'portlight loss-outcome smoke ok' /tmp/godot-loss-outcome-smoke.log; then
@@ -541,6 +553,24 @@ jobs:
           fi
           if [ ! -f /tmp/encounter-approach.png ]; then
             echo "encounter capture did not write /tmp/encounter-approach.png"
+            exit 1
+          fi
+          # Sinking recaps: a fight sinking and a storm sinking, towed to port.
+          mkdir -p /tmp/sunk-shots
+          run_godot /tmp/godot-encounter-sunk-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/sunk-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --encounter-sunk
+          if [ ! -f /tmp/sunk-shots/encounter-recap-sunk.png ]; then
+            echo "encounter-sunk capture did not write /tmp/sunk-shots/encounter-recap-sunk.png"
+            exit 1
+          fi
+          run_godot /tmp/godot-storm-sunk-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/sunk-shots/capture.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --storm-sunk
+          if [ ! -f /tmp/sunk-shots/storm-recap-sunk.png ]; then
+            echo "storm-sunk capture did not write /tmp/sunk-shots/storm-recap-sunk.png"
             exit 1
           fi
           # Outcome card with a non-win receipt (Crew term).
@@ -912,6 +942,8 @@ jobs:
           cmp_committed encounter-outcome.png /tmp/encounter-outcome.png
           cmp_committed encounter-recap-won.png /tmp/encounter-recap-won.png
           cmp_committed encounter-loss-outcome.png /tmp/loss-outcome-shots/encounter-loss-outcome.png
+          cmp_committed encounter-recap-sunk.png /tmp/sunk-shots/encounter-recap-sunk.png
+          cmp_committed storm-recap-sunk.png /tmp/sunk-shots/storm-recap-sunk.png
           cmp_committed harbour-seam-z100.png /tmp/seam-shots/harbour-seam-z100.png
           cmp_committed harbour-seam-z072.png /tmp/seam-shots/harbour-seam-z072.png
           cmp_committed harbour-seam-vertex-crop.png /tmp/seam-shots/harbour-seam-vertex-crop.png

@@ -83,10 +83,18 @@ pub(crate) struct DepartureFacts {
     pub hold_used: f64,
     pub hold_cap: i64,
     pub contracts: Vec<ContractFacts>,
+    /// Flagship hull now.
+    pub hull: i64,
+    /// The worst single storm this class takes (the sim's storm table).
+    pub worst_storm: i64,
+    /// A full repair at this port, in silver.
+    pub repair_price: i64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum DepartureKind {
+    /// One storm can sink the ship.
+    Hull,
     UnsoldHere,
     Late,
     AtRisk,
@@ -169,6 +177,22 @@ pub(crate) fn departure_facts(session: &Session, dest: &str) -> Option<Departure
         hold_used: economy::cargo_weight(cargo),
         hold_cap: ship::resolve_cargo_capacity(flagship),
         contracts,
+        hull: flagship.hull,
+        worst_storm: portlight_sim::session::worst_storm_damage(&flagship.template_id),
+        repair_price: crate::logic::full_repair_price(world),
+    })
+}
+
+/// `One storm can sink you - repair here for {N} silver` while the hull is
+/// at or below the worst single storm this class can take.
+pub(crate) fn storm_risk_line(hull: i64, worst_storm: i64, repair_price: i64) -> Option<String> {
+    if hull > worst_storm {
+        return None;
+    }
+    Some(if repair_price > 0 {
+        format!("One storm can sink you - repair here for {repair_price} silver")
+    } else {
+        "One storm can sink you".to_string()
     })
 }
 
@@ -342,6 +366,17 @@ pub(crate) fn build_departure_check(facts: &DepartureFacts) -> Option<DepartureD
                 text,
                 kind: DepartureKind::Stores,
                 warn: short,
+            },
+            deadline_day: 0,
+            title: String::new(),
+        });
+    }
+    if let Some(text) = storm_risk_line(facts.hull, facts.worst_storm, facts.repair_price) {
+        ranked.push(Ranked {
+            line: DepartureLine {
+                text,
+                kind: DepartureKind::Hull,
+                warn: true,
             },
             deadline_day: 0,
             title: String::new(),
@@ -623,6 +658,9 @@ mod tests {
             hold_used: 0.0,
             hold_cap: 30,
             contracts,
+            hull: 60,
+            worst_storm: 18,
+            repair_price: 0,
         }
     }
 
@@ -1060,5 +1098,40 @@ mod tests {
         facts.day = facts.contracts[0].deadline_day - 1;
         let doc = build_departure_check(&facts).unwrap();
         assert!(doc.lines[0].text.ends_with("1 day left - will be late"));
+    }
+
+    #[test]
+    fn departure_warning_at_low_hull() {
+        // Per class: the warning shows at hull <= worst storm, not above.
+        for def in &portlight_sim::content::content().ships {
+            let worst = portlight_sim::session::worst_storm_damage(&def.id);
+            assert_eq!(
+                storm_risk_line(worst, worst, 54).as_deref(),
+                Some("One storm can sink you - repair here for 54 silver"),
+                "{}",
+                def.id
+            );
+            assert_eq!(storm_risk_line(worst + 1, worst, 54), None, "{}", def.id);
+        }
+        assert_eq!(
+            portlight_sim::session::worst_storm_damage("coastal_sloop"),
+            18
+        );
+        assert_eq!(
+            portlight_sim::session::worst_storm_damage("royal_man_of_war"),
+            3
+        );
+        let mut facts = base_facts(Vec::new());
+        facts.hull = 19;
+        facts.repair_price = 123;
+        assert!(build_departure_check(&facts).is_none());
+        facts.hull = 18;
+        let doc = build_departure_check(&facts).expect("a hull line");
+        assert_eq!(
+            doc.lines[0].text,
+            "One storm can sink you - repair here for 123 silver"
+        );
+        assert!(doc.lines[0].warn);
+        assert!(doc.lines[0].text.is_ascii());
     }
 }

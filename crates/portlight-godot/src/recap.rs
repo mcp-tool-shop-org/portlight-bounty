@@ -20,6 +20,9 @@ pub(crate) const PASSTHROUGH_CAP: usize = 2;
 /// Injury rows at most.
 pub(crate) const INJURY_CAP: usize = 2;
 
+/// The cause on the silver and goods a sinking takes.
+const WRECK_CAUSE: &str = "lost with the wreck";
+
 pub(crate) const RULE_NOTE: &str =
     "Either ship closing counts toward boarding, unless the other evades.";
 pub(crate) const BOUNTY_NOTE: &str = "The bounty stays open";
@@ -182,8 +185,22 @@ pub(crate) struct CombatFacts {
     pub injuries: Vec<String>,
     pub reached_boarding: bool,
     pub bounty_open: bool,
-    /// The player's hull max, for the `Your hull 0/{max}` row after a sinking.
+    /// The player's hull max, for the `Your hull {h}/{max}` row after a sinking.
     pub hull_max: Option<i64>,
+    /// Sinking: tow port id, silver and goods lost with the wreck, and the
+    /// hull after the tow (from the sim step).
+    pub towed_to: String,
+    pub wreck_silver: i64,
+    pub wreck_cargo: Vec<(String, i64)>,
+    pub hull_after: i64,
+    /// Sinking: the voyage's destination before the tow (empty when unknown).
+    pub planned_destination: String,
+    /// Sinking: silver cargo insurance paid for the wreck.
+    pub claims_paid: i64,
+    /// Sinking: `fight`, `parting_shot`, `storm`, `pirates` or `event`.
+    pub sink_cause: String,
+    /// Sinking: full repair at the tow port, in silver (0: none needed).
+    pub repair_price: i64,
 }
 
 /// Extras a contract card needs beyond the outcome: units of the good still
@@ -281,6 +298,7 @@ pub(crate) fn decisive_clause(
             match action.as_str() {
                 "broadside" => Some("sunk by their broadside".into()),
                 "rake" => Some("sunk by their grapeshot".into()),
+                "parting shot" => Some("sunk by a parting shot".into()),
                 _ => None,
             }
         }
@@ -393,6 +411,13 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     if let Some(clause) = decisive_clause(result, facts.sea, facts.decisive.as_ref()) {
         headline = format!("{headline} - {clause}");
     }
+    // A sea-event sinking has no captain to name.
+    match facts.sink_cause.as_str() {
+        "storm" => headline = "Sunk by the storm".to_string(),
+        "pirates" => headline = "Sunk by pirates".to_string(),
+        "event" => headline = "Sunk at sea".to_string(),
+        _ => {}
+    }
     let headline = ascii_punctuation(&headline);
     let headline_tone = match result {
         r if r.is_win() => RecapTone::Gold,
@@ -419,8 +444,28 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
                 format!("Sunk - no prize - {reason}")
             })
         }
+        _ if !facts.towed_to.is_empty() => {
+            Some(format!("Towed to {}", port_display_name(&facts.towed_to)))
+        }
         _ => None,
     };
+    let wreck =
+        !facts.towed_to.is_empty() || facts.wreck_silver > 0 || !facts.wreck_cargo.is_empty();
+    // `{Destination} not reached` only when the tow went somewhere else.
+    let mut not_reached = (wreck
+        && !facts.towed_to.is_empty()
+        && !facts.planned_destination.is_empty()
+        && facts.planned_destination != facts.towed_to)
+        .then(|| {
+            row(
+                RecapSection::Choice,
+                format!(
+                    "{} not reached",
+                    port_display_name(&facts.planned_destination)
+                ),
+                RecapTone::Cream,
+            )
+        });
 
     // Earned (wins only): purse, loot silver once, loot goods, standing.
     let mut earned = Vec::new();
@@ -525,7 +570,52 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     let forfeit = (result == RecapResult::Lost
         && matches!(facts.decisive, Some(DecisiveMove::BestedInDuel)))
     .then_some("duel forfeit");
-    if !win && silver < 0 {
+    if wreck {
+        // Silver: the wreck's share from the step, then any other fall as
+        // its own plain row. Goods: catalog names, two rows then a count.
+        if facts.wreck_silver > 0 {
+            cost.push(caused(
+                RecapSection::Cost,
+                format!("Silver -{}", facts.wreck_silver),
+                Some(WRECK_CAUSE),
+                RecapTone::Due,
+            ));
+        }
+        // Only the wreck's own silver rows: no unexplained `Silver -N` beside
+        // them (fees paid at the tow port go to the Log).
+        let _ = silver;
+        let goods: Vec<&(String, i64)> = facts
+            .wreck_cargo
+            .iter()
+            .filter(|(_, qty)| *qty > 0)
+            .collect();
+        for (id, qty) in goods.iter().take(PASSTHROUGH_CAP) {
+            cost.push(caused(
+                RecapSection::Cost,
+                format!("{} -{qty}", good_display_name(id)),
+                Some(WRECK_CAUSE),
+                RecapTone::Cream,
+            ));
+        }
+        if goods.len() > PASSTHROUGH_CAP {
+            cost.push(row(
+                RecapSection::Cost,
+                format!(
+                    "+{} more goods {WRECK_CAUSE}",
+                    goods.len() - PASSTHROUGH_CAP
+                ),
+                RecapTone::Cream,
+            ));
+        }
+        if facts.claims_paid > 0 {
+            cost.push(caused(
+                RecapSection::Cost,
+                format!("Silver +{}", facts.claims_paid),
+                Some("insurance claim"),
+                RecapTone::Cream,
+            ));
+        }
+    } else if !win && silver < 0 {
         cost.push(caused(
             RecapSection::Cost,
             format!("Silver {silver}"),
@@ -533,7 +623,7 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
             RecapTone::Due,
         ));
     }
-    if !win && cargo < 0 {
+    if !win && cargo < 0 && !wreck {
         cost.push(caused(
             RecapSection::Cost,
             format!("Cargo {cargo}"),
@@ -548,15 +638,25 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
             RecapTone::Cream,
         ));
     }
-    if matches!(facts.decisive, Some(DecisiveMove::SunkBy(_))) {
+    if wreck {
         if let Some(max) = facts.hull_max.filter(|max| *max > 0) {
             cost.push(row(
                 RecapSection::Cost,
-                format!("Your hull 0/{max}"),
+                format!("Your hull {}/{max} - patched for the tow", facts.hull_after),
                 RecapTone::Muted,
             ));
         }
     }
+    let mut repair = (wreck
+        && facts.repair_price > 0
+        && facts.hull_max.is_some_and(|max| facts.hull_after < max))
+    .then(|| {
+        row(
+            RecapSection::Cost,
+            format!("Repair here - {} silver", facts.repair_price),
+            RecapTone::Muted,
+        )
+    });
 
     let bounty = (!win && facts.bounty_open)
         .then(|| row(RecapSection::Bounty, BOUNTY_NOTE, RecapTone::Muted));
@@ -570,8 +670,27 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     // standing row, the bounty note, until the body fits.
     let mut notes = notes;
     let mut bounty = bounty;
-    let fixed =
-        usize::from(choice.is_some()) + earned.len() + cost.len() + usize::from(net.is_some());
+    // The repair row drops first, then `{Destination} not reached`.
+    let optional = |repair: &Option<RecapRow>, not_reached: &Option<RecapRow>| {
+        usize::from(repair.is_some()) + usize::from(not_reached.is_some())
+    };
+    let mut fixed = usize::from(choice.is_some())
+        + earned.len()
+        + cost.len()
+        + usize::from(net.is_some())
+        + usize::from(bare_hull.is_some())
+        + usize::from(bare_crew.is_some());
+    while fixed + optional(&repair, &not_reached) > BODY_ROW_CAP {
+        if repair.is_some() {
+            repair = None;
+        } else if not_reached.is_some() {
+            not_reached = None;
+        } else {
+            break;
+        }
+    }
+    fixed = fixed - usize::from(bare_hull.is_some()) - usize::from(bare_crew.is_some())
+        + optional(&repair, &not_reached);
     // The split rows only when the whole card, notes and all, still fits;
     // otherwise each term keeps its single row.
     let all = fixed
@@ -637,6 +756,7 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
             RecapTone::Cream,
         ));
     }
+    rows.extend(not_reached);
     let mut earned_rows = earned;
     earned_rows.extend(goods);
     earned_rows.extend(standing);
@@ -649,6 +769,7 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
         rows.push(row(RecapSection::Heading, "Cost", RecapTone::Muted));
         rows.extend(cost);
     }
+    rows.extend(repair);
     if facts.reached_boarding {
         rows.push(row(RecapSection::RuleNote, RULE_NOTE, RecapTone::Muted));
     }
@@ -803,6 +924,19 @@ pub(crate) struct RecapSeed {
     pub notes: Vec<String>,
     pub prize_ship: String,
     pub no_prize_reason: String,
+    /// Sinking: what the sim's tow step reported.
+    pub towed_to: String,
+    pub wreck_silver: i64,
+    pub wreck_cargo: Vec<(String, i64)>,
+    pub hull_after: i64,
+    /// Sinking: the voyage's destination before the tow (empty when unknown).
+    pub planned_destination: String,
+    /// Sinking: silver cargo insurance paid for the wreck.
+    pub claims_paid: i64,
+    /// Sinking: `fight`, `parting_shot`, `storm`, `pirates` or `event`.
+    pub sink_cause: String,
+    /// Sinking: full repair at the tow port, in silver (0: none needed).
+    pub repair_price: i64,
 }
 
 /// The seed a new step starts from: the previous step's, unless that
@@ -996,6 +1130,16 @@ pub(crate) fn carry_seed(
         }
     }
     let decisive = match step.kind.as_str() {
+        // Sunk by a flee's shot: a failed flee is their broadside; a parting
+        // shot names no clause.
+        _ if flee && step.player_sunk => Some(DecisiveMove::SunkBy(
+            if step.escaped {
+                "parting shot"
+            } else {
+                "broadside"
+            }
+            .to_string(),
+        )),
         "choice" if flee && step.escaped => Some(DecisiveMove::FledApproach),
         "naval" if flee && step.escaped => Some(DecisiveMove::FledAtSea(step.turn)),
         "naval" if step.player_sunk => Some(DecisiveMove::SunkBy(step.enemy_action.clone())),
@@ -1022,6 +1166,15 @@ pub(crate) fn carry_seed(
     }
     if step.boarding_triggered || step.kind == "board" {
         seed.reached_boarding = true;
+    }
+    if step.player_sunk && step.phase == "resolved" {
+        seed.towed_to = step.towed_to.clone();
+        seed.wreck_silver = step.sink_silver_lost;
+        seed.wreck_cargo = step.sink_cargo_lost.clone();
+        seed.hull_after = step.hull_after;
+        seed.claims_paid = step.sink_claims_paid;
+        seed.sink_cause = step.sink_cause.clone();
+        seed.planned_destination = step.sink_planned_destination.clone();
     }
     if step.phase == "resolved" {
         seed.plundered = step.player_crew <= 0 && !step.player_sunk;
@@ -1052,6 +1205,14 @@ pub(crate) fn seed_facts(seed: &RecapSeed, name: &str) -> Option<CombatFacts> {
         reached_boarding: seed.reached_boarding,
         bounty_open: seed.bounty_open,
         hull_max: None,
+        towed_to: seed.towed_to.clone(),
+        wreck_silver: seed.wreck_silver,
+        wreck_cargo: seed.wreck_cargo.clone(),
+        hull_after: seed.hull_after,
+        planned_destination: seed.planned_destination.clone(),
+        claims_paid: seed.claims_paid,
+        sink_cause: seed.sink_cause.clone(),
+        repair_price: seed.repair_price,
     })
 }
 
@@ -1151,6 +1312,8 @@ mod tests {
             hull_after: 0,
             sink_claims_paid: 0,
             sink_cause: String::new(),
+            sink_planned_destination: String::new(),
+            sink_notes: Vec::new(),
         }
     }
 
@@ -1570,6 +1733,10 @@ mod tests {
         facts.bounty_open = true;
         facts.decisive = Some(DecisiveMove::SunkBy("broadside".into()));
         facts.hull_max = Some(60);
+        facts.towed_to = "porto_novo".into();
+        facts.wreck_silver = 40;
+        facts.wreck_cargo = vec![("grain".into(), 5)];
+        facts.hull_after = 6;
         let recap = combat(&facts);
         let rows = texts(&recap);
         let body = recap
@@ -1596,6 +1763,9 @@ mod tests {
         facts.hull_by_cause = [41, 0, 0];
         facts.hull_max = Some(60);
         facts.bounty_open = false;
+        facts.towed_to = "porto_novo".into();
+        facts.hull_after = 6;
+        let port = port_display_name("porto_novo");
         let recap = combat(&facts);
         assert_eq!(
             recap.headline,
@@ -1603,15 +1773,298 @@ mod tests {
         );
         assert_eq!(
             texts(&recap),
-            vec!["Cost", "Hull -30 - their broadside", "Your hull 0/60"]
+            vec![
+                format!("Towed to {port}").as_str(),
+                "Cost",
+                "Hull -30 - their broadside",
+                "Your hull 6/60 - patched for the tow"
+            ]
         );
         let last = recap.rows.last().unwrap();
         assert_eq!(last.tone, RecapTone::Muted);
         // Mixed with an overkill last broadside: the clamp lands on that cause.
         facts.hull_by_cause = [30, 6, 0];
         assert_eq!(
-            texts(&combat(&facts))[1..3],
+            texts(&combat(&facts))[2..4],
             ["Hull -24 - their broadside", "Hull -6 - their grapeshot"]
+        );
+    }
+
+    fn sunk() -> CombatFacts {
+        CombatFacts {
+            result: Some(RecapResult::Lost),
+            sea: true,
+            name: "Captain Vane".into(),
+            decisive: Some(DecisiveMove::SunkBy("broadside".into())),
+            deltas: [-150, 0, -30, -20],
+            hull_by_cause: [30, 0, 0],
+            hull_max: Some(60),
+            towed_to: "porto_novo".into(),
+            wreck_silver: 150,
+            wreck_cargo: vec![
+                ("spice".into(), 2),
+                ("silk".into(), 15),
+                ("grain".into(), 3),
+            ],
+            hull_after: 6,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn sink_recap_full_receipt_order() {
+        let mut facts = sunk();
+        facts.wreck_cargo.truncate(1);
+        facts.planned_destination = "silva_bay".into();
+        facts.claims_paid = 210;
+        facts.deltas = [60, 0, -30, -2];
+        facts.repair_price = 162;
+        let recap = combat(&facts);
+        let rows = owned(&recap);
+        let towed = format!("Towed to {}", port_display_name("porto_novo"));
+        let missed = format!("{} not reached", port_display_name("silva_bay"));
+        assert_eq!(rows[0], towed);
+        assert_eq!(rows[1], missed);
+        let at = |text: &str| rows.iter().position(|r| r.as_str() == text).expect(text);
+        assert!(at("Silver -150 - lost with the wreck") < at("Silver +210 - insurance claim"));
+        assert!(at("Silver +210 - insurance claim") < at("Your hull 6/60 - patched for the tow"));
+        assert!(at("Your hull 6/60 - patched for the tow") < at("Repair here - 162 silver"));
+        assert!(rows.contains(&"Silver net +60".to_string()), "{rows:?}");
+        // No plundered or Cargo rows, no unexplained Silver row, never 0/max.
+        for row in &rows {
+            assert!(
+                !row.contains("plundered") && !row.starts_with("Cargo "),
+                "{row}"
+            );
+            assert_ne!(row, "Silver +60");
+            assert!(!row.contains("0/60") || row.contains("6/60"), "{row}");
+            assert!(!row.ends_with('.') && row.is_ascii(), "{row}");
+        }
+    }
+
+    #[test]
+    fn destination_not_reached_only_when_different() {
+        let mut facts = sunk();
+        facts.planned_destination = "porto_novo".into();
+        assert!(!owned(&combat(&facts))
+            .iter()
+            .any(|r| r.ends_with("not reached")));
+        facts.planned_destination = String::new();
+        assert!(!owned(&combat(&facts))
+            .iter()
+            .any(|r| r.ends_with("not reached")));
+    }
+
+    #[test]
+    fn insurance_claim_row_only_when_paid() {
+        let mut facts = sunk();
+        assert!(!owned(&combat(&facts))
+            .iter()
+            .any(|r| r.contains("insurance")));
+        facts.claims_paid = 40;
+        facts.deltas[0] += 40;
+        assert!(owned(&combat(&facts)).contains(&"Silver +40 - insurance claim".to_string()));
+    }
+
+    #[test]
+    fn repair_price_row_uses_this_port() {
+        let mut facts = sunk();
+        facts.repair_price = 0;
+        assert!(!owned(&combat(&facts))
+            .iter()
+            .any(|r| r.starts_with("Repair here")));
+        facts.repair_price = 270;
+        assert_eq!(
+            owned(&combat(&facts)).last().map(String::as_str),
+            Some("Repair here - 270 silver")
+        );
+        // Whole hull: no repair row.
+        facts.hull_after = 60;
+        assert!(!owned(&combat(&facts))
+            .iter()
+            .any(|r| r.starts_with("Repair here")));
+    }
+
+    #[test]
+    fn sea_sink_headlines_name_the_event() {
+        for (cause, headline) in [
+            ("storm", "Sunk by the storm"),
+            ("pirates", "Sunk by pirates"),
+            ("event", "Sunk at sea"),
+        ] {
+            let mut facts = sunk();
+            facts.name = String::new();
+            facts.decisive = None;
+            facts.sink_cause = cause.into();
+            facts.hull_by_cause = [0, 0, 0];
+            let recap = combat(&facts);
+            assert_eq!(recap.headline, headline);
+            assert!(owned(&recap).contains(&"Your hull 6/60 - patched for the tow".to_string()));
+        }
+    }
+
+    #[test]
+    fn parting_shot_sink_is_lost_not_broke_away() {
+        let mut facts = sunk();
+        facts.decisive = Some(DecisiveMove::SunkBy("parting shot".into()));
+        facts.sink_cause = "parting_shot".into();
+        assert_eq!(
+            combat(&facts).headline,
+            "Lost to Captain Vane - sunk by a parting shot"
+        );
+        let mut step = EncounterStep {
+            kind: "naval".into(),
+            phase: "resolved".into(),
+            choice: "flee".into(),
+            escaped: true,
+            player_sunk: true,
+            ..Default::default()
+        };
+        step.success = true;
+        assert_eq!(
+            crate::logic::encounter_end(&step, false),
+            Some(crate::logic::EncounterEnd::LostAtSea)
+        );
+    }
+
+    #[test]
+    fn repair_then_not_reached_drop_first_at_the_cap() {
+        let mut facts = sunk();
+        facts.planned_destination = "silva_bay".into();
+        facts.claims_paid = 10;
+        facts.deltas[0] += 10;
+        facts.repair_price = 99;
+        facts.injuries = vec!["Broken arm".into(), "Gash".into()];
+        let rows = owned(&combat(&facts));
+        assert!(rows[0].starts_with("Towed to"));
+        assert!(
+            !rows.iter().any(|r| r.starts_with("Repair here")),
+            "{rows:?}"
+        );
+    }
+
+    fn owned(recap: &Recap) -> Vec<String> {
+        texts(recap).iter().map(|row| row.to_string()).collect()
+    }
+
+    #[test]
+    fn sink_recap_rows() {
+        let recap = combat(&sunk());
+        let spice = good_display_name("spice");
+        let silk = good_display_name("silk");
+        let port = port_display_name("porto_novo");
+        assert_eq!(
+            recap.headline,
+            "Lost to Captain Vane - sunk by their broadside"
+        );
+        assert_eq!(
+            texts(&recap),
+            vec![
+                format!("Towed to {port}"),
+                "Cost".to_string(),
+                "Hull -30 - their broadside".to_string(),
+                "Silver -150 - lost with the wreck".to_string(),
+                format!("{spice} -2 - lost with the wreck"),
+                format!("{silk} -15 - lost with the wreck"),
+                "+1 more goods lost with the wreck".to_string(),
+                "Your hull 6/60 - patched for the tow".to_string(),
+            ]
+        );
+        assert_eq!(recap.rows[0].section, RecapSection::Choice);
+        assert_eq!(recap.rows[0].tone, RecapTone::Cream);
+        assert_eq!(recap.rows.last().unwrap().tone, RecapTone::Muted);
+        // No Cargo aggregate, no Silver net, no trailing stop, ASCII.
+        for row in texts(&recap) {
+            assert!(
+                !row.starts_with("Cargo ") && !row.starts_with("Silver net"),
+                "{row}"
+            );
+            assert!(!row.ends_with('.') && row.is_ascii(), "{row}");
+        }
+    }
+
+    #[test]
+    fn sink_wreck_cause_only_from_data() {
+        // A sinking's card keeps to the wreck's own rows: silver lost before
+        // the sink draws no extra plain Silver row beside them.
+        let mut facts = sunk();
+        facts.deltas = [-180, 0, -30, -20];
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        assert!(
+            rows.contains(&"Silver -150 - lost with the wreck"),
+            "{rows:?}"
+        );
+        assert!(!rows.contains(&"Silver -30"), "{rows:?}");
+        assert_eq!(rows.iter().filter(|r| r.starts_with("Silver ")).count(), 1);
+        // A loss with no wreck data never names the wreck.
+        let rows = texts(&combat(&loss())).join("|");
+        assert!(!rows.contains("wreck") && !rows.contains("Towed"), "{rows}");
+    }
+
+    #[test]
+    fn sink_goods_cap_then_more() {
+        let mut facts = sunk();
+        facts.wreck_cargo.truncate(2);
+        assert!(!texts(&combat(&facts))
+            .iter()
+            .any(|r| r.contains("more goods")));
+        facts.wreck_cargo = (0..5).map(|i| (format!("good_{i}"), 1)).collect();
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        assert!(
+            rows.contains(&"+3 more goods lost with the wreck"),
+            "{rows:?}"
+        );
+    }
+
+    #[test]
+    fn sink_seed_reads_the_tow_step() {
+        let mut last = naval("broadside", -30, 0, 0);
+        last.phase = "resolved".into();
+        last.player_sunk = true;
+        last.towed_to = "porto_novo".into();
+        last.sink_silver_lost = 150;
+        last.sink_cargo_lost = vec![("silk".into(), 15)];
+        last.hull_after = 6;
+        let seed = carry_seed(&RecapSeed::default(), &last);
+        assert_eq!(seed.towed_to, "porto_novo");
+        assert_eq!(seed.wreck_silver, 150);
+        assert_eq!(seed.wreck_cargo, vec![("silk".to_string(), 15)]);
+        assert_eq!(seed.hull_after, 6);
+    }
+
+    #[test]
+    fn a_flee_sinking_is_a_loss_at_sea() {
+        let mut flee = step("choice", "resolved");
+        flee.choice = "flee".into();
+        flee.hull_damage = 6;
+        flee.player_sunk = true;
+        let seed = carry_seed(&RecapSeed::default(), &flee);
+        assert_eq!(
+            seed.decisive,
+            Some(DecisiveMove::SunkBy("broadside".into()))
+        );
+        assert_eq!(seed.hull_by_cause, [6, 0, 0]);
+        assert_eq!(
+            crate::logic::encounter_end(&flee, false),
+            Some(crate::logic::EncounterEnd::LostAtSea)
+        );
+        flee.escaped = true;
+        assert_eq!(
+            crate::logic::encounter_end(&flee, false),
+            Some(crate::logic::EncounterEnd::LostAtSea)
+        );
+    }
+
+    #[test]
+    fn towed_to_uses_port_name() {
+        let recap = combat(&sunk());
+        let rows = texts(&recap);
+        assert!(!rows[0].contains("porto_novo"), "{rows:?}");
+        assert_eq!(
+            rows[0],
+            format!("Towed to {}", port_display_name("porto_novo"))
         );
     }
 

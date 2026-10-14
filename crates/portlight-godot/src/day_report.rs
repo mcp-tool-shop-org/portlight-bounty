@@ -199,6 +199,26 @@ impl WeekWindow {
 }
 
 impl DayReportDocument {
+    /// A storm or route-event sinking heads the report (and opens it): the
+    /// wreck line, ASCII and without its full stop.
+    pub(crate) fn push_wreck_line(&mut self, line: &str) {
+        let text = crate::recap::passthrough_text(line);
+        if text.is_empty() {
+            return;
+        }
+        self.sections.insert(
+            0,
+            DayReportSection {
+                id: "wreck",
+                title: "Wreck",
+                lines: vec![DayReportLine {
+                    text,
+                    notable: true,
+                }],
+            },
+        );
+    }
+
     pub(crate) fn has_notable(&self) -> bool {
         self.sections
             .iter()
@@ -4084,5 +4104,23 @@ mod tests {
         assert_eq!(port_label(world, "salt_spit_cove"), "Salt Spit Cove");
         let known = world.port("porto_novo").expect("porto_novo");
         assert_eq!(port_label(world, "porto_novo"), known.name);
+    }
+
+    #[test]
+    fn a_wreck_line_heads_and_opens_the_report() {
+        let mut doc = DayReportDocument {
+            day: 4,
+            title: "Day 4".into(),
+            sections: Vec::new(),
+            footer: DayReportFooter::default(),
+        };
+        assert!(!doc.has_notable());
+        doc.push_wreck_line("The storm breaks your ship - towed to Porto Novo - lost 30 silver.");
+        assert!(doc.has_notable());
+        assert_eq!(doc.sections[0].id, "wreck");
+        assert_eq!(
+            doc.sections[0].lines[0].text,
+            "The storm breaks your ship - towed to Porto Novo - lost 30 silver"
+        );
     }
 }
