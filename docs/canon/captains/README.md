@@ -1,10 +1,10 @@
 # Captain canon index
 
-Base commit: 9acf9e2. Status: draft canon, phase 4. Hand-maintained from content.json `captains` (C:2315), `pirate_captains` (C:2913) and `captain_loot` (C:5027); there is no generator.
+Base commit: 4f08125. Status: draft canon, phase 4. Hand-maintained from content.json `captains` (C:2315), `pirate_captains` (C:2913) and `captain_loot` (C:5027); there is no generator.
 
 ## Player archetypes (9)
 
-The new game screen lists these in `CAPTAIN_ORDER` (crates/portlight-sim/src/custom_captain.rs:479-505), one button each: name - title - home port - ship class - silver (crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2918-2925). A custom captain is a tenth option and is not canon (game.rs:2926-2930).
+The new game screen lists these in `CAPTAIN_ORDER` (crates/portlight-sim/src/custom_captain.rs:432-442; iterated by `starting_captains()` at custom_captain.rs:479-505), one button each: name - title - home port - ship class - silver (crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974). A custom captain is a tenth option and is not canon (game.rs:2975-2979).
 
 | Archetype | Title | Home port | Region (data) | Mentor | Silver | Ship | Pirate regard | Cite | File |
 |---|---|---|---|---|---|---|---|---|---|

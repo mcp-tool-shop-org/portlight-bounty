@@ -1,6 +1,6 @@
 # Canon data fixes (proposals only; nothing changed)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa) 3 (lanes, base ab03ace) and 4 (factions and captains, base 9acf9e2). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa) 3 (lanes, base ab03ace) and 4 (factions and captains, base 4f08125). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
 Count: 28.
 
@@ -270,7 +270,7 @@ Why: both superlatives appear in shipped voyage text.
 Where:
 - content.json:2433 (privateer title 'Licensed Hunter')
 - content.json:2627 (bounty_hunter title 'Licensed Hunter')
-- Shown side by side on the new game captain buttons (crates/portlight-godot/src/logic.rs:1358-1365; game.rs:2918-2925)
+- Shown side by side on the new game captain buttons (crates/portlight-godot/src/logic.rs:1358-1365; game.rs:2967-2974)
 
 Proposed fix: retitle one. Suggested: The Privateer 'Letter of Marque' (garrison-licensed, Stormwall), keeping 'Licensed Hunter' for The Bounty Hunter. Copy PR; check the new game smoke and any test that asserts the title.
 

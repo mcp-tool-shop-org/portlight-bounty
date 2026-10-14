@@ -1,11 +1,11 @@
 # Faction canon index
 
-Base commit: 9acf9e2. Status: draft canon, phase 4. Hand-maintained from content.json `port_politics.blocs` (C:13386), `port_politics.relationships` (C:13716), `factions` (C:2877) and `faction_relationships` (C:13866); there is no generator.
+Base commit: 4f08125. Status: draft canon, phase 4. Hand-maintained from content.json `port_politics.blocs` (C:13386), `port_politics.relationships` (C:13716), `factions` (C:2877) and `faction_relationships` (C:13866); there is no generator.
 
 Two kinds of faction exist in data, and canon keeps them apart:
 
-- Trade blocs (7): political groupings of ports. The player sees a bloc name only on the custom captain 'Trade bloc' row (crates/portlight-godot/src/game.rs:3007-3015). No live mechanic reads a bloc today (DF-15; custom_captain.rs:180-181, 328).
-- Pirate factions (4): crews with territory regions and captains. The player meets them in pirate encounters and the duel prompt (crates/portlight-godot/src/logic.rs:1086-1094, 2203-2212) and on the custom captain 'Pirate faction' row (game.rs:3016-3024).
+- Trade blocs (7): political groupings of ports. The player sees a bloc name only on the custom captain 'Trade bloc' row (crates/portlight-godot/src/game.rs:3056-3064). No live mechanic reads a bloc today (DF-15; custom_captain.rs:180-181, 328).
+- Pirate factions (4): crews with territory regions and captains. The player meets them in pirate encounters and the duel prompt (crates/portlight-godot/src/logic.rs:1086-1094, 2203-2212) and on the custom captain 'Pirate faction' row (game.rs:3065-3073).
 
 ## Trade blocs
 
@@ -45,6 +45,6 @@ Only `hostile` is read by the sim (content.rs:1156; journal beats, narrative.rs:
 
 - Bloc and faction ids are data ids; file names are canon-only where they differ (gold_coast_compact for `gold_coast`, deep_reef_brotherhood for `deep_reef`).
 - Pirate factions are not blocs and have no bloc relationship rows. Their link to the blocs is the Shadow Ports (C:13493) and port text.
-- 'Trade bloc' and 'Pirate faction' are the shipped player labels (game.rs:3011, 3020); canon prose uses them.
+- 'Trade bloc' and 'Pirate faction' are the shipped player labels (game.rs:3060, 3069); canon prose uses them.
 - No bloc or faction has a flag, colour, seal or device in data. Canon invents none; a device would be an art brief and the holds stand.
 - Phase 4 data issues are DF-26 to DF-28 in [data-fixes.md](../data-fixes.md).

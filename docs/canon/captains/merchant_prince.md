@@ -1,6 +1,6 @@
 # The Merchant Prince (merchant_prince)
 
-Base commit: 9acf9e2 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
+Base commit: 4f08125 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
 
 ## 0. At a glance
@@ -20,7 +20,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Inspection terms | chance x0.4 - seizure 0.0 - fines x0.4 | C:2571-2573 |
 | Starting regard (data keys, not player terms) | commercial_trust 18, mediterranean 12, east_indies 5 | C:2575 |
 | Pirate regard | none | C:2583 |
-| Player sees | "The Merchant Prince  --  Khoury Dynasty Scion  --  Al-Manar  --  sloop  --  700 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2918-2925 |
+| Player sees | "The Merchant Prince  --  Khoury Dynasty Scion  --  Al-Manar  --  sloop  --  700 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974 |
 
 ## 1. The archetype (cited)
 
@@ -30,7 +30,7 @@ A scion of the Khoury dynasty of Al-Manar under Senhora Nadia Khoury (C:2551-255
 
 [invented] Sent to sea to earn the name before inheriting it, under the eye of Inspector-minded relatives.
 
-Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2911-2916). Canon gives no gender, age, face or dress; the character hold stands.
+Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2960-2965). Canon gives no gender, age, face or dress; the character hold stands.
 
 ## 3. Links
 

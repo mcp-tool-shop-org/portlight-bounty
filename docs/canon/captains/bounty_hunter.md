@@ -1,6 +1,6 @@
 # The Bounty Hunter (bounty_hunter)
 
-Base commit: 9acf9e2 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
+Base commit: 4f08125 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
 
 ## 0. At a glance
@@ -20,7 +20,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Inspection terms | chance x0.6 - seizure 0.0 - fines x0.5 | C:2647-2649 |
 | Starting regard (data keys, not player terms) | commercial_trust 3, mediterranean 3, north_atlantic 8 | C:2651 |
 | Pirate regard | none | C:2659 |
-| Player sees | "The Bounty Hunter  --  Licensed Hunter  --  Crosswind Isle  --  cutter  --  425 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2918-2925 |
+| Player sees | "The Bounty Hunter  --  Licensed Hunter  --  Crosswind Isle  --  cutter  --  425 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974 |
 
 ## 1. The archetype (cited)
 
@@ -30,7 +30,7 @@ A licensed hunter working out of Crosswind Isle under Dock Master Tao (C:2627-26
 
 [invented] Takes bounties posted at the neutral Bell and Board and answers to no bloc.
 
-Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2911-2916). Canon gives no gender, age, face or dress; the character hold stands.
+Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2960-2965). Canon gives no gender, age, face or dress; the character hold stands.
 
 ## 3. Links
 

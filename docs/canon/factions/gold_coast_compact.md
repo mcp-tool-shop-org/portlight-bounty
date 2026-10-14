@@ -1,6 +1,6 @@
 # The Gold Coast Compact (gold_coast_compact)
 
-Base commit: 9acf9e2 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
+Base commit: 4f08125 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
 
 ## 0. At a glance
@@ -15,7 +15,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Rivals (list) | The Iron Pact | C:13445 |
 | Hostile to (list) | - | C:13448 |
 | Loyalty bonus - disloyalty penalty | 0.06 - 0.05 [flavour, no mechanic] (DF-15) | C:13449-13450 |
-| Player sees | the name on the custom captain 'Trade bloc' row | crates/portlight-godot/src/game.rs:3007-3015 |
+| Player sees | the name on the custom captain 'Trade bloc' row | crates/portlight-godot/src/game.rs:3056-3064 |
 | Mechanic | none found: a custom captain's bloc is validated and stored only (custom_captain.rs:180-181, 328) | open question Q2 |
 
 ## 1. Data cites

@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 9acf9e2 (phase 4: factions and captains). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 
@@ -157,7 +157,7 @@ Every port file's section G cites these IDs. A port history may add detail but m
 
 - One file per trade bloc (7, `port_politics.blocs`, C:13386) and per pirate faction (4, `factions`, C:2877): see factions/README.md.
 - One file per player archetype (9, `captains`, C:2315) and per pirate captain (8, `pirate_captains`, C:2913): see captains/README.md.
-- Each port file links its bloc, any pirate faction tied to it and the archetypes that start there, in section E (Faction canon line). The Shadow Lane and the Smuggler's Run link the Crimson Tide and the Monsoon Syndicate.
+- Each port file links its bloc, any pirate faction tied to it and the archetypes that start there, in section E (Faction canon line). The Shadow Lane links the Crimson Tide; the Smuggler's Run links the Crimson Tide and the Monsoon Syndicate.
 - No bloc or faction device, flag or colour, and no character appearance: the character hold stands. Phase 4 data issues are DF-26 to DF-28 in data-fixes.md.
 
 ## Files

@@ -1,6 +1,6 @@
 # The Deep Reef Brotherhood (deep_reef_brotherhood)
 
-Base commit: 9acf9e2 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
+Base commit: 4f08125 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
 
 ## 0. At a glance
@@ -13,11 +13,11 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Smuggler attitude | respectful | C:2902 |
 | Captains | [Old Coral](../captains/pirates/old_coral.md), [The Diver](../captains/pirates/the_diver.md) | C:2943, C:2950 |
 | Home | none; the Brotherhood lives at sea on reef anchorages between Pearl Shallows and Ember Isle (README) [invented] | - |
-| Player sees | the name in the encounter panel and duel prompt; the custom captain 'Pirate faction' row | crates/portlight-godot/src/logic.rs:1089-1091, 2203-2212; game.rs:3016-3024 |
+| Player sees | the name in the encounter panel and duel prompt; the custom captain 'Pirate faction' row | crates/portlight-godot/src/logic.rs:1089-1091, 2203-2212; game.rs:3065-3073 |
 
 ## 1. What the faction does in the sim
 
-- Region pick: a pirate encounter prefers captains whose faction holds the destination region (voyage.rs:340-349; encounter.rs:96-105). With no faction in a region, the first faction in the list is used (encounter.rs:97-99).
+- Region pick: a pirate encounter prefers captains whose faction holds the destination region (voyage.rs:340-349; encounter.rs:96-105). With no faction in a region, the first faction in the list is used (encounter.rs:91-94).
 - Attitude: a smuggler captain gets +5 toward this faction when the attitude is friendly, cooperative or respectful (encounter.rs:50-58). 'respectful' qualifies.
 - Warning at sea: low regard in the faction's territory can bring a crossing-the-bow warning (consequences.rs:59-66).
 - A captain's home region falls back to the faction's first territory region (memory.rs:379-384).

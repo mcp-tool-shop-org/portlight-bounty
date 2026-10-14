@@ -1,6 +1,6 @@
 # The Smuggler (smuggler)
 
-Base commit: 9acf9e2 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
+Base commit: 4f08125 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
 
 ## 0. At a glance
@@ -20,7 +20,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Inspection terms | chance x1.3 - seizure 0.05 - fines x1.2 | C:2377-2379 |
 | Starting regard (data keys, not player terms) | customs_heat 8, west_africa 5 | C:2381 |
 | Pirate regard | none | C:2389 |
-| Player sees | "The Smuggler  --  Shadow Trader  --  Palm Cove  --  sloop  --  500 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2918-2925 |
+| Player sees | "The Smuggler  --  Shadow Trader  --  Palm Cove  --  sloop  --  500 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974 |
 
 ## 1. The archetype (cited)
 
@@ -30,7 +30,7 @@ A Palm Cove runner taught by the tavern keeper Mama Joy (C:2360; C:8934-8936). S
 
 [invented] Learned the trade from what Mama Joy overheard and did not repeat; treats the Compact's generosity as a debt to honour.
 
-Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2911-2916). Canon gives no gender, age, face or dress; the character hold stands.
+Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2960-2965). Canon gives no gender, age, face or dress; the character hold stands.
 
 ## 3. Links
 

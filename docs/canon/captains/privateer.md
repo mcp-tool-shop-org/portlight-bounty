@@ -1,6 +1,6 @@
 # The Privateer (privateer)
 
-Base commit: 9acf9e2 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
+Base commit: 4f08125 (content.json, the sim and the godot UI as cited). Status: draft canon, phase 4. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
 
 ## 0. At a glance
@@ -19,8 +19,8 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Voyage terms | provision burn x0.9 - speed +0.5 - storm resist +0.05 - cargo damage x0.9 | C:2447-2450 |
 | Inspection terms | chance x0.3 - seizure 0.0 - fines x0.5 | C:2453-2455 |
 | Starting regard (data keys, not player terms) | commercial_trust 8, mediterranean 3, north_atlantic 8 | C:2457 |
-| Pirate regard | The Iron Wolves -5 | C:2465 |
-| Player sees | "The Privateer  --  Licensed Hunter  --  Stormwall  --  cutter  --  475 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2918-2925 |
+| Pirate regard | The Iron Wolves -5 | C:2466 |
+| Player sees | "The Privateer  --  Licensed Hunter  --  Stormwall  --  cutter  --  475 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974 |
 
 ## 1. The archetype (cited)
 
@@ -30,7 +30,7 @@ A Stormwall-licensed hunter under Commander Vogt (C:2436; C:8194-8196); starts i
 
 [invented] Holds a garrison letter against pirates; the Wolves know the letter and the ship.
 
-Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2911-2916). Canon gives no gender, age, face or dress; the character hold stands.
+Archetypes are roles, not fixed people: the player names the captain (custom_captain.rs, new game Name row, game.rs:2960-2965). Canon gives no gender, age, face or dress; the character hold stands.
 
 ## 3. Links
 
