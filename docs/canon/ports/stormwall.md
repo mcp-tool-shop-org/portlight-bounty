@@ -94,6 +94,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Stormwall enforces the Pact's will. The garrison answers to the Pact, not the crown." (C:13570 area).
 - Grudge: "The garrison commander's daughter married a trader from Corsair's Rest. He hasn't spoken to her since." (C:13570 area).
 - Bloc philosophy: "Strength through industry. Trade serves the fortress." (C:13410 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Iron Pact](../factions/iron_pact.md); pirate faction [The Iron Wolves](../factions/iron_wolves.md); archetypes starting here [The Privateer](../captains/privateer.md).
 
 ## F. Relations with every other port
 

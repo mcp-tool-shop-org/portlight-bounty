@@ -97,6 +97,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Porto Novo: "The Spice Merchants' Circle wants Al-Manar to lead the Alliance, not Porto Novo. The rivalry is genteel but real." (C:13541 area).
 - Grudge: "Porto Novo got the Alliance headquarters. Al-Manar got the better harbor. Neither has forgiven the other." (C:13541 area).
 - Bloc philosophy: "Contracts are sacred. Prices are posted. Cheats are remembered." (C:13388 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Exchange Alliance](../factions/exchange_alliance.md); archetypes starting here [The Merchant Prince](../captains/merchant_prince.md).
 
 ## F. Relations with every other port
 

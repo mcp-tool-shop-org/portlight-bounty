@@ -94,6 +94,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Pearl Shallows: "Pearl rivalries run deep. The Storm Riders dive deeper and in worse conditions. The Breath-Holders say they lack the sacred technique." (C:13698 area).
 - Grudge: "Pearl Shallows accused Typhoon Anchorage of reef poaching. The Storm Riders responded by diving the deepest reef in the South Seas and bringing up a pearl the size of a fist. Case closed." (C:13698 area).
 - Bloc philosophy: "Tribute earns trade. The reef remembers." (C:13511 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Coral Crown](../factions/coral_crown.md).
 
 ## F. Relations with every other port
 

@@ -99,6 +99,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Jade Port: "Silk vs. porcelain - which is the supreme art? The weavers and the potters have argued for centuries. Both are convinced they're right." (C:13624 area).
 - Grudge: "Jade Port once called silk 'decorated thread.' The Silk Weavers' Guild responded by weaving a tapestry depicting the Kiln Masters' ancestors as monkeys. It hangs in the Loom Quarter to this day." (C:13624 area).
 - Bloc philosophy: "Quality over quantity. Hierarchy governs all." (C:13453 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Silk Circle](../factions/silk_circle.md).
 
 ## F. Relations with every other port
 

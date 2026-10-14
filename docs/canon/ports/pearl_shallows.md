@@ -91,6 +91,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Typhoon Anchorage: "Both export pearls. The Breath-Holders consider Typhoon Anchorage divers reckless and their pearls inferior. The feeling is mutual." (C:13606 area).
 - Grudge: "Typhoon Anchorage divers poached Pearl Shallows' reef three seasons ago. The Breath-Holders haven't spoken to the Storm Riders since." (C:13606 area).
 - Bloc philosophy: "Generosity first, then business. The coast remembers." (C:13431 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Gold Coast Compact](../factions/gold_coast_compact.md); pirate faction [The Deep Reef Brotherhood](../factions/deep_reef_brotherhood.md).
 
 ## F. Relations with every other port
 

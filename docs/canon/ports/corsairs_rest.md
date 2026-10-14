@@ -97,6 +97,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Porto Novo: "Corsair's Rest exists because Porto Novo's laws are too strict. Every smuggler at the Rest is a trader Porto Novo drove away." (C:13671 area).
 - Grudge: "Porto Novo's harbor master publicly burned a cargo manifest from Corsair's Rest. The Brotherhood of the Cove took his favorite ship. He got it back - without the cargo." (C:13671 area).
 - Bloc philosophy: "No names, no questions, no manifests." (C:13493 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Shadow Ports](../factions/shadow_ports.md); pirate faction [The Crimson Tide](../factions/crimson_tide.md); archetypes starting here [The Corsair](../captains/corsair.md).
 
 ## F. Relations with every other port
 

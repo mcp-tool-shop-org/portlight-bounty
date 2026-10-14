@@ -98,6 +98,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Trade embargo (data, unread by the sim; crates/portlight-sim/src/content.rs:676): Weapons.
 - Grudge: "A shipment of Ironhaven weapons was found at Corsair's Rest. The merchant who sold them was never seen again." (C:13559 area).
 - Bloc philosophy: "Strength through industry. Trade serves the fortress." (C:13410 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Iron Pact](../factions/iron_pact.md); pirate faction [The Iron Wolves](../factions/iron_wolves.md).
 
 ## F. Relations with every other port
 
