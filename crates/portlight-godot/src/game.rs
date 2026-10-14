@@ -7965,6 +7965,9 @@ impl PortlightGame {
                 if let Some(line) = cost {
                     self.push_log(line);
                 }
+                if let Some(id) = self.encounter.as_ref().map(|f| f.captain_id.clone()) {
+                    self.hunt_desk.last_fight.remove(&id);
+                }
                 if let Some(facts) = self.encounter.as_mut() {
                     facts.pending_victory = false;
                     facts.phase = "resolved".to_string();
@@ -8259,6 +8262,15 @@ impl PortlightGame {
             .is_some_and(crate::recap::RecapResult::is_win)
         {
             facts.recap.bounty_ready = bounty_ready(self.session.as_ref(), &facts.captain_id);
+        }
+        if let (Some(session), Some(result)) = (self.session.as_ref(), facts.recap.result) {
+            hunt_screen::record_fight(
+                &mut self.hunt_desk,
+                session,
+                &facts.captain_id,
+                result,
+                step.player_sunk,
+            );
         }
         self.encounter = Some(facts);
         if let Some(receipt) = receipt {
@@ -10891,6 +10903,9 @@ impl PortlightGame {
             };
             session.claim_bounty(id)
         };
+        if result.is_ok() {
+            self.hunt_desk.last_fight.remove(id);
+        }
         self.hunt_desk.notice = match result {
             Ok(silver) => hunt_screen::claim_notice(silver),
             Err(err) => err.to_string(),
@@ -11019,6 +11034,18 @@ impl PortlightGame {
                     .map(|row| row.captain_id.clone());
                 if let Some(id) = id {
                     self.accept_listed(&id);
+                    // The active frame shows the desk after a lost hunt:
+                    // the per-run memory a non-win writes at encounter end.
+                    if let Some(session) = self.session.as_ref() {
+                        hunt_screen::record_fight(
+                            &mut self.hunt_desk,
+                            session,
+                            &id,
+                            crate::recap::RecapResult::Lost,
+                            false,
+                        );
+                    }
+                    self.refresh();
                 } else {
                     self.smoke_ok = false;
                     godot_print!("Hunt smoke: no offer to accept for the active frame");
@@ -11064,7 +11091,20 @@ impl PortlightGame {
         let ok = match phase {
             HuntShot::Forage => open && notice.contains("Stores") && self.encounter.is_none(),
             HuntShot::Board => open && (1..=3).contains(&offers),
-            HuntShot::Active => open && active >= 1,
+            HuntShot::Active => {
+                let rows = self
+                    .hunt_model_now()
+                    .map(|model| model.active)
+                    .unwrap_or_default();
+                open && active >= 1
+                    && rows.iter().any(|row| {
+                        row.last_fight
+                            .as_deref()
+                            .is_some_and(|line| line.starts_with("Last fight: lost - day "))
+                            && row.claim_help == Some(hunt_screen::CLAIM_HELPER)
+                            && !row.text.contains("defeated 0")
+                    })
+            }
             HuntShot::Confirm => {
                 open && self.hunt_desk.confirm.is_some()
                     && (notice.contains("Boarding can cost up to")
