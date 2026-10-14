@@ -137,9 +137,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: hot, humid, a wet season of heavy rain; bright sun on the steps. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "the rhythmic singing of dockworkers loading bales"; bales thumping; scales creaking.
+- **Signature:** cotton bale onto a stack (soft, heavy); beam scale settling; morning blessing is a quiet beat.
+- **Music/work songs (NOTE ONLY):** canon's strongest work song - the Weighers "carrying the count in song". Flag for MUSIC when the hold lifts; never as SFX (no voice).
+- **Vs neighbours:** the singing port; soft-fibre thuds vs Iron Point's metal.
+- **Fragments:** `src.cotton_bale`, `src.beam_scale`, `place.bale_quay`.
 - Cited hooks: atmosphere "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales."; dock scene "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song." (C:12076 area).
 - Invented bed idea: auction calls on the steps, the elder's blessing at dawn. No assets are requested.
 

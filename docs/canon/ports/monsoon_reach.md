@@ -137,9 +137,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: two monsoons a year; dry clear months between. Regional weather [cite]: "Incense drifts from a passing junk. The air is thick with spice." (C:11892 area, weather_flavor).
 - Pirates in these waters [cite]: The Monsoon Syndicate (C:2888).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "salt spray, incense ... and the creak of monsoon-tested rigging"; wind round a headland.
+- **Signature:** heavy rigging creak under load; deep-keel hull settling; temple incense is smell only - no gong/bell (pitched).
+- **Music/work songs (NOTE ONLY):** monk chant would be invented; canon names forecasts, not chant - avoid.
+- **Vs neighbours:** wind-and-rope port; vs Typhoon Anchorage, steady seasonal wind, not storm.
+- **Fragments:** `src.rigging_strain`, `place.headland_harbour`.
 - Cited hooks: atmosphere "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging."; dock scene "The harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts - the monsoon demands it." (C:12126 area).
 - Invented bed idea: temple wind chimes, rain on palm roofs, the yard. No assets are requested.
 

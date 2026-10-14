@@ -135,9 +135,15 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: typhoon season every year; violent storms. Regional weather [cite]: "Turquoise water so clear you can see the reef below. Beautiful and deadly." (C:11950 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "wind that never fully dies"; ships "chained, not anchored" - chains straining; leeward cliff shelter.
+- **Signature:** mooring chain strain/snatch; salt-crusted timber creak; knife carving into the Storm Wall (custom).
+- **Music/work songs (NOTE ONLY):** none; stories as price of entry are voice - on hold.
+- **Vs neighbours:** constant wind + chain; vs Dragon's Gate chains (harbour boom, controlled) these are survival moorings.
+- **Fragments:** `src.mooring_chain_strain`, `src.carve_name`, `place.leeward_cliff`.
+
+---
 - Cited hooks: atmosphere "Wind that never fully dies, salt-crusted everything, and the pride of survival."; dock scene "The harbor is carved into the leeward cliff. Ships are chained, not anchored - anchors aren't enough here. Pearl divers work the outer reef between storms." (C:12186 area).
 - Invented bed idea: surf against the wall, carving tools, wind. No assets are requested.
 

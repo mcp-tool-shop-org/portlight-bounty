@@ -142,9 +142,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: warm and humid, monsoon rains. Regional weather [cite]: "Incense drifts from a passing junk. The air is thick with spice." (C:11892 area, weather_flavor).
 - Pirates in these waters [cite]: The Monsoon Syndicate (C:2888).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** kiln roar under "the delicate tap-tap-tap of artisans painting glaze patterns"; bamboo cranes creaking.
+- **Signature:** porcelain set on silk (soft-cushioned, never a ring); brush tap on glaze; straw-packed crate settled.
+- **Music/work songs (NOTE ONLY):** none in canon.
+- **Vs neighbours:** fine, delicate taps; Silk Haven is looms (rhythmic clack), Ember Isle's heat is volcanic not kiln.
+- **Fragments:** `src.porcelain_on_silk`, `src.glaze_brush_tap`, `src.bamboo_crane`.
 - Cited hooks: atmosphere "Kiln heat, wet clay, and the delicate tap-tap-tap of artisans painting glaze patterns."; dock scene "Bamboo cranes lift crates padded with straw from the hold. Each piece of porcelain is inspected by guild markers before it leaves the dock." (C:12116 area).
 - Invented bed idea: kiln fires roaring, porcelain ringing when tapped. No assets are requested.
 

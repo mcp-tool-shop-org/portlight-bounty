@@ -148,9 +148,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: dry summers, wet winters; olive country inland. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** big, busy stone quays; "shouts of dockhands loading grain barges"; barges knocking fenders; sacks thudding.
+- **Signature:** heavy grain sack dropped on stone; stylus on wax tablet (clerks tallying bushels); the harbour bell rung on first arrival (custom) - port-ambience only.
+- **Music/work songs (NOTE ONLY):** dockhand call-and-response is plausible but canon says "shouts", not song - keep as shouts (and voice is on hold).
+- **Vs neighbours:** the loud, open, grain-dusty Med hub; Al-Manar whispers, Silva Bay is woodwork.
+- **Fragments:** `src.grain_sack_drop`, `mat.wax_tablet`, `place.stone_quay`.
 - Cited hooks: atmosphere "Flour dust, sea salt, and the shouts of dockhands loading grain barges."; dock scene "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks." (C:12006 area).
 - Invented bed idea: dawn price-calling in the Exchange; the arrival bell; grain chutes. No assets are requested.
 

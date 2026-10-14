@@ -135,9 +135,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: windy junction of the trade winds; squalls but rarely storms. Regional weather [cite]: "Incense drifts from a passing junk. The air is thick with spice." (C:11892 area, weather_flavor).
 - Pirates in these waters [cite]: The Monsoon Syndicate (C:2888).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** crowded free port; "a dozen languages", cooking smoke; ships jostling; flags snapping.
+- **Signature:** money-changer's coin table set down; many-flag halyard flap; the Free Port Bell tolling on entry (ambience only).
+- **Music/work songs (NOTE ONLY):** none; the language mix is walla - on hold.
+- **Vs neighbours:** busiest, most mixed East Indies bed; Dragon's Gate is disciplined, Spice Narrows is hushed.
+- **Fragments:** `src.changer_table`, `src.flag_snap`, `place.free_port_quay`.
 - Cited hooks: atmosphere "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade."; dock scene "Ships from every region jostle for berth. The Free Port Bell tolls as you enter. Money-changers set up tables on the dock before your anchor hits bottom." (C:12146 area).
 - Invented bed idea: the Free Port Bell for every arrival; many languages at once. No assets are requested.
 

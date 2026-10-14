@@ -147,9 +147,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the Weavers' Guild, the Circle Magistrate and the merchant factors. The guild outranks the factors on any question of quality.
 - A local law [invented]: no bolt leaves without the inspector's seal; rolled silk is refused at the quay (custom extends this).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "the rhythmic clack of a hundred looms, the rustle of silk, and green tea steam"; sampans gliding.
+- **Signature:** loom shuttle clack; silk bolt unfolded (custom: folded, never rolled); tea steam hiss.
+- **Music/work songs (NOTE ONLY):** none; loom rhythm is the pulse.
+- **Vs neighbours:** soft fabric + wood looms vs Jade Port's ceramic taps.
+- **Fragments:** `src.loom_shuttle`, `mat.silk_fold`, `src.sampan_scull`.
 - Cited hooks: atmosphere "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam."; dock scene "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch." (C:12136 area).
 - Invented bed idea: hundreds of looms clacking; the calligrapher's brush. No assets are requested.
 

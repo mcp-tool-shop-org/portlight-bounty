@@ -142,9 +142,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions inside the Gate [invented]: the tower crews, the inspectors and the inn keepers. The inspectors hold the real power because they decide what counts as a weapon.
 - A local law [invented]: medicines pass duty-free (consistent with 'medicines are gold', description). Weapons are declared or confiscated (custom, cited).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "military precision, jasmine tea, and the distant clank of the harbor chains"; lacquered armour moving.
+- **Signature:** harbour chain clank; lacquer-armour plate creak; tea poured on the inner docks.
+- **Music/work songs (NOTE ONLY):** none in canon.
+- **Vs neighbours:** the strait fortress; chains + lacquer vs Stormwall's gates + drums; patience vs Crosswind's bustle.
+- **Fragments:** `src.harbour_chain`, `mat.lacquer_armour`, `place.strait_fort`.
 - Cited hooks: atmosphere "Military precision, jasmine tea, and the distant clank of the harbor chains."; dock scene "Soldiers in lacquered armor inspect every ship that passes the twin towers. Tea merchants wait patiently on the inner docks, knowing inspection takes time." (C:12156 area).
 - Invented bed idea: the chain winch, the tower gong at closing, inspectors' calls. No assets are requested.
 

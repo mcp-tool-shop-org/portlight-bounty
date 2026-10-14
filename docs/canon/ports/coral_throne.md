@@ -144,9 +144,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the king's household, the war chief's guard and the reef pilots. The pilots are quietly the most powerful, because no ship enters the lagoon without one.
 - A local law [invented]: a refused tribute ends in exile from the lagoon (custom, cited), never in a fight in harbour.
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** lagoon calm; "the distant beat of ceremonial drums"; crushed coral underfoot; war-canoe escort paddles.
+- **Signature:** footstep on crushed coral; war-canoe paddle strokes in unison; tribute chest set before the court.
+- **Music/work songs (NOTE ONLY):** ceremonial drums are canon - strongest drum note after Stormwall; keep distinct (royal, slow) if music opens.
+- **Vs neighbours:** ceremonial court; vs Ember Isle's geology, vs Typhoon's wind.
+- **Fragments:** `mat.crushed_coral`, `src.war_canoe_paddles`, `place.lagoon`.
 - Cited hooks: atmosphere "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums."; dock scene "The lagoon entrance is narrow and treacherous - local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock." (C:12196 area).
 - Invented bed idea: drums from the palace, surf on the outer reef. No assets are requested.
 

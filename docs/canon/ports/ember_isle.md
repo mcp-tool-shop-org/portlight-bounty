@@ -143,9 +143,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the Keepers of the mountain, the herbalists and the harbour. Kai's reading of the volcano outranks trade every time.
 - A local law [invented]: no medicine recipe is written down for an outsider; captains carry finished medicine, never the knowledge.
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "the low rumble of a volcano that never fully sleeps"; hot-spring steam vents.
+- **Signature:** steam vent hiss; obsidian scree underfoot; stone placed at the volcano's base (custom).
+- **Music/work songs (NOTE ONLY):** none in canon.
+- **Vs neighbours:** the only geological bed (sub rumble); vs Coral Throne's drums and Typhoon's wind.
+- **Fragments:** `src.steam_vent`, `mat.obsidian_scree`, `src.stone_placed`.
 - Cited hooks: atmosphere "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps."; dock scene "Black sand beaches and obsidian-sharp rocks frame the harbor. Steam rises from hot springs near the dock. Herbalists sort medicinal plants in the warm volcanic soil." (C:12176 area).
 - Invented bed idea: the mountain's rumble, hot springs hissing. No assets are requested.
 

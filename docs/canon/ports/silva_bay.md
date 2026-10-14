@@ -138,9 +138,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: Mediterranean coast with a wetter forested hinterland; morning sea fog over the mast pond. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** forest-backed bay; "the rhythmic sound of adzes shaping keels"; sawdust-soft quay; hot pitch bubbling.
+- **Signature:** adze bite into green timber; mallet on treenail; pitch pot simmer.
+- **Music/work songs (NOTE ONLY):** none in canon; adze rhythm is the work-song stand-in.
+- **Vs neighbours:** wood-on-wood (Ironhaven is iron-on-iron); a working yard, not a market.
+- **Fragments:** reuse `place.dockside_yard`, `place.timber_quay`; new `src.adze_keel`, `src.pitch_pot`.
 - Cited hooks: atmosphere "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels."; dock scene "Sawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish." (C:12026 area).
 - Invented bed idea: adzes, saws and mallets; the Hall bell opening council; timber barges at dawn. No assets are requested.
 

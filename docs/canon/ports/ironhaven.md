@@ -140,9 +140,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: cold, wet, smoky; snow on the foundry roofs in winter. Regional weather [cite]: "Grey skies press low. The Atlantic rolls in long, heavy swells." (C:11782 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879), The Iron Wolves (C:2905).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "ringing hammers, and the deep bass hum of bellows forcing air into furnaces"; crane chains; spark crackle.
+- **Signature:** hammer on anvil (short, dry - no ring-out per section 1); bellows breath; ingot set on barge deck.
+- **Music/work songs (NOTE ONLY):** none; northern reticence (custom: a nod, not words).
+- **Vs neighbours:** the only metal-industrial bed; Stormwall is military order, Thornport is wood smoke and fish.
+- **Fragments:** `src.anvil_hammer`, `src.bellows`, `place.foundry_quay`.
 - Cited hooks: atmosphere "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces."; dock scene "Iron-hulled barges sit low in the water. Cranes swing overhead, loading ingots onto merchant vessels. Sparks drift from the foundry like orange snowflakes." (C:12046 area).
 - Invented bed idea: trip hammers, bellows, the foundry horn at shift change. No assets are requested.
 

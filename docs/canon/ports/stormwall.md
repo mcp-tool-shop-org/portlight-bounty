@@ -136,9 +136,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: grey northern straits; gales and short winter days. Regional weather [cite]: "Grey skies press low. The Atlantic rolls in long, heavy swells." (C:11782 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879), The Iron Wolves (C:2905).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** "salt wind, military drums from the garrison, and the creak of heavy gates"; boots of grey-coat patrols; paper checked against sealed orders.
+- **Signature:** heavy gate hinge creak; manifest page flipped and stamped; drum is ambient-distant only.
+- **Music/work songs (NOTE ONLY):** garrison drums are canon - treat as far, unpitched military cadence if music ever opens.
+- **Vs neighbours:** ordered and watched; vs Ironhaven's roar and Thornport's homely sheds. Contrast with Dragon's Gate: wind + gates here, chains + tea there.
+- **Fragments:** `src.heavy_gate`, `src.inspection_stamp`, `place.garrison_quay`.
 - Cited hooks: atmosphere "Salt wind, military drums from the garrison, and the creak of heavy gates."; dock scene "Navy vessels line the inner harbor. Soldiers in grey coats patrol the docks, checking manifests against sealed orders. Everything is orderly. Everything is watched." (C:12056 area).
 - Invented bed idea: the watch bell, inspectors calling manifests, gulls and gale. No assets are requested.
 

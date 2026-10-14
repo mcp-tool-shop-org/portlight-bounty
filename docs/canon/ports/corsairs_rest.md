@@ -140,9 +140,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: Mediterranean, but the cliffs keep the cove in shadow by mid-afternoon. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879). Home port [invented]: The Crimson Tide - The cove's governor is 'The Tide's Voice' and Scarlet Ana is sighted off the Rest.
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** cliff-enclosed cove, close and muffled; torch crackle; "the clink of coins changing hands under the table"; a single rowboat's oars.
+- **Signature:** small silver coins palmed (dull, low clink - darker than `ui_trade_coin`); torch sputter; oarlock creak of the fee boy's rowboat.
+- **Music/work songs (NOTE ONLY):** none - the Brotherhood is "a silence"; absence is the design.
+- **Vs neighbours:** the one Med port with no flags and no voices - intimate and furtive vs Porto Novo's open quays.
+- **Fragments:** `place.hidden_cove`, `src.silver_palmed`, `src.oarlock_rowboat`.
 - Cited hooks: atmosphere "Torch smoke, cheap rum, and the clink of coins changing hands under the table."; dock scene "Ships anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee - payable in silver, no questions." (C:12036 area).
 - Invented bed idea: water slapping in caves; low talk; no bells. No assets are requested.
 

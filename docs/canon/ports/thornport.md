@@ -133,9 +133,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: cold coast, fog banks, long summer light. Regional weather [cite]: "Grey skies press low. The Atlantic rolls in long, heavy swells." (C:11782 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879), The Iron Wolves (C:2905).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** smoky whaling pier; wood-smoke crackle; fish racks in wind; tea brewing beside crates.
+- **Signature:** harpoon set on rack (wood shaft, iron head); tea kettle on a wooden crate; tobacco leaf rustle in curing sheds.
+- **Music/work songs (NOTE ONLY):** none in canon (shanties would be invented - avoid).
+- **Vs neighbours:** domestic, slower North Atlantic port; no forge (Ironhaven), no drums (Stormwall).
+- **Fragments:** `src.harpoon_rack`, `src.kettle_crate`, `mat.tobacco_leaf`.
 - Cited hooks: atmosphere "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds."; dock scene "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers." (C:12066 area).
 - Invented bed idea: the creak of the boat yard; Old Magnus telling stories. No assets are requested.
 

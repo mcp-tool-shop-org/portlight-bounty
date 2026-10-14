@@ -147,9 +147,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Factions [invented]: the Spice Lords own the anchorage. The Monsoon Syndicate is a tenant that pays in silence, and the Weigher's word ends every dispute.
 - A local law [invented]: a whispered price is binding; a spoken one is an insult and voids the deal.
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** hidden between volcanic cliffs; "prices are whispered ... the water carries sound"; rope ladders; vertical market overhead.
+- **Signature:** rope ladder rung creak; basket hauled up on rope; whisper-close cloth rustle (no voice).
+- **Music/work songs (NOTE ONLY):** none - silence is canon.
+- **Vs neighbours:** echoing, vertical; vs Al-Manar's whispers on marble, this is rope and cliff echo. (Only port where a short cliff echo is canon-justified - a deliberate section 1 exception if ever used.)
+- **Fragments:** `src.rope_ladder`, `src.basket_haul`, `place.cliff_anchorage`.
 - Cited hooks: atmosphere "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes."; dock scene "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical - everything climbs." (C:12166 area).
 - Invented bed idea: whispers, ropes creaking, water below. No assets are requested.
 

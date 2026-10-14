@@ -131,9 +131,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: hot, humid river mouth; red dust in the dry season. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** river-mouth mining town; "the echo of picks from the mine shafts"; ore carts rattling down tracks.
+- **Signature:** ore cart on rails; ore tipped into a hold; spit-and-clasp hands (custom) - very close, optional.
+- **Music/work songs (NOTE ONLY):** none in canon.
+- **Vs neighbours:** the only percussive-industrial West Africa port; vs Ironhaven, it is open-air picks and rails, not furnaces.
+- **Fragments:** `src.ore_cart_rail`, `src.pick_far`, `place.river_mouth`.
 - Cited hooks: atmosphere "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts."; dock scene "Ore carts rattle down tracks to the loading docks. The river runs red with mine runoff. Everything here - the buildings, the clothes, the skin - is stained rust." (C:12096 area).
 - Invented bed idea: pick work echoing in tunnels, ore carts on rails. No assets are requested.
 

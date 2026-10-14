@@ -139,9 +139,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: hot dry summers; the bazaar roof is built for shade. Regional weather [cite]: "The sea is calm and blue. Sunlight dances on ancient waters." (C:11728 area, weather_flavor).
 - Pirates in these waters [cite]: The Crimson Tide (C:2879).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** hushed, dense - "the murmur of a hundred negotiations conducted in whispers"; porters' feet on worn marble steps; felucca lateen canvas luffing.
+- **Signature:** brass-bound spice chest set down on marble; tea cup on saucer (custom: bargaining begins with tea); scoop of dry spice into a scale pan.
+- **Music/work songs (NOTE ONLY):** none in canon; at most a far auctioneer's cadence from the Spice Merchants' Circle - spoken, not sung.
+- **Vs neighbours:** quietest Mediterranean market - stone and whispers, where Porto Novo is shouting and Silva Bay is hammering.
+- **Fragments:** `mat.marble_step`, `src.spice_chest_brass`, `src.tea_cup_saucer`.
 - Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers."; dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12016 area).
 - Invented bed idea: tea-pouring before bargaining; a hundred voices under one roof. No assets are requested.
 

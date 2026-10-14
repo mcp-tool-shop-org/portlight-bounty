@@ -133,9 +133,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: sheltered and humid; palms break the wind. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** sheltered, lazy; "the lazy hum of bees"; small boats bobbing; children diving for coins.
+- **Signature:** rum barrel rolling down a wooden ramp; coin plop into shallow water; cup of rum poured (custom).
+- **Music/work songs (NOTE ONLY):** none in canon.
+- **Vs neighbours:** the softest, warmest bed on the coast; no singing (Sun Harbor), no silence ritual (Pearl Shallows).
+- **Fragments:** `src.barrel_ramp`, `src.coin_water_plop`, `place.sheltered_cove`.
 - Cited hooks: atmosphere "Sweet molasses, fermenting sugar cane, and the lazy hum of bees."; dock scene "Small boats bob in the sheltered cove. Rum barrels roll down wooden ramps from the hilltop distilleries. Children dive for coins tossed by arriving crews." (C:12086 area).
 - Invented bed idea: cask hammering, laughter, a cup offered to every stranger. No assets are requested.
 

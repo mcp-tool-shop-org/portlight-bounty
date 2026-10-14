@@ -132,9 +132,13 @@ Generated. Disposition is bloc-to-bloc (symmetric in data); lanes are undirected
 - Climate [invented port detail]: warm, still shallows; calm seas most of the year. Regional weather [cite]: "Warm air, heavy with moisture. The coast shimmers in the heat." (C:11838 area, weather_flavor).
 - Pirates in these waters [cite]: The Deep Reef Brotherhood (C:2896).
 
-## I. Sound and ambience (placeholder for the Sound seat)
+## I. Sound and ambience 
 
-- Status: placeholder. No per-port sound exists (inventory 'Undefined'; studio SOUND_BIBLE covers the Mediterranean slice generically; music is on hold).
+- **Soundscape:** near-silent - "the silence of divers preparing their breath"; canoe paddles; shallow lapping.
+- **Signature:** diver surfacing exhale; pearl pouch untied; paddle dip.
+- **Music/work songs (NOTE ONLY):** none - sacred quiet is the design; leave space.
+- **Vs neighbours:** quietest port in the game; vs Typhoon/Coral pearls, this is calm and patient.
+- **Fragments:** `src.diver_breath` (breath only, no voice), `src.canoe_paddle`, `place.warm_shallows`.
 - Cited hooks: atmosphere "Warm shallow water, coral sand, and the silence of divers preparing their breath."; dock scene "Canoes glide in from the reef. Divers emerge glistening, pouches of pearls tied to their wrists. An elder sits under a baobab tree, examining each pearl by sunlight." (C:12106 area).
 - Invented bed idea: water lapping, quiet prayer, divers' breath counts. No assets are requested.
 
