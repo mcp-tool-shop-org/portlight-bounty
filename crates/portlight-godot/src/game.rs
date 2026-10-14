@@ -758,6 +758,9 @@ struct PortlightGame {
     sunk_smoke: Option<&'static str>,
     sunk_shot_dir: Option<String>,
     sunk_pending: bool,
+    /// `--encounter-sunk`: the full-receipt card (wreck goods, claim, net)
+    /// has been staged after the plain sinking.
+    sunk_full_done: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -767,6 +770,8 @@ enum HarbourShot {
     Finance,
     Insurance,
     Bank,
+    /// The chart after the bank stage, desk closed: the status strip.
+    ChartBanked,
 }
 
 impl HarbourShot {
@@ -777,6 +782,7 @@ impl HarbourShot {
             Self::Finance => "harbour-finance.png",
             Self::Insurance => "harbour-insurance.png",
             Self::Bank => "harbour-bank.png",
+            Self::ChartBanked => "chart-status-banked.png",
         }
     }
 
@@ -787,6 +793,7 @@ impl HarbourShot {
             Self::Finance => harbour_screen::ANCHOR_FINANCE,
             Self::Insurance => harbour_screen::ANCHOR_INSURANCE,
             Self::Bank => harbour_screen::ANCHOR_BANK,
+            Self::ChartBanked => "",
         }
     }
 }
@@ -940,6 +947,7 @@ impl IControl for PortlightGame {
             sunk_smoke: None,
             sunk_shot_dir: None,
             sunk_pending: false,
+            sunk_full_done: false,
         }
     }
 
@@ -1342,11 +1350,18 @@ impl PortlightGame {
             } else {
                 self.run_encounter_sunk_to_card()
             };
-            if ready && self.check_sunk_recap(kind) && capture {
+            let checked = ready && self.check_sunk_recap(kind);
+            if checked && capture {
                 self.sunk_shot_dir = Some(loss_outcome_shot_dir(self.shot_path.as_deref()));
                 self.sunk_pending = true;
                 self.capture_frames = 4;
             } else {
+                if checked && kind == "encounter" {
+                    // Headless: the full-receipt card is checked too.
+                    self.leave_encounter();
+                    self.sunk_full_done = true;
+                    let _ = self.run_sunk_full_to_card() && self.check_sunk_full();
+                }
                 self.capture_frames = 2;
             }
         } else if user_arg("--encounter-loss-outcome") {
@@ -2478,16 +2493,19 @@ impl PortlightGame {
         let Some(dir) = self.harbour_shot_dir.clone() else {
             return false;
         };
-        if !self.harbour_open {
+        let chart = matches!(phase, HarbourShot::ChartBanked);
+        if self.harbour_open == chart {
             self.smoke_ok = false;
             godot_print!(
-                "Harbour smoke: screen was not open for {}",
+                "Harbour smoke: desk open state wrong for {}",
                 phase.file_name()
             );
         }
-        self.scroll_harbour(phase.anchor());
+        if !chart {
+            self.scroll_harbour(phase.anchor());
+        }
         let path = format!("{dir}/{}", phase.file_name());
-        if !self.save_shot(&path, true) {
+        if !self.save_shot(&path, !chart) {
             self.capture_failed = true;
         }
         let next = match phase {
@@ -2495,7 +2513,8 @@ impl PortlightGame {
             HarbourShot::Broker => Some(HarbourShot::Finance),
             HarbourShot::Finance => Some(HarbourShot::Insurance),
             HarbourShot::Insurance => Some(HarbourShot::Bank),
-            HarbourShot::Bank => None,
+            HarbourShot::Bank => Some(HarbourShot::ChartBanked),
+            HarbourShot::ChartBanked => None,
         };
         if matches!(next, Some(HarbourShot::Insurance)) {
             self.stage_harbour_insurance();
@@ -2507,7 +2526,9 @@ impl PortlightGame {
             self.finish_harbour_bank();
         }
         if let Some(next) = next {
-            self.scroll_harbour(next.anchor());
+            if !matches!(next, HarbourShot::ChartBanked) {
+                self.scroll_harbour(next.anchor());
+            }
             self.harbour_shot = Some(next);
             self.capture_frames = 4;
             true
@@ -2584,7 +2605,9 @@ impl PortlightGame {
                 return self.fail_harbour(format!("Harbour smoke: log row missing: {row}"));
             }
         }
-        if !self.status_text().contains(" - banked 400") {
+        if !self.status_text().contains("   Stores ")
+            || !self.status_text().contains("\nBanked 400\n")
+        {
             return self.fail_harbour("Harbour smoke: status line has no banked term.");
         }
         let text = self.harbour_body_text();
@@ -2619,7 +2642,71 @@ impl PortlightGame {
         if !ok {
             return self.fail_harbour("Harbour smoke: letter log row missing.");
         }
+        if !self.check_fields_keep_acted_amount() {
+            return;
+        }
+        // Bank 100 more so the status strip frame reads Banked 400 again
+        // after the letter drew 100.
+        self.set_bank_field("100");
+        self.perform(Action::HarbourBankDeposit);
+        self.perform(Action::HarbourConfirm);
+        self.close_harbour();
+        if !self.status_text().contains("\nBanked 400\n") {
+            let status = self.status_text();
+            return self.fail_harbour(format!("Harbour smoke: status strip {status:?}"));
+        }
         godot_print!("portlight harbour-bank smoke ok");
+    }
+
+    /// Qty and Repay act at once, with no prompt: after the action the
+    /// field still reads the amount acted on, and the notice names it.
+    fn check_fields_keep_acted_amount(&mut self) -> bool {
+        let defaults = (edit_text(&self.harbour_qty), edit_text(&self.harbour_repay));
+        if defaults != ("1".to_string(), "10".to_string()) {
+            self.fail_harbour(format!("Harbour smoke: fresh desk fields {defaults:?}"));
+            return false;
+        }
+        self.perform(Action::HarbourPrepare(HarbourIntent::LeaseWarehouse(
+            "depot".into(),
+        )));
+        self.perform(Action::HarbourConfirm);
+        for _ in 0..3 {
+            self.perform(Action::Buy("grain".into()));
+        }
+        if let Some(field) = self.harbour_qty.as_mut() {
+            field.set_text("3");
+        }
+        self.perform(Action::HarbourDeposit("grain".into()));
+        let qty = edit_text(&self.harbour_qty);
+        if !self.harbour_notice.starts_with("Deposited 3 ") || qty != "3" {
+            let notice = self.harbour_notice.clone();
+            self.fail_harbour(format!(
+                "Harbour smoke: Qty 3 deposit {notice:?}, field {qty:?}"
+            ));
+            return false;
+        }
+        self.perform(Action::HarbourPrepare(HarbourIntent::OpenCredit(
+            "merchant_line".into(),
+        )));
+        self.perform(Action::HarbourConfirm);
+        self.perform(Action::HarbourPrepare(HarbourIntent::Draw {
+            tier: "merchant_line".into(),
+            amount: 40,
+        }));
+        self.perform(Action::HarbourConfirm);
+        if let Some(field) = self.harbour_repay.as_mut() {
+            field.set_text("25");
+        }
+        self.perform(Action::HarbourRepayField);
+        let repay = edit_text(&self.harbour_repay);
+        if self.harbour_notice != "Repaid 25 silver." || repay != "25" {
+            let notice = self.harbour_notice.clone();
+            self.fail_harbour(format!(
+                "Harbour smoke: Repay 25 {notice:?}, field {repay:?}"
+            ));
+            return false;
+        }
+        true
     }
 
     fn set_bank_field(&mut self, text: &str) {
@@ -11309,14 +11396,14 @@ impl PortlightGame {
         }
     }
 
-    /// The scripted voyage, reloaded from its own save with the flagship's
-    /// hull at `hull` (smoke only: the public save path, no sim hook).
     fn sunk_fail(&mut self, line: &str) {
         self.smoke_ok = false;
         godot_print!("{line}");
         self.push_log(line.to_string());
     }
 
+    /// The scripted voyage, reloaded from its own save with the flagship's
+    /// hull at `hull` (smoke only: the public save path, no sim hook).
     fn scripted_voyage_at_hull(&mut self, seed: i128, hull: i64) -> Option<Session> {
         let mut session = Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, seed, None).ok()?;
         scripted_depart(&mut session).ok()?;
@@ -11469,7 +11556,12 @@ impl PortlightGame {
             return false;
         };
         self.check_recap_layout();
-        let path = format!("{dir}/{kind}-recap-sunk.png");
+        let name = if self.sunk_full_done {
+            format!("{kind}-recap-sunk-full.png")
+        } else {
+            format!("{kind}-recap-sunk.png")
+        };
+        let path = format!("{dir}/{name}");
         if !self.save_shot(&path, true) {
             self.capture_failed = true;
         }
@@ -11478,7 +11570,130 @@ impl PortlightGame {
         if self.encounter.is_some() || self.day_report_open {
             self.sunk_fail("Sunk smoke: Return did not land on the port screen.");
         }
+        if kind == "encounter" && !self.sunk_full_done {
+            self.sunk_full_done = true;
+            if self.run_sunk_full_to_card() && self.check_sunk_full() {
+                self.sunk_pending = true;
+                self.capture_frames = 4;
+                return true;
+            }
+        }
         false
+    }
+
+    /// Full-receipt sinking: a merchant sloop at sea under a cargo policy,
+    /// 500 silver and three goods aboard, sunk by broadside from hull 25. The Hull row is the fight's damage, not the tow patch.
+    fn run_sunk_full_to_card(&mut self) -> bool {
+        let Some(session) = sunk_full_stage_session() else {
+            self.sunk_fail("Sunk smoke: could not stage the full-receipt voyage.");
+            return false;
+        };
+        self.log_lines.clear();
+        self.encounter = None;
+        self.scripted_captain = None;
+        self.session = Some(session);
+        self.open_scripted_approach();
+        if !self.phase_is(ScreenPhase::Approach) {
+            self.sunk_fail("Sunk smoke: full receipt expected approach.");
+            return false;
+        }
+        self.choose_encounter("fight");
+        for _ in 0..40 {
+            if !self.phase_is(ScreenPhase::Naval) {
+                break;
+            }
+            // The sloop carries no broadside of its own: evade until theirs
+            // sinks it.
+            self.play_naval("evade");
+        }
+        if !self.phase_is(ScreenPhase::Outcome) {
+            self.sunk_fail("Sunk smoke: full receipt expected Outcome after the sinking.");
+            return false;
+        }
+        true
+    }
+
+    /// The full receipt, in order, inside the 9-row cap.
+    fn check_sunk_full(&mut self) -> bool {
+        let Some((headline, rows)) = self.recap_block_texts() else {
+            self.sunk_fail("Sunk smoke: no full-receipt RecapBlock.");
+            return false;
+        };
+        let wreck_goods: Vec<usize> = rows
+            .iter()
+            .enumerate()
+            .filter(|(_, row)| {
+                row.ends_with(" - lost with the wreck")
+                    && !row.starts_with("Silver ")
+                    && !row.starts_with('+')
+            })
+            .map(|(at, _)| at)
+            .collect();
+        let at = |test: &dyn Fn(&str) -> bool| rows.iter().position(|row| test(row));
+        let order = [
+            at(&|r| r.starts_with("Towed to ")),
+            at(&|r| r == "Cost"),
+            at(&|r| r == "Silver -150 - lost with the wreck"),
+            wreck_goods.first().copied(),
+            wreck_goods.get(1).copied(),
+            at(&|r| r.starts_with("Silver +") && r.ends_with(" - insurance claim")),
+            at(&|r| r == "Your hull 19/60 - patched for the tow"),
+            // Silver net closes the card, as on every recap.
+            at(&|r| r.starts_with("Silver net ")),
+        ];
+        let mut problems = Vec::new();
+        godot_print!("encounter-sunk full rows {rows:?}");
+        if !(headline.starts_with("Lost to ") && headline.ends_with(" - sunk by their broadside")) {
+            problems.push(format!("headline {headline:?}"));
+        }
+        if wreck_goods.len() != 2 {
+            problems.push(format!("wreck goods rows {wreck_goods:?}"));
+        }
+        // The third good folds into the more row.
+        if !rows
+            .iter()
+            .any(|row| row == "+1 more goods lost with the wreck")
+        {
+            problems.push("no +1 more goods row".to_string());
+        }
+        // The hull row, right after Cost, is the fight's damage, not the
+        // patched hull. The 9-row cap drops the repair row.
+        let cost = rows.iter().position(|row| row == "Cost");
+        let hull = rows
+            .iter()
+            .position(|row| row.starts_with("Hull -") && row.ends_with(" - their broadside"));
+        let hull_text = hull.map(|at| rows[at].as_str());
+        if hull.is_none()
+            || hull != cost.map(|at| at + 1)
+            || hull_text != Some("Hull -25 - their broadside")
+        {
+            problems.push("no Hull row from their broadside after Cost".to_string());
+        }
+        if rows.iter().any(|row| row.starts_with("Repair here")) {
+            problems.push("a Repair here row is drawn".to_string());
+        }
+        let found: Vec<usize> = order.iter().flatten().copied().collect();
+        if found.len() != order.len() || found.windows(2).any(|pair| pair[0] >= pair[1]) {
+            problems.push(format!("order {order:?}"));
+        }
+        // The tow ends at the destination, so there is no not-reached row;
+        // the body keeps to the 9-row cap.
+        if rows.iter().any(|row| row.ends_with(" not reached")) {
+            problems.push("a not-reached row is drawn".to_string());
+        }
+        if rows.iter().filter(|row| row.as_str() != "Cost").count() > 9 {
+            problems.push("more than 9 body rows".to_string());
+        }
+        if problems.is_empty() {
+            godot_print!("encounter-sunk full receipt ok");
+            true
+        } else {
+            self.sunk_fail(&format!(
+                "Sunk smoke: full receipt {}; rows {rows:?}",
+                problems.join("; ")
+            ));
+            false
+        }
     }
 
     fn advance_loss_outcome_shot(&mut self) -> bool {
@@ -12743,6 +12958,83 @@ fn hunt_shot_dir(shot: Option<&str>) -> String {
 
 /// The save text with the flagship's `"hull"` set (the first `"hull":` after
 /// `"ship": {`). Smoke only.
+/// Full-receipt sinking stage, through the public save path: a merchant
+/// sloop out of Porto Novo for Silva Bay under a cargo_standard policy, with
+/// 500 silver, grain 23, silk 20 and spice 4 aboard (two goods rows and a
+/// more row) and hull 25.
+/// Seed 6: from hull 25 every hit is a broadside, so the card carries one
+/// Hull row and no crew row and stays inside the recap cap.
+const SUNK_FULL_SEED: i128 = 6;
+
+fn sunk_full_stage_session() -> Option<Session> {
+    sunk_full_stage_session_with(SUNK_FULL_SEED)
+}
+
+fn sunk_full_stage_session_with(seed: i128) -> Option<Session> {
+    let mut session = Session::new(SCRIPTED_NAME, "merchant", seed, Some("porto_novo")).ok()?;
+    session.buy_insurance("cargo_standard", "", "", "").ok()?;
+    session.depart("silva_bay").ok()?;
+    let dir = std::env::temp_dir().join(format!("portlight-sunk-full-{}", std::process::id()));
+    let path = session.save(&dir, "sunk_full").ok()?;
+    let text = std::fs::read_to_string(&path).ok()?;
+    let text = with_captain_silver(&text, 500)?;
+    let cargo = [("grain", 23), ("silk", 20), ("spice", 4)]
+        .iter()
+        .map(|(good, qty)| {
+            format!(
+                "{{\"good_id\": \"{good}\", \"quantity\": {qty}, \"cost_basis\": {}, \"acquired_port\": \"porto_novo\", \"acquired_region\": \"Mediterranean\", \"acquired_day\": 1}}",
+                qty * 10
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    let text = with_captain_cargo(&text, &format!("[{cargo}]"))?;
+    let text = with_flagship_hull(&text, 25)?;
+    // Past halfway, so the tow ends at Silva Bay itself: no not-reached row,
+    // and the card stays inside the recap cap.
+    let text = with_voyage_progress(&text, 12)?;
+    std::fs::write(&path, text).ok()?;
+    let loaded = Session::load(&dir, "sunk_full").ok().flatten();
+    let _ = std::fs::remove_dir_all(&dir);
+    loaded
+}
+
+fn with_voyage_progress(text: &str, progress: i64) -> Option<String> {
+    let voyage = text.find("\"voyage\": {")?;
+    let at = voyage + text[voyage..].find("\"progress\": ")? + "\"progress\": ".len();
+    let end = at + text[at..].find(|c: char| !c.is_ascii_digit())?;
+    Some(format!("{}{progress}{}", &text[..at], &text[end..]))
+}
+
+fn with_captain_silver(text: &str, silver: i64) -> Option<String> {
+    let captain = text.find("\"captain\": {")?;
+    let at = captain + text[captain..].find("\"silver\": ")? + "\"silver\": ".len();
+    let end = at + text[at..].find(|c: char| !c.is_ascii_digit() && c != '-')?;
+    Some(format!("{}{silver}{}", &text[..at], &text[end..]))
+}
+
+/// Replace the captain's `cargo` array (the first one in the save).
+fn with_captain_cargo(text: &str, cargo: &str) -> Option<String> {
+    let captain = text.find("\"captain\": {")?;
+    let key = captain + text[captain..].find("\"cargo\": [")? + "\"cargo\": ".len();
+    let mut depth = 0;
+    let mut end = None;
+    for (offset, c) in text[key..].char_indices() {
+        match c {
+            '[' => depth += 1,
+            ']' => {
+                depth -= 1;
+                if depth == 0 {
+                    end = Some(key + offset + 1);
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    Some(format!("{}{cargo}{}", &text[..key], &text[end?..]))
+}
+
 fn with_flagship_hull(text: &str, hull: i64) -> Option<String> {
     let ship = text.find("\"ship\": {")?;
     let at = ship + text[ship..].find("\"hull\": ")? + "\"hull\": ".len();
@@ -13401,7 +13693,7 @@ impl PortlightGame {
         }
         lines.push("Actions:".to_string());
         for (id, label) in choices {
-            lines.push(format!("{id} — {label}"));
+            lines.push(format!("{id} - {label}"));
         }
         if !self.log_lines.is_empty() {
             lines.push("Log:".to_string());
@@ -14598,5 +14890,40 @@ mod load_line_tests {
             load_place_line(&session),
             format!("At sea, bound for {name}.")
         );
+    }
+}
+
+#[cfg(test)]
+mod sunk_full_stage_tests {
+    use super::*;
+
+    #[test]
+    fn sunk_full_stage_is_at_sea_with_silver_goods_and_policy() {
+        let session = sunk_full_stage_session().expect("stage");
+        let world = session.world();
+        assert!(at_sea(&session));
+        assert_eq!(world.captain.silver, 500);
+        let held: Vec<(String, i64)> = world
+            .captain
+            .cargo
+            .iter()
+            .map(|item| (item.good_id.clone(), item.quantity))
+            .collect();
+        assert_eq!(
+            held,
+            [
+                ("grain".to_string(), 23),
+                ("silk".to_string(), 20),
+                ("spice".to_string(), 4)
+            ]
+        );
+        let ship = world.captain.ship.as_ref().unwrap();
+        assert_eq!((ship.hull, ship.hull_max), (25, 60));
+        assert_eq!(world.voyage.progress, 12);
+        assert!(session
+            .infrastructure()
+            .policies
+            .iter()
+            .any(|policy| policy.spec_id == "cargo_standard" && policy.active));
     }
 }

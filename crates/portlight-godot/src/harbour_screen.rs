@@ -41,7 +41,7 @@ pub(crate) const ANCHOR_BANK: &str = "HarbourBank";
 /// The counting house's terms, two lines.
 pub(crate) const BANK_TERMS: [&str; 2] = [
     "Deposits are free, at least 50 silver",
-    "Withdraw here 1% (at least 1) - by letter 5% (at least 5) - no interest.",
+    "Withdraw here 1% (at least 1) - by letter 5% (at least 5) - no interest",
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1298,6 +1298,14 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bank_terms_are_ascii_fragments() {
+        for line in BANK_TERMS {
+            assert!(line.is_ascii(), "{line}");
+            assert!(!line.ends_with('.'), "{line}");
+        }
+    }
 
     #[test]
     fn harbour_bank_block_only_at_counting_house() {

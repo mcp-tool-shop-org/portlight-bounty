@@ -570,7 +570,15 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     // Cost: Hull, Crew, Silver, Cargo, Injury. On a win, Silver and Cargo
     // show only when the fight itself took some, with no cause: the win's
     // silver is the delta less the purse and loot silver (shown under Earned).
-    let [silver, crew, hull, cargo] = facts.deltas;
+    let [silver, crew, mut hull, cargo] = facts.deltas;
+    // The tow patches the hull before the recap reads it, so a towed ship's
+    // hull loss is what the fight did to it: the causes' sum, at most the
+    // hull it had before the fight (after the patch less the delta).
+    if !facts.towed_to.is_empty() {
+        let dealt = facts.hull_by_cause.iter().sum::<i64>();
+        let before = facts.hull_after - hull;
+        hull = -(if before > 0 { dealt.min(before) } else { dealt });
+    }
     let silver = if win {
         silver - facts.purse - loot_silver_total
     } else {
@@ -630,7 +638,7 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
                 RecapSection::Cost,
                 format!("{} -{qty}", good_display_name(id)),
                 Some(WRECK_CAUSE),
-                RecapTone::Cream,
+                RecapTone::Due,
             ));
         }
         if goods.len() > PASSTHROUGH_CAP {
@@ -640,7 +648,7 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
                     "+{} more goods {WRECK_CAUSE}",
                     goods.len() - PASSTHROUGH_CAP
                 ),
-                RecapTone::Cream,
+                RecapTone::Due,
             ));
         }
         if facts.claims_paid > 0 {
@@ -1884,17 +1892,20 @@ mod tests {
             vec![
                 format!("Towed to {port}").as_str(),
                 "Cost",
-                "Hull -30 - their broadside",
+                // Towed: the fight's own damage, not the patched delta, at
+                // most the 36 the ship had (6 after the patch, delta -30).
+                "Hull -36 - their broadside",
                 "Your hull 6/60 - patched for the tow"
             ]
         );
         let last = recap.rows.last().unwrap();
         assert_eq!(last.tone, RecapTone::Muted);
-        // Mixed with an overkill last broadside: the clamp lands on that cause.
+        // Mixed: a towed ship's loss is the sum of the causes, so each
+        // cause keeps its own amount.
         facts.hull_by_cause = [30, 6, 0];
         assert_eq!(
             texts(&combat(&facts))[2..4],
-            ["Hull -24 - their broadside", "Hull -6 - their grapeshot"]
+            ["Hull -30 - their broadside", "Hull -6 - their grapeshot"]
         );
     }
 
@@ -1917,6 +1928,32 @@ mod tests {
             hull_after: 6,
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn a_towed_ship_shows_the_fight_hull_loss_not_the_patch() {
+        // The tow patched the hull, so the delta reads +18; the fight did 30.
+        let mut facts = sunk();
+        facts.deltas[2] = 18;
+        facts.hull_after = 48;
+        facts.hull_by_cause = [30, 0, 0];
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        assert!(rows.contains(&"Hull -30 - their broadside"), "{rows:?}");
+    }
+
+    #[test]
+    fn every_wreck_row_is_due() {
+        let mut facts = sunk();
+        facts.wreck_cargo.push(("rum".into(), 1));
+        let recap = combat(&facts);
+        let wreck: Vec<&RecapRow> = recap
+            .rows
+            .iter()
+            .filter(|r| r.text.contains(WRECK_CAUSE))
+            .collect();
+        assert!(wreck.len() >= 4, "{:?}", texts(&recap));
+        assert!(wreck.iter().all(|r| r.tone == RecapTone::Due));
     }
 
     #[test]
