@@ -67,16 +67,16 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Gate is the town: Dragon's Gate exists to open or close a strait. Landmark [cite]: "The Gate Fortress - twin stone towers flanking the strait, chains ready to close the passage." (C:12156 area). Cited buildings: The Chain Harbor (harbor_master, C:10360); The Tea Terraces (exchange, C:10370); The Gate Command (governor, C:10380); The Gate Inn (tavern, C:10390); The Strip Room (customs, C:10400); The Strait Infirmary (apothecary, C:10410); The Permitted Desk (broker, C:10420). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Gate is the town: Dragon's Gate exists to open or close a strait. Landmark [cite]: "The Gate Fortress - twin stone towers flanking the strait, chains ready to close the passage." (C:12156 area). Cited buildings: The Chain Harbor (harbor_master, C:10360); The Tea Terraces (exchange, C:10370); The Gate Command (governor, C:10380); The Gate Inn (tavern, C:10390); The Strip Room (customs, C:10400); The Strait Infirmary (apothecary, C:10410); The Permitted Desk (broker, C:10420). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/gate_fortress.md.
 2. Materials: local and abundant (exports): Tea, Porcelain; scarce or luxury (imports): Medicines, Iron Ore, Tobacco, Rum, Cotton, Pelts (section A). Atmosphere [cite]: "Military precision, jasmine tea, and the distant clank of the harbor chains." (C:12156 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | dark fortress stone | (98, 96, 94) #62605E | 96 / 4 | in range | twin stone towers |
+| Dominant | dark fortress stone | (106, 104, 102) #6A6866 | 104 / 4 | in range | twin stone towers |
 | Secondary 1 | chain iron | (84, 86, 88) #545658 | 86 / 4 | in range | chains ready to close the passage |
 | Secondary 2 | strait fog | (118, 120, 122) #76787A | 120 / 4 | in range | [invented] morning mist |
-| Accent | lacquer red, small | (132, 84, 72) #845448 | 93 / 60 | in range, small areas only | tower banners |
+| Accent | lacquer red, small | (132, 84, 72) #845448 | 93 / 60 | small-area accent (chroma 60) | tower banners |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: crossed chains; declared-cargo tallies. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: two stone towers either side of the strait with a chain sagging between them; a walled harbour below. 7. Do and don't: README shared list.
 
@@ -144,7 +144,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "military precision, jasmine tea, and the distant clank of the harbor chains"; lacquered armour moving.
+- **Soundscape:** "Military precision, jasmine tea, and the distant clank of the harbor chains" (C:12159); lacquered armour moving.
 - **Signature:** harbour chain clank; lacquer-armour plate creak; tea poured on the inner docks.
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the strait fortress; chains + lacquer vs Stormwall's gates + drums; patience vs Crosswind's bustle.

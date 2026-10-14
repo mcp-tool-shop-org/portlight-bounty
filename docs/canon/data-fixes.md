@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed)
 
-Written 2026-10-14. Base: 143e284. Found while writing docs/canon phase 1. Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284) and 2 (landmarks, base 71c6aaa). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 17.
+Count: 21.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -182,6 +182,46 @@ Proposed fix: No data change required. Optionally add a `home_port_id` to pirate
 
 Why: Canon assigns invented home ports; data could follow later.
 
+## DF-18. Porto Novo's beacon exists only in code
+
+Where:
+- crates/portlight-sim/src/voyage.rs:594 ("The beacon of Porto Novo breaks through the haze.")
+- crates/portlight-sim/data/content.json:6958 (The Harbor Master's Tower: tower and telescope, no beacon)
+
+Proposed fix: Add one clause to the pn_harbor description, for example "A beacon lamp burns on the roof from dusk to dawn." Canon already places the beacon there (landmarks/porto_novo_beacon.md).
+
+Why: the voyage line names a structure the data does not have. A data addition is safer than changing shipped event text.
+
+## DF-19. The lighthouse event ignores region
+
+Where:
+- crates/portlight-sim/src/voyage.rs:592-607 (`resolve_lighthouse` picks any of 5 lines with no region or lane check)
+
+Proposed fix: Pick only beacons in or next to the voyage's origin or destination region; fall back to no lighthouse event. This changes the RNG draw sequence, so it needs a parity update and new goldens.
+
+Why: a captain on a South Seas lane can see Porto Novo's beacon or the Whale Arch. Canon does not explain this away.
+
+## DF-20. Two institutions share the name 'The Inspection Hall'
+
+Where:
+- crates/portlight-sim/data/content.json:8173 (Stormwall, customs, `sw_inspection`)
+- crates/portlight-sim/data/content.json:9463 (Jade Port, customs, `jp_quality`)
+
+Proposed fix: Rename Jade Port's to 'The Quality Hall' (matches its id `jp_quality` and its porcelain-testing role). Low priority: institution names are not shown to the player today.
+
+Why: two catalog names are identical across regions. Canon distinguishes them as 'Stormwall's Inspection Hall' and 'Jade Port's Inspection Hall' until then.
+
+## DF-21. Three lanes join the west straight to the East Indies
+
+Where:
+- content.json:2284 (The Monsoon Shortcut, Al-Manar - Monsoon Reach)
+- content.json:2293 (The Smuggler's Run, Corsair's Rest - Spice Narrows)
+- content.json:2302 (The Northern Passage, Ironhaven - Jade Port)
+
+Proposed fix: No data change. Canon reads them as long-haul open-ocean routes that pass other regions without calling. Their data already fits that reading: distances 72-80 and galleon minimum. If chart art ever draws lanes, route them around the other regions' coasts.
+
+Why: on the map they cross other regions. This is a flag, not an error.
+
 ## Resolved in lore (no data change)
 
 - Stormwall 'answers to the Pact, not the crown' (C:13570 area): the crown is the old Northern Crown that raised the Fortress (T3) and dissolved (T8).
@@ -192,3 +232,11 @@ Why: Canon assigns invented home ports; data could follow later.
 - Name reuse across ports (Mensah, Strand, Astrid, Esi): different people. Common names in a region, not kin.
 - Map scale (route distance against chart distance): route distance is sailing days under prevailing winds, not straight-line distance.
 - Bloc against region mismatches (Free Ports and Shadow Ports span regions): blocs are political, regions are geographic, by design.
+- Thornport whaler names (C:8362 beams, C:8499 Arch, C:12348 Arch): the Arch holds the originals carved by Bones; the Whale Bone's beams hold copies (landmarks/whale_arch.md).
+- Porto Novo bells (C:12008, C:6998, C:11753): two bells. The salvaged bell over the Harbor Bell tavern door is the one captains ring on arrival; the Exchange's great bell rings for the Harvest of Plenty (landmarks/grain_exchange.md).
+- Player-visible near-duplicates: The Cliff Tavern / Mama Lucia's Kitchen (one place, the Kitchen is its back room); The Fortress / The Fortress Gate (the Gate is the sea gate in the walls); The Gate Fortress / The Chain Harbor / The Gate Command (parts of one fortress); The Hanging Market / The Dark Room (open market above, the Weigher's cave behind); The Distillery Row / The Third Distillery (one house of seven); The Free Port Bell / The Bell and Board (two bells); The River Mouth Mines / The River Mouth Dock (the dock is the mines' loading quay).
+- The Chain Harbor (Dragon's Gate, C:10361) and The Chained Harbor (Typhoon Anchorage, C:11025): different places. One bars a strait, the other moors ships.
+- The Storm Wall (Typhoon Anchorage) and Stormwall (North Atlantic port): unrelated.
+- The Deep Reef (exchange, C:11034) and The Deep Reef Brotherhood (C:2896): the pirates are named for the reef ground; no tie.
+- Dimitri Andros sighting under Silva Bay: already DF-1.
+- 'Timber Exchange' at Silva Bay: already DF-8.

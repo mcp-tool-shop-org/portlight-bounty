@@ -68,16 +68,16 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: Distillery Row is the town: seven rum houses and the cove that serves them. Landmark [cite]: "The Distillery Row - seven rum houses, each with its own secret recipe and fierce pride." (C:12086 area). Cited buildings: The Hammock Dock (harbor_master, C:8796); The Third Distillery (exchange, C:8806); The Council Shade (governor, C:8816); The Rum House (tavern, C:8826); The Working Dock (shipyard, C:8836); The Stamp Table (customs, C:8846); Chioma's Table (broker, C:8856). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: Distillery Row is the town: seven rum houses and the cove that serves them. Landmark [cite]: "The Distillery Row - seven rum houses, each with its own secret recipe and fierce pride." (C:12086 area). Cited buildings: The Hammock Dock (harbor_master, C:8796); The Third Distillery (exchange, C:8806); The Council Shade (governor, C:8816); The Rum House (tavern, C:8826); The Working Dock (shipyard, C:8836); The Stamp Table (customs, C:8846); Chioma's Table (broker, C:8856). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/distillery_row.md.
 2. Materials: local and abundant (exports): Rum, Cotton, Tobacco; scarce or luxury (imports): Grain, Timber, Pelts, Silk, Iron Ore (section A). Atmosphere [cite]: "Sweet molasses, fermenting sugar cane, and the lazy hum of bees." (C:12086 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | palm-thatch brown | (110, 96, 74) #6E604A | 97 / 36 | mood, not values | thatched rum houses |
+| Dominant | palm-thatch brown | (113, 99, 78) #71634E | 100 / 35 | in range | thatched rum houses |
 | Secondary 1 | palm green, muted | (84, 98, 72) #546248 | 93 / 26 | in range | sheltered cove palms |
-| Secondary 2 | cask oak | (96, 78, 60) #604E3C | 81 / 36 | mood, not values | barrels outnumber the inhabitants |
-| Accent | amber rum | (150, 110, 62) #966E3E | 115 / 88 | mood, not values | rum, its top export |
+| Secondary 2 | cask oak | (96, 78, 61) #604E3D | 81 / 35 | in range | barrels outnumber the inhabitants |
+| Accent | amber rum | (140, 111, 77) #8C6F4D | 115 / 63 | small-area accent (chroma 63) | rum, its top export |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: seven marks for the seven houses, a cask. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: seven distillery chimneys in a row along a crescent beach. 7. Do and don't: README shared list.
 
@@ -135,7 +135,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** sheltered, lazy; "the lazy hum of bees"; small boats bobbing; children diving for coins.
+- **Soundscape:** sheltered, lazy; "the lazy hum of bees" (C:12089); small boats bobbing; children diving for coins.
 - **Signature:** rum barrel rolling down a wooden ramp; coin plop into shallow water; cup of rum poured (custom).
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the softest, warmest bed on the coast; no singing (Sun Harbor), no silence ritual (Pearl Shallows).

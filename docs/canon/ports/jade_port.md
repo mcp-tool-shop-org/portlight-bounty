@@ -72,16 +72,16 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The kilns are the town: Jade Port is the Porcelain Quarter with a harbour. Landmark [cite]: "The Porcelain Quarter - a district of workshops where master potters fire kilns day and night." (C:12116 area). Cited buildings: The Ceremonial Dock (harbor_master, C:9422); The Porcelain Quarter (exchange, C:9432); The Magistrate's Hall (governor, C:9442); The Jade Pavilion (tavern, C:9452); The Inspection Hall (customs, C:9462); The Trade Office (broker, C:9472); The Apprentice's Kiln (apothecary, C:9482). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The kilns are the town: Jade Port is the Porcelain Quarter with a harbour. Landmark [cite]: "The Porcelain Quarter - a district of workshops where master potters fire kilns day and night." (C:12116 area). Cited buildings: The Ceremonial Dock (harbor_master, C:9422); The Porcelain Quarter (exchange, C:9432); The Magistrate's Hall (governor, C:9442); The Jade Pavilion (tavern, C:9452); The Inspection Hall (customs, C:9462); The Trade Office (broker, C:9472); The Apprentice's Kiln (apothecary, C:9482). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/porcelain_quarter.md.
 2. Materials: local and abundant (exports): Porcelain, Silk, Tea, Spice; scarce or luxury (imports): Grain, Iron Ore, Rum, Pelts, Cotton (section A). Atmosphere [cite]: "Kiln heat, wet clay, and the delicate tap-tap-tap of artisans painting glaze patterns." (C:12116 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | kiln-fired brick | (120, 100, 88) #786458 | 103 / 32 | in range | the Porcelain Quarter |
+| Dominant | kiln-fired brick | (131, 111, 99) #836F63 | 114 / 32 | in range | the Porcelain Quarter |
 | Secondary 1 | celadon glaze, muted | (104, 118, 106) #68766A | 114 / 14 | in range | porcelain |
 | Secondary 2 | grey roof tile | (94, 96, 98) #5E6062 | 96 / 4 | in range | workshop roofs |
-| Accent | white porcelain | (150, 148, 142) #96948E | 148 / 8 | mood, not values | porcelain on silk |
+| Accent | white porcelain | (142, 140, 134) #8E8C86 | 140 / 8 | in range | porcelain on silk |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a bowl on a silk square. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: kiln chimneys over a dense quarter of tiled roofs. 7. Do and don't: README shared list.
 
@@ -144,7 +144,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** kiln roar under "the delicate tap-tap-tap of artisans painting glaze patterns"; bamboo cranes creaking.
+- **Soundscape:** kiln roar under "the delicate tap-tap-tap of artisans painting glaze patterns" (C:12119); bamboo cranes creaking.
 - **Signature:** porcelain set on silk (soft-cushioned, never a ring); brush tap on glaze; straw-packed crate settled.
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** fine, delicate taps; Silk Haven is looms (rhythmic clack), Ember Isle's heat is volcanic not kiln.

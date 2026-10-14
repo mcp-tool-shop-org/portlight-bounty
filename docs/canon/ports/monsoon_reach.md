@@ -70,16 +70,16 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Wind Temple keeps the calendar: Monsoon Reach is a port timed by the monsoon. Landmark [cite]: "The Wind Temple - a pagoda on the headland where monks track the monsoon." (C:12126 area). Cited buildings: The Headland Harbor (harbor_master, C:9656); The Wind Temple (apothecary, C:9666); The Monsoon Yard (shipyard, C:9676); The Spice Crossroads (exchange, C:9686); The Temple Hall (governor, C:9696); The Flow Desk (customs, C:9706); The Bridge Desk (broker, C:9716). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Wind Temple keeps the calendar: Monsoon Reach is a port timed by the monsoon. Landmark [cite]: "The Wind Temple - a pagoda on the headland where monks track the monsoon." (C:12126 area). Cited buildings: The Headland Harbor (harbor_master, C:9656); The Wind Temple (apothecary, C:9666); The Monsoon Yard (shipyard, C:9676); The Spice Crossroads (exchange, C:9686); The Temple Hall (governor, C:9696); The Flow Desk (customs, C:9706); The Bridge Desk (broker, C:9716). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/wind_temple.md.
 2. Materials: local and abundant (exports): Spice, Silk; scarce or luxury (imports): Cotton, Timber, Rum, Medicines, Grain, Porcelain, Pelts (section A). Atmosphere [cite]: "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging." (C:12126 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | teak and lacquer, muted | (108, 84, 68) #6C5444 | 88 / 40 | mood, not values | the shipyard and temple |
+| Dominant | teak and lacquer, muted | (111, 91, 77) #6F5B4D | 94 / 34 | in range | the shipyard and temple |
 | Secondary 1 | monsoon cloud grey | (110, 112, 116) #6E7074 | 112 / 6 | in range | seasonal winds |
 | Secondary 2 | jungle green, muted | (76, 92, 74) #4C5C4A | 87 / 18 | in range | headland |
-| Accent | temple ochre | (150, 116, 70) #967446 | 120 / 80 | mood, not values | the Wind Temple |
+| Accent | temple ochre | (144, 117, 80) #907550 | 120 / 64 | small-area accent (chroma 64) | the Wind Temple |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a wind vane. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a pagoda on the headland above slipways and spice godowns. 7. Do and don't: README shared list.
 
@@ -139,8 +139,9 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "salt spray, incense ... and the creak of monsoon-tested rigging"; wind round a headland.
+- **Soundscape:** "Salt spray, incense ... and the creak of monsoon-tested rigging" (C:12129); wind round a headland.
 - **Signature:** heavy rigging creak under load; deep-keel hull settling; temple incense is smell only - no gong/bell (pitched).
+- **Sea mark:** "The Wind Temple pagoda catches the sunset. Monsoon Reach is near." (crates/portlight-sim/src/voyage.rs:596); see ../landmarks/wind_temple.md
 - **Music/work songs (NOTE ONLY):** monk chant would be invented; canon names forecasts, not chant - avoid.
 - **Vs neighbours:** wind-and-rope port; vs Typhoon Anchorage, steady seasonal wind, not storm.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.rigging_strain`, `place.headland_harbour`.

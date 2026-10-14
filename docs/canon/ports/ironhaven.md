@@ -71,7 +71,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Foundry is the town: its chimney is the port's lighthouse. Landmark [cite]: "The Great Foundry - its chimney visible twenty leagues at sea, glowing red at night." (C:12046 area). Cited buildings: The Iron Dock (harbor_master, C:7888); The Great Foundry (exchange, C:7898); The Pact Office (governor, C:7908); The Deep Forge (shipyard, C:7918); The Forge & Anchor (tavern, C:7928); The Weapons Registry (customs, C:7938); The Contract Hall (broker, C:7948). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Foundry is the town: its chimney is the port's lighthouse. Landmark [cite]: "The Great Foundry - its chimney visible twenty leagues at sea, glowing red at night." (C:12046 area). Cited buildings: The Iron Dock (harbor_master, C:7888); The Great Foundry (exchange, C:7898); The Pact Office (governor, C:7908); The Deep Forge (shipyard, C:7918); The Forge & Anchor (tavern, C:7928); The Weapons Registry (customs, C:7938); The Contract Hall (broker, C:7948). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/great_foundry.md.
 2. Materials: local and abundant (exports): Iron Ore, Weapons, Pelts; scarce or luxury (imports): Timber, Grain, Cotton, Tobacco, Silk, Rum (section A). Atmosphere [cite]: "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces." (C:12046 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -80,7 +80,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 | Dominant | soot-stained brick | (96, 80, 72) #605048 | 83 / 24 | in range | forge smoke over brick |
 | Secondary 1 | cold iron grey | (98, 100, 104) #626468 | 100 / 6 | in range | iron ore and blades |
 | Secondary 2 | northern sea slate | (80, 88, 92) #50585C | 87 / 12 | in range | harbour stone |
-| Accent | furnace glow | (150, 96, 64) #966040 | 105 / 86 | mood, not values | the chimney 'glowing red at night' |
+| Accent | furnace glow | (120, 82, 66) #785242 | 89 / 54 | small-area accent (chroma 54) | the chimney 'glowing red at night' |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a hammer over an anvil, the Iron Guild mark. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: one great chimney above a crowd of workshop roofs; cranes on the ore quay. 7. Do and don't: README shared list.
 
@@ -142,8 +142,9 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "ringing hammers, and the deep bass hum of bellows forcing air into furnaces"; crane chains; spark crackle.
+- **Soundscape:** "ringing hammers, and the deep bass hum of bellows forcing air into furnaces" (C:12049); crane chains; spark crackle.
 - **Signature:** hammer on anvil (short, dry - no ring-out per section 1); bellows breath; ingot set on barge deck.
+- **Sea mark:** "Ironhaven's Great Foundry chimney glows red on the horizon - a landmark for miles." (crates/portlight-sim/src/voyage.rs:595); see ../landmarks/great_foundry.md
 - **Music/work songs (NOTE ONLY):** none; northern reticence (custom: a nod, not words).
 - **Vs neighbours:** the only metal-industrial bed; Stormwall is military order, Thornport is wood smoke and fish.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.anvil_hammer`, `src.bellows`, `place.foundry_quay`.

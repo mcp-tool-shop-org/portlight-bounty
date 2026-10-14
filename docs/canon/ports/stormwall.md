@@ -69,7 +69,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Fortress is the town: Stormwall is a garrison with a harbour, not a harbour with a fort. Landmark [cite]: "The Fortress - grey stone walls rising from the sea, older than anyone remembers." (C:12056 area). Cited buildings: The Fortress Gate (harbor_master, C:8122); The Supply Depot (exchange, C:8132); The Commander's Office (governor, C:8142); The Garrison Infirmary (apothecary, C:8152); The Watchtower (tavern, C:8162); The Inspection Hall (customs, C:8172); The Trade Liaison Office (broker, C:8182). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Fortress is the town: Stormwall is a garrison with a harbour, not a harbour with a fort. Landmark [cite]: "The Fortress - grey stone walls rising from the sea, older than anyone remembers." (C:12056 area). Cited buildings: The Fortress Gate (harbor_master, C:8122); The Supply Depot (exchange, C:8132); The Commander's Office (governor, C:8142); The Garrison Infirmary (apothecary, C:8152); The Watchtower (tavern, C:8162); The Inspection Hall (customs, C:8172); The Trade Liaison Office (broker, C:8182). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/stormwall_fortress.md.
 2. Materials: local and abundant (exports): Weapons, Grain, Medicines; scarce or luxury (imports): Rum, Tobacco, Pelts, Silk (section A). Atmosphere [cite]: "Salt wind, military drums from the garrison, and the creak of heavy gates." (C:12056 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -78,7 +78,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 | Dominant | weathered fortress granite | (112, 112, 110) #70706E | 112 / 2 | in range | grey stone walls |
 | Secondary 1 | sea-wet stone | (86, 90, 92) #565A5C | 89 / 6 | in range | walls rising from the sea |
 | Secondary 2 | garrison wool | (96, 98, 92) #60625C | 97 / 6 | in range | uniforms and banners, muted |
-| Accent | lamp-lit window | (140, 120, 86) #8C7856 | 122 / 54 | in range, small areas only | the watchtower |
+| Accent | lamp-lit window | (140, 120, 86) #8C7856 | 122 / 54 | small-area accent (chroma 54) | the watchtower |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: the Pact mark on the gate; tally marks for inspections. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: sheer grey walls from the waterline, a watchtower and a single gate. 7. Do and don't: README shared list.
 
@@ -138,7 +138,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "salt wind, military drums from the garrison, and the creak of heavy gates"; boots of grey-coat patrols; paper checked against sealed orders.
+- **Soundscape:** "Salt wind, military drums from the garrison, and the creak of heavy gates" (C:12059); boots of grey-coat patrols; paper checked against sealed orders.
 - **Signature:** heavy gate hinge creak; manifest page flipped and stamped; drum is ambient-distant only.
 - **Music/work songs (NOTE ONLY):** garrison drums are canon - treat as far, unpitched military cadence if music ever opens.
 - **Vs neighbours:** ordered and watched; vs Ironhaven's roar and Thornport's homely sheds. Contrast with Dragon's Gate: wind + gates here, chains + tea there.

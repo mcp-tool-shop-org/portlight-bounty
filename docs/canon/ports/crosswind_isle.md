@@ -68,16 +68,16 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Bell is the law: Crosswind Isle is a meeting place with no master. Landmark [cite]: "The Free Port Bell - rung once for every ship that enters, never for one that leaves." (C:12146 area). Cited buildings: The Free Dock (harbor_master, C:10126); The Open Market (exchange, C:10136); The Captain's Table (governor, C:10146); The Bell and Board (tavern, C:10156); The Empty Chair (apothecary, C:10166); Hassan's Table (customs, C:10176); The Dock Scrum (broker, C:10186). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Bell is the law: Crosswind Isle is a meeting place with no master. Landmark [cite]: "The Free Port Bell - rung once for every ship that enters, never for one that leaves." (C:12146 area). Cited buildings: The Free Dock (harbor_master, C:10126); The Open Market (exchange, C:10136); The Captain's Table (governor, C:10146); The Bell and Board (tavern, C:10156); The Empty Chair (apothecary, C:10166); Hassan's Table (customs, C:10176); The Dock Scrum (broker, C:10186). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/free_port_bell.md.
 2. Materials: local and abundant (exports): none; scarce or luxury (imports): Pelts (section A). Atmosphere [cite]: "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade." (C:12146 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | weathered mixed timber | (108, 98, 86) #6C6256 | 99 / 22 | in range | a port built from every region |
+| Dominant | weathered mixed timber | (133, 123, 111) #857B6F | 124 / 22 | in range | a port built from every region |
 | Secondary 1 | wind-scoured stone | (114, 112, 106) #72706A | 112 / 8 | in range | the junction of trade winds |
 | Secondary 2 | faded flag cloth | (104, 94, 96) #685E60 | 96 / 10 | in range | all flags fly |
-| Accent | bell bronze | (146, 120, 80) #927850 | 123 / 66 | mood, not values | the Free Port Bell |
+| Accent | bell bronze | (145, 120, 81) #917851 | 122 / 64 | small-area accent (chroma 64) | the Free Port Bell |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: the bell; no flags of its own. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a bell tower over a harbour crowded with masts of every rig. 7. Do and don't: README shared list.
 
@@ -137,7 +137,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** crowded free port; "a dozen languages", cooking smoke; ships jostling; flags snapping.
+- **Soundscape:** crowded free port; "A dozen languages" (C:12149), cooking smoke; ships jostling; flags snapping.
 - **Signature:** money-changer's coin table set down; many-flag halyard flap; the Free Port Bell tolling on entry (ambience only).
 - **Music/work songs (NOTE ONLY):** none; the language mix is walla - on hold.
 - **Vs neighbours:** busiest, most mixed East Indies bed; Dragon's Gate is disciplined, Spice Narrows is hushed.

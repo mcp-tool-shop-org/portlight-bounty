@@ -68,7 +68,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The mountain is the town: Ember Isle lives by what the volcano gives. Landmark [cite]: "Ember Peak - the smoldering volcano visible from fifty leagues, its glow a navigator's beacon." (C:12176 area). Cited buildings: The Black Sand Harbor (harbor_master, C:10828); The Volcanic Garden (exchange, C:10838); The Hot Springs Throne (governor, C:10848); The Healing Springs (tavern, C:10858); The Pigment Cave (shipyard, C:10868); The Export Hut (broker, C:10878). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The mountain is the town: Ember Isle lives by what the volcano gives. Landmark [cite]: "Ember Peak - the smoldering volcano visible from fifty leagues, its glow a navigator's beacon." (C:12176 area). Cited buildings: The Black Sand Harbor (harbor_master, C:10828); The Volcanic Garden (exchange, C:10838); The Hot Springs Throne (governor, C:10848); The Healing Springs (tavern, C:10858); The Pigment Cave (shipyard, C:10868); The Export Hut (broker, C:10878). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/ember_peak.md.
 2. Materials: local and abundant (exports): Medicines, Dyes, Iron Ore; scarce or luxury (imports): Grain, Timber, Weapons, Rum, Pelts, Cotton (section A). Atmosphere [cite]: "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps." (C:12176 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -77,7 +77,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 | Dominant | obsidian beach, lifted | (72, 70, 72) #484648 | 71 / 2 | in range | obsidian beaches |
 | Secondary 1 | volcanic soil | (98, 82, 72) #625248 | 85 / 26 | in range | slopes |
 | Secondary 2 | herb green, muted | (82, 100, 78) #52644E | 95 / 22 | in range | medicinal plants |
-| Accent | ember glow, small | (150, 98, 62) #96623E | 106 / 88 | mood, not values | Ember Peak |
+| Accent | ember glow, small | (138, 100, 74) #8A644A | 106 / 64 | small-area accent (chroma 64) | Ember Peak |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a stone cairn. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: the smoking cone above black beaches and terraced herb gardens. 7. Do and don't: README shared list.
 
@@ -145,8 +145,9 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "the low rumble of a volcano that never fully sleeps"; hot-spring steam vents.
+- **Soundscape:** "the low rumble of a volcano that never fully sleeps" (C:12179); hot-spring steam vents.
 - **Signature:** steam vent hiss; obsidian scree underfoot; stone placed at the volcano's base (custom).
+- **Sea mark:** "Ember Peak's volcanic glow marks the horizon. The South Seas await." (crates/portlight-sim/src/voyage.rs:597); see ../landmarks/ember_peak.md
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the only geological bed (sub rumble); vs Coral Throne's drums and Typhoon's wind.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.steam_vent`, `mat.obsidian_scree`, `src.stone_placed`.

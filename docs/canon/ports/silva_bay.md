@@ -68,16 +68,16 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The yard is the town (C:7414, 'The yard IS the town'). Landmark [cite]: "The Master Shipyard - where the finest hulls in the Mediterranean take shape." (C:12026 area). Cited buildings: The Master Shipyard (shipyard, C:7420); The Working Harbor (harbor_master, C:7430); The Timber Yard (exchange, C:7440); The Brotherhood Hall (governor, C:7450); The Dry Dock (tavern, C:7460); The Customs Shed (customs, C:7470); The Broker's Bench (broker, C:7480). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The yard is the town (C:7414, 'The yard IS the town'). Landmark [cite]: "The Master Shipyard - where the finest hulls in the Mediterranean take shape." (C:12026 area). Cited buildings: The Master Shipyard (shipyard, C:7420); The Working Harbor (harbor_master, C:7430); The Timber Yard (exchange, C:7440); The Brotherhood Hall (governor, C:7450); The Dry Dock (tavern, C:7460); The Customs Shed (customs, C:7470); The Broker's Bench (broker, C:7480). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/master_shipyard.md.
 2. Materials: local and abundant (exports): Timber, Iron Ore, Pelts; scarce or luxury (imports): Grain, Cotton, Weapons, Rum, Silk (section A). Atmosphere [cite]: "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels." (C:12026 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | weathered tarred timber | (104, 86, 66) #685642 | 88 / 38 | mood, not values | plank walls, roofs, slipways (art-reviewed value) |
+| Dominant | weathered tarred timber | (103, 86, 68) #675644 | 88 / 35 | in range | plank walls, roofs, slipways (art-reviewed value) |
 | Secondary 1 | forest canopy green | (70, 90, 64) #465A40 | 84 / 26 | in range | 'dense forests' (art-reviewed value) |
 | Secondary 2 | fieldstone and wet quay grey | (118, 116, 108) #76746C | 116 / 10 | in range | footings and quay (art-reviewed value) |
-| Accent | fresh-cut oak and sawdust | (166, 140, 102) #A68C66 | 143 / 64 | mood, not values | fresh cuts and sawdust only (art-reviewed value) |
+| Accent | fresh-cut oak and sawdust | (163, 137, 99) #A38963 | 140 / 64 | small-area accent (chroma 64) | fresh cuts and sawdust only (art-reviewed value) |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: timber grade chalk marks A, B, C; a keel-section silhouette; an adze. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: low serrated shed ridges stepping back from the quay, warehouses behind, the forest band beyond; the slipway with a half-built hull's ribs is the only tall shape. 7. Do and don't: README shared list.
 Man-of-war note (design ruling 2): the Royal Man-of-War stays in lore as a Silva Bay yard product, since the sim sells it at every shipyard (crates/portlight-sim/src/session.rs:3037-3043; C:193). No plate art exists for it (the art hold covers `man_of_war`), so no art depicts it until that hold lifts.
@@ -140,7 +140,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** forest-backed bay; "the rhythmic sound of adzes shaping keels"; sawdust-soft quay; hot pitch bubbling.
+- **Soundscape:** forest-backed bay; "the rhythmic sound of adzes shaping keels" (C:12029); sawdust-soft quay; hot pitch bubbling.
 - **Signature:** adze bite into green timber; mallet on treenail; pitch pot simmer.
 - **Music/work songs (NOTE ONLY):** none in canon; adze rhythm is the work-song stand-in.
 - **Vs neighbours:** wood-on-wood (Ironhaven is iron-on-iron); a working yard, not a market.

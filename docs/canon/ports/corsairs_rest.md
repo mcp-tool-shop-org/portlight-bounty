@@ -70,16 +70,16 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The cove is the town: Corsair's Rest is cliff, tavern and hidden berths, and nothing is built where the sea can see it. Landmark [cite]: "The Cliff Tavern - carved into the rock face, visible only from the sea." (C:12036 area). Cited buildings: The Cove Mouth (harbor_master, C:7654); The Whisper Market (exchange, C:7664); The Crimson Chair (governor, C:7674); Mama Lucia's Kitchen (tavern, C:7684); The Surgery (apothecary, C:7694); The Cliff Caves (broker, C:7704); The Cliff Watch (customs, C:7714). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The cove is the town: Corsair's Rest is cliff, tavern and hidden berths, and nothing is built where the sea can see it. Landmark [cite]: "The Cliff Tavern - carved into the rock face, visible only from the sea." (C:12036 area). Cited buildings: The Cove Mouth (harbor_master, C:7654); The Whisper Market (exchange, C:7664); The Crimson Chair (governor, C:7674); Mama Lucia's Kitchen (tavern, C:7684); The Surgery (apothecary, C:7694); The Cliff Caves (broker, C:7704); The Cliff Watch (customs, C:7714). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/cliff_tavern.md.
 2. Materials: local and abundant (exports): Weapons, Rum, Tobacco, Pelts, Black Powder, Stolen Cargo; scarce or luxury (imports): Silk, Medicines, Grain, Opium (section A). Atmosphere [cite]: "Torch smoke, cheap rum, and the clink of coins changing hands under the table." (C:12036 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | shadowed cliff rock | (84, 78, 72) #544E48 | 79 / 12 | in range | cliff-sheltered harbour |
-| Secondary 1 | tarred rope and dark hulls | (66, 60, 54) #423C36 | 61 / 12 | mood, not values | hidden berths |
+| Dominant | shadowed cliff rock | (77, 71, 65) #4D4741 | 72 / 12 | in range | cliff-sheltered harbour |
+| Secondary 1 | tarred rope and dark hulls | (71, 65, 59) #47413B | 66 / 12 | in range | hidden berths |
 | Secondary 2 | sea-cave grey-green | (76, 90, 84) #4C5A54 | 87 / 14 | in range | the cove water's edge rock |
-| Accent | lantern amber | (150, 112, 60) #96703C | 116 / 90 | mood, not values | the Cliff Tavern seen only from the sea |
+| Accent | lantern amber | (140, 113, 76) #8C714C | 116 / 64 | small-area accent (chroma 64) | the Cliff Tavern seen only from the sea |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: no signs at all; a chalk 'friend' mark. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: nothing above the cliff line; terraces and doors cut into the rock face, lanterns visible only seaward. 7. Do and don't: README shared list.
 
@@ -142,9 +142,9 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** cliff-enclosed cove, close and muffled; torch crackle; "the clink of coins changing hands under the table"; a single rowboat's oars.
+- **Soundscape:** cliff-enclosed cove, close and muffled; torch crackle; "the clink of coins changing hands under the table" (C:12039); a single rowboat's oars.
 - **Signature:** small silver coins palmed (dull, low clink - darker than `ui_trade_coin`); torch sputter; oarlock creak of the fee boy's rowboat.
-- **Music/work songs (NOTE ONLY):** none - the Brotherhood is "a silence"; absence is the design.
+- **Music/work songs (NOTE ONLY):** none - the Brotherhood is "a silence" (C:12043); absence is the design.
 - **Vs neighbours:** the one Med port with no flags and no voices - intimate and furtive vs Porto Novo's open quays.
 - **Fragments [proposal; no fragment or asset exists yet]:** `place.hidden_cove`, `src.silver_palmed`, `src.oarlock_rowboat`.
 - Cited hooks: atmosphere "Torch smoke, cheap rum, and the clink of coins changing hands under the table."; dock scene "Ships anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee - payable in silver, no questions." (C:12036 area).

@@ -65,16 +65,16 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Blessing Pool is the town's heart: Pearl Shallows waits on its divers. Landmark [cite]: "The Blessing Pool - a tidal pool where divers pray before descending." (C:12106 area). Cited buildings: The Reef Approach (harbor_master, C:9226); The Grading Stone (exchange, C:9236); The Blessing Pool (governor, C:9246); The Color Workshop (shipyard, C:9256); The Pool's Edge (tavern, C:9266); The Pearl Mat (broker, C:9276). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Blessing Pool is the town's heart: Pearl Shallows waits on its divers. Landmark [cite]: "The Blessing Pool - a tidal pool where divers pray before descending." (C:12106 area). Cited buildings: The Reef Approach (harbor_master, C:9226); The Grading Stone (exchange, C:9236); The Blessing Pool (governor, C:9246); The Color Workshop (shipyard, C:9256); The Pool's Edge (tavern, C:9266); The Pearl Mat (broker, C:9276). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/blessing_pool.md.
 2. Materials: local and abundant (exports): Pearls, Cotton, Dyes; scarce or luxury (imports): Medicines, Grain, Silk, Rum (section A). Atmosphere [cite]: "Warm shallow water, coral sand, and the silence of divers preparing their breath." (C:12106 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | sand and shell | (136, 128, 110) #88806E | 128 / 26 | in range | the warm shallows |
+| Dominant | sand and shell | (146, 138, 120) #928A78 | 138 / 26 | in range | the warm shallows |
 | Secondary 1 | shallow water stone | (98, 112, 108) #62706C | 109 / 14 | in range | tidal pool |
 | Secondary 2 | drying-rack wood | (104, 90, 72) #685A48 | 92 / 32 | in range | dye and pearl sheds |
-| Accent | pearl sheen | (150, 146, 138) #96928A | 146 / 12 | mood, not values | pearls |
+| Accent | pearl sheen | (144, 140, 132) #908C84 | 140 / 12 | in range | pearls |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a pearl in an open hand. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: low huts on stilts over shallows, the Blessing Pool ringed with stones. 7. Do and don't: README shared list.
 
@@ -134,7 +134,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** near-silent - "the silence of divers preparing their breath"; canoe paddles; shallow lapping.
+- **Soundscape:** near-silent - "the silence of divers preparing their breath" (C:12109); canoe paddles; shallow lapping.
 - **Signature:** diver surfacing exhale; pearl pouch untied; paddle dip.
 - **Music/work songs (NOTE ONLY):** none - sacred quiet is the design; leave space.
 - **Vs neighbours:** quietest port in the game; vs Typhoon/Coral pearls, this is calm and patient.

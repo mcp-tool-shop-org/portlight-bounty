@@ -65,16 +65,16 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The mines are the town: Iron Point lives in the red cliffs and sells what it digs. Landmark [cite]: "The River Mouth Mines - tunnels carved into red cliffs where the river meets the sea." (C:12096 area). Cited buildings: The River Mouth Dock (harbor_master, C:9030); The Assay Office (exchange, C:9040); The Foreman's Post (governor, C:9050); The Mine Kitchen (tavern, C:9060); The Dock Desk (customs, C:9070); Yaa's Wall (broker, C:9080). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The mines are the town: Iron Point lives in the red cliffs and sells what it digs. Landmark [cite]: "The River Mouth Mines - tunnels carved into red cliffs where the river meets the sea." (C:12096 area). Cited buildings: The River Mouth Dock (harbor_master, C:9030); The Assay Office (exchange, C:9040); The Foreman's Post (governor, C:9050); The Mine Kitchen (tavern, C:9060); The Dock Desk (customs, C:9070); Yaa's Wall (broker, C:9080). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/river_mouth_mines.md.
 2. Materials: local and abundant (exports): Iron Ore; scarce or luxury (imports): Grain, Timber, Porcelain, Weapons, Rum, Medicines, Pelts (section A). Atmosphere [cite]: "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts." (C:12096 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | red cliff earth, muted | (126, 92, 74) #7E5C4A | 98 / 52 | mood, not values | red cliffs |
+| Dominant | red cliff earth, muted | (107, 84, 72) #6B5448 | 88 / 35 | in range | red cliffs |
 | Secondary 1 | river silt | (104, 96, 82) #686052 | 97 / 22 | in range | the river mouth |
 | Secondary 2 | ore grey | (96, 94, 92) #605E5C | 94 / 4 | in range | iron ore |
-| Accent | rust | (150, 96, 64) #966040 | 105 / 86 | mood, not values | oxidised ore heaps |
+| Accent | rust | (138, 98, 75) #8A624B | 105 / 63 | small-area accent (chroma 63) | oxidised ore heaps |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a red hand print. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: tunnel mouths in red cliffs above an ore jetty. 7. Do and don't: README shared list.
 
@@ -133,7 +133,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** river-mouth mining town; "the echo of picks from the mine shafts"; ore carts rattling down tracks.
+- **Soundscape:** river-mouth mining town; "the echo of picks from the mine shafts" (C:12099); ore carts rattling down tracks.
 - **Signature:** ore cart on rails; ore tipped into a hold; spit-and-clasp hands (custom) - very close, optional.
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the only percussive-industrial West Africa port; vs Ironhaven, it is open-air picks and rails, not furnaces.

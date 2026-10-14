@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284. Phase 1: ports. Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus studio research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus studio research notes (not in this repo).
 
 ## Purpose
 
@@ -52,6 +52,8 @@ No canon rule names a fixed list of ports, blocs, goods or regions. The port set
   - A swatch outside this range is labelled 'mood, not values'.
   - Accents up to chroma 64 are allowed in small areas only.
   - World palettes are references, not UI tokens. UI stays INK / GOLD / CREAM / MUTED / DUE.
+  - Sea and water colour are deferred to the water renders; port palettes carry no sea swatch.
+  - Within a region, port dominants sit at least 10 luma apart, so ports read apart even inside the muted envelope.
 - Do: compose from the 14 will-use plates; keep `hdr_2d = false`; send any new plate through ANDON and the art gate with exact 2x (Addendum M.1).
 - Don't:
   - use the forbidden paths (`assets/iso/`, `_rejected/`, `assets/rooms/`, `assets/floors/`, `assets/tilesets/`, `stage/room_stage.gd`);
@@ -85,6 +87,17 @@ No canon rule names a fixed list of ports, blocs, goods or regions. The port set
 | T16 | ~1 BS | Typhoon Anchorage divers poach Pearl Shallows' reef 'three seasons ago'; Ember Peak grumbles more often | grudge and tension texts |
 | T17 | Day 1 | The player's voyage begins | the sim |
 
+Rows T18 on were added with the landmark canon (phase 2). Ids are stable, so read them by date, not by number:
+
+| Id | When | Event | Grounding |
+|---|---|---|---|
+| T18 | ~180 BS | Porto Novo puts a beacon on the Harbor Master's Tower roof | voyage.rs:594 names the beacon; its place is [invented] (DF-18) |
+| T19 | ~45 BS | Bones begins carving lost whalers' names on the Whale Arch; the Whale Bone copies them into its beams | C:8362, C:8499 (the names); date [invented] |
+| T20 | ~70 BS | Typhoon Anchorage lashes its first wrecks into the Storm Wall | 'built from the hulls of ships that didn't make it' (C:12187); date [invented] |
+| T21 | ~15 BS | Dragon's Gate raises its chains and does not lower them again | 'not lowered the chains in fifteen years' (tavern rumour, C:12161) |
+| T22 | ~50 BS | Crosswind Isle hangs the Free Port Bell at the charter (with T12) | [invented] |
+| T23 | ~35 BS | The Hanging Market reaches its present span across the Narrows | [invented] |
+
 Every port file's section G cites these IDs. A port history may add detail but must not move an event to another era.
 
 ## Pirate home ports ([invented]; data gives factions regions only)
@@ -101,11 +114,21 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - Religion: regional and quiet; no faith has a mechanic. Port faiths are in each section G.
 - Population: rough figures for art and writing scale only, never shown as numbers in copy.
 
+## Landmarks (phase 2)
+
+- One file per shipped port landmark (20, from `culture.ports[].landmark`, C:12007-12197) plus one sea mark found only in code (the Porto Novo beacon, voyage.rs:594): see landmarks/README.md.
+- Each port file links its landmark in section C.1. The five sea-mark ports (Porto Novo, Ironhaven, Monsoon Reach, Ember Isle, Thornport) also link it in section I.
+- Landmark palettes reuse their port's swatches, so a landmark always reads as part of its port.
+- The 15 named lanes are listed in landmarks/README.md and deferred to a later phase.
+- Not in data, future phase: no reefs, rocks, wrecks (other than the Storm Wall), lighthouses (other than the code-only beacon) or forts exist as data objects. No landmark has coordinates, art, an icon or a sound.
+- Phase 2 data issues are DF-18 to DF-21 in data-fixes.md.
+
 ## Files
 
 - README.md (this file)
 - ports/<port_id>.md, one per content.json port
 - relations-matrix.md
 - data-fixes.md (proposals for the game, not canon; DF-n items)
+- landmarks/README.md and landmarks/<landmark_id>.md (21 files)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.
