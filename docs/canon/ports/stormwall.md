@@ -123,8 +123,8 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13788) | - | Grain, Weapons | Rum, Tobacco | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Iron Strait": "Iron from the foundries, soldiers from the fortress. This lane never sleeps." (C:1973).
-- Lane lore: "The Tea and Tobacco Road": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade." (C:1991).
+- Lane lore: "The Iron Strait": "Iron from the foundries, soldiers from the fortress. This lane never sleeps." (C:1973). Lane canon: [The Iron Strait](../lanes/iron_strait.md).
+- Lane lore: "The Tea and Tobacco Road": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade." (C:1991). Lane canon: [The Tea and Tobacco Road](../lanes/tea_and_tobacco_road.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

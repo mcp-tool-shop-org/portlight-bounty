@@ -120,7 +120,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | allied (C:13816) | 68, galleon, 0.2 (C:2306) | - | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Deep South Run": "Pearl to pearl. The divers of the shallows and the divers of the reef - same craft, different kingdoms." (C:2306).
+- Lane lore: "The Deep South Run": "Pearl to pearl. The divers of the shallows and the divers of the reef - same craft, different kingdoms." (C:2306). Lane canon: [The Deep South Run](../lanes/deep_south_run.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

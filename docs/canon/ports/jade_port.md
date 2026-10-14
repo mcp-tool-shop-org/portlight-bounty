@@ -126,9 +126,9 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | allied (C:13837) | - | Porcelain, Silk, Tea | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Porcelain Lane": "From the free port to the kiln masters. Every piece of porcelain in the west passed through here." (C:2126).
-- Lane lore: "The Silk Road by Sea": "Where porcelain meets silk. The two oldest trades in the East, connected by the shortest route." (C:2171).
-- Lane lore: "The Northern Passage": "Iron west, porcelain east. The longest profitable route in the world." (C:2297).
+- Lane lore: "The Porcelain Lane": "From the free port to the kiln masters. Every piece of porcelain in the west passed through here." (C:2126). Lane canon: [The Porcelain Lane](../lanes/porcelain_lane.md).
+- Lane lore: "The Silk Road by Sea": "Where porcelain meets silk. The two oldest trades in the East, connected by the shortest route." (C:2171). Lane canon: [The Silk Road by Sea](../lanes/silk_road_by_sea.md).
+- Lane lore: "The Northern Passage": "Iron west, porcelain east. The longest profitable route in the world." (C:2297). Lane canon: [The Northern Passage](../lanes/northern_passage.md).
 - Asymmetry flag: Silk Haven names Jade Port as local rival (C:13624); Jade Port names none (C:13615). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
 - Asymmetry flag: Spice Narrows names Jade Port as local rival (C:13680); Jade Port names none (C:13615). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
 

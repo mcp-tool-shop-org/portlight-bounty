@@ -37,7 +37,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `description` at C:9378
 - regional festival: Dyer's Moon (C:11864)
 - regional festival: Pearl Tide (C:11877)
-- named lane: The Deep South Run (Pearl Shallows - Coral Throne, C:2311) - lanes are deferred to a later phase
+- named lane: The Deep South Run (Pearl Shallows - Coral Throne, C:2311) - see [../lanes/deep_south_run.md](../lanes/deep_south_run.md)
 
 ## 3. History (all [invented] unless cited)
 

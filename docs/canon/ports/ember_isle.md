@@ -125,7 +125,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | same bloc | 28, sloop, 0.15 (C:2261) | - | Rum | C:11640 |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Volcanic Passage": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days." (C:2234).
+- Lane lore: "The Volcanic Passage": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days." (C:2234). Lane canon: [The Volcanic Passage](../lanes/volcanic_passage.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

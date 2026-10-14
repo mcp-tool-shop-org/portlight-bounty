@@ -32,8 +32,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `rivalry_reason` at C:13535
 - regional festival: Harvest of Plenty (C:11753)
 - regional festival: Night of Lanterns (C:11766)
-- named lane: The Grain Road (Porto Novo - Al-Manar, C:1933) - lanes are deferred to a later phase
-- named lane: The Monsoon Shortcut (Al-Manar - Monsoon Reach, C:2284) - lanes are deferred to a later phase
+- named lane: The Grain Road (Porto Novo - Al-Manar, C:1933) - see [../lanes/grain_road.md](../lanes/grain_road.md)
+- named lane: The Monsoon Shortcut (Al-Manar - Monsoon Reach, C:2284) - see [../lanes/monsoon_shortcut.md](../lanes/monsoon_shortcut.md)
 
 ## 3. History (all [invented] unless cited)
 

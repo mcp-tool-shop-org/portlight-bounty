@@ -126,7 +126,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13753) | - | Pelts | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Timber Run": "Short and safe - the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet." (C:1937).
+- Lane lore: "The Timber Run": "Short and safe - the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet." (C:1937). Lane canon: [The Timber Run](../lanes/timber_run.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

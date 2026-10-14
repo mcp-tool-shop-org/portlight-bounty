@@ -127,8 +127,8 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13788) | - | Pelts, Weapons | Rum, Tobacco | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Iron Strait": "Iron from the foundries, soldiers from the fortress. This lane never sleeps." (C:1973).
-- Lane lore: "The Northern Passage": "Iron west, porcelain east. The longest profitable route in the world." (C:2297).
+- Lane lore: "The Iron Strait": "Iron from the foundries, soldiers from the fortress. This lane never sleeps." (C:1973). Lane canon: [The Iron Strait](../lanes/iron_strait.md).
+- Lane lore: "The Northern Passage": "Iron west, porcelain east. The longest profitable route in the world." (C:2297). Lane canon: [The Northern Passage](../lanes/northern_passage.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

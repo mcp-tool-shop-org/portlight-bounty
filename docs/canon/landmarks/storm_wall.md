@@ -40,7 +40,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `departure_text` at C:13183
 - regional festival: Coral Coronation (C:11976)
 - regional festival: Fire Walking (C:11990)
-- named lane: Typhoon Alley (Monsoon Reach - Typhoon Anchorage, C:2230) - lanes are deferred to a later phase
+- named lane: Typhoon Alley (Monsoon Reach - Typhoon Anchorage, C:2230) - see [../lanes/typhoon_alley.md](../lanes/typhoon_alley.md)
 
 ## 3. History (all [invented] unless cited)
 

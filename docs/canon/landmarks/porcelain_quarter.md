@@ -31,9 +31,9 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `name` at C:9433
 - regional festival: Silk Weavers' Fair (C:11920)
 - regional festival: Monsoon Prayer (C:11934)
-- named lane: The Porcelain Lane (Crosswind Isle - Jade Port, C:2131) - lanes are deferred to a later phase
-- named lane: The Silk Road by Sea (Jade Port - Silk Haven, C:2176) - lanes are deferred to a later phase
-- named lane: The Northern Passage (Ironhaven - Jade Port, C:2302) - lanes are deferred to a later phase
+- named lane: The Porcelain Lane (Crosswind Isle - Jade Port, C:2131) - see [../lanes/porcelain_lane.md](../lanes/porcelain_lane.md)
+- named lane: The Silk Road by Sea (Jade Port - Silk Haven, C:2176) - see [../lanes/silk_road_by_sea.md](../lanes/silk_road_by_sea.md)
+- named lane: The Northern Passage (Ironhaven - Jade Port, C:2302) - see [../lanes/northern_passage.md](../lanes/northern_passage.md)
 
 ## 3. History (all [invented] unless cited)
 

@@ -124,8 +124,8 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13851) | - | Silk | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "Typhoon Alley": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival." (C:2225).
-- Lane lore: "The Monsoon Shortcut": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown." (C:2279).
+- Lane lore: "Typhoon Alley": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival." (C:2225). Lane canon: [Typhoon Alley](../lanes/typhoon_alley.md).
+- Lane lore: "The Monsoon Shortcut": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown." (C:2279). Lane canon: [The Monsoon Shortcut](../lanes/monsoon_shortcut.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

@@ -33,10 +33,10 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `rivalry_reason` at C:13535
 - regional festival: Harvest of Plenty (C:11753)
 - regional festival: Night of Lanterns (C:11766)
-- named lane: The Grain Road (Porto Novo - Al-Manar, C:1933) - lanes are deferred to a later phase
-- named lane: The Timber Run (Porto Novo - Silva Bay, C:1942) - lanes are deferred to a later phase
-- named lane: The Shadow Lane (Porto Novo - Corsair's Rest, C:1960) - lanes are deferred to a later phase
-- named lane: The Cotton Crossing (Porto Novo - Sun Harbor, C:2032) - lanes are deferred to a later phase
+- named lane: The Grain Road (Porto Novo - Al-Manar, C:1933) - see [../lanes/grain_road.md](../lanes/grain_road.md)
+- named lane: The Timber Run (Porto Novo - Silva Bay, C:1942) - see [../lanes/timber_run.md](../lanes/timber_run.md)
+- named lane: The Shadow Lane (Porto Novo - Corsair's Rest, C:1960) - see [../lanes/shadow_lane.md](../lanes/shadow_lane.md)
+- named lane: The Cotton Crossing (Porto Novo - Sun Harbor, C:2032) - see [../lanes/cotton_crossing.md](../lanes/cotton_crossing.md)
 
 ## 3. History (all [invented] unless cited)
 

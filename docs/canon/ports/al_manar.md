@@ -126,8 +126,8 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13753) | - | - | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Grain Road": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory." (C:1928).
-- Lane lore: "The Monsoon Shortcut": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown." (C:2279).
+- Lane lore: "The Grain Road": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory." (C:1928). Lane canon: [The Grain Road](../lanes/grain_road.md).
+- Lane lore: "The Monsoon Shortcut": "Timing is everything. Catch the monsoon right and you fly. Catch it wrong and you drown." (C:2279). Lane canon: [The Monsoon Shortcut](../lanes/monsoon_shortcut.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

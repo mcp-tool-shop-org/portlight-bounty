@@ -35,8 +35,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `description` at C:8156
 - regional festival: The Iron Days (C:11808)
 - regional festival: Midwinter Market (C:11822)
-- named lane: The Iron Strait (Ironhaven - Stormwall, C:1978) - lanes are deferred to a later phase
-- named lane: The Tea and Tobacco Road (Stormwall - Thornport, C:1996) - lanes are deferred to a later phase
+- named lane: The Iron Strait (Ironhaven - Stormwall, C:1978) - see [../lanes/iron_strait.md](../lanes/iron_strait.md)
+- named lane: The Tea and Tobacco Road (Stormwall - Thornport, C:1996) - see [../lanes/tea_and_tobacco_road.md](../lanes/tea_and_tobacco_road.md)
 
 ## 3. History (all [invented] unless cited)
 

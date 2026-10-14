@@ -126,7 +126,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Typhoon Anchorage | South Seas | The Coral Crown | same bloc | 22, brigantine, 0.13 (C:2270) | Rum | - | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Deep South Run": "Pearl to pearl. The divers of the shallows and the divers of the reef - same craft, different kingdoms." (C:2306).
+- Lane lore: "The Deep South Run": "Pearl to pearl. The divers of the shallows and the divers of the reef - same craft, different kingdoms." (C:2306). Lane canon: [The Deep South Run](../lanes/deep_south_run.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

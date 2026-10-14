@@ -29,8 +29,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - local_custom: "No names. Every captain here is 'friend' until proven otherwise." (C:12038)
 - regional festival: Harvest of Plenty (C:11753)
 - regional festival: Night of Lanterns (C:11766)
-- named lane: The Shadow Lane (Porto Novo - Corsair's Rest, C:1960) - lanes are deferred to a later phase
-- named lane: The Smuggler's Run (Corsair's Rest - Spice Narrows, C:2293) - lanes are deferred to a later phase
+- named lane: The Shadow Lane (Porto Novo - Corsair's Rest, C:1960) - see [../lanes/shadow_lane.md](../lanes/shadow_lane.md)
+- named lane: The Smuggler's Run (Corsair's Rest - Spice Narrows, C:2293) - see [../lanes/smugglers_run.md](../lanes/smugglers_run.md)
 
 ## 3. History (all [invented] unless cited)
 

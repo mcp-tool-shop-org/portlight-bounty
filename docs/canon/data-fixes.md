@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284) and 2 (landmarks, base 71c6aaa). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa) and 3 (lanes, base ab03ace). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 21.
+Count: 25.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -222,6 +222,49 @@ Proposed fix: No data change. Canon reads them as long-haul open-ocean routes th
 
 Why: on the map they cross other regions. This is a flag, not an error.
 
+## DF-22. Saves drop lane names, so loaded games lose lane labels and route encounters
+
+Where:
+- crates/portlight-sim/src/save.rs:1832-1840 (`route_value` writes port_a, port_b, distance, danger, min_ship_class; no lore_name or lore)
+- crates/portlight-sim/src/save.rs:1842-1853 (`route_from` sets lore_name and lore to empty); used at save.rs:722-726
+- crates/portlight-sim/tests/save_parity.rs:192-193 (the test asserts the empty values)
+- Effect: crates/portlight-chart/src/view.rs:214-215 falls back to the destination name only; crates/portlight-sim/src/sea_culture.rs:129-133 falls back to the region table.
+
+Proposed fix: on load, refill lore_name and lore from content.json routes by port pair (no save format change). Sim/parity PR with a parity note, since the test encodes the current behaviour. Verify in that PR that no other load path rebuilds routes from content.
+
+Why: after a save and load, the 15 named lanes stop showing their names on the chart and their 15 encounter tables never fire. Canon describes the fresh-session experience.
+
+## DF-23. 'The gentlest route in the Known World' is not the gentlest
+
+Where:
+- content.json:12243 (Grain Road encounter: "The Grain Road earns its reputation as the gentlest route in the Known World.")
+- content.json:1931 (Grain Road danger 0.12); 19 of 43 routes have lower danger, the lowest being The Silk Road by Sea at 0.07 (content.json:2174)
+
+Proposed fix: copy change to "The Grain Road earns its reputation as a gentle route." ("gentlest in the Mediterranean" also fails: The Timber Run is 0.08, content.json:1940.) Copy PR with parity note (voyage flavour text).
+
+Why: a superlative the data contradicts.
+
+## DF-24. The Long Crossing says 'months'; the game says about 16 days
+
+Where:
+- content.json:2105 (lore: "Months of open water.")
+- content.json:2101 (distance 64), content.json:2103 (min class galleon), content.json:182 (galleon speed 4); voyage.rs:726-728 gives 16 days
+- Consistent text on the same lane: "Day twelve of the crossing" (content.json:12403)
+
+Proposed fix: "Weeks of open water." Copy PR. No sim change.
+
+Why: the chart shows the day estimate next to the name, so the player sees both.
+
+## DF-25. 'The longest profitable route in the world' is not the longest
+
+Where:
+- content.json:2303 and content.json:12618 (Northern Passage, distance 76)
+- content.json:2290 (The Smuggler's Run, distance 80; its own encounter says "The longest, most dangerous route in the Known World", content.json:12598)
+
+Proposed fix: No data change. Canon reads 'profitable' as 'lawful': the Run is longer but is a smuggling lane. If copy is touched, "the longest lawful route in the world". Flag, not error.
+
+Why: both superlatives appear in shipped voyage text.
+
 ## Resolved in lore (no data change)
 
 - Stormwall 'answers to the Pact, not the crown' (C:13570 area): the crown is the old Northern Crown that raised the Fortress (T3) and dissolved (T8).
@@ -240,3 +283,7 @@ Why: on the map they cross other regions. This is a flag, not an error.
 - The Deep Reef (exchange, C:11034) and The Deep Reef Brotherhood (C:2896): the pirates are named for the reef ground; no tie.
 - Dimitri Andros sighting under Silva Bay: already DF-1.
 - 'Timber Exchange' at Silva Bay: already DF-8.
+- Grain Road cliff-carved first Exchange (C:12228) vs the Exchange on temple ruins (C:12011): the cliff was an older open-air counting place; the hall came later (lanes/grain_road.md).
+- 'The route that clothed an empire' (C:2033): a figure of speech for the Alliance cotton trade; no empire exists.
+- Smuggler's Run 'pirate kings once controlled both ends' (C:2294) vs the Crimson Tide and Monsoon Syndicate today: one line of kings before T13, two crews since (T28).
+- Ember Isle 'obsidian-hulled' medicine boats (C:12538): obsidian-inlaid, black-lacquered hulls.

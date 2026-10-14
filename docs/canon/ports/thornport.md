@@ -121,7 +121,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13851) | - | Pelts, Tea | - | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Tea and Tobacco Road": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade." (C:1991).
+- Lane lore: "The Tea and Tobacco Road": "Thornport's warmth heading to Stormwall's cold. The northern comfort trade." (C:1991). Lane canon: [The Tea and Tobacco Road](../lanes/tea_and_tobacco_road.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

@@ -123,7 +123,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | same bloc | 22, brigantine, 0.13 (C:2270) | - | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "Typhoon Alley": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival." (C:2225).
+- Lane lore: "Typhoon Alley": "Named for obvious reasons. The monsoon winds funnel through here like a gauntlet. Timing is survival." (C:2225). Lane canon: [Typhoon Alley](../lanes/typhoon_alley.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 
