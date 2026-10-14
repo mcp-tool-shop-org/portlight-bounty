@@ -53,6 +53,13 @@ pub(crate) const FIRST_VOYAGE_HINTS: &[HintSpec] = &[
     },
 ];
 
+/// A personal fight's result counts as a win for the journal hint only when
+/// the player won outright; a draw does not (the sim counts it in
+/// `duels_won`, so the counters are not read for live play).
+pub(crate) fn duel_is_a_win(player_won: bool, draw: bool) -> bool {
+    player_won && !draw
+}
+
 /// The active hint for these facts, if any.
 pub(crate) fn active_hint(facts: &HintFacts) -> Option<&'static HintSpec> {
     FIRST_VOYAGE_HINTS
@@ -174,6 +181,23 @@ mod tests {
         assert_eq!(id(&f), Some("journal_paths"));
         f.journal_seen = true;
         assert_eq!(id(&f), None);
+    }
+
+    #[test]
+    fn a_draw_or_a_break_away_shows_no_hint() {
+        // Draw: no outright win, so the won-fight flag stays down.
+        assert!(!duel_is_a_win(false, true));
+        // Break-away: neither won nor drawn, nothing sunk.
+        assert!(!duel_is_a_win(false, false));
+        assert!(duel_is_a_win(true, false));
+        for won in [duel_is_a_win(false, true), duel_is_a_win(false, false)] {
+            let f = HintFacts {
+                docked: false,
+                wins: i64::from(won),
+                ..HintFacts::default()
+            };
+            assert_eq!(id(&f), None);
+        }
     }
 
     #[test]

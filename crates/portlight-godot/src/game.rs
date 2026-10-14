@@ -735,6 +735,9 @@ struct PortlightGame {
     /// First-voyage hint flags. Never saved: reset on a new game, seeded on load.
     hint_sailed_with_contract: bool,
     hint_journal_seen: bool,
+    /// Set by a real win (won boarding fight, won duel, enemy sunk). Never
+    /// saved; a draw or a break-away never sets it.
+    hint_won_fight: bool,
     /// `--first-voyage-hints` smoke state (never saved).
     hints_checked: bool,
     hint_shot: Option<HintShot>,
@@ -954,6 +957,7 @@ impl IControl for PortlightGame {
             chart_hint: None,
             hint_sailed_with_contract: false,
             hint_journal_seen: false,
+            hint_won_fight: false,
             hints_checked: false,
             hint_shot: None,
             hint_shot_done: false,
@@ -6251,6 +6255,9 @@ impl PortlightGame {
     fn finish_duel_result(&mut self, result: Result<DuelOutcome, portlight_sim::SimError>) {
         match result {
             Ok(outcome) => {
+                if crate::hints::duel_is_a_win(outcome.player_won, outcome.draw) {
+                    self.hint_won_fight = true;
+                }
                 self.stances.clear();
                 self.push_log(duel_outcome_line(&outcome));
             }
@@ -6433,7 +6440,7 @@ impl PortlightGame {
             .map(|session| session.world().captain.naval_victories)
             .unwrap_or(0);
         godot_print!("hint smoke won encounter: wins {wins} (naval {naval})");
-        if wins <= 0 {
+        if wins <= 0 || !self.hint_won_fight {
             self.hint_fail("Hint smoke: a won encounter raised no win count.");
         }
         self.expect_hint("won recap", None);
@@ -6508,6 +6515,7 @@ impl PortlightGame {
     fn reset_hint_flags(&mut self) {
         self.hint_sailed_with_contract = false;
         self.hint_journal_seen = false;
+        self.hint_won_fight = false;
     }
 
     /// A loaded save seeds the hint flags, so a veteran save shows no old hint.
@@ -6519,6 +6527,9 @@ impl PortlightGame {
         );
         self.hint_sailed_with_contract = sailed;
         self.hint_journal_seen = seen;
+        // The win counters only seed `journal_seen`; a load never sets the
+        // won-fight flag, so a veteran save stays quiet.
+        self.hint_won_fight = false;
     }
 
     /// A successful sail with a contract held clears the first-sale hint.
@@ -6538,7 +6549,7 @@ impl PortlightGame {
             docked: self.docked_id().is_some(),
             active: session.board().active.len(),
             settled: session.board().completed.len(),
-            wins: hint_wins(session),
+            wins: i64::from(self.hint_won_fight),
             sailed_with_contract: self.hint_sailed_with_contract,
             journal_seen: self.hint_journal_seen,
         })
@@ -8481,6 +8492,7 @@ impl PortlightGame {
         };
         match result {
             Ok(receipt) => {
+                self.hint_won_fight = true;
                 let lines = victory_receipt_lines(&receipt);
                 for line in &lines {
                     self.push_log(line.clone());
@@ -8691,6 +8703,9 @@ impl PortlightGame {
                 let text = session_text(&step.message, &step.flavor);
                 if !text.is_empty() {
                     self.push_log(text);
+                }
+                if step.enemy_sunk {
+                    self.hint_won_fight = true;
                 }
                 self.adopt_step(step);
             }
@@ -15026,7 +15041,8 @@ enum HintShot {
     NoHint,
 }
 
-/// Won fights, naval and personal, for the journal hint.
+/// Won fights, naval and personal, as the sim counts them (a draw counts as
+/// a duel won). Used only to seed `journal_seen` on load.
 fn hint_wins(session: &Session) -> i64 {
     let captain = &session.world().captain;
     captain.naval_victories + captain.duels_won
