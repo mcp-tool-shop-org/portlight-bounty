@@ -96,6 +96,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Ember Isle serves the Crown but keeps its own counsel. The volcano doesn't care about politics." (C:13689 area).
 - Grudge: "The Ember Keepers refused to share their medicine recipes with the Iron Pact. 'The mountain teaches us. It didn't teach you.'" (C:13689 area).
 - Bloc philosophy: "Tribute earns trade. The reef remembers." (C:13511 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Coral Crown](../factions/coral_crown.md); pirate faction [The Deep Reef Brotherhood](../factions/deep_reef_brotherhood.md).
 
 ## F. Relations with every other port
 

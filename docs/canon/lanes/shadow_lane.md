@@ -52,6 +52,7 @@ Flagless ships that do not wave (C:12288); rowboats in cliff shadow (C:12293). N
 
 - Ports: [Porto Novo](../ports/porto_novo.md), [Corsair's Rest](../ports/corsairs_rest.md)
 - Landmarks: [The Cliff Tavern](../landmarks/cliff_tavern.md), [The Grain Exchange](../landmarks/grain_exchange.md)
+- Factions: [The Crimson Tide](../factions/crimson_tide.md)
 
 ## 7. Flags
 

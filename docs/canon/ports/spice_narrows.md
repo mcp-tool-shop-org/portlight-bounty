@@ -98,6 +98,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Jade Port: "The Spice Lords undercut Jade Port's legitimate spice trade with smuggled goods at lower prices. The Kiln Masters are furious." (C:13680 area).
 - Grudge: "A Jade Port customs agent infiltrated the Narrows. The Spice Lords sent him back - alive, but with every piece of intelligence he'd gathered tattooed on his forehead." (C:13680 area).
 - Bloc philosophy: "No names, no questions, no manifests." (C:13493 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Shadow Ports](../factions/shadow_ports.md); pirate faction [The Monsoon Syndicate](../factions/monsoon_syndicate.md).
 
 ## F. Relations with every other port
 

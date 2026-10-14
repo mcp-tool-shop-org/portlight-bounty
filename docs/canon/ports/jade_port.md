@@ -97,6 +97,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Jade Port is the Circle's elder. The Kiln Masters have shaped Eastern trade policy for a thousand years." (C:13615 area).
 - Grudge: "A Western merchant once dropped a porcelain bowl. The Kiln Masters banned his entire family from trade for three generations." (C:13615 area).
 - Bloc philosophy: "Quality over quantity. Hierarchy governs all." (C:13453 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Silk Circle](../factions/silk_circle.md).
 
 ## F. Relations with every other port
 

@@ -103,6 +103,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Al-Manar: "Both claim to be the Mediterranean's premier trading port. The grain exchange vs. the spice bazaar - centuries of competition." (C:13532 area).
 - Grudge: "Al-Manar once tried to impose a spice tariff on Porto Novo grain ships. Porto Novo responded by raising port fees for Al-Manar flagged vessels. The tariff lasted three days." (C:13532 area).
 - Bloc philosophy: "Contracts are sacred. Prices are posted. Cheats are remembered." (C:13388 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Exchange Alliance](../factions/exchange_alliance.md); archetypes starting here [The Merchant](../captains/merchant.md).
 
 ## F. Relations with every other port
 

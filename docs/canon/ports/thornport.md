@@ -92,6 +92,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Thornport is too practical for politics. They sell tea and tobacco to anyone with silver." (C:13662 area).
 - Grudge: "Stormwall once tried to tax Thornport's tea trade. Thornport stopped selling tea to soldiers. The tax lasted two weeks." (C:13662 area).
 - Bloc philosophy: "All flags fly here. No nation claims us." (C:13475 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Free Ports](../factions/free_ports.md).
 
 ## F. Relations with every other port
 

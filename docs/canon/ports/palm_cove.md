@@ -93,6 +93,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Palm Cove doesn't do politics. They make rum and share it. That's their entire foreign policy." (C:13588 area).
 - Grudge: "None. Palm Cove is incapable of holding a grudge. It's a cultural impossibility." (C:13588 area).
 - Bloc philosophy: "Generosity first, then business. The coast remembers." (C:13431 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Gold Coast Compact](../factions/gold_coast_compact.md); archetypes starting here [The Smuggler](../captains/smuggler.md).
 
 ## F. Relations with every other port
 

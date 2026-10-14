@@ -95,6 +95,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Sun Harbor is the Compact's voice. The Weighers speak for all four ports at trade councils." (C:13579 area).
 - Grudge: "An Iron Pact mining consortium tried to buy Iron Point. The Compact blocked it. Relations have been cool since." (C:13579 area).
 - Bloc philosophy: "Generosity first, then business. The coast remembers." (C:13431 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Gold Coast Compact](../factions/gold_coast_compact.md).
 
 ## F. Relations with every other port
 

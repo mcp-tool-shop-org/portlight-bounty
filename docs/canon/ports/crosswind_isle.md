@@ -93,6 +93,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Crosswind Isle is neutral or dead. The Free Port Council enforces exactly one rule: no one rules." (C:13644 area).
 - Grudge: "Someone tried to claim the isle for an eastern dynasty. Every captain in harbor trained their guns on his ship. He left." (C:13644 area).
 - Bloc philosophy: "All flags fly here. No nation claims us." (C:13475 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Free Ports](../factions/free_ports.md); archetypes starting here [The Dockhand](../captains/dockhand.md), [The Bounty Hunter](../captains/bounty_hunter.md).
 
 ## F. Relations with every other port
 
