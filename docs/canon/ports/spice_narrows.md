@@ -160,4 +160,4 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 ## J. Flags for this port
 
 - DF-6: Local rivals are one-sided
-- DF-17: Pirate captains sighted under ports that are not their homes
+- DF-17: Pirate captain sightings imply home ports the data does not define

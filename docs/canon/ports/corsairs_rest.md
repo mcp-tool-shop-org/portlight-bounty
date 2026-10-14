@@ -154,5 +154,5 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 - DF-6: Local rivals are one-sided
 - DF-16: 'Corsairs Rest' spelling in docs
-- DF-17: Pirate captains sighted under ports that are not their homes
+- DF-17: Pirate captain sightings imply home ports the data does not define
 - Resolved in lore: The Cliff Tavern and Mama Lucia's Kitchen are one place; the Kitchen is the tavern's back room.

@@ -155,4 +155,4 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - DF-5: Ironhaven embargoes the weapons it exports
 - DF-8: NPC name drift across records
 - DF-13: Silva Bay 'cheapest repairs' is a tie
-- DF-17: Pirate captains sighted under ports that are not their homes
+- DF-17: Pirate captain sightings imply home ports the data does not define
