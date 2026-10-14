@@ -730,11 +730,12 @@ jobs:
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SHOT=/tmp/harbour-shots/capture.png \
             godot --display-driver x11 --rendering-driver opengl3 --path godot -- --harbour-screen
-          if ! grep -q 'portlight harbour smoke ok' /tmp/godot-harbour-frames.log; then
+          if ! grep -q 'portlight harbour smoke ok' /tmp/godot-harbour-frames.log \
+            || ! grep -q 'portlight harbour-bank smoke ok' /tmp/godot-harbour-frames.log; then
             echo "harbour frame capture did not report ok"
             exit 1
           fi
-          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png harbour-insurance.png; do
+          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png harbour-insurance.png harbour-bank.png; do
             if [ ! -f "/tmp/harbour-shots/${name}" ]; then
               echo "harbour capture did not write /tmp/harbour-shots/${name}"
               exit 1
@@ -899,6 +900,7 @@ jobs:
           cmp_committed harbour-broker.png /tmp/harbour-shots/harbour-broker.png
           cmp_committed harbour-finance.png /tmp/harbour-shots/harbour-finance.png
           cmp_committed harbour-insurance.png /tmp/harbour-shots/harbour-insurance.png
+          cmp_committed harbour-bank.png /tmp/harbour-shots/harbour-bank.png
           cmp_committed crew-roster.png /tmp/crew-shots/crew-roster.png
           cmp_committed crew-provisions.png /tmp/crew-shots/crew-provisions.png
           cmp_committed crew-training.png /tmp/crew-shots/crew-training.png

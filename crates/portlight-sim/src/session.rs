@@ -6595,6 +6595,11 @@ mod bank_tests {
             assert!(text.is_ascii(), "{text}");
             assert!(!text.contains("--") && !text.contains("  "), "{text}");
             assert!(!text.contains(" 0 "), "no zero terms: {text}");
+            // Notices and refusals read the same way: full sentences that end
+            // with a full stop (usage lines aside).
+            if !text.starts_with("Usage:") {
+                assert!(text.ends_with('.'), "full stop: {text}");
+            }
         }
     }
 
@@ -6632,6 +6637,35 @@ mod bank_tests {
         let again = Session::load(&dir, "bank").unwrap().unwrap();
         assert_eq!(again.infra.bank, session.infra.bank);
         assert_eq!(again.books().banked, 1000);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn save_goes_from_v12_to_v13_when_an_account_opens() {
+        let dir = std::env::temp_dir().join(format!("portlight-v12v13-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let version = |session: &mut Session, slot: &str| {
+            session.save(&dir, slot).unwrap();
+            let text =
+                std::fs::read_to_string(dir.join("saves").join(format!("{slot}.json"))).unwrap();
+            let file: serde_json::Value = serde_json::from_str(&text).unwrap();
+            (
+                file["version"].clone(),
+                file["infrastructure"].get("bank").is_some(),
+            )
+        };
+        let mut session = docked(1000);
+        assert_eq!(
+            version(&mut session, "before"),
+            (serde_json::json!(12), false)
+        );
+        session.deposit_silver(50).unwrap();
+        assert_eq!(version(&mut session, "open"), (serde_json::json!(13), true));
+        session.withdraw_silver(50).unwrap();
+        assert_eq!(
+            version(&mut session, "closed"),
+            (serde_json::json!(12), false)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

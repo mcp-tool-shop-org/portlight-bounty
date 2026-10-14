@@ -112,6 +112,9 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::HarbourRepayAll => "harbour.repay.all".into(),
         Action::HarbourDraw => "harbour.draw".into(),
         Action::HarbourEmergency => "harbour.emergency".into(),
+        Action::HarbourBankDeposit => "harbour.bank.deposit".into(),
+        Action::HarbourBankWithdraw => "harbour.bank.withdraw".into(),
+        Action::HarbourBankLetter(port) => format!("harbour.bank.letter.{port}"),
     }
 }
 
@@ -319,7 +322,12 @@ fn static_action(id: &str) -> Option<Action> {
         "harbour.repay.all" => Action::HarbourRepayAll,
         "harbour.draw" => Action::HarbourDraw,
         "harbour.emergency" => Action::HarbourEmergency,
-        _ => return None,
+        "harbour.bank.deposit" => Action::HarbourBankDeposit,
+        "harbour.bank.withdraw" => Action::HarbourBankWithdraw,
+        other => match other.strip_prefix("harbour.bank.letter.") {
+            Some(port) if !port.is_empty() => Action::HarbourBankLetter(port.to_string()),
+            _ => return None,
+        },
     })
 }
 
@@ -394,6 +402,9 @@ fn harbour_intent_id(intent: &HarbourIntent) -> String {
             origin,
             destination,
         } => insurance_id(policy_id, target_id, origin, destination),
+        HarbourIntent::BankDeposit(amount) => format!("bank.deposit.{amount}"),
+        HarbourIntent::BankWithdraw(amount) => format!("bank.withdraw.{amount}"),
+        HarbourIntent::BankLetter { source, amount } => format!("bank.letter.{source}.{amount}"),
     }
 }
 
@@ -426,6 +437,19 @@ fn harbour_intent_from(rest: &str) -> Option<HarbourIntent> {
     }
     if let Some(rest) = rest.strip_prefix("insurance.") {
         return insurance_from(rest);
+    }
+    if let Some(amount) = rest.strip_prefix("bank.deposit.") {
+        return Some(HarbourIntent::BankDeposit(amount.parse().ok()?));
+    }
+    if let Some(amount) = rest.strip_prefix("bank.withdraw.") {
+        return Some(HarbourIntent::BankWithdraw(amount.parse().ok()?));
+    }
+    if let Some(rest) = rest.strip_prefix("bank.letter.") {
+        let (source, amount) = rest.rsplit_once('.')?;
+        return Some(HarbourIntent::BankLetter {
+            source: source.to_string(),
+            amount: amount.parse().ok()?,
+        });
     }
     None
 }
@@ -1040,6 +1064,12 @@ pub(crate) fn cargo_key(cargo: &[portlight_sim::model::CargoItem]) -> Vec<(Strin
         }
     }
     out
+}
+
+/// `state.banked`: `{total, accounts: [{port, silver}]}` (port ids, port-id
+/// order).
+pub(crate) fn banked_key(session: &portlight_sim::Session) -> (i64, Vec<(String, i64)>) {
+    (session.banked_total(), session.bank_balances())
 }
 
 /// `state.policies`: `[{spec, family, scope, active, paid_out}]`.
@@ -1979,6 +2009,36 @@ mod tests {
         assert_eq!(key.hull_after, 19);
         assert_eq!(key.claims_paid, 40);
         assert_eq!(key.cargo_lost, vec![("silk".to_string(), 15)]);
+    }
+
+    #[test]
+    fn state_banked_key() {
+        let mut session = crate::harbour_screen::bank_stage_session(&[("silva_bay", 300)]).unwrap();
+        assert_eq!(
+            banked_key(&session),
+            (300, vec![("silva_bay".to_string(), 300)])
+        );
+        session.deposit_silver(100).unwrap();
+        assert_eq!(
+            banked_key(&session),
+            (
+                400,
+                vec![
+                    ("porto_novo".to_string(), 100),
+                    ("silva_bay".to_string(), 300)
+                ]
+            )
+        );
+        for (id, action) in [
+            ("harbour.bank.deposit", Action::HarbourBankDeposit),
+            ("harbour.bank.withdraw", Action::HarbourBankWithdraw),
+            (
+                "harbour.bank.letter.silva_bay",
+                Action::HarbourBankLetter("silva_bay".into()),
+            ),
+        ] {
+            assert_eq!(action_playtest_id(&action), id);
+        }
     }
 
     #[test]

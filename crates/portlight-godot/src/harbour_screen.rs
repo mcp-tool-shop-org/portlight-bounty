@@ -37,6 +37,12 @@ pub(crate) const ANCHOR_WAREHOUSE: &str = "HarbourWarehouse";
 pub(crate) const ANCHOR_BROKER: &str = "HarbourBroker";
 pub(crate) const ANCHOR_FINANCE: &str = "HarbourCredit";
 pub(crate) const ANCHOR_INSURANCE: &str = "HarbourInsurance";
+pub(crate) const ANCHOR_BANK: &str = "HarbourBank";
+/// The counting house's terms, two lines.
+pub(crate) const BANK_TERMS: [&str; 2] = [
+    "Deposits are free, at least 50 silver",
+    "Withdraw here 1% (at least 1) - by letter 5% (at least 5) - no interest.",
+];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum HarbourIntent {
@@ -57,6 +63,12 @@ pub(crate) enum HarbourIntent {
         target_id: String,
         origin: String,
         destination: String,
+    },
+    BankDeposit(i64),
+    BankWithdraw(i64),
+    BankLetter {
+        source: String,
+        amount: i64,
     },
 }
 
@@ -108,6 +120,97 @@ pub(crate) struct HarbourModel {
     pub policy_lines: Vec<String>,
     pub claim_lines: Vec<String>,
     pub insurance_offers: Vec<ActionRow>,
+    /// `None` where the port has no counting house: the block is absent.
+    pub bank: Option<BankBlock>,
+}
+
+/// The counting-house block under Credit.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct BankBlock {
+    /// `Counting house - {Port}`.
+    pub title: String,
+    /// `Here: {N} silver`, then `Elsewhere: {Port} {N}` per other account.
+    pub lines: Vec<String>,
+    /// Letter sources: `(port_id, port name)` for each other account.
+    pub letters: Vec<(String, String)>,
+    /// Silver banked here (0 disables Withdraw).
+    pub here: i64,
+}
+
+/// The counting-house block for the docked port, or `None` without one.
+pub(crate) fn bank_block(session: &Session) -> Option<BankBlock> {
+    let world = session.world();
+    if world.voyage.status != VoyageStatus::InPort {
+        return None;
+    }
+    let here_id = world.voyage.destination_id.as_str();
+    if !portlight_sim::bank::has_counting_house(here_id) {
+        return None;
+    }
+    let balances = session.bank_balances();
+    let here = balances
+        .iter()
+        .find(|(port, _)| port == here_id)
+        .map_or(0, |(_, silver)| *silver);
+    let mut lines = vec![if here > 0 {
+        format!("Here: {here} silver")
+    } else {
+        "Nothing banked here.".to_string()
+    }];
+    let mut letters = Vec::new();
+    for (port, silver) in balances.iter().filter(|(port, _)| port != here_id) {
+        let name = port_name(session, port);
+        lines.push(format!("Elsewhere: {name} {silver}"));
+        letters.push((port.clone(), name));
+    }
+    lines.extend(BANK_TERMS.iter().map(|line| line.to_string()));
+    Some(BankBlock {
+        title: format!("Counting house - {}", port_name(session, here_id)),
+        lines,
+        letters,
+        here,
+    })
+}
+
+/// Whether the desk may offer Confirm: a bank amount below the deposit
+/// minimum, or one the fee would swallow, shows its refusal with Confirm
+/// disabled. Every other intent is always confirmable.
+pub(crate) fn confirm_allowed(intent: &HarbourIntent) -> bool {
+    use portlight_sim::bank::{letter_fee, local_fee, BANK_MINIMUM};
+    match intent {
+        HarbourIntent::BankDeposit(amount) => *amount >= BANK_MINIMUM,
+        HarbourIntent::BankWithdraw(amount) => *amount > local_fee(*amount),
+        HarbourIntent::BankLetter { amount, .. } => *amount > letter_fee(*amount),
+        _ => true,
+    }
+}
+
+/// The fee line shown before Confirm: `Fee {F} - you receive {N - F}`.
+pub(crate) fn fee_line(amount: i64, fee: i64) -> String {
+    format!("Fee {fee} - you receive {}", amount - fee)
+}
+
+/// Captain's Log row for a bank action. One row per action, no balance.
+pub(crate) fn bank_log_row(session: &Session, intent: &HarbourIntent, fee: i64) -> Option<String> {
+    let here_id = session.world().voyage.destination_id.clone();
+    let here = port_name(session, &here_id);
+    match intent {
+        HarbourIntent::BankDeposit(amount) => Some(format!("Banked {amount} silver - {here}")),
+        HarbourIntent::BankWithdraw(amount) => Some(if fee > 0 {
+            format!("Withdrew {amount} silver - {here} - fee {fee}")
+        } else {
+            format!("Withdrew {amount} silver - {here}")
+        }),
+        HarbourIntent::BankLetter { source, amount } => {
+            let from = port_name(session, source);
+            Some(if fee > 0 {
+                format!("Drew {amount} silver by letter - {from} to {here} - fee {fee}")
+            } else {
+                format!("Drew {amount} silver by letter - {from} to {here}")
+            })
+        }
+        _ => None,
+    }
 }
 
 #[derive(Clone)]
@@ -648,6 +751,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         policy_lines,
         claim_lines,
         insurance_offers,
+        bank: bank_block(session),
     })
 }
 
@@ -690,6 +794,34 @@ pub(crate) fn confirm_prompt(session: &Session, intent: &HarbourIntent) -> Strin
         HarbourIntent::Draw { tier, amount } => {
             let name = credit_tier_name(tier);
             format!("Draw {amount} silver on {name}?")
+        }
+        HarbourIntent::BankDeposit(amount) => {
+            if *amount < portlight_sim::bank::BANK_MINIMUM {
+                return format!(
+                    "Deposit at least {} silver.",
+                    portlight_sim::bank::BANK_MINIMUM
+                );
+            }
+            let here = port_name(session, &session.world().voyage.destination_id);
+            format!("Bank {amount} silver at {here}? No fee.")
+        }
+        HarbourIntent::BankWithdraw(amount) => {
+            let fee = portlight_sim::bank::local_fee(*amount);
+            if *amount <= fee {
+                return format!("Too little to cover the {fee} silver fee.");
+            }
+            format!("Withdraw {amount} silver? {}.", fee_line(*amount, fee))
+        }
+        HarbourIntent::BankLetter { source, amount } => {
+            let fee = portlight_sim::bank::letter_fee(*amount);
+            if *amount <= fee {
+                return format!("Too little to cover the {fee} silver fee.");
+            }
+            let from = port_name(session, source);
+            format!(
+                "Draw {amount} silver from {from} by letter? {}.",
+                fee_line(*amount, fee)
+            )
         }
         HarbourIntent::Emergency(amount) => format!(
             "Emergency loan of {amount} silver? A deferred fee of about 15% is added. The cap is 200."
@@ -958,6 +1090,43 @@ pub(crate) fn contract_target_name(session: &Session, id: &str) -> String {
         .unwrap_or_else(|| SETTLED_CONTRACT.to_string())
 }
 
+static STAGE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// Bank frame and tests: a seed-1 game at Porto Novo with `accounts` already
+/// open elsewhere. The sim only opens an account at the docked port, so the
+/// staged accounts go in through a saved game, the public save path.
+pub(crate) fn bank_stage_session(accounts: &[(&str, i64)]) -> Result<Session, String> {
+    let session =
+        Session::new("Ada", "merchant", 1, Some("porto_novo")).map_err(|e| e.to_string())?;
+    let dir = std::env::temp_dir().join(format!(
+        "portlight-bank-stage-{}-{}",
+        std::process::id(),
+        STAGE.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    let mut session = session;
+    let path = session.save(&dir, "bank").map_err(|e| e.to_string())?;
+    let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let rows: Vec<String> = accounts
+        .iter()
+        .map(|(port, silver)| {
+            format!("{{\"port_id\": \"{port}\", \"balance\": {silver}, \"opened_day\": 1}}")
+        })
+        .collect();
+    let bank = format!("\"infrastructure\": {{\"bank\": [{}], ", rows.join(", "));
+    let text = text.replacen("\"infrastructure\": {", &bank, 1).replacen(
+        "\"version\": 12",
+        "\"version\": 13",
+        1,
+    );
+    std::fs::write(&path, text).map_err(|e| e.to_string())?;
+    let loaded = Session::load(&dir, "bank")
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "staged bank save did not load".to_string());
+    let _ = std::fs::remove_dir_all(&dir);
+    loaded
+}
+
 /// Insurance-frame stage, built from `Session` verbs only: a merchant at the
 /// start port holds a voyage policy (start port to Corsair's Rest) and a
 /// contract guarantee whose contract has since expired undelivered, so the
@@ -1129,6 +1298,105 @@ fn text_label(text: &str, size: i32, color: Color) -> Gd<Label> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn harbour_bank_block_only_at_counting_house() {
+        let porto = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let block = bank_block(&porto).expect("Porto Novo keeps a counting house");
+        assert_eq!(block.title, "Counting house - Porto Novo");
+        assert_eq!(block.lines[0], "Nothing banked here.");
+        assert!(block.letters.is_empty());
+        assert!(harbour_model(&porto).unwrap().bank.is_some());
+        let palm = Session::new("Ada", "merchant", 1, Some("palm_cove")).unwrap();
+        assert!(bank_block(&palm).is_none());
+        assert!(harbour_model(&palm).unwrap().bank.is_none());
+    }
+
+    #[test]
+    fn bank_block_lists_here_and_elsewhere() {
+        let mut session = bank_stage_session(&[("silva_bay", 300)]).unwrap();
+        session.deposit_silver(200).unwrap();
+        let block = bank_block(&session).unwrap();
+        let silva = port_name(&session, "silva_bay");
+        assert_eq!(block.lines[0], "Here: 200 silver");
+        assert_eq!(block.lines[1], format!("Elsewhere: {silva} 300"));
+        assert_eq!(block.letters, [("silva_bay".to_string(), silva)]);
+        assert_eq!(block.here, 200);
+        for line in &block.lines {
+            assert!(line.is_ascii(), "{line}");
+        }
+    }
+
+    #[test]
+    fn letter_shows_fee_before_confirm() {
+        let session = bank_stage_session(&[("silva_bay", 300)]).unwrap();
+        let silva = port_name(&session, "silva_bay");
+        let prompt = confirm_prompt(
+            &session,
+            &HarbourIntent::BankLetter {
+                source: "silva_bay".into(),
+                amount: 100,
+            },
+        );
+        assert_eq!(
+            prompt,
+            format!("Draw 100 silver from {silva} by letter? Fee 5 - you receive 95.")
+        );
+        assert_eq!(
+            confirm_prompt(&session, &HarbourIntent::BankWithdraw(1000)),
+            "Withdraw 1000 silver? Fee 10 - you receive 990."
+        );
+        assert_eq!(
+            confirm_prompt(&session, &HarbourIntent::BankDeposit(50)),
+            "Bank 50 silver at Porto Novo? No fee."
+        );
+        assert_eq!(
+            confirm_prompt(&session, &HarbourIntent::BankWithdraw(1)),
+            "Too little to cover the 1 silver fee."
+        );
+        assert_eq!(fee_line(100, 5), "Fee 5 - you receive 95");
+        assert_eq!(
+            confirm_prompt(&session, &HarbourIntent::BankDeposit(49)),
+            "Deposit at least 50 silver."
+        );
+        assert!(!confirm_allowed(&HarbourIntent::BankDeposit(49)));
+        assert!(confirm_allowed(&HarbourIntent::BankDeposit(50)));
+        assert!(!confirm_allowed(&HarbourIntent::BankWithdraw(1)));
+        assert!(confirm_allowed(&HarbourIntent::BankWithdraw(2)));
+        let letter = |amount| HarbourIntent::BankLetter {
+            source: "silva_bay".into(),
+            amount,
+        };
+        assert!(!confirm_allowed(&letter(5)));
+        assert!(confirm_allowed(&letter(6)));
+        assert!(confirm_allowed(&HarbourIntent::Emergency(1)));
+    }
+
+    #[test]
+    fn log_rows_for_bank_actions() {
+        let session = bank_stage_session(&[("silva_bay", 300)]).unwrap();
+        let silva = port_name(&session, "silva_bay");
+        let row = |intent: HarbourIntent, fee: i64| bank_log_row(&session, &intent, fee).unwrap();
+        assert_eq!(
+            row(HarbourIntent::BankDeposit(200), 0),
+            "Banked 200 silver - Porto Novo"
+        );
+        assert_eq!(
+            row(HarbourIntent::BankWithdraw(100), 1),
+            "Withdrew 100 silver - Porto Novo - fee 1"
+        );
+        assert_eq!(
+            row(
+                HarbourIntent::BankLetter {
+                    source: "silva_bay".into(),
+                    amount: 100
+                },
+                5
+            ),
+            format!("Drew 100 silver by letter - {silva} to Porto Novo - fee 5")
+        );
+        assert!(bank_log_row(&session, &HarbourIntent::Emergency(5), 0).is_none());
+    }
 
     /// Exact copy, both tiers humanized; any other
     /// refusal prints unchanged.

@@ -1812,6 +1812,25 @@ mod tests {
     }
 
     #[test]
+    fn recap_has_no_bank_row() {
+        // The recap reads the wreck's own facts; banked silver is not one of
+        // them, so a sinking with silver in a counting house still shows
+        // only the carried loss.
+        let mut facts = sunk();
+        facts.claims_paid = 40;
+        facts.repair_price = 90;
+        let recap = combat(&facts);
+        let rows = owned(&recap);
+        assert!(rows.contains(&"Silver -150 - lost with the wreck".to_string()));
+        for row in &rows {
+            let lower = row.to_lowercase();
+            assert!(!lower.contains("bank"), "{row}");
+            assert!(!lower.contains("counting house"), "{row}");
+            assert!(!lower.contains("letter"), "{row}");
+        }
+    }
+
+    #[test]
     fn sink_recap_full_receipt_order() {
         let mut facts = sunk();
         facts.wreck_cargo.truncate(1);
