@@ -6357,6 +6357,34 @@ impl PortlightGame {
         self.expect_hint("accepted, desk open", None);
         self.perform(Action::CloseContracts);
         self.expect_hint("accepted", Some("first_sale"));
+        // No grain aboard yet, so Sail raises the Departure check. It covers
+        // the chart panel: no hint while it is up.
+        let checked = [
+            "sun_harbor",
+            "ironhaven",
+            "al_manar",
+            "silva_bay",
+            "corsairs_rest",
+        ]
+        .into_iter()
+        .find(|dest| {
+            self.session
+                .as_ref()
+                .is_some_and(|session| departure_check::departure_document(session, dest).is_some())
+        });
+        match checked {
+            Some(dest) => {
+                self.perform(Action::Sail(dest.into()));
+                if !self.departure_open {
+                    self.hint_fail(format!("Hint smoke: Sail to {dest} opened no check."));
+                }
+                godot_print!("hint smoke departure check for {dest}");
+                self.expect_hint("departure check", None);
+                self.perform(Action::DepartureStay);
+                self.expect_hint("stayed in port", Some("first_sale"));
+            }
+            None => self.hint_fail("Hint smoke: no lane raised a Departure check."),
+        }
         self.perform(Action::ToggleMarket);
         if !self.market_open {
             self.hint_fail("Hint smoke: Market did not open.");
@@ -6460,6 +6488,40 @@ impl PortlightGame {
         self.expect_hint("journal after the win", None);
         self.perform(Action::CloseJournal);
         self.expect_hint("journal seen", None);
+
+        // Each stage below starts a fresh voyage (flags reset). A break-away
+        // (real verbs) and a draw raise no journal hint.
+        let away = self.drive_scripted_fight("flee", "flee");
+        godot_print!("hint smoke break-away: {away:?}");
+        if !away.is_some_and(|(headline, _)| headline.starts_with("Broke away from ")) {
+            self.hint_fail("Hint smoke: the flee route did not break away.");
+        }
+        self.expect_hint("break-away recap", None);
+        self.leave_encounter();
+        if self.hint_won_fight {
+            self.hint_fail("Hint smoke: a break-away set the won-fight flag.");
+        }
+        self.expect_hint("after break-away", None);
+        // Draw: the real fight up to the personal phase, then a resolved
+        // draw step through the same ingest path (a draw is not reachable on
+        // a fixed seed). The sim counts it as a duel won; the hint must not.
+        self.prepare_scripted_voyage();
+        self.open_scripted_approach();
+        self.choose_encounter("fight");
+        self.play_scripted_naval();
+        self.resolve_board();
+        let step = EncounterStep {
+            kind: "fight".to_string(),
+            phase: "resolved".to_string(),
+            draw: true,
+            ..EncounterStep::default()
+        };
+        self.ingest(Ok(step));
+        if self.hint_won_fight {
+            self.hint_fail("Hint smoke: a draw set the won-fight flag.");
+        }
+        self.leave_encounter();
+        self.expect_hint("after a draw", None);
     }
 
     /// Shot run: save the Begin frame, then re-lay the chart with the muted

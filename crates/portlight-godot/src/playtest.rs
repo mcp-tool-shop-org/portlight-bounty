@@ -2002,9 +2002,8 @@ mod tests {
         );
     }
 
-    /// RC3 (RV 1): the contract card is modal everywhere and ranks just
-    /// under the Day's report. While the report is up the card waits and a
-    /// chart press closes the report, never the card.
+    /// `state.ui.hint`: a drawn table row maps to its id and text; the
+    /// muted chart note and no label are null.
     #[test]
     fn state_ui_hint_key() {
         for hint in crate::hints::FIRST_VOYAGE_HINTS {
@@ -2014,6 +2013,9 @@ mod tests {
         assert_eq!(hint_key(None), None);
     }
 
+    /// RC3 (RV 1): the contract card is modal everywhere and ranks just
+    /// under the Day's report. While the report is up the card waits and a
+    /// chart press closes the report, never the card.
     #[test]
     fn recap_yields_to_the_report() {
         use BlockingOverlay::*;

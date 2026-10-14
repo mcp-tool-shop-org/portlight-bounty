@@ -137,15 +137,24 @@ mod tests {
                                     sailed_with_contract,
                                     journal_seen,
                                 };
+                                // Expected pick written out from the design
+                                // rules, independent of the table closures.
+                                let want = if docked && active == 0 && settled == 0 {
+                                    Some("first_contract")
+                                } else if active > 0 && settled == 0 && !sailed_with_contract {
+                                    Some("first_sale")
+                                } else if wins > 0 && !journal_seen {
+                                    Some("journal_paths")
+                                } else {
+                                    None
+                                };
+                                assert_eq!(id(&f), want, "{f:?}");
                                 let live = FIRST_VOYAGE_HINTS
                                     .iter()
                                     .filter(|hint| (hint.show)(&f) && !(hint.done)(&f))
-                                    .collect::<Vec<_>>();
-                                // The first live row wins; the pick is unique.
-                                assert_eq!(
-                                    active_hint(&f).map(|hint| hint.id),
-                                    live.first().map(|hint| hint.id)
-                                );
+                                    .count();
+                                assert!(live <= 3);
+                                assert_eq!(want.is_some(), live > 0, "{f:?}");
                             }
                         }
                     }
