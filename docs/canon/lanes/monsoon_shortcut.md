@@ -45,8 +45,8 @@ Galleon crews with copied charts; abandoned hulls of last season's failures (C:1
 
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Taut canvas and heeling hull at speed; dead calm with slack sails (atmosphere).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Taut canvas and heeling hull at speed; spray over the bow; rigging creaking under monsoon load (atmosphere).
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

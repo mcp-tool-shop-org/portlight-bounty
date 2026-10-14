@@ -44,8 +44,8 @@ Junks with the Kiln Masters' guild mark and straw-padded holds (C:12438); fishin
 
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Straw-padded crates shifting, light chop among islands, a sampan's scull (atmosphere).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Straw-packed crates shifting; light chop slapping among island rocks; a sampan's scull (atmosphere).
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

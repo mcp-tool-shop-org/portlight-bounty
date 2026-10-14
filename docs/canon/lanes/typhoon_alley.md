@@ -47,7 +47,7 @@ Storm riders in outriggers who surf the leading wave (C:12498); galleon crews on
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Wind howl, hull flex groan (C:12503), rain sheets (atmosphere). No pagoda bells or gongs (phase 2 ruling).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

@@ -44,8 +44,8 @@ Timber barges with logs lashed together (C:12263), fishing boats, the yard's own
 
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Log rafts knocking softly, water through lashed timber, gulls (atmosphere; ambience only, kept distinct from the shipyard-hammer cue).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Log rafts knocking softly, water through lashed timber, gulls (atmosphere; ambience only, never a cue).
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

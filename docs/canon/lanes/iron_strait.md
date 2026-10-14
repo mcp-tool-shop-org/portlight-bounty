@@ -45,7 +45,7 @@ Grey Stormwall patrol ships (C:12318), low-riding iron barges (C:12323), soldier
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Heavy hulls in chop, a patrol's oars in time, far forge thuds carried on wind (atmosphere).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

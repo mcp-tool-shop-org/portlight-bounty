@@ -46,7 +46,7 @@ Cotton traders with bales stacked high and women in indigo singing the count (C:
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Open-water swell, bale lashings creaking, dolphins blowing (atmosphere). The count sung (C:12373) is voice NOTE ONLY, on hold (as for the Cotton Steps).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

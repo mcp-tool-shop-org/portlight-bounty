@@ -51,7 +51,7 @@ Exchange Guild grain convoys and Al-Manar feluccas with brass-bound spice chests
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Lapping calm water, rigging at rest, a distant convoy's hulls creaking (atmosphere). The dock song (C:12248) is music NOTE ONLY, on hold.
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

@@ -44,8 +44,8 @@ Converted whalers with tea crates on deck, crews smoking pipes (C:12343).
 
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Fog-damp quiet, Thornport's harbour horn far off (C:12358; ambience only, never a cue), a kettle on the cook's stove.
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Fog-damp quiet; Thornport's fog horn far off (C:12358; port ambience only, never a cue, never an arrival cue); a kettle simmering on the cook's stove.
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 

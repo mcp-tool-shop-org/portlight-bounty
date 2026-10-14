@@ -46,8 +46,8 @@ Crimson Tide watchers, Syndicate signal lanterns ('three short, one long', C:126
 
 ## 5. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Muffled oars and whispered orders; hull in dark swell; no shanty in the hook (the shanty C:12603 is music NOTE ONLY).
-- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed [proposal].
+- Muffled oars; hull in dark swell; a shuttered lantern's slide (atmosphere). Voice NOTE ONLY: whispered orders [invented], on hold. The shanty (C:12603) is music NOTE ONLY.
+- Lanes are heard at sea only through the voyage text. Ambience only, never a cue; never layered on sfx_chart_sail_depart or any arrival cue. No music, no voice; the holds stand (README). Fragment candidates: none proposed yet [proposal; no fragment or asset exists yet].
 
 ## 6. Links
 
