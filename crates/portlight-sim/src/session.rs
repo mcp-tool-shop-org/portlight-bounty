@@ -5930,6 +5930,46 @@ mod sink_tests {
         assert!(outcome.claims_paid > 0);
     }
 
+    fn wreck_claim_pays_for(cause: &str, incident: &str) {
+        let (mut session, _, lane) = insured_at_sea(7, vec![lot("grain", 23, 2300, 0)]);
+        let before = session.infra.claims.len();
+        let silver_before = session.world.captain.silver;
+        let outcome = session.sink_and_tow(cause, incident);
+        assert_eq!(outcome.towed_to, lane);
+        let claims = &session.infra.claims[before..];
+        assert_eq!(
+            claims.len(),
+            1,
+            "{incident}: one cargo claim, no hull claim"
+        );
+        assert_eq!(claims[0].incident_type, incident);
+        assert!(
+            claims[0].loss_value <= 1700,
+            "{incident}: capped at cost basis"
+        );
+        assert!(outcome.claims_paid > 0, "{incident}: the claim pays");
+        assert_eq!(
+            session.world.captain.silver,
+            silver_before - outcome.silver_lost + outcome.claims_paid
+        );
+    }
+
+    #[test]
+    fn storm_sinking_pays_the_cargo_claim() {
+        wreck_claim_pays_for("storm", "storm");
+    }
+
+    #[test]
+    fn pirate_event_sinking_pays_the_cargo_claim() {
+        wreck_claim_pays_for("pirates", "pirates");
+    }
+
+    #[test]
+    fn other_event_sinking_pays_the_cargo_claim() {
+        wreck_claim_pays_for("event", "cargo_damaged");
+        wreck_claim_pays_for("event", "event");
+    }
+
     // S19
     #[test]
     fn claim_never_exceeds_cost_basis() {
