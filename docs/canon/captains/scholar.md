@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/scholar.md](../player-types/scholar.md)
 - Home port: [Monsoon Reach](../ports/monsoon_reach.md) (bloc [The Free Ports](../factions/free_ports.md))
 
 ## 4. Flags

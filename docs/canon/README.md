@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains); c413788 (phase 5: player types). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 
@@ -160,6 +160,12 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - Each port file links its bloc, any pirate faction tied to it and the archetypes that start there, in section E (Faction canon line). The Shadow Lane links the Crimson Tide; the Smuggler's Run links the Crimson Tide and the Monsoon Syndicate.
 - No bloc or faction device, flag or colour, and no character appearance: the character hold stands. Phase 4 data issues are DF-26 to DF-28 in data-fixes.md.
 
+## Player types (phase 5)
+
+- One file per player archetype (9, `captains`, C:2315) on how the type plays: see player-types/README.md. Each captains/ file links its type file in one line.
+- Every perk is tagged [exists file:line] or [proposal; planned slice PT-Sn]; the PT slices are separate sim PRs, not canon.
+- Each type file has a row for all 20 ports, linked to the port and its bloc file. No new timeline rows: types are roles, not events. Phase 5 data issues are DF-29 to DF-33 in data-fixes.md.
+
 ## Files
 
 - README.md (this file)
@@ -170,5 +176,6 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - lanes/README.md and lanes/<lane_id>.md (15 files)
 - factions/README.md and factions/<faction>.md (11 files: 7 blocs, 4 pirate factions)
 - captains/README.md, captains/<archetype>.md (9 files) and captains/pirates/<pirate_id>.md (8 files)
+- player-types/README.md and player-types/<archetype>.md (9 files)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.

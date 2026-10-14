@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa) 3 (lanes, base ab03ace) and 4 (factions and captains, base 4f08125). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125) and 5 (player types, base c413788). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 28.
+Count: 33.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -297,6 +297,59 @@ Where:
 Proposed fix: No data change. Either brief a spillover mechanic, or soften the hint to describe a journal beat, not a rule (the hint also uses 'Standing', against Option A, if it is ever shown in godot; the godot journal copy omits it, crates/portlight-godot/src/journal_screen.rs:984-987). Add content.rs doc comments marking spillover and vendetta_trigger unread, as in DF-15.
 
 Why: the beat fires on regard 15 with any one faction (narrative.rs:631-638), whether or not that faction has enemies, and nothing changes with the rivals.
+
+## DF-29. Python perk copy contradicts the captain data
+
+Where:
+- portlight@9b02494 src/portlight/engine/captain_identity.py:198 (smuggler '5% cheaper buys') against content.json:2365 (buy_price_mult 1.0)
+- captain_identity.py:446 (scholar 'Best provision efficiency') against content.json:2527 (provision_burn 0.75) and content.json:2409 (navigator 0.7)
+- captain_identity.py:506 (merchant prince 'lowest inspections') against content.json:2571 (inspection_chance_mult 0.4) and content.json:2453 (privateer 0.3)
+
+Proposed fix: when perk copy is ported to the Rust/Godot build, write it from content.json, not from the Python strings. Either drop the three claims or change the data (smuggler buy x0.95; scholar burn under 0.7; merchant prince inspection under 0.3); the canon prefers fixing the copy. Copy PR; sim data change only with a parity note.
+
+Why: the copy is not shipped today (Python only), but it is the only perk text and would mislead players if ported as is.
+
+## DF-30. Gnaw (strength 9) pays the same bounty as strength-7 pirates
+
+Where:
+- content.json:2968 (Gnaw strength 9); crates/portlight-sim/src/bounty.rs:104 (reward 200)
+- content.json:2961 and bounty.rs:95 (Sergeant Kruze, strength 7, reward 200); content.json:2940 and bounty.rs:68 (Typhoon Mei, strength 7, reward 200)
+- content.json:2926 and bounty.rs:50 (The Butcher, strength 8, reward 220)
+
+Proposed fix: raise Gnaw's reward above The Butcher's (suggested 250), or record that rewards are not tied to strength. The bounty table is hard-coded (bounty.rs:35-110) and hand-copied into the hunt screen; change both with a parity note. Coordinate with PT-S2.
+
+Why: the strongest pirate pays less than a weaker one, so the hardest hunt is the worst deal.
+
+## DF-31. Scarlet Ana is on the North Atlantic board but sighted at Corsair's Rest
+
+Where:
+- crates/portlight-sim/src/bounty.rs:40 (scarlet_ana region North Atlantic)
+- content.json:12816-12818 (sighting under corsairs_rest, region Mediterranean)
+- content.json:2877 area (The Crimson Tide holds both the Mediterranean and the North Atlantic)
+
+Proposed fix: set the bounty region to Mediterranean, or move the sighting to a North Atlantic port. Canon prefers Mediterranean, matching the invented Crimson Tide home at Corsair's Rest (DF-17). Parity note for the bounty and sighting text.
+
+Why: the board sends a hunter to one sea while the game shows her in another.
+
+## DF-32. The Privateer's negative Iron Wolves start is lost on the first duel win
+
+Where:
+- content.json:2466 (privateer underworld iron_wolves -5)
+- crates/portlight-sim/src/session.rs:3701 (underworld standing clamped to 0-100)
+
+Proposed fix: clamp underworld standing to -100..100 (or at least keep values below 0), so a take-all duel win against the Iron Wolves moves -5 to -3, not 0. The -5 survives save and load; only the clamp drops it. Sim PR with a parity note against the Python oracle; separate follow-up (review triage).
+
+Why: the Privateer's one pirate grudge disappears after a single win, which also undercuts PT-S3.
+
+## DF-33. The Bounty Hunter and the Dockhand share a home port and mentor
+
+Where:
+- content.json:2591-2592 (dockhand: crosswind_isle, ci_dock_master_tao)
+- content.json:2629-2630 (bounty_hunter: crosswind_isle, ci_dock_master_tao)
+
+Proposed fix: flag only; no change proposed now. Revisit with DF-3 (Bounty Hunter region) if the home port moves.
+
+Why: two of nine starts open in the same port with the same mentor, which weakens type identity.
 
 ## Resolved in lore (no data change)
 
