@@ -94,6 +94,8 @@ pub struct Turn {
     pub contracts: Vec<ContractOutcome>,
     /// Infrastructure, credit, and injury-heal messages from this day.
     pub notes: Vec<String>,
+    /// A storm or route event sank the ship today (no encounter step).
+    pub sink: Option<SinkOutcome>,
 }
 
 /// Silver, loot, standing, and companion lines from [`Session::spare`] or
@@ -182,15 +184,79 @@ pub struct EncounterStep {
     pub sink_cargo_lost: Vec<(String, i64)>,
     /// Sinking: hull after the tow's floor.
     pub hull_after: i64,
+    /// Sinking: silver insurance paid for the wreck's goods.
+    pub sink_claims_paid: i64,
+    /// Sinking: `fight`, `parting_shot`, `storm`, `pirates` or `event`.
+    pub sink_cause: String,
 }
 
-/// What [`Session::sink_and_tow`] did, for the step and its message.
+/// What [`Session::sink_and_tow`] did: the step fields of a fight sinking,
+/// and the day's [`Turn::sink`] for a storm or route-event sinking.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-struct SinkOutcome {
-    towed_to: String,
-    silver_lost: i64,
-    cargo_lost: Vec<(String, i64)>,
-    hull_after: i64,
+pub struct SinkOutcome {
+    /// `fight`, `parting_shot`, `storm`, `pirates` or `event`.
+    pub cause: String,
+    /// The tow port id; empty when the ship was not at sea.
+    pub towed_to: String,
+    /// The voyage's destination before the tow.
+    pub planned_destination: String,
+    pub silver_lost: i64,
+    /// Units lost per good, in first-appearance order.
+    pub cargo_lost: Vec<(String, i64)>,
+    /// Silver cargo insurance paid at the tow port.
+    pub claims_paid: i64,
+    pub hull_after: i64,
+    /// The sim log line(s): the wreck line, then the claim line when paid.
+    pub message: String,
+}
+
+/// Takes a wreck's cargo: per good, three quarters of its total across its
+/// lots, rounded down, from the oldest lots first (`acquired_day`, then list
+/// order). Each lot's cost basis falls pro rata. Returns `(good, lost,
+/// cost basis lost)` in first-appearance order; empty lots are removed.
+pub fn sink_cargo(cargo: &mut Vec<CargoItem>) -> Vec<(String, i64, i64)> {
+    let mut goods: Vec<String> = Vec::new();
+    for item in cargo.iter() {
+        if !goods.contains(&item.good_id) {
+            goods.push(item.good_id.clone());
+        }
+    }
+    let mut lost = Vec::new();
+    for good in goods {
+        let total: i64 = cargo
+            .iter()
+            .filter(|item| item.good_id == good)
+            .map(|item| 0.max(item.quantity))
+            .sum();
+        let mut remaining = sink_stack_loss(total);
+        if remaining == 0 {
+            continue;
+        }
+        let taken = remaining;
+        let mut lots: Vec<usize> = (0..cargo.len())
+            .filter(|&i| cargo[i].good_id == good)
+            .collect();
+        lots.sort_by_key(|&i| (cargo[i].acquired_day, i));
+        let mut basis_lost = 0;
+        for i in lots {
+            if remaining == 0 {
+                break;
+            }
+            let lot = &mut cargo[i];
+            let take = remaining.min(0.max(lot.quantity));
+            if take == 0 {
+                continue;
+            }
+            let cut = lot.cost_basis * take / lot.quantity;
+            lot.cost_basis -= cut;
+            lot.quantity -= take;
+            basis_lost += cut;
+            remaining -= take;
+        }
+        lost.push((good, taken, basis_lost));
+    }
+    cargo.retain(|item| item.quantity > 0);
+    lost
 }
 
 /// Silver a sinking takes: 30%, rounded down, no cap.
@@ -203,16 +269,44 @@ pub fn sink_stack_loss(quantity: i64) -> i64 {
     0.max(quantity) * 3 / 4
 }
 
-/// The hull a towed wreck is raised to: a tenth of its maximum, at least 1.
-pub fn sink_hull_floor(hull_max: i64) -> i64 {
-    1.max(hull_max / 10)
+/// The worst single storm a ship of this class takes, from the storm table
+/// and the template's storm resistance.
+pub fn worst_storm_damage(template_id: &str) -> i64 {
+    let resist = content::content()
+        .ship(template_id)
+        .map_or(0.0, |def| def.storm_resist);
+    voyage::storm_damage(voyage::STORM_RAW_MAX, resist)
+}
+
+/// The worst single route pirate event a ship of this class takes.
+pub fn worst_route_pirate_damage(template_id: &str) -> i64 {
+    let resist = content::content()
+        .ship(template_id)
+        .map_or(0.0, |def| def.storm_resist);
+    voyage::route_pirate_damage(voyage::ROUTE_PIRATE_RAW_MAX, resist)
+}
+
+/// The hull a towed wreck is raised to: one more than the worst single storm
+/// or route pirate event its class can take, so it reaches its next port
+/// through one, but not enough to ride out a fight. Per class from the
+/// template's storm resistance (upgrades not counted): sloop 19, cutter 16,
+/// brigantine 13, galleon 9, man-of-war 8.
+pub fn sink_hull_floor(template_id: &str) -> i64 {
+    1.max(worst_storm_damage(template_id).max(worst_route_pirate_damage(template_id)) + 1)
 }
 
 /// `Your ship goes down - towed to {Port} - lost {S} silver and {C} cargo.`
-/// Zero terms are left out; with both zero the lost clause goes.
-pub fn sink_message(port: &str, silver: i64, cargo: &[(String, i64)]) -> String {
+/// A storm reads `The storm breaks your ship`, a pirate route event
+/// `Pirates hole your ship`. Zero terms are left out; with both zero the
+/// lost clause goes.
+pub fn sink_message(cause: &str, port: &str, silver: i64, cargo: &[(String, i64)]) -> String {
     let units: i64 = cargo.iter().map(|(_, qty)| qty).sum();
-    let mut line = "Your ship goes down".to_string();
+    let mut line = match cause {
+        "storm" => "The storm breaks your ship",
+        "pirates" => "Pirates hole your ship",
+        _ => "Your ship goes down",
+    }
+    .to_string();
     if !port.is_empty() {
         line.push_str(&format!(" - towed to {port}"));
     }
@@ -787,6 +881,15 @@ impl Session {
     /// Spawns the locked encounter, writes `pending_duel`, and keeps the
     /// encounter on the session so a later `encounter` command does not re-roll.
     pub fn hunt_bounty(&mut self, target_id: &str) -> Result<EncounterState, SimError> {
+        if let Some(ship) = self.world.captain.ship.as_ref() {
+            let floor = sink_hull_floor(&ship.template_id);
+            if ship.hull <= floor {
+                return Err(SimError::HullTooLowToHunt {
+                    need: floor + 1,
+                    have: ship.hull,
+                });
+            }
+        }
         let enc = crate::bounty::hunt_bounty(&self.world, target_id, &mut self.rng)
             .map_err(SimError::Sentence)?;
         self.world.pending_duel = Some(PendingDuel {
@@ -1048,7 +1151,7 @@ impl Session {
             step.phase = "resolved".into();
             step.player_sunk = player_sunk;
             if player_sunk {
-                let outcome = self.sink_and_tow();
+                let outcome = self.sink_and_tow("fight", "pirates");
                 self.apply_sink_to_step(&mut step, outcome);
             }
         }
@@ -1498,7 +1601,8 @@ impl Session {
             self.clear_encounter();
             step.phase = "resolved".into();
             step.player_sunk = true;
-            let outcome = self.sink_and_tow();
+            let outcome =
+                self.sink_and_tow(if escaped { "parting_shot" } else { "fight" }, "pirates");
             self.apply_sink_to_step(&mut step, outcome);
             return Ok(step);
         }
@@ -1585,106 +1689,111 @@ impl Session {
             self.clear_encounter();
             step.phase = "resolved".into();
             if player_sunk {
-                let outcome = self.sink_and_tow();
+                let outcome =
+                    self.sink_and_tow(if escaped { "parting_shot" } else { "fight" }, "pirates");
                 self.apply_sink_to_step(&mut step, outcome);
             }
         }
         Ok(step)
     }
 
-    /// A sunk ship: cargo then silver go down with the wreck, cargo
-    /// insurance pays for the goods, and the ship is towed to the nearer end
-    /// of the voyage with its hull raised to the floor. Order: cargo, silver,
-    /// tow, claims at the tow port, hull floor, arrival. Same day, no RNG.
-    fn sink_and_tow(&mut self) -> SinkOutcome {
+    /// A sunk ship. Order: cargo (per good, FIFO across lots), silver,
+    /// cargo claims at the tow port, tow to the nearer end, hull floor,
+    /// arrival bookkeeping. Same day, no RNG. `cause` names the sinking;
+    /// `incident` is the claim's incident type.
+    fn sink_and_tow(&mut self, cause: &str, incident: &str) -> SinkOutcome {
         let day = self.world.day;
-        // (1) Cargo, in cargo-list order.
-        let mut cargo_lost = Vec::new();
-        for item in &mut self.world.captain.cargo {
-            let lost = sink_stack_loss(item.quantity);
-            if lost > 0 {
-                item.quantity -= lost;
-                cargo_lost.push((item.good_id.clone(), lost));
-            }
-        }
-        self.world.captain.cargo.retain(|item| item.quantity > 0);
+        // (1) Cargo.
+        let lost = sink_cargo(&mut self.world.captain.cargo);
         // (2) Silver.
         let silver_lost = sink_silver_loss(self.world.captain.silver);
         self.world.captain.silver -= silver_lost;
-        // (3) Tow: the nearer end. The voyage, and the next-voyage policies
-        // written for it, now end at the tow port.
         let planned = self.world.voyage.destination_id.clone();
-        let towed_to = sink_tow_port(&self.world.voyage);
         let at_sea = matches!(
             self.world.voyage.status,
             VoyageStatus::AtSea | VoyageStatus::Arrived
         );
+        let towed_to = if at_sea {
+            sink_tow_port(&self.world.voyage)
+        } else {
+            String::new()
+        };
+        // (3) Cargo claims, paid at the tow port; worth the base price but
+        // never more than the lost units cost. No hull claim.
+        let mut claims_paid = 0;
+        for (good_id, qty, basis) in &lost {
+            let Some(good) = content::content().good(good_id) else {
+                continue;
+            };
+            let value = (good.base_price * qty).min(*basis);
+            let category = good.category.clone();
+            let claims = infrastructure::resolve_wreck_claim(
+                &mut self.infra,
+                &mut self.world.captain,
+                incident,
+                value,
+                day,
+                &category,
+                if at_sea { &towed_to } else { &planned },
+            );
+            claims_paid += claims.iter().map(|claim| claim.payout).sum::<i64>();
+        }
+        // (4) Tow.
         if at_sea && !towed_to.is_empty() {
             self.world.voyage.destination_id = towed_to.clone();
             self.world.voyage.progress = self.world.voyage.distance;
             self.world.voyage.status = VoyageStatus::Arrived;
-            for policy in &mut self.infra.policies {
-                if policy.active
-                    && policy.scope == "next_voyage"
-                    && policy.voyage_destination == planned
-                {
-                    policy.voyage_destination = towed_to.clone();
-                }
-            }
-        }
-        // (4) Cargo claims at the tow port, incident pirates; no hull claim.
-        let claim_port = if at_sea { towed_to.clone() } else { planned };
-        for (good_id, qty) in &cargo_lost {
-            let Some(good) = content::content().good(good_id) else {
-                continue;
-            };
-            let category = good.category.clone();
-            infrastructure::resolve_claim(
-                &mut self.infra,
-                &mut self.world.captain,
-                "pirates",
-                good.base_price * qty,
-                day,
-                &category,
-                "",
-                &claim_port,
-            );
         }
         // (5) Hull floor.
         let mut hull_after = 0;
         if let Some(ship) = self.world.captain.ship.as_mut() {
-            ship.hull = ship.hull.max(sink_hull_floor(ship.hull_max));
+            ship.hull = ship
+                .hull
+                .max(sink_hull_floor(&ship.template_id).min(ship.hull_max));
             hull_after = ship.hull;
         }
-        // (6) Arrival bookkeeping.
+        // (6) Arrival bookkeeping; no visit is recorded.
         if self.world.voyage.status == VoyageStatus::Arrived {
             let _ = voyage::arrive(&mut self.world);
             let _ = infrastructure::expire_voyage_policies(&mut self.infra);
         }
+        let cargo_lost: Vec<(String, i64)> =
+            lost.into_iter().map(|(good, qty, _)| (good, qty)).collect();
+        let port = self
+            .world
+            .port(&towed_to)
+            .map(|port| port.name.clone())
+            .unwrap_or_default();
+        let mut message = sink_message(cause, &port, silver_lost, &cargo_lost);
+        if claims_paid > 0 {
+            message.push_str(&format!(
+                " Insurance paid {claims_paid} silver for the wreck."
+            ));
+        }
         SinkOutcome {
-            towed_to: if at_sea { towed_to } else { String::new() },
+            cause: cause.to_string(),
+            towed_to,
+            planned_destination: planned,
             silver_lost,
             cargo_lost,
+            claims_paid,
             hull_after,
+            message,
         }
     }
 
     fn apply_sink_to_step(&self, step: &mut EncounterStep, outcome: SinkOutcome) {
-        let port = self
-            .world
-            .port(&outcome.towed_to)
-            .map(|port| port.name.clone())
-            .unwrap_or_default();
-        let line = sink_message(&port, outcome.silver_lost, &outcome.cargo_lost);
         if step.message.is_empty() {
-            step.message = line;
+            step.message = outcome.message;
         } else {
-            step.message = format!("{} {line}", step.message.trim_end());
+            step.message = format!("{} {}", step.message.trim_end(), outcome.message);
         }
         step.towed_to = outcome.towed_to;
         step.sink_silver_lost = outcome.silver_lost;
         step.sink_cargo_lost = outcome.cargo_lost;
         step.hull_after = outcome.hull_after;
+        step.sink_claims_paid = outcome.claims_paid;
+        step.sink_cause = outcome.cause;
     }
 
     fn plunder(&mut self) {
@@ -1988,6 +2097,8 @@ impl Session {
             sink_silver_lost: 0,
             sink_cargo_lost: Vec::new(),
             hull_after: 0,
+            sink_claims_paid: 0,
+            sink_cause: String::new(),
         }
     }
 
@@ -2257,6 +2368,7 @@ impl Session {
         let mut notes = self.tick_upkeep();
         notes.extend(self.heal_injuries());
         let sailed = self.world.voyage.status == VoyageStatus::AtSea;
+        let mut day_sink: Option<SinkOutcome> = None;
         let mut turn = if !sailed {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
             self.world.day += 1;
@@ -2275,6 +2387,7 @@ impl Session {
                 shocks,
                 contracts: Vec::new(),
                 notes,
+                sink: None,
             }
         } else {
             let breaches = self.board.breaches.len() as i64;
@@ -2295,18 +2408,21 @@ impl Session {
                     VoyageStatus::AtSea | VoyageStatus::Arrived
                 )
             {
-                // Hull 0 from a sea event is a sinking too (not a naval defeat).
-                let outcome = self.sink_and_tow();
-                let port = self
-                    .world
-                    .port(&outcome.towed_to)
-                    .map(|port| port.name.clone())
-                    .unwrap_or_default();
-                notes.push(sink_message(
-                    &port,
-                    outcome.silver_lost,
-                    &outcome.cargo_lost,
-                ));
+                // Hull 0 from a storm or route event is a sinking too (not a
+                // naval defeat), after the day has ticked and before the report.
+                let event = events
+                    .iter()
+                    .rev()
+                    .find(|event| event.hull_delta < 0)
+                    .map_or("event", |event| event.event_type.as_str());
+                let cause = match event {
+                    "storm" | "pirates" => event,
+                    _ => "event",
+                };
+                let incident = event;
+                let outcome = self.sink_and_tow(cause, incident);
+                notes.push(outcome.message.clone());
+                day_sink = Some(outcome);
             }
             if self.world.voyage.status == VoyageStatus::Arrived {
                 let _ = voyage::arrive(&mut self.world);
@@ -2367,9 +2483,11 @@ impl Session {
                 shocks: Vec::new(),
                 contracts: Vec::new(),
                 notes,
+                sink: None,
             }
         };
         turn.contracts = contracts;
+        turn.sink = day_sink;
         self.project_books();
         reprice_all(&mut self.world);
         let milestones = campaign::evaluate_milestones(&self.world, &self.books);
@@ -5132,17 +5250,31 @@ mod tests {
 #[cfg(test)]
 mod sink_tests {
     use super::*;
-    use crate::model::CargoItem;
+    use crate::model::{CargoItem, DeferredFee, FleetShip};
 
-    fn stack(good: &str, quantity: i64) -> CargoItem {
+    fn lot(good: &str, quantity: i64, cost_basis: i64, day: i64) -> CargoItem {
         CargoItem {
             good_id: good.to_string(),
             quantity,
-            cost_basis: 0,
-            acquired_port: String::new(),
+            cost_basis,
+            acquired_port: format!("port_{day}"),
             acquired_region: String::new(),
-            acquired_day: 0,
+            acquired_day: day,
         }
+    }
+
+    fn stack(good: &str, quantity: i64) -> CargoItem {
+        lot(good, quantity, 0, 0)
+    }
+
+    fn held(session: &Session) -> Vec<(String, i64)> {
+        session
+            .world
+            .captain
+            .cargo
+            .iter()
+            .map(|c| (c.good_id.clone(), c.quantity))
+            .collect()
     }
 
     /// A merchant at sea `progress` of the way along a voyage, with cargo.
@@ -5155,6 +5287,22 @@ mod sink_tests {
         session.world.captain.cargo = vec![stack("grain", 23), stack("spice", 2), stack("silk", 1)];
         session.world.captain.silver = 499;
         session
+    }
+
+    /// At sea with a cargo policy bought for the planned destination.
+    fn insured_at_sea(progress: i64, cargo: Vec<CargoItem>) -> (Session, String, String) {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.world.captain.silver = 2000;
+        let origin = session.world.voyage.destination_id.clone();
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        session
+            .buy_insurance("cargo_standard", "", &origin, &lane)
+            .unwrap();
+        session.depart(&lane).unwrap();
+        session.world.voyage.distance = 10;
+        session.world.voyage.progress = progress;
+        session.world.captain.cargo = cargo;
+        (session, origin, lane)
     }
 
     /// Fight to the sinking: hull 1, an unsinkable enemy, broadsides until
@@ -5192,6 +5340,23 @@ mod sink_tests {
         panic!("no sinking flee in 200 seeds");
     }
 
+    /// The first seed whose day at sea with hull 1 sinks by `cause`.
+    fn sea_sink(cause: &str) -> (Session, Session, Turn) {
+        for seed in 0..2000 {
+            let mut session = at_sea(seed, 3);
+            session.world.captain.ship.as_mut().unwrap().hull = 1;
+            let before = session.clone();
+            let Ok(turn) = session.advance() else {
+                continue;
+            };
+            if turn.sink.as_ref().is_some_and(|sink| sink.cause == cause) {
+                return (before, session, turn);
+            }
+        }
+        panic!("no {cause} sinking in 2000 seeds");
+    }
+
+    // S1
     #[test]
     fn sink_takes_thirty_percent_silver_rounded_down() {
         assert_eq!(sink_silver_loss(499), 149);
@@ -5200,26 +5365,44 @@ mod sink_tests {
         let mut session = at_sea(1, 3);
         let step = sink_in_round(&mut session);
         assert_eq!(step.sink_silver_lost, 149);
+        let mut broke = at_sea(1, 3);
+        broke.world.captain.silver = 0;
+        assert_eq!(broke.sink_and_tow("fight", "pirates").silver_lost, 0);
     }
 
+    // S2
     #[test]
-    fn sink_takes_three_quarters_of_each_stack() {
+    fn sink_takes_three_quarters_of_each_good() {
         assert_eq!(sink_stack_loss(1), 0);
         assert_eq!(sink_stack_loss(2), 1);
-        assert_eq!(sink_stack_loss(4), 3);
         assert_eq!(sink_stack_loss(23), 17);
-        let mut session = at_sea(1, 3);
-        session.world.captain.cargo.push(stack("rum", 0));
-        sink_in_round(&mut session);
-        let cargo: Vec<(String, i64)> = session
-            .world
-            .captain
-            .cargo
+        let mut cargo = vec![
+            lot("grain", 23, 230, 0),
+            lot("spice", 2, 50, 0),
+            lot("silk", 1, 70, 0),
+            lot("rum", 0, 0, 0),
+        ];
+        let lost = sink_cargo(&mut cargo);
+        assert_eq!(
+            lost,
+            vec![("grain".to_string(), 17, 170), ("spice".to_string(), 1, 25)]
+        );
+        let left: Vec<(String, i64, i64)> = cargo
             .iter()
-            .map(|c| (c.good_id.clone(), c.quantity))
+            .map(|c| (c.good_id.clone(), c.quantity, c.cost_basis))
             .collect();
         assert_eq!(
-            cargo,
+            left,
+            vec![
+                ("grain".to_string(), 6, 60),
+                ("spice".to_string(), 1, 25),
+                ("silk".to_string(), 1, 70)
+            ]
+        );
+        let mut session = at_sea(1, 3);
+        sink_in_round(&mut session);
+        assert_eq!(
+            held(&session),
             vec![
                 ("grain".to_string(), 6),
                 ("spice".to_string(), 1),
@@ -5228,6 +5411,47 @@ mod sink_tests {
         );
     }
 
+    // S2b
+    #[test]
+    fn sink_split_one_unit_lots_lose_like_one_stack() {
+        let mut cargo: Vec<CargoItem> = (0..8).map(|day| lot("grain", 1, 10, day)).collect();
+        let lost = sink_cargo(&mut cargo);
+        assert_eq!(lost, vec![("grain".to_string(), 6, 60)]);
+        let days: Vec<i64> = cargo.iter().map(|c| c.acquired_day).collect();
+        assert_eq!(days, vec![6, 7]);
+    }
+
+    // S2c
+    #[test]
+    fn sink_lot_order_is_fifo() {
+        // Newest first in the list; the oldest day goes first, then list
+        // order among equal days.
+        let mut cargo = vec![
+            lot("grain", 4, 40, 9),
+            lot("spice", 4, 80, 1),
+            lot("grain", 2, 20, 3),
+            lot("grain", 2, 30, 3),
+        ];
+        let lost = sink_cargo(&mut cargo);
+        // grain 8 -> 6 lost: day 3 (2), day 3 (2), then 2 of day 9.
+        assert_eq!(
+            lost,
+            vec![("grain".to_string(), 6, 70), ("spice".to_string(), 3, 60)]
+        );
+        let left: Vec<(String, i64, i64, i64)> = cargo
+            .iter()
+            .map(|c| (c.good_id.clone(), c.quantity, c.cost_basis, c.acquired_day))
+            .collect();
+        assert_eq!(
+            left,
+            vec![
+                ("grain".to_string(), 2, 20, 9),
+                ("spice".to_string(), 1, 20, 1)
+            ]
+        );
+    }
+
+    // S3
     #[test]
     fn sink_costs_at_least_plunder() {
         for silver in 0..=5000 {
@@ -5239,6 +5463,7 @@ mod sink_tests {
         }
     }
 
+    // S4
     #[test]
     fn sink_tows_to_nearer_end() {
         for (progress, to_origin) in [(0, true), (3, true), (5, true), (6, false), (10, false)] {
@@ -5254,80 +5479,147 @@ mod sink_tests {
         }
     }
 
+    // S5
     #[test]
-    fn sink_raises_hull_to_floor() {
-        for def in &content::content().ships {
-            assert_eq!(sink_hull_floor(def.hull_max), 1.max(def.hull_max / 10));
-            assert!(sink_hull_floor(def.hull_max) >= 1);
+    fn sink_raises_hull_to_event_floor() {
+        let table = [
+            ("coastal_sloop", 19),
+            ("swift_cutter", 16),
+            ("trade_brigantine", 13),
+            ("merchant_galleon", 9),
+            ("royal_man_of_war", 8),
+        ];
+        for (id, floor) in table {
+            assert_eq!(sink_hull_floor(id), floor, "{id}");
         }
-        assert_eq!(sink_hull_floor(60), 6);
-        assert_eq!(sink_hull_floor(5), 1);
-        assert_eq!(sink_hull_floor(0), 1);
+        for def in &content::content().ships {
+            assert!(sink_hull_floor(&def.id) >= 1);
+            assert!(sink_hull_floor(&def.id) <= def.hull_max);
+        }
         let mut session = at_sea(1, 3);
-        let max = session.world.captain.ship.as_ref().unwrap().hull_max;
+        let template = session
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .unwrap()
+            .template_id
+            .clone();
         let step = sink_in_round(&mut session);
-        assert_eq!(step.hull_after, sink_hull_floor(max));
+        assert_eq!(step.hull_after, sink_hull_floor(&template));
         assert_eq!(
             session.world.captain.ship.as_ref().unwrap().hull,
-            sink_hull_floor(max)
+            sink_hull_floor(&template)
         );
     }
 
+    // S5b
+    #[test]
+    fn floor_survives_worst_storm_and_pirate_event() {
+        for def in &content::content().ships {
+            let floor = sink_hull_floor(&def.id);
+            let storm = voyage::storm_damage(voyage::STORM_RAW_MAX, def.storm_resist);
+            let pirates =
+                voyage::route_pirate_damage(voyage::ROUTE_PIRATE_RAW_MAX, def.storm_resist);
+            assert!(floor - storm >= 1, "{} storm {storm}", def.id);
+            assert!(floor - pirates >= 1, "{} pirates {pirates}", def.id);
+            // Every roll in the tables, not only the top one.
+            for raw in voyage::STORM_RAW_MIN..=voyage::STORM_RAW_MAX {
+                assert!(floor - voyage::storm_damage(raw, def.storm_resist) >= 1);
+            }
+            for raw in voyage::ROUTE_PIRATE_RAW_MIN..=voyage::ROUTE_PIRATE_RAW_MAX {
+                assert!(floor - voyage::route_pirate_damage(raw, def.storm_resist) >= 1);
+            }
+        }
+    }
+
+    // S5c
+    #[test]
+    fn floor_falls_to_one_max_broadside_s7() {
+        let mut rng = PyRandom::from_seed(1);
+        let enemy = naval::generate_enemy_ship("Test", 7, &mut rng);
+        for def in &content::content().ships {
+            let floor = sink_hull_floor(&def.id);
+            let round = |roll: f64| {
+                1.max(crate::util::py_trunc(
+                    enemy.cannons as f64 * roll * (1.0 - def.maneuver * 0.3),
+                ))
+            };
+            assert!(
+                floor - round(3.0) <= 0,
+                "{} max round {}",
+                def.id,
+                round(3.0)
+            );
+            assert!(floor - 2 * round(2.0) <= 0, "{} two mean rounds", def.id);
+        }
+    }
+
+    // S6
     #[test]
     fn sink_draws_no_rng() {
         let mut session = at_sea(1, 3);
         let mut before = session.rng.clone();
-        session.sink_and_tow();
+        session.sink_and_tow("fight", "pirates");
         let mut after = session.rng.clone();
         for _ in 0..8 {
             assert_eq!(before.random(), after.random());
         }
     }
 
+    // S7
     #[test]
-    fn sink_same_day_no_tick() {
+    fn fight_sink_same_day_no_tick() {
         let mut session = at_sea(1, 3);
         let day = session.world.day;
         let provisions = session.world.captain.provisions;
         let elapsed = session.world.voyage.days_elapsed;
         let active = session.board.active.len();
-        session.sink_and_tow();
+        sink_in_round(&mut session);
         assert_eq!(session.world.day, day);
         assert_eq!(session.world.captain.provisions, provisions);
         assert_eq!(session.world.voyage.days_elapsed, elapsed);
         assert_eq!(session.board.active.len(), active);
     }
 
+    // S8
     #[test]
-    fn sink_files_cargo_claims() {
-        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
-        session.world.captain.silver = 2000;
-        let lane = session.sail_lanes()[0].destination_id.clone();
-        let origin = session.world.voyage.destination_id.clone();
-        session
-            .buy_insurance("cargo_standard", "", &origin, &lane)
-            .unwrap();
-        session.depart(&lane).unwrap();
-        session.world.voyage.distance = 10;
-        session.world.voyage.progress = 3;
-        session.world.captain.cargo = vec![stack("grain", 23), stack("spice", 2), stack("silk", 1)];
+    fn sink_files_cargo_claims_at_the_tow_port() {
+        let cargo = vec![
+            lot("grain", 23, 2300, 0),
+            lot("spice", 2, 400, 0),
+            stack("silk", 1),
+        ];
+        let (mut session, _origin, lane) = insured_at_sea(7, cargo);
         let claims_before = session.infra.claims.len();
         let silver_before = session.world.captain.silver;
-        let outcome = session.sink_and_tow();
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert_eq!(outcome.towed_to, lane);
         let claims = &session.infra.claims[claims_before..];
-        assert_eq!(claims.len(), outcome.cargo_lost.len());
-        assert_eq!(outcome.cargo_lost.len(), 2);
+        assert_eq!(
+            claims.len(),
+            2,
+            "one cargo claim per lost good, no hull claim"
+        );
         assert!(claims.iter().all(|c| c.incident_type == "pirates"));
         let grain = content::content().good("grain").unwrap().base_price;
-        assert_eq!(claims[0].loss_value, grain * 17);
-        let paid: i64 = claims.iter().map(|c| c.payout).sum();
-        assert!(paid > 0);
+        assert_eq!(claims[0].loss_value, (grain * 17).min(1700));
+        assert!(outcome.claims_paid > 0);
+        assert_eq!(
+            outcome.claims_paid,
+            claims.iter().map(|c| c.payout).sum::<i64>()
+        );
         assert_eq!(
             session.world.captain.silver,
-            silver_before - sink_silver_loss(silver_before) + paid
+            silver_before - sink_silver_loss(silver_before) + outcome.claims_paid
         );
+        assert!(outcome.message.ends_with(&format!(
+            "Insurance paid {} silver for the wreck.",
+            outcome.claims_paid
+        )));
     }
 
+    // S9
     #[test]
     fn sink_from_flee_matches_sink_from_round() {
         let (flee_session, flee) = sink_in_flee(3);
@@ -5340,103 +5632,23 @@ mod sink_tests {
         assert_eq!(flee.sink_silver_lost, round.sink_silver_lost);
         assert_eq!(flee.sink_cargo_lost, round.sink_cargo_lost);
         assert_eq!(flee.hull_after, round.hull_after);
+        assert_eq!(flee.sink_cause, "fight");
         assert_eq!(flee_session.world.captain.cargo.len(), 3);
     }
 
-    #[test]
-    fn a_flee_shot_that_empties_the_hull_is_a_sinking() {
-        let mut found = 0;
-        for seed in 0..200 {
-            let mut session = at_sea(seed, 3);
-            session.world.captain.ship.as_mut().unwrap().hull = 1;
-            let origin = session.world.voyage.origin_id.clone();
-            let step = session.encounter_choice("flee").unwrap();
-            if step.hull_damage == 0 {
-                continue;
-            }
-            found += 1;
-            assert!(step.player_sunk, "seed {seed}");
-            assert_eq!(step.phase, "resolved");
-            assert_eq!(step.towed_to, origin);
-            assert_eq!(step.sink_silver_lost, 149);
-            assert!(session.encounter.is_none());
-            assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
-            assert!(session.world.captain.ship.as_ref().unwrap().hull >= 1);
-        }
-        assert!(found > 0, "no damaging approach flee in 200 seeds");
-    }
-
-    #[test]
-    fn a_sea_event_that_empties_the_hull_is_a_sinking() {
-        for seed in 0..300 {
-            let mut session = at_sea(seed, 3);
-            session.world.captain.ship.as_mut().unwrap().hull = 1;
-            let silver = session.world.captain.silver;
-            let defeats = session.world.captain.naval_defeats;
-            let Ok(turn) = session.advance() else {
-                continue;
-            };
-            if !turn
-                .notes
-                .iter()
-                .any(|n| n.starts_with("Your ship goes down"))
-            {
-                continue;
-            }
-            assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
-            assert!(session.world.captain.ship.as_ref().unwrap().hull >= 1);
-            assert!(session.world.captain.silver <= silver - sink_silver_loss(silver) + 1000);
-            assert_eq!(session.world.captain.naval_defeats, defeats);
-            return;
-        }
-        panic!("no hull-emptying sea event in 300 seeds");
-    }
-
-    #[test]
-    fn claims_pay_at_the_tow_port() {
-        // Towed back to the origin: the next-voyage policy follows the tow
-        // and pays there.
-        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
-        session.world.captain.silver = 2000;
-        let origin = session.world.voyage.destination_id.clone();
-        let lane = session.sail_lanes()[0].destination_id.clone();
-        session
-            .buy_insurance("cargo_standard", "", &origin, &lane)
-            .unwrap();
-        session.depart(&lane).unwrap();
-        session.world.voyage.distance = 10;
-        session.world.voyage.progress = 2;
-        session.world.captain.cargo = vec![stack("grain", 23)];
-        let before = session.infra.claims.len();
-        let outcome = session.sink_and_tow();
-        assert_eq!(outcome.towed_to, origin);
-        let claims = &session.infra.claims[before..];
-        assert_eq!(claims.len(), 1);
-        assert!(claims[0].payout > 0);
-        assert!(session
-            .infra
-            .policies
-            .iter()
-            .all(|p| p.voyage_destination != lane));
-    }
-
+    // S10
     #[test]
     fn crew_gone_plunder_unchanged() {
         let mut session = at_sea(1, 3);
         session.world.captain.silver = 500;
         session.plunder();
         assert_eq!(session.world.captain.silver, 375);
-        let cargo: Vec<i64> = session
-            .world
-            .captain
-            .cargo
-            .iter()
-            .map(|c| c.quantity)
-            .collect();
+        let cargo: Vec<i64> = held(&session).into_iter().map(|(_, q)| q).collect();
         assert_eq!(cargo, vec![12, 1, 1]);
         assert_eq!(session.world.voyage.status, VoyageStatus::AtSea);
     }
 
+    // S11
     #[test]
     fn sink_step_fields() {
         let mut session = at_sea(1, 3);
@@ -5449,6 +5661,8 @@ mod sink_tests {
             vec![("grain".to_string(), 17), ("spice".to_string(), 1)]
         );
         assert!(step.hull_after >= 1);
+        assert_eq!(step.sink_claims_paid, 0);
+        assert_eq!(step.sink_cause, "fight");
         let port = session.world.port(&step.towed_to).unwrap().name.clone();
         assert!(
             step.message.ends_with(&format!(
@@ -5459,30 +5673,382 @@ mod sink_tests {
         );
     }
 
+    // S12
     #[test]
     fn sink_message_ascii_and_r4() {
         let cargo = vec![("grain".to_string(), 17), ("spice".to_string(), 1)];
         assert_eq!(
-            sink_message("Port Royal", 150, &cargo),
+            sink_message("fight", "Port Royal", 150, &cargo),
             "Your ship goes down - towed to Port Royal - lost 150 silver and 18 cargo."
         );
         assert_eq!(
-            sink_message("Port Royal", 0, &cargo),
+            sink_message("fight", "Port Royal", 0, &cargo),
             "Your ship goes down - towed to Port Royal - lost 18 cargo."
         );
         assert_eq!(
-            sink_message("Port Royal", 150, &[]),
+            sink_message("parting_shot", "Port Royal", 150, &[]),
             "Your ship goes down - towed to Port Royal - lost 150 silver."
         );
         assert_eq!(
-            sink_message("Port Royal", 0, &[]),
+            sink_message("fight", "Port Royal", 0, &[]),
             "Your ship goes down - towed to Port Royal."
         );
+        assert_eq!(
+            sink_message("storm", "Port Royal", 150, &cargo),
+            "The storm breaks your ship - towed to Port Royal - lost 150 silver and 18 cargo."
+        );
+        assert_eq!(
+            sink_message("pirates", "Port Royal", 0, &[]),
+            "Pirates hole your ship - towed to Port Royal."
+        );
+        assert_eq!(
+            sink_message("event", "", 5, &[]),
+            "Your ship goes down - lost 5 silver."
+        );
         for line in [
-            sink_message("Port Royal", 150, &cargo),
-            sink_message("", 0, &[]),
+            sink_message("fight", "Port Royal", 150, &cargo),
+            sink_message("storm", "", 0, &[]),
+            sink_message("pirates", "X", 1, &cargo),
         ] {
             assert!(line.is_ascii() && !line.contains("--"), "{line}");
         }
+    }
+
+    // S13
+    #[test]
+    fn approach_flee_to_zero_sinks_at_that_step() {
+        let mut found = 0;
+        for seed in 0..200 {
+            let mut session = at_sea(seed, 3);
+            session.world.captain.ship.as_mut().unwrap().hull = 1;
+            let origin = session.world.voyage.origin_id.clone();
+            session.ensure_encounter(None, None).unwrap();
+            // The flee roll alone, on a copy: the sink draws nothing more.
+            let mut copy = session.clone();
+            let ship = copy.combat_ship().unwrap();
+            let mut enc = copy.encounter.clone().unwrap();
+            let (_, damage, _) = encounter::resolve_flee(&mut enc, &ship, &mut copy.rng);
+            if damage == 0 {
+                continue;
+            }
+            let defeats = session.world.captain.naval_defeats;
+            let step = session.encounter_choice("flee").unwrap();
+            found += 1;
+            assert!(step.player_sunk, "seed {seed}");
+            assert_eq!(step.phase, "resolved");
+            assert_eq!(step.hull_damage, damage);
+            assert_eq!(step.towed_to, origin);
+            assert_eq!(step.sink_silver_lost, 149);
+            assert!(
+                !step.message.contains('\n'),
+                "no fight opened: {}",
+                step.message
+            );
+            assert!(session.encounter.is_none());
+            assert_eq!(session.world.captain.naval_defeats, defeats + 1);
+            assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+            let (mut a, mut b) = (session.rng.clone(), copy.rng.clone());
+            for _ in 0..8 {
+                assert_eq!(a.random(), b.random(), "seed {seed}");
+            }
+        }
+        assert!(found > 0, "no damaging approach flee in 200 seeds");
+    }
+
+    // S14
+    #[test]
+    fn storm_to_zero_sinks_and_tows() {
+        let (before, session, turn) = sea_sink("storm");
+        let sink = turn.sink.clone().unwrap();
+        assert_eq!(
+            session.world.day,
+            before.world.day + 1,
+            "the day ticks once"
+        );
+        assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+        assert_eq!(
+            session.world.captain.naval_defeats,
+            before.world.captain.naval_defeats
+        );
+        assert_eq!(session.world.voyage.destination_id, sink.towed_to);
+        assert!(!sink.towed_to.is_empty());
+        assert_eq!(
+            session.world.captain.ship.as_ref().unwrap().hull,
+            sink.hull_after
+        );
+        assert!(sink.hull_after >= 1);
+        assert!(sink
+            .message
+            .starts_with("The storm breaks your ship - towed to "));
+        assert_eq!(
+            turn.notes.last(),
+            Some(&sink.message),
+            "in the day's report"
+        );
+        let grain: i64 = held(&session)
+            .iter()
+            .filter(|(g, _)| g == "grain")
+            .map(|(_, q)| q)
+            .sum();
+        assert!(grain <= 23 - 17, "{grain}");
+    }
+
+    // S15
+    #[test]
+    fn pirate_event_to_zero_sinks_and_tows() {
+        let (before, session, turn) = sea_sink("pirates");
+        let sink = turn.sink.unwrap();
+        assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+        assert_eq!(
+            session.world.captain.naval_defeats,
+            before.world.captain.naval_defeats
+        );
+        assert!(sink
+            .message
+            .starts_with("Pirates hole your ship - towed to "));
+        assert!(session.world.captain.ship.as_ref().unwrap().hull >= 1);
+    }
+
+    // S16
+    #[test]
+    fn no_ship_at_sea_with_zero_hull() {
+        let afloat = |session: &Session| {
+            let hull = session.world.captain.ship.as_ref().unwrap().hull;
+            hull > 0
+        };
+        let mut round = at_sea(1, 3);
+        sink_in_round(&mut round);
+        assert!(afloat(&round));
+        let (flee, _) = sink_in_flee(3);
+        assert!(afloat(&flee));
+        for seed in 0..60 {
+            let mut approach = at_sea(seed, 3);
+            approach.world.captain.ship.as_mut().unwrap().hull = 1;
+            let _ = approach.encounter_choice("flee");
+            assert!(afloat(&approach), "approach seed {seed}");
+            let mut sea = at_sea(seed, 3);
+            sea.world.captain.ship.as_mut().unwrap().hull = 1;
+            let _ = sea.advance();
+            assert!(afloat(&sea), "sea seed {seed}");
+        }
+        // An old save at sea with hull 0 sinks on its next hull check.
+        let mut old = at_sea(1, 3);
+        old.world.captain.ship.as_mut().unwrap().hull = 0;
+        let _ = old.advance();
+        assert!(afloat(&old));
+    }
+
+    // S17
+    #[test]
+    fn voyage_policy_and_tow_to_origin_pays() {
+        let (mut session, origin, lane) = insured_at_sea(2, vec![lot("grain", 23, 46, 0)]);
+        let before = session.infra.claims.len();
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert_eq!(outcome.towed_to, origin);
+        let claims = &session.infra.claims[before..];
+        assert_eq!(claims.len(), 1);
+        // 17 of 23 units that cost 46: capped at 34.
+        assert_eq!(claims[0].loss_value, 34);
+        assert!(claims[0].payout > 0 && claims[0].payout <= 34);
+        let policy = session
+            .infra
+            .policies
+            .iter()
+            .find(|p| p.voyage_destination == lane)
+            .unwrap();
+        assert!(!policy.active, "the voyage policy ends with the tow");
+    }
+
+    // S18
+    #[test]
+    fn voyage_policy_and_tow_to_destination() {
+        let (mut session, _origin, lane) = insured_at_sea(8, vec![lot("grain", 23, 2300, 0)]);
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert_eq!(outcome.towed_to, lane);
+        assert!(outcome.claims_paid > 0);
+    }
+
+    // S19
+    #[test]
+    fn claim_never_exceeds_cost_basis() {
+        let base = content::content().good("grain").unwrap().base_price;
+        for price in 0..=base * 3 {
+            let (mut session, _, _) = insured_at_sea(2, vec![lot("grain", 9, price * 9, 0)]);
+            let before = session.infra.claims.len();
+            session.sink_and_tow("fight", "pirates");
+            for claim in &session.infra.claims[before..] {
+                assert!(claim.loss_value <= price * 6, "price {price}");
+                assert!(claim.loss_value <= base * 6);
+                assert!(claim.payout <= claim.loss_value);
+            }
+        }
+    }
+
+    // S20
+    #[test]
+    fn deferred_fees_at_tow_port() {
+        let mut session = at_sea(1, 3);
+        session.world.captain.silver = 100;
+        session.world.captain.deferred_fees = vec![
+            DeferredFee {
+                fee_type: "port".into(),
+                amount: 50,
+                day: 1,
+            },
+            DeferredFee {
+                fee_type: "port".into(),
+                amount: 500,
+                day: 1,
+            },
+        ];
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert_eq!(outcome.silver_lost, 30);
+        assert_eq!(
+            session.world.captain.silver, 20,
+            "70 after the wreck, then 50 fee"
+        );
+        assert_eq!(session.world.captain.deferred_fees.len(), 1);
+        assert_eq!(session.world.captain.deferred_fees[0].amount, 500);
+        assert!(session.world.captain.silver >= 0);
+    }
+
+    // S21
+    #[test]
+    fn convoy_docks_after_tow() {
+        let mut session = at_sea(1, 3);
+        let ship = session.world.captain.ship.clone().unwrap();
+        session.world.captain.fleet.push(FleetShip {
+            ship,
+            docked_port_id: String::new(),
+            cargo: vec![stack("grain", 40)],
+        });
+        let outcome = session.sink_and_tow("fight", "pirates");
+        let escort = &session.world.captain.fleet[0];
+        assert_eq!(escort.docked_port_id, outcome.towed_to);
+        assert_eq!(escort.cargo[0].quantity, 40);
+    }
+
+    // S22
+    #[test]
+    fn sink_when_not_at_sea_has_no_tow() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.world.captain.silver = 100;
+        let port = session.world.voyage.destination_id.clone();
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert!(outcome.towed_to.is_empty());
+        assert_eq!(outcome.message, "Your ship goes down - lost 30 silver.");
+        assert_eq!(session.world.voyage.destination_id, port);
+        assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+    }
+
+    // S23
+    #[test]
+    fn tow_records_no_visit() {
+        let mut session = at_sea(1, 8);
+        let standing = format!("{:?}", session.world.captain.standing);
+        let culture = format!("{:?}", session.world.culture);
+        session.sink_and_tow("fight", "pirates");
+        assert_eq!(format!("{:?}", session.world.captain.standing), standing);
+        assert_eq!(format!("{:?}", session.world.culture), culture);
+    }
+
+    // S24
+    #[test]
+    fn tow_port_without_shipyard_can_repair() {
+        let mut session = at_sea(1, 0);
+        let bare = session
+            .world
+            .ports
+            .iter()
+            .find(|port| !port.has_feature("shipyard"))
+            .map(|port| port.id.clone())
+            .expect("a port without a shipyard");
+        session.world.voyage.origin_id = bare.clone();
+        session.world.captain.silver = 5000;
+        session.world.captain.ship.as_mut().unwrap().hull = 0;
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert_eq!(outcome.towed_to, bare);
+        let hull = session.world.captain.ship.as_ref().unwrap().hull;
+        session.repair(None).unwrap();
+        assert!(session.world.captain.ship.as_ref().unwrap().hull > hull);
+        assert!(!session.sail_lanes().is_empty());
+    }
+
+    // S25
+    #[test]
+    fn save_load_across_a_sink() {
+        let dir = std::env::temp_dir().join(format!("pl-sink-{}", std::process::id()));
+        let mut session = at_sea(1, 3);
+        sink_in_round(&mut session);
+        session.save(&dir, "sink").unwrap();
+        let mut loaded = Session::load(&dir, "sink").unwrap().unwrap();
+        let second = std::fs::read(loaded.save(&dir, "sink2").unwrap()).unwrap();
+        let mut again = Session::load(&dir, "sink2").unwrap().unwrap();
+        let third = std::fs::read(again.save(&dir, "sink3").unwrap()).unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(second, third, "a reload is stable");
+        assert_eq!(loaded.world.voyage.status, VoyageStatus::InPort);
+        assert_eq!(
+            format!("{:?}", loaded.world.voyage),
+            format!("{:?}", session.world.voyage)
+        );
+        assert_eq!(loaded.world.captain.silver, session.world.captain.silver);
+        assert_eq!(held(&loaded), held(&session));
+        assert_eq!(
+            loaded.world.captain.ship.as_ref().unwrap().hull,
+            session.world.captain.ship.as_ref().unwrap().hull
+        );
+    }
+
+    // S26
+    #[test]
+    fn broke_after_sink_can_still_sail() {
+        let mut session = at_sea(1, 3);
+        session.world.captain.silver = 0;
+        session.world.captain.cargo.clear();
+        session.sink_and_tow("fight", "pirates");
+        assert_eq!(session.world.captain.silver, 0);
+        assert!(!session.sail_lanes().is_empty());
+    }
+
+    // S27
+    #[test]
+    fn no_second_sink_same_day() {
+        let mut session = at_sea(1, 3);
+        sink_in_round(&mut session);
+        let silver = session.world.captain.silver;
+        assert!(session.encounter.is_none());
+        assert!(session.naval_round("broadside").is_err());
+        assert!(session.naval_round("flee").is_err());
+        assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+        assert_eq!(session.world.captain.silver, silver);
+    }
+
+    // S28
+    #[test]
+    fn hunt_refused_at_floor() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let template = session
+            .world
+            .captain
+            .ship
+            .as_ref()
+            .unwrap()
+            .template_id
+            .clone();
+        let floor = sink_hull_floor(&template);
+        session.world.captain.ship.as_mut().unwrap().hull = floor;
+        assert_eq!(
+            session.hunt_bounty("nobody").unwrap_err(),
+            SimError::HullTooLowToHunt {
+                need: floor + 1,
+                have: floor
+            }
+        );
+        session.world.captain.ship.as_mut().unwrap().hull = floor + 1;
+        assert!(!matches!(
+            session.hunt_bounty("nobody"),
+            Err(SimError::HullTooLowToHunt { .. })
+        ));
     }
 }

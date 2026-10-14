@@ -1149,6 +1149,8 @@ mod tests {
             sink_silver_lost: 0,
             sink_cargo_lost: Vec::new(),
             hull_after: 0,
+            sink_claims_paid: 0,
+            sink_cause: String::new(),
         }
     }
 

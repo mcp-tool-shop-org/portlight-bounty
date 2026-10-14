@@ -722,6 +722,56 @@ pub fn resolve_claim(
     contract_id: &str,
     voyage_destination: &str,
 ) -> Vec<InsuranceClaim> {
+    settle_claim(
+        state,
+        captain,
+        incident_type,
+        loss_value,
+        day,
+        cargo_category,
+        contract_id,
+        voyage_destination,
+        false,
+    )
+}
+
+/// A wreck's cargo claim (Rust only). Only cargo policies answer it, and a
+/// voyage policy pays even when the tow went back to the origin: the insured
+/// voyage was lost. `tow_port` is recorded as the claim's destination.
+pub fn resolve_wreck_claim(
+    state: &mut InfrastructureRecord,
+    captain: &mut Captain,
+    incident_type: &str,
+    loss_value: i64,
+    day: i64,
+    cargo_category: &str,
+    tow_port: &str,
+) -> Vec<InsuranceClaim> {
+    settle_claim(
+        state,
+        captain,
+        incident_type,
+        loss_value,
+        day,
+        cargo_category,
+        "",
+        tow_port,
+        true,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn settle_claim(
+    state: &mut InfrastructureRecord,
+    captain: &mut Captain,
+    incident_type: &str,
+    loss_value: i64,
+    day: i64,
+    cargo_category: &str,
+    contract_id: &str,
+    voyage_destination: &str,
+    wreck: bool,
+) -> Vec<InsuranceClaim> {
     let mut claims = Vec::new();
     let catalog = content::content();
     for policy in &mut state.policies {
@@ -734,7 +784,7 @@ pub fn resolve_claim(
             "contract_guarantee" => incident_type == "contract_failure",
             _ => false,
         };
-        if !family_ok {
+        if !family_ok || (wreck && policy.family != "premium_cargo") {
             continue;
         }
         if policy.scope == "named_contract"
@@ -743,6 +793,7 @@ pub fn resolve_claim(
             continue;
         }
         if policy.scope == "next_voyage"
+            && !wreck
             && !voyage_destination.is_empty()
             && !policy.voyage_destination.is_empty()
             && policy.voyage_destination != voyage_destination

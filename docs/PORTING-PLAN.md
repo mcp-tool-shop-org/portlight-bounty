@@ -141,16 +141,28 @@ Random sea encounters, scripted encounters and claimed-target fights keep
 Python. Pinned in parity/expected_divergences.json: bounty_claim.txt and
 bounty_claim_sail.txt.
 
-**Sinking (Rust only).** Python only prints "Your ship is sinking!" and the
-ship stays at sea at hull 0. In Rust, a ship sunk in a naval round or a failed
-flee loses 30% of its silver and three quarters of each cargo stack (both
-rounded down, cargo first, no cap), files one cargo insurance claim per lost
-good (incident `pirates`, no hull claim), and is towed the same day to the
-nearer end of its voyage (route distance remaining; a tie goes to the origin)
-with hull raised to max(1, hull_max / 10). The tow docks through
-`voyage::arrive`. No RNG draw, no save change (`Session::sink_and_tow`).
-Silver and cargo loss and tow have no Python equivalent; no parity script
-reaches a player sinking, so expected_divergences.json has no entry for it.
+**Sinking (Rust only):** silver and cargo loss, claims
+and tow on hull 0 from any cause; no Python equivalent; no parity script
+reaches it. Python only prints "Your ship is sinking!" and the ship stays at
+sea at hull 0. In Rust, hull 0 from a naval round, a flee (at the approach or
+in the fight), a storm or a route event sinks the ship: each good loses three
+quarters of its total across its lots (rounded down, oldest lots first, cost
+basis pro rata), silver loses 30% (rounded down, no cap), cargo insurance pays
+one claim per lost good at the tow port (worth the base price, capped at what
+the lost units cost; a voyage policy pays even when the tow goes back to the
+origin; no hull claim), and the ship is towed the same moment to the nearer
+end of its voyage (a tie goes to the origin) with hull raised to a
+per-class floor. The floor is one more than the worst single storm or route
+pirate event the class can take, computed from the storm table (raw 5-18,
+times 1 - storm_resist), the route pirate table (raw 3-12, times
+1 - storm_resist / 2) and the template's storm_resist (upgrades not counted):
+sloop 19, cutter 16, brigantine 13, galleon 9, man-of-war 8. So a towed ship
+survives any one storm or pirate event on its next leg, while one maximum
+broadside round from a strength-7 pirate (9 cannons, times 3, times
+1 - maneuver x 0.3), or two average rounds, still sinks every class. The tow docks through `voyage::arrive` and ends voyage
+policies but records no port visit. A storm or route-event sinking is not a
+naval defeat. A bounty hunt is refused while hull is at or below that floor
+(`HullTooLowToHunt`). No RNG draw, no save change (`Session::sink_and_tow`).
 
 
 ## Porting order
