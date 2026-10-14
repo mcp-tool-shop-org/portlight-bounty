@@ -6552,7 +6552,7 @@ mod bank_tests {
     }
 
     #[test]
-    fn bank_messages_ascii_r4() {
+    fn bank_messages_ascii_no_zero_terms() {
         let lines = [
             bank::deposit_message(500, "porto_novo"),
             bank::withdraw_message(500, 5),
@@ -6594,7 +6594,7 @@ mod bank_tests {
         {
             assert!(text.is_ascii(), "{text}");
             assert!(!text.contains("--") && !text.contains("  "), "{text}");
-            assert!(!text.contains(" 0 "), "R4: {text}");
+            assert!(!text.contains(" 0 "), "no zero terms: {text}");
         }
     }
 
