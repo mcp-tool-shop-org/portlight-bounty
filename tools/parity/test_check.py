@@ -32,6 +32,27 @@ def report_failed(errors: list[str], left=None, right=None, entries=None) -> int
     return failed[0]
 
 
+class PlayerTextTest(unittest.TestCase):
+    def test_offer_reason_is_skipped_but_other_fields_are_not(self) -> None:
+        left = {"board": {"offers": [{"id": "a", "offer_reason": "Shortage at X \u2014 urgent demand for grain"}]}}
+        right = {"board": {"offers": [{"id": "a", "offer_reason": "Shortage at X - urgent demand for Grain"}]}}
+        self.assertEqual(check.close(left, right, "$"), [])
+        right["board"]["offers"][0]["id"] = "b"
+        errors = check.close(left, right, "$")
+        self.assertEqual([check.error_path(line) for line in errors], ["$.board.offers[0].id"])
+
+    def test_offer_reason_outside_an_offer_is_compared(self) -> None:
+        errors = check.close({"offer_reason": "a"}, {"offer_reason": "b"}, "$")
+        self.assertEqual(len(errors), 1)
+        errors = check.close({"active": [{"offer_reason": "a"}]}, {"active": [{"offer_reason": "b"}]}, "$")
+        self.assertEqual(len(errors), 1)
+
+    def test_offer_reason_keys_and_types_still_count(self) -> None:
+        left = {"offers": [{"offer_reason": "a"}]}
+        self.assertEqual(len(check.close(left, {"offers": [{}]}, "$")), 1)
+        self.assertEqual(len(check.close(left, {"offers": [{"offer_reason": 1}]}, "$")), 1)
+
+
 class AllowlistTest(unittest.TestCase):
     def test_broker_board_gamesession_allowlist_is_closed(self) -> None:
         entries = check.load_divergences()

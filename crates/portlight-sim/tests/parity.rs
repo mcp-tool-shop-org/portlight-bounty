@@ -11,6 +11,17 @@ fn parity_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../parity")
 }
 
+/// Player-facing text on a board offer that Rust and Python word
+/// differently: only a string `offer_reason` directly on `...offers[n]` is
+/// skipped. Every other field, and `offer_reason` anywhere else, is compared.
+fn player_text(path: &str, key: &str, left: &Value, right: &Value) -> bool {
+    let on_offer = path.rsplit_once(".offers[").is_some_and(|(_, rest)| {
+        rest.strip_suffix(']')
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+    });
+    key == "offer_reason" && on_offer && left.is_string() && right.is_string()
+}
+
 fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
     match (left, right) {
         (Value::Number(a), Value::Number(b)) => {
@@ -57,6 +68,9 @@ fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
                     errors.push(format!("{path}: missing {key}"));
                     return;
                 };
+                if player_text(path, key, value, other) {
+                    continue;
+                }
                 close(value, other, &format!("{path}.{key}"), errors);
             }
         }
@@ -445,6 +459,38 @@ fn wildcard_pattern_is_rejected() {
     );
     assert!(container.is_err(), "{container:?}");
     assert!(container.unwrap_err().contains("wildcard"));
+}
+
+#[test]
+fn offer_reason_is_skipped_but_other_fields_are_not() {
+    let left = serde_json::json!({"board": {"offers": [
+        {"id": "a", "offer_reason": "Shortage at X \u{2014} urgent demand for grain"}
+    ]}});
+    let mut right = serde_json::json!({"board": {"offers": [
+        {"id": "a", "offer_reason": "Shortage at X - urgent demand for Grain"}
+    ]}});
+    let mut errors = Vec::new();
+    close(&left, &right, "$", &mut errors);
+    assert!(errors.is_empty(), "{errors:?}");
+    right["board"]["offers"][0]["id"] = "b".into();
+    close(&left, &right, "$", &mut errors);
+    assert_eq!(errors.len(), 1);
+    assert!(errors[0].starts_with("$.board.offers[0].id:"), "{errors:?}");
+    // Outside an offer, and with a non-string value, it is compared.
+    let mut errors = Vec::new();
+    close(
+        &serde_json::json!({"offer_reason": "a"}),
+        &serde_json::json!({"offer_reason": "b"}),
+        "$",
+        &mut errors,
+    );
+    close(
+        &serde_json::json!({"offers": [{"offer_reason": "a"}]}),
+        &serde_json::json!({"offers": [{"offer_reason": 1}]}),
+        "$",
+        &mut errors,
+    );
+    assert_eq!(errors.len(), 2, "{errors:?}");
 }
 
 #[test]

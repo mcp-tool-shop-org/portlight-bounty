@@ -12,7 +12,8 @@ ledger. Those keys are stripped before the golden comparison. Goldens stay
 the narrow shape. `parity/expected_divergences.json` names the JSON paths
 that may differ, including a round-trip entry, and pins both values. A path
 that names a list, an object, or a `[*]` wildcard is rejected. CI prints
-that list. Any other difference fails.
+that list. Any other difference fails. A board offer's `offer_reason` is
+player-facing text and is not compared (see `player_text`).
 
 Usage (from the repo root, after `cargo build -p portlight-cli`):
 
@@ -25,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -148,6 +150,23 @@ def run_python_load(directory: str, slot: str) -> dict:
     )
 
 
+# Player-facing text on a contract offer that Rust and Python word
+# differently. Only the string `offer_reason` of a board offer
+# (`...offers[n].offer_reason`) is skipped; every other offer field, and any
+# `offer_reason` anywhere else, is still compared.
+PLAYER_TEXT_FIELD = "offer_reason"
+OFFER_PATH = re.compile(r"\.offers\[\d+\]$")
+
+
+def player_text(path: str, key: str, a, b) -> bool:
+    return (
+        key == PLAYER_TEXT_FIELD
+        and OFFER_PATH.search(path) is not None
+        and isinstance(a, str)
+        and isinstance(b, str)
+    )
+
+
 def close(a, b, path: str) -> list[str]:
     if isinstance(a, bool) or isinstance(b, bool):
         if a != b:
@@ -182,6 +201,8 @@ def close(a, b, path: str) -> list[str]:
         if set(a) != set(b):
             return [f"{path}: keys {sorted(set(a) ^ set(b))}"]
         for key in a:
+            if player_text(path, key, a[key], b[key]):
+                continue
             errors.extend(close(a[key], b[key], f"{path}.{key}"))
         return errors
     if a != b:

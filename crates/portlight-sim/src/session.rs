@@ -4405,7 +4405,22 @@ mod tests {
             .join("../../parity/saves/contract_v12.json");
         let python: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(fixture).unwrap()).unwrap();
-        assert_eq!(rust["contract_board"], python["contract_board"]);
+        // A board offer's offer_reason is player-facing text that Rust and
+        // Python word differently (the parity check skips it the same way):
+        // compare every other field exactly.
+        let strip = |board: &serde_json::Value| {
+            let mut board = board.clone();
+            for offer in board["offers"].as_array_mut().into_iter().flatten() {
+                if let Some(offer) = offer.as_object_mut() {
+                    assert!(offer.remove("offer_reason").is_some_and(|r| r.is_string()));
+                }
+            }
+            board
+        };
+        assert_eq!(
+            strip(&rust["contract_board"]),
+            strip(&python["contract_board"])
+        );
         assert_eq!(
             rust["captain"]["breach_records"],
             python["captain"]["breach_records"]
