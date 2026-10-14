@@ -57,7 +57,8 @@ Palette: drawn from the Typhoon Anchorage port palette ([port file section C.3](
 |---|---|---|---|---|
 | Mass | storm-wet timber (Dominant) | (92, 84, 76) #5C544C | 85 / 16 | in range |
 | Detail | typhoon sky grey (Secondary 1) | (104, 108, 112) #686C70 | 107 / 8 | in range |
-| Accent | storm-flag red, small (Accent) | (128, 80, 72) #805048 | 90 / 56 | small-area accent (chroma 56) |
+| Accent | reef stone (Secondary 2) | (110, 104, 96) #6E6860 | 105 / 14 | in range |
+| Accent 2 | storm-flag red, small (Accent) | (128, 80, 72) #805048 | 90 / 56 | small-area accent (chroma 56) |
 
 Kit: compose from the shipped will-use plates; no named landmark has art today. Any new plate is a gap for the art gap list, not a commission.
 
