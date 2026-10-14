@@ -8108,6 +8108,8 @@ impl PortlightGame {
             &mut nodes.plate_caption,
             &template_id,
         );
+        let show_portrait = view.as_ref().is_none_or(|view| view.portrait_placeholder);
+        nodes.placeholder.set_visible(show_portrait);
         let open = view.is_some();
         nodes.root.set_visible(open);
         nodes.root.set_mouse_filter(if open {
@@ -8161,7 +8163,7 @@ impl PortlightGame {
                 ScreenAction::Spare => Action::Spare,
                 ScreenAction::Capture => Action::Capture,
                 ScreenAction::TakeAll => Action::TakeAll,
-                ScreenAction::Return { .. } => Action::LeaveEncounter,
+                ScreenAction::Return { .. } | ScreenAction::BackToPort => Action::LeaveEncounter,
             };
             let mut button = encounter_button(&caption, game_id, command);
             match line {

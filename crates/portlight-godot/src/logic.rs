@@ -376,7 +376,11 @@ pub(crate) enum ScreenAction {
     Spare,
     Capture,
     TakeAll,
-    Return { at_sea: bool },
+    Return {
+        at_sea: bool,
+    },
+    /// The Outcome card after a tow: the ship is already docked.
+    BackToPort,
 }
 
 /// What the last Session call (or the content catalog) exposed.
@@ -711,6 +715,7 @@ pub(crate) fn action_caption(action: &ScreenAction) -> String {
         ScreenAction::TakeAll => "Take all".to_string(),
         ScreenAction::Return { at_sea: true } => "Back to the voyage".to_string(),
         ScreenAction::Return { at_sea: false } => "Back to the chart".to_string(),
+        ScreenAction::BackToPort => "Back to port".to_string(),
     }
 }
 
@@ -863,6 +868,9 @@ pub(crate) fn present(facts: &EncounterFacts) -> Option<EncounterView> {
         ScreenPhase::Outcome if facts.phase == "capture_available" => {
             vec![ScreenAction::Capture]
         }
+        ScreenPhase::Outcome if !facts.recap.towed_to.is_empty() => {
+            vec![ScreenAction::BackToPort]
+        }
         ScreenPhase::Outcome => vec![ScreenAction::Return {
             at_sea: facts.at_sea,
         }],
@@ -880,8 +888,17 @@ fn view(phase: ScreenPhase, facts: &EncounterFacts, actions: Vec<ScreenAction>) 
         choice_preview: (phase == ScreenPhase::Outcome && facts.pending_victory)
             .then(|| choice_preview(facts.strength)),
         actions,
-        portrait_placeholder: true,
+        portrait_placeholder: !sea_event_card(facts),
     }
+}
+
+/// A sinking with no ship against you (a storm or a route event): the card
+/// says where it happened and shows no portrait slot.
+pub(crate) fn sea_event_card(facts: &EncounterFacts) -> bool {
+    facts.recap.sea
+        && facts.captain_id.is_empty()
+        && facts.captain_name.is_empty()
+        && !facts.recap.towed_to.is_empty()
 }
 
 /// ASCII receipt. Flavor and departure text are copied from the receipt.
@@ -1057,6 +1074,9 @@ pub(crate) fn boarding_line(progress: i64, threshold: i64) -> String {
 
 fn card_text(facts: &EncounterFacts, phase: ScreenPhase) -> String {
     let mut lines = Vec::new();
+    if sea_event_card(facts) {
+        lines.push("At sea".to_string());
+    }
     if !facts.captain_name.is_empty() {
         lines.push(facts.captain_name.clone());
     }
@@ -4450,6 +4470,20 @@ mod tests {
             cargo_units: 7,
         };
         assert_eq!(capture_cost_line(&baseline, &gains), None);
+    }
+
+    #[test]
+    fn a_storm_card_says_at_sea_and_hides_the_portrait() {
+        let mut facts = naval_facts();
+        facts.captain_id.clear();
+        facts.captain_name.clear();
+        facts.faction_id.clear();
+        facts.recap.sea = true;
+        facts.recap.towed_to = "porto_novo".into();
+        let view = view(ScreenPhase::Outcome, &facts, vec![ScreenAction::BackToPort]);
+        assert!(view.card.starts_with("At sea"));
+        assert!(!view.portrait_placeholder);
+        assert_eq!(action_caption(&ScreenAction::BackToPort), "Back to port");
     }
 
     #[test]
