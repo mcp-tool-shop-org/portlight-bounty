@@ -31,7 +31,7 @@ Boarding progress rises when either ship closes and the other does not evade. Yo
 
 The line that opens the fight names the threshold as a number of close actions. It does not say whose closes those are. Read the count as either ship, not as your button alone.
 
-If your hull reaches 0, from a fight or from the sea, you are sunk - you lose 30% of your silver and about three quarters of each good, then you are towed to the nearer end of your voyage, patched just enough to ride out one storm or pirate attack, not a fight. The tow does not count as a visit. Cargo insurance pays for a wreck but not for a plunder. Any port can repair your hull - the recap shows the price. You cannot start a hunt while your hull is at the patched floor.
+If your hull reaches 0, from a fight or from the sea, you are sunk - you lose 30% of your silver (uncapped) and about three quarters of each good, then you are towed to the nearer end of your voyage, patched just enough to ride out one storm or pirate attack, not a fight. The tow does not count as a visit. Cargo insurance pays for a wreck but not for a plunder. Any port can repair your hull - the recap shows the price. You cannot start a hunt until your hull is above the patched floor.
 
 ## The day's report
 
