@@ -10,14 +10,9 @@ use godot::classes::{
 };
 use godot::prelude::*;
 
-use crate::encounter_screen::{set_recap_block, style_encounter_button};
+use crate::encounter_screen::{set_recap_block, style_encounter_button, CREAM};
+pub(crate) use crate::encounter_screen::{DUE, GOLD, INK, MUTED};
 use crate::recap::Recap;
-
-pub(crate) const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
-pub(crate) const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
-pub(crate) const DUE: Color = Color::from_rgb(0.93, 0.55, 0.42);
-pub(crate) const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
-const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
 
 /// The Day's report slot (day_report.rs CARD_X/Y/W/H).
 pub(crate) const CARD_X: f32 = 170.0;
@@ -167,7 +162,7 @@ pub(crate) fn keyboard_trapped(nodes: &RecapCardNodes) -> bool {
 }
 
 /// Draw the recap: the shared recap block (headline, then a label per row)
-/// with the card's 22 px headline.
+/// with the card's 24 px headline.
 pub(crate) fn apply(nodes: &mut RecapCardNodes, recap: &Recap) {
     set_recap_block(&mut nodes.content, Some(recap));
     if let Some(mut headline) = nodes.content.try_get_node_as::<Label>("RecapHeadline") {
@@ -410,7 +405,7 @@ mod tests {
     /// One card per sale, no stacking: the card up stays until Close, and a
     /// sale that settles nothing raises nothing.
     #[test]
-    fn recap_queue_keeps_sale_order() {
+    fn recap_card_never_stacks() {
         let mut queue = RecapQueue::default();
         queue.push(Some(card("first")));
         queue.push(None);

@@ -18,14 +18,14 @@ use crate::logic::{
 };
 use crate::recap::{Recap, RecapSection, RecapTone};
 
-const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
-const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
-const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
-const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
+pub(crate) const INK: Color = Color::from_rgb(0.08, 0.11, 0.16);
+pub(crate) const CREAM: Color = Color::from_rgb(0.94, 0.91, 0.84);
+pub(crate) const GOLD: Color = Color::from_rgb(0.96, 0.84, 0.45);
+pub(crate) const MUTED: Color = Color::from_rgb(0.7, 0.74, 0.78);
 /// Chart danger tone (`game.rs` voyage encounter label). Player loss on the delta line.
 const DANGER: Color = Color::from_rgb(0.93, 0.55, 0.42);
 /// Owed or lost (Contracts desk DUE): a recap loss headline and cost rows.
-const DUE: Color = Color::from_rgb(0.93, 0.55, 0.42);
+pub(crate) const DUE: Color = Color::from_rgb(0.93, 0.55, 0.42);
 const PARCHMENT: Color = Color::from_rgb(0.72, 0.58, 0.36);
 const PLACEHOLDER_FILL: Color = Color::from_rgb(0.32, 0.24, 0.18);
 /// Untinted. A plate in a panel is not recoloured.

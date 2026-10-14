@@ -566,17 +566,17 @@ pub(crate) enum OfferScope {
 ///   ([`implicit_dismiss`]), so it never confirms the Departure check's lane;
 ///   a Sail to another lane runs that lane's own check.
 ///
-/// Draw order (top first): Departure, Day's report, the contract recap
-/// card, then the blocking screens.
+/// Draw order (top first): the Day's report, the contract recap card, then
+/// Departure and the blocking screens. The card is modal: only the Day's
+/// report ranks above it.
 pub(crate) fn offer_scope(
     blocking: Option<BlockingOverlay>,
     day_report: bool,
     departure: bool,
     recap: bool,
 ) -> OfferScope {
-    // The recap card is modal everywhere: only the Day's report (and the
-    // Departure check) rank above it.
-    if recap && !day_report && !departure {
+    // The recap card is modal everywhere: only the Day's report ranks above it.
+    if recap && !day_report {
         return OfferScope::Only(OfferLayer::Recap);
     }
     let Some(blocking) = blocking else {
@@ -1998,6 +1998,11 @@ mod tests {
                 "{blocking:?}"
             );
         }
+        // Departure never ranks above the card (only the report does).
+        assert_eq!(
+            offer_scope(None, false, true, true),
+            OfferScope::Only(OfferLayer::Recap)
+        );
         assert_eq!(
             implicit_dismiss(false, true, false, false),
             Some(ImplicitDismiss::CloseDayReport)
