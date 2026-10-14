@@ -58,7 +58,7 @@ Extra depth (thin port): [invented] Closing the chain takes sixty seconds (C:103
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Chain clank; the gate gong [invented].
+- Harbour chain clank; lacquered armour plates creaking; tea poured on the inner docks (atmosphere). The tower gong at closing is the port's one gong (../ports/dragons_gate.md section I) [invented]; distant ambience only, never a cue.
 - Fragment candidates: see the port's section I fragment ideas (../ports/dragons_gate.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
