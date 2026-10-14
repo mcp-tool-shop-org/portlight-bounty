@@ -12,8 +12,9 @@ ledger. Those keys are stripped before the golden comparison. Goldens stay
 the narrow shape. `parity/expected_divergences.json` names the JSON paths
 that may differ, including a round-trip entry, and pins both values. A path
 that names a list, an object, or a `[*]` wildcard is rejected. CI prints
-that list. Any other difference fails. A board offer's `offer_reason` is
-player-facing text and is not compared (see `player_text`).
+that list. Any other difference fails. A board offer's shortage
+`offer_reason` may differ only by the known rewording (see
+`shortage_reworded`).
 
 Usage (from the repo root, after `cargo build -p portlight-cli`):
 
@@ -150,21 +151,42 @@ def run_python_load(directory: str, slot: str) -> dict:
     )
 
 
-# Player-facing text on a contract offer that Rust and Python word
-# differently. Only the string `offer_reason` of a board offer
-# (`...offers[n].offer_reason`) is skipped; every other offer field, and any
-# `offer_reason` anywhere else, is still compared.
-PLAYER_TEXT_FIELD = "offer_reason"
-OFFER_PATH = re.compile(r"\.offers\[\d+\]$")
+# A board offer's shortage reason is the one offer text Rust words
+# differently: Python writes "Shortage at {port} \u2014 urgent demand for
+# {good_id}", Rust "Shortage at {port} - urgent demand for {good name}". A
+# difference at `...offers[n].offer_reason` passes only when one side is
+# exactly that transform of the other (same port, the good's catalog name
+# from the sim's content.json). Equal strings compare as normal; any other
+# difference, there or anywhere else, fails.
+CONTENT = os.path.join(ROOT, "crates", "portlight-sim", "data", "content.json")
+OFFER_REASON_PATH = re.compile(r"\.offers\[\d+\]\.offer_reason$")
+PY_SHORTAGE = re.compile(r"Shortage at (.+) \u2014 urgent demand for ([a-z0-9_]+)")
+_GOOD_NAMES: dict[str, str] | None = None
 
 
-def player_text(path: str, key: str, a, b) -> bool:
-    return (
-        key == PLAYER_TEXT_FIELD
-        and OFFER_PATH.search(path) is not None
-        and isinstance(a, str)
-        and isinstance(b, str)
-    )
+def good_names() -> dict[str, str]:
+    global _GOOD_NAMES
+    if _GOOD_NAMES is None:
+        with open(CONTENT, encoding="utf-8") as handle:
+            _GOOD_NAMES = {good["id"]: good["name"] for good in json.load(handle)["goods"]}
+    return _GOOD_NAMES
+
+
+def shortage_transform(python_text: str) -> str | None:
+    match = PY_SHORTAGE.fullmatch(python_text)
+    if not match:
+        return None
+    port, good_id = match.groups()
+    name = good_names().get(good_id)
+    if name is None:
+        return None
+    return f"Shortage at {port} - urgent demand for {name}"
+
+
+def shortage_reworded(path: str, a, b) -> bool:
+    if not (isinstance(a, str) and isinstance(b, str)) or not OFFER_REASON_PATH.search(path):
+        return False
+    return shortage_transform(a) == b or shortage_transform(b) == a
 
 
 def close(a, b, path: str) -> list[str]:
@@ -179,7 +201,7 @@ def close(a, b, path: str) -> list[str]:
             return []
         return [f"{path}: {a!r} != {b!r}"]
     if isinstance(a, str) and isinstance(b, str):
-        if a != b:
+        if a != b and not shortage_reworded(path, a, b):
             return [f"{path}: {a!r} != {b!r}"]
         return []
     if a is None and b is None:
@@ -201,8 +223,6 @@ def close(a, b, path: str) -> list[str]:
         if set(a) != set(b):
             return [f"{path}: keys {sorted(set(a) ^ set(b))}"]
         for key in a:
-            if player_text(path, key, a[key], b[key]):
-                continue
             errors.extend(close(a[key], b[key], f"{path}.{key}"))
         return errors
     if a != b:
