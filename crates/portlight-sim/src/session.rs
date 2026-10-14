@@ -1673,7 +1673,9 @@ impl Session {
             .map(|enc| enc.naval_turns)
             .unwrap_or(0);
         step.player_sunk = player_sunk;
-        if escaped {
+        // Hull 0 first: a parting shot that empties the hull is a sinking,
+        // not an escape (as at the approach).
+        if escaped && !player_sunk {
             if let Some(enc) = self.encounter.clone() {
                 encounter::remember(&mut self.world.captain, &enc, self.world.day, "fled");
             }
@@ -5634,6 +5636,33 @@ mod sink_tests {
         assert_eq!(flee.hull_after, round.hull_after);
         assert_eq!(flee.sink_cause, "fight");
         assert_eq!(flee_session.world.captain.cargo.len(), 3);
+    }
+
+    // S9b
+    #[test]
+    fn parting_shot_to_zero_in_the_fight_sinks_and_tows() {
+        let mut found = 0;
+        for seed in 0..400 {
+            let mut session = at_sea(seed, 3);
+            session.encounter_choice("fight").unwrap();
+            session.world.captain.ship.as_mut().unwrap().hull = 1;
+            // Every flee escapes, so only the parting shot can sink.
+            session.world.captain.ship.as_mut().unwrap().speed = 1000.0;
+            let origin = session.world.voyage.origin_id.clone();
+            let step = session.naval_round("flee").unwrap();
+            if !step.escaped || step.hull_damage == 0 {
+                continue;
+            }
+            found += 1;
+            assert!(step.player_sunk, "seed {seed}");
+            assert_eq!(step.phase, "resolved");
+            assert_eq!(step.sink_cause, "parting_shot");
+            assert_eq!(step.towed_to, origin);
+            assert!(session.encounter.is_none());
+            assert_eq!(session.world.voyage.status, VoyageStatus::InPort);
+            assert!(session.world.captain.ship.as_ref().unwrap().hull >= 1);
+        }
+        assert!(found > 0, "no parting shot in 400 seeds");
     }
 
     // S10
