@@ -11,6 +11,44 @@ fn parity_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../parity")
 }
 
+/// A board offer's shortage reason is the one offer text Rust words
+/// differently: Python writes "Shortage at {port} \u{2014} urgent demand for
+/// {good_id}", Rust "Shortage at {port} - urgent demand for {good name}". A
+/// difference at `...offers[n].offer_reason` passes only when one side is
+/// exactly that transform of the other (same port, the good's catalog name).
+/// Equal strings compare as normal; any other difference fails.
+fn shortage_transform(python: &str) -> Option<String> {
+    let rest = python.strip_prefix("Shortage at ")?;
+    let (port, good_id) = rest.rsplit_once(" \u{2014} urgent demand for ")?;
+    if port.is_empty()
+        || good_id.is_empty()
+        || !good_id
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
+    {
+        return None;
+    }
+    let name = &portlight_sim::content::content()
+        .goods
+        .iter()
+        .find(|good| good.id == good_id)?
+        .name;
+    Some(format!("Shortage at {port} - urgent demand for {name}"))
+}
+
+fn on_offer_reason(path: &str) -> bool {
+    path.strip_suffix(".offer_reason")
+        .and_then(|head| head.rsplit_once(".offers["))
+        .and_then(|(_, rest)| rest.strip_suffix(']'))
+        .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+}
+
+fn shortage_reworded(path: &str, a: &str, b: &str) -> bool {
+    on_offer_reason(path)
+        && (shortage_transform(a).as_deref() == Some(b)
+            || shortage_transform(b).as_deref() == Some(a))
+}
+
 fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
     match (left, right) {
         (Value::Number(a), Value::Number(b)) => {
@@ -22,7 +60,7 @@ fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
             }
         }
         (Value::String(a), Value::String(b)) => {
-            if a != b {
+            if a != b && !shortage_reworded(path, a, b) {
                 errors.push(format!("{path}: {a:?} != {b:?}"));
             }
         }
@@ -445,6 +483,70 @@ fn wildcard_pattern_is_rejected() {
     );
     assert!(container.is_err(), "{container:?}");
     assert!(container.unwrap_err().contains("wildcard"));
+}
+
+#[test]
+fn only_the_shortage_rewording_passes_on_an_offer_reason() {
+    let path = "$.board.offers[2].offer_reason";
+    let differs = |a: &str, b: &str, path: &str| {
+        let mut errors = Vec::new();
+        close(&Value::from(a), &Value::from(b), path, &mut errors);
+        errors.len()
+    };
+    for (python, rust) in [
+        (
+            "Shortage at Corsair's Rest \u{2014} urgent demand for grain",
+            "Shortage at Corsair's Rest - urgent demand for Grain",
+        ),
+        (
+            "Shortage at Ironhaven \u{2014} urgent demand for iron",
+            "Shortage at Ironhaven - urgent demand for Iron Ore",
+        ),
+    ] {
+        assert_eq!(differs(python, rust, path), 0);
+        assert_eq!(differs(rust, python, path), 0);
+    }
+    assert_eq!(differs("Same text", "Same text", path), 0);
+    for (python, rust) in [
+        (
+            "Porto Novo needs grain delivered",
+            "Porto Novo needs Grain delivered",
+        ),
+        (
+            "Shortage at Ironhaven \u{2014} urgent demand for grain",
+            "Shortage at Thornport - urgent demand for Grain",
+        ),
+        (
+            "Shortage at Ironhaven \u{2014} urgent demand for iron",
+            "Shortage at Ironhaven - urgent demand for Iron",
+        ),
+        (
+            "Shortage at Ironhaven \u{2014} urgent demand for unobtainium",
+            "Shortage at Ironhaven - urgent demand for Unobtainium",
+        ),
+    ] {
+        assert_eq!(differs(python, rust, path), 1, "{python} / {rust}");
+    }
+    let python = "Shortage at Ironhaven \u{2014} urgent demand for iron";
+    let rust = "Shortage at Ironhaven - urgent demand for Iron Ore";
+    for other in [
+        "$.offer_reason",
+        "$.board.active[0].offer_reason",
+        "$.board.offers[0].title",
+    ] {
+        assert_eq!(differs(python, rust, other), 1, "{other}");
+    }
+    // A changed field beside an accepted reason still fails.
+    let left = serde_json::json!({"offers": [
+        {"id": "a", "offer_reason": "Shortage at X \u{2014} urgent demand for grain"}
+    ]});
+    let right = serde_json::json!({"offers": [
+        {"id": "b", "offer_reason": "Shortage at X - urgent demand for Grain"}
+    ]});
+    let mut errors = Vec::new();
+    close(&left, &right, "$", &mut errors);
+    assert_eq!(errors.len(), 1, "{errors:?}");
+    assert!(errors[0].starts_with("$.offers[0].id:"), "{errors:?}");
 }
 
 #[test]

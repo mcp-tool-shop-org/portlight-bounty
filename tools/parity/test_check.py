@@ -32,6 +32,55 @@ def report_failed(errors: list[str], left=None, right=None, entries=None) -> int
     return failed[0]
 
 
+class ShortageReasonTest(unittest.TestCase):
+    PATH = "$.board.offers[2].offer_reason"
+
+    def errors(self, python: str, rust: str, path: str | None = None) -> list[str]:
+        return check.close(python, rust, path or self.PATH)
+
+    def test_real_pairs_pass_both_ways(self) -> None:
+        for python, rust in [
+            ("Shortage at Corsair's Rest \u2014 urgent demand for grain",
+             "Shortage at Corsair's Rest - urgent demand for Grain"),
+            ("Shortage at Ironhaven \u2014 urgent demand for iron",
+             "Shortage at Ironhaven - urgent demand for Iron Ore"),
+        ]:
+            self.assertEqual(self.errors(python, rust), [])
+            self.assertEqual(check.close(rust, python, self.PATH), [])
+
+    def test_equal_strings_compare_as_normal(self) -> None:
+        self.assertEqual(self.errors("Same text", "Same text"), [])
+
+    def test_other_differences_fail(self) -> None:
+        cases = [
+            # A procurement reason that differs.
+            ("Porto Novo needs grain delivered", "Porto Novo needs Grain delivered"),
+            # A shortage with the wrong port.
+            ("Shortage at Ironhaven \u2014 urgent demand for grain",
+             "Shortage at Thornport - urgent demand for Grain"),
+            # A shortage with the wrong good name.
+            ("Shortage at Ironhaven \u2014 urgent demand for iron",
+             "Shortage at Ironhaven - urgent demand for Iron"),
+            # An unknown good id.
+            ("Shortage at Ironhaven \u2014 urgent demand for unobtainium",
+             "Shortage at Ironhaven - urgent demand for Unobtainium"),
+        ]
+        for python, rust in cases:
+            self.assertEqual(len(self.errors(python, rust)), 1, (python, rust))
+
+    def test_the_rewording_is_only_accepted_on_a_board_offer(self) -> None:
+        python = "Shortage at Ironhaven \u2014 urgent demand for iron"
+        rust = "Shortage at Ironhaven - urgent demand for Iron Ore"
+        for path in ["$.offer_reason", "$.board.active[0].offer_reason", "$.board.offers[0].title"]:
+            self.assertEqual(len(self.errors(python, rust, path)), 1, path)
+
+    def test_a_changed_field_beside_it_still_fails(self) -> None:
+        left = {"offers": [{"id": "a", "offer_reason": "Shortage at X \u2014 urgent demand for grain"}]}
+        right = {"offers": [{"id": "b", "offer_reason": "Shortage at X - urgent demand for Grain"}]}
+        errors = check.close(left, right, "$")
+        self.assertEqual([check.error_path(line) for line in errors], ["$.offers[0].id"])
+
+
 class AllowlistTest(unittest.TestCase):
     def test_broker_board_gamesession_allowlist_is_closed(self) -> None:
         entries = check.load_divergences()

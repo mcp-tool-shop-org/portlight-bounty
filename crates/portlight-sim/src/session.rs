@@ -4405,7 +4405,43 @@ mod tests {
             .join("../../parity/saves/contract_v12.json");
         let python: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(fixture).unwrap()).unwrap();
-        assert_eq!(rust["contract_board"], python["contract_board"]);
+        // Rust words the shortage offer reason differently from Python:
+        // "Shortage at {port} - urgent demand for {good name}" for Python's em
+        // dash and good id. Only that exact rewording may differ; every other
+        // reason and field must match.
+        let mut python_board = python["contract_board"].clone();
+        let rust_offers = rust["contract_board"]["offers"].as_array().unwrap();
+        let mut reworded = 0;
+        for (offer, ours) in python_board["offers"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .zip(rust_offers)
+        {
+            let theirs = offer["offer_reason"].as_str().unwrap().to_string();
+            let mine = ours["offer_reason"].as_str().unwrap();
+            if theirs == mine {
+                continue;
+            }
+            let (port, good_id) = theirs
+                .strip_prefix("Shortage at ")
+                .and_then(|rest| rest.rsplit_once(" \u{2014} urgent demand for "))
+                .expect("only a shortage reason may differ");
+            let name = &content::content()
+                .goods
+                .iter()
+                .find(|good| good.id == good_id)
+                .expect("a catalog good")
+                .name;
+            assert_eq!(
+                mine,
+                format!("Shortage at {port} - urgent demand for {name}")
+            );
+            offer["offer_reason"] = mine.into();
+            reworded += 1;
+        }
+        assert_eq!(reworded, 1);
+        assert_eq!(rust["contract_board"], python_board);
         assert_eq!(
             rust["captain"]["breach_records"],
             python["captain"]["breach_records"]

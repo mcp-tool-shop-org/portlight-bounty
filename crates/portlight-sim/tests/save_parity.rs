@@ -691,7 +691,20 @@ fn rust_v13_bank_round_trips() {
 /// `portlight script` from `PRE_BANK_SCRIPT`, the second by `Session::load`
 /// of the first and `Session::save` again (a load reprices the markets, so the two differ). A game with no
 /// account must still write both byte for byte.
+///
+/// Both files stay frozen, not regenerated: they are the proof that a save
+/// written before counting houses loads and re-saves unchanged, and a file
+/// written by today's code could not prove that. A saved offer keeps its
+/// stored reason, so the load and re-save half is still exact. Since then the
+/// sim words the shortage offer reason differently ("Shortage at {port} -
+/// urgent demand for {good name}"); a fresh game writes that one value
+/// anew, so the fresh-write half swaps it into the frozen bytes and compares
+/// everything else exactly.
 const PRE_BANK_SCRIPT: &str = "new merchant Ada 1\nbuy grain 5\nbuy_infrastructure warehouse depot\ndeposit grain 2\nbuy_insurance hull_basic\n";
+
+/// The one value a fresh game now writes differently from the frozen file.
+const OLD_SHORTAGE_REASON: &str = "Shortage at Corsair's Rest \u{2014} urgent demand for grain";
+const NEW_SHORTAGE_REASON: &str = "Shortage at Corsair's Rest - urgent demand for Grain";
 
 #[test]
 fn pre_bank_v12_save_is_byte_identical() {
@@ -701,8 +714,11 @@ fn pre_bank_v12_save_is_byte_identical() {
     let dir = scratch("pre-bank-v12");
     portlight_sim::script::run_and_save(PRE_BANK_SCRIPT, &dir, "pre_bank_v12").unwrap();
     let written = fs::read(dir.join("saves").join("pre_bank_v12.json")).unwrap();
+    let frozen = String::from_utf8(fixture.clone()).unwrap();
+    assert_eq!(frozen.matches(OLD_SHORTAGE_REASON).count(), 1);
+    let fresh = frozen.replace(OLD_SHORTAGE_REASON, NEW_SHORTAGE_REASON);
     assert!(
-        written == fixture,
+        written == fresh.as_bytes(),
         "a new game without an account wrote different bytes"
     );
     let mut loaded = Session::load(&root, "pre_bank_v12").unwrap().unwrap();
