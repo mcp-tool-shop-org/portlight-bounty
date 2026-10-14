@@ -469,7 +469,9 @@ pub fn evaluate_narrative(
             break;
         }
     }
-    if world.captain.silver < 50 && world.day > 10 {
+    // Carried plus banked: a captain with silver in a counting house is not
+    // broke.
+    if world.captain.silver + books.banked < 50 && world.day > 10 {
         fired.fire("near_bankruptcy", "", "");
     }
     if board
@@ -493,7 +495,7 @@ pub fn evaluate_narrative(
     if region == "South Seas" {
         fired.fire("south_seas_discovery", "", "South Seas");
     }
-    if world.captain.silver >= 2000 {
+    if world.captain.silver + books.banked >= 2000 {
         fired.fire("wealth_milestone", "", "");
     }
 

@@ -127,6 +127,9 @@ pub struct HouseBooks {
     /// Paid, non-denied insurance claims. Area 4 writes this.
     pub claims_paid: i64,
     pub credit: Option<CreditBook>,
+    /// Silver across counting-house accounts. Counted with carried silver
+    /// wherever a reader asks how rich the captain is.
+    pub banked: i64,
     pub completed_paths: Vec<VictoryRecord>,
     pub completed_milestones: Vec<MilestoneCompletion>,
 }
@@ -355,6 +358,11 @@ fn infra_regions(world: &World, books: &HouseBooks) -> Vec<String> {
     regions
 }
 
+/// Carried plus banked silver: banking never costs progress.
+fn wealth(world: &World, books: &HouseBooks) -> i64 {
+    world.captain.silver + books.banked
+}
+
 fn scored(strength: f64) -> f64 {
     py_round_places(strength, 1).max(0.0)
 }
@@ -408,8 +416,8 @@ fn evaluate_lawful(world: &World, books: &HouseBooks) -> VictoryPathStatus {
     } else {
         String::new()
     };
-    let silver_action = if world.captain.silver < 2000 {
-        format!("Earn {} more silver", 2000 - world.captain.silver)
+    let silver_action = if wealth(world, books) < 2000 {
+        format!("Earn {} more silver", 2000 - wealth(world, books))
     } else {
         String::new()
     };
@@ -451,8 +459,8 @@ fn evaluate_lawful(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         ),
         req(
             "2000+ silver",
-            world.captain.silver >= 2000,
-            format!("Silver: {}", world.captain.silver),
+            wealth(world, books) >= 2000,
+            format!("Silver: {}", wealth(world, books)),
             silver_action,
             false,
         ),
@@ -559,7 +567,7 @@ fn evaluate_shadow(world: &World, books: &HouseBooks) -> VictoryPathStatus {
     if max_h < 3 {
         strength += -20.0;
     }
-    if world.captain.silver < 100 {
+    if wealth(world, books) < 100 {
         strength += -25.0;
     }
     VictoryPathStatus {
@@ -587,8 +595,8 @@ fn evaluate_oceanic(world: &World, books: &HouseBooks) -> VictoryPathStatus {
     } else {
         String::new()
     };
-    let silver_action = if world.captain.silver < 2000 {
-        format!("Earn {} more silver", 2000 - world.captain.silver)
+    let silver_action = if wealth(world, books) < 2000 {
+        format!("Earn {} more silver", 2000 - wealth(world, books))
     } else {
         String::new()
     };
@@ -634,8 +642,8 @@ fn evaluate_oceanic(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         ),
         req(
             "2000+ silver",
-            world.captain.silver >= 2000,
-            format!("Silver: {}", world.captain.silver),
+            wealth(world, books) >= 2000,
+            format!("Silver: {}", wealth(world, books)),
             silver_action,
             false,
         ),
@@ -691,8 +699,8 @@ fn evaluate_empire(world: &World, books: &HouseBooks) -> VictoryPathStatus {
     } else {
         String::new()
     };
-    let silver_action = if world.captain.silver < 3000 {
-        format!("Earn {} more silver", 3000 - world.captain.silver)
+    let silver_action = if wealth(world, books) < 3000 {
+        format!("Earn {} more silver", 3000 - wealth(world, books))
     } else {
         String::new()
     };
@@ -746,8 +754,8 @@ fn evaluate_empire(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         ),
         req(
             "3000+ silver",
-            world.captain.silver >= 3000,
-            format!("Silver: {}", world.captain.silver),
+            wealth(world, books) >= 3000,
+            format!("Silver: {}", wealth(world, books)),
             silver_action,
             false,
         ),

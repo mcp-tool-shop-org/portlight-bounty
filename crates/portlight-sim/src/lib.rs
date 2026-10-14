@@ -10,6 +10,7 @@
 //! Front ends drive [`Session`] one turn at a time. [`run_script`] calls that
 //! same API.
 
+pub mod bank;
 pub mod bounty;
 pub mod campaign;
 pub mod combat;
