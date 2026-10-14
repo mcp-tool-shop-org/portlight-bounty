@@ -690,7 +690,7 @@ fn row_line(row: &ContractRow) -> String {
             parts.push(part);
         }
     }
-    let mut line = format!("- {}", parts.join(" — "));
+    let mut line = format!("- {}", parts.join(" - "));
     if !row.actions.is_empty() {
         line.push_str(&format!(" [{}]", row.actions.join(", ")));
     }
@@ -1640,10 +1640,10 @@ mod tests {
             ..DayReportView::default()
         };
         assert_eq!(bare.text_lines(), vec!["Day's report: Day 3"]);
-        let text = "Screen: day-report\nActions:\nchart.day_report.close — Close";
+        let text = "Screen: day-report\nActions:\nchart.day_report.close - Close";
         assert_eq!(
             splice_text(text, &bare.text_lines()),
-            "Screen: day-report\nDay's report: Day 3\nActions:\nchart.day_report.close — Close"
+            "Screen: day-report\nDay's report: Day 3\nActions:\nchart.day_report.close - Close"
         );
     }
 
@@ -1669,17 +1669,17 @@ mod tests {
         assert_eq!(open[1], "Board:");
         assert_eq!(
             open[2],
-            "- Spice run — Spice x3 to Corsair's Rest   90 silver [contracts.accept.s1]"
+            "- Spice run - Spice x3 to Corsair's Rest   90 silver [contracts.accept.s1]"
         );
         assert_eq!(open[3], "Active:");
         assert_eq!(open[4], "- none");
         assert!(ContractsView::default().text_lines(false).is_empty());
 
-        let text = "Screen: chart\nstatus\nActions:\nchart.hire — Hire";
+        let text = "Screen: chart\nstatus\nActions:\nchart.hire - Hire";
         let spliced = splice_text(text, &closed);
         assert_eq!(
             spliced,
-            "Screen: chart\nstatus\nContract strip: Grain run - 0/5 - 4 days left - to Al-Manar\nActions:\nchart.hire — Hire"
+            "Screen: chart\nstatus\nContract strip: Grain run - 0/5 - 4 days left - to Al-Manar\nActions:\nchart.hire - Hire"
         );
         assert_eq!(splice_text(text, &[]), text);
         assert_eq!(splice_text("x", &["y".into()]), "x\ny");
@@ -1787,10 +1787,10 @@ mod tests {
                 "- Day 1: Set out."
             ]
         );
-        let text = "Screen: journal\nActions:\nchart.journal.close — Close";
+        let text = "Screen: journal\nActions:\nchart.journal.close - Close";
         assert_eq!(
             splice_text(text, &view.text_lines()[..1]),
-            "Screen: journal\nJournal: Captain's Journal\nActions:\nchart.journal.close — Close"
+            "Screen: journal\nJournal: Captain's Journal\nActions:\nchart.journal.close - Close"
         );
     }
 

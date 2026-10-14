@@ -1979,7 +1979,7 @@ mod tests {
         assert_eq!(session.world().voyage.status, VoyageStatus::AtSea);
         assert!(
             snapshot_docked_prices(&session).is_empty(),
-            "at-sea snapshot must be empty (§13.2)"
+            "at-sea snapshot must be empty (section 13.2)"
         );
         assert!(
             price_lines(&session, &docked).is_empty(),
@@ -3035,8 +3035,8 @@ mod tests {
             ("grain", 16),  // +33%
             ("spice", 14),  // -30%
             ("timber", 11), // +10%
-            ("wine", 54),   // +8% — below bar
-            ("salt", 8),    // zero — omit
+            ("wine", 54),   // +8% - below bar
+            ("salt", 8),    // zero - omit
             ("tea", 33),    // +10%
         ]
         .into_iter()

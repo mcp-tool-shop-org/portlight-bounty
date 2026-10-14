@@ -561,7 +561,7 @@ jobs:
             xvfb-run -a -s "-screen 0 1280x720x24" \
             env PORTLIGHT_SHOT=/tmp/sunk-shots/capture.png \
             godot --display-driver x11 --rendering-driver opengl3 --path godot -- --encounter-sunk
-          if [ ! -f /tmp/sunk-shots/encounter-recap-sunk.png ]; then
+          if [ ! -f /tmp/sunk-shots/encounter-recap-sunk.png ] || [ ! -f /tmp/sunk-shots/encounter-recap-sunk-full.png ]; then
             echo "encounter-sunk capture did not write /tmp/sunk-shots/encounter-recap-sunk.png"
             exit 1
           fi
@@ -735,7 +735,7 @@ jobs:
             echo "harbour frame capture did not report ok"
             exit 1
           fi
-          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png harbour-insurance.png harbour-bank.png; do
+          for name in harbour-warehouse.png harbour-broker.png harbour-finance.png harbour-insurance.png harbour-bank.png chart-status-banked.png; do
             if [ ! -f "/tmp/harbour-shots/${name}" ]; then
               echo "harbour capture did not write /tmp/harbour-shots/${name}"
               exit 1
@@ -901,6 +901,7 @@ jobs:
           cmp_committed harbour-finance.png /tmp/harbour-shots/harbour-finance.png
           cmp_committed harbour-insurance.png /tmp/harbour-shots/harbour-insurance.png
           cmp_committed harbour-bank.png /tmp/harbour-shots/harbour-bank.png
+          cmp_committed chart-status-banked.png /tmp/harbour-shots/chart-status-banked.png
           cmp_committed crew-roster.png /tmp/crew-shots/crew-roster.png
           cmp_committed crew-provisions.png /tmp/crew-shots/crew-provisions.png
           cmp_committed crew-training.png /tmp/crew-shots/crew-training.png
@@ -945,6 +946,7 @@ jobs:
           cmp_committed encounter-recap-won.png /tmp/encounter-recap-won.png
           cmp_committed encounter-loss-outcome.png /tmp/loss-outcome-shots/encounter-loss-outcome.png
           cmp_committed encounter-recap-sunk.png /tmp/sunk-shots/encounter-recap-sunk.png
+          cmp_committed encounter-recap-sunk-full.png /tmp/sunk-shots/encounter-recap-sunk-full.png
           cmp_committed storm-recap-sunk.png /tmp/sunk-shots/storm-recap-sunk.png
           cmp_committed harbour-seam-z100.png /tmp/seam-shots/harbour-seam-z100.png
           cmp_committed harbour-seam-z072.png /tmp/seam-shots/harbour-seam-z072.png

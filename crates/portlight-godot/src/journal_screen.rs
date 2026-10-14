@@ -1008,6 +1008,31 @@ mod tests {
         beat_text, beat_title, chronicle_entry_rows, document_lines, journal_document, memory_rows,
         BEATS,
     };
+
+    /// Sim text reaches the screen through one of these folds; an em dash,
+    /// en dash or curly quote in any of them prints as ASCII.
+    #[test]
+    fn sim_text_display_paths_fold_to_ascii() {
+        let sample =
+            "Shortage at Porto Novo \u{2014} urgent \u{2013} \u{201c}grain\u{201d}\u{2019}s run";
+        let paths: [(&str, String); 5] = [
+            (
+                "log",
+                crate::logic::ascii_punctuation(&crate::logic::strip_markup(sample)),
+            ),
+            (
+                "day report",
+                crate::contracts_screen::ascii_sentence(sample),
+            ),
+            ("recap", crate::recap::passthrough_text(sample)),
+            ("journal", super::fold_ascii(sample)),
+            ("harbour", crate::harbour_screen::ascii_copy(sample)),
+        ];
+        for (name, text) in paths {
+            assert!(text.is_ascii(), "{name}: {text}");
+            assert!(text.contains("Porto Novo"), "{name}: {text}");
+        }
+    }
     use portlight_sim::model::{CaptainMemory, JournalEntry};
     use portlight_sim::Session;
 
