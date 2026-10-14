@@ -591,7 +591,14 @@ fn make_offer(
 fn offer_reason(family: &str, issuer_name: &str, dest_name: &str, good_id: &str) -> String {
     match family {
         "procurement" => format!("{dest_name} needs {good_id} delivered"),
-        "shortage" => format!("Shortage at {dest_name} — urgent demand for {good_id}"),
+        "shortage" => {
+            let good = content::content()
+                .goods
+                .iter()
+                .find(|good| good.id == good_id)
+                .map_or(good_id, |good| good.name.as_str());
+            format!("Shortage at {dest_name} - urgent demand for {good}")
+        }
         "luxury_discreet" => format!("Discreet buyer at {dest_name} wants {good_id}"),
         "return_freight" => {
             format!("{issuer_name} has {good_id} that needs to reach {dest_name}")
