@@ -68,7 +68,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Storm Wall is the town: a breakwater of dead ships that keeps the living ones afloat. Landmark [cite]: "The Storm Wall - a massive breakwater built from the hulls of ships that didn't make it." (C:12186 area). Cited buildings: The Chained Harbor (harbor_master, C:11024); The Deep Reef (exchange, C:11034); The Storm Wall (governor, C:11044); Hine's Storm Grill (tavern, C:11054); The Wreck Yard (shipyard, C:11064); Wiremu's Steady Desk (broker, C:11074). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Storm Wall is the town: a breakwater of dead ships that keeps the living ones afloat. Landmark [cite]: "The Storm Wall - a massive breakwater built from the hulls of ships that didn't make it." (C:12186 area). Cited buildings: The Chained Harbor (harbor_master, C:11024); The Deep Reef (exchange, C:11034); The Storm Wall (governor, C:11044); Hine's Storm Grill (tavern, C:11054); The Wreck Yard (shipyard, C:11064); Wiremu's Steady Desk (broker, C:11074). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/storm_wall.md.
 2. Materials: local and abundant (exports): Pearls, Timber, Spice; scarce or luxury (imports): Silk, Porcelain, Medicines, Rum, Pelts, Grain (section A). Atmosphere [cite]: "Wind that never fully dies, salt-crusted everything, and the pride of survival." (C:12186 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -77,7 +77,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 | Dominant | storm-wet timber | (92, 84, 76) #5C544C | 85 / 16 | in range | wreck hulls |
 | Secondary 1 | typhoon sky grey | (104, 108, 112) #686C70 | 107 / 8 | in range | storms |
 | Secondary 2 | reef stone | (110, 104, 96) #6E6860 | 105 / 14 | in range | breakwater base |
-| Accent | pearl sheen | (146, 142, 132) #928E84 | 142 / 14 | mood, not values | pearls |
+| Accent | storm-flag red, small | (128, 80, 72) #805048 | 90 / 56 | small-area accent (chroma 56) | storm flags on the wall |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: carved ship names. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a long dark breakwater of hulls around a small shipyard. 7. Do and don't: README shared list.
 
@@ -137,14 +137,14 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "wind that never fully dies"; ships "chained, not anchored" - chains straining; leeward cliff shelter.
+- **Soundscape:** "Wind that never fully dies" (C:12189); ships "chained, not anchored" (C:11028) - chains straining; leeward cliff shelter.
 - **Signature:** mooring chain strain/snatch; salt-crusted timber creak; knife carving into the Storm Wall (custom).
 - **Music/work songs (NOTE ONLY):** none; stories as price of entry are voice - on hold.
 - **Vs neighbours:** constant wind + chain; vs Dragon's Gate chains (harbour boom, controlled) these are survival moorings.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.mooring_chain_strain`, `src.carve_name`, `place.leeward_cliff`.
 
 ---
-- Cited hooks: atmosphere "Wind that never fully dies, salt-crusted everything, and the pride of survival."; dock scene "The harbor is carved into the leeward cliff. Ships are chained, not anchored - anchors aren't enough here. Pearl divers work the outer reef between storms." (C:12186 area).
+- Cited hooks: atmosphere "Wind that never fully dies, salt-crusted everything, and the pride of survival." (C:12189); dock scene "The harbor is carved into the leeward cliff. Ships are chained, not anchored - anchors aren't enough here. Pearl divers work the outer reef between storms." (C:12190).
 - Invented bed idea: surf against the wall, carving tools, wind. No assets are requested.
 
 ## J. Flags for this port

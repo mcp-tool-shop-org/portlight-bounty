@@ -71,16 +71,16 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Bazaar is the town: Al-Manar is a covered market with a harbour attached. Landmark [cite]: "The Spice Bazaar - a covered market where a hundred aromas compete for your attention." (C:12016 area). Cited buildings: The Harbor of Arrivals (harbor_master, C:7186); The Spice Bazaar (exchange, C:7196); The Khoury Palace (governor, C:7206); The Amber Glass (tavern, C:7216); The Scales of Truth (customs, C:7226); The Apothecary House (apothecary, C:7236); The Broker's Alcove (broker, C:7246). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Bazaar is the town: Al-Manar is a covered market with a harbour attached. Landmark [cite]: "The Spice Bazaar - a covered market where a hundred aromas compete for your attention." (C:12016 area). Cited buildings: The Harbor of Arrivals (harbor_master, C:7186); The Spice Bazaar (exchange, C:7196); The Khoury Palace (governor, C:7206); The Amber Glass (tavern, C:7216); The Scales of Truth (customs, C:7226); The Apothecary House (apothecary, C:7236); The Broker's Alcove (broker, C:7246). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/spice_bazaar.md.
 2. Materials: local and abundant (exports): Spice, Medicines; scarce or luxury (imports): Silk, Grain, Porcelain, Rum, Tea, Iron Ore, Pelts (section A). Atmosphere [cite]: "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers." (C:12016 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | sun-baked plaster | (132, 118, 96) #847660 | 119 / 36 | mood, not values | the covered bazaar walls |
+| Dominant | sun-baked plaster | (143, 129, 108) #8F816C | 130 / 35 | in range | the covered bazaar walls |
 | Secondary 1 | shade under awnings | (88, 80, 70) #585046 | 81 / 18 | in range | the bazaar's covered lanes |
 | Secondary 2 | pale harbour stone | (124, 120, 112) #7C7870 | 120 / 12 | in range | 'the better harbor' (grudge) |
-| Accent | saffron dust | (160, 128, 72) #A08048 | 131 / 88 | mood, not values | spice, its first export |
+| Accent | saffron dust | (152, 129, 88) #988158 | 131 / 64 | small-area accent (chroma 64) | spice, its first export |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a tea cup, a spice scoop. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a long low domed roof line of the bazaar behind the harbour, with tea-house terraces. 7. Do and don't: README shared list.
 
@@ -141,12 +141,12 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** hushed, dense - "the murmur of a hundred negotiations conducted in whispers"; porters' feet on worn marble steps; felucca lateen canvas luffing.
+- **Soundscape:** hushed, dense - "the murmur of a hundred negotiations conducted in whispers" (C:12019); porters' feet on worn marble steps; felucca lateen canvas luffing.
 - **Signature:** brass-bound spice chest set down on marble; tea cup on saucer (custom: bargaining begins with tea); scoop of dry spice into a scale pan.
 - **Music/work songs (NOTE ONLY):** none in canon; at most a far auctioneer's cadence from the Spice Merchants' Circle - spoken, not sung.
 - **Vs neighbours:** quietest Mediterranean market - stone and whispers, where Porto Novo is shouting and Silva Bay is hammering.
 - **Fragments [proposal; no fragment or asset exists yet]:** `mat.marble_step`, `src.spice_chest_brass`, `src.tea_cup_saucer`.
-- Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers."; dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12016 area).
+- Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers." (C:12019); dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12020).
 - Invented bed idea: tea-pouring before bargaining; a hundred voices under one roof. No assets are requested.
 
 ## J. Flags for this port

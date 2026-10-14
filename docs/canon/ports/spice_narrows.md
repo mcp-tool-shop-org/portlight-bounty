@@ -69,16 +69,16 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Hanging Market is the town: everything in Spice Narrows hangs over water and can be cut loose. Landmark [cite]: "The Hanging Market - stalls suspended on ropes between cliff faces above the water." (C:12166 area). Cited buildings: The Volcanic Channel (harbor_master, C:10594); The Dark Room (exchange, C:10604); The Deep Throne (governor, C:10614); Mama Smoke's Cave (tavern, C:10624); The Intelligence Cave (customs, C:10634); The Poison Lab (apothecary, C:10644); The Contract Wall (broker, C:10654). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Hanging Market is the town: everything in Spice Narrows hangs over water and can be cut loose. Landmark [cite]: "The Hanging Market - stalls suspended on ropes between cliff faces above the water." (C:12166 area). Cited buildings: The Volcanic Channel (harbor_master, C:10594); The Dark Room (exchange, C:10604); The Deep Throne (governor, C:10614); Mama Smoke's Cave (tavern, C:10624); The Intelligence Cave (customs, C:10634); The Poison Lab (apothecary, C:10644); The Contract Wall (broker, C:10654). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/hanging_market.md.
 2. Materials: local and abundant (exports): Spice, Pearls, Opium; scarce or luxury (imports): Silk, Weapons, Grain, Rum, Pelts, Black Powder (section A). Atmosphere [cite]: "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes." (C:12166 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | wet cliff rock | (86, 84, 76) #56544C | 84 / 10 | in range | cliff faces |
+| Dominant | wet cliff rock | (84, 82, 74) #54524A | 82 / 10 | in range | cliff faces |
 | Secondary 1 | rope and plank | (102, 86, 68) #665644 | 88 / 34 | in range | suspended stalls |
 | Secondary 2 | deep shadow green | (66, 78, 70) #424E46 | 75 / 12 | in range | the archipelago |
-| Accent | spice red, small | (140, 92, 66) #8C5C42 | 100 / 74 | mood, not values | spice, its top export |
+| Accent | spice red, small | (134, 93, 71) #865D47 | 100 / 63 | small-area accent (chroma 63) | spice, its top export |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: none; a knot that marks a stall as open. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: no skyline: rope bridges and stalls strung between cliffs above dark water. 7. Do and don't: README shared list.
 
@@ -149,12 +149,12 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** hidden between volcanic cliffs; "prices are whispered ... the water carries sound"; rope ladders; vertical market overhead.
+- **Soundscape:** hidden between volcanic cliffs; "Prices are whispered ... the water carries sound" (C:12168); rope ladders; vertical market overhead.
 - **Signature:** rope ladder rung creak; basket hauled up on rope; whisper-close cloth rustle (no voice).
 - **Music/work songs (NOTE ONLY):** none - silence is canon.
 - **Vs neighbours:** echoing, vertical; vs Al-Manar's whispers on marble, this is rope and cliff echo. (Only port where a short cliff echo is canon-justified - a deliberate section 1 exception if ever used.)
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.rope_ladder`, `src.basket_haul`, `place.cliff_anchorage`.
-- Cited hooks: atmosphere "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes."; dock scene "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical - everything climbs." (C:12166 area).
+- Cited hooks: atmosphere "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes." (C:12169); dock scene "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical - everything climbs." (C:12170).
 - Invented bed idea: whispers, ropes creaking, water below. No assets are requested.
 
 ## J. Flags for this port

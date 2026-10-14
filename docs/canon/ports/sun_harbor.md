@@ -70,16 +70,16 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Cotton Steps are the town: Sun Harbor is a marketplace on stairs. Landmark [cite]: "The Cotton Steps - wide stone stairs where cotton bales are displayed and auctioned." (C:12076 area). Cited buildings: The Welcome Dock (harbor_master, C:8562); The Cotton Steps (exchange, C:8572); The Acacia Throne (governor, C:8582); The Cotton House (shipyard, C:8592); Yusuf's Table (tavern, C:8602); The Honest Scale (customs, C:8612); The Contract Mat (broker, C:8622). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Cotton Steps are the town: Sun Harbor is a marketplace on stairs. Landmark [cite]: "The Cotton Steps - wide stone stairs where cotton bales are displayed and auctioned." (C:12076 area). Cited buildings: The Welcome Dock (harbor_master, C:8562); The Cotton Steps (exchange, C:8572); The Acacia Throne (governor, C:8582); The Cotton House (shipyard, C:8592); Yusuf's Table (tavern, C:8602); The Honest Scale (customs, C:8612); The Contract Mat (broker, C:8622). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/cotton_steps.md.
 2. Materials: local and abundant (exports): Cotton, Iron Ore, Dyes, Pelts; scarce or luxury (imports): Silk, Spice, Rum, Porcelain (section A). Atmosphere [cite]: "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales." (C:12076 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | sunlit stone steps | (138, 124, 100) #8A7C64 | 125 / 38 | mood, not values | the Cotton Steps |
+| Dominant | sunlit stone steps | (137, 124, 102) #897C66 | 125 / 35 | in range | the Cotton Steps |
 | Secondary 1 | cotton bale | (134, 128, 116) #868074 | 128 / 18 | in range | bales stacked high |
 | Secondary 2 | indigo cloth, muted | (80, 86, 104) #505668 | 86 / 24 | in range | dyes export |
-| Accent | ochre dust | (150, 118, 74) #96764A | 122 / 76 | mood, not values | red earth and dye |
+| Accent | ochre dust | (145, 119, 82) #917752 | 122 / 63 | small-area accent (chroma 63) | red earth and dye |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: the weigher's scale, a cotton boll. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: broad stone stairs rising from the quay with warehouses either side, bales stacked higher than the roofs. 7. Do and don't: README shared list.
 
@@ -139,12 +139,12 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "the rhythmic singing of dockworkers loading bales"; bales thumping; scales creaking.
+- **Soundscape:** "the rhythmic singing of dockworkers loading bales" (C:12079); bales thumping; scales creaking.
 - **Signature:** cotton bale onto a stack (soft, heavy); beam scale settling; morning blessing is a quiet beat.
-- **Music/work songs (NOTE ONLY):** canon's strongest work song - the Weighers "carrying the count in song". Flag for MUSIC when the hold lifts; never as SFX (no voice).
+- **Music/work songs (NOTE ONLY):** canon's strongest work song - the Weighers "carrying the count in song" (C:8576). Flag for MUSIC when the hold lifts; never as SFX (no voice).
 - **Vs neighbours:** the singing port; soft-fibre thuds vs Iron Point's metal.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.cotton_bale`, `src.beam_scale`, `place.bale_quay`.
-- Cited hooks: atmosphere "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales."; dock scene "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song." (C:12076 area).
+- Cited hooks: atmosphere "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales." (C:12079); dock scene "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song." (C:12080).
 - Invented bed idea: auction calls on the steps, the elder's blessing at dawn. No assets are requested.
 
 ## J. Flags for this port

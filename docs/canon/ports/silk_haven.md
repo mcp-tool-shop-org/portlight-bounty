@@ -70,16 +70,16 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Loom Quarter is the town: Silk Haven measures time in weaving patterns a thousand years old. Landmark [cite]: "The Loom Quarter - where silk is woven in patterns a thousand years old." (C:12136 area). Cited buildings: The Arranged Harbor (harbor_master, C:9892); The Loom Quarter (exchange, C:9902); The Silk Court (governor, C:9912); The Brush and Bowl (tavern, C:9922); The Silk Warehouse (shipyard, C:9932); The Touch Room (customs, C:9942); The Story Room (broker, C:9952). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Loom Quarter is the town: Silk Haven measures time in weaving patterns a thousand years old. Landmark [cite]: "The Loom Quarter - where silk is woven in patterns a thousand years old." (C:12136 area). Cited buildings: The Arranged Harbor (harbor_master, C:9892); The Loom Quarter (exchange, C:9902); The Silk Court (governor, C:9912); The Brush and Bowl (tavern, C:9922); The Silk Warehouse (shipyard, C:9932); The Touch Room (customs, C:9942); The Story Room (broker, C:9952). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/loom_quarter.md.
 2. Materials: local and abundant (exports): Silk, Porcelain; scarce or luxury (imports): Spice, Rum, Dyes, Iron Ore, Cotton, Grain, Pelts (section A). Atmosphere [cite]: "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam." (C:12136 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | dark lacquered timber | (92, 76, 68) #5C4C44 | 79 / 24 | in range | loom houses |
+| Dominant | dark lacquered timber | (85, 69, 61) #55453D | 72 / 24 | in range | loom houses |
 | Secondary 1 | raw silk, muted | (136, 128, 112) #888070 | 129 / 24 | in range | silk |
 | Secondary 2 | grey roof tile | (98, 98, 100) #626264 | 98 / 2 | in range | quarter roofs |
-| Accent | dyed silk thread, small | (138, 96, 90) #8A605A | 104 / 48 | in range, small areas only | the dyes it imports |
+| Accent | dyed silk thread, small | (138, 96, 90) #8A605A | 104 / 48 | small-area accent (chroma 48) | the dyes it imports |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a folded bolt, a shuttle. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a dense quarter of low loom houses with long windows; a guild hall with a stepped roof. 7. Do and don't: README shared list.
 
@@ -149,12 +149,12 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** "the rhythmic clack of a hundred looms, the rustle of silk, and green tea steam"; sampans gliding.
+- **Soundscape:** "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam" (C:12139); sampans gliding.
 - **Signature:** loom shuttle clack; silk bolt unfolded (custom: folded, never rolled); tea steam hiss.
 - **Music/work songs (NOTE ONLY):** none; loom rhythm is the pulse.
 - **Vs neighbours:** soft fabric + wood looms vs Jade Port's ceramic taps.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.loom_shuttle`, `mat.silk_fold`, `src.sampan_scull`.
-- Cited hooks: atmosphere "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam."; dock scene "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch." (C:12136 area).
+- Cited hooks: atmosphere "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam." (C:12139); dock scene "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch." (C:12140).
 - Invented bed idea: hundreds of looms clacking; the calligrapher's brush. No assets are requested.
 
 ## J. Flags for this port

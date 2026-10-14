@@ -69,7 +69,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Palace is the kingdom: Coral Throne is the Coral King's court with a harbour attached. Landmark [cite]: "The Coral Palace - grown over centuries from living reef, rising from the lagoon like a crown." (C:12196 area). Cited buildings: The Lagoon Entrance (harbor_master, C:11220); The Pearl Hall (exchange, C:11230); The Coral Palace (governor, C:11240); The Drum Circle (tavern, C:11250); The War Canoe Dock (customs, C:11260); The Royal Trading Post (broker, C:11270). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Palace is the kingdom: Coral Throne is the Coral King's court with a harbour attached. Landmark [cite]: "The Coral Palace - grown over centuries from living reef, rising from the lagoon like a crown." (C:12196 area). Cited buildings: The Lagoon Entrance (harbor_master, C:11220); The Pearl Hall (exchange, C:11230); The Coral Palace (governor, C:11240); The Drum Circle (tavern, C:11250); The War Canoe Dock (customs, C:11260); The Royal Trading Post (broker, C:11270). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/coral_palace.md.
 2. Materials: local and abundant (exports): Pearls, Tobacco, Rum; scarce or luxury (imports): Weapons, Silk, Tea, Grain, Pelts, Porcelain (section A). Atmosphere [cite]: "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums." (C:12196 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -77,7 +77,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 |---|---|---|---|---|---|
 | Dominant | pale reef stone | (132, 126, 112) #847E70 | 126 / 20 | in range | coral reefs |
 | Secondary 1 | lagoon shallows, muted | (92, 112, 108) #5C706C | 107 / 20 | in range | the lagoon |
-| Secondary 2 | woven fibre | (118, 104, 82) #766852 | 105 / 36 | mood, not values | houses |
+| Secondary 2 | woven fibre | (118, 104, 83) #766853 | 105 / 35 | in range | houses |
 | Accent | pearl and tribute silk, small | (148, 136, 120) #948878 | 137 / 28 | in range | pearls and tribute |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a crown of coral branches. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a palace of grown coral rising from the lagoon, smaller reef houses ringed around it. 7. Do and don't: README shared list.
@@ -146,12 +146,12 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** lagoon calm; "the distant beat of ceremonial drums"; crushed coral underfoot; war-canoe escort paddles.
+- **Soundscape:** lagoon calm; "the distant beat of ceremonial drums" (C:12199); crushed coral underfoot; war-canoe escort paddles.
 - **Signature:** footstep on crushed coral; war-canoe paddle strokes in unison; tribute chest set before the court.
 - **Music/work songs (NOTE ONLY):** ceremonial drums are canon - strongest drum note after Stormwall; keep distinct (royal, slow) if music opens.
 - **Vs neighbours:** ceremonial court; vs Ember Isle's geology, vs Typhoon's wind.
 - **Fragments [proposal; no fragment or asset exists yet]:** `mat.crushed_coral`, `src.war_canoe_paddles`, `place.lagoon`.
-- Cited hooks: atmosphere "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums."; dock scene "The lagoon entrance is narrow and treacherous - local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock." (C:12196 area).
+- Cited hooks: atmosphere "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums." (C:12199); dock scene "The lagoon entrance is narrow and treacherous - local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock." (C:12200).
 - Invented bed idea: drums from the palace, surf on the outer reef. No assets are requested.
 
 ## J. Flags for this port

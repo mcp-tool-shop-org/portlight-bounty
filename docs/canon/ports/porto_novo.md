@@ -76,16 +76,16 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Exchange is the town: every street runs downhill to the Grain Exchange, and the bell decides the day. Landmark [cite]: "The Grain Exchange - a columned hall where prices are read aloud at dawn." (C:12006 area). Cited buildings: The Harbor Master's Tower (harbor_master, C:6958); The Grain Exchange (exchange, C:6968); Andros & Sons Shipyard (shipyard, C:6978); The Governor's Residence (governor, C:6988); The Harbor Bell (tavern, C:6998); The Customs House (customs, C:7008); The Broker's Desk (broker, C:7018). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Exchange is the town: every street runs downhill to the Grain Exchange, and the bell decides the day. Landmark [cite]: "The Grain Exchange - a columned hall where prices are read aloud at dawn." (C:12006 area). Cited buildings: The Harbor Master's Tower (harbor_master, C:6958); The Grain Exchange (exchange, C:6968); Andros & Sons Shipyard (shipyard, C:6978); The Governor's Residence (governor, C:6988); The Harbor Bell (tavern, C:6998); The Customs House (customs, C:7008); The Broker's Desk (broker, C:7018). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/grain_exchange.md, ../landmarks/porto_novo_beacon.md.
 2. Materials: local and abundant (exports): Grain, Rum; scarce or luxury (imports): Timber, Cotton, Dyes, Pelts, Porcelain (section A). Atmosphere [cite]: "Flour dust, sea salt, and the shouts of dockhands loading grain barges." (C:12006 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
 | Dominant | limewashed stone in shade | (120, 114, 104) #787268 | 115 / 16 | in range | the columned Grain Exchange |
-| Secondary 1 | grain-sack hemp | (128, 112, 86) #807056 | 114 / 42 | mood, not values | grain, its main export |
+| Secondary 1 | grain-sack hemp | (126, 112, 91) #7E705B | 113 / 35 | in range | grain, its main export |
 | Secondary 2 | harbour slate | (92, 96, 98) #5C6062 | 95 / 6 | in range | quay and civic roofs |
-| Accent | Exchange brass | (150, 126, 80) #967E50 | 128 / 70 | mood, not values | the harbour bell and scale pans |
+| Accent | Exchange brass | (148, 126, 84) #947E54 | 128 / 64 | small-area accent (chroma 64) | the harbour bell and scale pans |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a balance scale, wheat sheaf, the bell. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a columned hall on a rise with warehouses stepping down to the quay; the harbour bell tower is the tallest point. 7. Do and don't: README shared list.
 
@@ -150,12 +150,13 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
-- **Soundscape:** big, busy stone quays; "shouts of dockhands loading grain barges"; barges knocking fenders; sacks thudding.
+- **Soundscape:** big, busy stone quays; "shouts of dockhands loading grain barges" (C:12009); barges knocking fenders; sacks thudding.
 - **Signature:** heavy grain sack dropped on stone; stylus on wax tablet (clerks tallying bushels); the harbour bell rung on first arrival (custom) - port-ambience only.
+- **Sea mark:** "The beacon of Porto Novo breaks through the haze. You're on course." (crates/portlight-sim/src/voyage.rs:594); see ../landmarks/porto_novo_beacon.md
 - **Music/work songs (NOTE ONLY):** dockhand call-and-response is plausible but canon says "shouts", not song - keep as shouts (and voice is on hold).
 - **Vs neighbours:** the loud, open, grain-dusty Med hub; Al-Manar whispers, Silva Bay is woodwork.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.grain_sack_drop`, `mat.wax_tablet`, `place.stone_quay`.
-- Cited hooks: atmosphere "Flour dust, sea salt, and the shouts of dockhands loading grain barges."; dock scene "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks." (C:12006 area).
+- Cited hooks: atmosphere "Flour dust, sea salt, and the shouts of dockhands loading grain barges." (C:12009); dock scene "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks." (C:12010).
 - Invented bed idea: dawn price-calling in the Exchange; the arrival bell; grain chutes. No assets are requested.
 
 ## J. Flags for this port

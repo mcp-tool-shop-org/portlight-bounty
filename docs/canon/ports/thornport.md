@@ -67,16 +67,16 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Whale Arch is the town's gate: Thornport is a whaling town that learned to trade. Landmark [cite]: "The Whale Arch - a jawbone arch spanning the harbor entrance, bleached white by decades of salt." (C:12066 area). Cited buildings: The Whale Dock (harbor_master, C:8328); The Blending Room (exchange, C:8338); The Meeting Bench (governor, C:8348); The Whale Bone (tavern, C:8358); Bones' Boat Yard (shipyard, C:8368); The Stamp Desk (customs, C:8378); Erik's Desk (broker, C:8388). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
+1. Architecture. Identity line [invented]: The Whale Arch is the town's gate: Thornport is a whaling town that learned to trade. Landmark [cite]: "The Whale Arch - a jawbone arch spanning the harbor entrance, bleached white by decades of salt." (C:12066 area). Cited buildings: The Whale Dock (harbor_master, C:8328); The Blending Room (exchange, C:8338); The Meeting Bench (governor, C:8348); The Whale Bone (tavern, C:8358); Bones' Boat Yard (shipyard, C:8368); The Stamp Desk (customs, C:8378); Erik's Desk (broker, C:8388). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes). Landmark canon: ../landmarks/whale_arch.md.
 2. Materials: local and abundant (exports): Tea, Tobacco, Timber, Pelts; scarce or luxury (imports): Medicines, Silk, Spice, Porcelain (section A). Atmosphere [cite]: "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds." (C:12066 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | weathered grey shingle | (106, 104, 98) #6A6862 | 104 / 8 | in range | wood-shingled houses |
+| Dominant | weathered grey shingle | (100, 98, 92) #64625C | 98 / 8 | in range | wood-shingled houses |
 | Secondary 1 | peat-smoked timber | (88, 78, 66) #584E42 | 79 / 22 | in range | timber export |
-| Secondary 2 | fog-grey sea | (110, 116, 118) #6E7476 | 115 / 8 | in range | fog banks |
-| Accent | bleached bone | (150, 146, 132) #969284 | 146 / 18 | mood, not values | the Whale Arch |
+| Secondary 2 | fog-bank grey | (110, 116, 118) #6E7476 | 115 / 8 | in range | fog banks |
+| Accent | bleached bone | (144, 140, 126) #908C7E | 140 / 18 | in range | the Whale Arch |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: the arch, a tea kettle. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a white jawbone arch over the harbour mouth, low shingled houses behind. 7. Do and don't: README shared list.
 
@@ -137,10 +137,11 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 
 - **Soundscape:** smoky whaling pier; wood-smoke crackle; fish racks in wind; tea brewing beside crates.
 - **Signature:** harpoon set on rack (wood shaft, iron head); tea kettle on a wooden crate; tobacco leaf rustle in curing sheds.
+- **Sea mark:** "The Whale Arch of Thornport stands white against the grey sky." (crates/portlight-sim/src/voyage.rs:598); see ../landmarks/whale_arch.md
 - **Music/work songs (NOTE ONLY):** none in canon (shanties would be invented - avoid).
 - **Vs neighbours:** domestic, slower North Atlantic port; no forge (Ironhaven), no drums (Stormwall).
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.harpoon_rack`, `src.kettle_crate`, `mat.tobacco_leaf`.
-- Cited hooks: atmosphere "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds."; dock scene "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers." (C:12066 area).
+- Cited hooks: atmosphere "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds." (C:12069); dock scene "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers." (C:12070).
 - Invented bed idea: the creak of the boat yard; Old Magnus telling stories. No assets are requested.
 
 ## J. Flags for this port
