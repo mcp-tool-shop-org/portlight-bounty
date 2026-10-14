@@ -730,6 +730,18 @@ struct PortlightGame {
     recap_card_nodes: Option<crate::recap_card::RecapCardNodes>,
     /// Contract recap cards waiting to draw, oldest first (Godot memory).
     recap_queue: crate::recap_card::RecapQueue,
+    /// The chart note label; it carries the first-voyage hint (hints.rs).
+    chart_hint: Option<Gd<Label>>,
+    /// First-voyage hint flags. Never saved: reset on a new game, seeded on load.
+    hint_sailed_with_contract: bool,
+    hint_journal_seen: bool,
+    /// `--first-voyage-hints` smoke state (never saved).
+    hints_checked: bool,
+    hint_shot: Option<HintShot>,
+    hint_shot_done: bool,
+    /// Smoke only: draw the muted note for the no-hint layout measure.
+    smoke_hide_hint: bool,
+    hint_layout: Option<(Rect2, f32)>,
     /// A storm or route-event sinking's recap, opened when the day's report closes.
     pending_sink_recap: Option<EncounterFacts>,
     day_report_doc: Option<DayReportDocument>,
@@ -939,6 +951,14 @@ impl IControl for PortlightGame {
             day_report_open: false,
             recap_card_nodes: None,
             recap_queue: crate::recap_card::RecapQueue::default(),
+            chart_hint: None,
+            hint_sailed_with_contract: false,
+            hint_journal_seen: false,
+            hints_checked: false,
+            hint_shot: None,
+            hint_shot_done: false,
+            smoke_hide_hint: false,
+            hint_layout: None,
             pending_sink_recap: None,
             day_report_doc: None,
             day_report_memory: DayReportMemory::default(),
@@ -1147,6 +1167,19 @@ impl IControl for PortlightGame {
             } else {
                 self.capture_frames = 2;
             }
+        } else if user_arg("--first-voyage-hints") {
+            // Fix A: headless runs the real-verb hint walk; a shot run takes
+            // the frame after Begin, then measures the layout without a hint.
+            self.smoke = true;
+            self.hints_checked = true;
+            if self.shot_path.is_some() {
+                self.start_game();
+                self.hint_shot = Some(HintShot::WithHint);
+                self.capture_frames = 4;
+            } else {
+                self.run_first_voyage_hints_smoke();
+                self.capture_frames = 2;
+            }
         } else if scripted_launch() {
             self.start_game();
             self.launch_scripted();
@@ -1208,6 +1241,9 @@ impl IControl for PortlightGame {
         if self.advance_market_paid_shot() {
             return;
         }
+        if self.advance_hint_shot() {
+            return;
+        }
         if self.advance_departure_smoke() {
             return;
         }
@@ -1253,6 +1289,7 @@ impl IControl for PortlightGame {
             && self.loss_outcome_shot_dir.is_none()
             && self.sunk_shot_dir.is_none()
             && self.departure_shot_dir.is_none()
+            && !self.hint_shot_done
         {
             if let Some(path) = self.shot_path.clone() {
                 // `--encounter-galleon` is still on the encounter screen. The
@@ -1322,6 +1359,11 @@ impl IControl for PortlightGame {
         } else if self.departure_checked {
             godot_print!(
                 "portlight departure-check smoke {}",
+                if self.smoke_ok { "ok" } else { "FAILED" }
+            );
+        } else if self.hints_checked {
+            godot_print!(
+                "portlight first-voyage-hints smoke {}",
                 if self.smoke_ok { "ok" } else { "FAILED" }
             );
         } else if self.trade_checked {
@@ -1688,11 +1730,10 @@ impl PortlightGame {
         self.stance_label = Some(stance_label);
         self.duel_button = Some(duel);
 
-        column.add_child(&body_label(
-            "Lanes from the sail picker. Days use raw ship speed.",
-            13,
-            MUTED,
-        ));
+        let mut chart_hint = body_label(crate::hints::CHART_NOTE, 13, MUTED);
+        chart_hint.set_name(crate::hints::HINT_NODE);
+        column.add_child(&chart_hint);
+        self.chart_hint = Some(chart_hint);
         let (lane_scroll, lane_box) = scrolling(220.0);
         column.add_child(&lane_scroll);
         self.lane_box = Some(lane_box);
@@ -1876,6 +1917,7 @@ impl PortlightGame {
         self.recap_queue.reset();
         self.reset_departure();
         self.reset_trade();
+        self.reset_hint_flags();
         self.encounter = None;
         match Session::new(
             FIRST_PLAYABLE_NAME,
@@ -2058,6 +2100,7 @@ impl PortlightGame {
         self.recap_queue.reset();
         self.reset_departure();
         self.reset_trade();
+        self.reset_hint_flags();
         self.session = Some(session);
         self.newgame_notice.clear();
         self.push_log(format!("A new voyage begins. Docked at {place}."));
@@ -2089,6 +2132,7 @@ impl PortlightGame {
                 self.recap_queue.reset();
                 self.reset_departure();
                 self.reset_trade();
+                self.seed_hint_flags(&session);
                 self.session = Some(session);
                 self.push_log(format!("Loaded slot {slot}. {where_line}"));
                 self.play_sfx("sfx_ui_newgame_start");
@@ -2283,6 +2327,7 @@ impl PortlightGame {
         }
         self.close_day_report();
         self.journal_open = true;
+        self.hint_journal_seen = true;
         self.journal_filled = false;
         self.refresh();
         self.scroll_journal_to(0);
@@ -4475,6 +4520,7 @@ impl PortlightGame {
         };
         match result {
             Ok(name) => {
+                self.note_sailed_for_hints();
                 self.market_notice.clear();
                 self.play_sfx("sfx_chart_sail_depart");
                 // The fee is what the session took: silver before less after.
@@ -6218,6 +6264,310 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn hint_fail(&mut self, line: impl Into<String>) {
+        let line = line.into();
+        godot_print!("{line}");
+        self.push_log(line);
+        self.smoke_ok = false;
+    }
+
+    /// The bridge's `state.ui.hint`, read through `augment` as the bridge
+    /// reads it: `(id, text)` or None for null.
+    fn state_ui_hint(&self) -> Option<(String, String)> {
+        let observation = self.playtest_observation_dict();
+        let node: Gd<Node> = self.base().clone().upcast();
+        let result = crate::playtest::PortlightPlaytestLens::augment(Some(node), observation);
+        let hint = result
+            .get("state")
+            .and_then(|value| value.try_to::<VarDictionary>().ok())
+            .and_then(|state| state.get("ui"))
+            .and_then(|ui| ui.try_to::<VarDictionary>().ok())
+            .and_then(|ui| ui.get("hint"))
+            .and_then(|hint| hint.try_to::<VarDictionary>().ok())?;
+        let field = |key: &str| {
+            hint.get(key)
+                .map(|value| value.to::<GString>().to_string())
+                .unwrap_or_default()
+        };
+        Some((field("id"), field("text")))
+    }
+
+    /// One step of the hint walk: the label draws `want` (CREAM, one line)
+    /// or the muted note, and `state.ui.hint` equals it.
+    fn expect_hint(&mut self, step: &str, want: Option<&str>) {
+        let Some(label) = self.chart_hint.clone() else {
+            self.hint_fail(format!("Hint smoke {step}: no ChartHint label."));
+            return;
+        };
+        let text = label.get_text().to_string();
+        let color = label.get_theme_color("font_color");
+        let lines = label.get_line_count();
+        let bridge = self.state_ui_hint();
+        let want_row = want.and_then(|id| {
+            crate::hints::FIRST_VOYAGE_HINTS
+                .iter()
+                .find(|hint| hint.id == id)
+        });
+        let (want_text, want_color) = match want_row {
+            Some(hint) => (hint.text, CREAM),
+            None => (crate::hints::CHART_NOTE, MUTED),
+        };
+        let want_bridge = want_row.map(|hint| (hint.id.to_string(), hint.text.to_string()));
+        godot_print!("hint smoke {step}: {text:?} lines {lines} bridge {bridge:?}");
+        if label.get_name() != crate::hints::HINT_NODE
+            || text != want_text
+            || color != want_color
+            || lines != 1
+            || text.len() > crate::hints::HINT_MAX_CHARS
+            || bridge != want_bridge
+        {
+            self.hint_fail(format!(
+                "Hint smoke {step}: want {want:?}, label {text:?} lines {lines}, bridge {bridge:?}."
+            ));
+        }
+    }
+
+    /// `--first-voyage-hints` (Fix A), Merchant Ada seed 1, real verbs.
+    fn run_first_voyage_hints_smoke(&mut self) {
+        self.start_game();
+        self.expect_hint("begin", Some("first_contract"));
+        self.perform(Action::OpenContracts);
+        self.expect_hint("contracts open", None);
+        let offer = self.session.as_mut().and_then(|session| {
+            session
+                .available_contracts()
+                .into_iter()
+                .find(|offer| {
+                    offer.good_id == "grain" && offer.destination_port_id == "corsairs_rest"
+                })
+                .map(|offer| (offer.id, offer.quantity))
+        });
+        let Some((offer_id, required)) = offer else {
+            self.hint_fail("Hint smoke: no grain starter for Corsair's Rest.");
+            return;
+        };
+        self.accept_contract_offer(&offer_id);
+        self.expect_hint("accepted, desk open", None);
+        self.perform(Action::CloseContracts);
+        self.expect_hint("accepted", Some("first_sale"));
+        self.perform(Action::ToggleMarket);
+        if !self.market_open {
+            self.hint_fail("Hint smoke: Market did not open.");
+        }
+        self.expect_hint("market open", None);
+        self.perform(Action::CycleTradeQty);
+        self.perform(Action::CycleTradeQty);
+        for _ in 0..6 {
+            if self.held("grain") >= required + 5 {
+                break;
+            }
+            self.perform(Action::Buy("grain".into()));
+        }
+        self.perform(Action::ToggleMarket);
+        self.expect_hint("loaded", Some("first_sale"));
+        self.perform(Action::OpenJournal);
+        self.expect_hint("journal open", None);
+        self.perform(Action::CloseJournal);
+        // Opening the Journal early does not clear the first-sale hint.
+        self.expect_hint("journal closed", Some("first_sale"));
+        self.depart_now("corsairs_rest");
+        self.expect_hint("sailed", None);
+        for _ in 0..40 {
+            if self.docked_id() == Some("corsairs_rest") {
+                break;
+            }
+            if self.day_report_open {
+                self.expect_hint("day report", None);
+            }
+            self.close_day_report();
+            if self.encounter.is_some() {
+                self.encounter = None;
+            }
+            self.next_day();
+        }
+        if self.docked_id() != Some("corsairs_rest") {
+            self.hint_fail("Hint smoke: never docked at Corsair's Rest.");
+            return;
+        }
+        self.close_day_report();
+        self.expect_hint("docked with the goods", None);
+        self.perform(Action::ToggleMarket);
+        let mut card = false;
+        for _ in 0..6 {
+            let still = self.session.as_ref().is_some_and(|session| {
+                session
+                    .board()
+                    .active
+                    .iter()
+                    .any(|contract| contract.offer_id == offer_id)
+            });
+            if !still {
+                break;
+            }
+            self.perform(Action::Sell("grain".into()));
+            if self.recap_card_open() {
+                card = true;
+                self.expect_hint("recap card", None);
+            }
+        }
+        if !card {
+            self.hint_fail("Hint smoke: the settling sale raised no recap card.");
+        }
+        self.perform(Action::CloseRecap);
+        self.perform(Action::ToggleMarket);
+        self.expect_hint("sold", None);
+
+        // Separately: the won-encounter stage, then the Journal.
+        self.prepare_scripted_voyage();
+        self.open_scripted_approach();
+        self.expect_hint("approach", None);
+        self.choose_encounter("fight");
+        self.play_scripted_naval();
+        self.resolve_board();
+        self.play_scripted_fight();
+        self.spare_enemy_checked();
+        let wins = self.session.as_ref().map(hint_wins).unwrap_or(0);
+        let naval = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.naval_victories)
+            .unwrap_or(0);
+        godot_print!("hint smoke won encounter: wins {wins} (naval {naval})");
+        if wins <= 0 {
+            self.hint_fail("Hint smoke: a won encounter raised no win count.");
+        }
+        self.expect_hint("won recap", None);
+        self.leave_encounter();
+        let want = self
+            .hint_facts()
+            .and_then(|facts| crate::hints::active_hint(&facts))
+            .map(|hint| hint.id);
+        if want != Some("journal_paths") {
+            self.hint_fail(format!(
+                "Hint smoke: after the win the table picked {want:?}, facts {:?}.",
+                self.hint_facts()
+            ));
+        }
+        self.expect_hint("after the win", Some("journal_paths"));
+        self.perform(Action::OpenJournal);
+        self.expect_hint("journal after the win", None);
+        self.perform(Action::CloseJournal);
+        self.expect_hint("journal seen", None);
+    }
+
+    /// Shot run: save the Begin frame, then re-lay the chart with the muted
+    /// note and check the ChartHint rect and the lane scroll y hold.
+    fn advance_hint_shot(&mut self) -> bool {
+        let Some(phase) = self.hint_shot else {
+            return false;
+        };
+        let measure = |game: &Self| -> Option<(Rect2, f32)> {
+            let label = game.chart_hint.as_ref()?;
+            let scroll = game
+                .lane_box
+                .as_ref()?
+                .get_parent()?
+                .try_cast::<Control>()
+                .ok()?;
+            Some((label.get_global_rect(), scroll.get_global_position().y))
+        };
+        match phase {
+            HintShot::WithHint => {
+                self.expect_hint("begin frame", Some("first_contract"));
+                self.hint_layout = measure(self);
+                if let Some(path) = self.shot_path.clone() {
+                    if !self.save_shot(&path, false) {
+                        self.capture_failed = true;
+                    }
+                }
+                self.smoke_hide_hint = true;
+                self.refresh();
+                self.hint_shot = Some(HintShot::NoHint);
+                self.capture_frames = 2;
+                true
+            }
+            HintShot::NoHint => {
+                self.hint_shot = None;
+                self.hint_shot_done = true;
+                self.expect_hint("no-hint layout", None);
+                let without = measure(self);
+                godot_print!(
+                    "hint layout: with {:?} without {:?}",
+                    self.hint_layout,
+                    without
+                );
+                if without.is_none() || without != self.hint_layout {
+                    self.hint_fail("Hint smoke: the hint moved the ChartHint rect or the lanes.");
+                }
+                self.smoke_hide_hint = false;
+                false
+            }
+        }
+    }
+
+    fn reset_hint_flags(&mut self) {
+        self.hint_sailed_with_contract = false;
+        self.hint_journal_seen = false;
+    }
+
+    /// A loaded save seeds the hint flags, so a veteran save shows no old hint.
+    fn seed_hint_flags(&mut self, session: &Session) {
+        let (sailed, seen) = crate::hints::seed_from_load(
+            session.board().completed.len(),
+            session.world().voyage.status == VoyageStatus::AtSea,
+            hint_wins(session),
+        );
+        self.hint_sailed_with_contract = sailed;
+        self.hint_journal_seen = seen;
+    }
+
+    /// A successful sail with a contract held clears the first-sale hint.
+    fn note_sailed_for_hints(&mut self) {
+        if self
+            .session
+            .as_ref()
+            .is_some_and(|session| !session.board().active.is_empty())
+        {
+            self.hint_sailed_with_contract = true;
+        }
+    }
+
+    fn hint_facts(&self) -> Option<crate::hints::HintFacts> {
+        let session = self.session.as_ref()?;
+        Some(crate::hints::HintFacts {
+            docked: self.docked_id().is_some(),
+            active: session.board().active.len(),
+            settled: session.board().completed.len(),
+            wins: hint_wins(session),
+            sailed_with_contract: self.hint_sailed_with_contract,
+            journal_seen: self.hint_journal_seen,
+        })
+    }
+
+    /// The hint to draw now: none while anything covers the chart panel.
+    fn chart_hint_now(&self) -> Option<&'static crate::hints::HintSpec> {
+        let covered = !self.open_desks().is_empty()
+            || self.market_open
+            || self.recap_card_open()
+            || self.newgame_page != NewgamePage::Hidden;
+        if covered || self.smoke_hide_hint {
+            return None;
+        }
+        crate::hints::active_hint(&self.hint_facts()?)
+    }
+
+    fn sync_chart_hint(&mut self) {
+        let hint = self.chart_hint_now();
+        if let Some(label) = self.chart_hint.as_mut() {
+            let (text, color) = match hint {
+                Some(hint) => (hint.text, CREAM),
+                None => (crate::hints::CHART_NOTE, MUTED),
+            };
+            label.set_text(text);
+            label.add_theme_color_override("font_color", color);
+        }
+    }
+
     fn refresh(&mut self) {
         let docked = self.docked_id().is_some();
         let pending = self
@@ -6297,6 +6647,7 @@ impl PortlightGame {
         self.sync_hunt();
         self.sync_day_report();
         self.sync_recap_card();
+        self.sync_chart_hint();
         self.sync_contract_strip();
         self.sync_departure_check();
     }
@@ -12551,6 +12902,7 @@ impl PortlightGame {
         self.stances.clear();
         self.encounter = None;
         self.scripted_captain = None;
+        self.reset_hint_flags();
         match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
             Ok(mut session) => match scripted_depart(&mut session) {
                 Ok(fee) => {
@@ -13144,6 +13496,7 @@ impl PortlightGame {
         self.log_lines.clear();
         self.encounter = None;
         self.scripted_captain = None;
+        self.reset_hint_flags();
         match Session::new(SCRIPTED_NAME, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_SEED, None) {
             Ok(session) => self.session = Some(session),
             Err(err) => {
@@ -14664,6 +15017,19 @@ fn title_label(text: &str, size: i32, color: Color) -> Gd<Label> {
     label.add_theme_font_size_override("font_size", size);
     label.add_theme_color_override("font_color", color);
     label
+}
+
+/// `--first-voyage-hints` shot phases.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HintShot {
+    WithHint,
+    NoHint,
+}
+
+/// Won fights, naval and personal, for the journal hint.
+fn hint_wins(session: &Session) -> i64 {
+    let captain = &session.world().captain;
+    captain.naval_victories + captain.duels_won
 }
 
 fn body_label(text: &str, size: i32, color: Color) -> Gd<Label> {

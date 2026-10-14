@@ -999,7 +999,8 @@ pub(crate) struct PortlightPlaytestLens {}
 impl PortlightPlaytestLens {
     /// Adds `state.contract_strip`, `state.contract_board`,
     /// `state.contracts_active`, `state.day_report` (null unless the card is
-    /// showing), and `state.journal` (null unless the Journal is open), and
+    /// showing), `state.journal` (null unless the Journal is open),
+    /// `state.ui.hint` (the first-voyage chart hint, or null), and
     /// the same facts as text lines before `Actions:`.
     /// Returns the observation unchanged when `game` is null.
     ///
@@ -1018,6 +1019,7 @@ impl PortlightPlaytestLens {
         let view = read_contracts_view(&game, contracts_open);
         let day_report = read_day_report_view(&game);
         let journal = read_journal_view(&game);
+        let hint = read_chart_hint(&game);
 
         let mut result = observation.clone();
         let mut state = observation
@@ -1035,6 +1037,15 @@ impl PortlightPlaytestLens {
             Some(view) => state.set("journal", &view.to_dictionary()),
             None => state.set("journal", &Variant::nil()),
         }
+        let mut ui = state
+            .get("ui")
+            .and_then(|value| value.try_to::<VarDictionary>().ok())
+            .unwrap_or_default();
+        match hint_key(hint.as_deref()) {
+            Some((id, text)) => ui.set("hint", &vdict! { "id" => id, "text" => text }),
+            None => ui.set("hint", &Variant::nil()),
+        }
+        state.set("ui", &ui);
         result.set("state", &state);
 
         let text = observation
@@ -1418,6 +1429,22 @@ fn collect_copy(node: &Gd<Node>, out: &mut Vec<String>) {
     for child in node.get_children().iter_shared() {
         collect_copy(&child, out);
     }
+}
+
+/// The drawn text of the chart note (`ChartHint`), when it is on screen.
+fn read_chart_hint(game: &Gd<Node>) -> Option<String> {
+    let label = find_named(game, crate::hints::HINT_NODE)?
+        .try_cast::<Label>()
+        .ok()?;
+    label
+        .is_visible_in_tree()
+        .then(|| label.get_text().to_string())
+}
+
+/// `state.ui.hint`: the table row whose text the label draws, else null. The
+/// muted chart note (no hint) is null.
+pub(crate) fn hint_key(drawn: Option<&str>) -> Option<(&'static str, &'static str)> {
+    crate::hints::hint_by_text(drawn?).map(|hint| (hint.id, hint.text))
 }
 
 fn find_named(root: &Gd<Node>, name: &str) -> Option<Gd<Node>> {
@@ -1978,6 +2005,15 @@ mod tests {
     /// RC3 (RV 1): the contract card is modal everywhere and ranks just
     /// under the Day's report. While the report is up the card waits and a
     /// chart press closes the report, never the card.
+    #[test]
+    fn state_ui_hint_key() {
+        for hint in crate::hints::FIRST_VOYAGE_HINTS {
+            assert_eq!(hint_key(Some(hint.text)), Some((hint.id, hint.text)));
+        }
+        assert_eq!(hint_key(Some(crate::hints::CHART_NOTE)), None);
+        assert_eq!(hint_key(None), None);
+    }
+
     #[test]
     fn recap_yields_to_the_report() {
         use BlockingOverlay::*;
