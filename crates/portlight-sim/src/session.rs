@@ -2363,6 +2363,66 @@ impl Session {
         )
     }
 
+    /// Bank `amount` carried silver at this port's counting house. Returns
+    /// the account's new balance.
+    pub fn deposit_silver(&mut self, amount: i64) -> Result<i64, SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToBank)?;
+        let day = self.world.day;
+        let balance = crate::bank::deposit(
+            &mut self.infra,
+            &mut self.world.captain,
+            &port_id,
+            amount,
+            day,
+        )?;
+        self.project_books();
+        Ok(balance)
+    }
+
+    /// Withdraw from this port's account. Returns `(received, fee)`.
+    pub fn withdraw_silver(&mut self, amount: i64) -> Result<(i64, i64), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToBank)?;
+        let drawn =
+            crate::bank::withdraw(&mut self.infra, &mut self.world.captain, &port_id, amount)?;
+        self.project_books();
+        Ok(drawn)
+    }
+
+    /// Draw on the account at `source_port` by letter of credit. Returns
+    /// `(received, fee)`.
+    pub fn draw_letter(&mut self, source_port: &str, amount: i64) -> Result<(i64, i64), SimError> {
+        let port_id = current_port_id(&self.world)
+            .map(str::to_string)
+            .ok_or(SimError::MustBeDockedToBank)?;
+        let drawn = crate::bank::draw_letter(
+            &mut self.infra,
+            &mut self.world.captain,
+            &port_id,
+            source_port,
+            amount,
+        )?;
+        self.project_books();
+        Ok(drawn)
+    }
+
+    /// `(port_id, balance)` per account, in port-id order.
+    pub fn bank_balances(&self) -> Vec<(String, i64)> {
+        self.infra
+            .bank
+            .iter()
+            .map(|account| (account.port_id.clone(), account.balance))
+            .collect()
+    }
+
+    /// Silver across every counting-house account.
+    pub fn banked_total(&self) -> i64 {
+        self.infra.banked_total()
+    }
+
     /// Move cargo from the warehouse at the current port onto the ship.
     pub fn withdraw_cargo(
         &mut self,
@@ -2715,6 +2775,7 @@ impl Session {
     }
 
     fn project_books(&mut self) {
+        self.books.banked = self.infra.banked_total();
         self.books.warehouses = self
             .infra
             .warehouses
@@ -6220,5 +6281,378 @@ mod sink_tests {
             session.hunt_bounty("nobody"),
             Err(SimError::HullTooLowToHunt { .. })
         ));
+    }
+}
+
+#[cfg(test)]
+mod bank_tests {
+    use super::*;
+    use crate::bank::{self, BANK_MINIMUM};
+    use crate::model::{CreditState, DeferredFee};
+
+    /// A merchant docked at Porto Novo (a counting house) with silver.
+    fn docked(silver: i64) -> Session {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session.world.captain.silver = silver;
+        session
+    }
+
+    /// Put the ship in port at `port_id` (test shortcut, no voyage).
+    fn dock_at(session: &mut Session, port_id: &str) {
+        session.world.voyage.destination_id = port_id.to_string();
+        session.world.voyage.status = VoyageStatus::InPort;
+    }
+
+    #[test]
+    fn seven_counting_houses_at_the_commercial_ports() {
+        assert_eq!(
+            bank::counting_house_ports(),
+            [
+                "al_manar",
+                "ironhaven",
+                "jade_port",
+                "monsoon_reach",
+                "porto_novo",
+                "silva_bay",
+                "typhoon_anchorage",
+            ]
+        );
+        assert!(!bank::has_counting_house("palm_cove"));
+    }
+
+    #[test]
+    fn deposit_requires_counting_house_and_minimum() {
+        let mut session = docked(1000);
+        dock_at(&mut session, "palm_cove");
+        assert_eq!(session.deposit_silver(100), Err(SimError::NoCountingHouse));
+        dock_at(&mut session, "porto_novo");
+        assert_eq!(
+            session.deposit_silver(49),
+            Err(SimError::BelowBankMinimum { minimum: 50 })
+        );
+        assert_eq!(session.world.captain.silver, 1000);
+        assert_eq!(session.deposit_silver(BANK_MINIMUM), Ok(50));
+        assert_eq!(session.world.captain.silver, 950, "deposits are free");
+        assert_eq!(session.deposit_silver(100), Ok(150));
+        assert_eq!(
+            session.deposit_silver(5000),
+            Err(SimError::InsufficientSilver { have: 850 })
+        );
+        assert_eq!(session.bank_balances(), [("porto_novo".to_string(), 150)]);
+        assert_eq!(session.banked_total(), 150);
+        assert_eq!(session.books().banked, 150);
+        let day = session.world.day;
+        assert_eq!(session.infra.bank[0].opened_day, day);
+        // At sea: refused.
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        session.depart(&lane).unwrap();
+        assert_eq!(
+            session.deposit_silver(100),
+            Err(SimError::MustBeDockedToBank)
+        );
+    }
+
+    #[test]
+    fn withdraw_local_fee_one_percent_min_one() {
+        assert_eq!(bank::local_fee(100), 1);
+        assert_eq!(bank::local_fee(50), 1);
+        assert_eq!(bank::local_fee(1000), 10);
+        assert_eq!(bank::local_fee(199), 1);
+        let mut session = docked(2000);
+        session.deposit_silver(1500).unwrap();
+        assert_eq!(session.withdraw_silver(1000), Ok((990, 10)));
+        assert_eq!(session.world.captain.silver, 500 + 990);
+        assert_eq!(session.withdraw_silver(100), Ok((99, 1)));
+        assert_eq!(
+            session.withdraw_silver(1),
+            Err(SimError::BelowBankFee { fee: 1 })
+        );
+        assert_eq!(
+            session.withdraw_silver(500),
+            Err(SimError::InsufficientBalance {
+                port: "Porto Novo".to_string(),
+                have: 400
+            })
+        );
+        assert_eq!(session.withdraw_silver(400), Ok((396, 4)));
+        assert!(session.infra.bank.is_empty(), "an emptied account closes");
+        // Elsewhere: no local account to draw on.
+        dock_at(&mut session, "palm_cove");
+        assert_eq!(session.withdraw_silver(100), Err(SimError::NoCountingHouse));
+    }
+
+    #[test]
+    fn letter_fee_five_percent_min_five() {
+        assert_eq!(bank::letter_fee(1000), 50);
+        assert_eq!(bank::letter_fee(100), 5);
+        assert_eq!(bank::letter_fee(50), 5);
+        assert_eq!(bank::letter_fee(199), 9);
+        let mut session = docked(3000);
+        session.deposit_silver(2000).unwrap();
+        // Same port: that is a withdrawal.
+        assert_eq!(
+            session.draw_letter("porto_novo", 100),
+            Err(SimError::LetterOnLocalAccount)
+        );
+        dock_at(&mut session, "silva_bay");
+        // An empty account elsewhere.
+        assert_eq!(
+            session.draw_letter("al_manar", 100),
+            Err(SimError::InsufficientBalance {
+                port: content::content().port("al_manar").unwrap().name.clone(),
+                have: 0
+            })
+        );
+        assert_eq!(session.draw_letter("porto_novo", 1000), Ok((950, 50)));
+        assert_eq!(session.world.captain.silver, 1000 + 950);
+        assert_eq!(session.draw_letter("porto_novo", 100), Ok((95, 5)));
+        assert_eq!(
+            session.draw_letter("porto_novo", 5),
+            Err(SimError::BelowBankFee { fee: 5 })
+        );
+        assert_eq!(session.banked_total(), 900);
+        // Not at a counting house.
+        dock_at(&mut session, "palm_cove");
+        assert_eq!(
+            session.draw_letter("porto_novo", 100),
+            Err(SimError::NoCountingHouse)
+        );
+        // At sea.
+        dock_at(&mut session, "porto_novo");
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        session.depart(&lane).unwrap();
+        assert_eq!(
+            session.draw_letter("porto_novo", 100),
+            Err(SimError::MustBeDockedToBank)
+        );
+        assert_eq!(session.banked_total(), 900);
+    }
+
+    #[test]
+    fn bank_safe_from_wreck() {
+        let mut session = docked(1499);
+        session.deposit_silver(1000).unwrap();
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        session.depart(&lane).unwrap();
+        session.world.voyage.distance = 10;
+        session.world.voyage.progress = 3;
+        session.world.captain.silver = 499;
+        let outcome = session.sink_and_tow("fight", "pirates");
+        assert_eq!(outcome.silver_lost, 149, "30% of the 499 carried");
+        assert_eq!(session.bank_balances(), [("porto_novo".to_string(), 1000)]);
+    }
+
+    #[test]
+    fn bank_safe_from_plunder() {
+        let mut session = docked(1400);
+        session.deposit_silver(1000).unwrap();
+        session.plunder();
+        assert_eq!(
+            session.world.captain.silver, 300,
+            "a quarter of the 400 carried"
+        );
+        assert_eq!(session.banked_total(), 1000);
+    }
+
+    #[test]
+    fn nothing_auto_draws_from_bank() {
+        let mut session = docked(600);
+        session.deposit_silver(600).unwrap();
+        assert_eq!(session.world.captain.silver, 0);
+        let day = session.world.day;
+        session.world.captain.deferred_fees = vec![DeferredFee {
+            fee_type: "port".into(),
+            amount: 40,
+            day,
+        }];
+        session.infra.credit = Some(CreditState {
+            tier: "merchant_line".into(),
+            credit_limit: 300,
+            outstanding: 200,
+            next_due_day: day,
+            total_borrowed: 200,
+            active: true,
+            ..CreditState::default()
+        });
+        let lane = session.sail_lanes()[0].destination_id.clone();
+        // The port fee is not taken from the bank either: departing with 0
+        // carried is refused.
+        assert!(matches!(
+            session.depart(&lane),
+            Err(SimError::NeedPortFee { .. })
+        ));
+        assert_eq!(session.banked_total(), 600);
+        session.world.captain.silver = 3;
+        session.depart(&lane).unwrap();
+        assert_eq!(session.world.captain.silver, 0);
+        for _ in 0..12 {
+            if session.advance().is_err() {
+                break;
+            }
+        }
+        assert_eq!(session.bank_balances(), [("porto_novo".to_string(), 600)]);
+        let credit = session.infra.credit.as_ref().unwrap();
+        assert!(credit.defaults >= 1, "the unpaid line defaults");
+        assert_eq!(session.banked_total(), 600, "no seizure on default");
+    }
+
+    #[test]
+    fn campaign_counts_banked_silver() {
+        let mut session = docked(2500);
+        session.deposit_silver(2000).unwrap();
+        let progress = crate::campaign::compute_victory_progress(&session.world, &session.books);
+        let silver_req = |path: &str, text: &str| {
+            progress
+                .iter()
+                .find(|p| p.path_id == path)
+                .unwrap()
+                .requirements
+                .iter()
+                .find(|r| r.description == text)
+                .unwrap()
+                .clone()
+        };
+        let lawful = silver_req(crate::campaign::PATH_LAWFUL_HOUSE, "2000+ silver");
+        assert_eq!(lawful.detail, "Silver: 2500");
+        assert!(
+            lawful.action.is_empty(),
+            "met with 500 carried and 2000 banked"
+        );
+    }
+
+    #[test]
+    fn near_bankruptcy_counts_banked_silver() {
+        let fire = |carried: i64, banked: i64| {
+            let mut world =
+                crate::world::new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+            world.day = 11;
+            world.captain.silver = carried;
+            let books = HouseBooks {
+                banked,
+                ..HouseBooks::default()
+            };
+            let mut state = NarrativeState::default();
+            crate::narrative::evaluate_narrative(
+                &mut state,
+                &world,
+                &ContractBoard::default(),
+                &InfrastructureRecord::default(),
+                &books,
+                &[],
+                Some("porto_novo"),
+                &[],
+            )
+            .iter()
+            .map(|beat| beat.id.clone())
+            .collect::<Vec<_>>()
+        };
+        assert!(fire(10, 0).contains(&"near_bankruptcy".to_string()));
+        assert!(!fire(10, 500).contains(&"near_bankruptcy".to_string()));
+        assert!(fire(0, 2000).contains(&"wealth_milestone".to_string()));
+    }
+
+    #[test]
+    fn bank_messages_ascii_no_zero_terms() {
+        let lines = [
+            bank::deposit_message(500, "porto_novo"),
+            bank::withdraw_message(500, 5),
+            bank::withdraw_message(500, 0),
+            bank::letter_message(1000, "silva_bay", 50),
+            bank::letter_message(1000, "silva_bay", 0),
+        ];
+        let silva = content::content().port("silva_bay").unwrap().name.clone();
+        assert_eq!(lines[0], "Banked 500 silver at Porto Novo.");
+        assert_eq!(lines[1], "Withdrew 500 silver - fee 5.");
+        assert_eq!(lines[2], "Withdrew 500 silver.");
+        assert_eq!(
+            lines[3],
+            format!("Drew 1000 silver from {silva} by letter - fee 50.")
+        );
+        assert_eq!(
+            lines[4],
+            format!("Drew 1000 silver from {silva} by letter.")
+        );
+        let errors = [
+            SimError::MustBeDockedToBank,
+            SimError::NoCountingHouse,
+            SimError::BelowBankMinimum { minimum: 50 },
+            SimError::InsufficientBalance {
+                port: "Porto Novo".into(),
+                have: 3,
+            },
+            SimError::InsufficientSilver { have: 3 },
+            SimError::BelowBankFee { fee: 5 },
+            SimError::LetterOnLocalAccount,
+            SimError::UsageBankDeposit,
+            SimError::UsageBankWithdraw,
+            SimError::UsageBankLetter,
+        ];
+        for text in lines
+            .iter()
+            .cloned()
+            .chain(errors.iter().map(ToString::to_string))
+        {
+            assert!(text.is_ascii(), "{text}");
+            assert!(!text.contains("--") && !text.contains("  "), "{text}");
+            assert!(!text.contains(" 0 "), "no zero terms: {text}");
+        }
+    }
+
+    #[test]
+    fn save_v12_migrates_to_v13_empty_bank() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../parity");
+        let loaded = Session::load(&root, "infrastructure_v12").unwrap().unwrap();
+        assert!(loaded.infra.bank.is_empty());
+        assert_eq!(loaded.banked_total(), 0);
+        let mut data: serde_json::Value = serde_json::json!({"version": 12, "day": 4});
+        crate::save::migrate_save(&mut data).unwrap();
+        assert_eq!(data["version"], 13);
+        assert_eq!(data["day"], 4);
+    }
+
+    #[test]
+    fn save_v13_round_trip_with_accounts() {
+        let dir = std::env::temp_dir().join(format!("portlight-bank-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut session = docked(3000);
+        session.deposit_silver(700).unwrap();
+        dock_at(&mut session, "al_manar");
+        session.deposit_silver(300).unwrap();
+        session.save(&dir, "bank").unwrap();
+        let text = std::fs::read_to_string(dir.join("saves").join("bank.json")).unwrap();
+        let file: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(file["version"], 13);
+        assert_eq!(
+            file["infrastructure"]["bank"],
+            serde_json::json!([
+                {"port_id": "al_manar", "balance": 300, "opened_day": 1},
+                {"port_id": "porto_novo", "balance": 700, "opened_day": 1},
+            ])
+        );
+        let again = Session::load(&dir, "bank").unwrap().unwrap();
+        assert_eq!(again.infra.bank, session.infra.bank);
+        assert_eq!(again.books().banked, 1000);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn empty_bank_not_serialized() {
+        let dir = std::env::temp_dir().join(format!("portlight-nobank-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut session = docked(1000);
+        session.deposit_silver(100).unwrap();
+        session.withdraw_silver(100).unwrap();
+        assert!(session.infra.bank.is_empty());
+        session.save(&dir, "plain").unwrap();
+        let text = std::fs::read_to_string(dir.join("saves").join("plain.json")).unwrap();
+        let file: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(
+            file["version"], 12,
+            "no account: the v12 shape, Python-loadable"
+        );
+        assert!(file["infrastructure"].get("bank").is_none());
+        // The snapshot's infrastructure block stays hidden, as before.
+        assert!(!session.infra.is_visible());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

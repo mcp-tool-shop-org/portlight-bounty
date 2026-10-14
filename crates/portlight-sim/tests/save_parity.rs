@@ -168,6 +168,7 @@ fn played() -> Session {
             total_repaid: 0,
             active: true,
         }),
+        bank: Vec::new(),
     });
     session
 }
@@ -482,11 +483,11 @@ fn missing_and_corrupt_slots_are_absent() {
     fs::create_dir_all(&path).unwrap();
     fs::write(path.join("default.json"), b"{not json").unwrap();
     assert!(Session::load(&dir, "default").unwrap().is_none());
-    fs::write(path.join("default.json"), b"{\"version\": 13}").unwrap();
+    fs::write(path.join("default.json"), b"{\"version\": 14}").unwrap();
     let err = Session::load(&dir, "default").unwrap_err();
     assert_eq!(
         err.to_string(),
-        "Save file version 13 is newer than supported version 12. Update Portlight to load this save."
+        "Save file version 14 is newer than supported version 13. Update Portlight to load this save."
     );
     let _ = fs::remove_dir_all(&dir);
 }
@@ -658,4 +659,29 @@ fn python_custom_captain_v12_loads_name_type_silver_and_day() {
         .unwrap();
     assert_eq!(porcelain.buy_price, 162);
     assert_eq!(porcelain.sell_price, 159);
+}
+
+/// Rust wrote this v13 slot (seed 1, 300 silver banked at Porto Novo). It is
+/// not a Python golden: the Python game has no bank.
+#[test]
+fn rust_v13_bank_round_trips() {
+    let root = parity_root();
+    let file: Value =
+        serde_json::from_str(&fs::read_to_string(root.join("saves/bank_v13.json")).unwrap())
+            .unwrap();
+    assert_eq!(file["version"], 13);
+    let mut loaded = Session::load(&root, "bank_v13").unwrap().unwrap();
+    assert_eq!(loaded.bank_balances(), [("porto_novo".to_string(), 300)]);
+    assert_eq!(loaded.world().captain.silver, 250);
+    let dir = scratch("bank-v13");
+    loaded.save(&dir, "bank_v13").unwrap();
+    let again: Value =
+        serde_json::from_str(&fs::read_to_string(dir.join("saves").join("bank_v13.json")).unwrap())
+            .unwrap();
+    assert_eq!(again["version"], 13);
+    assert_eq!(
+        again["infrastructure"]["bank"],
+        file["infrastructure"]["bank"]
+    );
+    let _ = fs::remove_dir_all(&dir);
 }

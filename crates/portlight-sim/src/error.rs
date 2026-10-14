@@ -141,6 +141,32 @@ pub enum SimError {
     UsageRecruit,
     UsageAgency,
     UsageRemember,
+    /// Counting house: not docked.
+    MustBeDockedToBank,
+    /// Counting house: this port has none.
+    NoCountingHouse,
+    /// Counting house: a deposit below the minimum.
+    BelowBankMinimum {
+        minimum: i64,
+    },
+    /// Counting house: the account holds less than asked (port display name).
+    InsufficientBalance {
+        port: String,
+        have: i64,
+    },
+    /// Counting house: less silver carried than the deposit.
+    InsufficientSilver {
+        have: i64,
+    },
+    /// Counting house: the fee would take the whole amount.
+    BelowBankFee {
+        fee: i64,
+    },
+    /// Counting house: a letter drawn on the account at this port.
+    LetterOnLocalAccount,
+    UsageBankDeposit,
+    UsageBankWithdraw,
+    UsageBankLetter,
     /// A sentence copied from the Python rules engine.
     Rejected(String),
     /// A Python sentence this area surfaces directly.
@@ -306,6 +332,24 @@ impl fmt::Display for SimError {
             Self::UsageDeposit => write!(f, "Usage: deposit <good> <qty>"),
             Self::UsageWithdraw => write!(f, "Usage: withdraw <good> <qty> [source_port]"),
             Self::UsageRepayCredit => write!(f, "Usage: repay_credit <amount>"),
+            Self::MustBeDockedToBank => write!(f, "Must be docked to use a counting house"),
+            Self::NoCountingHouse => write!(f, "No counting house at this port"),
+            Self::BelowBankMinimum { minimum } => {
+                write!(f, "Deposit at least {minimum} silver")
+            }
+            Self::InsufficientBalance { port, have } => {
+                write!(f, "Only {have} silver banked at {port}")
+            }
+            Self::InsufficientSilver { have } => write!(f, "Only {have} silver on hand"),
+            Self::BelowBankFee { fee } => {
+                write!(f, "Too little to cover the {fee} silver fee")
+            }
+            Self::LetterOnLocalAccount => {
+                write!(f, "That account is here - withdraw instead")
+            }
+            Self::UsageBankDeposit => write!(f, "Usage: bank_deposit <amount>"),
+            Self::UsageBankWithdraw => write!(f, "Usage: bank_withdraw <amount>"),
+            Self::UsageBankLetter => write!(f, "Usage: bank_letter <source_port> <amount>"),
             Self::Rejected(message) => write!(f, "{message}"),
             Self::Sentence(message) => write!(f, "{message}"),
         }

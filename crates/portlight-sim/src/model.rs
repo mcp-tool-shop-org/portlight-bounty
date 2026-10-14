@@ -955,9 +955,26 @@ pub struct InfrastructureRecord {
     pub policies: Vec<ActivePolicy>,
     pub claims: Vec<InsuranceClaim>,
     pub credit: Option<CreditState>,
+    /// Counting-house silver accounts, one per port, in port-id order. An
+    /// account at 0 is removed, so an unused bank leaves no trace.
+    pub bank: Vec<BankAccount>,
+}
+
+/// Silver deposited at one counting house. Safe from wreck, plunder and
+/// credit default; nothing draws on it automatically.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BankAccount {
+    pub port_id: String,
+    pub balance: i64,
+    pub opened_day: i64,
 }
 
 impl InfrastructureRecord {
+    /// Silver across every counting-house account.
+    pub fn banked_total(&self) -> i64 {
+        self.bank.iter().map(|account| account.balance).sum()
+    }
+
     /// True when a snapshot should show this record.
     ///
     /// `tick_credit` materializes an inactive zero account. That account is
@@ -969,6 +986,7 @@ impl InfrastructureRecord {
             || !self.licenses.is_empty()
             || !self.policies.is_empty()
             || !self.claims.is_empty()
+            || !self.bank.is_empty()
         {
             return true;
         }

@@ -87,6 +87,9 @@ pub(crate) struct DepartureFacts {
     pub hull: i64,
     /// The worst single storm this class takes (the sim's storm table).
     pub worst_storm: i64,
+    /// The worst single route pirate event this class takes. With the
+    /// storm, this sets the per-class hull floor.
+    pub worst_pirate: i64,
     /// A full repair at this port, in silver.
     pub repair_price: i64,
 }
@@ -179,20 +182,30 @@ pub(crate) fn departure_facts(session: &Session, dest: &str) -> Option<Departure
         contracts,
         hull: flagship.hull,
         worst_storm: portlight_sim::session::worst_storm_damage(&flagship.template_id),
+        worst_pirate: portlight_sim::session::worst_route_pirate_damage(&flagship.template_id),
         repair_price: crate::logic::full_repair_price(world),
     })
 }
 
 /// `One storm can sink you - repair here for {N} silver` while the hull is
-/// at or below the worst single storm this class can take.
-pub(crate) fn storm_risk_line(hull: i64, worst_storm: i64, repair_price: i64) -> Option<String> {
-    if hull > worst_storm {
-        return None;
-    }
+/// below the per-class floor: at or below the worst single storm or route
+/// pirate event this class can take. The line names whichever can do it.
+pub(crate) fn storm_risk_line(
+    hull: i64,
+    worst_storm: i64,
+    worst_pirate: i64,
+    repair_price: i64,
+) -> Option<String> {
+    let risk = match (hull <= worst_storm, hull <= worst_pirate) {
+        (true, true) => "One storm or pirate attack can sink you",
+        (true, false) => "One storm can sink you",
+        (false, true) => "One pirate attack can sink you",
+        (false, false) => return None,
+    };
     Some(if repair_price > 0 {
-        format!("One storm can sink you - repair here for {repair_price} silver")
+        format!("{risk} - repair here for {repair_price} silver")
     } else {
-        "One storm can sink you".to_string()
+        risk.to_string()
     })
 }
 
@@ -371,7 +384,12 @@ pub(crate) fn build_departure_check(facts: &DepartureFacts) -> Option<DepartureD
             title: String::new(),
         });
     }
-    if let Some(text) = storm_risk_line(facts.hull, facts.worst_storm, facts.repair_price) {
+    if let Some(text) = storm_risk_line(
+        facts.hull,
+        facts.worst_storm,
+        facts.worst_pirate,
+        facts.repair_price,
+    ) {
         ranked.push(Ranked {
             line: DepartureLine {
                 text,
@@ -660,6 +678,7 @@ mod tests {
             contracts,
             hull: 60,
             worst_storm: 18,
+            worst_pirate: 12,
             repair_price: 0,
         }
     }
@@ -1102,25 +1121,43 @@ mod tests {
 
     #[test]
     fn departure_warning_at_low_hull() {
-        // Per class: the warning shows at hull <= worst storm, not above.
+        // Per class: the warning shows below the hull floor (at or below the
+        // worst storm or route pirate event), not at the floor.
         for def in &portlight_sim::content::content().ships {
-            let worst = portlight_sim::session::worst_storm_damage(&def.id);
-            assert_eq!(
-                storm_risk_line(worst, worst, 54).as_deref(),
-                Some("One storm can sink you - repair here for 54 silver"),
+            let storm = portlight_sim::session::worst_storm_damage(&def.id);
+            let pirate = portlight_sim::session::worst_route_pirate_damage(&def.id);
+            let floor = portlight_sim::session::sink_hull_floor(&def.id);
+            assert!(
+                storm_risk_line(floor - 1, storm, pirate, 54).is_some(),
                 "{}",
                 def.id
             );
-            assert_eq!(storm_risk_line(worst + 1, worst, 54), None, "{}", def.id);
+            assert_eq!(
+                storm_risk_line(floor, storm, pirate, 54),
+                None,
+                "{}",
+                def.id
+            );
         }
         assert_eq!(
-            portlight_sim::session::worst_storm_damage("coastal_sloop"),
-            18
+            storm_risk_line(18, 18, 12, 54).as_deref(),
+            Some("One storm can sink you - repair here for 54 silver")
         );
         assert_eq!(
-            portlight_sim::session::worst_storm_damage("royal_man_of_war"),
-            3
+            storm_risk_line(7, 3, 7, 54).as_deref(),
+            Some("One pirate attack can sink you - repair here for 54 silver")
         );
+        assert_eq!(
+            storm_risk_line(3, 3, 7, 0).as_deref(),
+            Some("One storm or pirate attack can sink you")
+        );
+        // A man-of-war: storms alone (3) would miss hull 4 to 7.
+        let mow = "royal_man_of_war";
+        let storm = portlight_sim::session::worst_storm_damage(mow);
+        let pirate = portlight_sim::session::worst_route_pirate_damage(mow);
+        assert_eq!(storm, 3);
+        assert_eq!(pirate + 1, portlight_sim::session::sink_hull_floor(mow));
+        assert!(storm_risk_line(storm + 1, storm, pirate, 54).is_some());
         let mut facts = base_facts(Vec::new());
         facts.hull = 19;
         facts.repair_price = 123;

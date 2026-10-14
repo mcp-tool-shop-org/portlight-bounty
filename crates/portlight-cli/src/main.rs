@@ -49,7 +49,8 @@ Usage:
 
 new defaults: captain merchant, name Captain, seed 1.
 --json prints the canonical snapshot. Without it, new prints a short summary.
-load prints a version-12 save.
+load prints a version-12 or version-13 save (13 once a counting-house
+account is open).
 
 Exit codes: 0 ok, 1 the simulation or a file failed, 2 the command was not understood.
 Errors are sentences. There is no --debug flag and no log level.
@@ -60,6 +61,7 @@ Script commands, one per line:
   accept_contract, complete_contract, abandon_contract
   buy_infrastructure, take_credit, buy_insurance
   deposit, withdraw, repay_credit, save, load
+  bank_deposit, bank_withdraw, bank_letter
   hire, provision, work, duel, resolve_duel
   encounter, naval, board, fight, capture, spare, take_all
   train, recruit, skill, remember, agency, gear

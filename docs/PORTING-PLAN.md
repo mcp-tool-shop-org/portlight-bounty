@@ -164,6 +164,23 @@ policies but records no port visit. A storm or route-event sinking is not a
 naval defeat. A bounty hunt is refused while hull is at or below that floor
 (`HullTooLowToHunt`). No RNG draw, no save change (`Session::sink_and_tow`).
 
+**Counting-house silver accounts (Rust only):** no Python equivalent; no
+parity script reaches them. The seven ports with a commercial warehouse tier
+keep a counting house. Deposits are free with a 50 silver minimum;
+withdrawing at the same port costs 1% (rounded down, at least 1); drawing on
+another port's account by letter costs 5% (rounded down, at least 5). Fees
+come out of the amount drawn. No interest, no upkeep, no seizure on credit
+default. Banked silver sits outside `captain.silver`, so the wreck, plunder
+and default never touch it and nothing spends it automatically; victory
+silver requirements and the wealth and near-bankruptcy beats count carried
+plus banked. Save version 13 adds `infrastructure.bank`; a v12 save migrates
+with an empty bank, and a game with no open account still writes the v12
+shape (version 12, no `bank` key), so Python can load it and no golden
+changes. `parity/saves/bank_v13.json` is a Rust-written v13 round-trip
+fixture, not a Python golden. Script verbs: `bank_deposit N`,
+`bank_withdraw N`, `bank_letter PORT N` (`Session::deposit_silver`,
+`withdraw_silver`, `draw_letter`).
+
 
 ## Porting order
 

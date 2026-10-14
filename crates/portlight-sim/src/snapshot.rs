@@ -970,6 +970,16 @@ pub struct InfraSnap {
     pub claims: Vec<ClaimSnap>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub credit: Option<CreditSnap>,
+    /// Counting-house accounts; absent while none is open.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub bank: Vec<BankSnap>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct BankSnap {
+    pub port_id: String,
+    pub balance: i64,
+    pub opened_day: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -1475,6 +1485,15 @@ fn infra_snap(infra: &InfrastructureRecord) -> InfraSnap {
             .as_ref()
             .filter(credit_visible)
             .map(credit_snap),
+        bank: infra
+            .bank
+            .iter()
+            .map(|account| BankSnap {
+                port_id: account.port_id.clone(),
+                balance: account.balance,
+                opened_day: account.opened_day,
+            })
+            .collect(),
     }
 }
 

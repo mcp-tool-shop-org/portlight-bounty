@@ -230,6 +230,33 @@ fn dispatch(
             session.withdraw_cargo(&tokens[1], qty, source)?;
             Ok(())
         }
+        "bank_deposit" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageBankDeposit);
+            }
+            let amount = parse_qty(&tokens[1])?;
+            session.deposit_silver(amount)?;
+            Ok(())
+        }
+        "bank_withdraw" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::UsageBankWithdraw);
+            }
+            let amount = parse_qty(&tokens[1])?;
+            session.withdraw_silver(amount)?;
+            Ok(())
+        }
+        "bank_letter" => {
+            let session = active(session)?;
+            if tokens.len() != 3 {
+                return Err(SimError::UsageBankLetter);
+            }
+            let amount = parse_qty(&tokens[2])?;
+            session.draw_letter(&tokens[1], amount)?;
+            Ok(())
+        }
         "repay_credit" => {
             let session = active(session)?;
             if tokens.len() != 2 {
@@ -773,6 +800,30 @@ mod tests {
         assert_eq!(snap.log.len(), 2);
         assert_eq!(snap.log[1].error.as_deref(), Some("Unknown command: fly"));
         assert_eq!(snap.captain.silver, 550);
+    }
+
+    #[test]
+    fn bank_verbs_are_distinct_from_cargo_verbs() {
+        // Seed 1 starts at Porto Novo, a counting house, with 550 silver.
+        let snap = run_script(
+            "new merchant Ada 1\nbank_deposit 300\nbank_withdraw 100\nbank_letter porto_novo 50\n",
+        );
+        let errors: Vec<_> = snap.log.iter().map(|entry| entry.error.clone()).collect();
+        assert_eq!(errors[1], None);
+        assert_eq!(errors[2], None);
+        assert_eq!(
+            errors[3].as_deref(),
+            Some("That account is here - withdraw instead")
+        );
+        assert_eq!(snap.captain.silver, 550 - 300 + 99);
+        let bank = &snap.infrastructure.as_ref().unwrap().bank;
+        assert_eq!(bank[0].port_id, "porto_novo");
+        assert_eq!(bank[0].balance, 200);
+        let usage = run_script("new merchant Ada 1\nbank_deposit\n");
+        assert_eq!(
+            usage.log[1].error.as_deref(),
+            Some("Usage: bank_deposit <amount>")
+        );
     }
 
     #[test]

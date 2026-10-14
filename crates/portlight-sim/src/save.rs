@@ -22,8 +22,8 @@ use crate::economy::TradeReceipt;
 use crate::encounter::{self, EncounterState};
 use crate::error::SimError;
 use crate::model::{
-    ActiveContract, ActiveFestival, ActivePolicy, Armor, BreachRecord, BrokerOffice, Captain,
-    CaptainMemory, CaptainRelationship, CargoItem, Companion, Contract, ContractBoard,
+    ActiveContract, ActiveFestival, ActivePolicy, Armor, BankAccount, BreachRecord, BrokerOffice,
+    Captain, CaptainMemory, CaptainRelationship, CargoItem, Companion, Contract, ContractBoard,
     ContractOutcome, CreditState, CulturalState, DeferredFee, EncounterMemory, FleetShip, Incident,
     InfrastructureRecord, Injury, InstalledUpgrade, InsuranceClaim, JournalEntry, MarketSlot,
     NarrativeState, Officer, OwnedLicense, Party, PendingDuel, PirateEncounterRecord, Port, Route,
@@ -34,7 +34,13 @@ use crate::model::{
 pub const SAVE_DIR: &str = "saves";
 pub const SAVE_FILE: &str = "portlight_save.json";
 pub const DEFAULT_SLOT: &str = "default";
-pub const CURRENT_SAVE_VERSION: i64 = 12;
+pub const CURRENT_SAVE_VERSION: i64 = 13;
+
+/// The version written when no counting-house account is open. Such a save
+/// has exactly the v12 shape, so it stays byte-identical to before and the
+/// Python game can still load it. A save with an account is written as
+/// [`CURRENT_SAVE_VERSION`].
+pub const SAVE_VERSION_WITHOUT_BANK: i64 = 12;
 
 const PORT_FEATURES: [&str; 3] = ["shipyard", "black_market", "safe_harbor"];
 const CREW_ROLES: [&str; 6] = [
@@ -238,7 +244,7 @@ fn json_truthy(value: Option<&Value>) -> bool {
     }
 }
 
-/// Bring a save object up to version 12. Already-current files are unchanged.
+/// Bring a save object up to version 13. Already-current files are unchanged.
 pub fn migrate_save(data: &mut Value) -> Result<(), SimError> {
     migrate_inner(data).map_err(|err| match err {
         MigrateError::Version(err) => err,
@@ -335,6 +341,7 @@ fn migrate_inner(data: &mut Value) -> Result<(), MigrateError> {
             9 => migrate_v9_to_v10(map)?,
             10 => migrate_v10_to_v11(map)?,
             11 => migrate_v11_to_v12(map)?,
+            12 => migrate_v12_to_v13(map),
             other => {
                 return Err(MigrateError::Version(SimError::SaveMigration {
                     found: other,
@@ -603,6 +610,13 @@ fn migrate_v11_to_v12(data: &mut Map<String, Value>) -> Result<i64, MigrateError
     Ok(12)
 }
 
+/// v13 adds counting-house accounts (`infrastructure.bank`). A v12 save has
+/// none; the loader reads a missing list as empty, so only the version moves.
+fn migrate_v12_to_v13(data: &mut Map<String, Value>) -> i64 {
+    data.insert("version".to_string(), Value::from(13));
+    13
+}
+
 fn add_roster(ship: &mut Map<String, Value>) {
     if ship.contains_key("roster") {
         return;
@@ -661,7 +675,14 @@ fn encode(
         ports.insert(port.id.clone(), port_value(port));
     }
     json_obj(&[
-        ("version", Value::from(CURRENT_SAVE_VERSION)),
+        (
+            "version",
+            Value::from(if infra.bank.is_empty() {
+                SAVE_VERSION_WITHOUT_BANK
+            } else {
+                CURRENT_SAVE_VERSION
+            }),
+        ),
         ("captain", captain_value(&world.captain, &board.breaches)),
         ("ports", Value::Object(ports)),
         (
@@ -2889,6 +2910,14 @@ fn infra_value(infra: &InfrastructureRecord) -> Value {
     if let Some(credit) = &infra.credit {
         map.insert("credit".to_string(), credit_value(credit));
     }
+    // Written only when an account is open (v13); otherwise the object keeps
+    // its v12 shape.
+    if !infra.bank.is_empty() {
+        map.insert(
+            "bank".to_string(),
+            Value::Array(infra.bank.iter().map(bank_value).collect()),
+        );
+    }
     Value::Object(map)
 }
 
@@ -2998,6 +3027,38 @@ fn credit_value(credit: &CreditState) -> Value {
     ])
 }
 
+fn bank_value(account: &BankAccount) -> Value {
+    json_obj(&[
+        ("port_id", Value::from(account.port_id.as_str())),
+        ("balance", Value::from(account.balance)),
+        ("opened_day", Value::from(account.opened_day)),
+    ])
+}
+
+/// Accounts at 0 or below are dropped, and the list is kept in port-id order.
+fn bank_from(map: &Map<String, Value>) -> Vec<BankAccount> {
+    let mut accounts: Vec<BankAccount> = map
+        .get("bank")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|value| {
+                    let item = value.as_object()?;
+                    Some(BankAccount {
+                        port_id: req_str(item, "port_id")?,
+                        balance: opt_i64(item, "balance").unwrap_or(0),
+                        opened_day: opt_i64(item, "opened_day").unwrap_or(0),
+                    })
+                })
+                .filter(|account| account.balance > 0)
+                .collect()
+        })
+        .unwrap_or_default();
+    accounts.sort_by(|a, b| a.port_id.cmp(&b.port_id));
+    accounts
+}
+
 fn infra_from(value: &Value) -> Option<InfrastructureRecord> {
     let map = value.as_object()?;
     Some(InfrastructureRecord {
@@ -3030,6 +3091,7 @@ fn infra_from(value: &Value) -> Option<InfrastructureRecord> {
             Some(credit) => Some(credit_from(credit)?),
             None => None,
         },
+        bank: bank_from(map),
     })
 }
 
@@ -3151,6 +3213,7 @@ fn credit_from(value: &Value) -> Option<CreditState> {
 }
 
 fn project_infra(books: &mut HouseBooks, infra: &InfrastructureRecord) {
+    books.banked = infra.banked_total();
     books.warehouses = infra
         .warehouses
         .iter()
@@ -3431,11 +3494,11 @@ mod tests {
 
     #[test]
     fn newer_version_uses_the_python_sentence() {
-        let mut data = serde_json::json!({"version": 13});
+        let mut data = serde_json::json!({"version": 14});
         let err = migrate_save(&mut data).unwrap_err();
         assert_eq!(
             err.to_string(),
-            "Save file version 13 is newer than supported version 12. Update Portlight to load this save."
+            "Save file version 14 is newer than supported version 13. Update Portlight to load this save."
         );
     }
 
@@ -3445,13 +3508,13 @@ mod tests {
         let err = migrate_save(&mut data).unwrap_err();
         assert_eq!(
             err.to_string(),
-            "Migration chain broken: reached version 0, expected 12"
+            "Migration chain broken: reached version 0, expected 13"
         );
     }
 
     #[test]
     fn current_version_is_left_alone() {
-        let mut data = serde_json::json!({"version": 12, "day": 3});
+        let mut data = serde_json::json!({"version": 13, "day": 3});
         migrate_save(&mut data).unwrap();
         assert_eq!(data["day"], 3);
         assert_eq!(data.as_object().unwrap().len(), 2);
@@ -3462,7 +3525,7 @@ mod tests {
         let v1 = migrate(
             r#"{"captain":{"standing":{"regional_standing":{"Mediterranean":4},"customs_heat":{"West Africa":1}}},"ship_note":1}"#,
         );
-        assert_eq!(v1["version"], 12);
+        assert_eq!(v1["version"], 13);
         assert!(v1.get("campaign").is_some());
         assert!(v1.get("ledger").is_some());
         assert!(v1.get("contract_board").is_some());
@@ -3525,9 +3588,14 @@ mod tests {
         let mut data: Value =
             serde_json::from_str(&fs::read_to_string(root.join("v1.json")).unwrap()).unwrap();
         migrate_save(&mut data).unwrap();
-        let expected: Value =
+        let mut expected: Value =
             serde_json::from_str(&fs::read_to_string(root.join("v1.migrated.json")).unwrap())
                 .unwrap();
+        // The Python chain stops at 12; the Rust-only v12 -> v13 step moves
+        // the version and nothing else.
+        assert_eq!(expected["version"], 12);
+        assert_eq!(data["version"], 13);
+        expected["version"] = Value::from(13);
         assert_eq!(data, expected);
     }
 
