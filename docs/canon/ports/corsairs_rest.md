@@ -70,7 +70,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The cove is the town: Corsair's Rest is cliff, tavern and hidden berths, and nothing is built where the sea can see it. Landmark [cite]: "The Cliff Tavern - carved into the rock face, visible only from the sea." (C:12036 area). Cited buildings: The Cove Mouth (harbor_master, C:7654); The Whisper Market (exchange, C:7664); The Crimson Chair (governor, C:7674); Mama Lucia's Kitchen (tavern, C:7684); The Surgery (apothecary, C:7694); The Cliff Caves (broker, C:7704); The Cliff Watch (customs, C:7714). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
+1. Architecture. Identity line [invented]: The cove is the town: Corsair's Rest is cliff, tavern and hidden berths, and nothing is built where the sea can see it. Landmark [cite]: "The Cliff Tavern - carved into the rock face, visible only from the sea." (C:12036 area). Cited buildings: The Cove Mouth (harbor_master, C:7654); The Whisper Market (exchange, C:7664); The Crimson Chair (governor, C:7674); Mama Lucia's Kitchen (tavern, C:7684); The Surgery (apothecary, C:7694); The Cliff Caves (broker, C:7704); The Cliff Watch (customs, C:7714). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
 2. Materials: local and abundant (exports): Weapons, Rum, Tobacco, Pelts, Black Powder, Stolen Cargo; scarce or luxury (imports): Silk, Medicines, Grain, Opium (section A). Atmosphere [cite]: "Torch smoke, cheap rum, and the clink of coins changing hands under the table." (C:12036 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -85,7 +85,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 
 ## D. Historical analogies (feed [invented] prose; never a cite)
 
-- **Port Royal before 1692 (as a trade function only).** Fits: a harbour where outlaw cargo was sold openly to anyone who came (black market, Stolen Cargo 1.2). Suggests: no-names custom, cash on the plank, protection paid quietly. Limit: keep it about the trade, not any people (Analogist risk 3). Avoid: eyepatch-and-parrot pirate costume.
+- **Port Royal before 1692 (as a trade function only).** Fits: a harbour where outlaw cargo was sold openly to anyone who came (black market, Stolen Cargo 1.2). Suggests: no-names custom, cash on the plank, protection paid quietly. Limit: keep it about the trade, not any people (analogy rule 3). Avoid: eyepatch-and-parrot pirate costume.
 - **Sale (Bou Regreg) corsair port, as harbour logistics.** Fits: a cliff-sheltered harbour run by a captains' council that sold prizes. Suggests: one voice speaks for the cove; disputes settled in the tavern. Limit: the analogy covers harbour logistics only. Avoid: any ethnic or religious coding.
 
 ## E. Governance

@@ -69,7 +69,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Hanging Market is the town: everything in Spice Narrows hangs over water and can be cut loose. Landmark [cite]: "The Hanging Market - stalls suspended on ropes between cliff faces above the water." (C:12166 area). Cited buildings: The Volcanic Channel (harbor_master, C:10594); The Dark Room (exchange, C:10604); The Deep Throne (governor, C:10614); Mama Smoke's Cave (tavern, C:10624); The Intelligence Cave (customs, C:10634); The Poison Lab (apothecary, C:10644); The Contract Wall (broker, C:10654). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
+1. Architecture. Identity line [invented]: The Hanging Market is the town: everything in Spice Narrows hangs over water and can be cut loose. Landmark [cite]: "The Hanging Market - stalls suspended on ropes between cliff faces above the water." (C:12166 area). Cited buildings: The Volcanic Channel (harbor_master, C:10594); The Dark Room (exchange, C:10604); The Deep Throne (governor, C:10614); Mama Smoke's Cave (tavern, C:10624); The Intelligence Cave (customs, C:10634); The Poison Lab (apothecary, C:10644); The Contract Wall (broker, C:10654). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
 2. Materials: local and abundant (exports): Spice, Pearls, Opium; scarce or luxury (imports): Silk, Weapons, Grain, Rum, Pelts, Black Powder (section A). Atmosphere [cite]: "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes." (C:12166 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
@@ -84,7 +84,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 
 ## D. Historical analogies (feed [invented] prose; never a cite)
 
-- **Port Royal, as an outlaw market.** Fits: a hidden anchorage selling spice, opium and pearls outside any law (black market, Spice 1.8, Opium 1.4). Suggests: prices whispered; brokers without names. Limit: trade only, never a people (Analogist risk 3). Avoid: pirate costume.
+- **Port Royal, as an outlaw market.** Fits: a hidden anchorage selling spice, opium and pearls outside any law (black market, Spice 1.8, Opium 1.4). Suggests: prices whispered; brokers without names. Limit: trade only, never a people (analogy rule 3). Avoid: pirate costume.
 - **Malacca-strait smuggling anchorages, as geography.** Fits: an archipelago hideout controlling a spice route. Suggests: cliff markets, look-outs, boats that move at night. Limit: geography and logistics only. Avoid: any ethnic coding.
 - **A Venetian fondaco turned inside out.** Fits: a merchant house with rules, but the rules are silence. Suggests: whispered bids, the Weigher's word final. Limit: form only. Avoid: carnival masks.
 - Contrast, not model: Jade Port's posted, inspected trade; the Narrows undercuts it in the dark.

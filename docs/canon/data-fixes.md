@@ -151,15 +151,16 @@ Proposed fix: Reword Elena's agenda to 'will never build a war fleet to a power'
 
 Why: Design ruling 2: the sim sells the Royal Man-of-War at Silva Bay (session.rs:3037-3043), so the lore now says the yard builds single hulls of every class but no fleets for powers.
 
-## DF-15. Bloc loyalty_bonus, disloyalty_penalty and spillover are unread
+## DF-15. Bloc loyalty_bonus and disloyalty_penalty have no live caller; spillover is unread
 
 Where:
 - C:13388 and the other blocs; relationships from C:13718
-- crates/portlight-sim/src/custom_captain.rs:524 (the only port_politics reader)
+- crates/portlight-sim/src/culture.rs:225-245 (price_multiplier reads loyalty_bonus and disloyalty_penalty; no live caller, only tests at :352-362)
+- spillover (relationships, from C:13718) has no reader
 
 Proposed fix: No data change. Add a content.rs doc comment saying these fields are unread (lore only) until a mechanic is briefed.
 
-Why: This keeps copy and canon from promising a price effect.
+Why: the rates exist in code but no live path applies them, so copy and canon must not promise a price effect.
 
 ## DF-16. 'Corsairs Rest' spelling in docs
 
@@ -170,7 +171,7 @@ Proposed fix: Change it to 'Corsair's Rest'.
 
 Why: Spelling.
 
-## DF-17. Pirate captains sighted under ports that are not their homes
+## DF-17. Pirate captain sightings imply home ports the data does not define
 
 Where:
 - content.json:12816 (Scarlet Ana under Corsair's Rest)

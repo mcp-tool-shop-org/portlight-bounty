@@ -42,7 +42,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 ## B. People
 
 - Cultural group: The Exchange Guild: "Keepers of the price - they set the dawn rates and arbitrate disputes." (C:12006 area).
-- Local custom: "Captains ring the harbour bell on first arrival. It's bad luck not to." (C:12006 area).
+- Local custom: "Captains ring the harbor bell on first arrival. It's bad luck not to." (C:12006 area).
 - Regional ethos: "Civilization is commerce. The law of contract binds harder than iron, and a merchant's word, once given, is recorded in stone." Greeting: "Welcome to port, Captain. Your cargo manifest, if you please." Proverb: "A contract honored is worth more than gold hoarded." (C:11728 area).
 - Tavern rumour (in-world, unreliable): "They say the Grain Exchange is built on the ruins of an older temple. Some nights the clerks hear chanting from beneath the floor." (C:12006 area).
 
@@ -76,7 +76,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 
 Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, envelope and do/don't blocks are in README.md and not repeated here.
 
-1. Architecture. Identity line [invented]: The Exchange is the town: every street runs downhill to the Grain Exchange, and the bell decides the day. Landmark [cite]: "The Grain Exchange - a columned hall where prices are read aloud at dawn." (C:12006 area). Cited buildings: The Harbor Master's Tower (harbor_master, C:6958); The Grain Exchange (exchange, C:6968); Andros & Sons Shipyard (shipyard, C:6978); The Governor's Residence (governor, C:6988); The Harbor Bell (tavern, C:6998); The Customs House (customs, C:7008); The Broker's Desk (broker, C:7018). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the PB-001 gap list.
+1. Architecture. Identity line [invented]: The Exchange is the town: every street runs downhill to the Grain Exchange, and the bell decides the day. Landmark [cite]: "The Grain Exchange - a columned hall where prices are read aloud at dawn." (C:12006 area). Cited buildings: The Harbor Master's Tower (harbor_master, C:6958); The Grain Exchange (exchange, C:6968); Andros & Sons Shipyard (shipyard, C:6978); The Governor's Residence (governor, C:6988); The Harbor Bell (tavern, C:6998); The Customs House (customs, C:7008); The Broker's Desk (broker, C:7018). Kit use [proposal]: compose from the shipped will-use plates; identity carriers are ground choice and building frequency, never new ids. Gaps follow the art gap list (design notes).
 2. Materials: local and abundant (exports): Grain, Rum; scarce or luxury (imports): Timber, Cotton, Dyes, Pelts, Porcelain (section A). Atmosphere [cite]: "Flour dust, sea salt, and the shouts of dockhands loading grain barges." (C:12006 area). Climate: section G.
 3. Palette (references, not UI tokens; UI stays INK / GOLD / CREAM / MUTED / DUE). Judged in sRGB against the plate envelope (luma 65-141, chroma p98 35):
 
