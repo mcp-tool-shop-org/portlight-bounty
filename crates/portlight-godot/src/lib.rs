@@ -11,6 +11,7 @@ mod encounter_screen;
 mod game;
 mod harbour;
 mod harbour_screen;
+mod hints;
 mod hunt_screen;
 mod journal_screen;
 mod logic;

@@ -206,7 +206,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log" || grep -q 'portlight trade smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log" || grep -q 'portlight trade smoke ok' "$log" || grep -q 'portlight first-voyage-hints smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -499,6 +499,22 @@ jobs:
             godot --headless --path godot -- --market-paid-screen
           if ! grep -q 'portlight trade smoke ok' /tmp/godot-market-paid-smoke.log; then
             echo "market-paid smoke did not report ok"
+            exit 1
+          fi
+          # First-voyage hints: Merchant Ada seed 1, real verbs; the
+          # bridge's state.ui.hint equals the ChartHint label at every step.
+          rm -f /tmp/hs-chart-hint.png
+          expect_explicit_headless_shot_fails /tmp/godot-headless-chart-hint-shot.log \
+            env PORTLIGHT_SHOT=/tmp/hs-chart-hint.png \
+            godot --headless --path godot -- --first-voyage-hints
+          if [ -f /tmp/hs-chart-hint.png ]; then
+            echo "headless first-voyage-hints PORTLIGHT_SHOT wrote a file"
+            exit 1
+          fi
+          run_godot /tmp/godot-first-voyage-hints-smoke.log \
+            godot --headless --path godot -- --first-voyage-hints
+          if ! grep -q 'portlight first-voyage-hints smoke ok' /tmp/godot-first-voyage-hints-smoke.log; then
+            echo "first-voyage-hints smoke did not report ok"
             exit 1
           fi
           # Departure check: F9 crew line, clean sail, late panel, Escape /
@@ -880,6 +896,19 @@ jobs:
             echo "departure-check capture did not write /tmp/departure-check-shots/chart-at-sea-first.png"
             exit 1
           fi
+          # First-voyage hint after Begin; then the no-hint layout check.
+          run_godot /tmp/godot-chart-hint-frames.log \
+            xvfb-run -a -s "-screen 0 1280x720x24" \
+            env PORTLIGHT_SHOT=/tmp/chart-hint-first-contract.png \
+            godot --display-driver x11 --rendering-driver opengl3 --path godot -- --first-voyage-hints
+          if ! grep -q 'portlight first-voyage-hints smoke ok' /tmp/godot-chart-hint-frames.log; then
+            echo "chart-hint frame capture did not report ok"
+            exit 1
+          fi
+          if [ ! -f /tmp/chart-hint-first-contract.png ]; then
+            echo "chart-hint capture did not write /tmp/chart-hint-first-contract.png"
+            exit 1
+          fi
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -929,6 +958,7 @@ jobs:
           cmp_committed departure-check.png /tmp/departure-check-shots/departure-check.png
           cmp_committed departure-check-worst.png /tmp/departure-check-shots/departure-check-worst.png
           cmp_committed chart-at-sea-first.png /tmp/departure-check-shots/chart-at-sea-first.png
+          cmp_committed chart-hint-first-contract.png /tmp/chart-hint-first-contract.png
           cmp_committed newgame-title.png /tmp/newgame-shots/newgame-title.png
           cmp_committed newgame-captains.png /tmp/newgame-shots/newgame-captains.png
           cmp_committed newgame-custom.png /tmp/newgame-shots/newgame-custom.png

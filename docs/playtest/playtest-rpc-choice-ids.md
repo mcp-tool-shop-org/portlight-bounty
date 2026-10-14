@@ -66,6 +66,18 @@ Escape is not a choice id. `key` `escape` or `ui_cancel` calls `dismiss_cancel`.
 - A contract card has no `Silver net` row and no total row.
 - `state.encounter.log` still carries the combat recap text, unchanged.
 
+## state.ui.hint
+
+`state.ui.hint` is the first-voyage chart hint: the one line under the port row that names the next verb. It is null when no hint is drawn, including whenever Contracts, the Market, the Journal, the Day's report, the Departure check, an encounter or a recap card is open. While one is drawn it is:
+
+```
+{ "id": "first_contract" | "first_sale" | "journal_paths", "text": "<the drawn line>" }
+```
+
+- At most one hint is drawn at a time. `text` is the exact drawn ASCII line on the `ChartHint` label.
+- There is no choice id: a hint is not pressable.
+- Hint state is never saved. A loaded save that has already settled a contract or won a fight shows no old hint.
+
 ## What a rename breaks
 
 A saved transcript's evidence is keyed on the pressed ids. Replaying it after a silent rename dies at the first renamed id, because the offered-check rejects it as not on screen. Cross-run comparisons split into two namespaces. Freeze before the first seat.
