@@ -541,9 +541,11 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
         .map(|n| passthrough(RecapSection::Note, n, RecapTone::Muted))
         .collect();
 
-    // Cost: Hull, Crew, Silver, Cargo, Injury. A win shows Hull, Crew and
-    // Injury only.
+    // Cost: Hull, Crew, Silver, Cargo, Injury. On a win, Silver and Cargo
+    // show only when the fight itself took some, with no cause: the win's
+    // silver is the delta less the receipt's purse (shown under Earned).
     let [silver, crew, hull, cargo] = facts.deltas;
+    let silver = if win { silver - facts.purse } else { silver };
     let hull_sums = clamp_hull_sums(-hull, facts.hull_by_cause, facts.decisive.as_ref());
     let bare_hull = (hull < 0).then(|| {
         caused(
@@ -619,19 +621,19 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
                 RecapTone::Cream,
             ));
         }
-    } else if !win && silver < 0 {
+    } else if silver < 0 {
         cost.push(caused(
             RecapSection::Cost,
             format!("Silver {silver}"),
-            plunder.or(forfeit),
+            if win { None } else { plunder.or(forfeit) },
             RecapTone::Due,
         ));
     }
-    if !win && cargo < 0 && !wreck {
+    if cargo < 0 && !wreck {
         cost.push(caused(
             RecapSection::Cost,
             format!("Cargo {cargo}"),
-            plunder,
+            if win { None } else { plunder },
             RecapTone::Cream,
         ));
     }
@@ -2156,6 +2158,52 @@ mod tests {
     }
 
     #[test]
+    fn win_cost_shows_silver_and_cargo_only_when_they_fell() {
+        // Purse +55, a duel stake -30: delta +25.
+        let mut facts = win(RecapResult::WonSpared);
+        facts.purse = 55;
+        facts.deltas = [25, 0, 0, -4];
+        let rows = texts(&combat(&facts))
+            .iter()
+            .map(|r| r.to_string())
+            .collect::<Vec<_>>();
+        assert!(rows.contains(&"Silver +55 - purse".to_string()), "{rows:?}");
+        assert!(rows.contains(&"Silver -30".to_string()), "{rows:?}");
+        assert!(rows.contains(&"Cargo -4".to_string()), "{rows:?}");
+        assert!(rows.contains(&"Silver net +25".to_string()), "{rows:?}");
+        // Silver fell with no purse: the row, and no net (nothing rose).
+        facts.purse = 0;
+        facts.deltas = [-30, 0, 0, 0];
+        let rows = texts(&combat(&facts))
+            .iter()
+            .map(|r| r.to_string())
+            .collect::<Vec<_>>();
+        assert!(rows.contains(&"Silver -30".to_string()), "{rows:?}");
+        assert!(
+            !rows.iter().any(|r| r.starts_with("Silver net")),
+            "{rows:?}"
+        );
+        assert!(!rows.iter().any(|r| r.starts_with("Cargo")), "{rows:?}");
+        // No silver or cargo change beyond the purse: no such rows.
+        let rows = texts(&combat(&win(RecapResult::WonTookAll)))
+            .iter()
+            .map(|r| r.to_string())
+            .collect::<Vec<_>>();
+        assert!(
+            !rows.iter().any(|r| r.starts_with("Silver -")
+                || r.starts_with("Cargo")
+                || r.starts_with("Silver net")),
+            "{rows:?}"
+        );
+        for row in rows
+            .iter()
+            .filter(|r| r.starts_with("Silver") || r.starts_with("Cargo"))
+        {
+            assert!(!row.ends_with(" 0") && !row.ends_with('.'), "{row}");
+        }
+    }
+
+    #[test]
     fn won_recap_shows_bounty_ready_once() {
         let mut facts = win(RecapResult::WonSpared);
         facts.bounty_ready = true;
@@ -2437,11 +2485,14 @@ mod tests {
     }
 
     #[test]
-    fn a_win_shows_no_silver_or_cargo_cost() {
+    fn a_win_shows_silver_and_cargo_cost_without_a_cause() {
         let mut facts = win(RecapResult::WonPrize);
+        facts.purse = 0;
         facts.deltas = [-10, 0, 0, -3];
-        let rows = texts(&combat(&facts)).join("|");
-        assert!(!rows.contains("Silver -10") && !rows.contains("Cargo"));
+        let recap = combat(&facts);
+        let rows = texts(&recap);
+        assert!(rows.contains(&"Silver -10"), "{rows:?}");
+        assert!(rows.contains(&"Cargo -3"), "{rows:?}");
     }
 
     #[test]
