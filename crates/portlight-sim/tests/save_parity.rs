@@ -14,6 +14,33 @@ use portlight_sim::snapshot;
 use portlight_sim::Session;
 use serde_json::Value;
 
+fn content_route(a: &str, b: &str) -> Option<&'static portlight_sim::content::RouteDef> {
+    portlight_sim::content::content()
+        .routes
+        .iter()
+        .find(|def| (def.port_a == a && def.port_b == b) || (def.port_a == b && def.port_b == a))
+}
+
+/// Every loaded route carries the same lane name and lore as the session
+/// that was saved.
+fn assert_lane_names_match(saved: &Session, loaded: &Session) {
+    assert_eq!(saved.world().routes.len(), loaded.world().routes.len());
+    for (before, after) in saved.world().routes.iter().zip(&loaded.world().routes) {
+        assert_eq!(before.port_a, after.port_a);
+        assert_eq!(before.port_b, after.port_b);
+        assert_eq!(
+            before.lore_name, after.lore_name,
+            "{}-{}",
+            before.port_a, before.port_b
+        );
+        assert_eq!(
+            before.lore, after.lore,
+            "{}-{}",
+            before.port_a, before.port_b
+        );
+    }
+}
+
 fn parity_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../parity")
 }
@@ -189,8 +216,15 @@ fn v1_slot_matches_the_python_loader() {
         loaded.world().ports[0].features,
         vec!["shipyard".to_string()]
     );
-    assert_eq!(loaded.world().routes[0].lore, "");
-    assert_eq!(loaded.world().routes[0].lore_name, "");
+    // Saves keep no lane names; the loader refills them from content by
+    // port pair (the Python loader leaves them empty; see the parity note).
+    let route = &loaded.world().routes[0];
+    let def = content_route(&route.port_a, &route.port_b);
+    assert_eq!(
+        route.lore_name,
+        def.map(|d| d.lore_name.clone()).unwrap_or_default()
+    );
+    assert_eq!(route.lore, def.map(|d| d.lore.clone()).unwrap_or_default());
     assert_eq!(loaded.world().captain.deferred_fees[0].fee_type, "port_fee");
     assert_eq!(loaded.world().captain.deferred_fees[0].amount, 12);
     assert_eq!(
@@ -234,11 +268,7 @@ fn played_slot_matches_the_python_loader() {
         loaded.world().pending_duel.is_some(),
         session.world().pending_duel.is_some()
     );
-    assert!(loaded
-        .world()
-        .routes
-        .iter()
-        .all(|route| route.lore.is_empty()));
+    assert_lane_names_match(&session, &loaded);
 
     let golden_path = parity_root().join("golden/save_roundtrip.json");
     let golden_text = fs::read_to_string(&golden_path).unwrap_or_else(|_| {
@@ -729,5 +759,77 @@ fn pre_bank_v12_save_is_byte_identical() {
         resaved == resaved_fixture,
         "load and re-save wrote different bytes"
     );
+    let _ = fs::remove_dir_all(&dir);
+}
+
+/// Lane names survive a save and load, and a loaded game's lane voyage
+/// draws from that lane's own encounter table, not the region fallback.
+#[test]
+fn lane_names_and_lane_encounters_survive_save_and_load() {
+    let mut fresh = Session::new("Ada", "merchant", 1, None).unwrap();
+    let named = fresh
+        .world()
+        .routes
+        .iter()
+        .filter(|route| !route.lore_name.is_empty())
+        .count();
+    assert_eq!(named, 15);
+    let dir = scratch("lane-names");
+    fresh.save(&dir, "lanes").unwrap();
+    let mut loaded = Session::load(&dir, "lanes").unwrap().unwrap();
+    assert_lane_names_match(&fresh, &loaded);
+
+    // Porto Novo to Silva Bay is The Timber Run.
+    let lane = loaded
+        .world()
+        .find_route("porto_novo", "silva_bay")
+        .map(|route| route.lore_name.clone())
+        .unwrap();
+    assert_eq!(lane, "The Timber Run");
+    let catalog = portlight_sim::content::content();
+    let lane_texts: Vec<&str> = catalog
+        .route_encounters(&lane)
+        .unwrap()
+        .encounters
+        .iter()
+        .map(|e| e.text.as_str())
+        .collect();
+    let mut seen_lane = 0;
+    let mut here = "porto_novo".to_string();
+    for _ in 0..40 {
+        if seen_lane > 0 {
+            break;
+        }
+        let there = if here == "porto_novo" {
+            "silva_bay"
+        } else {
+            "porto_novo"
+        };
+        loaded.provision(10).ok();
+        if loaded.depart(there).is_err() {
+            break;
+        }
+        for _ in 0..20 {
+            if loaded.world().voyage.status != VoyageStatus::AtSea {
+                break;
+            }
+            if loaded.world().pending_duel.is_some() {
+                break;
+            }
+            let Ok(turn) = loaded.advance() else { break };
+            seen_lane += turn
+                .events
+                .iter()
+                .filter(|event| lane_texts.contains(&event.message.as_str()))
+                .count();
+        }
+        if loaded.world().pending_duel.is_some()
+            || loaded.world().voyage.status == VoyageStatus::AtSea
+        {
+            break;
+        }
+        here = there.to_string();
+    }
+    assert!(seen_lane > 0, "no Timber Run encounter after a load");
     let _ = fs::remove_dir_all(&dir);
 }
