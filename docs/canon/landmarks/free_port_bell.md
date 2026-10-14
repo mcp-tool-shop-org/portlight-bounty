@@ -57,7 +57,7 @@ A bell-keeper paid by the Free Port Council [invented]; every arriving crew hear
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- One toll per arrival heard across the harbour (dock scene; port ambience only, never layered on or substituted for sfx_chart_dock_arrive; pitched, so never a cue identity, bell rule).
+- One toll per arrival heard across the harbour (dock scene; port ambience only, never a game cue; pitched, so never a cue identity, bell rule).
 - Fragment candidates: see the port's section I fragment ideas (../ports/crosswind_isle.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports

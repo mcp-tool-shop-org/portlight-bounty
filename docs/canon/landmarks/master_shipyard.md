@@ -58,7 +58,7 @@ Elena and the Brotherhood shipwrights, sawyers, caulkers. Every hull class the s
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Adze bite into green timber; mallet on treenail (ambience only, kept distinct from the shipyard-hammer cue); steam box hiss; pitch pot simmer.
+- Adze bite into green timber; mallet on treenail (ambience only, never a cue); steam box hiss; pitch pot simmer.
 - Fragment candidates: see the port's section I fragment ideas (../ports/silva_bay.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
