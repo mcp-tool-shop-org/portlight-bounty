@@ -218,6 +218,14 @@ pub(crate) fn record_fight(
     }
 }
 
+/// A claim's effect on the desk memory: a paid claim forgets the target's
+/// last fight; a refused one keeps it.
+pub(crate) fn forget_on_claim<E>(desk: &mut HuntDesk, captain_id: &str, result: &Result<i64, E>) {
+    if result.is_ok() {
+        desk.last_fight.remove(captain_id);
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct HuntNodes {
     pub root: Gd<PanelContainer>,
@@ -1131,6 +1139,19 @@ mod tests {
         assert!(!accept_enabled("z", &[], &["z".into()]));
         assert!(!claim_enabled(0));
         assert!(claim_enabled(1));
+    }
+
+    #[test]
+    fn a_paid_claim_forgets_the_last_fight_and_a_refused_one_keeps_it() {
+        let mut desk = HuntDesk::default();
+        desk.last_fight.insert("gnaw".into(), ("lost".into(), 4));
+        desk.last_fight
+            .insert("raj_the_quiet".into(), ("drew".into(), 5));
+        forget_on_claim(&mut desk, "gnaw", &Err::<i64, &str>("not defeated"));
+        assert_eq!(desk.last_fight.get("gnaw"), Some(&("lost".to_string(), 4)));
+        forget_on_claim(&mut desk, "gnaw", &Ok::<i64, &str>(150));
+        assert!(!desk.last_fight.contains_key("gnaw"));
+        assert!(desk.last_fight.contains_key("raj_the_quiet"));
     }
 
     #[test]

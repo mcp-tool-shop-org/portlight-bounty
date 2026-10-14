@@ -328,14 +328,25 @@ fn capitalize(action: &str) -> String {
     }
 }
 
-/// The folded loot row: `Loot: {n} items, +{s} silver`, either part
-/// omitted when it is zero.
+const INJURY_PREFIX: &str = "Injury - ";
+
+/// The folded injury row: `Injuries - a, b`, trimmed to the row width with
+/// no full stop.
+fn injuries_row(names: &[&str]) -> String {
+    let text = format!("Injuries - {}", names.join(", "));
+    trim_tail(&text, ROW_CHARS)
+        .trim_end_matches('.')
+        .to_string()
+}
+
+/// The folded loot row: `Loot - {n} items - Silver +{s}`; `1 item` at one,
+/// the silver part dropped at zero, `Loot - Silver +{s}` with no goods.
 fn loot_summary(items: usize, silver: i64) -> String {
     let noun = if items == 1 { "item" } else { "items" };
     match (items, silver > 0) {
-        (0, _) => format!("Loot: +{silver} silver"),
-        (_, true) => format!("Loot: {items} {noun}, +{silver} silver"),
-        (_, false) => format!("Loot: {items} {noun}"),
+        (0, _) => format!("Loot - Silver +{silver}"),
+        (_, true) => format!("Loot - {items} {noun} - Silver +{silver}"),
+        (_, false) => format!("Loot - {items} {noun}"),
     }
 }
 
@@ -659,7 +670,7 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     for injury in facts.injuries.iter().take(INJURY_CAP) {
         cost.push(row(
             RecapSection::Cost,
-            format!("Injury - {}", injury.trim()),
+            format!("{INJURY_PREFIX}{}", injury.trim()),
             RecapTone::Cream,
         ));
     }
@@ -700,9 +711,8 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     let net = silver_net(&drawn);
 
     // Cap: drop notes beyond 1, notes, loot goods beyond 1, loot goods, the
-    // standing row, the bounty note, until the body fits.
+    // standing row, until the body fits. The bounty row never drops.
     let mut notes = notes;
-    let mut bounty = bounty;
     // The repair row drops first, then `{Destination} not reached`.
     let optional = |repair: &Option<RecapRow>, not_reached: &Option<RecapRow>| {
         usize::from(repair.is_some()) + usize::from(not_reached.is_some())
@@ -792,6 +802,40 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
     // with it would pass the cap.
     let rule_note = facts.reached_boarding
         && !(win && body(&notes, &goods, &standing, &bounty) + 1 > BODY_ROW_CAP);
+    // Then the injuries: a won card still over the cap shows them on one
+    // `Injuries - a, b` row where the first stood.
+    let mut cost = cost;
+    let injured: Vec<usize> = cost
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| r.text.starts_with(INJURY_PREFIX))
+        .map(|(i, _)| i)
+        .collect();
+    if win && injured.len() > 1 && body(&notes, &goods, &standing, &bounty) > BODY_ROW_CAP {
+        let names: Vec<&str> = facts
+            .injuries
+            .iter()
+            .take(INJURY_CAP)
+            .map(|i| i.trim())
+            .collect();
+        let folded_row = row(RecapSection::Cost, injuries_row(&names), RecapTone::Cream);
+        let first = injured[0];
+        for index in injured.iter().rev() {
+            cost.remove(*index);
+        }
+        cost.insert(first, folded_row);
+        fixed -= injured.len() - 1;
+    }
+    let body = |notes: &[RecapRow],
+                goods: &[RecapRow],
+                standing: &Option<RecapRow>,
+                bounty: &Option<RecapRow>| {
+        fixed
+            + notes.len()
+            + goods.len()
+            + usize::from(standing.is_some())
+            + usize::from(bounty.is_some())
+    };
     while body(&notes, &goods, &standing, &bounty) > BODY_ROW_CAP {
         if notes.len() > 1 {
             notes.truncate(1);
@@ -803,8 +847,6 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
             goods.clear();
         } else if standing.is_some() {
             standing = None;
-        } else if bounty.is_some() {
-            bounty = None;
         } else {
             break;
         }
@@ -2214,7 +2256,7 @@ mod tests {
         let rows = texts(&fits);
         assert!(rows.contains(&"Silver +12 - loot"), "{rows:?}");
         assert!(rows.contains(&"Found: Compass"), "{rows:?}");
-        assert!(!rows.iter().any(|r| r.starts_with("Loot:")), "{rows:?}");
+        assert!(!rows.iter().any(|r| r.starts_with("Loot -")), "{rows:?}");
 
         // Fight cost, standing, a note and the bounty push it over the cap.
         facts.deltas = [facts.purse + 12 - 30, -1, -12, -4];
@@ -2223,7 +2265,7 @@ mod tests {
         facts.bounty_ready = true;
         let over = combat(&facts);
         let rows = texts(&over);
-        assert!(rows.contains(&"Loot: 1 item, +12 silver"), "{rows:?}");
+        assert!(rows.contains(&"Loot - 1 item - Silver +12"), "{rows:?}");
         assert!(!rows.contains(&"Silver +12 - loot"), "{rows:?}");
         assert!(!rows.contains(&"Found: Compass"), "{rows:?}");
         for kept in ["Silver -30", "Cargo -4", "Silver net +102", BOUNTY_READY] {
@@ -2238,6 +2280,112 @@ mod tests {
         assert!(!rows.contains(&RULE_NOTE), "{rows:?}");
         // The short card keeps the rule note.
         assert!(texts(&fits).contains(&RULE_NOTE));
+    }
+
+    /// A heavy won card: choice, purse, hull from three causes, crew from
+    /// two, silver and cargo lost, two injuries and net (12 rows on a 9-row
+    /// cap), with the target claimable.
+    fn heavy_win() -> CombatFacts {
+        let mut facts = win(RecapResult::WonTookAll);
+        facts.purse = 120;
+        facts.deltas = [90, -2, -12, -4];
+        facts.hull_by_cause = [5, 4, 3];
+        facts.crew_by_cause = [1, 1];
+        facts.injuries = vec!["Cut".into(), "Bruise".into()];
+        facts.bounty_ready = true;
+        facts
+    }
+
+    #[test]
+    fn injuries_fold_into_one_row_only_on_overflow() {
+        let heavy = combat(&heavy_win());
+        let rows = texts(&heavy);
+        assert!(rows.contains(&"Injuries - Cut, Bruise"), "{rows:?}");
+        assert!(!rows.iter().any(|r| r.starts_with("Injury - ")), "{rows:?}");
+        assert_eq!(
+            rows.iter().position(|r| *r == "Injuries - Cut, Bruise"),
+            rows.iter().position(|r| *r == "Cargo -4").map(|i| i + 1),
+            "{rows:?}"
+        );
+        let body = heavy
+            .rows
+            .iter()
+            .filter(|r| r.section.counts_toward_cap())
+            .count();
+        assert!(body <= BODY_ROW_CAP, "{rows:?}");
+        // A card that fits keeps one row per injury.
+        let mut light = win(RecapResult::WonSpared);
+        light.injuries = vec!["Cut".into(), "Bruise".into()];
+        let rows = texts(&combat(&light)).join("|");
+        assert!(rows.contains("Injury - Cut|Injury - Bruise"), "{rows}");
+        assert!(!rows.contains("Injuries"), "{rows}");
+    }
+
+    #[test]
+    fn loot_summary_copy() {
+        assert_eq!(loot_summary(3, 20), "Loot - 3 items - Silver +20");
+        assert_eq!(loot_summary(1, 12), "Loot - 1 item - Silver +12");
+        assert_eq!(loot_summary(2, 0), "Loot - 2 items");
+        assert_eq!(loot_summary(1, 0), "Loot - 1 item");
+        assert_eq!(loot_summary(0, 9), "Loot - Silver +9");
+        for text in [loot_summary(3, 20), loot_summary(1, 0)] {
+            assert!(!text.ends_with('.'), "{text}");
+        }
+    }
+
+    #[test]
+    fn win_rows_with_an_injury_follow_the_order() {
+        let mut facts = win(RecapResult::WonSpared);
+        facts.loot = vec!["+12 silver".into(), "3 Rum".into()];
+        facts.injuries = vec!["Cracked rib".into()];
+        let recap = combat(&facts);
+        assert_eq!(
+            texts(&recap),
+            vec![
+                "Spared",
+                "Earned",
+                "Silver +120 - purse",
+                "Silver +12 - loot",
+                "3 Rum",
+                "Cost",
+                "Hull -12 - their broadside",
+                "Crew -1 - boarding melee",
+                "Injury - Cracked rib",
+                RULE_NOTE,
+            ]
+        );
+    }
+
+    #[test]
+    fn the_bounty_row_survives_a_heavy_win() {
+        let recap = combat(&heavy_win());
+        let rows = texts(&recap);
+        assert_eq!(
+            rows.iter().filter(|r| **r == BOUNTY_READY).count(),
+            1,
+            "{rows:?}"
+        );
+        assert!(!rows.contains(&BOUNTY_NOTE), "{rows:?}");
+        let body = recap
+            .rows
+            .iter()
+            .filter(|r| r.section.counts_toward_cap())
+            .count();
+        assert!(body <= BODY_ROW_CAP + 1, "{rows:?}");
+    }
+
+    #[test]
+    fn a_heavy_non_win_keeps_the_bounty_open_note() {
+        for result in [RecapResult::Lost, RecapResult::Drew, RecapResult::BrokeAway] {
+            let mut facts = loss();
+            facts.result = Some(result);
+            facts.injuries = vec!["Cut".into(), "Bruise".into()];
+            facts.bounty_open = true;
+            facts.bounty_ready = true;
+            let rows = texts(&combat(&facts)).join("|");
+            assert!(rows.contains(BOUNTY_NOTE), "{rows}");
+            assert!(!rows.contains(BOUNTY_READY), "{rows}");
+        }
     }
 
     #[test]
@@ -2730,7 +2878,8 @@ mod tests {
         facts.injuries = vec!["Cut".into(), "Bruise".into()];
         // body: choice, purse, loot silver, 3 goods rows, standing, 2 notes,
         // hull, crew, 2 injuries = 13 > 9. The loot folds to one row first
-        // (10), then the notes beyond the first drop.
+        // (10), the rule note drops, then the injuries fold (9), so both
+        // notes stay.
         let recap = combat(&facts);
         let body = recap
             .rows
@@ -2739,9 +2888,10 @@ mod tests {
             .count();
         assert_eq!(body, BODY_ROW_CAP);
         let rows = texts(&recap);
-        assert!(rows.contains(&"Loot: 3 items, +5 silver"), "{rows:?}");
+        assert!(rows.contains(&"Loot - 3 items - Silver +5"), "{rows:?}");
         assert!(!rows.contains(&"3 Rum") && !rows.contains(&"Silver +5 - loot"));
-        assert!(rows.contains(&"A") && !rows.contains(&"B"), "{rows:?}");
+        assert!(rows.contains(&"A") && rows.contains(&"B"), "{rows:?}");
+        assert!(rows.contains(&"Injuries - Cut, Bruise"), "{rows:?}");
         assert!(rows.iter().any(|t| t.starts_with("Underworld standing")));
     }
 

@@ -255,6 +255,10 @@ enum ShotPhase {
     /// Not saved: the won card again with a fight cost in silver and cargo,
     /// checked against the recap height cap.
     RecapWonCost,
+    /// Not saved: the heaviest won card (hull from three causes, crew from
+    /// two, silver, cargo, two injuries, net and the bounty row), checked
+    /// against the cap and the Return edge.
+    RecapWonHeavy,
 }
 
 impl ShotPhase {
@@ -265,7 +269,7 @@ impl ShotPhase {
             Self::Boarding => "encounter-boarding.png",
             Self::Personal => "encounter-fight.png",
             Self::RecapWon => "encounter-recap-won.png",
-            Self::RecapWonCost => "",
+            Self::RecapWonCost | Self::RecapWonHeavy => "",
             Self::Outcome => "encounter-outcome.png",
         }
     }
@@ -279,6 +283,7 @@ impl ShotPhase {
             Self::Outcome => "outcome",
             Self::RecapWon => "won recap",
             Self::RecapWonCost => "won recap with cost",
+            Self::RecapWonHeavy => "heavy won recap",
         }
     }
 
@@ -288,7 +293,9 @@ impl ShotPhase {
             Self::Naval => ScreenPhase::Naval,
             Self::Boarding => ScreenPhase::Boarding,
             Self::Personal => ScreenPhase::Personal,
-            Self::Outcome | Self::RecapWon | Self::RecapWonCost => ScreenPhase::Outcome,
+            Self::Outcome | Self::RecapWon | Self::RecapWonCost | Self::RecapWonHeavy => {
+                ScreenPhase::Outcome
+            }
         }
     }
 }
@@ -10908,9 +10915,7 @@ impl PortlightGame {
             };
             session.claim_bounty(id)
         };
-        if result.is_ok() {
-            self.hunt_desk.last_fight.remove(id);
-        }
+        hunt_screen::forget_on_claim(&mut self.hunt_desk, id, &result);
         self.hunt_desk.notice = match result {
             Ok(silver) => hunt_screen::claim_notice(silver),
             Err(err) => err.to_string(),
@@ -11297,7 +11302,10 @@ impl PortlightGame {
             godot_print!("{line}");
             self.push_log(line);
         } else {
-            godot_print!("Recap smoke: layout ok height {}", block.size.y);
+            godot_print!(
+                "Recap smoke: layout ok height {} bottom {bottom}",
+                block.size.y
+            );
         }
     }
 
@@ -11618,6 +11626,35 @@ impl PortlightGame {
                     godot_print!("Encounter shots: won cost rows {rows:?}");
                 } else {
                     godot_print!("Encounter shots: won cost rows ok");
+                }
+                if let Some(facts) = self.encounter.as_mut() {
+                    let seed = &mut facts.recap;
+                    seed.hull_by_cause = [5, 4, 3];
+                    seed.crew_by_cause = [1, 1];
+                    seed.injuries = vec!["Cut".into(), "Bruise".into()];
+                    if let Some(deltas) = seed.deltas.as_mut() {
+                        deltas[1] = -2;
+                        deltas[2] = -12;
+                    }
+                }
+                self.refresh();
+                self.encounter_shot = Some(ShotPhase::RecapWonHeavy);
+            }
+            ShotPhase::RecapWonHeavy => {
+                self.check_recap_layout();
+                let rows = self
+                    .recap_block_texts()
+                    .map(|(_, rows)| rows)
+                    .unwrap_or_default();
+                let ready = rows
+                    .iter()
+                    .filter(|row| row.as_str() == crate::recap::BOUNTY_READY)
+                    .count();
+                if ready != 1 {
+                    self.smoke_ok = false;
+                    godot_print!("Encounter shots: heavy won rows {rows:?}");
+                } else {
+                    godot_print!("Encounter shots: heavy won rows ok {}", rows.len());
                 }
                 self.leave_encounter();
                 self.report_encounter_smoke();
