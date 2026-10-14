@@ -151,7 +151,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** ceremonial drums are canon - strongest drum note after Stormwall; keep distinct (royal, slow) if music opens.
 - **Vs neighbours:** ceremonial court; vs Ember Isle's geology, vs Typhoon's wind.
 - **Fragments [proposal; no fragment or asset exists yet]:** `mat.crushed_coral`, `src.war_canoe_paddles`, `place.lagoon`.
-- Cited hooks: atmosphere "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums."; dock scene "The lagoon entrance is narrow and treacherous - local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock." (C:12196 area).
+- Cited hooks: atmosphere "Warm lagoon water, crushed coral underfoot, and the distant beat of ceremonial drums." (C:12199); dock scene "The lagoon entrance is narrow and treacherous - local pilots guide every ship through the reef. The Coral Palace rises ahead, its walls glittering with embedded shells and pearls. Warriors in war canoes escort you to the royal dock." (C:12200).
 - Invented bed idea: drums from the palace, surf on the outer reef. No assets are requested.
 
 ## J. Flags for this port

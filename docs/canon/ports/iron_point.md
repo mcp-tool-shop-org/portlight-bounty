@@ -138,7 +138,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the only percussive-industrial West Africa port; vs Ironhaven, it is open-air picks and rails, not furnaces.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.ore_cart_rail`, `src.pick_far`, `place.river_mouth`.
-- Cited hooks: atmosphere "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts."; dock scene "Ore carts rattle down tracks to the loading docks. The river runs red with mine runoff. Everything here - the buildings, the clothes, the skin - is stained rust." (C:12096 area).
+- Cited hooks: atmosphere "Red dust, the metallic tang of iron, and the echo of picks from the mine shafts." (C:12099); dock scene "Ore carts rattle down tracks to the loading docks. The river runs red with mine runoff. Everything here - the buildings, the clothes, the skin - is stained rust." (C:12100).
 - Invented bed idea: pick work echoing in tunnels, ore carts on rails. No assets are requested.
 
 ## J. Flags for this port

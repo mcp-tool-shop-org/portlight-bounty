@@ -156,7 +156,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** dockhand call-and-response is plausible but canon says "shouts", not song - keep as shouts (and voice is on hold).
 - **Vs neighbours:** the loud, open, grain-dusty Med hub; Al-Manar whispers, Silva Bay is woodwork.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.grain_sack_drop`, `mat.wax_tablet`, `place.stone_quay`.
-- Cited hooks: atmosphere "Flour dust, sea salt, and the shouts of dockhands loading grain barges."; dock scene "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks." (C:12006 area).
+- Cited hooks: atmosphere "Flour dust, sea salt, and the shouts of dockhands loading grain barges." (C:12009); dock scene "Grain barges jostle for position along the stone quays. Clerks with wax tablets tally every bushel while porters sweat under heavy sacks." (C:12010).
 - Invented bed idea: dawn price-calling in the Exchange; the arrival bell; grain chutes. No assets are requested.
 
 ## J. Flags for this port

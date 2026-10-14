@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Silva Bay](../ports/silva_bay.md) | - |
-| Region | Mediterranean | C:378 |
+| Region | Mediterranean | C:381 |
 | Shipped text | "The Master Shipyard - where the finest hulls in the Mediterranean take shape." [ascii-folded] | C:12027 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -58,8 +58,8 @@ Elena and the Brotherhood shipwrights, sawyers, caulkers. Every hull class the s
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Adze bite into green timber, mallet on treenail, the steam box hiss.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Adze bite into green timber; mallet on treenail (ambience only, kept distinct from the shipyard-hammer cue); steam box hiss; pitch pot simmer.
+- Fragment candidates: see the port's section I fragment ideas (../ports/silva_bay.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

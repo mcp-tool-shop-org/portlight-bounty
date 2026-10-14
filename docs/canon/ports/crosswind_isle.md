@@ -142,7 +142,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none; the language mix is walla - on hold.
 - **Vs neighbours:** busiest, most mixed East Indies bed; Dragon's Gate is disciplined, Spice Narrows is hushed.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.changer_table`, `src.flag_snap`, `place.free_port_quay`.
-- Cited hooks: atmosphere "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade."; dock scene "Ships from every region jostle for berth. The Free Port Bell tolls as you enter. Money-changers set up tables on the dock before your anchor hits bottom." (C:12146 area).
+- Cited hooks: atmosphere "A dozen languages, cooking smoke from every cuisine, and the constant negotiation of trade." (C:12149); dock scene "Ships from every region jostle for berth. The Free Port Bell tolls as you enter. Money-changers set up tables on the dock before your anchor hits bottom." (C:12150).
 - Invented bed idea: the Free Port Bell for every arrival; many languages at once. No assets are requested.
 
 ## J. Flags for this port

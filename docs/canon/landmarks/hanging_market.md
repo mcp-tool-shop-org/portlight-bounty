@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Spice Narrows](../ports/spice_narrows.md) | - |
-| Region | East Indies | C:1566 |
+| Region | East Indies | C:1569 |
 | Shipped text | "The Hanging Market - stalls suspended on ropes between cliff faces above the water." [ascii-folded] | C:12167 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -61,7 +61,7 @@ Extra depth (thin port): [invented] Every stall rope is owned by a different fam
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Rope creak, whispered prices carried by the water (custom C:12168).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/spice_narrows.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

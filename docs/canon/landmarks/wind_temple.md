@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Monsoon Reach](../ports/monsoon_reach.md) | - |
-| Region | East Indies | C:1206 |
+| Region | East Indies | C:1209 |
 | Shipped text | "The Wind Temple - a pagoda on the headland where monks track the monsoon." [ascii-folded] | C:12127 |
 | Sea mark | "The Wind Temple pagoda catches the sunset. Monsoon Reach is near." | crates/portlight-sim/src/voyage.rs:596 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -59,7 +59,7 @@ Palette: drawn from the Monsoon Reach port palette ([port file section C.3](../p
 |---|---|---|---|---|
 | Mass | teak and lacquer, muted (Dominant) | (111, 91, 77) #6F5B4D | 94 / 34 | in range |
 | Detail | jungle green, muted (Secondary 2) | (76, 92, 74) #4C5C4A | 87 / 18 | in range |
-| Accent | temple ochre (Accent) | (144, 117, 80) #907550 | 120 / 64 | small-area accent (chroma 64) |
+| Accent | rain-dark temple tile, small (Accent) | (84, 96, 124) #54607C | 95 / 40 | small-area accent (chroma 40) |
 
 Kit: compose from the shipped will-use plates; no named landmark has art today. Any new plate is a gap for the art gap list, not a commission.
 
@@ -69,8 +69,8 @@ Monks tracking the monsoon, the five-member council, shipwrights who read their 
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Pagoda bells with each council decision (institution text); wind in vanes.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Wind in the vanes; rigging creaking under monsoon load; prayer flags snapping on the headland (atmosphere). Pagoda bells in the lower hall (C:9700), distant ambience only, never a cue.
+- Fragment candidates: see the port's section I fragment ideas (../ports/monsoon_reach.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

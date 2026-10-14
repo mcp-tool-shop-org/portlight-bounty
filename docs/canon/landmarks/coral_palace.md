@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Coral Throne](../ports/coral_throne.md) | - |
-| Region | South Seas | C:1839 |
+| Region | South Seas | C:1842 |
 | Shipped text | "The Coral Palace - grown over centuries from living reef, rising from the lagoon like a crown." [ascii-folded] | C:12197 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -63,8 +63,8 @@ Extra depth (thin port): [invented] New rooms are grown, not built: divers plant
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Ceremonial drums (atmosphere); paddles of the escort.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Ceremonial drums, distant (atmosphere; drums are music NOTE ONLY, royal and slow); escort paddles.
+- Fragment candidates: see the port's section I fragment ideas (../ports/coral_throne.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

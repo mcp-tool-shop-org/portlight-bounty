@@ -77,7 +77,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 
 | Role | Family | sRGB | Luma / chroma | Status | Tie |
 |---|---|---|---|---|---|
-| Dominant | soot-stained brick | (96, 80, 72) #605048 | 83 / 24 | in range | forge smoke over brick |
+| Dominant | soot-stained brick, cool | (92, 82, 84) #5C5254 | 84 / 10 | in range | forge smoke over brick |
 | Secondary 1 | cold iron grey | (98, 100, 104) #626468 | 100 / 6 | in range | iron ore and blades |
 | Secondary 2 | northern sea slate | (80, 88, 92) #50585C | 87 / 12 | in range | harbour stone |
 | Accent | furnace glow | (120, 82, 66) #785242 | 89 / 54 | small-area accent (chroma 54) | the chimney 'glowing red at night' |
@@ -148,7 +148,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none; northern reticence (custom: a nod, not words).
 - **Vs neighbours:** the only metal-industrial bed; Stormwall is military order, Thornport is wood smoke and fish.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.anvil_hammer`, `src.bellows`, `place.foundry_quay`.
-- Cited hooks: atmosphere "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces."; dock scene "Iron-hulled barges sit low in the water. Cranes swing overhead, loading ingots onto merchant vessels. Sparks drift from the foundry like orange snowflakes." (C:12046 area).
+- Cited hooks: atmosphere "Coal smoke, ringing hammers, and the deep bass hum of bellows forcing air into furnaces." (C:12049); dock scene "Iron-hulled barges sit low in the water. Cranes swing overhead, loading ingots onto merchant vessels. Sparks drift from the foundry like orange snowflakes." (C:12050).
 - Invented bed idea: trip hammers, bellows, the foundry horn at shift change. No assets are requested.
 
 ## J. Flags for this port

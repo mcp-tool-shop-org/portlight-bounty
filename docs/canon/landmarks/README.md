@@ -59,3 +59,5 @@ Listed for completeness; no lane files in phase 2. Lane names are shown on the c
 ## Id note
 
 Landmark ids are canon-only, never data ids. Stormwall's 'The Fortress' uses `stormwall_fortress` (not `fortress`) so it cannot be confused with Dragon's Gate's `gate_fortress`.
+
+Sea marks are visual voyage text. Any future sound for the lighthouse event is a proposal and must not reuse port bells, sfx_chart_dock_arrive or sfx_chart_sail_depart.

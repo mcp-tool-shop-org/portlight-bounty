@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Iron Point](../ports/iron_point.md) | - |
-| Region | West Africa | C:961 |
+| Region | West Africa | C:964 |
 | Shipped text | "The River Mouth Mines - tunnels carved into red cliffs where the river meets the sea." [ascii-folded] | C:12097 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -56,7 +56,7 @@ Miners, the foreman, ore-cart crews.
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Picks echoing from shafts (atmosphere); carts on rails.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/iron_point.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

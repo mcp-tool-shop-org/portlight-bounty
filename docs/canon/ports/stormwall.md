@@ -143,7 +143,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** garrison drums are canon - treat as far, unpitched military cadence if music ever opens.
 - **Vs neighbours:** ordered and watched; vs Ironhaven's roar and Thornport's homely sheds. Contrast with Dragon's Gate: wind + gates here, chains + tea there.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.heavy_gate`, `src.inspection_stamp`, `place.garrison_quay`.
-- Cited hooks: atmosphere "Salt wind, military drums from the garrison, and the creak of heavy gates."; dock scene "Navy vessels line the inner harbor. Soldiers in grey coats patrol the docks, checking manifests against sealed orders. Everything is orderly. Everything is watched." (C:12056 area).
+- Cited hooks: atmosphere "Salt wind, military drums from the garrison, and the creak of heavy gates." (C:12059); dock scene "Navy vessels line the inner harbor. Soldiers in grey coats patrol the docks, checking manifests against sealed orders. Everything is orderly. Everything is watched." (C:12060).
 - Invented bed idea: the watch bell, inspectors calling manifests, gulls and gale. No assets are requested.
 
 ## J. Flags for this port

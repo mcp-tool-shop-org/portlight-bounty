@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Dragon's Gate](../ports/dragons_gate.md) | - |
-| Region | East Indies | C:1487 |
+| Region | East Indies | C:1490 |
 | Shipped text | "The Gate Fortress - twin stone towers flanking the strait, chains ready to close the passage." [ascii-folded] | C:12157 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -59,7 +59,7 @@ Extra depth (thin port): [invented] Closing the chain takes sixty seconds (C:103
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Chain clank; the gate gong [invented].
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/dragons_gate.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

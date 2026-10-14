@@ -79,7 +79,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 | Dominant | teak and lacquer, muted | (111, 91, 77) #6F5B4D | 94 / 34 | in range | the shipyard and temple |
 | Secondary 1 | monsoon cloud grey | (110, 112, 116) #6E7074 | 112 / 6 | in range | seasonal winds |
 | Secondary 2 | jungle green, muted | (76, 92, 74) #4C5C4A | 87 / 18 | in range | headland |
-| Accent | temple ochre | (144, 117, 80) #907550 | 120 / 64 | small-area accent (chroma 64) | the Wind Temple |
+| Accent | rain-dark temple tile, small | (84, 96, 124) #54607C | 95 / 40 | small-area accent (chroma 40) | the Wind Temple |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: a wind vane. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a pagoda on the headland above slipways and spice godowns. 7. Do and don't: README shared list.
 
@@ -140,12 +140,12 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** "Salt spray, incense ... and the creak of monsoon-tested rigging" (C:12129); wind round a headland.
-- **Signature:** heavy rigging creak under load; deep-keel hull settling; temple incense is smell only - no gong/bell (pitched).
+- **Signature:** heavy rigging creak under load; deep-keel hull settling; temple incense is smell only; the lower-hall pagoda bells (C:9700) stay distant ambience, never a cue.
 - **Sea mark:** "The Wind Temple pagoda catches the sunset. Monsoon Reach is near." (crates/portlight-sim/src/voyage.rs:596); see ../landmarks/wind_temple.md
 - **Music/work songs (NOTE ONLY):** monk chant would be invented; canon names forecasts, not chant - avoid.
 - **Vs neighbours:** wind-and-rope port; vs Typhoon Anchorage, steady seasonal wind, not storm.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.rigging_strain`, `place.headland_harbour`.
-- Cited hooks: atmosphere "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging."; dock scene "The harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts - the monsoon demands it." (C:12126 area).
+- Cited hooks: atmosphere "Salt spray, incense from the Wind Temple, and the creak of monsoon-tested rigging." (C:12129); dock scene "The harbor curves around a headland crowned by the Wind Temple. Ships here are built with deeper keels and stronger masts - the monsoon demands it." (C:12130).
 - Invented bed idea: temple wind chimes, rain on palm roofs, the yard. No assets are requested.
 
 ## J. Flags for this port

@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Corsair's Rest](../ports/corsairs_rest.md) | - |
-| Region | Mediterranean | C:459 |
+| Region | Mediterranean | C:462 |
 | Shipped text | "The Cliff Tavern - carved into the rock face, visible only from the sea." [ascii-folded] | C:12037 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -57,8 +57,8 @@ Crews of no flag, Mama Lucia at the fire pit, brokers from the Cliff Caves (C:77
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Low talk in a stone room; a fire pit; coins changing hands under the table (atmosphere).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Low talk in a stone room; a fire pit; coins passed muffled hand to hand under the table (atmosphere; ambience only, distinct from the trade-coin cue).
+- Fragment candidates: see the port's section I fragment ideas (../ports/corsairs_rest.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

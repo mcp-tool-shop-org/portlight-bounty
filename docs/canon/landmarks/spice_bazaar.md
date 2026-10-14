@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Al-Manar](../ports/al_manar.md) | - |
-| Region | Mediterranean | C:291 |
+| Region | Mediterranean | C:294 |
 | Shipped text | "The Spice Bazaar - a covered market where a hundred aromas compete for your attention." [ascii-folded] | C:12017 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -60,8 +60,8 @@ Spice factors, porters with brass-bound chests (dock scene), the Khoury family's
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Murmured bargaining under a vaulted roof; brass lamp chains; spice scoops on scale pans.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Murmured bargaining under a vaulted roof; lamp chains swaying; spice scoops tipped onto scale pans (ambience only, distinct from the trade-coin cue).
+- Fragment candidates: see the port's section I fragment ideas (../ports/al_manar.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

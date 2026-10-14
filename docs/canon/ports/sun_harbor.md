@@ -144,7 +144,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** canon's strongest work song - the Weighers "carrying the count in song" (C:8576). Flag for MUSIC when the hold lifts; never as SFX (no voice).
 - **Vs neighbours:** the singing port; soft-fibre thuds vs Iron Point's metal.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.cotton_bale`, `src.beam_scale`, `place.bale_quay`.
-- Cited hooks: atmosphere "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales."; dock scene "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song." (C:12076 area).
+- Cited hooks: atmosphere "Warm earth, indigo dye, and the rhythmic singing of dockworkers loading bales." (C:12079); dock scene "Cotton bales stack three stories high along the waterfront. Women in indigo cloth oversee the weighing, their voices carrying the count in song." (C:12080).
 - Invented bed idea: auction calls on the steps, the elder's blessing at dawn. No assets are requested.
 
 ## J. Flags for this port

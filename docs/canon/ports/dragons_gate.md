@@ -149,7 +149,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the strait fortress; chains + lacquer vs Stormwall's gates + drums; patience vs Crosswind's bustle.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.harbour_chain`, `mat.lacquer_armour`, `place.strait_fort`.
-- Cited hooks: atmosphere "Military precision, jasmine tea, and the distant clank of the harbor chains."; dock scene "Soldiers in lacquered armor inspect every ship that passes the twin towers. Tea merchants wait patiently on the inner docks, knowing inspection takes time." (C:12156 area).
+- Cited hooks: atmosphere "Military precision, jasmine tea, and the distant clank of the harbor chains." (C:12159); dock scene "Soldiers in lacquered armor inspect every ship that passes the twin towers. Tea merchants wait patiently on the inner docks, knowing inspection takes time." (C:12160).
 - Invented bed idea: the chain winch, the tower gong at closing, inspectors' calls. No assets are requested.
 
 ## J. Flags for this port

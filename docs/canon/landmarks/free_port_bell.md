@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Crosswind Isle](../ports/crosswind_isle.md) | - |
-| Region | East Indies | C:1382 |
+| Region | East Indies | C:1385 |
 | Shipped text | "The Free Port Bell - rung once for every ship that enters, never for one that leaves." [ascii-folded] | C:12147 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -57,8 +57,8 @@ A bell-keeper paid by the Free Port Council [invented]; every arriving crew hear
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- One toll per arrival (dock scene) - pitched, so never used as a game cue (bell rule).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- One toll per arrival heard across the harbour (dock scene; port ambience only, never layered on or substituted for sfx_chart_dock_arrive; pitched, so never a cue identity, bell rule).
+- Fragment candidates: see the port's section I fragment ideas (../ports/crosswind_isle.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

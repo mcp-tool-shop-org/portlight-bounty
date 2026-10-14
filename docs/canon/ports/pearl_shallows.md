@@ -139,7 +139,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none - sacred quiet is the design; leave space.
 - **Vs neighbours:** quietest port in the game; vs Typhoon/Coral pearls, this is calm and patient.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.diver_breath` (breath only, no voice), `src.canoe_paddle`, `place.warm_shallows`.
-- Cited hooks: atmosphere "Warm shallow water, coral sand, and the silence of divers preparing their breath."; dock scene "Canoes glide in from the reef. Divers emerge glistening, pouches of pearls tied to their wrists. An elder sits under a baobab tree, examining each pearl by sunlight." (C:12106 area).
+- Cited hooks: atmosphere "Warm shallow water, coral sand, and the silence of divers preparing their breath." (C:12109); dock scene "Canoes glide in from the reef. Divers emerge glistening, pouches of pearls tied to their wrists. An elder sits under a baobab tree, examining each pearl by sunlight." (C:12110).
 - Invented bed idea: water lapping, quiet prayer, divers' breath counts. No assets are requested.
 
 ## J. Flags for this port

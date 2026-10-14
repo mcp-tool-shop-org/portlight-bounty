@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Stormwall](../ports/stormwall.md) | - |
-| Region | North Atlantic | C:645 |
+| Region | North Atlantic | C:648 |
 | Shipped text | "The Fortress - grey stone walls rising from the sea, older than anyone remembers." [ascii-folded] | C:12057 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -27,16 +27,12 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - atmosphere: "Salt wind, military drums from the garrison, and the creak of heavy gates." (C:12059)
 - tavern_rumor: "The garrison commander has doubled the night watch. Nobody says why, but the soldiers look north when they think no one's watching." (C:12061)
 - local_custom: "All cargo is inspected. Complaining about it marks you as a southerner." (C:12058)
-- named in `lore` at C:1979
-- named in `cultural_flavor` at C:3134
 - named in `power_structure` at C:8118
 - named in `name` at C:8123
 - named in `description` at C:8126
 - named in `political_leaning` at C:8128
 - named in `description` at C:8146
-- named in `function` at C:8147
 - named in `description` at C:8156
-- named in `description` at C:8186
 - regional festival: The Iron Days (C:11808)
 - regional festival: Midwinter Market (C:11822)
 - named lane: The Iron Strait (Ironhaven - Stormwall, C:1978) - lanes are deferred to a later phase
@@ -67,8 +63,8 @@ Garrison in grey coats, inspectors (The Inspection Hall, C:8172), the commander.
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Garrison drums, heavy gates, salt wind (atmosphere).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Heavy gate hinges, salt wind, patrol boots (atmosphere); garrison drums distant only, music NOTE ONLY.
+- Fragment candidates: see the port's section I fragment ideas (../ports/stormwall.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

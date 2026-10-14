@@ -149,7 +149,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** fine, delicate taps; Silk Haven is looms (rhythmic clack), Ember Isle's heat is volcanic not kiln.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.porcelain_on_silk`, `src.glaze_brush_tap`, `src.bamboo_crane`.
-- Cited hooks: atmosphere "Kiln heat, wet clay, and the delicate tap-tap-tap of artisans painting glaze patterns."; dock scene "Bamboo cranes lift crates padded with straw from the hold. Each piece of porcelain is inspected by guild markers before it leaves the dock." (C:12116 area).
+- Cited hooks: atmosphere "Kiln heat, wet clay, and the delicate tap-tap-tap of artisans painting glaze patterns." (C:12119); dock scene "Bamboo cranes lift crates padded with straw from the hold. Each piece of porcelain is inspected by guild markers before it leaves the dock." (C:12120).
 - Invented bed idea: kiln fires roaring, porcelain ringing when tapped. No assets are requested.
 
 ## J. Flags for this port

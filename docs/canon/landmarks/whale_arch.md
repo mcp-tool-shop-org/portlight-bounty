@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Thornport](../ports/thornport.md) | - |
-| Region | North Atlantic | C:724 |
+| Region | North Atlantic | C:727 |
 | Shipped text | "The Whale Arch - a jawbone arch spanning the harbor entrance, bleached white by decades of salt." [ascii-folded] | C:12067 |
 | Sea mark | "The Whale Arch of Thornport stands white against the grey sky." | crates/portlight-sim/src/voyage.rs:598 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -63,7 +63,7 @@ Whalers, Bones the carver, mourners. Tea merchants brew samples on the pier bene
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Wind through the arch; a knife on bone; harpoon lines creaking at the pier.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/thornport.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

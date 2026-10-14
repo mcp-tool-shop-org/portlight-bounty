@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Palm Cove](../ports/palm_cove.md) | - |
-| Region | West Africa | C:882 |
+| Region | West Africa | C:885 |
 | Shipped text | "The Distillery Row - seven rum houses, each with its own secret recipe and fierce pride." [ascii-folded] | C:12087 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -55,7 +55,7 @@ Distillers, Old Cassius at the third distillery (rumour), boat crews, children d
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Barrels rumbling down wooden ramps; copper still ticks; bees.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/palm_cove.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

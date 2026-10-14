@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Pearl Shallows](../ports/pearl_shallows.md) | - |
-| Region | West Africa | C:1040 |
+| Region | West Africa | C:1043 |
 | Shipped text | "The Blessing Pool - a tidal pool where divers pray before descending." [ascii-folded] | C:12107 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -65,7 +65,7 @@ Elder Ama governs here (institution text); divers; the elder who examines each p
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Near silence; breath held; canoe paddles (atmosphere).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/pearl_shallows.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

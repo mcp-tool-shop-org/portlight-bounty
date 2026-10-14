@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus studio research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 

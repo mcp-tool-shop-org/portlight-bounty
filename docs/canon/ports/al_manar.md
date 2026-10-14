@@ -146,7 +146,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon; at most a far auctioneer's cadence from the Spice Merchants' Circle - spoken, not sung.
 - **Vs neighbours:** quietest Mediterranean market - stone and whispers, where Porto Novo is shouting and Silva Bay is hammering.
 - **Fragments [proposal; no fragment or asset exists yet]:** `mat.marble_step`, `src.spice_chest_brass`, `src.tea_cup_saucer`.
-- Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers."; dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12016 area).
+- Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers." (C:12019); dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12020).
 - Invented bed idea: tea-pouring before bargaining; a hundred voices under one roof. No assets are requested.
 
 ## J. Flags for this port

@@ -145,7 +145,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon; adze rhythm is the work-song stand-in.
 - **Vs neighbours:** wood-on-wood (Ironhaven is iron-on-iron); a working yard, not a market.
 - **Fragments [proposal; no fragment or asset exists yet]:** proposed `place.dockside_yard`, `place.timber_quay`, `src.adze_keel`, `src.pitch_pot`.
-- Cited hooks: atmosphere "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels."; dock scene "Sawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish." (C:12026 area).
+- Cited hooks: atmosphere "Fresh-cut timber, hot pitch, and the rhythmic sound of adzes shaping keels." (C:12029); dock scene "Sawdust drifts like snow across the waterfront. Half-finished hulls rise on slipways, their ribs exposed like the skeletons of great fish." (C:12030).
 - Invented bed idea: adzes, saws and mallets; the Hall bell opening council; timber barges at dawn. No assets are requested.
 
 ## J. Flags for this port

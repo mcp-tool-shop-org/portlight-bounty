@@ -154,7 +154,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none - silence is canon.
 - **Vs neighbours:** echoing, vertical; vs Al-Manar's whispers on marble, this is rope and cliff echo. (Only port where a short cliff echo is canon-justified - a deliberate section 1 exception if ever used.)
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.rope_ladder`, `src.basket_haul`, `place.cliff_anchorage`.
-- Cited hooks: atmosphere "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes."; dock scene "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical - everything climbs." (C:12166 area).
+- Cited hooks: atmosphere "Concentrated spice - overwhelming, intoxicating. The air itself burns your eyes." (C:12169); dock scene "The anchorage is hidden between volcanic cliffs. Rope ladders drop from the Hanging Market above. Commerce here is vertical - everything climbs." (C:12170).
 - Invented bed idea: whispers, ropes creaking, water below. No assets are requested.
 
 ## J. Flags for this port

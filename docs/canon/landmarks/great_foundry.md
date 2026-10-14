@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Ironhaven](../ports/ironhaven.md) | - |
-| Region | North Atlantic | C:556 |
+| Region | North Atlantic | C:559 |
 | Shipped text | "The Great Foundry - its chimney visible twenty leagues at sea, glowing red at night." [ascii-folded] | C:12047 |
 | Sea mark | "Ironhaven's Great Foundry chimney glows red on the horizon - a landmark for miles." | crates/portlight-sim/src/voyage.rs:595 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -49,7 +49,7 @@ Palette: drawn from the Ironhaven port palette ([port file section C.3](../ports
 
 | Role | Port swatch | sRGB | Luma / chroma | Status |
 |---|---|---|---|---|
-| Mass | soot-stained brick (Dominant) | (96, 80, 72) #605048 | 83 / 24 | in range |
+| Mass | soot-stained brick, cool (Dominant) | (92, 82, 84) #5C5254 | 84 / 10 | in range |
 | Detail | cold iron grey (Secondary 1) | (98, 100, 104) #626468 | 100 / 6 | in range |
 | Accent | furnace glow (Accent) | (120, 82, 66) #785242 | 89 / 54 | small-area accent (chroma 54) |
 
@@ -62,7 +62,7 @@ Smiths, furnace crews, crane gangs (dock scene). The Iron Days festival is held 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Ringing hammers and the deep bellows hum (atmosphere); crane chains.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/ironhaven.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

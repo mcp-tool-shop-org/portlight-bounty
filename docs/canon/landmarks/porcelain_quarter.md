@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Jade Port](../ports/jade_port.md) | - |
-| Region | East Indies | C:1119 |
+| Region | East Indies | C:1122 |
 | Shipped text | "The Porcelain Quarter - a district of workshops where master potters fire kilns day and night." [ascii-folded] | C:12117 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -60,7 +60,7 @@ Master potters, guild markers inspecting every piece (dock scene).
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Kiln roar under the tap of glaze brushes (atmosphere).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/jade_port.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

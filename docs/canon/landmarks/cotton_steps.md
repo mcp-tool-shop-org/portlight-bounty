@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Sun Harbor](../ports/sun_harbor.md) | - |
-| Region | West Africa | C:803 |
+| Region | West Africa | C:806 |
 | Shipped text | "The Cotton Steps - wide stone stairs where cotton bales are displayed and auctioned." [ascii-folded] | C:12077 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -30,7 +30,6 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - local_custom: "The first trade of the day is blessed by an elder. Smart captains arrive early." (C:12078)
 - named in `power_structure` at C:8558
 - named in `name` at C:8573
-- named in `sh_kofi` at C:8693
 - named in `description` at C:8706
 - named in `agenda` at C:8707
 - regional festival: Dyer's Moon (C:11864)
@@ -63,8 +62,9 @@ Women in indigo who oversee the weighing and sing the count (dock scene); bidder
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- The count sung over bale thumps (atmosphere).
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Bale thumps on stone steps; scale beams creaking (atmosphere).
+- Music NOTE ONLY: Kofi's counting song, "rises into song when he's counting bales" (C:8706); music stays on hold.
+- Fragment candidates: see the port's section I fragment ideas (../ports/sun_harbor.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

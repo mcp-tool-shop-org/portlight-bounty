@@ -77,7 +77,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 | Dominant | storm-wet timber | (92, 84, 76) #5C544C | 85 / 16 | in range | wreck hulls |
 | Secondary 1 | typhoon sky grey | (104, 108, 112) #686C70 | 107 / 8 | in range | storms |
 | Secondary 2 | reef stone | (110, 104, 96) #6E6860 | 105 / 14 | in range | breakwater base |
-| Accent | pearl sheen | (144, 140, 130) #908C82 | 140 / 14 | in range | pearls |
+| Accent | storm-flag red, small | (128, 80, 72) #805048 | 90 / 56 | small-area accent (chroma 56) | storm flags on the wall |
 
 4. Dress: see section B. 5. Signage: ASCII only, no UI-duplicating words; motifs [invented]: carved ship names. 6. Silhouette: chart scale is the shared `chart_port_marker`; harbour-scale skyline [invented]: a long dark breakwater of hulls around a small shipyard. 7. Do and don't: README shared list.
 
@@ -144,7 +144,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.mooring_chain_strain`, `src.carve_name`, `place.leeward_cliff`.
 
 ---
-- Cited hooks: atmosphere "Wind that never fully dies, salt-crusted everything, and the pride of survival."; dock scene "The harbor is carved into the leeward cliff. Ships are chained, not anchored - anchors aren't enough here. Pearl divers work the outer reef between storms." (C:12186 area).
+- Cited hooks: atmosphere "Wind that never fully dies, salt-crusted everything, and the pride of survival." (C:12189); dock scene "The harbor is carved into the leeward cliff. Ships are chained, not anchored - anchors aren't enough here. Pearl divers work the outer reef between storms." (C:12190).
 - Invented bed idea: surf against the wall, carving tools, wind. No assets are requested.
 
 ## J. Flags for this port

@@ -186,7 +186,7 @@ Why: Canon assigns invented home ports; data could follow later.
 
 Where:
 - crates/portlight-sim/src/voyage.rs:594 ("The beacon of Porto Novo breaks through the haze.")
-- crates/portlight-sim/data/content.json:6958 (The Harbor Master's Tower: tower and telescope, no beacon)
+- crates/portlight-sim/data/content.json:6962 (The Harbor Master's Tower: tower and telescope, no beacon)
 
 Proposed fix: Add one clause to the pn_harbor description, for example "A beacon lamp burns on the roof from dusk to dawn." Canon already places the beacon there (landmarks/porto_novo_beacon.md).
 
@@ -234,7 +234,7 @@ Why: on the map they cross other regions. This is a flag, not an error.
 - Bloc against region mismatches (Free Ports and Shadow Ports span regions): blocs are political, regions are geographic, by design.
 - Thornport whaler names (C:8362 beams, C:8499 Arch, C:12348 Arch): the Arch holds the originals carved by Bones; the Whale Bone's beams hold copies (landmarks/whale_arch.md).
 - Porto Novo bells (C:12008, C:6998, C:11753): two bells. The salvaged bell over the Harbor Bell tavern door is the one captains ring on arrival; the Exchange's great bell rings for the Harvest of Plenty (landmarks/grain_exchange.md).
-- Player-visible near-duplicates: The Cliff Tavern / Mama Lucia's Kitchen (one place, the Kitchen is its back room); The Fortress / The Fortress Gate (the Gate is the sea gate in the walls); The Gate Fortress / The Chain Harbor / The Gate Command (parts of one fortress); The Hanging Market / The Dark Room (open market above, the Weigher's cave behind); The Distillery Row / The Third Distillery (one house of seven); The Free Port Bell / The Bell and Board (two bells); The River Mouth Mines / The River Mouth Dock (the dock is the mines' loading quay).
+- Near-duplicate names (landmark vs institution; institution names are not shown today): The Cliff Tavern / Mama Lucia's Kitchen (one place, the Kitchen is its back room); The Fortress / The Fortress Gate (the Gate is the sea gate in the walls); The Gate Fortress / The Chain Harbor / The Gate Command (parts of one fortress); The Hanging Market / The Dark Room (open market above, the Weigher's cave behind); The Distillery Row / The Third Distillery (one house of seven); The Free Port Bell / The Bell and Board (two bells); The River Mouth Mines / The River Mouth Dock (the dock is the mines' loading quay).
 - The Chain Harbor (Dragon's Gate, C:10361) and The Chained Harbor (Typhoon Anchorage, C:11025): different places. One bars a strait, the other moors ships.
 - The Storm Wall (Typhoon Anchorage) and Stormwall (North Atlantic port): unrelated.
 - The Deep Reef (exchange, C:11034) and The Deep Reef Brotherhood (C:2896): the pirates are named for the reef ground; no tie.

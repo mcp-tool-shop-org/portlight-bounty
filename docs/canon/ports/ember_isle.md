@@ -151,7 +151,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the only geological bed (sub rumble); vs Coral Throne's drums and Typhoon's wind.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.steam_vent`, `mat.obsidian_scree`, `src.stone_placed`.
-- Cited hooks: atmosphere "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps."; dock scene "Black sand beaches and obsidian-sharp rocks frame the harbor. Steam rises from hot springs near the dock. Herbalists sort medicinal plants in the warm volcanic soil." (C:12176 area).
+- Cited hooks: atmosphere "Sulfur, tropical flowers, and the low rumble of a volcano that never fully sleeps." (C:12179); dock scene "Black sand beaches and obsidian-sharp rocks frame the harbor. Steam rises from hot springs near the dock. Herbalists sort medicinal plants in the warm volcanic soil." (C:12180).
 - Invented bed idea: the mountain's rumble, hot springs hissing. No assets are requested.
 
 ## J. Flags for this port

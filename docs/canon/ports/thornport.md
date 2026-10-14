@@ -141,7 +141,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon (shanties would be invented - avoid).
 - **Vs neighbours:** domestic, slower North Atlantic port; no forge (Ironhaven), no drums (Stormwall).
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.harpoon_rack`, `src.kettle_crate`, `mat.tobacco_leaf`.
-- Cited hooks: atmosphere "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds."; dock scene "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers." (C:12066 area).
+- Cited hooks: atmosphere "Wood smoke, drying fish, and the bitter-sweet scent of tobacco curing in the sheds." (C:12069); dock scene "Whaling boats line the pier, their harpoons cleaned and ready. Tea merchants squat beside wooden crates, brewing samples for prospective buyers." (C:12070).
 - Invented bed idea: the creak of the boat yard; Old Magnus telling stories. No assets are requested.
 
 ## J. Flags for this port

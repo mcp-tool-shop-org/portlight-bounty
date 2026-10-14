@@ -140,7 +140,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none in canon.
 - **Vs neighbours:** the softest, warmest bed on the coast; no singing (Sun Harbor), no silence ritual (Pearl Shallows).
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.barrel_ramp`, `src.coin_water_plop`, `place.sheltered_cove`.
-- Cited hooks: atmosphere "Sweet molasses, fermenting sugar cane, and the lazy hum of bees."; dock scene "Small boats bob in the sheltered cove. Rum barrels roll down wooden ramps from the hilltop distilleries. Children dive for coins tossed by arriving crews." (C:12086 area).
+- Cited hooks: atmosphere "Sweet molasses, fermenting sugar cane, and the lazy hum of bees." (C:12089); dock scene "Small boats bob in the sheltered cove. Rum barrels roll down wooden ramps from the hilltop distilleries. Children dive for coins tossed by arriving crews." (C:12090).
 - Invented bed idea: cask hammering, laughter, a cup offered to every stranger. No assets are requested.
 
 ## J. Flags for this port

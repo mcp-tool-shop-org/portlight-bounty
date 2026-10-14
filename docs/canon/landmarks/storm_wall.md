@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Typhoon Anchorage](../ports/typhoon_anchorage.md) | - |
-| Region | South Seas | C:1750 |
+| Region | South Seas | C:1753 |
 | Shipped text | "The Storm Wall - a massive breakwater built from the hulls of ships that didn't make it." [ascii-folded] | C:12187 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -57,7 +57,7 @@ Palette: drawn from the Typhoon Anchorage port palette ([port file section C.3](
 |---|---|---|---|---|
 | Mass | storm-wet timber (Dominant) | (92, 84, 76) #5C544C | 85 / 16 | in range |
 | Detail | typhoon sky grey (Secondary 1) | (104, 108, 112) #686C70 | 107 / 8 | in range |
-| Accent | reef stone (Secondary 2) | (110, 104, 96) #6E6860 | 105 / 14 | in range |
+| Accent | storm-flag red, small (Accent) | (128, 80, 72) #805048 | 90 / 56 | small-area accent (chroma 56) |
 
 Kit: compose from the shipped will-use plates; no named landmark has art today. Any new plate is a gap for the art gap list, not a commission.
 
@@ -67,8 +67,8 @@ Survivors who carve, the governor, Wreck Yard builders.
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- Chains straining; surf through hull timbers.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Mooring chains straining and snatching (survival moorings, not a controlled boom like the Gate Fortress chain); surf through dead-hull timbers; a knife carving a name into the wall (custom).
+- Fragment candidates: see the port's section I fragment ideas (../ports/typhoon_anchorage.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

@@ -147,7 +147,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none - the Brotherhood is "a silence" (C:12043); absence is the design.
 - **Vs neighbours:** the one Med port with no flags and no voices - intimate and furtive vs Porto Novo's open quays.
 - **Fragments [proposal; no fragment or asset exists yet]:** `place.hidden_cove`, `src.silver_palmed`, `src.oarlock_rowboat`.
-- Cited hooks: atmosphere "Torch smoke, cheap rum, and the clink of coins changing hands under the table."; dock scene "Ships anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee - payable in silver, no questions." (C:12036 area).
+- Cited hooks: atmosphere "Torch smoke, cheap rum, and the clink of coins changing hands under the table." (C:12039); dock scene "Ships anchor in the hidden cove with no flags flying. A boy in a rowboat approaches to collect the docking fee - payable in silver, no questions." (C:12040).
 - Invented bed idea: water slapping in caves; low talk; no bells. No assets are requested.
 
 ## J. Flags for this port

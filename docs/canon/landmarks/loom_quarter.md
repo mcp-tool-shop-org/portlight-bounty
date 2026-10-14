@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Silk Haven](../ports/silk_haven.md) | - |
-| Region | East Indies | C:1295 |
+| Region | East Indies | C:1298 |
 | Shipped text | "The Loom Quarter - where silk is woven in patterns a thousand years old." [ascii-folded] | C:12137 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -66,7 +66,7 @@ Extra depth (thin port): [invented] Each street of the Quarter weaves one patter
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - A hundred looms clacking (atmosphere); silk rustle.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/silk_haven.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

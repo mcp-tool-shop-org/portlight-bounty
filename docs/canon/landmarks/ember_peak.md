@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Ember Isle](../ports/ember_isle.md) | - |
-| Region | South Seas | C:1663 |
+| Region | South Seas | C:1666 |
 | Shipped text | "Ember Peak - the smoldering volcano visible from fifty leagues, its glow a navigator's beacon." [ascii-folded] | C:12177 |
 | Sea mark | "Ember Peak's volcanic glow marks the horizon. The South Seas await." | crates/portlight-sim/src/voyage.rs:597 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -60,7 +60,7 @@ Extra depth (thin port): [invented] The Keepers read the peak's colour each dusk
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - Low volcanic rumble (atmosphere); steam vents.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/ember_isle.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

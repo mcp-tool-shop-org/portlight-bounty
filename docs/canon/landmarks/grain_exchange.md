@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | A (port landmark) | - |
 | Port | [Porto Novo](../ports/porto_novo.md) | - |
-| Region | Mediterranean | C:210 |
+| Region | Mediterranean | C:213 |
 | Shipped text | "The Grain Exchange - a columned hall where prices are read aloud at dawn." [ascii-folded] | C:12007 |
 | Sea mark | none | voyage.rs:592-607 |
 | Player sees it | yes, as the Landmark line on arrival | crates/portlight-sim/src/port_arrival_engine.rs:157-159 |
@@ -64,8 +64,9 @@ Clerks with wax tablets (dock scene), porters, factors, the Exchange Guild. Mart
 
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
-- A single voice reading rates at dawn over harbour murmur; wax-tablet scratches; sacks thudding on stone.
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Wax-tablet scratches; sacks thudding on stone; dawn harbour murmur (atmosphere).
+- Voice NOTE ONLY: rates read aloud at dawn [invented]; voice stays on hold.
+- Fragment candidates: see the port's section I fragment ideas (../ports/porto_novo.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 

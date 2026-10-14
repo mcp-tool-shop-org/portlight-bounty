@@ -154,7 +154,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 - **Music/work songs (NOTE ONLY):** none; loom rhythm is the pulse.
 - **Vs neighbours:** soft fabric + wood looms vs Jade Port's ceramic taps.
 - **Fragments [proposal; no fragment or asset exists yet]:** `src.loom_shuttle`, `mat.silk_fold`, `src.sampan_scull`.
-- Cited hooks: atmosphere "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam."; dock scene "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch." (C:12136 area).
+- Cited hooks: atmosphere "The rhythmic clack of a hundred looms, the rustle of silk, and green tea steam." (C:12139); dock scene "Sampans glide between junks with crimson sails. Merchants in silk robes examine bolts of fabric with magnifying glasses, judging thread count by touch." (C:12140).
 - Invented bed idea: hundreds of looms clacking; the calligrapher's brush. No assets are requested.
 
 ## J. Flags for this port

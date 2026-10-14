@@ -9,20 +9,20 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 |---|---|---|
 | Category | B (sea mark) | - |
 | Port | [Porto Novo](../ports/porto_novo.md) | - |
-| Region | Mediterranean | C:210 |
+| Region | Mediterranean | C:213 |
 | Shipped text | "The beacon of Porto Novo breaks through the haze. You're on course." | crates/portlight-sim/src/voyage.rs:594 |
 | Player sees it | yes, as a random voyage event on any lane (DF-19) | voyage.rs:592-607 |
 | Mechanic | none [flavour, no mechanic] | - |
 
 ## 1. Location (all [invented] unless a cite or a named data field is given)
 
-[invented] A lamp on the roof of The Harbor Master's Tower, the stone tower at the harbour mouth (C:6958). The tower's brass telescope shares the roof. The beacon is not in content.json; it exists only in the voyage lighthouse line (crates/portlight-sim/src/voyage.rs:594).
+[invented] A lamp on the roof of The Harbor Master's Tower, the stone tower at the harbour mouth (C:6962). The tower's brass telescope shares the roof. The beacon is not in content.json; it exists only in the voyage lighthouse line (crates/portlight-sim/src/voyage.rs:594).
 
 No coordinates exist for landmarks; the chart position is the port's own map x/y. Placing landmarks on the chart is a future phase.
 
 ## 2. Data cites
 
-- named in `name` at C:6959
+- host building: The Harbor Master's Tower, `description` at C:6962 (stone tower, brass telescope on the roof; no beacon in data, DF-18)
 - voyage lighthouse line: crates/portlight-sim/src/voyage.rs:594
 - regional festival: Harvest of Plenty (C:11753)
 - regional festival: Night of Lanterns (C:11766)
@@ -56,7 +56,7 @@ Kept by the Harbor Master's clerks (Vasco's office, C:6958 area). Lit at dusk, t
 ## 6. Sound hook (all [invented] sound design unless quoted from a cite)
 
 - None at the beacon itself; from sea it is silent. Hook only: oil hiss and a lamp door closing [invented].
-- Fragments: none proposed yet [proposal]. No music, no voice; #45 ear hold unaffected.
+- Fragment candidates: see the port's section I fragment ideas (../ports/porto_novo.md) [proposal; no fragment or asset exists yet]. No music, no voice; voice and music holds stand (README).
 
 ## 7. Links to ports
 
