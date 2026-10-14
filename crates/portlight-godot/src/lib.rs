@@ -18,6 +18,7 @@ mod market;
 mod newgame_screen;
 mod playtest;
 mod recap;
+mod recap_card;
 mod seam;
 mod shipyard_screen;
 

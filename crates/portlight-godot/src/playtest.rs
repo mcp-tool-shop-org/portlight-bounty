@@ -98,6 +98,7 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::OpenJournal => "chart.journal.open".into(),
         Action::CloseJournal => "chart.journal.close".into(),
         Action::CloseDayReport => "chart.day_report.close".into(),
+        Action::CloseRecap => "recap.close".into(),
         Action::DepartureSail => "chart.departure.sail".into(),
         Action::DepartureStay => "chart.departure.stay".into(),
         Action::ToggleBeat(id) => format!("journal.beat.{id}"),
@@ -312,6 +313,7 @@ fn static_action(id: &str) -> Option<Action> {
         "chart.journal.open" => Action::OpenJournal,
         "chart.journal.close" => Action::CloseJournal,
         "chart.day_report.close" => Action::CloseDayReport,
+        "recap.close" => Action::CloseRecap,
         "chart.departure.sail" => Action::DepartureSail,
         "chart.departure.stay" => Action::DepartureStay,
         "chart.harbour.open" => Action::OpenHarbour,
@@ -537,6 +539,9 @@ pub(crate) enum OfferLayer {
     /// The Day's report card (non-blocking, drawn above the desks and the
     /// encounter).
     DayReport,
+    /// The contract recap card: modal over the chart and every desk, drawn
+    /// just under the Day's report.
+    Recap,
     /// An input-blocking screen.
     Blocking(BlockingOverlay),
 }
@@ -561,13 +566,19 @@ pub(crate) enum OfferScope {
 ///   ([`implicit_dismiss`]), so it never confirms the Departure check's lane;
 ///   a Sail to another lane runs that lane's own check.
 ///
-/// Draw order (top first): Departure, Day's report, then the blocking
-/// screens.
+/// Draw order (top first): Departure, Day's report, the contract recap
+/// card, then the blocking screens.
 pub(crate) fn offer_scope(
     blocking: Option<BlockingOverlay>,
     day_report: bool,
     departure: bool,
+    recap: bool,
 ) -> OfferScope {
+    // The recap card is modal everywhere: only the Day's report (and the
+    // Departure check) rank above it.
+    if recap && !day_report && !departure {
+        return OfferScope::Only(OfferLayer::Recap);
+    }
     let Some(blocking) = blocking else {
         return OfferScope::Everything;
     };
@@ -1802,21 +1813,27 @@ mod tests {
     fn f10_1_top_screen_actions_are_always_offered() {
         use BlockingOverlay::*;
         assert_eq!(
-            offer_scope(Some(Encounter), true, false),
+            offer_scope(Some(Encounter), true, false, false),
             OfferScope::Only(OfferLayer::DayReport)
         );
         assert_eq!(
-            offer_scope(Some(Hunt), false, true),
+            offer_scope(Some(Hunt), false, true, false),
             OfferScope::Only(OfferLayer::Departure)
         );
         assert_eq!(
-            offer_scope(Some(Journal), false, false),
+            offer_scope(Some(Journal), false, false, false),
             OfferScope::Only(OfferLayer::Blocking(Journal))
         );
         // Over the chart the scope is everything drawn, which holds the
         // overlay's own Close / Stay / Sail anyway.
-        assert_eq!(offer_scope(None, true, false), OfferScope::Everything);
-        assert_eq!(offer_scope(None, false, true), OfferScope::Everything);
+        assert_eq!(
+            offer_scope(None, true, false, false),
+            OfferScope::Everything
+        );
+        assert_eq!(
+            offer_scope(None, false, true, false),
+            OfferScope::Everything
+        );
     }
 
     /// F10-2: an input-blocking screen hides the chart behind it. Every
@@ -1828,7 +1845,7 @@ mod tests {
             Encounter, Hunt, Crew, Contracts, Shipyard, Harbour, Journal, Newgame,
         ] {
             assert_eq!(
-                offer_scope(Some(overlay), false, false),
+                offer_scope(Some(overlay), false, false, false),
                 OfferScope::Only(OfferLayer::Blocking(overlay)),
                 "{overlay:?}"
             );
@@ -1836,7 +1853,7 @@ mod tests {
         // Encounter outranks a desk left open under it.
         let top = blocking_overlay(&[(Contracts, true), (Encounter, true)]);
         assert_eq!(
-            offer_scope(top, false, false),
+            offer_scope(top, false, false, false),
             OfferScope::Only(OfferLayer::Blocking(Encounter))
         );
     }
@@ -1884,7 +1901,7 @@ mod tests {
     fn report_outranks_every_blocking_screen() {
         for overlay in BLOCKING_DRAW_ORDER {
             assert_eq!(
-                offer_scope(Some(overlay), true, false),
+                offer_scope(Some(overlay), true, false, false),
                 OfferScope::Only(OfferLayer::DayReport),
                 "{overlay:?}"
             );
@@ -1896,20 +1913,82 @@ mod tests {
     #[test]
     fn f10_3_one_layer_at_a_time() {
         use BlockingOverlay::*;
-        let report_over_fight = offer_scope(Some(Encounter), true, false);
+        let report_over_fight = offer_scope(Some(Encounter), true, false, false);
         assert_eq!(report_over_fight, OfferScope::Only(OfferLayer::DayReport));
         assert_ne!(
             report_over_fight,
             OfferScope::Only(OfferLayer::Blocking(Encounter))
         );
         assert_eq!(
-            offer_scope(Some(Encounter), false, false),
+            offer_scope(Some(Encounter), false, false, false),
             OfferScope::Only(OfferLayer::Blocking(Encounter))
         );
         // The top-most non-blocking layer wins when both are up.
         assert_eq!(
-            offer_scope(Some(Encounter), true, true),
+            offer_scope(Some(Encounter), true, true, false),
             OfferScope::Only(OfferLayer::Departure)
+        );
+    }
+
+    /// RC3 (RV 1): the contract card is modal everywhere and ranks just
+    /// under the Day's report. While the report is up the card waits and a
+    /// chart press closes the report, never the card.
+    #[test]
+    fn recap_yields_to_the_report() {
+        use BlockingOverlay::*;
+        // Over the chart the report keeps F10-4 (everything offered; a
+        // press closes the report first, and then the waiting card stops it).
+        assert_eq!(offer_scope(None, true, false, true), OfferScope::Everything);
+        for blocking in [None, Some(Contracts), Some(Encounter)] {
+            if blocking.is_some() {
+                assert_eq!(
+                    offer_scope(blocking, true, false, true),
+                    OfferScope::Only(OfferLayer::DayReport),
+                    "{blocking:?}"
+                );
+            }
+            assert_eq!(
+                offer_scope(blocking, false, false, true),
+                OfferScope::Only(OfferLayer::Recap),
+                "{blocking:?}"
+            );
+        }
+        assert_eq!(
+            implicit_dismiss(false, true, false, false),
+            Some(ImplicitDismiss::CloseDayReport)
+        );
+        assert!(matches!(
+            static_action("recap.close"),
+            Some(Action::CloseRecap)
+        ));
+        assert_eq!(action_playtest_id(&Action::CloseRecap), "recap.close");
+    }
+
+    /// RV 2: with a paid card up over the chart only its Close is offered,
+    /// so no Market sell (or any chart press) can run under it.
+    #[test]
+    fn recap_card_is_modal_over_the_chart() {
+        assert_eq!(
+            offer_scope(None, false, false, true),
+            OfferScope::Only(OfferLayer::Recap)
+        );
+        assert_eq!(
+            offer_scope(None, false, false, false),
+            OfferScope::Everything
+        );
+    }
+
+    /// RV 6: over the Contracts desk the abandon card owns the offer, so the
+    /// desk's own Close is not offered while it is up.
+    #[test]
+    fn abandon_card_owns_the_desk() {
+        assert_eq!(
+            offer_scope(Some(BlockingOverlay::Contracts), false, false, true),
+            OfferScope::Only(OfferLayer::Recap)
+        );
+        assert_eq!(
+            offer_scope(Some(BlockingOverlay::Contracts), false, false, false),
+            OfferScope::Only(OfferLayer::Blocking(BlockingOverlay::Contracts))
         );
     }
 
@@ -1951,9 +2030,15 @@ mod tests {
     /// offered, and a chart press counts as Stay / close first.
     #[test]
     fn f10_4_non_blocking_overlays_keep_the_chart() {
-        assert_eq!(offer_scope(None, false, true), OfferScope::Everything);
-        assert_eq!(offer_scope(None, true, false), OfferScope::Everything);
-        assert_eq!(offer_scope(None, true, true), OfferScope::Everything);
+        assert_eq!(
+            offer_scope(None, false, true, false),
+            OfferScope::Everything
+        );
+        assert_eq!(
+            offer_scope(None, true, false, false),
+            OfferScope::Everything
+        );
+        assert_eq!(offer_scope(None, true, true, false), OfferScope::Everything);
         // A chart press under Departure is Stay in port; its own buttons
         // are not.
         assert_eq!(
