@@ -122,8 +122,8 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13851) | - | - | - | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Long Crossing": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive." (C:2099).
-- Lane lore: "The Porcelain Lane": "From the free port to the kiln masters. Every piece of porcelain in the west passed through here." (C:2126).
+- Lane lore: "The Long Crossing": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive." (C:2099). Lane canon: [The Long Crossing](../lanes/long_crossing.md).
+- Lane lore: "The Porcelain Lane": "From the free port to the kiln masters. Every piece of porcelain in the west passed through here." (C:2126). Lane canon: [The Porcelain Lane](../lanes/porcelain_lane.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

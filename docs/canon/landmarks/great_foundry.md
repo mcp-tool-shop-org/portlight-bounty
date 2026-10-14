@@ -33,8 +33,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - voyage lighthouse line: crates/portlight-sim/src/voyage.rs:595
 - regional festival: The Iron Days (C:11808)
 - regional festival: Midwinter Market (C:11822)
-- named lane: The Iron Strait (Ironhaven - Stormwall, C:1978) - lanes are deferred to a later phase
-- named lane: The Northern Passage (Ironhaven - Jade Port, C:2302) - lanes are deferred to a later phase
+- named lane: The Iron Strait (Ironhaven - Stormwall, C:1978) - see [../lanes/iron_strait.md](../lanes/iron_strait.md)
+- named lane: The Northern Passage (Ironhaven - Jade Port, C:2302) - see [../lanes/northern_passage.md](../lanes/northern_passage.md)
 
 ## 3. History (all [invented] unless cited)
 

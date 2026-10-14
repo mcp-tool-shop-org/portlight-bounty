@@ -34,7 +34,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `arrival_text` at C:13216
 - regional festival: Coral Coronation (C:11976)
 - regional festival: Fire Walking (C:11990)
-- named lane: The Deep South Run (Pearl Shallows - Coral Throne, C:2311) - lanes are deferred to a later phase
+- named lane: The Deep South Run (Pearl Shallows - Coral Throne, C:2311) - see [../lanes/deep_south_run.md](../lanes/deep_south_run.md)
 
 ## 3. History (all [invented] unless cited)
 

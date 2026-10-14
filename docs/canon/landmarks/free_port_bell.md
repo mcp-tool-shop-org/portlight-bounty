@@ -30,8 +30,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `dock_scene` at C:12150
 - regional festival: Silk Weavers' Fair (C:11920)
 - regional festival: Monsoon Prayer (C:11934)
-- named lane: The Long Crossing (Sun Harbor - Crosswind Isle, C:2104) - lanes are deferred to a later phase
-- named lane: The Porcelain Lane (Crosswind Isle - Jade Port, C:2131) - lanes are deferred to a later phase
+- named lane: The Long Crossing (Sun Harbor - Crosswind Isle, C:2104) - see [../lanes/long_crossing.md](../lanes/long_crossing.md)
+- named lane: The Porcelain Lane (Crosswind Isle - Jade Port, C:2131) - see [../lanes/porcelain_lane.md](../lanes/porcelain_lane.md)
 
 ## 3. History (all [invented] unless cited)
 

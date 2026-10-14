@@ -30,8 +30,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `dock_scene` at C:12170
 - regional festival: Silk Weavers' Fair (C:11920)
 - regional festival: Monsoon Prayer (C:11934)
-- named lane: The Volcanic Passage (Spice Narrows - Ember Isle, C:2239) - lanes are deferred to a later phase
-- named lane: The Smuggler's Run (Corsair's Rest - Spice Narrows, C:2293) - lanes are deferred to a later phase
+- named lane: The Volcanic Passage (Spice Narrows - Ember Isle, C:2239) - see [../lanes/volcanic_passage.md](../lanes/volcanic_passage.md)
+- named lane: The Smuggler's Run (Corsair's Rest - Spice Narrows, C:2293) - see [../lanes/smugglers_run.md](../lanes/smugglers_run.md)
 
 ## 3. History (all [invented] unless cited)
 

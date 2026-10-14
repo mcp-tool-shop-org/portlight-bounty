@@ -34,8 +34,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `agenda` at C:8707
 - regional festival: Dyer's Moon (C:11864)
 - regional festival: Pearl Tide (C:11877)
-- named lane: The Cotton Crossing (Porto Novo - Sun Harbor, C:2032) - lanes are deferred to a later phase
-- named lane: The Long Crossing (Sun Harbor - Crosswind Isle, C:2104) - lanes are deferred to a later phase
+- named lane: The Cotton Crossing (Porto Novo - Sun Harbor, C:2032) - see [../lanes/cotton_crossing.md](../lanes/cotton_crossing.md)
+- named lane: The Long Crossing (Sun Harbor - Crosswind Isle, C:2104) - see [../lanes/long_crossing.md](../lanes/long_crossing.md)
 
 ## 3. History (all [invented] unless cited)
 

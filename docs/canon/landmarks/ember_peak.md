@@ -30,7 +30,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - voyage lighthouse line: crates/portlight-sim/src/voyage.rs:597
 - regional festival: Coral Coronation (C:11976)
 - regional festival: Fire Walking (C:11990)
-- named lane: The Volcanic Passage (Spice Narrows - Ember Isle, C:2239) - lanes are deferred to a later phase
+- named lane: The Volcanic Passage (Spice Narrows - Ember Isle, C:2239) - see [../lanes/volcanic_passage.md](../lanes/volcanic_passage.md)
 
 ## 3. History (all [invented] unless cited)
 

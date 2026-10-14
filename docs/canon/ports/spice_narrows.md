@@ -127,8 +127,8 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13858) | - | - | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Volcanic Passage": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days." (C:2234).
-- Lane lore: "The Smuggler's Run": "Only the desperate or the bold sail this direct. Pirate kings once controlled both ends." (C:2288).
+- Lane lore: "The Volcanic Passage": "Warm currents and sulfur air. The locals say the sea boils near the islands on bad days." (C:2234). Lane canon: [The Volcanic Passage](../lanes/volcanic_passage.md).
+- Lane lore: "The Smuggler's Run": "Only the desperate or the bold sail this direct. Pirate kings once controlled both ends." (C:2288). Lane canon: [The Smuggler's Run](../lanes/smugglers_run.md).
 - Asymmetry flag: Spice Narrows names Jade Port as local rival (C:13680); Jade Port names none (C:13615). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
 
 ## G. World details (undefined in data; all [invented] unless cited)

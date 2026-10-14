@@ -31,7 +31,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `name` at C:7421
 - regional festival: Harvest of Plenty (C:11753)
 - regional festival: Night of Lanterns (C:11766)
-- named lane: The Timber Run (Porto Novo - Silva Bay, C:1942) - lanes are deferred to a later phase
+- named lane: The Timber Run (Porto Novo - Silva Bay, C:1942) - see [../lanes/timber_run.md](../lanes/timber_run.md)
 
 ## 3. History (all [invented] unless cited)
 

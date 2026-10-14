@@ -35,7 +35,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - voyage lighthouse line: crates/portlight-sim/src/voyage.rs:598
 - regional festival: The Iron Days (C:11808)
 - regional festival: Midwinter Market (C:11822)
-- named lane: The Tea and Tobacco Road (Stormwall - Thornport, C:1996) - lanes are deferred to a later phase
+- named lane: The Tea and Tobacco Road (Stormwall - Thornport, C:1996) - see [../lanes/tea_and_tobacco_road.md](../lanes/tea_and_tobacco_road.md)
 
 ## 3. History (all [invented] unless cited)
 

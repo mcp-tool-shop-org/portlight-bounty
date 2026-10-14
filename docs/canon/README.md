@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 
@@ -98,6 +98,17 @@ Rows T18 on were added with the landmark canon (phase 2). Ids are stable, so rea
 | T22 | ~50 BS | Crosswind Isle hangs the Free Port Bell at the charter (with T12) | [invented] |
 | T23 | ~35 BS | The Hanging Market reaches its present span across the Narrows | [invented] |
 
+Rows T24 on were added with the lane canon (phase 3). Read them by date, not by number:
+
+| Id | When | Event | Grounding |
+|---|---|---|---|
+| T24 | ~600 BS | Grain ships first sail the Grain Road | 'since before memory' (C:1934); date [invented] |
+| T25 | ~250 BS | Grain south, cotton north: the Cotton Crossing becomes a regular trade | 'Been this way for centuries' (C:12388); date [invented] |
+| T26 | ~100 BS | The first recorded Long Crossing | driftwood prayer markers (C:12408); event and date [invented] |
+| T27 | ~30 BS | Old Farouk sails the Monsoon Shortcut seven times; navigators copy his charts (before T14) | C:12568; date [invented] |
+| T28 | ~100 BS | Pirate kings hold both ends of the Smuggler's Run; their line ends before T13 | 'once controlled both ends' (C:2294); date [invented] |
+| T29 | ~55 BS | Ironhaven iron first goes east by the Northern Passage (after T11) | 'Iron west, porcelain east' (C:2303); date [invented] |
+
 Every port file's section G cites these IDs. A port history may add detail but must not move an event to another era.
 
 ## Pirate home ports ([invented]; data gives factions regions only)
@@ -119,9 +130,15 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - One file per shipped port landmark (20, from `culture.ports[].landmark`, C:12007-12197) plus one sea mark found only in code (the Porto Novo beacon, voyage.rs:594): see landmarks/README.md.
 - Each port file links its landmark in section C.1. The five sea-mark ports (Porto Novo, Ironhaven, Monsoon Reach, Ember Isle, Thornport) also link it in section I.
 - Landmark palettes reuse their port's swatches, so a landmark always reads as part of its port.
-- The 15 named lanes are listed in landmarks/README.md and deferred to a later phase.
+- The 15 named lanes have their own files from phase 3 (lanes/README.md).
 - Not in data, future phase: no reefs, rocks, wrecks (other than the Storm Wall), lighthouses (other than the code-only beacon) or forts exist as data objects. No landmark has coordinates, art, an icon or a sound.
 - Phase 2 data issues are DF-18 to DF-21 in data-fixes.md.
+
+## Lanes (phase 3)
+
+- One file per route with a `lore_name` (15 of 43, C:1928-2312). The name is shown on the chart lane label (crates/portlight-chart/src/view.rs:213-223) and keys a route encounter table (C:12210-12669; sea_culture.rs:121-136).
+- Each endpoint port links its lanes in section F (Lane lore lines); landmark files link the lanes that pass them.
+- Lanes have no drawn course, art or sound. Phase 3 data issues are DF-22 to DF-25 in data-fixes.md.
 
 ## Files
 
@@ -130,5 +147,6 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - relations-matrix.md
 - data-fixes.md (proposals for the game, not canon; DF-n items)
 - landmarks/README.md and landmarks/<landmark_id>.md (21 files)
+- lanes/README.md and lanes/<lane_id>.md (15 files)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.

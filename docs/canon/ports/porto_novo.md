@@ -132,10 +132,10 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | neutral (C:13753) | - | Grain | - | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Grain Road": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory." (C:1928).
-- Lane lore: "The Timber Run": "Short and safe - the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet." (C:1937).
-- Lane lore: "The Shadow Lane": "Every merchant denies using it. Every merchant uses it. The line between trade and smuggling runs through these waters." (C:1955).
-- Lane lore: "The Cotton Crossing": "Mediterranean grain south, Gold Coast cotton north. The route that clothed an empire." (C:2027).
+- Lane lore: "The Grain Road": "The oldest trade route in the Mediterranean. Grain ships have sailed this lane since before memory." (C:1928). Lane canon: [The Grain Road](../lanes/grain_road.md).
+- Lane lore: "The Timber Run": "Short and safe - the shipwrights' lifeline. Silva Bay's timber built Porto Novo's fleet." (C:1937). Lane canon: [The Timber Run](../lanes/timber_run.md).
+- Lane lore: "The Shadow Lane": "Every merchant denies using it. Every merchant uses it. The line between trade and smuggling runs through these waters." (C:1955). Lane canon: [The Shadow Lane](../lanes/shadow_lane.md).
+- Lane lore: "The Cotton Crossing": "Mediterranean grain south, Gold Coast cotton north. The route that clothed an empire." (C:2027). Lane canon: [The Cotton Crossing](../lanes/cotton_crossing.md).
 - Asymmetry flag: Corsair's Rest names Porto Novo as local rival (C:13671); Porto Novo names Al-Manar (C:13532). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
 
 ## G. World details (undefined in data; all [invented] unless cited)

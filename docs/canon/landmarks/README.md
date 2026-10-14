@@ -28,33 +28,14 @@ Phase 2 covers category A (the one shipped `landmark` per port, C:12007-12197) a
 | The Storm Wall | Typhoon Anchorage | A | - | C:12187 | [storm_wall.md](storm_wall.md) |
 | The Coral Palace | Coral Throne | A | - | C:12197 | [coral_palace.md](coral_palace.md) |
 
-## Named lanes (category C, deferred)
+## Named lanes (category C)
 
-Listed for completeness; no lane files in phase 2. Lane names are shown on the chart lane label (crates/portlight-chart/src/view.rs:214-217).
-
-| Lane | Ends | Cite | Note |
-|---|---|---|---|
-| The Grain Road | Porto Novo - Al-Manar | C:1933 | - |
-| The Timber Run | Porto Novo - Silva Bay | C:1942 | - |
-| The Shadow Lane | Porto Novo - Corsair's Rest | C:1960 | - |
-| The Iron Strait | Ironhaven - Stormwall | C:1978 | - |
-| The Tea and Tobacco Road | Stormwall - Thornport | C:1996 | - |
-| The Cotton Crossing | Porto Novo - Sun Harbor | C:2032 | - |
-| The Long Crossing | Sun Harbor - Crosswind Isle | C:2104 | - |
-| The Porcelain Lane | Crosswind Isle - Jade Port | C:2131 | - |
-| The Silk Road by Sea | Jade Port - Silk Haven | C:2176 | - |
-| Typhoon Alley | Monsoon Reach - Typhoon Anchorage | C:2230 | - |
-| The Volcanic Passage | Spice Narrows - Ember Isle | C:2239 | - |
-| The Monsoon Shortcut | Al-Manar - Monsoon Reach | C:2284 | long-haul open-ocean route; flagged DF-21 |
-| The Smuggler's Run | Corsair's Rest - Spice Narrows | C:2293 | long-haul open-ocean route; flagged DF-21 |
-| The Northern Passage | Ironhaven - Jade Port | C:2302 | long-haul open-ocean route; flagged DF-21 |
-| The Deep South Run | Pearl Shallows - Coral Throne | C:2311 | - |
+The 15 named lanes have their own canon from phase 3: see [../lanes/README.md](../lanes/README.md).
 
 ## Not in data (future phase)
 
 - No reefs, rocks, shoals, wrecks (other than the Storm Wall), lighthouses (other than the code-only Porto Novo beacon) or forts exist as data objects. Forts exist only as landmark prose.
 - No landmark has coordinates, an icon, art or a sound. Placing landmarks on the chart and any landmark art or sound are a future phase and need their own brief.
-- 28 of 43 lanes have no name; they stay unnamed in canon.
 
 ## Id note
 

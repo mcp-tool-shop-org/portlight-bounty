@@ -41,8 +41,8 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - voyage lighthouse line: crates/portlight-sim/src/voyage.rs:596
 - regional festival: Silk Weavers' Fair (C:11920)
 - regional festival: Monsoon Prayer (C:11934)
-- named lane: Typhoon Alley (Monsoon Reach - Typhoon Anchorage, C:2230) - lanes are deferred to a later phase
-- named lane: The Monsoon Shortcut (Al-Manar - Monsoon Reach, C:2284) - lanes are deferred to a later phase
+- named lane: Typhoon Alley (Monsoon Reach - Typhoon Anchorage, C:2230) - see [../lanes/typhoon_alley.md](../lanes/typhoon_alley.md)
+- named lane: The Monsoon Shortcut (Al-Manar - Monsoon Reach, C:2284) - see [../lanes/monsoon_shortcut.md](../lanes/monsoon_shortcut.md)
 
 ## 3. History (all [invented] unless cited)
 

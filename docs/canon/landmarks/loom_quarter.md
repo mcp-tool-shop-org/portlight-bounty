@@ -36,7 +36,7 @@ No coordinates exist for landmarks; the chart position is the port's own map x/y
 - named in `port_grudge` at C:13630
 - regional festival: Silk Weavers' Fair (C:11920)
 - regional festival: Monsoon Prayer (C:11934)
-- named lane: The Silk Road by Sea (Jade Port - Silk Haven, C:2176) - lanes are deferred to a later phase
+- named lane: The Silk Road by Sea (Jade Port - Silk Haven, C:2176) - see [../lanes/silk_road_by_sea.md](../lanes/silk_road_by_sea.md)
 
 ## 3. History (all [invented] unless cited)
 

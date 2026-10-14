@@ -128,7 +128,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 | Coral Throne | South Seas | The Coral Crown | allied (C:13837) | - | Porcelain, Silk | Rum | - |
 <!-- hand-maintained:end -->
 
-- Lane lore: "The Silk Road by Sea": "Where porcelain meets silk. The two oldest trades in the East, connected by the shortest route." (C:2171).
+- Lane lore: "The Silk Road by Sea": "Where porcelain meets silk. The two oldest trades in the East, connected by the shortest route." (C:2171). Lane canon: [The Silk Road by Sea](../lanes/silk_road_by_sea.md).
 - Asymmetry flag: Silk Haven names Jade Port as local rival (C:13624); Jade Port names none (C:13615). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
 
 ## G. World details (undefined in data; all [invented] unless cited)
