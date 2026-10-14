@@ -41,7 +41,7 @@ pub(crate) const ANCHOR_BANK: &str = "HarbourBank";
 /// The counting house's terms, two lines.
 pub(crate) const BANK_TERMS: [&str; 2] = [
     "Deposits are free, at least 50 silver",
-    "Withdraw here 1% (at least 1) - by letter 5% (at least 5) - no interest",
+    "Withdraw here 1% (at least 1) - by letter 5% (at least 5) - no interest.",
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -172,7 +172,6 @@ pub(crate) fn bank_block(session: &Session) -> Option<BankBlock> {
     })
 }
 
-/// The fee line shown before Confirm: `Fee {F} - you receive {N - F}`.
 /// Whether the desk may offer Confirm: a bank amount below the deposit
 /// minimum, or one the fee would swallow, shows its refusal with Confirm
 /// disabled. Every other intent is always confirmable.
@@ -186,6 +185,7 @@ pub(crate) fn confirm_allowed(intent: &HarbourIntent) -> bool {
     }
 }
 
+/// The fee line shown before Confirm: `Fee {F} - you receive {N - F}`.
 pub(crate) fn fee_line(amount: i64, fee: i64) -> String {
     format!("Fee {fee} - you receive {}", amount - fee)
 }
@@ -1131,6 +1131,7 @@ pub(crate) fn bank_stage_session(accounts: &[(&str, i64)]) -> Result<Session, St
 /// start port holds a voyage policy (start port to Corsair's Rest) and a
 /// contract guarantee whose contract has since expired undelivered, so the
 /// desk shows a `Voyage A to B` row, a settled-contract `Target` row and the
+/// guarantee's claim.
 pub(crate) fn insurance_stage_session() -> Result<Session, String> {
     let mut session = Session::new("Ada", "merchant", 1, None).map_err(|err| err.to_string())?;
     let here = session.world().voyage.destination_id.clone();

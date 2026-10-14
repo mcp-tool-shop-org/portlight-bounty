@@ -2545,12 +2545,20 @@ impl PortlightGame {
             let notice = self.harbour_notice.clone();
             return self.fail_harbour(format!("Harbour smoke: deposit prompt {notice:?}"));
         }
+        if !self.bank_field_matches_prompt() {
+            return self
+                .fail_harbour("Harbour smoke: bank field disagrees with the deposit prompt.");
+        }
         self.perform(Action::HarbourConfirm);
         self.set_bank_field("100");
         self.perform(Action::HarbourBankWithdraw);
         if !self.harbour_notice.contains("Fee 1 - you receive 99") {
             let notice = self.harbour_notice.clone();
             return self.fail_harbour(format!("Harbour smoke: withdraw prompt {notice:?}"));
+        }
+        if !self.bank_field_matches_prompt() {
+            return self
+                .fail_harbour("Harbour smoke: bank field disagrees with the withdraw prompt.");
         }
         self.perform(Action::HarbourConfirm);
         if silver(self) != start - 200 + 99 {
@@ -2575,8 +2583,19 @@ impl PortlightGame {
         self.perform(Action::HarbourBankLetter("silva_bay".into()));
         if !self.harbour_notice.contains("Fee 5 - you receive 95") {
             let notice = self.harbour_notice.clone();
-            self.fail_harbour(format!("Harbour smoke: letter prompt {notice:?}"));
+            return self.fail_harbour(format!("Harbour smoke: letter prompt {notice:?}"));
         }
+        if !self.bank_field_matches_prompt() {
+            self.fail_harbour("Harbour smoke: bank field disagrees with the letter prompt.");
+        }
+    }
+
+    /// The bank field shows the same N as the pending prompt (`Bank N`,
+    /// `Withdraw N`, `Draw N`).
+    fn bank_field_matches_prompt(&self) -> bool {
+        let field = edit_text(&self.harbour_bank);
+        let prompt_n = self.harbour_notice.split_whitespace().nth(1).unwrap_or("");
+        !field.is_empty() && field == prompt_n
     }
 
     /// After the bank frame: confirm the letter and check its log row.
@@ -4691,6 +4710,11 @@ impl PortlightGame {
         self.close_day_report();
         self.harbour_open = true;
         self.harbour_pending = None;
+        self.harbour_qty = None;
+        self.harbour_draw = None;
+        self.harbour_bank = None;
+        self.harbour_repay = None;
+        self.harbour_emergency = None;
         self.harbour_notice.clear();
         self.refresh();
     }
@@ -4997,6 +5021,33 @@ impl PortlightGame {
         let Some(mut body) = self.harbour_nodes.as_ref().map(|nodes| nodes.body.clone()) else {
             return;
         };
+        // Fields keep what the player typed across a rebuild; a pending
+        // intent's own amount wins, so the field never disagrees with the
+        // prompt. A fresh desk (open_harbour) starts from the defaults.
+        let typed = |field: &Option<Gd<LineEdit>>, default: &str| -> String {
+            field
+                .as_ref()
+                .filter(|field| field.is_instance_valid())
+                .map(|field| field.get_text().to_string())
+                .unwrap_or_else(|| default.to_string())
+        };
+        let pending = self.harbour_pending.clone();
+        let qty_text = typed(&self.harbour_qty, "1");
+        let repay_text = typed(&self.harbour_repay, "10");
+        let draw_text = match &pending {
+            Some(HarbourIntent::Draw { amount, .. }) => amount.to_string(),
+            _ => typed(&self.harbour_draw, "40"),
+        };
+        let emergency_text = match &pending {
+            Some(HarbourIntent::Emergency(amount)) => amount.to_string(),
+            _ => typed(&self.harbour_emergency, "50"),
+        };
+        let bank_text = match &pending {
+            Some(HarbourIntent::BankDeposit(amount))
+            | Some(HarbourIntent::BankWithdraw(amount))
+            | Some(HarbourIntent::BankLetter { amount, .. }) => amount.to_string(),
+            _ => typed(&self.harbour_bank, "50"),
+        };
         clear_children(&mut body);
         self.harbour_qty = None;
         self.harbour_draw = None;
@@ -5013,7 +5064,7 @@ impl PortlightGame {
         }
         body.add_child(&harbour_screen::muted_label("Qty"));
         let mut qty = LineEdit::new_alloc();
-        qty.set_text("1");
+        qty.set_text(&qty_text);
         newgame_screen::style_field(&mut qty);
         body.add_child(&qty);
         self.harbour_qty = Some(qty);
@@ -5071,7 +5122,7 @@ impl PortlightGame {
             model.draw_tier
         )));
         let mut draw = LineEdit::new_alloc();
-        draw.set_text("40");
+        draw.set_text(&draw_text);
         newgame_screen::style_field(&mut draw);
         body.add_child(&draw);
         self.harbour_draw = Some(draw);
@@ -5083,7 +5134,7 @@ impl PortlightGame {
         body.add_child(&draw_button);
         body.add_child(&harbour_screen::muted_label("Repay"));
         let mut repay = LineEdit::new_alloc();
-        repay.set_text("10");
+        repay.set_text(&repay_text);
         newgame_screen::style_field(&mut repay);
         body.add_child(&repay);
         self.harbour_repay = Some(repay);
@@ -5106,7 +5157,7 @@ impl PortlightGame {
         body.add_child(&repay_row);
         body.add_child(&harbour_screen::muted_label("Emergency loan"));
         let mut emergency = LineEdit::new_alloc();
-        emergency.set_text("50");
+        emergency.set_text(&emergency_text);
         newgame_screen::style_field(&mut emergency);
         body.add_child(&emergency);
         self.harbour_emergency = Some(emergency);
@@ -5132,7 +5183,7 @@ impl PortlightGame {
             }
             body.add_child(&harbour_screen::muted_label("Amount"));
             let mut amount = LineEdit::new_alloc();
-            amount.set_text("50");
+            amount.set_text(&bank_text);
             newgame_screen::style_field(&mut amount);
             body.add_child(&amount);
             self.harbour_bank = Some(amount);
