@@ -142,10 +142,10 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 ## I. Sound and ambience (all [invented] sound design unless quoted from a cite)
 
 - **Soundscape:** hushed, dense - "the murmur of a hundred negotiations conducted in whispers" (C:12019); porters' feet on worn marble steps; felucca lateen canvas luffing.
-- **Signature:** iron-bound spice chest set down on marble; tea cup on saucer (custom: bargaining begins with tea); scoop of dry spice into a scale pan.
+- **Signature:** brass-bound spice chest set down on marble; tea cup on saucer (custom: bargaining begins with tea); scoop of dry spice into a scale pan.
 - **Music/work songs (NOTE ONLY):** none in canon; at most a far auctioneer's cadence from the Spice Merchants' Circle - spoken, not sung.
 - **Vs neighbours:** quietest Mediterranean market - stone and whispers, where Porto Novo is shouting and Silva Bay is hammering.
-- **Fragments [proposal; no fragment or asset exists yet]:** `mat.marble_step`, `src.spice_chest_iron`, `src.tea_cup_saucer`.
+- **Fragments [proposal; no fragment or asset exists yet]:** `mat.marble_step`, `src.spice_chest_brass`, `src.tea_cup_saucer`.
 - Cited hooks: atmosphere "Cinnamon, cardamom, and the murmur of a hundred negotiations conducted in whispers." (C:12019); dock scene "Feluccas with triangular sails crowd the harbor. Porters carry brass-bound chests of spice up marble steps worn smooth by centuries of trade." (C:12020).
 - Invented bed idea: tea-pouring before bargaining; a hundred voices under one roof. No assets are requested.
 
