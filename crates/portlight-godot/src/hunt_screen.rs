@@ -35,6 +35,8 @@ pub(crate) const FORAGE_HELPER: &str = "Spends a day gathering stores. Does not 
 pub(crate) const FORAGE_NO_CHANGE: &str = "No gain, no loss.";
 pub(crate) const HUNT_TARGET_BUTTON: &str = "Hunt target";
 pub(crate) const CLAIM_BUTTON: &str = "Claim";
+/// Muted helper under a disabled Claim.
+pub(crate) const CLAIM_HELPER: &str = "Claim opens after you win the fight.";
 pub(crate) const EMPTY_BOARD: &str = "No bounties on the board.";
 /// Eyebrow above the gold title. The title is location only, like the
 /// sibling desks; docked status sits here.
@@ -128,7 +130,7 @@ const CATALOG: &[CatalogRow] = &[
     },
 ];
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct BountyCard {
     pub captain_id: String,
     pub captain_name: String,
@@ -166,6 +168,62 @@ pub(crate) struct HuntDesk {
     pub posted: bool,
     pub known: Vec<BountyTarget>,
     pub confirm: Option<HuntConfirm>,
+    /// Per-run memory of the last non-win against an active target:
+    /// captain id to (outcome word, day). Not saved; cleared on a win or a
+    /// claim.
+    pub last_fight: std::collections::BTreeMap<String, (String, i64)>,
+}
+
+/// Recap result to the desk's outcome word, for a non-win only.
+pub(crate) fn last_fight_word(
+    result: crate::recap::RecapResult,
+    sunk: bool,
+) -> Option<&'static str> {
+    use crate::recap::RecapResult;
+    if sunk {
+        return Some("sunk");
+    }
+    match result {
+        RecapResult::Lost => Some("lost"),
+        RecapResult::Drew => Some("drew"),
+        RecapResult::BrokeAway => Some("broke away"),
+        _ => None,
+    }
+}
+
+/// Encounter end: a non-win against an active target is remembered; a win
+/// forgets it.
+pub(crate) fn record_fight(
+    desk: &mut HuntDesk,
+    session: &Session,
+    captain_id: &str,
+    result: crate::recap::RecapResult,
+    sunk: bool,
+) {
+    if result.is_win() {
+        desk.last_fight.remove(captain_id);
+        return;
+    }
+    let active = session
+        .world()
+        .captain
+        .active_bounties
+        .iter()
+        .any(|id| id == captain_id);
+    if let (true, Some(word)) = (active, last_fight_word(result, sunk)) {
+        desk.last_fight.insert(
+            captain_id.to_string(),
+            (word.to_string(), session.world().day),
+        );
+    }
+}
+
+/// A claim's effect on the desk memory: a paid claim forgets the target's
+/// last fight; a refused one keeps it.
+pub(crate) fn forget_on_claim<E>(desk: &mut HuntDesk, captain_id: &str, result: &Result<i64, E>) {
+    if result.is_ok() {
+        desk.last_fight.remove(captain_id);
+    }
 }
 
 #[derive(Clone)]
@@ -196,6 +254,11 @@ pub(crate) struct ActiveRow {
     pub id: String,
     pub text: String,
     pub claim_enabled: bool,
+    /// `Last fight: {outcome} - day {d} - still open`, while remembered and
+    /// still undefeated.
+    pub last_fight: Option<String>,
+    /// CLAIM_HELPER whenever Claim is disabled.
+    pub claim_help: Option<&'static str>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -506,10 +569,18 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
         .map(|id| {
             let card = resolve_card(id, &desk.known);
             let defeats = times_defeated(session, id);
+            let enabled = claim_enabled(defeats);
+            let last_fight = desk
+                .last_fight
+                .get(id)
+                .filter(|_| defeats == 0)
+                .map(|(word, day)| format!("Last fight: {word} - day {day} - still open"));
             ActiveRow {
                 id: id.clone(),
                 text: active_text(&card, defeats),
-                claim_enabled: claim_enabled(defeats),
+                claim_enabled: enabled,
+                last_fight,
+                claim_help: (!enabled).then_some(CLAIM_HELPER),
             }
         })
         .collect();
@@ -523,7 +594,10 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
         .iter()
         .map(|memory| {
             let name = resolve_card(&memory.captain_id, &desk.known).captain_name;
-            format!("{name}  defeated {}", memory.times_defeated_by_player)
+            match memory.times_defeated_by_player {
+                0 => name,
+                n => format!("{name}  defeated {n}"),
+            }
         })
         .collect();
     HuntModel {
@@ -581,6 +655,9 @@ pub(crate) fn rebuild_body(
     let mut active = section(&model.active_heading);
     for row in &model.active {
         active.add_child(&wrapped(&row.text, 15, CREAM));
+        if let Some(line) = &row.last_fight {
+            active.add_child(&wrapped(line, 14, MUTED));
+        }
         let mut buttons = HBoxContainer::new_alloc();
         buttons.add_theme_constant_override("separation", 8);
         buttons.add_child(&make(
@@ -591,6 +668,9 @@ pub(crate) fn rebuild_body(
         claim.set_disabled(!row.claim_enabled);
         buttons.add_child(&claim);
         active.add_child(&buttons);
+        if let Some(help) = row.claim_help {
+            active.add_child(&wrapped(help, 14, MUTED));
+        }
     }
     body.add_child(&active);
 
@@ -699,7 +779,16 @@ fn offer_text(card: &BountyCard) -> String {
 
 fn active_text(card: &BountyCard, defeats: i64) -> String {
     if card.reward == 0 && card.difficulty.is_empty() {
-        return format!("{}\nDefeated {defeats}.", card.captain_name);
+        if defeats == 0 {
+            return card.captain_name.clone();
+        }
+        return format!("{}\nDefeated {defeats}", card.captain_name);
+    }
+    if defeats == 0 {
+        return format!(
+            "{}\n{} silver | {}",
+            card.captain_name, card.reward, card.difficulty
+        );
     }
     format!(
         "{}\n{} silver | {} | defeated {defeats}",
@@ -1053,6 +1142,19 @@ mod tests {
     }
 
     #[test]
+    fn a_paid_claim_forgets_the_last_fight_and_a_refused_one_keeps_it() {
+        let mut desk = HuntDesk::default();
+        desk.last_fight.insert("gnaw".into(), ("lost".into(), 4));
+        desk.last_fight
+            .insert("raj_the_quiet".into(), ("drew".into(), 5));
+        forget_on_claim(&mut desk, "gnaw", &Err::<i64, &str>("not defeated"));
+        assert_eq!(desk.last_fight.get("gnaw"), Some(&("lost".to_string(), 4)));
+        forget_on_claim(&mut desk, "gnaw", &Ok::<i64, &str>(150));
+        assert!(!desk.last_fight.contains_key("gnaw"));
+        assert!(desk.last_fight.contains_key("raj_the_quiet"));
+    }
+
+    #[test]
     fn wanted_footnote_is_only_the_pact_sea_event() {
         assert_eq!(wanted_copy(0).1, None);
         assert_eq!(wanted_copy(2).1, None);
@@ -1109,6 +1211,81 @@ mod tests {
         assert_eq!(desk.known.len(), kept);
         let still = hunt_model(&session, &desk);
         assert!(still.active[0].text.contains("silver"));
+    }
+
+    #[test]
+    fn desk_remembers_a_lost_fight_and_explains_claim() {
+        use crate::recap::RecapResult;
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.accept_bounty("gnaw").unwrap();
+        let mut desk = HuntDesk::default();
+        // Not an active target: nothing remembered.
+        record_fight(
+            &mut desk,
+            &session,
+            "raj_the_quiet",
+            RecapResult::Lost,
+            false,
+        );
+        assert!(desk.last_fight.is_empty());
+        record_fight(&mut desk, &session, "gnaw", RecapResult::Lost, false);
+        let day = session.world().day;
+        let model = hunt_model(&session, &desk);
+        let row = model.active.iter().find(|row| row.id == "gnaw").unwrap();
+        assert_eq!(
+            row.last_fight.as_deref(),
+            Some(format!("Last fight: lost - day {day} - still open").as_str())
+        );
+        assert!(!row.claim_enabled);
+        assert_eq!(row.claim_help, Some(CLAIM_HELPER));
+        assert!(!row.text.contains("defeated"), "{}", row.text);
+        for (result, sunk, word) in [
+            (RecapResult::Drew, false, "drew"),
+            (RecapResult::BrokeAway, false, "broke away"),
+            (RecapResult::Lost, true, "sunk"),
+        ] {
+            assert_eq!(last_fight_word(result, sunk), Some(word));
+        }
+        assert_eq!(last_fight_word(RecapResult::WonSpared, false), None);
+        // A win forgets it.
+        record_fight(&mut desk, &session, "gnaw", RecapResult::WonSpared, false);
+        assert!(desk.last_fight.is_empty());
+        for text in [CLAIM_HELPER, "Last fight: broke away - day 3 - still open"] {
+            assert!(text.is_ascii() && !text.contains("--") && !text.contains('_'));
+            assert!(!text.contains("Complete") && !text.contains("Deliver"));
+        }
+    }
+
+    #[test]
+    fn desk_never_shows_defeated_zero() {
+        let card = BountyCard {
+            captain_name: "Gnaw".into(),
+            reward: 200,
+            difficulty: "hard".into(),
+            ..BountyCard::default()
+        };
+        assert_eq!(active_text(&card, 0), "Gnaw\n200 silver | hard");
+        assert_eq!(
+            active_text(&card, 2),
+            "Gnaw\n200 silver | hard | defeated 2"
+        );
+        let bare = BountyCard {
+            captain_name: "Gnaw".into(),
+            ..BountyCard::default()
+        };
+        assert_eq!(active_text(&bare, 0), "Gnaw");
+        assert_eq!(active_text(&bare, 1), "Gnaw\nDefeated 1");
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.accept_bounty("gnaw").unwrap();
+        let model = hunt_model(&session, &HuntDesk::default());
+        for line in model
+            .active
+            .iter()
+            .map(|r| r.text.as_str())
+            .chain(model.known.iter().map(String::as_str))
+        {
+            assert!(!line.to_lowercase().contains("defeated 0"), "{line}");
+        }
     }
 
     #[test]

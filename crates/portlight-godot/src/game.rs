@@ -252,6 +252,13 @@ enum ShotPhase {
     Personal,
     Outcome,
     RecapWon,
+    /// Not saved: the won card again with a fight cost in silver and cargo,
+    /// checked against the recap height cap.
+    RecapWonCost,
+    /// Not saved: the heaviest won card (hull from three causes, crew from
+    /// two, silver, cargo, two injuries, net and the bounty row), checked
+    /// against the cap and the Return edge.
+    RecapWonHeavy,
 }
 
 impl ShotPhase {
@@ -262,6 +269,7 @@ impl ShotPhase {
             Self::Boarding => "encounter-boarding.png",
             Self::Personal => "encounter-fight.png",
             Self::RecapWon => "encounter-recap-won.png",
+            Self::RecapWonCost | Self::RecapWonHeavy => "",
             Self::Outcome => "encounter-outcome.png",
         }
     }
@@ -274,6 +282,8 @@ impl ShotPhase {
             Self::Personal => "personal fight",
             Self::Outcome => "outcome",
             Self::RecapWon => "won recap",
+            Self::RecapWonCost => "won recap with cost",
+            Self::RecapWonHeavy => "heavy won recap",
         }
     }
 
@@ -283,7 +293,9 @@ impl ShotPhase {
             Self::Naval => ScreenPhase::Naval,
             Self::Boarding => ScreenPhase::Boarding,
             Self::Personal => ScreenPhase::Personal,
-            Self::Outcome | Self::RecapWon => ScreenPhase::Outcome,
+            Self::Outcome | Self::RecapWon | Self::RecapWonCost | Self::RecapWonHeavy => {
+                ScreenPhase::Outcome
+            }
         }
     }
 }
@@ -7957,11 +7969,16 @@ impl PortlightGame {
                 let cost = self.encounter.as_mut().and_then(|facts| {
                     let deltas = facts.baseline.zip(now).map(|(base, now)| base.deltas(&now));
                     crate::recap::seed_victory(&mut facts.recap, &receipt, deltas);
+                    facts.recap.bounty_ready =
+                        bounty_ready(self.session.as_ref(), &facts.captain_id);
                     facts.baseline.take()?;
                     crate::logic::fight_cost_line(deltas?)
                 });
                 if let Some(line) = cost {
                     self.push_log(line);
+                }
+                if let Some(id) = self.encounter.as_ref().map(|f| f.captain_id.clone()) {
+                    self.hunt_desk.last_fight.remove(&id);
                 }
                 if let Some(facts) = self.encounter.as_mut() {
                     facts.pending_victory = false;
@@ -8251,6 +8268,22 @@ impl PortlightGame {
         } else {
             None
         };
+        if facts
+            .recap
+            .result
+            .is_some_and(crate::recap::RecapResult::is_win)
+        {
+            facts.recap.bounty_ready = bounty_ready(self.session.as_ref(), &facts.captain_id);
+        }
+        if let (Some(session), Some(result)) = (self.session.as_ref(), facts.recap.result) {
+            hunt_screen::record_fight(
+                &mut self.hunt_desk,
+                session,
+                &facts.captain_id,
+                result,
+                step.player_sunk,
+            );
+        }
         self.encounter = Some(facts);
         if let Some(receipt) = receipt {
             self.push_log(receipt);
@@ -10882,6 +10915,7 @@ impl PortlightGame {
             };
             session.claim_bounty(id)
         };
+        hunt_screen::forget_on_claim(&mut self.hunt_desk, id, &result);
         self.hunt_desk.notice = match result {
             Ok(silver) => hunt_screen::claim_notice(silver),
             Err(err) => err.to_string(),
@@ -11010,6 +11044,18 @@ impl PortlightGame {
                     .map(|row| row.captain_id.clone());
                 if let Some(id) = id {
                     self.accept_listed(&id);
+                    // The active frame shows the desk after a lost hunt:
+                    // the per-run memory a non-win writes at encounter end.
+                    if let Some(session) = self.session.as_ref() {
+                        hunt_screen::record_fight(
+                            &mut self.hunt_desk,
+                            session,
+                            &id,
+                            crate::recap::RecapResult::Lost,
+                            false,
+                        );
+                    }
+                    self.refresh();
                 } else {
                     self.smoke_ok = false;
                     godot_print!("Hunt smoke: no offer to accept for the active frame");
@@ -11055,7 +11101,20 @@ impl PortlightGame {
         let ok = match phase {
             HuntShot::Forage => open && notice.contains("Stores") && self.encounter.is_none(),
             HuntShot::Board => open && (1..=3).contains(&offers),
-            HuntShot::Active => open && active >= 1,
+            HuntShot::Active => {
+                let rows = self
+                    .hunt_model_now()
+                    .map(|model| model.active)
+                    .unwrap_or_default();
+                open && active >= 1
+                    && rows.iter().any(|row| {
+                        row.last_fight
+                            .as_deref()
+                            .is_some_and(|line| line.starts_with("Last fight: lost - day "))
+                            && row.claim_help == Some(hunt_screen::CLAIM_HELPER)
+                            && !row.text.contains("defeated 0")
+                    })
+            }
             HuntShot::Confirm => {
                 open && self.hunt_desk.confirm.is_some()
                     && (notice.contains("Boarding can cost up to")
@@ -11234,16 +11293,19 @@ impl PortlightGame {
         let block = nodes.recap.get_global_rect();
         let actions = nodes.actions.get_global_rect();
         let bottom = actions.position.y + actions.size.y;
-        if block.size.y > 320.0 || bottom > 696.0 {
+        if block.size.y > 360.0 || bottom > 696.0 {
             self.smoke_ok = false;
             let line = format!(
-                "Recap smoke: recap height {} (max 320), actions bottom {bottom} (max 696)",
+                "Recap smoke: recap height {} (max 360), actions bottom {bottom} (max 696)",
                 block.size.y
             );
             godot_print!("{line}");
             self.push_log(line);
         } else {
-            godot_print!("Recap smoke: layout ok height {}", block.size.y);
+            godot_print!(
+                "Recap smoke: layout ok height {} bottom {bottom}",
+                block.size.y
+            );
         }
     }
 
@@ -11483,9 +11545,11 @@ impl PortlightGame {
             return false;
         };
         self.expect_phase(phase.screen(), phase.label());
-        let path = format!("{dir}/{}", phase.file_name());
-        if !self.save_shot(&path, true) {
-            self.capture_failed = true;
+        if !phase.file_name().is_empty() {
+            let path = format!("{dir}/{}", phase.file_name());
+            if !self.save_shot(&path, true) {
+                self.capture_failed = true;
+            }
         }
         match phase {
             ShotPhase::Approach => {
@@ -11506,12 +11570,92 @@ impl PortlightGame {
             }
             ShotPhase::Outcome => {
                 self.expect_outcome_actions();
+                // The won recap is shot against an accepted bounty target, so
+                // it carries the ready-to-claim row. Accepted only now, after
+                // the earlier frames, so they and the fight stay as they were.
+                if let Some(session) = self.session.as_mut() {
+                    if let Err(err) = session.accept_bounty(SCRIPTED_CAPTAIN) {
+                        self.smoke_ok = false;
+                        godot_print!("Encounter shots: accept bounty: {err}");
+                    }
+                }
                 self.spare_enemy_checked();
                 self.encounter_shot = Some(ShotPhase::RecapWon);
             }
             ShotPhase::RecapWon => {
                 self.check_recap_layout();
+                let rows = self
+                    .recap_block_texts()
+                    .map(|(_, rows)| rows)
+                    .unwrap_or_default();
+                let ready = rows
+                    .iter()
+                    .filter(|row| row.as_str() == crate::recap::BOUNTY_READY)
+                    .count();
+                if ready != 1 {
+                    self.smoke_ok = false;
+                    godot_print!("Encounter shots: won recap bounty rows {rows:?}");
+                }
                 self.expect_returned();
+                // The same bounty win, as if the fight had also taken 30
+                // silver and 4 cargo: both Cost rows and the bounty row.
+                if let Some(facts) = self.encounter.as_mut() {
+                    let seed = &mut facts.recap;
+                    let loot: i64 = seed
+                        .loot
+                        .iter()
+                        .filter_map(|m| crate::recap::loot_silver(m))
+                        .sum();
+                    if let Some(deltas) = seed.deltas.as_mut() {
+                        deltas[0] = seed.purse + loot - 30;
+                        deltas[3] = -4;
+                    }
+                }
+                self.refresh();
+                self.encounter_shot = Some(ShotPhase::RecapWonCost);
+            }
+            ShotPhase::RecapWonCost => {
+                self.check_recap_layout();
+                let rows = self
+                    .recap_block_texts()
+                    .map(|(_, rows)| rows)
+                    .unwrap_or_default();
+                let has = |text: &str| rows.iter().any(|row| row == text);
+                if !(has("Silver -30") && has("Cargo -4") && has(crate::recap::BOUNTY_READY)) {
+                    self.smoke_ok = false;
+                    godot_print!("Encounter shots: won cost rows {rows:?}");
+                } else {
+                    godot_print!("Encounter shots: won cost rows ok");
+                }
+                if let Some(facts) = self.encounter.as_mut() {
+                    let seed = &mut facts.recap;
+                    seed.hull_by_cause = [5, 4, 3];
+                    seed.crew_by_cause = [1, 1];
+                    seed.injuries = vec!["Cut".into(), "Bruise".into()];
+                    if let Some(deltas) = seed.deltas.as_mut() {
+                        deltas[1] = -2;
+                        deltas[2] = -12;
+                    }
+                }
+                self.refresh();
+                self.encounter_shot = Some(ShotPhase::RecapWonHeavy);
+            }
+            ShotPhase::RecapWonHeavy => {
+                self.check_recap_layout();
+                let rows = self
+                    .recap_block_texts()
+                    .map(|(_, rows)| rows)
+                    .unwrap_or_default();
+                let ready = rows
+                    .iter()
+                    .filter(|row| row.as_str() == crate::recap::BOUNTY_READY)
+                    .count();
+                if ready != 1 {
+                    self.smoke_ok = false;
+                    godot_print!("Encounter shots: heavy won rows {rows:?}");
+                } else {
+                    godot_print!("Encounter shots: heavy won rows ok {}", rows.len());
+                }
                 self.leave_encounter();
                 self.report_encounter_smoke();
                 self.encounter_shot = None;
@@ -12515,6 +12659,17 @@ fn victory_line(session: &Session) -> String {
     }
     let names: Vec<&str> = paths.iter().map(|path| path.name.as_str()).collect();
     format!("Victory paths: {}", names.join(", "))
+}
+
+/// After a win resolves: the beaten captain is an accepted, unclaimed
+/// bounty target the Hunt desk can now pay.
+fn bounty_ready(session: Option<&Session>, captain_id: &str) -> bool {
+    session.is_some_and(|session| {
+        !captain_id.is_empty()
+            && day_report::claimable_ids(session)
+                .iter()
+                .any(|id| id == captain_id)
+    })
 }
 
 fn scripted_launch() -> bool {
