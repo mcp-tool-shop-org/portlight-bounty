@@ -11575,6 +11575,15 @@ impl PortlightGame {
         }
     }
 
+    /// The bridge's `state.recap`, or `None` when it is null.
+    fn state_recap(&self) -> Option<VarDictionary> {
+        self.playtest_observation()
+            .get("state")
+            .and_then(|state| state.try_to::<VarDictionary>().ok())
+            .and_then(|state| state.get("recap"))
+            .and_then(|recap| recap.try_to::<VarDictionary>().ok())
+    }
+
     fn recap_fail(&mut self, line: impl Into<String>) {
         let line = line.into();
         godot_print!("{line}");
@@ -11632,8 +11641,8 @@ impl PortlightGame {
     }
 
     /// One contract card as drawn: frame, theme, copy rules, layout, the
-    /// modal layer (dim only on the abandon card). `rows`, when given, is the
-    /// exact body.
+    /// modal layer (dim only on the abandon card), and `state.recap` equal to
+    /// the drawn texts. `rows`, when given, is the exact body.
     fn check_recap_card(&mut self, frame: &str, result: &str, rows: Option<&[&str]>) -> bool {
         let Some(nodes) = self.recap_card_nodes.clone() else {
             self.recap_fail("Recap card smoke: no card nodes.");
@@ -11740,6 +11749,36 @@ impl PortlightGame {
                 }
             }
         }
+        // RC4: state.recap is the drawn card.
+        let key = self.state_recap();
+        match key {
+            None => problems.push("state.recap null".to_string()),
+            Some(key) => {
+                let text = |dict: &VarDictionary, name: &str| {
+                    dict.get(name)
+                        .and_then(|value| value.try_to::<GString>().ok())
+                        .map(|value| value.to_string())
+                        .unwrap_or_default()
+                };
+                let state_rows: Vec<String> = key
+                    .get("rows")
+                    .and_then(|value| value.try_to::<VarArray>().ok())
+                    .map(|rows| {
+                        rows.iter_shared()
+                            .filter_map(|row| row.try_to::<VarDictionary>().ok())
+                            .map(|row| text(&row, "text"))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                if text(&key, "kind") != "contract"
+                    || text(&key, "result") != result
+                    || text(&key, "headline") != headline
+                    || state_rows != drawn
+                {
+                    problems.push(format!("state.recap {state_rows:?} vs drawn {drawn:?}"));
+                }
+            }
+        }
         if problems.is_empty() && ok_layout {
             godot_print!("Recap card smoke: {frame} ok - {headline:?} {drawn:?}");
             return true;
@@ -11781,7 +11820,7 @@ impl PortlightGame {
             self.capture_frames = 2;
             return true;
         }
-        let state_up = self.recap_card_shown();
+        let state_up = self.state_recap().is_some();
         if !self.recap_card_shown() || !state_up {
             self.recap_fail("Recap smoke: the paid card did not stay up for 3 s.");
         }
@@ -11795,7 +11834,7 @@ impl PortlightGame {
         let notice = self.market_notice.clone();
         let log = self.log_lines.clone();
         self.dismiss_cancel();
-        let state_up = self.recap_card_shown();
+        let state_up = self.state_recap().is_some();
         if self.recap_card_open()
             || state_up
             || !self.market_open
@@ -11850,7 +11889,7 @@ impl PortlightGame {
         let reply = self
             .playtest_choose(&format!("chart.sell.{good}"))
             .to_string();
-        let state_up = self.recap_card_shown();
+        let state_up = self.state_recap().is_some();
         if !reply.is_empty() || self.day_report_open || self.held(&good) != before - 1 || state_up {
             self.recap_fail(format!(
                 "Recap smoke item 9: reply {reply:?}, report {}, held {} of {before}, recap up {state_up}.",
@@ -12008,7 +12047,7 @@ impl PortlightGame {
             .recap_card_nodes
             .as_ref()
             .is_some_and(crate::recap_card::scrim_shown);
-        let state_up = self.recap_card_shown();
+        let state_up = self.state_recap().is_some();
         if self.recap_card_open()
             || dimmed
             || state_up
@@ -14138,6 +14177,18 @@ impl PortlightGame {
                 .is_some_and(|root| root.is_visible_in_tree())
     }
 
+    /// The recap drawn now: the contract card, else the combat block on the
+    /// Outcome card. `None` when neither draws.
+    fn drawn_recap(&self) -> Option<crate::recap::Recap> {
+        if self.recap_card_shown() {
+            return self.recap_queue.front().cloned();
+        }
+        self.recap_block_texts()?;
+        self.encounter
+            .as_ref()
+            .and_then(crate::recap::outcome_recap)
+    }
+
     fn day_report_shown(&self) -> bool {
         self.day_report_open
             && self
@@ -14262,6 +14313,10 @@ impl PortlightGame {
         match crate::playtest::encounter_key(self.encounter.as_ref(), self.day_report_open) {
             Some(key) => state.set("encounter", &key.to_dictionary()),
             None => state.set("encounter", &Variant::nil()),
+        }
+        match crate::playtest::recap_key(self.drawn_recap().as_ref()) {
+            Some(key) => state.set("recap", &key.to_dictionary()),
+            None => state.set("recap", &Variant::nil()),
         }
         match self.session.as_ref() {
             Some(session) => {

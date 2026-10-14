@@ -561,6 +561,15 @@ async function voyage(socket, chart) {
   assert(!/^Contract strip: /m.test(String(sold?.text ?? '')), 'strip line stayed in the text', sold);
   assert(Number(sold?.state?.silver) > silverAtPort, `silver did not go up (${silverAtPort} -> ${sold?.state?.silver})`, sold);
 
+  // RC3a / RC4: the settling sale raised the paid card. It is modal (Close
+  // is the only id) and state.recap is the drawn card; Close takes it down.
+  const recap = sold?.state?.recap;
+  assert(recap && recap.kind === 'contract' && recap.result === 'paid', 'settling sale raised no paid card', sold);
+  assert(JSON.stringify(ids(sold)) === JSON.stringify(['recap.close']), 'paid card was not modal', sold);
+  sold = await choose(socket, 'recap.close');
+  assert(sold?.state?.recap === null, 'state.recap stayed set after Close', sold);
+  notes.recap = `${recap.headline} (${recap.rows.length} rows)`;
+
   // R10: the sale settled it, so Complete is not offered. The press is the
   // offered-check.
   const desk2 = await choose(socket, 'chart.contracts.open');

@@ -617,6 +617,51 @@ pub(crate) fn implicit_dismiss(
     }
 }
 
+/// `state.recap`: the recap drawn now (the combat block on the Outcome
+/// card, or the contract card), else null. `rows` are the drawn rows in
+/// order without the headings; the boarding rule note is a `note`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RecapKey {
+    pub kind: &'static str,
+    pub result: &'static str,
+    pub headline: String,
+    pub rows: Vec<(&'static str, String)>,
+}
+
+pub(crate) fn recap_key(recap: Option<&crate::recap::Recap>) -> Option<RecapKey> {
+    let recap = recap?;
+    Some(RecapKey {
+        kind: match recap.kind {
+            crate::recap::RecapKind::Combat => "combat",
+            crate::recap::RecapKind::Contract => "contract",
+        },
+        result: recap.result.id(),
+        headline: recap.headline.clone(),
+        rows: recap
+            .rows
+            .iter()
+            .filter(|row| row.section != crate::recap::RecapSection::Heading)
+            .map(|row| (row.section.bridge_name(), row.text.clone()))
+            .collect(),
+    })
+}
+
+impl RecapKey {
+    pub(crate) fn to_dictionary(&self) -> VarDictionary {
+        let mut rows = VarArray::new();
+        for (section, text) in &self.rows {
+            rows.push(&vdict! { "section" => *section, "text" => text.as_str() });
+        }
+        let mut dict = vdict! {
+            "kind" => self.kind,
+            "result" => self.result,
+            "headline" => self.headline.as_str(),
+        };
+        dict.set("rows", &rows);
+        dict
+    }
+}
+
 /// F14: the offered label for a lane's Sail button. The drawn text stays
 /// `Sail`; the id stays `chart.sail.<port_id>`.
 pub(crate) fn sail_offer_label(port_name: &str) -> String {

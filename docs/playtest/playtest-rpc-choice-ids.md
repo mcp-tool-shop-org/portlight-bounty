@@ -38,13 +38,33 @@ Insurance ids drop empty segments (`harbour.prepare.insurance.{policy}`, `.{poli
 
 Offered ids follow the F10 layer rules. The top screen's ids are always offered. An input-blocking screen (an encounter, a docked desk, or a new-game page) offers only its own ids. The Day's report or the Departure check over a blocking screen is the only layer offered. Over the chart, both keep the chart ids, and a chart press is Stay in port or closes the card first. A chart press never confirms the Departure check's lane: a `chart.sail.<port_id>` press is a fresh Sail, so the same lane re-opens the check and another lane runs its own check (and departs if that check is clean).
 
+`recap.close` is the Close button on the contract recap card. The card goes up after a sale that settles one or more contracts (paid) or after a confirmed abandon. It is modal everywhere: while it is up it is the only layer offered, so `recap.close` is the only id, over the chart and over the Contracts desk alike. Only the Day's report ranks above it. A card raised while the report is open waits; a chart press under the report then closes the report and does nothing else, and the card is up. `recap.close` is never offered for a combat recap, where `encounter.leave` stays the choice.
+
 `harbour.emergency` is the emergency-loan button. It is stamped. The amount field is not a `line` target.
 
 `pier.hunt.open` is one id on two buttons. Refresh shows only the one that belongs to port or sea.
 
 ## Keys
 
-Escape is not a choice id. `key` `escape` or `ui_cancel` calls `dismiss_cancel`. Today that closes Day's report and no other desk. A no-op is success, so the next observation still shows the overlay. There is no `ui.close` id.
+Escape is not a choice id. `key` `escape` or `ui_cancel` calls `dismiss_cancel`. Today that closes Day's report, or else the contract recap card, and no other desk. On the abandon card it closes the card only; the Contracts desk stays open. A no-op is success, so the next observation still shows the overlay. There is no `ui.close` id.
+
+## state.recap
+
+`state.recap` is null unless a recap is drawn: the combat recap block on the encounter's Outcome card, or the contract recap card. While one is drawn it is:
+
+```
+{
+  "kind": "combat" | "contract",
+  "result": "won_spared" | "won_took_all" | "won_prize" | "won_sunk" | "lost" | "drew" | "broke_away" | "paid" | "abandoned",
+  "headline": "<the drawn headline>",
+  "rows": [ { "section": "how" | "earned" | "cost" | "note" | "contract", "text": "<the drawn row>" }, ... ]
+}
+```
+
+- `rows` are in drawn order, after every trim and fold. Section headings (such as `Cost`) are left out. The boarding rule note is kept, as a `note`.
+- Every string is the drawn ASCII text.
+- A contract card has no `Silver net` row and no total row.
+- `state.encounter.log` still carries the combat recap text, unchanged.
 
 ## What a rename breaks
 
