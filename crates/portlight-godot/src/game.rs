@@ -7957,6 +7957,8 @@ impl PortlightGame {
                 let cost = self.encounter.as_mut().and_then(|facts| {
                     let deltas = facts.baseline.zip(now).map(|(base, now)| base.deltas(&now));
                     crate::recap::seed_victory(&mut facts.recap, &receipt, deltas);
+                    facts.recap.bounty_ready =
+                        bounty_ready(self.session.as_ref(), &facts.captain_id);
                     facts.baseline.take()?;
                     crate::logic::fight_cost_line(deltas?)
                 });
@@ -8251,6 +8253,13 @@ impl PortlightGame {
         } else {
             None
         };
+        if facts
+            .recap
+            .result
+            .is_some_and(crate::recap::RecapResult::is_win)
+        {
+            facts.recap.bounty_ready = bounty_ready(self.session.as_ref(), &facts.captain_id);
+        }
         self.encounter = Some(facts);
         if let Some(receipt) = receipt {
             self.push_log(receipt);
@@ -11506,11 +11515,32 @@ impl PortlightGame {
             }
             ShotPhase::Outcome => {
                 self.expect_outcome_actions();
+                // The won recap is shot against an accepted bounty target, so
+                // it carries the ready-to-claim row. Accepted only now, after
+                // the earlier frames, so they and the fight stay as they were.
+                if let Some(session) = self.session.as_mut() {
+                    if let Err(err) = session.accept_bounty(SCRIPTED_CAPTAIN) {
+                        self.smoke_ok = false;
+                        godot_print!("Encounter shots: accept bounty: {err}");
+                    }
+                }
                 self.spare_enemy_checked();
                 self.encounter_shot = Some(ShotPhase::RecapWon);
             }
             ShotPhase::RecapWon => {
                 self.check_recap_layout();
+                let rows = self
+                    .recap_block_texts()
+                    .map(|(_, rows)| rows)
+                    .unwrap_or_default();
+                let ready = rows
+                    .iter()
+                    .filter(|row| row.as_str() == crate::recap::BOUNTY_READY)
+                    .count();
+                if ready != 1 {
+                    self.smoke_ok = false;
+                    godot_print!("Encounter shots: won recap bounty rows {rows:?}");
+                }
                 self.expect_returned();
                 self.leave_encounter();
                 self.report_encounter_smoke();
@@ -12515,6 +12545,17 @@ fn victory_line(session: &Session) -> String {
     }
     let names: Vec<&str> = paths.iter().map(|path| path.name.as_str()).collect();
     format!("Victory paths: {}", names.join(", "))
+}
+
+/// After a win resolves: the beaten captain is an accepted, unclaimed
+/// bounty target the Hunt desk can now pay.
+fn bounty_ready(session: Option<&Session>, captain_id: &str) -> bool {
+    session.is_some_and(|session| {
+        !captain_id.is_empty()
+            && day_report::claimable_ids(session)
+                .iter()
+                .any(|id| id == captain_id)
+    })
 }
 
 fn scripted_launch() -> bool {

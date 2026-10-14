@@ -26,6 +26,8 @@ const WRECK_CAUSE: &str = "lost with the wreck";
 pub(crate) const RULE_NOTE: &str =
     "Either ship closing counts toward boarding, unless the other evades.";
 pub(crate) const BOUNTY_NOTE: &str = "The bounty stays open";
+/// A win against an accepted bounty target that can now be claimed.
+pub(crate) const BOUNTY_READY: &str = "Bounty ready to claim - Hunt desk";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RecapKind {
@@ -110,7 +112,7 @@ impl RecapResult {
         }
     }
 
-    fn is_win(self) -> bool {
+    pub(crate) fn is_win(self) -> bool {
         matches!(
             self,
             Self::WonSpared | Self::WonTookAll | Self::WonPrize | Self::WonSunk
@@ -185,6 +187,8 @@ pub(crate) struct CombatFacts {
     pub injuries: Vec<String>,
     pub reached_boarding: bool,
     pub bounty_open: bool,
+    /// Won against an accepted target whose bounty is now claimable.
+    pub bounty_ready: bool,
     /// The player's hull max, for the `Your hull {h}/{max}` row after a sinking.
     pub hull_max: Option<i64>,
     /// Sinking: tow port id, silver and goods lost with the wreck, and the
@@ -658,8 +662,16 @@ pub(crate) fn combat_recap(facts: &CombatFacts) -> Option<Recap> {
         )
     });
 
-    let bounty = (!win && facts.bounty_open)
-        .then(|| row(RecapSection::Bounty, BOUNTY_NOTE, RecapTone::Muted));
+    // One bounty row at most: ready on a win, still open otherwise.
+    let bounty = if win {
+        facts
+            .bounty_ready
+            .then(|| row(RecapSection::Bounty, BOUNTY_READY, RecapTone::Muted))
+    } else {
+        facts
+            .bounty_open
+            .then(|| row(RecapSection::Bounty, BOUNTY_NOTE, RecapTone::Muted))
+    };
 
     // Silver net: only when a drawn silver row rose and another fell.
     let mut drawn = earned.clone();
@@ -915,6 +927,8 @@ pub(crate) struct RecapSeed {
     /// the fight resolved.
     pub deltas: Option<[i64; 4]>,
     pub bounty_open: bool,
+    /// Set at a win, read after it resolved: the target is claimable.
+    pub bounty_ready: bool,
     /// A step triggered boarding or a boarding step ran.
     pub reached_boarding: bool,
     /// Win receipt: purse, loot messages, standing, reactions and departures.
@@ -1204,6 +1218,7 @@ pub(crate) fn seed_facts(seed: &RecapSeed, name: &str) -> Option<CombatFacts> {
         injuries: seed.injuries.clone(),
         reached_boarding: seed.reached_boarding,
         bounty_open: seed.bounty_open,
+        bounty_ready: seed.bounty_ready,
         hull_max: None,
         towed_to: seed.towed_to.clone(),
         wreck_silver: seed.wreck_silver,
@@ -2140,6 +2155,46 @@ mod tests {
         }
     }
 
+    #[test]
+    fn won_recap_shows_bounty_ready_once() {
+        let mut facts = win(RecapResult::WonSpared);
+        facts.bounty_ready = true;
+        let recap = combat(&facts);
+        let rows: Vec<&RecapRow> = recap
+            .rows
+            .iter()
+            .filter(|r| r.text == BOUNTY_READY || r.text == BOUNTY_NOTE)
+            .collect();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].text, BOUNTY_READY);
+        assert_eq!(rows[0].section, RecapSection::Bounty);
+        assert_eq!(rows[0].tone, RecapTone::Muted);
+        // A win never shows the non-win note, even with the flag set.
+        facts.bounty_open = true;
+        assert!(!texts(&combat(&facts)).contains(&BOUNTY_NOTE));
+    }
+
+    #[test]
+    fn won_recap_without_ready_bounty_has_no_bounty_row() {
+        // Not a target, or already claimed: the seed carries no flag.
+        let recap = combat(&win(RecapResult::WonTookAll));
+        assert!(recap.rows.iter().all(|r| r.section != RecapSection::Bounty));
+    }
+
+    #[test]
+    fn non_win_keeps_only_bounty_stays_open() {
+        let mut facts = loss();
+        facts.bounty_ready = true;
+        let recap = combat(&facts);
+        let bounty: Vec<&str> = recap
+            .rows
+            .iter()
+            .filter(|r| r.section == RecapSection::Bounty)
+            .map(|r| r.text.as_str())
+            .collect();
+        assert_eq!(bounty, [BOUNTY_NOTE]);
+    }
+
     fn all_combat() -> Vec<Recap> {
         let mut out = Vec::new();
         for result in [
@@ -2552,6 +2607,9 @@ mod tests {
         facts.name = "Captain \u{2014} Vane".into();
         let mut recaps = all_combat();
         recaps.push(combat(&facts));
+        let mut ready = win(RecapResult::WonSpared);
+        ready.bounty_ready = true;
+        recaps.push(combat(&ready));
         recaps.extend(all_contract());
         for recap in &recaps {
             let all = std::iter::once(recap.headline.as_str())
