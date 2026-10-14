@@ -370,6 +370,8 @@ enum ContractsShot {
     Active,
     /// The Abandon prompt armed on a contract with credited progress.
     Armed,
+    /// RC3b: the abandon card over the dimmed desk.
+    RecapAbandoned,
     Empty,
 }
 
@@ -379,6 +381,7 @@ impl ContractsShot {
             Self::Board => "contracts-board.png",
             Self::Active => "contracts-active.png",
             Self::Armed => "contracts-abandon-armed.png",
+            Self::RecapAbandoned => "contracts-recap-abandoned.png",
             Self::Empty => "contracts-empty.png",
         }
     }
@@ -6502,6 +6505,9 @@ impl PortlightGame {
                     .as_ref()
                     .map(|session| cargo_held(&session.world().captain.cargo, &outcome.good_id))
                     .unwrap_or(0);
+                // RC3b: the confirmed abandon raises its card over the desk.
+                self.recap_queue
+                    .push(crate::recap_card::abandon_card(&outcome, held));
                 self.contracts_notice = contracts_screen::abandon_notice(&outcome, held);
                 self.push_log(self.contracts_notice.clone());
             }
@@ -6719,7 +6725,9 @@ impl PortlightGame {
         };
         let mut scroll = nodes.scroll.clone();
         let target = match shot {
-            ContractsShot::Active | ContractsShot::Armed => "AbandonButton",
+            ContractsShot::Active | ContractsShot::Armed | ContractsShot::RecapAbandoned => {
+                "AbandonButton"
+            }
             ContractsShot::Board | ContractsShot::Empty => "ContractList",
         };
         if shot == ContractsShot::Board || shot == ContractsShot::Empty {
@@ -6751,7 +6759,13 @@ impl PortlightGame {
             self.capture_failed = true;
         }
         let path = format!("{dir}/{}", phase.file_name());
-        if !self.save_shot(&path, true) {
+        // The abandon card dims the desk, as the report does over a screen.
+        let gate = if phase == ContractsShot::RecapAbandoned {
+            ShotGate::Dimmed
+        } else {
+            ShotGate::Ink
+        };
+        if !self.save_shot_as(&path, gate) {
             self.capture_failed = true;
         }
         match phase {
@@ -6781,6 +6795,12 @@ impl PortlightGame {
                 self.contracts_shot = Some(ContractsShot::Armed);
             }
             ContractsShot::Armed => {
+                // RC3b: confirm the armed abandon; its card goes up over the desk.
+                self.confirm_abandon();
+                self.contracts_shot = Some(ContractsShot::RecapAbandoned);
+            }
+            ContractsShot::RecapAbandoned => {
+                self.check_abandon_card_close();
                 if let Some(saved) = self.armed_saved.take() {
                     self.restore_staging(saved);
                 }
@@ -7230,6 +7250,11 @@ impl PortlightGame {
                     self.fail_contracts(format!(
                         "Contracts smoke: the armed frame had prompt {prompt:?}."
                     ));
+                    return false;
+                }
+            }
+            ContractsShot::RecapAbandoned => {
+                if !self.check_recap_card("contracts-recap-abandoned.png", "abandoned", None) {
                     return false;
                 }
             }
@@ -11959,6 +11984,41 @@ impl PortlightGame {
         self.recap_queue.reset();
         self.recap_queue.push(staged);
         self.refresh();
+    }
+
+    /// RC3b: Escape on the abandon card closes the card only; the desk stays
+    /// open with its notice byte-identical, and the dim goes.
+    fn check_abandon_card_close(&mut self) {
+        let notice = self.contracts_notice.clone();
+        let focus_on_close = self
+            .base()
+            .get_viewport()
+            .and_then(|viewport| viewport.gui_get_focus_owner())
+            .zip(
+                self.recap_card_nodes
+                    .as_ref()
+                    .map(|n| n.close.clone().upcast::<Control>()),
+            )
+            .is_some_and(|(owner, close)| owner == close);
+        if !focus_on_close {
+            self.recap_fail("Recap smoke: focus was not on the abandon card's Close.");
+        }
+        self.dismiss_cancel();
+        let dimmed = self
+            .recap_card_nodes
+            .as_ref()
+            .is_some_and(crate::recap_card::scrim_shown);
+        let state_up = self.recap_card_shown();
+        if self.recap_card_open()
+            || dimmed
+            || state_up
+            || !self.contracts_open
+            || self.contracts_notice != notice
+        {
+            self.recap_fail("Recap smoke: Escape on the abandon card did more than close it.");
+        } else {
+            godot_print!("Recap smoke: Escape closed the abandon card; desk and notice kept");
+        }
     }
 
     fn sunk_fail(&mut self, line: &str) {

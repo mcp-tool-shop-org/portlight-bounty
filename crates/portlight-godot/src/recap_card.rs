@@ -247,6 +247,18 @@ pub(crate) fn sale_card(sale: &portlight_sim::session::Sale) -> Option<Recap> {
     crate::recap::contract_recap(&sale.contracts, &crate::recap::ContractExtras::default())
 }
 
+/// The card a confirmed abandon opens (`confirm_abandon`'s `Ok` arm), with
+/// the units still held.
+pub(crate) fn abandon_card(
+    outcome: &portlight_sim::model::ContractOutcome,
+    held: i64,
+) -> Option<Recap> {
+    crate::recap::contract_recap(
+        std::slice::from_ref(outcome),
+        &crate::recap::ContractExtras { held: vec![held] },
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -337,6 +349,47 @@ mod tests {
             .iter()
             .any(|c| c.outcome_type.starts_with("expired")));
         assert_eq!(queue.len(), 0);
+    }
+
+    #[test]
+    fn abandon_card_opens_only_on_ok() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let offer = session.available_contracts().remove(0);
+        // An Err (and a cancel, which never calls the sim) has no outcome to
+        // draw; the card is raised only inside confirm_abandon's Ok arm.
+        assert!(session.abandon_contract("no-such-offer").is_err());
+        let game = include_str!("game.rs");
+        assert_eq!(game.matches("crate::recap_card::abandon_card(").count(), 1);
+        let ok_arm = game
+            .find("            Ok(outcome) => {\n                // Contract fail:")
+            .unwrap();
+        let call = game.find("crate::recap_card::abandon_card(").unwrap();
+        let err_arm = game[ok_arm..].find("            Err(err) =>").unwrap() + ok_arm;
+        assert!(ok_arm < call && call < err_arm);
+        session.accept_contract(&offer.id).unwrap();
+        let outcome = session.abandon_contract(&offer.id).unwrap();
+        let card = abandon_card(&outcome, 3).unwrap();
+        assert_eq!(card.result, RecapResult::Abandoned);
+        assert_eq!(card.headline, "Contract abandoned");
+    }
+
+    #[test]
+    fn abandon_card_has_no_silver_row() {
+        let (mut session, offer_id) = grain_at_corsairs_rest();
+        session.sell("grain", 10).unwrap();
+        let held_now = held(&session, "grain");
+        let outcome = session.abandon_contract(&offer_id).unwrap();
+        let card = abandon_card(&outcome, held_now).unwrap();
+        let texts: Vec<&str> = card.rows.iter().map(|r| r.text.as_str()).collect();
+        assert!(texts.iter().all(|t| !t.starts_with("Silver")), "{texts:?}");
+        assert!(
+            texts.iter().any(|t| t.starts_with("Progress lost - 10/")),
+            "{texts:?}"
+        );
+        assert!(
+            texts.contains(&format!("{held_now} Grain still aboard").as_str()),
+            "{texts:?}"
+        );
     }
 
     fn card(headline: &str) -> Recap {
