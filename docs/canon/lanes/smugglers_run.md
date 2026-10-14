@@ -53,6 +53,7 @@ Crimson Tide watchers, Syndicate signal lanterns ('three short, one long', C:126
 
 - Ports: [Corsair's Rest](../ports/corsairs_rest.md), [Spice Narrows](../ports/spice_narrows.md)
 - Landmarks: [The Cliff Tavern](../landmarks/cliff_tavern.md), [The Hanging Market](../landmarks/hanging_market.md)
+- Factions: [The Crimson Tide](../factions/crimson_tide.md), [The Monsoon Syndicate](../factions/monsoon_syndicate.md)
 
 ## 7. Flags
 

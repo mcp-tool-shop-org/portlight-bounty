@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 9acf9e2 (phase 4: factions and captains). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 
@@ -109,6 +109,19 @@ Rows T24 on were added with the lane canon (phase 3). Read them by date, not by 
 | T28 | ~100 BS | Pirate kings hold both ends of the Smuggler's Run; their line ends before T13 | 'once controlled both ends' (C:2294); date [invented] |
 | T29 | ~55 BS | Ironhaven iron first goes east by the Northern Passage (after T11) | 'Iron west, porcelain east' (C:2303); date [invented] |
 
+Rows T30 on were added with the faction and captain canon (phase 4). Read them by date, not by number:
+
+| Id | When | Event | Grounding |
+|---|---|---|---|
+| T30 | ~45 BS | The Crimson Tide and the Deep Reef Brotherhood begin killing each other's captains | 'for decades' (C:13879); date [invented] |
+| T31 | ~45 BS | No One deserts the garrison and comes to the Crimson Tide | 'like the Iron Wolves, but earlier' (C:7781); garrison and date [invented] |
+| T32 | ~40 BS | Gunnar leaves the same garrison when the pay stops | 'years earlier' (C:7971); date [invented] |
+| T33 | ~30 BS | The Iron Wolves desert the garrison and sail with the Crimson Tide | C:7971, 'Former allies' (C:13887); date [invented] |
+| T34 | ~22 BS | The Wolves split from the Tide when its leader demands tribute | C:13887; date [invented] |
+| T35 | ~10 BS | Raj the Quiet feeds Wolf fleet positions to a navy patrol; three Wolf ships burn | C:13903; date [invented] |
+| T36 | ~8 BS | Iron Wolves try to run weapons through Dragon's Gate; fifteen are chained to the seabed (after T21) | C:13641; date [invented] |
+| T37 | ~40 BS | The present Coral King is crowned as a boy (after T12) | 'grown with him for forty years' (C:11288) |
+
 Every port file's section G cites these IDs. A port history may add detail but must not move an event to another era.
 
 ## Pirate home ports ([invented]; data gives factions regions only)
@@ -140,6 +153,13 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - Each endpoint port links its lanes in section F (Lane lore lines); landmark files link the lanes that pass them.
 - Lanes have no drawn course, art or sound. Phase 3 data issues are DF-22 to DF-25 in data-fixes.md.
 
+## Factions and captains (phase 4)
+
+- One file per trade bloc (7, `port_politics.blocs`, C:13386) and per pirate faction (4, `factions`, C:2877): see factions/README.md.
+- One file per player archetype (9, `captains`, C:2315) and per pirate captain (8, `pirate_captains`, C:2913): see captains/README.md.
+- Each port file links its bloc, any pirate faction tied to it and the archetypes that start there, in section E (Faction canon line). The Shadow Lane and the Smuggler's Run link the Crimson Tide and the Monsoon Syndicate.
+- No bloc or faction device, flag or colour, and no character appearance: the character hold stands. Phase 4 data issues are DF-26 to DF-28 in data-fixes.md.
+
 ## Files
 
 - README.md (this file)
@@ -148,5 +168,7 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - data-fixes.md (proposals for the game, not canon; DF-n items)
 - landmarks/README.md and landmarks/<landmark_id>.md (21 files)
 - lanes/README.md and lanes/<lane_id>.md (15 files)
+- factions/README.md and factions/<faction>.md (11 files: 7 blocs, 4 pirate factions)
+- captains/README.md, captains/<archetype>.md (9 files) and captains/pirates/<pirate_id>.md (8 files)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.

@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa) and 3 (lanes, base ab03ace). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa) 3 (lanes, base ab03ace) and 4 (factions and captains, base 9acf9e2). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 25.
+Count: 28.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -265,6 +265,39 @@ Proposed fix: No data change. Canon reads 'profitable' as 'lawful': the Run is l
 
 Why: both superlatives appear in shipped voyage text.
 
+## DF-26. Two archetypes share the title 'Licensed Hunter'
+
+Where:
+- content.json:2433 (privateer title 'Licensed Hunter')
+- content.json:2627 (bounty_hunter title 'Licensed Hunter')
+- Shown side by side on the new game captain buttons (crates/portlight-godot/src/logic.rs:1358-1365; game.rs:2918-2925)
+
+Proposed fix: retitle one. Suggested: The Privateer 'Letter of Marque' (garrison-licensed, Stormwall), keeping 'Licensed Hunter' for The Bounty Hunter. Copy PR; check the new game smoke and any test that asserts the title.
+
+Why: two of nine choices read the same title on one screen, so the title does not tell them apart.
+
+## DF-27. Silk Circle and Shadow Ports are rivals in the table but in neither bloc's list
+
+Where:
+- content.json:13830-13833 (relationships: silk_circle - shadow_ports, rival)
+- content.json:13465 (Silk Circle `rivals`: exchange_alliance only); content.json:13502 (Shadow Ports `rivals`: empty)
+
+Proposed fix: fold into the DF-7 fix: add shadow_ports to the Silk Circle's `rivals` and silk_circle to the Shadow Ports' `rivals`, or document the lists as one-sided. Same sim PR as DF-7.
+
+Why: DF-7 names only the hostile gap; this is the matching rival gap. No live effect today (DF-15).
+
+## DF-28. Faction spillover and vendetta triggers are unread, but journal copy implies an effect
+
+Where:
+- content.json:13866-13914 (`faction_relationships`: spillover and vendetta_trigger on every row)
+- crates/portlight-sim/src/content.rs:707-708 (fields); only `faction_enemies` reads the table, by disposition (content.rs:1156; narrative.rs:655, 672, 736)
+- crates/portlight-sim/src/narrative.rs:356-361 ('The Price of Friends': "The enemies of your friends are now watching you with different eyes." and hint "Standing with one faction affects your reputation with their rivals and enemies.")
+- Faction regard changes only for the faction fought (crates/portlight-sim/src/session.rs:3695-3706)
+
+Proposed fix: No data change. Either brief a spillover mechanic, or soften the hint to describe a journal beat, not a rule (the hint also uses 'Standing', against Option A, if it is ever shown in godot; the godot journal copy omits it, crates/portlight-godot/src/journal_screen.rs:984-987). Add content.rs doc comments marking spillover and vendetta_trigger unread, as in DF-15.
+
+Why: the beat fires on regard 15 with any one faction (narrative.rs:631-638), whether or not that faction has enemies, and nothing changes with the rivals.
+
 ## Resolved in lore (no data change)
 
 - Stormwall 'answers to the Pact, not the crown' (C:13570 area): the crown is the old Northern Crown that raised the Fortress (T3) and dissolved (T8).
@@ -287,3 +320,8 @@ Why: both superlatives appear in shipped voyage text.
 - 'The route that clothed an empire' (C:2033): a figure of speech for the Alliance cotton trade; no empire exists.
 - Smuggler's Run 'pirate kings once controlled both ends' (C:2294) vs the Crimson Tide and Monsoon Syndicate today: one line of kings before T13, two crews since (T28).
 - Ember Isle 'obsidian-hulled' medicine boats (C:12538): obsidian-inlaid, black-lacquered hulls.
+- Free Ports 'refuse to join any bloc' (C:13482) while listed as a bloc: a bloc of non-alignment (factions/free_ports.md).
+- Coral Crown 'three island ports under the Coral King's authority' (C:13518) vs Ember Isle's Keeper Elder and Typhoon Anchorage's Storm Chief: an overlordship of tribute; each island keeps its own ruler (factions/coral_crown.md).
+- Raj the Quiet as a sea captain (C:2929) and as Kiran's intelligence chief (C:10703): Raj sails; his Shadow keeps the desk (C:10738).
+- An Iron Wolves captain trading at Coral Throne (C:11335), outside Wolf territory: Wolves sell anywhere and raid at home.
+- No One, Gunnar and the Iron Wolves all deserted 'the same garrison' (C:7781, C:7971): canon reads it as Stormwall's garrison, in order T31, T32, T33.

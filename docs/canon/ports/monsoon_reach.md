@@ -95,6 +95,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "Monsoon Reach trades with everyone and judges no one. The Wind Temple monks believe commerce is prayer." (C:13653 area).
 - Grudge: "The Monsoon Brotherhood predicted a typhoon that saved a Silk Circle fleet. The Circle offered alliance. The monks declined. 'We read the wind, not politics.'" (C:13653 area).
 - Bloc philosophy: "All flags fly here. No nation claims us." (C:13475 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Free Ports](../factions/free_ports.md); archetypes starting here [The Scholar](../captains/scholar.md).
 
 ## F. Relations with every other port
 

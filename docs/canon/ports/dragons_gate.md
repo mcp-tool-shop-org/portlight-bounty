@@ -96,6 +96,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Trade embargo (data, unread by the sim; crates/portlight-sim/src/content.rs:676): Weapons.
 - Grudge: "The Iron Wolves tried to smuggle weapons through the Gate. Fifteen Wolf sailors are still chained to the seabed." (C:13633 area).
 - Bloc philosophy: "Quality over quantity. Hierarchy governs all." (C:13453 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Silk Circle](../factions/silk_circle.md).
 
 ## F. Relations with every other port
 

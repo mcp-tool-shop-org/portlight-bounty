@@ -91,6 +91,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Local rival: Ironhaven: "Same ore, different prices. Iron Point sells raw; Ironhaven sells refined at triple the markup. The miners feel cheated by industrial middlemen." (C:13597 area).
 - Grudge: "Ironhaven called Iron Point ore 'unrefined swamp metal' at a trade fair. The Red Hand has a long memory." (C:13597 area).
 - Bloc philosophy: "Generosity first, then business. The coast remembers." (C:13431 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Gold Coast Compact](../factions/gold_coast_compact.md).
 
 ## F. Relations with every other port
 

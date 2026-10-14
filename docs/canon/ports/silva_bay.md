@@ -97,6 +97,7 @@ Man-of-war note (design ruling 2): the Royal Man-of-War stays in lore as a Silva
 - Bloc stance: "Silva Bay stays out of politics and builds ships. The Alliance needs them too much to push." (C:13550 area).
 - Grudge: "The Shipwrights' Brotherhood refused to build warships for the Iron Pact. Stormwall hasn't forgotten." (C:13550 area).
 - Bloc philosophy: "Contracts are sacred. Prices are posted. Cheats are remembered." (C:13388 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Exchange Alliance](../factions/exchange_alliance.md); archetypes starting here [The Navigator](../captains/navigator.md).
 
 ## F. Relations with every other port
 

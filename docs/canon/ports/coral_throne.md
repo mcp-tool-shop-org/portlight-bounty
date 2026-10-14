@@ -97,6 +97,7 @@ Pattern: the shared visual-identity headings 1-7 (design notes). Shared camera, 
 - Bloc stance: "The Coral Throne IS the Crown. The king's word shapes trade from Ember Isle to Typhoon Anchorage." (C:13707 area).
 - Grudge: "A Western merchant refused to pay tribute. The Coral King displayed his ship's nameplate in the palace as a decoration. The merchant swam home." (C:13707 area).
 - Bloc philosophy: "Tribute earns trade. The reef remembers." (C:13511 area). Loyalty and spillover numbers are [flavour, no mechanic] (DF-15).
+- Faction canon: bloc [The Coral Crown](../factions/coral_crown.md).
 
 ## F. Relations with every other port
 
