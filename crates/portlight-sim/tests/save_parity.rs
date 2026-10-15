@@ -860,6 +860,17 @@ fn unknown_lane_loads_with_empty_names() {
         .pointer_mut("/routes")
         .and_then(Value::as_array_mut)
         .unwrap();
+    // Reversed order: store The Timber Run as silva_bay -> porto_novo.
+    let timber = routes
+        .iter_mut()
+        .find(|route| {
+            route["port_a"] == "porto_novo" && route["port_b"] == "silva_bay"
+                || route["port_a"] == "silva_bay" && route["port_b"] == "porto_novo"
+        })
+        .unwrap();
+    let (pa, pb) = (timber["port_a"].clone(), timber["port_b"].clone());
+    timber["port_a"] = pb;
+    timber["port_b"] = pa;
     routes.push(serde_json::json!({
         "port_a": "porto_novo",
         "port_b": "nowhere",
@@ -879,5 +890,19 @@ fn unknown_lane_loads_with_empty_names() {
     assert_eq!(unknown.lore, "");
     let grain = loaded.world().find_route("porto_novo", "al_manar").unwrap();
     assert_eq!(grain.lore_name, "The Grain Road");
+    let timber = loaded
+        .world()
+        .routes
+        .iter()
+        .find(|route| route.port_a == "silva_bay" && route.port_b == "porto_novo")
+        .or_else(|| {
+            loaded
+                .world()
+                .routes
+                .iter()
+                .find(|route| route.port_a == "porto_novo" && route.port_b == "silva_bay")
+        })
+        .unwrap();
+    assert_eq!(timber.lore_name, "The Timber Run");
     let _ = fs::remove_dir_all(&dir);
 }
