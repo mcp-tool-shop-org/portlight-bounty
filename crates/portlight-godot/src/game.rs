@@ -6446,6 +6446,8 @@ impl PortlightGame {
         if self.encounter.as_ref().and_then(present).is_some() {
             self.docked_fail("Docked smoke: Escape with Back visible did not leave.");
         }
+        // 3b. The encounter wins over the Day's report.
+        self.check_report_under_bounty_fight();
 
         // 4-5. Sail with Contracts, then Crew, left open (no Close first).
         for (name, open) in [
@@ -6470,7 +6472,9 @@ impl PortlightGame {
                 self.docked_fail(format!("Docked smoke: {name} still drawn at sea."));
             }
             self.expect_open(&format!("{name} at sea"), &[]);
-            // Not stale at the next pier.
+            // Not stale at the next pier. Smoke-only shortcut: any sea
+            // encounter is dropped (encounter = None) so the sail reaches a
+            // pier; it is not a game path.
             for _ in 0..20 {
                 if self.docked_id().is_some() {
                     break;
@@ -6490,7 +6494,147 @@ impl PortlightGame {
         self.perform(Action::OpenHunt);
         self.expect_open("hunt at sea", &["hunt"]);
         self.dismiss_cancel();
+        // OC3: a pending Hunt claim does not survive undock; Hunt stays open.
+        self.start_game();
+        self.perform(Action::OpenHunt);
+        let target = self
+            .hunt_desk
+            .board
+            .first()
+            .map(|target| target.captain_id.clone());
+        if let Some(id) = target {
+            self.ask_claim(&id);
+        }
+        let armed = self.hunt_desk.confirm.is_some();
+        self.depart_now("al_manar");
+        let kept = self.hunt_open && self.hunt_desk.confirm.is_none();
+        godot_print!(
+            "docked smoke OC3: armed {armed}, at sea hunt open {} confirm cleared {}",
+            self.hunt_open,
+            self.hunt_desk.confirm.is_none()
+        );
+        if !armed || !kept {
+            self.docked_fail(format!(
+                "Docked smoke OC3: armed {armed}, hunt open {}, confirm {:?}.",
+                self.hunt_open,
+                self.hunt_desk.confirm.is_some()
+            ));
+        }
+        self.dismiss_cancel();
         self.expect_open("hunt at sea escape", &[]);
+    }
+
+    /// B1: the Day's report is open when a bounty fight starts (the Next-day
+    /// path, `open_sea_agency`). During the fight the report is kept open but
+    /// not drawn and inert, Escape leaves it alone, the fight reaches Back
+    /// (not stuck in naval), and after leaving the report shows again and one
+    /// Escape closes it.
+    fn check_report_under_bounty_fight(&mut self) {
+        self.start_game();
+        let day = self
+            .session
+            .as_ref()
+            .map(|session| session.world().day)
+            .unwrap_or(1);
+        self.open_day_report_doc(day_report::smoke_full_document(day));
+        let state = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            if let Err(err) = session.accept_bounty(SCRIPTED_CAPTAIN) {
+                self.docked_fail(format!("Docked smoke B1: accept bounty failed: {err}"));
+                return;
+            }
+            match session.hunt_bounty(SCRIPTED_CAPTAIN) {
+                Ok(state) => state,
+                Err(err) => {
+                    self.docked_fail(format!("Docked smoke B1: hunt bounty failed: {err}"));
+                    return;
+                }
+            }
+        };
+        self.open_sea_agency(state, String::new());
+        self.refresh();
+        self.choose_encounter("fight");
+        let hidden = |game: &Self| {
+            let card = game
+                .day_report_root()
+                .is_some_and(|root| root.is_visible_in_tree());
+            let scrim = game
+                .day_report_nodes
+                .as_ref()
+                .is_some_and(|nodes| day_report::scrim_shown(nodes) || nodes.close.has_focus());
+            let fight = game
+                .encounter_nodes
+                .as_ref()
+                .is_some_and(|nodes| nodes.root.is_visible_in_tree());
+            game.day_report_open && !card && !scrim && fight
+        };
+        let phase = self.encounter.as_ref().map(|facts| facts.phase.clone());
+        let hidden_naval = hidden(self) && phase.as_deref() == Some("naval");
+        self.dismiss_cancel();
+        let after = self.encounter.as_ref().map(|facts| facts.phase.clone());
+        let inert = after == phase && self.day_report_open;
+        // Each round plays the first action the screen offers (always legal).
+        for _ in 0..40 {
+            if !self.phase_is(ScreenPhase::Naval) {
+                break;
+            }
+            let Some(action) = self
+                .encounter
+                .as_ref()
+                .and_then(|facts| facts.naval_actions.first().cloned())
+            else {
+                break;
+            };
+            self.play_naval(&action);
+        }
+        if self.phase_is(ScreenPhase::Boarding) {
+            self.resolve_board();
+        }
+        for _ in 0..60 {
+            if !self.phase_is(ScreenPhase::Personal) {
+                break;
+            }
+            let Some(action) = self
+                .encounter
+                .as_ref()
+                .and_then(|facts| facts.combat_actions.first().cloned())
+            else {
+                break;
+            };
+            self.play_fight(&action);
+        }
+        // Win or lose, the fight must reach a Back (no prize step needed).
+        let end_phase = self.encounter.as_ref().map(|facts| facts.phase.clone());
+        godot_print!("docked smoke B1: fight ended in phase {end_phase:?}");
+        let back = self.escape_facts().encounter_leave;
+        let hidden_end = hidden(self);
+        godot_print!(
+            "docked smoke B1: hidden in naval {hidden_naval}, Escape inert {inert}, reached Back {back}, hidden at Back {hidden_end}"
+        );
+        if !hidden_naval || !inert || !back || !hidden_end {
+            self.docked_fail(format!(
+                "Docked smoke B1: phase {phase:?}, hidden in naval {hidden_naval}, Escape inert {inert}, Back {back}, hidden at Back {hidden_end}."
+            ));
+        }
+        self.dismiss_cancel();
+        self.refresh();
+        let shows = !self.encounter_up()
+            && self.day_report_drawn()
+            && self
+                .day_report_root()
+                .is_some_and(|root| root.is_visible_in_tree());
+        self.dismiss_cancel();
+        let closed = !self.day_report_open;
+        godot_print!(
+            "docked smoke B1: report shows after the fight {shows}, one Escape closes it {closed}"
+        );
+        if !shows || !closed {
+            self.docked_fail(format!(
+                "Docked smoke B1: after the fight report shows {shows}, closed by Escape {closed}."
+            ));
+        }
     }
 
     /// With a confirm armed on `desk`, Escape once cancels only the confirm
@@ -8503,9 +8647,9 @@ impl PortlightGame {
     }
 
     /// The sea agency a Next day opens. Unlike [`Self::open_agency`] it leaves
-    /// the Day's report up: the card opens first over the Approach card
-    /// (dimmed, input blocked) and Close gives the encounter back, so an
-    /// expiry from the same tick is never lost behind it.
+    /// the Day's report open: it is not drawn while the encounter is up and
+    /// shows again when the encounter ends, so an expiry from the same tick
+    /// is never lost.
     fn open_sea_agency(&mut self, state: EncounterState, log: String) {
         if !log.is_empty() {
             self.push_log(log.clone());
@@ -9786,8 +9930,20 @@ impl PortlightGame {
         Some(facts)
     }
 
+    /// An encounter on screen: it draws on top and takes all input.
+    fn encounter_up(&self) -> bool {
+        self.encounter.as_ref().and_then(present).is_some()
+    }
+
+    /// The Day's report is drawn: open and no encounter up. While an
+    /// encounter is up the report stays open but is not drawn (no card, no
+    /// scrim, no focus); it shows again when the encounter ends.
+    fn day_report_drawn(&self) -> bool {
+        self.day_report_open && !self.encounter_up()
+    }
+
     fn sync_day_report(&mut self) {
-        let open = self.day_report_open;
+        let open = self.day_report_drawn();
         let Some(mut nodes) = self.day_report_nodes.clone() else {
             return;
         };
@@ -13708,8 +13864,8 @@ impl PortlightGame {
     }
 
     /// A Next day that expires a contract and opens a sea encounter: the
-    /// report opens first over the Approach card (dimmed, input refused), the
-    /// expiry is still in the Log, and Close gives the Approach card back.
+    /// encounter wins. The report stays open but is not drawn, the Approach
+    /// choices are offered, Escape is inert, and the expiry is in the Log.
     /// Runs on a fresh scripted session through the same `open_sea_agency`
     /// the Next day path calls; the smoke's own state is put back after.
     fn check_report_same_tick_encounter(&mut self) {
@@ -13752,40 +13908,36 @@ impl PortlightGame {
         self.open_day_report_doc(day_report::smoke_deadline_document(day));
         self.open_sea_agency(state, String::new());
         self.refresh();
-        let report_first = self.day_report_open
+        // The encounter wins: the report stays open but is not drawn and
+        // takes no input; Escape at Approach is inert and leaves it alone.
+        let report_kept = self.day_report_open
             && self.encounter.is_some()
+            && !self.day_report_drawn()
             && self.day_report_nodes.as_ref().is_some_and(|nodes| {
-                day_report::scrim_shown(nodes) && day_report::keyboard_trapped(nodes)
+                !day_report::scrim_shown(nodes) && !day_report::keyboard_trapped(nodes)
             });
-        let refused = self.playtest_choose("encounter.choice.fight").to_string();
-        let still_approach = self.phase_is(ScreenPhase::Approach) && self.day_report_open;
-        self.dismiss_cancel();
         let offered = offered_choices(&self.offer_root())
             .iter()
             .any(|(id, _)| id.starts_with("encounter.choice."));
+        self.dismiss_cancel();
+        let still_approach = self.phase_is(ScreenPhase::Approach) && self.day_report_open;
         let logged = self.log_lines.contains(&expiry);
-        let ok = report_first
-            && !refused.is_empty()
-            && still_approach
-            && !self.day_report_open
-            && offered
-            && logged;
+        let ok = report_kept && offered && still_approach && logged;
         if ok {
             godot_print!(
-                "day report over a same-tick encounter: report first, choices refused ({refused}), Close restores the Approach card, expiry kept in the Log"
+                "day report under a same-tick encounter: kept open but not drawn, choices offered, Escape inert, expiry kept in the Log"
             );
         } else {
             godot_print!(
-                "same-tick: report_first {report_first}, refused {refused:?}, still_approach {still_approach}, report_open {}, offered {offered}, logged {logged}",
+                "same-tick: report_kept {report_kept}, offered {offered}, still_approach {still_approach}, report_open {}, logged {logged}",
                 self.day_report_open
             );
         }
         ok
     }
 
-    /// A Day's report raised over an open encounter dims it and takes its
-    /// input: the scrim is up and stops clicks, and Close holds the focus.
-    /// Closing the report gives the encounter back.
+    /// A Day's report raised while an encounter is up is kept open but not
+    /// drawn: no card, no scrim, no focus. The encounter keeps its input.
     fn check_report_dims_encounter(&mut self) {
         let prior_doc = self.day_report_doc.clone();
         let day = self
@@ -13805,13 +13957,21 @@ impl PortlightGame {
                 )
             })
             .unwrap_or_default();
-        if dimmed && stops && focused {
-            godot_print!("day report over encounter: dimmed, blocks clicks, Close focused");
+        // The encounter wins: the report stays open but is not drawn - no
+        // card, no scrim, no focus - and shows again when the fight ends.
+        let card_shown = self
+            .day_report_root()
+            .is_some_and(|root| root.is_visible_in_tree());
+        if self.day_report_open && !card_shown && !dimmed && !stops && !focused {
+            godot_print!("day report under encounter: kept open, not drawn, no scrim, no focus");
         } else {
             self.smoke_ok = false;
-            self.push_log(format!(
-                "Report over encounter: dimmed {dimmed}, stops clicks {stops}, Close focused {focused}."
-            ));
+            let line = format!(
+                "Report under encounter: open {}, card {card_shown}, dimmed {dimmed}, stops clicks {stops}, Close focused {focused}.",
+                self.day_report_open
+            );
+            godot_print!("{line}");
+            self.push_log(line);
         }
         self.close_day_report();
         self.day_report_doc = prior_doc;
@@ -14681,7 +14841,7 @@ impl PortlightGame {
         let desk = DESK_ORDER.into_iter().find(|desk| open_desk(*desk));
         EscapeFacts {
             departure: self.departure_open,
-            day_report: self.day_report_open,
+            day_report: self.day_report_drawn(),
             recap_card: self.recap_card_open(),
             encounter: view.is_some(),
             encounter_leave: view.is_some_and(|view| {
@@ -15090,7 +15250,7 @@ impl PortlightGame {
         state.set("place", place.as_str());
         state.set("open", &open);
         state.set("hire_on_screen", hire);
-        match crate::playtest::encounter_key(self.encounter.as_ref(), self.day_report_open) {
+        match crate::playtest::encounter_key(self.encounter.as_ref(), self.day_report_drawn()) {
             Some(key) => state.set("encounter", &key.to_dictionary()),
             None => state.set("encounter", &Variant::nil()),
         }
@@ -15221,11 +15381,11 @@ impl PortlightGame {
         if self.departure_open {
             return "departure-check";
         }
-        if self.day_report_open {
-            return "day-report";
-        }
         if self.encounter.as_ref().and_then(present).is_some() {
             return "encounter";
+        }
+        if self.day_report_open {
+            return "day-report";
         }
         if self.hunt_open {
             return "hunt";
@@ -15260,7 +15420,7 @@ impl PortlightGame {
         if self.departure_open {
             open.push("departure-check");
         }
-        if self.day_report_open {
+        if self.day_report_drawn() {
             open.push("day-report");
         }
         if self.encounter.as_ref().and_then(present).is_some() {
@@ -15489,18 +15649,13 @@ enum EscapeStep {
     Close(Desk),
 }
 
-/// What one Escape does, top-down: Departure (Stay), the Day's report, the
-/// recap card, the encounter (only once Back / Leave is visible), then the
-/// open desk (its confirm first). At most one step; never a confirm.
+/// What one Escape does, top-down: Departure (Stay), the encounter (only
+/// once Back / Leave is visible; the Day's report under it is not drawn and
+/// not touched), the Day's report, the recap card, then the open desk (its
+/// confirm first). At most one step; never a confirm.
 fn escape_step(facts: &EscapeFacts) -> EscapeStep {
     if facts.departure {
         return EscapeStep::StayInPort;
-    }
-    if facts.day_report {
-        return EscapeStep::CloseDayReport;
-    }
-    if facts.recap_card {
-        return EscapeStep::CloseRecap;
     }
     if facts.encounter {
         return if facts.encounter_leave {
@@ -15508,6 +15663,12 @@ fn escape_step(facts: &EscapeFacts) -> EscapeStep {
         } else {
             EscapeStep::Nothing
         };
+    }
+    if facts.day_report {
+        return EscapeStep::CloseDayReport;
+    }
+    if facts.recap_card {
+        return EscapeStep::CloseRecap;
     }
     match facts.desk {
         Some(desk) if facts.desk_armed => EscapeStep::CancelConfirm(desk),
@@ -16524,6 +16685,17 @@ mod escape_tests {
             departure: false,
             ..all
         };
+        assert_eq!(escape_step(&f), EscapeStep::LeaveEncounter);
+        let f = EscapeFacts {
+            encounter_leave: false,
+            ..f
+        };
+        // Mid-fight Escape is inert; it never reaches the report under it.
+        assert_eq!(escape_step(&f), EscapeStep::Nothing);
+        let f = EscapeFacts {
+            encounter: false,
+            ..f
+        };
         assert_eq!(escape_step(&f), EscapeStep::CloseDayReport);
         let f = EscapeFacts {
             day_report: false,
@@ -16532,16 +16704,6 @@ mod escape_tests {
         assert_eq!(escape_step(&f), EscapeStep::CloseRecap);
         let f = EscapeFacts {
             recap_card: false,
-            ..f
-        };
-        assert_eq!(escape_step(&f), EscapeStep::LeaveEncounter);
-        let f = EscapeFacts {
-            encounter_leave: false,
-            ..f
-        };
-        assert_eq!(escape_step(&f), EscapeStep::Nothing);
-        let f = EscapeFacts {
-            encounter: false,
             ..f
         };
         assert_eq!(escape_step(&f), EscapeStep::CancelConfirm(Desk::Contracts));

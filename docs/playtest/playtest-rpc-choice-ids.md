@@ -46,7 +46,7 @@ Offered ids follow the F10 layer rules. The top screen's ids are always offered.
 
 ## Keys
 
-Escape is not a choice id. `key` `escape` or `ui_cancel` calls `dismiss_cancel`, which does one thing, top-down: departure check (stay in port), Day's report, contract recap card, encounter (leaves only when Back/Return is shown; inert otherwise), then the one open desk (Hunt, Crew, Contracts, Shipyard, Harbour, Journal). On a desk with a pending confirm the first Escape cancels the confirm only; the next closes the desk. On the abandon card Escape closes the card only. A no-op is success, so the next observation still shows the overlay. There is no `ui.close` id.
+Escape is not a choice id. `key` `escape` or `ui_cancel` calls `dismiss_cancel`, which does one thing, top-down: departure check (stay in port), encounter (leaves only when Back/Return is shown; inert otherwise), Day's report, contract recap card, then the one open desk (Hunt, Crew, Contracts, Shipyard, Harbour, Journal). On a desk with a pending confirm the first Escape cancels the confirm only; the next closes the desk. On the abandon card Escape closes the card only. While an encounter is up the Day's report stays open but is not drawn and takes no input (`screen` reads `encounter`); it shows again after the encounter. A no-op is success, so the next observation still shows the overlay. There is no `ui.close` id.
 
 ## state.recap
 
