@@ -30,6 +30,11 @@ const SEEDS: [i128; 30] = [
 ];
 const NAME: &str = "Balance";
 const END_DAY: i64 = 60;
+/// Silver an unarmed ship must hold to hunt: a quarter of a 4000 silver stake,
+/// so a thin purse trades instead.
+const HUNT_RESERVE: i64 = 1000;
+/// A run is a bust when its final net worth is under this many silver.
+const BUST_BELOW: i64 = 200;
 /// Band for the gate: +/-15 percent of the field median.
 const BAND_PCT: i64 = 15;
 
@@ -600,7 +605,17 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
                 .ship
                 .as_ref()
                 .is_some_and(|ship| ship.hull * 10 >= ship.hull_max * 7);
-            if strategy == Strategy::Opportunist && healthy && hunted < 6 {
+            // Hunt guard: hunt only with cannons aboard, or while silver is at
+            // least HUNT_RESERVE (a 25% reserve against a 4000 stake), so
+            // sloop types trade instead of busting.
+            let armed = session
+                .world()
+                .captain
+                .ship
+                .as_ref()
+                .is_some_and(|ship| ship.cannons > 0);
+            let reserve = session.world().captain.silver >= HUNT_RESERVE;
+            if strategy == Strategy::Opportunist && healthy && (armed || reserve) && hunted < 6 {
                 if let Some(target) = try_bounty(&mut session) {
                     hunted += 1;
                     if let Ok(state) = session.hunt_bounty(&target) {
@@ -741,12 +756,12 @@ fn median(mut v: Vec<i64>) -> i64 {
 
 fn csv(runs: &[Run]) -> String {
     let mut out = String::from(
-        "type,strategy,seed,net_worth,duels_won,days_at_sea,contracts_completed,bounties_claimed,game_over,silver,banked,cargo,ships,debt\n",
+        "type,strategy,seed,net_worth,duels_won,days_at_sea,contracts_completed,bounties_claimed,game_over,bust,silver,banked,cargo,ships,debt\n",
     );
     for r in runs {
         let _ = writeln!(
             out,
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
             r.captain_type,
             r.strategy.id(),
             r.seed,
@@ -756,6 +771,7 @@ fn csv(runs: &[Run]) -> String {
             r.contracts_completed,
             r.bounties_claimed,
             if r.game_over { "y" } else { "n" },
+            if r.net_worth < BUST_BELOW { "y" } else { "n" },
             r.worth.silver,
             r.worth.banked,
             r.worth.cargo,
@@ -870,17 +886,21 @@ fn summary(runs: &[Run], seeds: &[i128]) -> String {
     );
     let _ = writeln!(
         md,
-        "- s3_opportunist: a bounty claimed on {b}/{bn} runs (reported, not gated)."
+        "- s3_opportunist: a bounty claimed on {b}/{bn} runs (reported, not gated). The opportunist hunts only if armed or holding at least {HUNT_RESERVE} silver."
     );
     let _ = writeln!(md, "\n## Game over by strategy\n");
-    let _ = writeln!(md, "| Strategy | Game over | Runs | Broken bot (>20%) |");
-    let _ = writeln!(md, "|---|---:|---:|---|");
+    let _ = writeln!(
+        md,
+        "| Strategy | Game over | Busts (net worth < {BUST_BELOW}) | Runs | Broken bot (>20%) |"
+    );
+    let _ = writeln!(md, "|---|---:|---:|---:|---|");
     for s in Strategy::ALL {
         let all: Vec<_> = runs.iter().filter(|r| r.strategy == s).collect();
         let over = all.iter().filter(|r| r.game_over).count();
+        let busts = all.iter().filter(|r| r.net_worth < BUST_BELOW).count();
         let _ = writeln!(
             md,
-            "| {} | {over} | {} | {} |",
+            "| {} | {over} | {busts} | {} | {} |",
             s.id(),
             all.len(),
             if over * 5 > all.len() { "yes" } else { "no" }
