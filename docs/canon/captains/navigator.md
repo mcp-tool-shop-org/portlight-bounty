@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/navigator.md](../player-types/navigator.md)
 - Home port: [Silva Bay](../ports/silva_bay.md) (bloc [The Exchange Alliance](../factions/exchange_alliance.md))
 
 ## 4. Flags

@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/smuggler.md](../player-types/smuggler.md)
 - Home port: [Palm Cove](../ports/palm_cove.md) (bloc [The Gold Coast Compact](../factions/gold_coast_compact.md))
 
 ## 4. Flags

@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/merchant.md](../player-types/merchant.md)
 - Home port: [Porto Novo](../ports/porto_novo.md) (bloc [The Exchange Alliance](../factions/exchange_alliance.md))
 
 ## 4. Flags
