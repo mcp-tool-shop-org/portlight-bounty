@@ -2994,7 +2994,8 @@
         "South Seas"
       ],
       "captain_bias": [
-        "merchant"
+        "merchant",
+        "dockhand"
       ],
       "tags": [
         "staple",
@@ -3027,7 +3028,8 @@
       ],
       "captain_bias": [
         "merchant",
-        "navigator"
+        "navigator",
+        "dockhand"
       ],
       "tags": [
         "construction",
@@ -3059,7 +3061,8 @@
         "East Indies"
       ],
       "captain_bias": [
-        "merchant"
+        "merchant",
+        "dockhand"
       ],
       "tags": [
         "industrial"
@@ -3125,7 +3128,8 @@
       ],
       "captain_bias": [
         "smuggler",
-        "navigator"
+        "navigator",
+        "privateer"
       ],
       "tags": [
         "military",
@@ -3154,7 +3158,8 @@
       "source_port": null,
       "destination_regions": [],
       "captain_bias": [
-        "merchant"
+        "merchant",
+        "dockhand"
       ],
       "tags": [
         "urgent",
@@ -3183,7 +3188,8 @@
       "source_port": null,
       "destination_regions": [],
       "captain_bias": [
-        "smuggler"
+        "smuggler",
+        "dockhand"
       ],
       "tags": [
         "urgent",
@@ -3216,7 +3222,8 @@
       ],
       "captain_bias": [
         "merchant",
-        "navigator"
+        "navigator",
+        "dockhand"
       ],
       "tags": [
         "urgent",
@@ -3245,7 +3252,8 @@
       "source_port": null,
       "destination_regions": [],
       "captain_bias": [
-        "smuggler"
+        "smuggler",
+        "merchant_prince"
       ],
       "tags": [
         "discreet",
@@ -3276,7 +3284,8 @@
       "destination_regions": [],
       "captain_bias": [
         "smuggler",
-        "merchant"
+        "merchant",
+        "merchant_prince"
       ],
       "tags": [
         "discreet",
@@ -3305,7 +3314,8 @@
       "source_port": null,
       "destination_regions": [],
       "captain_bias": [
-        "smuggler"
+        "smuggler",
+        "merchant_prince"
       ],
       "tags": [
         "discreet",
@@ -3336,7 +3346,8 @@
       "destination_regions": [],
       "captain_bias": [
         "smuggler",
-        "merchant"
+        "merchant",
+        "merchant_prince"
       ],
       "tags": [
         "discreet",
@@ -3572,7 +3583,8 @@
       "source_port": null,
       "destination_regions": [],
       "captain_bias": [
-        "merchant"
+        "merchant",
+        "merchant_prince"
       ],
       "tags": [
         "charter",
@@ -3608,7 +3620,8 @@
       ],
       "captain_bias": [
         "merchant",
-        "navigator"
+        "navigator",
+        "privateer"
       ],
       "tags": [
         "charter",
