@@ -206,7 +206,7 @@ jobs:
               echo "explicit headless capture exited ${code}, expected 1"
               exit 1
             fi
-            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log" || grep -q 'portlight trade smoke ok' "$log" || grep -q 'portlight first-voyage-hints smoke ok' "$log"; then
+            if grep -q 'portlight smoke ok' "$log" || grep -q 'portlight encounter smoke ok' "$log" || grep -q 'portlight newgame smoke ok' "$log" || grep -q 'portlight contracts smoke ok' "$log" || grep -q 'portlight shipyard smoke ok' "$log" || grep -q 'portlight journal smoke ok' "$log" || grep -q 'portlight harbour smoke ok' "$log" || grep -q 'portlight crew smoke ok' "$log" || grep -q 'portlight hunt smoke ok' "$log" || grep -q 'portlight day-report smoke ok' "$log" || grep -q 'portlight trade smoke ok' "$log" || grep -q 'portlight first-voyage-hints smoke ok' "$log" || grep -q 'portlight docked-consistency smoke ok' "$log"; then
               echo "explicit headless capture printed smoke ok"
               exit 1
             fi
@@ -515,6 +515,15 @@ jobs:
             godot --headless --path godot -- --first-voyage-hints
           if ! grep -q 'portlight first-voyage-hints smoke ok' /tmp/godot-first-voyage-hints-smoke.log; then
             echo "first-voyage-hints smoke did not report ok"
+            exit 1
+          fi
+          # Docked consistency: Escape = Close (confirm first) on every desk,
+          # Contracts and Crew close on undock, one desk at a time, the
+          # encounter wins. Real verbs, no frames.
+          run_godot /tmp/godot-docked-consistency-smoke.log \
+            godot --headless --path godot -- --docked-consistency
+          if ! grep -q 'portlight docked-consistency smoke ok' /tmp/godot-docked-consistency-smoke.log; then
+            echo "docked-consistency smoke did not report ok"
             exit 1
           fi
           # Departure check: F9 crew line, clean sail, late panel, Escape /
