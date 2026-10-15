@@ -14,6 +14,33 @@ use portlight_sim::snapshot;
 use portlight_sim::Session;
 use serde_json::Value;
 
+fn content_route(a: &str, b: &str) -> Option<&'static portlight_sim::content::RouteDef> {
+    portlight_sim::content::content()
+        .routes
+        .iter()
+        .find(|def| (def.port_a == a && def.port_b == b) || (def.port_a == b && def.port_b == a))
+}
+
+/// Every loaded route carries the same lane name and lore as the session
+/// that was saved.
+fn assert_lane_names_match(saved: &Session, loaded: &Session) {
+    assert_eq!(saved.world().routes.len(), loaded.world().routes.len());
+    for (before, after) in saved.world().routes.iter().zip(&loaded.world().routes) {
+        assert_eq!(before.port_a, after.port_a);
+        assert_eq!(before.port_b, after.port_b);
+        assert_eq!(
+            before.lore_name, after.lore_name,
+            "{}-{}",
+            before.port_a, before.port_b
+        );
+        assert_eq!(
+            before.lore, after.lore,
+            "{}-{}",
+            before.port_a, before.port_b
+        );
+    }
+}
+
 fn parity_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../parity")
 }
@@ -189,8 +216,15 @@ fn v1_slot_matches_the_python_loader() {
         loaded.world().ports[0].features,
         vec!["shipyard".to_string()]
     );
-    assert_eq!(loaded.world().routes[0].lore, "");
-    assert_eq!(loaded.world().routes[0].lore_name, "");
+    // Saves keep no lane names; the loader refills them from content by
+    // port pair (the Python loader leaves them empty; see the parity note).
+    let route = &loaded.world().routes[0];
+    let def = content_route(&route.port_a, &route.port_b);
+    assert_eq!(
+        route.lore_name,
+        def.map(|d| d.lore_name.clone()).unwrap_or_default()
+    );
+    assert_eq!(route.lore, def.map(|d| d.lore.clone()).unwrap_or_default());
     assert_eq!(loaded.world().captain.deferred_fees[0].fee_type, "port_fee");
     assert_eq!(loaded.world().captain.deferred_fees[0].amount, 12);
     assert_eq!(
@@ -234,11 +268,7 @@ fn played_slot_matches_the_python_loader() {
         loaded.world().pending_duel.is_some(),
         session.world().pending_duel.is_some()
     );
-    assert!(loaded
-        .world()
-        .routes
-        .iter()
-        .all(|route| route.lore.is_empty()));
+    assert_lane_names_match(&session, &loaded);
 
     let golden_path = parity_root().join("golden/save_roundtrip.json");
     let golden_text = fs::read_to_string(&golden_path).unwrap_or_else(|_| {
@@ -729,5 +759,150 @@ fn pre_bank_v12_save_is_byte_identical() {
         resaved == resaved_fixture,
         "load and re-save wrote different bytes"
     );
+    let _ = fs::remove_dir_all(&dir);
+}
+
+/// Lane names survive a save and load, and a loaded game's lane voyage
+/// draws from that lane's own encounter table, not the region fallback.
+#[test]
+fn lane_names_and_lane_encounters_survive_save_and_load() {
+    let mut fresh = Session::new("Ada", "merchant", 1, None).unwrap();
+    let named = fresh
+        .world()
+        .routes
+        .iter()
+        .filter(|route| !route.lore_name.is_empty())
+        .count();
+    assert_eq!(named, 15);
+    let dir = scratch("lane-names");
+    fresh.save(&dir, "lanes").unwrap();
+    let mut loaded = Session::load(&dir, "lanes").unwrap().unwrap();
+    assert_lane_names_match(&fresh, &loaded);
+
+    // Porto Novo to Silva Bay is The Timber Run.
+    let lane = loaded
+        .world()
+        .find_route("porto_novo", "silva_bay")
+        .map(|route| route.lore_name.clone())
+        .unwrap();
+    assert_eq!(lane, "The Timber Run");
+    let catalog = portlight_sim::content::content();
+    let lane_texts: Vec<&str> = catalog
+        .route_encounters(&lane)
+        .unwrap()
+        .encounters
+        .iter()
+        .map(|e| e.text.as_str())
+        .collect();
+    let mut seen_lane = 0;
+    let mut here = "porto_novo".to_string();
+    for _ in 0..40 {
+        if seen_lane > 0 {
+            break;
+        }
+        let there = if here == "porto_novo" {
+            "silva_bay"
+        } else {
+            "porto_novo"
+        };
+        loaded.provision(10).ok();
+        if loaded.depart(there).is_err() {
+            break;
+        }
+        for _ in 0..20 {
+            if loaded.world().voyage.status != VoyageStatus::AtSea {
+                break;
+            }
+            if loaded.world().pending_duel.is_some() {
+                break;
+            }
+            let Ok(turn) = loaded.advance() else { break };
+            seen_lane += turn
+                .events
+                .iter()
+                .filter(|event| lane_texts.contains(&event.message.as_str()))
+                .count();
+        }
+        if loaded.world().pending_duel.is_some()
+            || loaded.world().voyage.status == VoyageStatus::AtSea
+        {
+            break;
+        }
+        here = there.to_string();
+    }
+    assert!(seen_lane > 0, "no Timber Run encounter after a load");
+    let _ = fs::remove_dir_all(&dir);
+}
+
+/// A saved route with no content match loads fine and keeps empty lane
+/// names; the matched routes still get theirs.
+#[test]
+fn unknown_lane_loads_with_empty_names() {
+    let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+    let dir = scratch("unknown-lane");
+    session.save(&dir, "unknown").unwrap();
+    // The slot file sits in the save dir or one folder below it.
+    let mut stack = vec![dir.clone()];
+    let mut file = None;
+    while let Some(at) = stack.pop() {
+        for entry in fs::read_dir(&at).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.file_name().is_some_and(|name| name == "unknown.json") {
+                file = Some(path);
+            }
+        }
+    }
+    let file = file.expect("unknown.json slot file");
+    let mut data: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
+    let routes = data
+        .pointer_mut("/routes")
+        .and_then(Value::as_array_mut)
+        .unwrap();
+    // Reversed order: store The Timber Run as silva_bay -> porto_novo.
+    let timber = routes
+        .iter_mut()
+        .find(|route| {
+            route["port_a"] == "porto_novo" && route["port_b"] == "silva_bay"
+                || route["port_a"] == "silva_bay" && route["port_b"] == "porto_novo"
+        })
+        .unwrap();
+    let (pa, pb) = (timber["port_a"].clone(), timber["port_b"].clone());
+    timber["port_a"] = pb;
+    timber["port_b"] = pa;
+    routes.push(serde_json::json!({
+        "port_a": "porto_novo",
+        "port_b": "nowhere",
+        "distance": 10,
+        "danger": 0.1,
+        "min_ship_class": "sloop"
+    }));
+    fs::write(&file, serde_json::to_string(&data).unwrap()).unwrap();
+    let loaded = Session::load(&dir, "unknown").unwrap().unwrap();
+    let unknown = loaded
+        .world()
+        .routes
+        .iter()
+        .find(|route| route.port_b == "nowhere")
+        .unwrap();
+    assert_eq!(unknown.lore_name, "");
+    assert_eq!(unknown.lore, "");
+    let grain = loaded.world().find_route("porto_novo", "al_manar").unwrap();
+    assert_eq!(grain.lore_name, "The Grain Road");
+    let timber = loaded
+        .world()
+        .routes
+        .iter()
+        .find(|route| route.port_a == "silva_bay" && route.port_b == "porto_novo")
+        .or_else(|| {
+            loaded
+                .world()
+                .routes
+                .iter()
+                .find(|route| route.port_a == "porto_novo" && route.port_b == "silva_bay")
+        })
+        .unwrap();
+    assert_eq!(timber.lore_name, "The Timber Run");
     let _ = fs::remove_dir_all(&dir);
 }
