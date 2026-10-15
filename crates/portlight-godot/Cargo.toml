@@ -13,3 +13,6 @@ crate-type = ["cdylib", "lib"]
 godot = { version = "0.5.5", features = ["api-4-7"] }
 portlight-chart = { path = "../portlight-chart" }
 portlight-sim = { path = "../portlight-sim" }
+
+[features]
+python-base = ["portlight-sim/python-base", "portlight-chart/python-base"]

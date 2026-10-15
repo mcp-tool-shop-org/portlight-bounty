@@ -2,37 +2,37 @@
 
 Seeds 1001..1030 (30 seeds), captain "Balance", 9 types x 3 strategies. Score = median over seeds of the best of the 3 strategies. Gate: within +/-15% of the field median.
 
-Field median: **52078**
+Field median: **54686**
 
 | Type | Score | vs field | Gate | Winning strategy | Spread |
 |---|---:|---:|---|---|---:|
-| merchant | 38525 | -26.0% | FLAG | s3_opportunist | 26% |
-| smuggler | 24918 | -52.1% | FLAG | s1_cautious | 24% |
-| navigator | 52078 | +0.0% | PASS | s1_cautious | 52% |
-| privateer | 72156 | +38.5% | FLAG | s3_opportunist | 113% |
-| corsair | 62896 | +20.7% | FLAG | s1_cautious | 69% |
-| scholar | 28019 | -46.1% | FLAG | s3_opportunist | 13% |
-| merchant_prince | 59979 | +15.1% | FLAG | s1_cautious | 65% |
-| dockhand | 77020 | +47.8% | FLAG | s3_opportunist | 112% |
-| bounty_hunter | 18925 | -63.6% | FLAG | s2_contracts | 4% |
+| merchant | 38525 | -29.5% | FLAG | s3_opportunist | 25% |
+| smuggler | 30975 | -43.3% | FLAG | s3_opportunist | 31% |
+| navigator | 52078 | -4.7% | PASS | s1_cautious | 49% |
+| privateer | 61163 | +11.8% | PASS | s3_opportunist | 74% |
+| corsair | 62896 | +15.0% | FLAG | s1_cautious | 66% |
+| scholar | 63643 | +16.3% | FLAG | s1_cautious | 52% |
+| merchant_prince | 54686 | +0.0% | PASS | s1_cautious | 48% |
+| dockhand | 58328 | +6.6% | PASS | s1_cautious | 69% |
+| bounty_hunter | 22272 | -59.2% | FLAG | s2_contracts | 13% |
 
 ## Per-strategy medians
 
 | Type | s1_cautious | s2_contracts | s3_opportunist |
 |---|---:|---:|---:|
 | merchant | 32762 | 20838 | 34806 |
-| smuggler | 23165 | 10592 | 21541 |
+| smuggler | 28565 | 11225 | 28304 |
 | navigator | 48693 | 21410 | 46980 |
-| privateer | 62908 | 11416 | 70319 |
+| privateer | 51714 | 14684 | 55155 |
 | corsair | 58910 | 22664 | 58954 |
-| scholar | 26329 | 19097 | 25606 |
-| merchant_prince | 58006 | 23967 | 54600 |
-| dockhand | 63877 | 12687 | 71124 |
-| bounty_hunter | 14879 | 15053 | 12484 |
+| scholar | 48383 | 19829 | 38402 |
+| merchant_prince | 50868 | 24103 | 45803 |
+| dockhand | 50625 | 12635 | 43036 |
+| bounty_hunter | 16068 | 20684 | 13429 |
 
 ## Completion rates
 
-- s2_contracts: a contract completed on 266/270 runs (gate: at least 98%).
+- s2_contracts: a contract completed on 265/270 runs (gate: at least 98%).
 - s3_opportunist: a bounty claimed on 58/270 runs (reported, not gated). The opportunist hunts only if armed or holding at least 1000 silver.
 
 ## Game over by strategy

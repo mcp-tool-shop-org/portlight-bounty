@@ -1,4 +1,6 @@
 {
+  "_source": "python-oracle",
+  "_note": "Python oracle snapshot. Rust differs on the pinned paths in rust_tuned_pins.json (Rust-tuned).",
   "seed": 60,
   "day": 52,
   "trade_seq": 0,

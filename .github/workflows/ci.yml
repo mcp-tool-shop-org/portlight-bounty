@@ -49,6 +49,10 @@ jobs:
         run: cargo clippy --locked --workspace --exclude portlight-godot --all-targets --all-features -- -D warnings
       - name: Test
         run: cargo test --locked --workspace --exclude portlight-godot
+      - name: Test (python-base, tuned overlay off)
+        # The same suite with the overlay compiled out. The Rust-tuned pins are
+        # dropped in this build, so every golden matches the Python snapshot.
+        run: cargo test --locked --workspace --exclude portlight-godot --features python-base
       - name: Manifest gate fixtures
         run: python3 -m pip install --target /tmp/portlight-pytest 'pytest==9.1.1' && PYTHONPATH=/tmp/portlight-pytest python3 tools/test_build_manifest_gates.py
       - name: Parity allowlist
@@ -136,8 +140,15 @@ jobs:
           python-version: "3.12"
       - name: Build
         run: cargo build --locked -p portlight-cli
+      - name: Build (python-base, tuned overlay off)
+        run: CARGO_TARGET_DIR=${{ github.workspace }}/target/python-base cargo build --locked -p portlight-cli --features python-base
       - name: Live Python oracle
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
+      - name: Live Python oracle (python-base, tuned overlay off)
+        # Counterfactual: with the overlay off, every script matches with only
+        # the entries that existed before the balance fork. That proves each
+        # Rust-tuned difference comes from the overlay and nothing else.
+        run: PORTLIGHT_BIN=${{ github.workspace }}/target/python-base/debug/portlight PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle --base-content
       - name: Parity allowlist and golden bytes
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/test_check.py
       - name: Victory fixtures
@@ -948,15 +959,21 @@ jobs:
             echo "chart-hint capture did not write /tmp/chart-hint-first-contract.png"
             exit 1
           fi
+          # Every frame is compared; a mismatch is recorded, not fatal, so one
+          # run lists all moved frames with their before and after hashes. The
+          # step fails once, after the last comparison.
+          moved_frames=0
           cmp_committed() {
             local name="$1"
             local fresh="$2"
-            if ! cmp -s "docs/screenshots/${name}" "$fresh"; then
-              echo "committed frame docs/screenshots/${name} differs from ${fresh}"
-              exit 1
-            fi
-            local sum
+            local sum fresh_sum
             sum=$(sha256sum "docs/screenshots/${name}" | awk '{print $1}')
+            if ! cmp -s "docs/screenshots/${name}" "$fresh"; then
+              fresh_sum=$(sha256sum "$fresh" 2>/dev/null | awk '{print $1}')
+              echo "MOVED docs/screenshots/${name} committed sha256=${sum} fresh sha256=${fresh_sum:-missing} (${fresh})"
+              moved_frames=$((moved_frames + 1))
+              return 0
+            fi
             echo "compared docs/screenshots/${name} sha256=${sum}"
           }
           cmp_committed chart-1280.png /tmp/portlight-chart-1280.png
@@ -1027,6 +1044,10 @@ jobs:
           cmp_committed quay-paving-z072.png /tmp/seam-shots/quay-paving-z072.png
           cmp_committed flat-deck-z100.png /tmp/seam-shots/flat-deck-z100.png
           cmp_committed flat-deck-z072.png /tmp/seam-shots/flat-deck-z072.png
+          if [ "$moved_frames" -ne 0 ]; then
+            echo "${moved_frames} committed frame(s) differ from the fresh render"
+            exit 1
+          fi
 
   audit:
     runs-on: ubuntu-latest

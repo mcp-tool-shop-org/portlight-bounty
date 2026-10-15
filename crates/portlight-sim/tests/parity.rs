@@ -159,19 +159,58 @@ struct Pin {
     rust: Value,
 }
 
-fn oracle_pins(root: &Path, script: &str) -> Vec<Pin> {
-    let text = fs::read_to_string(root.join("expected_divergences.json")).unwrap_or_default();
+fn entries_in(root: &Path, file: &str) -> Vec<Value> {
+    let text = fs::read_to_string(root.join(file)).unwrap_or_default();
     if text.is_empty() {
         return Vec::new();
     }
-    let data: Value = serde_json::from_str(&text).expect("expected_divergences.json");
-    let mut pins = Vec::new();
-    for entry in data
-        .get("entries")
+    let data: Value = serde_json::from_str(&text).unwrap_or_else(|e| panic!("{file}: {e}"));
+    data.get("entries")
         .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-    {
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// The original entries of `expected_divergences.json`; empty when the file is absent.
+fn original_entries_in(root: &Path) -> Vec<Value> {
+    entries_in(root, "expected_divergences.json")
+}
+
+/// The raw Rust-tuned pins of `rust_tuned_pins.json`. Their check names carry a
+/// `tuned_` prefix, so no (script, check) pair is in both files.
+fn tuned_entries_in(root: &Path) -> Vec<Value> {
+    entries_in(root, "rust_tuned_pins.json")
+}
+
+const TUNED_CATEGORY: &str = "rust-tuned";
+const TUNED_CHECK_PREFIX: &str = "tuned_";
+
+fn is_tuned_entry(entry: &Value) -> bool {
+    entry.get("category").and_then(Value::as_str) == Some(TUNED_CATEGORY)
+}
+
+/// The entries that apply to this build. A `python-base` build has no overlay,
+/// so it reads the original entries alone and never opens the tuned file. Tuned
+/// entries come back with the `tuned_` prefix stripped from their check.
+fn divergence_entries_in(root: &Path) -> Vec<Value> {
+    let mut entries = original_entries_in(root);
+    if cfg!(feature = "python-base") {
+        return entries;
+    }
+    for mut entry in tuned_entries_in(root) {
+        let check = entry["check"].as_str().expect("check").to_string();
+        let bare = check
+            .strip_prefix(TUNED_CHECK_PREFIX)
+            .unwrap_or_else(|| panic!("tuned check without prefix: {check}"));
+        entry["check"] = Value::String(bare.to_string());
+        entries.push(entry);
+    }
+    entries
+}
+
+fn oracle_pins(root: &Path, script: &str) -> Vec<Pin> {
+    let mut pins = Vec::new();
+    for entry in &divergence_entries_in(root) {
         if entry.get("script").and_then(Value::as_str) != Some(script) {
             continue;
         }
@@ -967,4 +1006,307 @@ fn infrastructure_goldens_cover_warehouse_broker_credit_and_insurance() {
         "hull_basic"
     );
     assert_eq!(insurance["infrastructure"]["policies"][0]["family"], "hull");
+}
+
+// Both pin files are closed by name. UNTAGGED_PAIRS are the 23 entries of
+// expected_divergences.json, unchanged from before the balance fork.
+// TUNED_PAIRS are the entries of rust_tuned_pins.json that
+// `tools/parity/pin_tuned.py`'s sweep produced.
+const UNTAGGED_PAIRS: [(&str, &str); 23] = [
+    ("capture_prize.txt", "oracle"),
+    ("bounty_claim.txt", "oracle"),
+    ("bounty_claim.txt", "roundtrip"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("bounty_claim_sail.txt", "roundtrip"),
+    ("insurance_claim.txt", "oracle"),
+    ("capture_decline.txt", "oracle"),
+    ("capture_fleet_full.txt", "oracle"),
+    ("capture_prize.txt", "oracle"),
+    ("capture_too_few.txt", "oracle"),
+    ("capture_too_many.txt", "oracle"),
+    ("upgrade_naval.txt", "oracle"),
+    ("boarding.txt", "oracle"),
+    ("bounty_claim.txt", "oracle"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("capture_spare_prefix.txt", "oracle"),
+    ("gear_armor.txt", "oracle"),
+    ("injury_heal.txt", "oracle"),
+    ("naval_combat.txt", "oracle"),
+    ("victory_provenance.txt", "oracle"),
+    ("victory_spare.txt", "oracle"),
+    ("victory_takeall.txt", "oracle"),
+    ("naval_evade_clip.txt", "oracle"),
+];
+
+const TUNED_PAIRS: [(&str, &str); 134] = [
+    ("boarding.txt", "tuned_oracle_wide"),
+    ("boarding.txt", "tuned_roundtrip_rust_save"),
+    ("boarding.txt", "tuned_roundtrip_python_save"),
+    ("boarding.txt", "tuned_roundtrip"),
+    ("bounty_claim.txt", "tuned_oracle_wide"),
+    ("bounty_claim.txt", "tuned_roundtrip_rust_save"),
+    ("bounty_claim.txt", "tuned_roundtrip_python_save"),
+    ("bounty_claim.txt", "tuned_roundtrip"),
+    ("bounty_claim_sail.txt", "tuned_oracle"),
+    ("bounty_claim_sail.txt", "tuned_oracle_wide"),
+    ("bounty_claim_sail.txt", "tuned_roundtrip_rust_save"),
+    ("bounty_claim_sail.txt", "tuned_roundtrip_python_save"),
+    ("bounty_claim_sail.txt", "tuned_roundtrip"),
+    ("captain_bounty_hunter_s1.txt", "tuned_oracle"),
+    ("captain_bounty_hunter_s1.txt", "tuned_oracle_wide"),
+    ("captain_bounty_hunter_s1.txt", "tuned_gamesession"),
+    ("captain_bounty_hunter_s1.txt", "tuned_roundtrip_rust_save"),
+    (
+        "captain_bounty_hunter_s1.txt",
+        "tuned_roundtrip_python_save",
+    ),
+    ("captain_bounty_hunter_s1.txt", "tuned_roundtrip"),
+    ("captain_bounty_hunter_s42.txt", "tuned_oracle"),
+    ("captain_bounty_hunter_s42.txt", "tuned_oracle_wide"),
+    ("captain_bounty_hunter_s42.txt", "tuned_roundtrip_rust_save"),
+    (
+        "captain_bounty_hunter_s42.txt",
+        "tuned_roundtrip_python_save",
+    ),
+    ("captain_bounty_hunter_s42.txt", "tuned_roundtrip"),
+    ("captain_dockhand_s1.txt", "tuned_oracle"),
+    ("captain_dockhand_s1.txt", "tuned_oracle_wide"),
+    ("captain_dockhand_s1.txt", "tuned_gamesession"),
+    ("captain_dockhand_s1.txt", "tuned_roundtrip_rust_save"),
+    ("captain_dockhand_s1.txt", "tuned_roundtrip_python_save"),
+    ("captain_dockhand_s1.txt", "tuned_roundtrip"),
+    ("captain_dockhand_s42.txt", "tuned_oracle"),
+    ("captain_dockhand_s42.txt", "tuned_oracle_wide"),
+    ("captain_dockhand_s42.txt", "tuned_roundtrip_rust_save"),
+    ("captain_dockhand_s42.txt", "tuned_roundtrip_python_save"),
+    ("captain_dockhand_s42.txt", "tuned_roundtrip"),
+    ("captain_merchant_prince_s1.txt", "tuned_oracle_wide"),
+    ("captain_merchant_prince_s1.txt", "tuned_gamesession"),
+    ("captain_merchant_prince_s1.txt", "tuned_roundtrip"),
+    ("captain_merchant_prince_s42.txt", "tuned_oracle_wide"),
+    ("captain_merchant_prince_s42.txt", "tuned_roundtrip"),
+    ("captain_privateer_s1.txt", "tuned_oracle"),
+    ("captain_privateer_s1.txt", "tuned_oracle_wide"),
+    ("captain_privateer_s1.txt", "tuned_gamesession"),
+    ("captain_privateer_s1.txt", "tuned_roundtrip_rust_save"),
+    ("captain_privateer_s1.txt", "tuned_roundtrip_python_save"),
+    ("captain_privateer_s1.txt", "tuned_roundtrip"),
+    ("captain_privateer_s42.txt", "tuned_oracle"),
+    ("captain_privateer_s42.txt", "tuned_oracle_wide"),
+    ("captain_privateer_s42.txt", "tuned_roundtrip_rust_save"),
+    ("captain_privateer_s42.txt", "tuned_roundtrip_python_save"),
+    ("captain_privateer_s42.txt", "tuned_roundtrip"),
+    ("captain_scholar_s1.txt", "tuned_oracle"),
+    ("captain_scholar_s1.txt", "tuned_gamesession"),
+    ("captain_scholar_s1.txt", "tuned_roundtrip_rust_save"),
+    ("captain_scholar_s1.txt", "tuned_roundtrip_python_save"),
+    ("captain_scholar_s42.txt", "tuned_oracle"),
+    ("captain_scholar_s42.txt", "tuned_roundtrip_rust_save"),
+    ("captain_scholar_s42.txt", "tuned_roundtrip_python_save"),
+    ("captain_smuggler_s1.txt", "tuned_oracle"),
+    ("captain_smuggler_s1.txt", "tuned_oracle_wide"),
+    ("captain_smuggler_s1.txt", "tuned_gamesession"),
+    ("captain_smuggler_s1.txt", "tuned_roundtrip_rust_save"),
+    ("captain_smuggler_s1.txt", "tuned_roundtrip_python_save"),
+    ("captain_smuggler_s1.txt", "tuned_roundtrip"),
+    ("captain_smuggler_s42.txt", "tuned_oracle"),
+    ("captain_smuggler_s42.txt", "tuned_oracle_wide"),
+    ("captain_smuggler_s42.txt", "tuned_roundtrip_rust_save"),
+    ("captain_smuggler_s42.txt", "tuned_roundtrip_python_save"),
+    ("captain_smuggler_s42.txt", "tuned_roundtrip"),
+    ("capture_decline.txt", "tuned_oracle_wide"),
+    ("capture_decline.txt", "tuned_roundtrip_rust_save"),
+    ("capture_decline.txt", "tuned_roundtrip_python_save"),
+    ("capture_decline.txt", "tuned_roundtrip"),
+    ("capture_prize.txt", "tuned_oracle_wide"),
+    ("capture_prize.txt", "tuned_roundtrip_rust_save"),
+    ("capture_prize.txt", "tuned_roundtrip_python_save"),
+    ("capture_prize.txt", "tuned_roundtrip"),
+    ("capture_spare_prefix.txt", "tuned_oracle_wide"),
+    ("capture_spare_prefix.txt", "tuned_roundtrip_rust_save"),
+    ("capture_spare_prefix.txt", "tuned_roundtrip_python_save"),
+    ("capture_spare_prefix.txt", "tuned_roundtrip"),
+    ("capture_too_few.txt", "tuned_oracle_wide"),
+    ("capture_too_few.txt", "tuned_roundtrip_rust_save"),
+    ("capture_too_few.txt", "tuned_roundtrip_python_save"),
+    ("capture_too_few.txt", "tuned_roundtrip"),
+    ("capture_too_many.txt", "tuned_oracle_wide"),
+    ("capture_too_many.txt", "tuned_roundtrip_rust_save"),
+    ("capture_too_many.txt", "tuned_roundtrip_python_save"),
+    ("capture_too_many.txt", "tuned_roundtrip"),
+    ("event_foreign.txt", "tuned_oracle"),
+    ("event_foreign.txt", "tuned_gamesession"),
+    ("event_foreign.txt", "tuned_roundtrip_rust_save"),
+    ("event_foreign.txt", "tuned_roundtrip_python_save"),
+    ("g9.txt", "tuned_oracle"),
+    ("g9.txt", "tuned_gamesession"),
+    ("g9.txt", "tuned_roundtrip_rust_save"),
+    ("g9.txt", "tuned_roundtrip_python_save"),
+    ("gear_armor.txt", "tuned_oracle_wide"),
+    ("gear_armor.txt", "tuned_roundtrip_rust_save"),
+    ("gear_armor.txt", "tuned_roundtrip_python_save"),
+    ("gear_armor.txt", "tuned_roundtrip"),
+    ("hull_day20.txt", "tuned_oracle"),
+    ("hull_day20.txt", "tuned_gamesession"),
+    ("hull_day20.txt", "tuned_roundtrip_rust_save"),
+    ("hull_day20.txt", "tuned_roundtrip_python_save"),
+    ("injury_heal.txt", "tuned_oracle"),
+    ("injury_heal.txt", "tuned_oracle_wide"),
+    ("injury_heal.txt", "tuned_roundtrip_rust_save"),
+    ("injury_heal.txt", "tuned_roundtrip_python_save"),
+    ("injury_heal.txt", "tuned_roundtrip"),
+    ("naval_combat.txt", "tuned_oracle_wide"),
+    ("naval_combat.txt", "tuned_roundtrip_rust_save"),
+    ("naval_combat.txt", "tuned_roundtrip_python_save"),
+    ("naval_combat.txt", "tuned_roundtrip"),
+    ("naval_evade_clip.txt", "tuned_oracle_wide"),
+    ("naval_evade_clip.txt", "tuned_roundtrip_rust_save"),
+    ("naval_evade_clip.txt", "tuned_roundtrip_python_save"),
+    ("naval_evade_clip.txt", "tuned_roundtrip"),
+    ("smuggler.txt", "tuned_oracle"),
+    ("smuggler.txt", "tuned_gamesession"),
+    ("smuggler.txt", "tuned_roundtrip_rust_save"),
+    ("smuggler.txt", "tuned_roundtrip_python_save"),
+    ("victory_provenance.txt", "tuned_oracle_wide"),
+    ("victory_provenance.txt", "tuned_roundtrip_rust_save"),
+    ("victory_provenance.txt", "tuned_roundtrip_python_save"),
+    ("victory_provenance.txt", "tuned_roundtrip"),
+    ("victory_spare.txt", "tuned_oracle_wide"),
+    ("victory_spare.txt", "tuned_roundtrip_rust_save"),
+    ("victory_spare.txt", "tuned_roundtrip_python_save"),
+    ("victory_spare.txt", "tuned_roundtrip"),
+    ("victory_takeall.txt", "tuned_oracle_wide"),
+    ("victory_takeall.txt", "tuned_roundtrip_rust_save"),
+    ("victory_takeall.txt", "tuned_roundtrip_python_save"),
+    ("victory_takeall.txt", "tuned_roundtrip"),
+];
+
+fn divergence_entries() -> Vec<Value> {
+    divergence_entries_in(&parity_root())
+}
+
+fn pair(entry: &Value) -> (String, String) {
+    (
+        entry["script"].as_str().expect("script").to_string(),
+        entry["check"].as_str().expect("check").to_string(),
+    )
+}
+
+fn named(list: &[(&str, &str)]) -> Vec<(String, String)> {
+    list.iter()
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .collect()
+}
+
+const TUNED_CHECKS: [&str; 6] = [
+    "tuned_oracle",
+    "tuned_oracle_wide",
+    "tuned_gamesession",
+    "tuned_roundtrip_rust_save",
+    "tuned_roundtrip_python_save",
+    "tuned_roundtrip",
+];
+
+#[test]
+fn original_divergence_list_is_closed_by_name() {
+    let original = original_entries_in(&parity_root());
+    let pairs: Vec<_> = original.iter().map(pair).collect();
+    assert_eq!(pairs, named(&UNTAGGED_PAIRS), "original entries changed");
+    assert_eq!(pairs.len(), 23);
+    assert!(
+        original.iter().all(|e| e.get("category").is_none()),
+        "the original file has no tagged entries"
+    );
+}
+
+#[test]
+fn tuned_pin_list_is_closed_by_name() {
+    let tuned = tuned_entries_in(&parity_root());
+    let pairs: Vec<_> = tuned.iter().map(pair).collect();
+    assert_eq!(pairs, named(&TUNED_PAIRS), "rust-tuned entries changed");
+    for entry in &tuned {
+        let (script, check) = pair(entry);
+        assert!(is_tuned_entry(entry), "{script} {check}");
+        assert!(TUNED_CHECKS.contains(&check.as_str()), "{script} {check}");
+        for spec in entry["paths"].as_array().expect("paths") {
+            let path = spec["path"].as_str().expect("path");
+            assert!(!path.contains('*'), "{script}: wildcard {path}");
+            assert!(
+                spec.get("python").is_some() && spec.get("rust").is_some(),
+                "{script} {path}"
+            );
+            assert_ne!(
+                spec["python"], spec["rust"],
+                "{script} [{check}] {path}: python and rust values are equal"
+            );
+        }
+    }
+}
+
+#[test]
+fn no_script_check_pair_is_in_both_lists() {
+    let original: Vec<_> = named(&UNTAGGED_PAIRS);
+    for tuned in named(&TUNED_PAIRS) {
+        assert!(!original.contains(&tuned), "{tuned:?} is in both lists");
+    }
+    let mut seen = std::collections::HashSet::new();
+    for tuned in named(&TUNED_PAIRS) {
+        assert!(seen.insert(tuned.clone()), "{tuned:?} is listed twice");
+    }
+}
+
+#[test]
+fn the_build_reads_the_lists_it_should() {
+    let entries = divergence_entries();
+    if cfg!(feature = "python-base") {
+        let pairs: Vec<_> = entries.iter().map(pair).collect();
+        assert_eq!(
+            pairs,
+            named(&UNTAGGED_PAIRS),
+            "python-base reads the original 23 only"
+        );
+    } else {
+        assert_eq!(entries.len(), UNTAGGED_PAIRS.len() + TUNED_PAIRS.len());
+    }
+}
+
+#[test]
+fn wide_keys_are_pinned_only_under_oracle_wide() {
+    // A narrow golden has no wide keys, so an "oracle" pin there could never
+    // reproduce. The wide part of a difference belongs to "oracle_wide".
+    let wide = [
+        "board",
+        "captain_memories",
+        "active_bounties",
+        "deferred_fees",
+        "ledger",
+    ];
+    for entry in divergence_entries() {
+        if entry["check"] != "oracle" {
+            continue;
+        }
+        for spec in entry["paths"].as_array().expect("paths") {
+            let path = spec["path"].as_str().expect("path");
+            let key = path
+                .trim_start_matches("$.")
+                .split(['.', '['])
+                .next()
+                .unwrap_or("");
+            assert!(
+                !wide.contains(&key),
+                "{} pins a wide key under oracle: {path}",
+                entry["script"]
+            );
+        }
+    }
+}
+
+#[test]
+fn tuned_pins_follow_the_build() {
+    let pins = oracle_pins(&parity_root(), "captain_dockhand_s1.txt");
+    if cfg!(feature = "python-base") {
+        assert!(pins.is_empty(), "python-base must drop the rust-tuned pins");
+    } else {
+        assert!(!pins.is_empty(), "the tuned build pins its price paths");
+    }
 }

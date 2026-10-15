@@ -46,6 +46,7 @@ pub mod ship;
 pub mod skills;
 pub mod snapshot;
 pub mod training;
+pub mod tuned;
 pub mod util;
 pub mod voyage;
 pub mod weapon_provenance;

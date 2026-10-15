@@ -1350,10 +1350,47 @@ def test_ci_compare_match_prints_one_success_line(tmp_path):
     assert proc.stdout.count("\n") == 1
 
 
-def test_ci_compare_mismatch_exits_nonzero(tmp_path):
+def _moved_frames_gate_source():
+    text = open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8").read()
+    match = re.search(
+        r'^([ \t]*)if \[ "\$moved_frames" -ne 0 \]; then\n.*?\n\1fi', text, re.M | re.S
+    )
+    assert match, "CI moved-frames gate was not found"
+    return match.group(0)
+
+
+def test_ci_compare_mismatch_reports_both_hashes_and_keeps_going(tmp_path):
     fresh = tmp_path / "fresh.png"
     proc = _run_compare(tmp_path / "repo", "plate.png", fresh, b"committed", b"fresh")
+    old = hashlib.sha256(b"committed").hexdigest()
+    new = hashlib.sha256(b"fresh").hexdigest()
+    assert proc.returncode == 0, proc.stderr
+    assert "MOVED docs/screenshots/plate.png" in proc.stdout
+    assert f"committed sha256={old}" in proc.stdout
+    assert f"fresh sha256={new}" in proc.stdout
+
+
+def test_ci_compare_reports_every_mismatch_then_exits_nonzero(tmp_path):
+    root = tmp_path / "repo"
+    shot = root / "docs" / "screenshots"
+    shot.mkdir(parents=True)
+    for name in ("a.png", "b.png", "c.png"):
+        (shot / name).write_bytes(b"committed-" + name.encode())
+    fresh = tmp_path / "fresh"
+    fresh.mkdir()
+    (fresh / "a.png").write_bytes(b"other-a")
+    (fresh / "b.png").write_bytes(b"committed-b.png")
+    (fresh / "c.png").write_bytes(b"other-c")
+    script = "moved_frames=0\n" + _cmp_committed_source() + "\n"
+    for name in ("a.png", "b.png", "c.png"):
+        script += f'cmp_committed "{name}" "{fresh / name}"\n'
+    script += _moved_frames_gate_source() + "\n"
+    proc = subprocess.run(["bash", "-c", script], cwd=root, capture_output=True, text=True)
     assert proc.returncode != 0
+    assert "MOVED docs/screenshots/a.png" in proc.stdout
+    assert "MOVED docs/screenshots/c.png" in proc.stdout
+    assert "compared docs/screenshots/b.png" in proc.stdout
+    assert "2 committed frame(s) differ" in proc.stdout
 
 
 def test_committed_manifest_entry_bytes_match():
