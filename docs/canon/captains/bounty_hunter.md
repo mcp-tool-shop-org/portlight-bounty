@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/bounty_hunter.md](../player-types/bounty_hunter.md)
 - Home port: [Crosswind Isle](../ports/crosswind_isle.md) (bloc [The Free Ports](../factions/free_ports.md))
 
 ## 4. Flags

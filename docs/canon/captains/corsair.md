@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/corsair.md](../player-types/corsair.md)
 - Home port: [Corsair's Rest](../ports/corsairs_rest.md) (bloc [The Shadow Ports](../factions/shadow_ports.md))
 - Faction: [The Crimson Tide](../factions/crimson_tide.md)
 

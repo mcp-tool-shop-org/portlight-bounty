@@ -34,6 +34,7 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 3. Links
 
+- How this type plays: [player-types/privateer.md](../player-types/privateer.md)
 - Home port: [Stormwall](../ports/stormwall.md) (bloc [The Iron Pact](../factions/iron_pact.md))
 - Faction: [The Iron Wolves](../factions/iron_wolves.md)
 
