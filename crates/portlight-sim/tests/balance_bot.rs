@@ -432,7 +432,8 @@ fn take_contract(session: &mut Session, here: &str) {
 }
 
 /// S3: the bounty to hunt now: the held one (retried while unclaimed), else
-/// accept the weakest target no stronger than the ship (ties by id).
+/// accept the weakest target whose strength is at most the board's median
+/// pirate strength (ties by id). The caller already required hull >= 70%.
 fn try_bounty(session: &mut Session) -> Option<String> {
     let captain = &session.world().captain;
     if let Some(held) = captain
@@ -603,8 +604,9 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
                 if let Some(target) = try_bounty(&mut session) {
                     hunted += 1;
                     if let Ok(state) = session.hunt_bounty(&target) {
-                        // The target was picked as no stronger than the ship
-                        // (accept rule), so the hunt is fought, not fled.
+                        // Hull was >= 70% and the target's strength is at most
+                        // the board's median (accept rule), so the hunt is
+                        // fought, not fled.
                         run_encounter(&mut session, &state.phase, Some(&target), true);
                         let _ = session.claim_bounty(&target);
                     }
