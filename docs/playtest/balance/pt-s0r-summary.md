@@ -33,7 +33,7 @@ Field median: **52078**
 ## Completion rates
 
 - s2_contracts: a contract completed on 266/270 runs (gate: at least 98%).
-- s3_opportunist: a bounty claimed on 58/270 runs (reported, not gated).
+- s3_opportunist: a bounty claimed on 58/270 runs (reported, not gated). The opportunist hunts only if armed or holding at least 1000 silver.
 
 ## Game over by strategy
 

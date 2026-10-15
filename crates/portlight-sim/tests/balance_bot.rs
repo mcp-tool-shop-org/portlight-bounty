@@ -606,8 +606,8 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
                 .as_ref()
                 .is_some_and(|ship| ship.hull * 10 >= ship.hull_max * 7);
             // Hunt guard: hunt only with cannons aboard, or while silver is at
-            // least HUNT_RESERVE (a 25% reserve against a 4000 stake), so sloop types trade instead
-            // of busting.
+            // least HUNT_RESERVE (a 25% reserve against a 4000 stake), so
+            // sloop types trade instead of busting.
             let armed = session
                 .world()
                 .captain
@@ -886,7 +886,7 @@ fn summary(runs: &[Run], seeds: &[i128]) -> String {
     );
     let _ = writeln!(
         md,
-        "- s3_opportunist: a bounty claimed on {b}/{bn} runs (reported, not gated)."
+        "- s3_opportunist: a bounty claimed on {b}/{bn} runs (reported, not gated). The opportunist hunts only if armed or holding at least {HUNT_RESERVE} silver."
     );
     let _ = writeln!(md, "\n## Game over by strategy\n");
     let _ = writeln!(
