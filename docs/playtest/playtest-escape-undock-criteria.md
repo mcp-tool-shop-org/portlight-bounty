@@ -42,7 +42,7 @@ If Coord lands docked-consistency before Fix A: still flip these three; note Fix
 | **Intent** | Escape / `ui_cancel` = visible Close (confirm-first); encounter Escape only when Leave/Back visible |
 | **Membership (tip `cc2c50e4`+)** | Contracts · Shipyard · Harbour · Journal · **Crew** · **Hunt** · **Day's report** · encounter Leave when Back visible |
 | **Before (tip today)** | Day's report closes on Escape; other desks Close-button only → **fail** if scored hard |
-| **Pass after land** | Escape closes each member overlay; pending confirm → first Escape cancels confirm only; mid-encounter Escape inert; Leave visible → Escape leaves |
+| **Pass after land** | Escape closes each member overlay (Hunt, Crew, Contracts, Shipyard, Harbour, Journal) and the Day's report; pending confirm → first Escape cancels confirm only; mid-encounter Escape inert; Leave visible → Escape leaves |
 | **Fail signals** | Escape no-ops on open desk; Escape confirms a buy/abandon/claim; Escape skips naval/Spare choice; Day's report still special-cased while desks ignore Escape |
 | **Check steps** | (1) Open each desk → Escape. (2) Arm abandon / harbour confirm / Hunt claim confirm → Escape once (confirm gone, overlay stays) → Escape again (closes). (3) Next day → Day's report → Escape. (4) Encounter mid-resolve → Escape inert; Leave visible → Escape leaves. |
 | **Harden note** | Update criteria Pass line to list Hunt/Crew/Day's report; cite docked-consistency PR sha. Land-PR smoke **must** assert Escape closes each desk including Hunt and Crew (GD required). |
@@ -56,7 +56,7 @@ If Coord lands docked-consistency before Fix A: still flip these three; note Fix
 | **Intent** | Pier Contracts overlay cannot remain open at sea |
 | **Membership** | Force-close on undock: **Contracts** + **Crew** (docked-only; GD amend 2026-10-05). **Journal** and **Hunt** stay openable at sea (intentional). Shipyard / Harbour already undock-hide — regression-watch only |
 | **Before** | Leave Contracts open → Sail → overlay can stay (`sync_contracts` ignores `docked_id`) — smoke closes first so CI misses it |
-| **Pass after land** | Sail or Next day away from port with Contracts left open → overlay gone; button/port_row hygiene unchanged |
+| **Pass after land** | Sail or Next day away from port with Contracts or Crew left open → overlay gone; button/port_row hygiene unchanged |
 | **Fail signals** | Contracts root still visible / `contracts_open` true while undocked |
 | **Check steps** | (1) Docked → open Contracts → **do not Close** → Sail Al-Manar → Next day until at sea → assert overlay hidden + `contracts_open == false`. (2) Same with **Crew** left open → sail → Crew overlay gone / `crew_open` cleared (not stale at next pier). (3) Control: Journal still opens at sea. (4) Control: Hunt still opens at sea. (5) Day's report may stay across undock (sea-capable per GD) — not a C2 fail. |
 | **Harden note** | Land-PR smoke **must** sail with Contracts (and Crew) left open and assert overlay hidden — required (GD), not optional. Current tip smoke closes first and only checks the button. |
@@ -70,7 +70,7 @@ If Coord lands docked-consistency before Fix A: still flip these three; note Fix
 | **Intent** | One ink desk at a time; encounter wins |
 | **Membership (mutual exclusion set)** | Contracts · Shipyard · Harbour · Journal · **Crew** · **Hunt** · **Day's report** (opening a desk clears peers). **Market** = in-panel toggle — **not** in set |
 | **Before** | Opens set own flag only (Day's report is closed by peers today; desks can still stack) |
-| **Pass after land** | Opening any member clears other member flags; opening encounter clears all members |
+| **Pass after land** | Opening any of the six desks clears the other desks and the Day's report; opening encounter clears all members |
 | **Fail signals** | Two ink desks visible; docked desk under encounter |
 | **Check steps** | (1) Open Contracts → open Hunt → only Hunt visible. (2) Open Crew → open Journal → only Journal. (3) Open Harbour → start encounter (Hunt target or smoke) → desks cleared. (4) Market toggle does not force-close desks / is not required to clear on desk open |
 | **Harden note** | Criteria Pass line must drop "other three" wording — set is six desks + Day's report |
