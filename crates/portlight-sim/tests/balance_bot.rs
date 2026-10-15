@@ -9,7 +9,8 @@
 //! ```
 //!
 //! Output goes to `$PT_S0R_OUT` (default `target/pt-s0r`): `pt-s0r.csv` and
-//! `pt-s0r-summary.md`. The bot only calls public `Session` verbs; it never
+//! `pt-s0r-summary.md`. The committed copies live in `docs/playtest/balance/`.
+//! The bot only calls public `Session` verbs; it never
 //! edits game state directly. Every choice is a pure function of visible
 //! state, ties broken by the lowest id; the only randomness is the session's
 //! own seeded RNG.

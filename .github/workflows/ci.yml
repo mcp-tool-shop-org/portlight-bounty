@@ -72,6 +72,11 @@ jobs:
           test -s "$PT_S0R_OUT/pt-s0r.csv"
           test -s "$PT_S0R_OUT/pt-s0r-summary.md"
           cat "$PT_S0R_OUT/pt-s0r-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          # Committed copies: missing fails; out of date only warns.
+          for f in pt-s0r.csv pt-s0r-summary.md; do
+            test -s "docs/playtest/balance/$f"
+            cmp -s "docs/playtest/balance/$f" "$PT_S0R_OUT/$f" || echo "::warning::docs/playtest/balance/$f differs from this run"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: pt-s0r
