@@ -724,6 +724,7 @@ fn decode(data: &Value) -> Option<LoadedGame> {
     for route in routes_value {
         routes.push(route_from(route)?);
     }
+    refill_lane_names(&mut routes);
     let voyage = voyage_from(truthy(data.get("voyage"))?)?;
     let day = json_i64(data.get("day")?)?;
     let seed = match data.get("seed") {
@@ -1850,6 +1851,24 @@ fn route_from(value: &Value) -> Option<Route> {
         lore_name: String::new(),
         lore: String::new(),
     })
+}
+
+/// Saves keep no lane names (the save format has no `lore_name` / `lore`).
+/// Refill them from the content routes by port pair, in either order, so a
+/// loaded game keeps its chart lane labels and lane encounter tables. A
+/// route with no content match keeps the empty values.
+fn refill_lane_names(routes: &mut [Route]) {
+    let catalog = &content::content().routes;
+    for route in routes.iter_mut() {
+        let found = catalog.iter().find(|def| {
+            (def.port_a == route.port_a && def.port_b == route.port_b)
+                || (def.port_a == route.port_b && def.port_b == route.port_a)
+        });
+        if let Some(def) = found {
+            route.lore_name = def.lore_name.clone();
+            route.lore = def.lore.clone();
+        }
+    }
 }
 
 fn culture_value(state: &CulturalState) -> Value {
