@@ -10944,11 +10944,13 @@ impl PortlightGame {
         let Some(dir) = self.day_report_shot_dir.clone() else {
             return false;
         };
-        if !self.day_report_open
-            || self
-                .day_report_nodes
-                .as_ref()
-                .is_none_or(|nodes| !day_report::overlay_visible(nodes))
+        let over_encounter = matches!(phase, DayReportShot::OverEncounter);
+        if !over_encounter
+            && (!self.day_report_open
+                || self
+                    .day_report_nodes
+                    .as_ref()
+                    .is_none_or(|nodes| !day_report::overlay_visible(nodes)))
         {
             self.smoke_ok = false;
             godot_print!(
@@ -10956,15 +10958,17 @@ impl PortlightGame {
                 phase.file_name()
             );
         }
-        if matches!(phase, DayReportShot::OverEncounter)
-            && (self.encounter.is_none()
-                || !self
-                    .day_report_nodes
-                    .as_ref()
-                    .is_some_and(day_report::scrim_shown))
+        // The encounter wins: the report is kept open but not drawn, so this
+        // frame shows the Approach card alone (no card, no dim).
+        if over_encounter
+            && (!self.encounter_up()
+                || !self.day_report_open
+                || self.day_report_nodes.as_ref().is_some_and(|nodes| {
+                    day_report::overlay_visible(nodes) || day_report::scrim_shown(nodes)
+                }))
         {
             self.smoke_ok = false;
-            godot_print!("Day-report smoke: the over-encounter frame is not dimmed.");
+            godot_print!("Day-report smoke: the over-encounter frame still draws the report.");
         }
         if matches!(phase, DayReportShot::OverScreen) {
             let dimmed = self
@@ -10979,17 +10983,18 @@ impl PortlightGame {
             }
         }
         // Laid out and drawn: the open card must still be 520x380 with Close inside.
-        self.assert_day_report_fits(phase.file_name());
+        if !over_encounter {
+            self.assert_day_report_fits(phase.file_name());
+        }
         let path = format!("{dir}/{}", phase.file_name());
         // Compact card over the chart: use the chart flat-frame check, not the
         // encounter plate/button ink gate (no side plate on this panel).
         // A dimmed desk behind the card is mostly one ink colour, so that
         // frame takes its own gate.
-        let gate = if matches!(
-            phase,
-            DayReportShot::OverScreen | DayReportShot::OverEncounter
-        ) {
+        let gate = if matches!(phase, DayReportShot::OverScreen) {
             ShotGate::Dimmed
+        } else if over_encounter {
+            ShotGate::Ink
         } else {
             ShotGate::Chart
         };
@@ -11023,7 +11028,7 @@ impl PortlightGame {
                 true
             }
             DayReportShot::OverScreen => {
-                // Same card, now over an open encounter: the Approach card dims.
+                // Same card, opened while an encounter is up: kept, not drawn.
                 self.close_day_report();
                 self.close_contracts();
                 self.open_scripted_approach();
