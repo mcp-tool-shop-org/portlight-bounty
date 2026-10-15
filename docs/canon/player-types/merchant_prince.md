@@ -80,10 +80,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: composed, rich, unhurried - restraint that still costs money [invented; AD note]
-- Materials: lacquered teak panelling, tooled-leather chests, a silver-chased sea chest, a brocade-covered cabin table [invented; AD note]
-- Silhouette: high and ornate - a tall stern, layered trim, heavy upper mass [invented; AD note]
-- Palette: deep claret-brown, tarnished silver, dark teak; mid-low values, warm; small accent of an old-gilt edge (thin lines only) [invented; AD note]
+- Mood: composed, rich, unhurried - restraint that still costs money [invented; look note]
+- Materials: lacquered teak panelling, tooled-leather chests, a silver-chased sea chest, a brocade-covered cabin table [invented; look note]
+- Silhouette: high and ornate - a tall stern, layered trim, heavy upper mass [invented; look note]
+- Palette: deep claret-brown, tarnished silver, dark teak; mid-low values, warm; small accent of an old-gilt edge (thin lines only) [invented; look note]
 - A polished deck [invented]
 - Cabin: silk, a family seal [invented]
 - The crew are paid on time and say so [invented]

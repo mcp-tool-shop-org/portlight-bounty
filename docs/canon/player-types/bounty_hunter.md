@@ -6,7 +6,7 @@ Who this captain is: [../captains/bounty_hunter.md](../captains/bounty_hunter.md
 
 ## 1. Identity and fantasy
 
-Mike's 'Bounty Hunter'. A freelance hunter in a fast cutter. [invented] where not data.
+Also called 'Bounty Hunter'. A freelance hunter in a fast cutter. [invented] where not data.
 
 The player's verb: "The board is my trade route" [invented]
 
@@ -78,14 +78,14 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: cold, watchful, purposeful - quiet like a held breath [invented; AD note]
-- Materials: dark-oiled leather, manacles and chain stowed tidy, a spyglass, a pinned board of notices in the cabin [invented; AD note]
-- Silhouette: sharp and long - forward-leaning, a keen bow, thin hard lines [invented; AD note]
-- Palette: gunmetal, storm-slate, oxblood leather; mid-low values, cool, the highest contrast of the nine; small accent of a notice-paper off-white [invented; AD note]
+- Mood: cold, watchful, purposeful - quiet like a held breath [invented; look note]
+- Materials: dark-oiled leather, manacles and chain stowed tidy, a spyglass, a pinned board of notices in the cabin [invented; look note]
+- Silhouette: sharp and long - forward-leaning, a keen bow, thin hard lines [invented; look note]
+- Palette: gunmetal, storm-slate, oxblood leather; mid-low values, cool, the highest contrast of the nine; small accent of a notice-paper off-white [invented; look note]
 - A cutter kept fast [invented]
 - Cabin: wanted notices pinned [invented]
 - The crew talk about targets [invented]
-- Closest pair is The Privateer and The Bounty Hunter: the Privateer is square, scrubbed and lighter; the Bounty Hunter is sharp, oiled and darker [invented; AD note]
+- Closest pair is The Privateer and The Bounty Hunter: the Privateer is square, scrubbed and lighter; the Bounty Hunter is sharp, oiled and darker [invented; look note]
 
 ## 7. Sound hooks
 

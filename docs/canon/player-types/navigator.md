@@ -81,10 +81,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: calm, airy, precise - a deck that feels measured [invented; AD note]
-- Materials: brass dividers and sextant, rolled charts in leather tubes, a chart table of pale ash, a log line on a reel [invented; AD note]
-- Silhouette: tall and narrow - a raised quarterdeck, upright verticals [invented; AD note]
-- Palette: salt-faded indigo, sea-mist grey, pale ash; upper-mid values, cool; small accent of compass-needle verdigris [invented; AD note]
+- Mood: calm, airy, precise - a deck that feels measured [invented; look note]
+- Materials: brass dividers and sextant, rolled charts in leather tubes, a chart table of pale ash, a log line on a reel [invented; look note]
+- Silhouette: tall and narrow - a raised quarterdeck, upright verticals [invented; look note]
+- Palette: salt-faded indigo, sea-mist grey, pale ash; upper-mid values, cool; small accent of compass-needle verdigris [invented; look note]
 - Charts pinned under glass, wind notes in the margins [invented]
 - A clean, light deck built for speed [invented]
 - The crew talk in bearings and days [invented]

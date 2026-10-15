@@ -2,7 +2,7 @@
 
 Base commit: c413788. Status: draft canon, phase 5. Hand-maintained from content.json `captains` (C:2315); there is no generator.
 
-Mike's ask: build out unique qualities for each player type. A player type is a catalog captain archetype (`captain_type`, crates/portlight-sim/src/model.rs:502). The captains/ files are the who; these files are how each type plays. Custom captains are out of scope. Mike's names: Trader = The Merchant, Pirate = The Corsair, Bounty Hunter = The Bounty Hunter.
+The ask: build out unique qualities for each player type. A player type is a catalog captain archetype (`captain_type`, crates/portlight-sim/src/model.rs:502). The captains/ files are the who; these files are how each type plays. Custom captains are out of scope. Also called: Trader = The Merchant, Pirate = The Corsair, Bounty Hunter = The Bounty Hunter.
 
 ## Tags
 

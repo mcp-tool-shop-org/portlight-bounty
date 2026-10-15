@@ -6,7 +6,7 @@ Who this captain is: [../captains/corsair.md](../captains/corsair.md). This file
 
 ## 1. Identity and fantasy
 
-Mike's 'Pirate'. A Crimson Tide captain out of Corsair's Rest; the cove is home, the lawful world is not. [invented] where not data.
+Also called 'Pirate'. A Crimson Tide captain out of Corsair's Rest; the cove is home, the lawful world is not. [invented] where not data.
 
 The player's verb: "I fly the crimson pennant" [invented]
 
@@ -66,7 +66,7 @@ Basis: [exists] means a real effect of this type's numbers (regional regard, pir
 - Starting regard is copied from the type's data into the standing at new game (S/model.rs:255-270). Regional customs inspection rises with heat in a region (S/reputation.rs:216-227). Pirate hostility reads pirate regard (S/encounter.rs:42-62).
 - Starts Mediterranean -5, heat 12 everywhere, Crimson Tide 25 (C:2497)
 - Heat 12 is under the first inspection step at 15 (S/reputation.rs:216-227)
-- No Deep Reef start regard; the Python 'hostile' claim is lore only (DF-29)
+- No Deep Reef start regard [exists C:2497]
 - No spillover: regard with one bloc or faction does not move its rivals (DF-28). Canon claims none.
 
 ## 5. Progression
@@ -81,10 +81,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: loud, patched, unruly - a deck that has been through things [invented; AD note]
-- Materials: patched sailcloth, mismatched salvaged hardware, scarred rail timber, a grapnel and chain left where they fell [invented; AD note]
-- Silhouette: jagged and irregular - ragged edges, uneven lines, clutter breaking the outline [invented; AD note]
-- Palette: weathered rust, smoke-stained ochre, blood-brown timber; mid-low values, hot; small accent of a sun-bleached crimson rag [invented; AD note]
+- Mood: loud, patched, unruly - a deck that has been through things [invented; look note]
+- Materials: patched sailcloth, mismatched salvaged hardware, scarred rail timber, a grapnel and chain left where they fell [invented; look note]
+- Silhouette: jagged and irregular - ragged edges, uneven lines, clutter breaking the outline [invented; look note]
+- Palette: weathered rust, smoke-stained ochre, blood-brown timber; mid-low values, hot; small accent of a sun-bleached crimson rag [invented; look note]
 - A lean deck, the pennant always ready [invented]
 - Cabin: trophies, a chart of coves [invented]
 - The crew talk loud in port and quiet at sea [invented]

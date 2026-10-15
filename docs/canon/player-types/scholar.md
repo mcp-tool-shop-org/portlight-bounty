@@ -80,10 +80,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: quiet, cluttered, curious - a cabin that has outgrown its shelves [invented; AD note]
-- Materials: crated books under oilcloth, glass specimen jars, a vellum-bound log, a lamp-lit writing desk of walnut [invented; AD note]
-- Silhouette: soft and stacked - bundles and rounded piles, no hard edges [invented; AD note]
-- Palette: parchment buff, ink-wash grey-blue, walnut brown; mid values, neutral; small accent of a lamp-glow ochre [invented; AD note]
+- Mood: quiet, cluttered, curious - a cabin that has outgrown its shelves [invented; look note]
+- Materials: crated books under oilcloth, glass specimen jars, a vellum-bound log, a lamp-lit writing desk of walnut [invented; look note]
+- Silhouette: soft and stacked - bundles and rounded piles, no hard edges [invented; look note]
+- Palette: parchment buff, ink-wash grey-blue, walnut brown; mid values, neutral; small accent of a lamp-glow ochre [invented; look note]
 - Notebooks in oilcloth, a monsoon chart [invented]
 - A quiet deck [invented]
 - The crew learn to read clouds [invented]

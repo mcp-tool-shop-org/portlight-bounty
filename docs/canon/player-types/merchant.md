@@ -6,7 +6,7 @@ Who this captain is: [../captains/merchant.md](../captains/merchant.md). This fi
 
 ## 1. Identity and fantasy
 
-Mike's 'Trader'. A guild-licensed operator whose edge is the ledger: steady prices, cheap fees and a clean name in the settled ports. The fantasy is the trading house built one honest margin at a time. [invented] where not data; the trade and inspection numbers are data (C:2326-2341).
+Also called 'Trader'. A guild-licensed operator whose edge is the ledger: steady prices, cheap fees and a clean name in the settled ports. The fantasy is the trading house built one honest margin at a time. [invented] where not data; the trade and inspection numbers are data (C:2326-2341).
 
 The player's verb: "I buy low, sell on time" [invented]
 
@@ -83,10 +83,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: orderly, warm, patient - a tidy deck that looks like it pays its bills [invented; AD note]
-- Materials: oiled oak cargo hatches, hemp-lashed crates, a brass balance scale and tally board in the cabin [invented; AD note]
-- Silhouette: squat and broad - stacked cargo, low rounded mass [invented; AD note]
-- Palette: honey oak, sacking tan, worn-brass glint; mid-warm values; one small accent of ledger-ribbon red [invented; AD note]
+- Mood: orderly, warm, patient - a tidy deck that looks like it pays its bills [invented; look note]
+- Materials: oiled oak cargo hatches, hemp-lashed crates, a brass balance scale and tally board in the cabin [invented; look note]
+- Silhouette: squat and broad - stacked cargo, low rounded mass [invented; look note]
+- Palette: honey oak, sacking tan, worn-brass glint; mid-warm values; one small accent of ledger-ribbon red [invented; look note]
 - A tidy deck, cargo lashed in rows and a tally board by the hatch [invented]
 - Cabin: a ledger desk, a scale, the guild licence framed [invented]
 - Flies the Exchange Guild flag correctly and early [invented]

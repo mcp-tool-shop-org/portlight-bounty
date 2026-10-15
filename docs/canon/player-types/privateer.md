@@ -82,21 +82,21 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: disciplined, lawful, squared away - drilled not ragged [invented; AD note]
-- Materials: blacked iron fittings, polished leather cartridge boxes, a sealed letter-of-marque case, coiled boarding lines in neat flakes [invented; AD note]
-- Silhouette: square and upright - squared yards, straight lines [invented; AD note]
-- Palette: slate blue, pewter, scrubbed deal planking; mid values, cool-neutral; small accent of a faded charter-seal red [invented; AD note]
+- Mood: disciplined, lawful, squared away - drilled not ragged [invented; look note]
+- Materials: blacked iron fittings, polished leather cartridge boxes, a sealed letter-of-marque case, coiled boarding lines in neat flakes [invented; look note]
+- Silhouette: square and upright - squared yards, straight lines [invented; look note]
+- Palette: slate blue, pewter, scrubbed deal planking; mid values, cool-neutral; small accent of a faded charter-seal red [invented; look note]
 - A disciplined deck; guns run out clean [invented]
 - Cabin: the commission in a sealed case [invented]
 - Flies the Pact colours openly [invented]
 - The crew talk like a watch roster [invented]
-- Closest pair is The Privateer and The Bounty Hunter: the Privateer is square, scrubbed and lighter; the Bounty Hunter is sharp, oiled and darker [invented; AD note]
+- Closest pair is The Privateer and The Bounty Hunter: the Privateer is square, scrubbed and lighter; the Bounty Hunter is sharp, oiled and darker [invented; look note]
 
 ## 7. Sound hooks
 
 - sfx_chart_sail_depart (G/game.rs:4529): putting out on patrol
 - sfx_ui_contract_accept (G/game.rs:6861): taking a garrison job
-- New sounds are ideas only: a bosun's call on a won fight (idea, no asset requested)
+- New sounds are ideas only: a bosun's pipe on a won fight (idea, no asset requested)
 
 ## 8. Flags
 

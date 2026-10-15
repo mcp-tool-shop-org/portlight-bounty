@@ -84,10 +84,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: hushed, close, ready to vanish - nothing on deck that catches light [invented; AD note]
-- Materials: tarred canvas covers, false-floor planking, muffled oars, a shuttered lantern with smoked glass [invented; AD note]
-- Silhouette: low and lean - flat sheer, nothing tall above the rail [invented; AD note]
-- Palette: tar-black shadows, bilge green-grey, damp rope brown; low-end values, cool; tiny accent of shuttered-lamp amber [invented; AD note]
+- Mood: hushed, close, ready to vanish - nothing on deck that catches light [invented; look note]
+- Materials: tarred canvas covers, false-floor planking, muffled oars, a shuttered lantern with smoked glass [invented; look note]
+- Silhouette: low and lean - flat sheer, nothing tall above the rail [invented; look note]
+- Palette: tar-black shadows, bilge green-grey, damp rope brown; low-end values, cool; tiny accent of shuttered-lamp amber [invented; look note]
 - A plain deck that hides a second floor [invented]
 - Cabin: false panels, a lamp kept low [invented]
 - Flag manners: the honest flag, struck to the letter of the law [invented]

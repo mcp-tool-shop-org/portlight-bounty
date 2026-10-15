@@ -78,10 +78,10 @@ Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), t
 
 Words, not art direction. Character plates stay held; canon sets no face, age, gender or dress for the captain (../captains/README.md rules).
 
-- Mood: plain, hard-working, unfussy - everything chosen because it lasts [invented; AD note]
-- Materials: rough-sawn pine, iron hooks and cargo slings, a mallet and caulking iron, frayed working rope [invented; AD note]
-- Silhouette: compact and blocky - short and sturdy, working gear hanging off the rail [invented; AD note]
-- Palette: dust grey, bleached pine, mud-tan canvas; flat mid values, neutral-warm, the lowest contrast of the nine; small accent of a chalked tally mark [invented; AD note]
+- Mood: plain, hard-working, unfussy - everything chosen because it lasts [invented; look note]
+- Materials: rough-sawn pine, iron hooks and cargo slings, a mallet and caulking iron, frayed working rope [invented; look note]
+- Silhouette: compact and blocky - short and sturdy, working gear hanging off the rail [invented; look note]
+- Palette: dust grey, bleached pine, mud-tan canvas; flat mid values, neutral-warm, the lowest contrast of the nine; small accent of a chalked tally mark [invented; look note]
 - A patched deck [invented]
 - Cabin: a hammock and a cash tin [invented]
 - The crew are old dock friends [invented]
