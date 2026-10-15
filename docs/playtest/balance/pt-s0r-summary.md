@@ -2,33 +2,38 @@
 
 Seeds 1001..1030 (30 seeds), captain "Balance", 9 types x 3 strategies. Score = median over seeds of the best of the 3 strategies. Gate: within +/-15% of the field median.
 
-Field median: **51100**
+Field median: **58493**
 
 | Type | Score | vs field | Gate | Winning strategy | Spread |
 |---|---:|---:|---|---|---:|
-| merchant | 44632 | -12.6% | PASS | s3_opportunist | 48% |
-| smuggler | 25728 | -49.6% | FLAG | s3_opportunist | 30% |
-| navigator | 51100 | +0.0% | PASS | s1_cautious | 62% |
-| privateer | 67784 | +32.6% | FLAG | s1_cautious | 113% |
-| corsair | 64645 | +26.5% | FLAG | s3_opportunist | 79% |
-| scholar | 27751 | -45.6% | FLAG | s1_cautious | 26% |
-| merchant_prince | 63449 | +24.1% | FLAG | s3_opportunist | 73% |
-| dockhand | 77841 | +52.3% | FLAG | s3_opportunist | 117% |
-| bounty_hunter | 18230 | -64.3% | FLAG | s1_cautious | 2% |
+| merchant | 46391 | -20.6% | FLAG | s3_opportunist | 31% |
+| smuggler | 25502 | -56.4% | FLAG | s1_cautious | 21% |
+| navigator | 59543 | +1.7% | PASS | s3_opportunist | 58% |
+| privateer | 72156 | +23.3% | FLAG | s3_opportunist | 100% |
+| corsair | 62228 | +6.3% | PASS | s1_cautious | 61% |
+| scholar | 27775 | -52.5% | FLAG | s1_cautious | 14% |
+| merchant_prince | 58493 | +0.0% | PASS | s1_cautious | 58% |
+| dockhand | 63877 | +9.2% | PASS | s1_cautious | 108% |
+| bounty_hunter | 18925 | -67.6% | FLAG | s2_contracts | 4% |
 
 ## Per-strategy medians
 
 | Type | s1_cautious | s2_contracts | s3_opportunist |
 |---|---:|---:|---:|
-| merchant | 32762 | 12609 | 37349 |
-| smuggler | 23165 | 7816 | 23587 |
-| navigator | 48693 | 16542 | 42675 |
-| privateer | 62908 | 4898 | 55536 |
-| corsair | 58910 | 18228 | 57240 |
-| scholar | 26329 | 12757 | 23811 |
-| merchant_prince | 58006 | 20815 | 58347 |
-| dockhand | 63877 | 11107 | 71152 |
-| bounty_hunter | 14879 | 14551 | 13613 |
+| merchant | 32762 | 20838 | 39048 |
+| smuggler | 23165 | 10592 | 23355 |
+| navigator | 48693 | 21410 | 55883 |
+| privateer | 62908 | 11416 | 70319 |
+| corsair | 58910 | 22664 | 57830 |
+| scholar | 26329 | 19097 | 18048 |
+| merchant_prince | 58006 | 23967 | 40004 |
+| dockhand | 63877 | 12687 | 135 |
+| bounty_hunter | 14879 | 15053 | 12484 |
+
+## Completion rates
+
+- s2_contracts: a contract completed on 266/270 runs (gate: at least 98%).
+- s3_opportunist: a bounty claimed on 58/270 runs (reported, not gated).
 
 ## Game over by strategy
 

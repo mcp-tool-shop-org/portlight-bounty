@@ -207,8 +207,48 @@ fn best_trade(session: &Session, here: &str) -> Option<(i64, String, String)> {
     best
 }
 
+/// Deliver: at a contract's destination, sell the held contract good (the
+/// sale settles the contract), whatever the margin.
+fn deliver_contracts(session: &mut Session, here: &str, stats: &mut Stats) {
+    let mut goods: Vec<String> = session
+        .board()
+        .active
+        .iter()
+        .filter(|a| a.destination_port_id == here)
+        .map(|a| a.good_id.clone())
+        .collect();
+    goods.sort();
+    goods.dedup();
+    for good in goods {
+        let qty: i64 = session
+            .world()
+            .captain
+            .cargo
+            .iter()
+            .filter(|c| c.good_id == good)
+            .map(|c| c.quantity)
+            .sum();
+        if qty > 0 {
+            if let Ok(sale) = session.sell(&good, qty) {
+                stats.contracts += count_completed(&sale.contracts);
+            }
+        }
+    }
+}
+
+/// Goods reserved for active contracts are not sold for margin.
+fn reserved(session: &Session) -> Vec<String> {
+    session
+        .board()
+        .active
+        .iter()
+        .map(|a| a.good_id.clone())
+        .collect()
+}
+
 /// Sell every lot whose sale beats its cost basis.
 fn sell_winners(session: &mut Session, here: &str, stats: &mut Stats) {
+    let keep = reserved(session);
     let mut lots: Vec<(String, i64, i64)> = session
         .world()
         .captain
@@ -221,7 +261,7 @@ fn sell_winners(session: &mut Session, here: &str, stats: &mut Stats) {
         let Some(price) = slot(session, here, &good).map(|s| s.sell_price) else {
             continue;
         };
-        if qty > 0 && price * qty > basis {
+        if qty > 0 && price * qty > basis && !keep.contains(&good) {
             if let Ok(sale) = session.sell(&good, qty) {
                 stats.contracts += count_completed(&sale.contracts);
             }
@@ -232,7 +272,7 @@ fn sell_winners(session: &mut Session, here: &str, stats: &mut Stats) {
 fn count_completed(outcomes: &[portlight_sim::model::ContractOutcome]) -> i64 {
     outcomes
         .iter()
-        .filter(|o| o.outcome_type == "completed")
+        .filter(|o| o.outcome_type.starts_with("completed"))
         .count() as i64
 }
 
@@ -391,29 +431,92 @@ fn take_contract(session: &mut Session, here: &str) {
     }
 }
 
-/// S3: accept and hunt one bounty the ship can take. Returns the target.
+/// S3: the bounty to hunt now: the held one (retried while unclaimed), else
+/// accept the weakest target whose strength is at most the board's median
+/// pirate strength (ties by id). The caller already required hull >= 70%.
 fn try_bounty(session: &mut Session) -> Option<String> {
-    if !session.world().captain.active_bounties.is_empty() {
+    let captain = &session.world().captain;
+    if let Some(held) = captain
+        .active_bounties
+        .iter()
+        .find(|id| !captain.claimed_bounties.contains(id))
+    {
+        return Some(held.clone());
+    }
+    // Take only a target no stronger than the board's median pirate, on
+    // the content strength scale (the caller already required hull >= 70%).
+    let mut board = session.bounty_board();
+    let strength = |id: &str| content::content().pirate(id).map(|p| p.strength);
+    let mut all: Vec<i64> = board
+        .iter()
+        .filter_map(|t| strength(&t.captain_id))
+        .collect();
+    if all.is_empty() {
         return None;
     }
-    let mut board = session.bounty_board();
-    board.sort_by(|a, b| a.captain_id.cmp(&b.captain_id));
-    let own = own_strength(session);
-    let target = board.into_iter().find(|t| {
-        content::content()
-            .pirate(&t.captain_id)
-            .is_some_and(|p| p.strength <= own)
-    })?;
+    all.sort();
+    let cap = all[(all.len() - 1) / 2];
+    board.retain(|t| strength(&t.captain_id).is_some_and(|s| s <= cap));
+    board.sort_by_key(|t| {
+        (
+            content::content().pirate(&t.captain_id).map(|p| p.strength),
+            t.captain_id.clone(),
+        )
+    });
+    let target = board.into_iter().next()?;
     session.accept_bounty(&target.captain_id).ok()?;
     Some(target.captain_id)
 }
 
 const CORE: [&str; 3] = ["thrust", "slash", "parry"];
 
+/// Opponent stance weights for the core moves, by personality, as the
+/// sim's opponent picks them (combat.rs), with the balanced counter bump.
+fn opponent_weights(personality: &str, my_last: Option<&str>) -> [f64; 3] {
+    let mut w = match personality {
+        "aggressive" => [0.40, 0.30, 0.10],
+        "defensive" => [0.15, 0.15, 0.35],
+        "wild" => [0.20, 0.20, 0.15],
+        _ => [0.25, 0.25, 0.20],
+    };
+    if personality != "aggressive" && personality != "defensive" && personality != "wild" {
+        match my_last {
+            Some("thrust") => w[2] += 0.25,
+            Some("slash") => w[0] += 0.25,
+            Some("parry") => w[1] += 0.25,
+            _ => {}
+        }
+    }
+    w
+}
+
+/// The core stance with the best expected outcome (+1 win, -1 loss)
+/// against those weights; ties go to the earlier stance in CORE.
+fn best_stance(personality: &str, my_last: Option<&str>) -> &'static str {
+    let w = opponent_weights(personality, my_last);
+    // thrust beats slash, slash beats parry, parry beats thrust.
+    let score = |i: usize| -> f64 {
+        let beaten = (i + 1) % 3;
+        let beats_me = (i + 2) % 3;
+        w[beaten] - w[beats_me]
+    };
+    let mut best = 0;
+    for i in 1..3 {
+        if score(i) > score(best) {
+            best = i;
+        }
+    }
+    CORE[best]
+}
+
 /// Drive one encounter to its end. `fight` picks fight over flee.
 fn run_encounter(session: &mut Session, start_phase: &str, captain_id: Option<&str>, fight: bool) {
     let mut phase = start_phase.to_string();
-    let mut turn = 0usize;
+    let personality = captain_id
+        .and_then(|id| content::content().pirate(id))
+        .map(|p| p.personality.clone())
+        .unwrap_or_default();
+    let mut last: Option<&'static str> = None;
     for _ in 0..300 {
         let step = match phase.as_str() {
             "approach" => session.encounter_choice_with(
@@ -424,14 +527,16 @@ fn run_encounter(session: &mut Session, start_phase: &str, captain_id: Option<&s
             "naval" => session.naval_round(if fight { "broadside" } else { "flee" }),
             "boarding" => session.resolve_boarding(),
             "duel" => {
-                let mut result = session.fight(CORE[turn % 3]);
+                let pick = best_stance(&personality, last);
+                let mut result = session.fight(pick);
+                last = Some(pick);
                 for alt in CORE {
                     if result.is_ok() {
                         break;
                     }
                     result = session.fight(alt);
+                    last = Some(alt);
                 }
-                turn += 1;
                 result
             }
             _ => break,
@@ -449,6 +554,10 @@ fn run_encounter(session: &mut Session, start_phase: &str, captain_id: Option<&s
             Err(_) => break,
         }
     }
+    // A won fight waits for the prize call; without a win this is refused.
+    if fight {
+        let _ = session.take_all();
+    }
     if session.world().pending_duel.is_some() {
         let _ = session.resolve_pending_duel();
     }
@@ -463,6 +572,8 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
     let mut stats = Stats::default();
     let mut game_over = false;
     let mut guard = 0;
+    // S3 hunts at most 6 times per run, so a hard target cannot eat the run.
+    let mut hunted = 0;
     while session.world().day < END_DAY && guard < 2000 {
         guard += 1;
         if session.world().captain.ship.is_none() {
@@ -481,12 +592,22 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
         }
         if let Some(here) = docked_port(&session) {
             maybe_repair(&mut session);
+            deliver_contracts(&mut session, &here, &mut stats);
             sell_winners(&mut session, &here, &mut stats);
-            if strategy == Strategy::Opportunist {
+            let healthy = session
+                .world()
+                .captain
+                .ship
+                .as_ref()
+                .is_some_and(|ship| ship.hull * 10 >= ship.hull_max * 7);
+            if strategy == Strategy::Opportunist && healthy && hunted < 6 {
                 if let Some(target) = try_bounty(&mut session) {
+                    hunted += 1;
                     if let Ok(state) = session.hunt_bounty(&target) {
-                        let fight = fight_choice(&session, strategy, state.enemy_strength);
-                        run_encounter(&mut session, &state.phase, Some(&target), fight);
+                        // Hull was >= 70% and the target's strength is at most
+                        // the board's median (accept rule), so the hunt is
+                        // fought, not fled.
+                        run_encounter(&mut session, &state.phase, Some(&target), true);
                         let _ = session.claim_bounty(&target);
                     }
                     continue;
@@ -551,7 +672,7 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
         match session.advance() {
             Ok(turn) => {
                 for outcome in &turn.contracts {
-                    if outcome.outcome_type == "completed" {
+                    if outcome.outcome_type.starts_with("completed") {
                         stats.contracts += 1;
                     }
                 }
@@ -736,6 +857,21 @@ fn summary(runs: &[Run], seeds: &[i128]) -> String {
         let ps = &per_strategy[i];
         let _ = writeln!(md, "| {t} | {} | {} | {} |", ps[0], ps[1], ps[2]);
     }
+    let rate = |s: Strategy, f: fn(&Run) -> bool| {
+        let all: Vec<_> = runs.iter().filter(|r| r.strategy == s).collect();
+        (all.iter().filter(|r| f(r)).count(), all.len())
+    };
+    let (c, cn) = rate(Strategy::Contracts, |r| r.contracts_completed > 0);
+    let (b, bn) = rate(Strategy::Opportunist, |r| r.bounties_claimed > 0);
+    let _ = writeln!(md, "\n## Completion rates\n");
+    let _ = writeln!(
+        md,
+        "- s2_contracts: a contract completed on {c}/{cn} runs (gate: at least 98%)."
+    );
+    let _ = writeln!(
+        md,
+        "- s3_opportunist: a bounty claimed on {b}/{bn} runs (reported, not gated)."
+    );
     let _ = writeln!(md, "\n## Game over by strategy\n");
     let _ = writeln!(md, "| Strategy | Game over | Runs | Broken bot (>20%) |");
     let _ = writeln!(md, "|---|---:|---:|---|");
@@ -764,6 +900,17 @@ fn out_dir() -> PathBuf {
 fn balance_sweep_day_60() {
     let runs = sweep(&SEEDS);
     assert_eq!(runs.len(), 9 * 3 * SEEDS.len());
+    // Gate: S2 completes a contract on at least 98% of its runs.
+    let s2: Vec<_> = runs
+        .iter()
+        .filter(|r| r.strategy == Strategy::Contracts)
+        .collect();
+    let done = s2.iter().filter(|r| r.contracts_completed > 0).count();
+    assert!(
+        done * 100 >= s2.len() * 98,
+        "contracts completed on {done}/{} S2 runs (< 98%)",
+        s2.len()
+    );
     let dir = out_dir();
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("pt-s0r.csv"), csv(&runs)).unwrap();
