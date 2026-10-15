@@ -1,4 +1,6 @@
 {
+  "_source": "python-oracle",
+  "_note": "Python oracle snapshot. Rust differs on the pinned paths in expected_divergences.json (Rust-tuned).",
   "seed": 435326599206,
   "day": 12,
   "trade_seq": 0,

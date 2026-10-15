@@ -44,6 +44,11 @@ DIVERGENCES = os.path.join(ROOT, "parity", "expected_divergences.json")
 # parity/golden so the committed files keep the narrow shape.
 WIDE_KEYS = ("board", "captain_memories", "active_bounties", "deferred_fees", "ledger")
 
+# Entries the balance fork added carry this category. They pin the places
+# where the Rust-tuned overlay moves Rust away from the Python game. A run
+# against a `python-base` build drops them and must match with the rest.
+TUNED_CATEGORY = "rust-tuned"
+
 
 def rust_bin() -> str:
     override = os.environ.get("PORTLIGHT_BIN")
@@ -234,6 +239,21 @@ def narrow(snap: dict) -> dict:
     return {key: value for key, value in snap.items() if key not in WIDE_KEYS}
 
 
+def is_wide_error(line: str) -> bool:
+    """True when a close() line is under a wide-only key of the snapshot."""
+    path = error_path(line)
+    if not path.startswith("$."):
+        return False
+    return re.split(r"[.\[]", path[2:], maxsplit=1)[0] in WIDE_KEYS
+
+
+def split_wide(errors: list[str]) -> tuple[list[str], list[str]]:
+    """Narrow errors, then errors under a wide-only key."""
+    narrow_errors = [line for line in errors if not is_wide_error(line)]
+    wide_errors = [line for line in errors if is_wide_error(line)]
+    return narrow_errors, wide_errors
+
+
 def without_log(snap: dict) -> dict:
     return {key: value for key, value in snap.items() if key != "log"}
 
@@ -248,11 +268,21 @@ def scripts() -> list[str]:
     return names
 
 
-def load_divergences() -> list[dict]:
+def is_tuned(entry: dict) -> bool:
+    return entry.get("category") == TUNED_CATEGORY
+
+
+def load_divergences(base_content: bool = False) -> list[dict]:
+    """Expected divergences. `base_content` drops the Rust-tuned entries."""
     if not os.path.exists(DIVERGENCES):
         return []
     data = load_json(DIVERGENCES)
     entries = data.get("entries", [])
+    for entry in entries:
+        if "category" in entry and not is_tuned(entry):
+            raise SystemExit(f"{DIVERGENCES} entry has an unknown category: {entry['script']}")
+    if base_content:
+        entries = [entry for entry in entries if not is_tuned(entry)]
     for entry in entries:
         for key in ("script", "check", "summary", "rust", "python", "paths"):
             if key not in entry:
@@ -276,6 +306,9 @@ def print_divergence_list(entries: list[dict]) -> None:
         print("  (none)")
         return
     for entry in entries:
+        if is_tuned(entry):
+            print(f"  {entry['script']} [{entry['check']}]: {TUNED_CATEGORY}, {len(entry['paths'])} paths")
+            continue
         print(f"  {entry['script']} [{entry['check']}]: {entry['summary']}")
         bits = [
             f"{spec['path']} python={spec['python']!r} rust={spec['rust']!r}"
@@ -613,11 +646,19 @@ def main() -> int:
         action="store_true",
         help="skip save/load round-trips (debug only; CI does not pass this)",
     )
+    parser.add_argument(
+        "--base-content",
+        action="store_true",
+        help=(
+            "check a binary built with --features python-base: drop the "
+            "rust-tuned entries, so every script must match as before the fork"
+        ),
+    )
     args = parser.parse_args()
     if not os.path.exists(rust_bin()):
         raise SystemExit(f"missing {rust_bin()}; run cargo build -p portlight-cli")
     os.makedirs(GOLDEN, exist_ok=True)
-    entries = load_divergences()
+    entries = load_divergences(args.base_content)
     print_divergence_list(entries)
     known_scripts = set(scripts())
     for entry in entries:
@@ -654,7 +695,10 @@ def main() -> int:
                 else:
                     oracle = run_oracle(script_path, os.path.join(save_root, "oracle"))
                     counts["oracle"] += 1
-                    report(name, "oracle", close(oracle, rust, "$"), entries, failed, oracle, rust)
+                    oracle_errors, wide_errors = split_wide(close(oracle, rust, "$"))
+                    report(name, "oracle", oracle_errors, entries, failed, oracle, rust)
+                    if wide_errors or listed(entries, name, "oracle_wide"):
+                        report(name, "oracle_wide", wide_errors, entries, failed, oracle, rust)
                     session = run_session(script_path, os.path.join(save_root, "session"))
                     if session is None:
                         counts["gamesession_skipped"] += 1

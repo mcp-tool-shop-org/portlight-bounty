@@ -18,7 +18,7 @@ cargo run -p portlight-cli -- --help
 
 `scripts/verify.ps1` and `scripts/verify.sh` run the formatter, those tests, a CLI build, and `--help`. They do not run the Godot frame compare. That job is Linux CI, because it needs a display.
 
-The live Python oracle in CI checks out `mcp-tool-shop-org/portlight` at `9b02494`. Goldens under `parity/golden/` are the recorded witness when the oracle is not in the job.
+The live Python oracle in CI checks out `mcp-tool-shop-org/portlight` at `9b02494`. Goldens under `parity/golden/` are the recorded witness when the oracle is not in the job. Five captain types have Rust-tuned pricing and burn from a small overlay file applied over the unmodified Python extract (`content.json`); the `python-base` build feature turns the overlay off, and CI checks that build against the oracle with only the original expected differences.
 
 ## Numbers that stay
 

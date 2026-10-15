@@ -159,23 +159,36 @@ struct Pin {
     rust: Value,
 }
 
-fn oracle_pins(root: &Path, script: &str) -> Vec<Pin> {
+/// Every entry of `expected_divergences.json`; empty when the file is absent.
+fn divergence_entries_in(root: &Path) -> Vec<Value> {
     let text = fs::read_to_string(root.join("expected_divergences.json")).unwrap_or_default();
     if text.is_empty() {
         return Vec::new();
     }
     let data: Value = serde_json::from_str(&text).expect("expected_divergences.json");
-    let mut pins = Vec::new();
-    for entry in data
-        .get("entries")
+    data.get("entries")
         .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-    {
+        .cloned()
+        .unwrap_or_default()
+}
+
+const TUNED_CATEGORY: &str = "rust-tuned";
+
+fn is_tuned_entry(entry: &Value) -> bool {
+    entry.get("category").and_then(Value::as_str) == Some(TUNED_CATEGORY)
+}
+
+fn oracle_pins(root: &Path, script: &str) -> Vec<Pin> {
+    let mut pins = Vec::new();
+    for entry in &divergence_entries_in(root) {
         if entry.get("script").and_then(Value::as_str) != Some(script) {
             continue;
         }
         if entry.get("check").and_then(Value::as_str) != Some("oracle") {
+            continue;
+        }
+        // A python-base build has no overlay, so the Rust-tuned pins do not apply.
+        if cfg!(feature = "python-base") && is_tuned_entry(entry) {
             continue;
         }
         for spec in entry
@@ -967,4 +980,213 @@ fn infrastructure_goldens_cover_warehouse_broker_credit_and_insurance() {
         "hull_basic"
     );
     assert_eq!(insurance["infrastructure"]["policies"][0]["family"], "hull");
+}
+
+// The expected-divergence list is closed by name. The untagged entries are the
+// pairs that existed before the balance fork and stay byte for byte as they
+// were. The tagged pairs come from `tools/parity/pin_tuned.py`'s sweep.
+const UNTAGGED_PAIRS: [(&str, &str); 23] = [
+    ("capture_prize.txt", "oracle"),
+    ("bounty_claim.txt", "oracle"),
+    ("bounty_claim.txt", "roundtrip"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("bounty_claim_sail.txt", "roundtrip"),
+    ("insurance_claim.txt", "oracle"),
+    ("capture_decline.txt", "oracle"),
+    ("capture_fleet_full.txt", "oracle"),
+    ("capture_prize.txt", "oracle"),
+    ("capture_too_few.txt", "oracle"),
+    ("capture_too_many.txt", "oracle"),
+    ("upgrade_naval.txt", "oracle"),
+    ("boarding.txt", "oracle"),
+    ("bounty_claim.txt", "oracle"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("capture_spare_prefix.txt", "oracle"),
+    ("gear_armor.txt", "oracle"),
+    ("injury_heal.txt", "oracle"),
+    ("naval_combat.txt", "oracle"),
+    ("victory_provenance.txt", "oracle"),
+    ("victory_spare.txt", "oracle"),
+    ("victory_takeall.txt", "oracle"),
+    ("naval_evade_clip.txt", "oracle"),
+];
+
+const TUNED_PAIRS: [(&str, &str); 82] = [
+    ("boarding.txt", "oracle_wide"),
+    ("boarding.txt", "roundtrip"),
+    ("bounty_claim.txt", "oracle_wide"),
+    ("bounty_claim.txt", "roundtrip"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("bounty_claim_sail.txt", "oracle_wide"),
+    ("bounty_claim_sail.txt", "roundtrip"),
+    ("captain_bounty_hunter_s1.txt", "oracle"),
+    ("captain_bounty_hunter_s1.txt", "oracle_wide"),
+    ("captain_bounty_hunter_s1.txt", "gamesession"),
+    ("captain_bounty_hunter_s1.txt", "roundtrip"),
+    ("captain_bounty_hunter_s42.txt", "oracle"),
+    ("captain_bounty_hunter_s42.txt", "oracle_wide"),
+    ("captain_bounty_hunter_s42.txt", "roundtrip"),
+    ("captain_dockhand_s1.txt", "oracle"),
+    ("captain_dockhand_s1.txt", "oracle_wide"),
+    ("captain_dockhand_s1.txt", "gamesession"),
+    ("captain_dockhand_s1.txt", "roundtrip"),
+    ("captain_dockhand_s42.txt", "oracle"),
+    ("captain_dockhand_s42.txt", "oracle_wide"),
+    ("captain_dockhand_s42.txt", "roundtrip"),
+    ("captain_merchant_prince_s1.txt", "oracle_wide"),
+    ("captain_merchant_prince_s1.txt", "gamesession"),
+    ("captain_merchant_prince_s1.txt", "roundtrip"),
+    ("captain_merchant_prince_s42.txt", "oracle_wide"),
+    ("captain_merchant_prince_s42.txt", "roundtrip"),
+    ("captain_privateer_s1.txt", "oracle"),
+    ("captain_privateer_s1.txt", "oracle_wide"),
+    ("captain_privateer_s1.txt", "gamesession"),
+    ("captain_privateer_s1.txt", "roundtrip"),
+    ("captain_privateer_s42.txt", "oracle"),
+    ("captain_privateer_s42.txt", "oracle_wide"),
+    ("captain_privateer_s42.txt", "roundtrip"),
+    ("captain_scholar_s1.txt", "oracle"),
+    ("captain_scholar_s1.txt", "gamesession"),
+    ("captain_scholar_s1.txt", "roundtrip"),
+    ("captain_scholar_s42.txt", "oracle"),
+    ("captain_scholar_s42.txt", "roundtrip"),
+    ("captain_smuggler_s1.txt", "oracle"),
+    ("captain_smuggler_s1.txt", "oracle_wide"),
+    ("captain_smuggler_s1.txt", "gamesession"),
+    ("captain_smuggler_s1.txt", "roundtrip"),
+    ("captain_smuggler_s42.txt", "oracle"),
+    ("captain_smuggler_s42.txt", "oracle_wide"),
+    ("captain_smuggler_s42.txt", "roundtrip"),
+    ("capture_decline.txt", "oracle_wide"),
+    ("capture_decline.txt", "roundtrip"),
+    ("capture_prize.txt", "oracle_wide"),
+    ("capture_prize.txt", "roundtrip"),
+    ("capture_spare_prefix.txt", "oracle_wide"),
+    ("capture_spare_prefix.txt", "roundtrip"),
+    ("capture_too_few.txt", "oracle_wide"),
+    ("capture_too_few.txt", "roundtrip"),
+    ("capture_too_many.txt", "oracle_wide"),
+    ("capture_too_many.txt", "roundtrip"),
+    ("event_foreign.txt", "oracle"),
+    ("event_foreign.txt", "gamesession"),
+    ("event_foreign.txt", "roundtrip"),
+    ("g9.txt", "oracle"),
+    ("g9.txt", "gamesession"),
+    ("g9.txt", "roundtrip"),
+    ("gear_armor.txt", "oracle_wide"),
+    ("gear_armor.txt", "roundtrip"),
+    ("hull_day20.txt", "oracle"),
+    ("hull_day20.txt", "gamesession"),
+    ("hull_day20.txt", "roundtrip"),
+    ("injury_heal.txt", "oracle"),
+    ("injury_heal.txt", "oracle_wide"),
+    ("injury_heal.txt", "roundtrip"),
+    ("naval_combat.txt", "oracle_wide"),
+    ("naval_combat.txt", "roundtrip"),
+    ("naval_evade_clip.txt", "oracle_wide"),
+    ("naval_evade_clip.txt", "roundtrip"),
+    ("smuggler.txt", "oracle"),
+    ("smuggler.txt", "gamesession"),
+    ("smuggler.txt", "roundtrip"),
+    ("victory_provenance.txt", "oracle_wide"),
+    ("victory_provenance.txt", "roundtrip"),
+    ("victory_spare.txt", "oracle_wide"),
+    ("victory_spare.txt", "roundtrip"),
+    ("victory_takeall.txt", "oracle_wide"),
+    ("victory_takeall.txt", "roundtrip"),
+];
+
+fn divergence_entries() -> Vec<Value> {
+    divergence_entries_in(&parity_root())
+}
+
+fn pair(entry: &Value) -> (String, String) {
+    (
+        entry["script"].as_str().expect("script").to_string(),
+        entry["check"].as_str().expect("check").to_string(),
+    )
+}
+
+fn named(list: &[(&str, &str)]) -> Vec<(String, String)> {
+    list.iter()
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .collect()
+}
+
+#[test]
+fn expected_divergence_list_is_closed_by_name() {
+    let entries = divergence_entries();
+    let untagged: Vec<_> = entries
+        .iter()
+        .filter(|e| e.get("category").is_none())
+        .map(pair)
+        .collect();
+    assert_eq!(untagged, named(&UNTAGGED_PAIRS), "untagged entries changed");
+    let tagged: Vec<_> = entries
+        .iter()
+        .filter(|e| is_tuned_entry(e))
+        .map(pair)
+        .collect();
+    assert_eq!(tagged, named(&TUNED_PAIRS), "rust-tuned entries changed");
+    assert_eq!(
+        entries.len(),
+        UNTAGGED_PAIRS.len() + TUNED_PAIRS.len(),
+        "an entry has an unknown category"
+    );
+    for entry in entries.iter().filter(|e| is_tuned_entry(e)) {
+        let (script, check) = pair(entry);
+        assert!(
+            ["oracle", "oracle_wide", "gamesession", "roundtrip"].contains(&check.as_str()),
+            "{script} {check}"
+        );
+        for spec in entry["paths"].as_array().expect("paths") {
+            let path = spec["path"].as_str().expect("path");
+            assert!(!path.contains('*'), "{script}: wildcard {path}");
+            assert!(
+                spec.get("python").is_some() && spec.get("rust").is_some(),
+                "{script} {path}"
+            );
+        }
+    }
+}
+
+#[test]
+fn wide_keys_are_pinned_only_under_oracle_wide() {
+    // A narrow golden has no wide keys, so an "oracle" pin there could never
+    // reproduce. The wide part of a difference belongs to "oracle_wide".
+    let wide = [
+        "board",
+        "captain_memories",
+        "active_bounties",
+        "deferred_fees",
+        "ledger",
+    ];
+    for entry in divergence_entries() {
+        if entry["check"] != "oracle" {
+            continue;
+        }
+        for spec in entry["paths"].as_array().expect("paths") {
+            let path = spec["path"].as_str().expect("path");
+            let key = path
+                .trim_start_matches("$.")
+                .split(['.', '['])
+                .next()
+                .unwrap_or("");
+            assert!(
+                !wide.contains(&key),
+                "{} pins a wide key under oracle: {path}",
+                entry["script"]
+            );
+        }
+    }
+}
+
+#[test]
+fn tuned_pins_follow_the_build() {
+    let pins = oracle_pins(&parity_root(), "captain_dockhand_s1.txt");
+    if cfg!(feature = "python-base") {
+        assert!(pins.is_empty(), "python-base must drop the rust-tuned pins");
+    } else {
+        assert!(!pins.is_empty(), "the tuned build pins its price paths");
+    }
 }

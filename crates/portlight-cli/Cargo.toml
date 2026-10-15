@@ -13,3 +13,6 @@ path = "src/main.rs"
 [dependencies]
 portlight-sim = { path = "../portlight-sim" }
 serde_json = "1"
+
+[features]
+python-base = ["portlight-sim/python-base"]

@@ -1,0 +1,212 @@
+{
+  "note": "Rust-tuned deviations from the extracted Python content. Every row names its base value from content.json; the loader refuses anything else. See tuned.rs for the allow-list.",
+  "rows": [
+    {
+      "path": "captains[id=dockhand].pricing.buy_price_mult",
+      "base": 1.0,
+      "tuned": 1.07
+    },
+    {
+      "path": "captains[id=dockhand].pricing.sell_price_mult",
+      "base": 1.0,
+      "tuned": 0.95
+    },
+    {
+      "path": "captains[id=scholar].pricing.sell_price_mult",
+      "base": 1.0,
+      "tuned": 1.01
+    },
+    {
+      "path": "captains[id=scholar].voyage.provision_burn",
+      "base": 0.75,
+      "tuned": 0.9
+    },
+    {
+      "path": "captains[id=privateer].pricing.buy_price_mult",
+      "base": 0.95,
+      "tuned": 1.1
+    },
+    {
+      "path": "captains[id=privateer].pricing.sell_price_mult",
+      "base": 1.02,
+      "tuned": 0.95
+    },
+    {
+      "path": "captains[id=privateer].pricing.port_fee_mult",
+      "base": 0.6,
+      "tuned": 0.8
+    },
+    {
+      "path": "captains[id=privateer].voyage.provision_burn",
+      "base": 0.9,
+      "tuned": 0.99
+    },
+    {
+      "path": "captains[id=smuggler].pricing.buy_price_mult",
+      "base": 1.0,
+      "tuned": 0.85
+    },
+    {
+      "path": "captains[id=smuggler].pricing.sell_price_mult",
+      "base": 0.98,
+      "tuned": 1.05
+    },
+    {
+      "path": "captains[id=smuggler].voyage.provision_burn",
+      "base": 0.85,
+      "tuned": 0.7
+    },
+    {
+      "path": "captains[id=bounty_hunter].pricing.buy_price_mult",
+      "base": 1.05,
+      "tuned": 0.95
+    },
+    {
+      "path": "captains[id=bounty_hunter].pricing.sell_price_mult",
+      "base": 0.98,
+      "tuned": 1.02
+    },
+    {
+      "path": "contracts[id=proc_grain_feed].captain_bias",
+      "base": [
+        "merchant"
+      ],
+      "tuned": [
+        "merchant",
+        "dockhand"
+      ]
+    },
+    {
+      "path": "contracts[id=proc_timber_shipyard].captain_bias",
+      "base": [
+        "merchant",
+        "navigator"
+      ],
+      "tuned": [
+        "merchant",
+        "navigator",
+        "dockhand"
+      ]
+    },
+    {
+      "path": "contracts[id=proc_iron_forge].captain_bias",
+      "base": [
+        "merchant"
+      ],
+      "tuned": [
+        "merchant",
+        "dockhand"
+      ]
+    },
+    {
+      "path": "contracts[id=proc_weapons_garrison].captain_bias",
+      "base": [
+        "smuggler",
+        "navigator"
+      ],
+      "tuned": [
+        "smuggler",
+        "navigator",
+        "privateer"
+      ]
+    },
+    {
+      "path": "contracts[id=short_grain_famine].captain_bias",
+      "base": [
+        "merchant"
+      ],
+      "tuned": [
+        "merchant",
+        "dockhand"
+      ]
+    },
+    {
+      "path": "contracts[id=short_rum_drought].captain_bias",
+      "base": [
+        "smuggler"
+      ],
+      "tuned": [
+        "smuggler",
+        "dockhand"
+      ]
+    },
+    {
+      "path": "contracts[id=short_tea_crisis].captain_bias",
+      "base": [
+        "merchant",
+        "navigator"
+      ],
+      "tuned": [
+        "merchant",
+        "navigator",
+        "dockhand"
+      ]
+    },
+    {
+      "path": "contracts[id=lux_silk_collector].captain_bias",
+      "base": [
+        "smuggler"
+      ],
+      "tuned": [
+        "smuggler",
+        "merchant_prince"
+      ]
+    },
+    {
+      "path": "contracts[id=lux_porcelain_estate].captain_bias",
+      "base": [
+        "smuggler",
+        "merchant"
+      ],
+      "tuned": [
+        "smuggler",
+        "merchant",
+        "merchant_prince"
+      ]
+    },
+    {
+      "path": "contracts[id=lux_spice_monopolist].captain_bias",
+      "base": [
+        "smuggler"
+      ],
+      "tuned": [
+        "smuggler",
+        "merchant_prince"
+      ]
+    },
+    {
+      "path": "contracts[id=lux_pearls_crown].captain_bias",
+      "base": [
+        "smuggler",
+        "merchant"
+      ],
+      "tuned": [
+        "smuggler",
+        "merchant",
+        "merchant_prince"
+      ]
+    },
+    {
+      "path": "contracts[id=rep_charter_luxury].captain_bias",
+      "base": [
+        "merchant"
+      ],
+      "tuned": [
+        "merchant",
+        "merchant_prince"
+      ]
+    },
+    {
+      "path": "contracts[id=rep_charter_atlantic].captain_bias",
+      "base": [
+        "merchant",
+        "navigator"
+      ],
+      "tuned": [
+        "merchant",
+        "navigator",
+        "privateer"
+      ]
+    }
+  ]
+}

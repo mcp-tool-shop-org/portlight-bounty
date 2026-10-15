@@ -216,6 +216,230 @@ class AllowlistTest(unittest.TestCase):
         self.assertNotIn("Traceback", text)
 
 
+# The expected-divergence list is closed by name. UNTAGGED_PAIRS are the entries
+# that existed before the balance fork and stay byte for byte as they were.
+# TUNED_PAIRS are the Rust-tuned pairs `pin_tuned.py`'s sweep produced.
+UNTAGGED_PAIRS = [
+    ("capture_prize.txt", "oracle"),
+    ("bounty_claim.txt", "oracle"),
+    ("bounty_claim.txt", "roundtrip"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("bounty_claim_sail.txt", "roundtrip"),
+    ("insurance_claim.txt", "oracle"),
+    ("capture_decline.txt", "oracle"),
+    ("capture_fleet_full.txt", "oracle"),
+    ("capture_prize.txt", "oracle"),
+    ("capture_too_few.txt", "oracle"),
+    ("capture_too_many.txt", "oracle"),
+    ("upgrade_naval.txt", "oracle"),
+    ("boarding.txt", "oracle"),
+    ("bounty_claim.txt", "oracle"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("capture_spare_prefix.txt", "oracle"),
+    ("gear_armor.txt", "oracle"),
+    ("injury_heal.txt", "oracle"),
+    ("naval_combat.txt", "oracle"),
+    ("victory_provenance.txt", "oracle"),
+    ("victory_spare.txt", "oracle"),
+    ("victory_takeall.txt", "oracle"),
+    ("naval_evade_clip.txt", "oracle"),
+]
+
+TUNED_PAIRS = [
+    ("boarding.txt", "oracle_wide"),
+    ("boarding.txt", "roundtrip"),
+    ("bounty_claim.txt", "oracle_wide"),
+    ("bounty_claim.txt", "roundtrip"),
+    ("bounty_claim_sail.txt", "oracle"),
+    ("bounty_claim_sail.txt", "oracle_wide"),
+    ("bounty_claim_sail.txt", "roundtrip"),
+    ("captain_bounty_hunter_s1.txt", "oracle"),
+    ("captain_bounty_hunter_s1.txt", "oracle_wide"),
+    ("captain_bounty_hunter_s1.txt", "gamesession"),
+    ("captain_bounty_hunter_s1.txt", "roundtrip"),
+    ("captain_bounty_hunter_s42.txt", "oracle"),
+    ("captain_bounty_hunter_s42.txt", "oracle_wide"),
+    ("captain_bounty_hunter_s42.txt", "roundtrip"),
+    ("captain_dockhand_s1.txt", "oracle"),
+    ("captain_dockhand_s1.txt", "oracle_wide"),
+    ("captain_dockhand_s1.txt", "gamesession"),
+    ("captain_dockhand_s1.txt", "roundtrip"),
+    ("captain_dockhand_s42.txt", "oracle"),
+    ("captain_dockhand_s42.txt", "oracle_wide"),
+    ("captain_dockhand_s42.txt", "roundtrip"),
+    ("captain_merchant_prince_s1.txt", "oracle_wide"),
+    ("captain_merchant_prince_s1.txt", "gamesession"),
+    ("captain_merchant_prince_s1.txt", "roundtrip"),
+    ("captain_merchant_prince_s42.txt", "oracle_wide"),
+    ("captain_merchant_prince_s42.txt", "roundtrip"),
+    ("captain_privateer_s1.txt", "oracle"),
+    ("captain_privateer_s1.txt", "oracle_wide"),
+    ("captain_privateer_s1.txt", "gamesession"),
+    ("captain_privateer_s1.txt", "roundtrip"),
+    ("captain_privateer_s42.txt", "oracle"),
+    ("captain_privateer_s42.txt", "oracle_wide"),
+    ("captain_privateer_s42.txt", "roundtrip"),
+    ("captain_scholar_s1.txt", "oracle"),
+    ("captain_scholar_s1.txt", "gamesession"),
+    ("captain_scholar_s1.txt", "roundtrip"),
+    ("captain_scholar_s42.txt", "oracle"),
+    ("captain_scholar_s42.txt", "roundtrip"),
+    ("captain_smuggler_s1.txt", "oracle"),
+    ("captain_smuggler_s1.txt", "oracle_wide"),
+    ("captain_smuggler_s1.txt", "gamesession"),
+    ("captain_smuggler_s1.txt", "roundtrip"),
+    ("captain_smuggler_s42.txt", "oracle"),
+    ("captain_smuggler_s42.txt", "oracle_wide"),
+    ("captain_smuggler_s42.txt", "roundtrip"),
+    ("capture_decline.txt", "oracle_wide"),
+    ("capture_decline.txt", "roundtrip"),
+    ("capture_prize.txt", "oracle_wide"),
+    ("capture_prize.txt", "roundtrip"),
+    ("capture_spare_prefix.txt", "oracle_wide"),
+    ("capture_spare_prefix.txt", "roundtrip"),
+    ("capture_too_few.txt", "oracle_wide"),
+    ("capture_too_few.txt", "roundtrip"),
+    ("capture_too_many.txt", "oracle_wide"),
+    ("capture_too_many.txt", "roundtrip"),
+    ("event_foreign.txt", "oracle"),
+    ("event_foreign.txt", "gamesession"),
+    ("event_foreign.txt", "roundtrip"),
+    ("g9.txt", "oracle"),
+    ("g9.txt", "gamesession"),
+    ("g9.txt", "roundtrip"),
+    ("gear_armor.txt", "oracle_wide"),
+    ("gear_armor.txt", "roundtrip"),
+    ("hull_day20.txt", "oracle"),
+    ("hull_day20.txt", "gamesession"),
+    ("hull_day20.txt", "roundtrip"),
+    ("injury_heal.txt", "oracle"),
+    ("injury_heal.txt", "oracle_wide"),
+    ("injury_heal.txt", "roundtrip"),
+    ("naval_combat.txt", "oracle_wide"),
+    ("naval_combat.txt", "roundtrip"),
+    ("naval_evade_clip.txt", "oracle_wide"),
+    ("naval_evade_clip.txt", "roundtrip"),
+    ("smuggler.txt", "oracle"),
+    ("smuggler.txt", "gamesession"),
+    ("smuggler.txt", "roundtrip"),
+    ("victory_provenance.txt", "oracle_wide"),
+    ("victory_provenance.txt", "roundtrip"),
+    ("victory_spare.txt", "oracle_wide"),
+    ("victory_spare.txt", "roundtrip"),
+    ("victory_takeall.txt", "oracle_wide"),
+    ("victory_takeall.txt", "roundtrip"),
+]
+
+
+WIDE_ROOTS = ("board", "captain_memories", "active_bounties", "deferred_fees", "ledger")
+
+
+class ClosedListTest(unittest.TestCase):
+    def entries(self) -> list[dict]:
+        return check.load_json(check.DIVERGENCES)["entries"]
+
+    def test_untagged_entries_are_the_original_pairs(self) -> None:
+        pairs = [(e["script"], e["check"]) for e in self.entries() if "category" not in e]
+        self.assertEqual(pairs, UNTAGGED_PAIRS)
+
+    def test_tuned_entries_are_the_generated_pairs(self) -> None:
+        pairs = [(e["script"], e["check"]) for e in self.entries() if check.is_tuned(e)]
+        self.assertEqual(pairs, TUNED_PAIRS)
+        self.assertEqual(len(self.entries()), len(UNTAGGED_PAIRS) + len(TUNED_PAIRS))
+
+    def test_tuned_paths_are_exact_leaves_with_both_values(self) -> None:
+        for entry in self.entries():
+            if not check.is_tuned(entry):
+                continue
+            self.assertIn(entry["check"], ("oracle", "oracle_wide", "gamesession", "roundtrip"))
+            for spec in entry["paths"]:
+                self.assertIsNone(check.pattern_error(spec["path"]), spec["path"])
+                self.assertTrue({"path", "python", "rust"} <= set(spec), spec["path"])
+                self.assertFalse(isinstance(spec["python"], (dict, list)) and "$missing" not in spec["python"])
+
+    def test_wide_keys_are_pinned_only_under_oracle_wide(self) -> None:
+        for entry in self.entries():
+            if entry["check"] != "oracle":
+                continue
+            for spec in entry["paths"]:
+                root = spec["path"][2:].replace("[", ".").split(".")[0]
+                self.assertNotIn(root, WIDE_ROOTS, f"{entry['script']} {spec['path']}")
+
+    def test_base_content_drops_only_the_tuned_entries(self) -> None:
+        base = check.load_divergences(base_content=True)
+        self.assertEqual([(e["script"], e["check"]) for e in base], UNTAGGED_PAIRS)
+        self.assertEqual(len(check.load_divergences()), len(UNTAGGED_PAIRS) + len(TUNED_PAIRS))
+
+    def test_every_oracle_tuned_script_has_a_python_oracle_golden(self) -> None:
+        for script, kind in TUNED_PAIRS:
+            if kind != "oracle":
+                continue
+            golden = check.load_json(os.path.join(check.GOLDEN, script.replace(".txt", ".json")))
+            self.assertEqual(golden.get("_source"), "python-oracle", script)
+
+
+class WideSplitTest(unittest.TestCase):
+    def test_wide_errors_are_split_from_narrow(self) -> None:
+        errors = [
+            "$.board.offers[0].id: 'a' != 'b'",
+            "$.ledger[2].kind: 'x' != 'y'",
+            "$.captain.silver: 1 != 2",
+            "$.boardwalk: 1 != 2",
+            "$: keys ['culture']",
+        ]
+        narrow, wide = check.split_wide(errors)
+        self.assertEqual(wide, errors[:2])
+        self.assertEqual(narrow, errors[2:])
+
+    def test_a_wide_pin_matches_under_oracle_wide_only(self) -> None:
+        left = {"board": {"offers": [{"id": "a"}]}}
+        right = {"board": {"offers": [{"id": "b"}]}}
+        entries = [{
+            "script": "x.txt", "check": "oracle_wide", "category": "rust-tuned",
+            "summary": "s", "rust": "r", "python": "p",
+            "paths": [{"path": "$.board.offers[0].id", "python": "a", "rust": "b"}],
+        }]
+        narrow, wide = check.split_wide(check.close(left, right, "$"))
+        failed = [0]
+        with contextlib.redirect_stdout(io.StringIO()):
+            check.report("x.txt", "oracle", narrow, entries, failed, left, right)
+            check.report("x.txt", "oracle_wide", wide, entries, failed, left, right)
+        self.assertEqual(failed[0], 0)
+        # The same difference with a changed Rust value is not the pinned pair.
+        moved = {"board": {"offers": [{"id": "other"}]}}
+        _, wide = check.split_wide(check.close(left, moved, "$"))
+        failed = [0]
+        with contextlib.redirect_stdout(io.StringIO()):
+            check.report("x.txt", "oracle_wide", wide, entries, failed, left, moved)
+        self.assertEqual(failed[0], 1)
+
+    def test_an_unlisted_wide_difference_fails(self) -> None:
+        left = {"board": {"offers": [{"id": "a"}]}}
+        right = {"board": {"offers": [{"id": "b"}]}}
+        _, wide = check.split_wide(check.close(left, right, "$"))
+        failed = [0]
+        with contextlib.redirect_stdout(io.StringIO()):
+            check.report("x.txt", "oracle_wide", wide, [], failed, left, right)
+        self.assertEqual(failed[0], 1)
+
+    def test_an_unknown_category_is_refused(self) -> None:
+        import tempfile
+
+        entry = {"script": "x.txt", "check": "oracle", "category": "other", "summary": "s",
+                 "rust": "r", "python": "p", "paths": [{"path": "$.a", "python": 1, "rust": 2}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "d.json")
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump({"note": "n", "entries": [entry]}, fh)
+            old = check.DIVERGENCES
+            check.DIVERGENCES = path
+            try:
+                with self.assertRaises(SystemExit):
+                    check.load_divergences()
+            finally:
+                check.DIVERGENCES = old
+
+
 class ErrorPathTest(unittest.TestCase):
     def test_dollar_inside_a_value_does_not_move_the_path(self) -> None:
         line = "$.board.offers[0].title: 'pay $10' != 'pay $12'"

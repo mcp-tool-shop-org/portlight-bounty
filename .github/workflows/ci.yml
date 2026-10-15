@@ -49,6 +49,10 @@ jobs:
         run: cargo clippy --locked --workspace --exclude portlight-godot --all-targets --all-features -- -D warnings
       - name: Test
         run: cargo test --locked --workspace --exclude portlight-godot
+      - name: Test (python-base, tuned overlay off)
+        # The same suite with the overlay compiled out. The Rust-tuned pins are
+        # dropped in this build, so every golden matches the Python snapshot.
+        run: cargo test --locked --workspace --exclude portlight-godot --features python-base
       - name: Manifest gate fixtures
         run: python3 -m pip install --target /tmp/portlight-pytest 'pytest==9.1.1' && PYTHONPATH=/tmp/portlight-pytest python3 tools/test_build_manifest_gates.py
       - name: Parity allowlist
@@ -136,8 +140,15 @@ jobs:
           python-version: "3.12"
       - name: Build
         run: cargo build --locked -p portlight-cli
+      - name: Build (python-base, tuned overlay off)
+        run: CARGO_TARGET_DIR=${{ github.workspace }}/target/python-base cargo build --locked -p portlight-cli --features python-base
       - name: Live Python oracle
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle
+      - name: Live Python oracle (python-base, tuned overlay off)
+        # Counterfactual: with the overlay off, every script matches with only
+        # the entries that existed before the balance fork. That proves each
+        # Rust-tuned difference comes from the overlay and nothing else.
+        run: PORTLIGHT_BIN=${{ github.workspace }}/target/python-base/debug/portlight PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/check.py --require-oracle --base-content
       - name: Parity allowlist and golden bytes
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/test_check.py
       - name: Victory fixtures

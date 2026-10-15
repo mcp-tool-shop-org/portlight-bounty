@@ -38,7 +38,7 @@ The handbook walks the screens: [landing page](https://mcp-tool-shop-org.github.
 
 ## The simulation
 
-The crates do not draw. `portlight-sim` is the rules. `portlight-cli` runs a script and prints the snapshot the parity harness compares to Python. `portlight-chart` is the dimetric math, still with no Godot in it.
+The crates do not draw. `portlight-sim` is the rules, matching the Python game except the listed Rust-tuned scripts. `portlight-cli` runs a script and prints the snapshot the parity harness compares to Python. `portlight-chart` is the dimetric math, still with no Godot in it.
 
 ```
 cargo run -p portlight-cli -- new --captain merchant --name Ada --seed 42
