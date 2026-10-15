@@ -1,5 +1,5 @@
 {
-  "note": "Rust-tuned deviations from the extracted Python content. Every row names its base value from content.json; the loader refuses anything else. See tuned.rs for the allow-list.",
+  "note": "Rust-tuned deviations from the extracted Python content. Every row names its base value from content.json; the loader refuses anything else. See tuned.rs for the allow-list. The scholar response is a step, not a slope: the 28019 to 63643 median in the day-60 sweep came from the sell and burn levers together, with no intermediate result, so tune scholar by re-running the sweep rather than interpolating. Old saves reprice on load, so a save made before this overlay shows the tuned prices on the next load. This is a first fork, not a finished balance.",
   "rows": [
     {
       "path": "captains[id=dockhand].pricing.buy_price_mult",

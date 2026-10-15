@@ -39,15 +39,20 @@ ORACLE = os.path.join(ROOT, "tools", "parity", "oracle.py")
 SESSION = os.path.join(ROOT, "tools", "parity", "session_runner.py")
 SAVE_SLOT = os.path.join(ROOT, "tools", "parity", "save_slot.py")
 DIVERGENCES = os.path.join(ROOT, "parity", "expected_divergences.json")
+TUNED_PINS = os.path.join(ROOT, "parity", "rust_tuned_pins.json")
 
 # Present in the live snapshot when PORTLIGHT_WIDE_SNAPSHOT=1. Omitted from
 # parity/golden so the committed files keep the narrow shape.
 WIDE_KEYS = ("board", "captain_memories", "active_bounties", "deferred_fees", "ledger")
 
-# Entries the balance fork added carry this category. They pin the places
-# where the Rust-tuned overlay moves Rust away from the Python game. A run
-# against a `python-base` build drops them and must match with the rest.
+# Entries in parity/rust_tuned_pins.json carry this category. They pin the
+# places where the Rust-tuned overlay moves Rust away from the Python game.
+# A run against a `python-base` build does not read that file and must match
+# with the original entries alone.
 TUNED_CATEGORY = "rust-tuned"
+# In rust_tuned_pins.json every entry names its check as tuned_<check>, so no
+# (script, check) pair is in both pin files. load_divergences strips the prefix.
+TUNED_CHECK_PREFIX = "tuned_"
 
 
 def rust_bin() -> str:
@@ -272,32 +277,52 @@ def is_tuned(entry: dict) -> bool:
     return entry.get("category") == TUNED_CATEGORY
 
 
-def load_divergences(base_content: bool = False) -> list[dict]:
-    """Expected divergences. `base_content` drops the Rust-tuned entries."""
-    if not os.path.exists(DIVERGENCES):
-        return []
-    data = load_json(DIVERGENCES)
-    entries = data.get("entries", [])
-    for entry in entries:
-        if "category" in entry and not is_tuned(entry):
-            raise SystemExit(f"{DIVERGENCES} entry has an unknown category: {entry['script']}")
-    if base_content:
-        entries = [entry for entry in entries if not is_tuned(entry)]
+def validate_entries(path: str, entries: list[dict], tuned: bool) -> None:
     for entry in entries:
         for key in ("script", "check", "summary", "rust", "python", "paths"):
             if key not in entry:
-                raise SystemExit(f"{DIVERGENCES} entry missing {key}: {entry}")
+                raise SystemExit(f"{path} entry missing {key}: {entry}")
+        if tuned and not entry["check"].startswith(TUNED_CHECK_PREFIX):
+            raise SystemExit(f"{path} {entry['script']}: check must start with {TUNED_CHECK_PREFIX}")
+        if tuned != is_tuned(entry) or (not tuned and "category" in entry):
+            raise SystemExit(f"{path} entry has the wrong category: {entry['script']}")
         if not entry["paths"]:
-            raise SystemExit(f"{DIVERGENCES} entry has no paths: {entry['script']}")
+            raise SystemExit(f"{path} entry has no paths: {entry['script']}")
         for spec in entry["paths"]:
             if not isinstance(spec, dict) or not {"path", "python", "rust"} <= set(spec):
                 raise SystemExit(
-                    f"{DIVERGENCES} path must pin python and rust values: {entry['script']} {spec}"
+                    f"{path} path must pin python and rust values: {entry['script']} {spec}"
                 )
             message = pattern_error(spec["path"])
             if message:
-                raise SystemExit(f"{DIVERGENCES} {entry['script']}: {message}")
-    return entries
+                raise SystemExit(f"{path} {entry['script']}: {message}")
+            if tuned and spec["python"] == spec["rust"]:
+                raise SystemExit(
+                    f"{path} {entry['script']} [{entry['check']}] {spec['path']}: "
+                    "python and rust values are equal, so this pins no divergence"
+                )
+
+
+def load_divergences(base_content: bool = False) -> list[dict]:
+    """Expected divergences.
+
+    `parity/expected_divergences.json` holds the original entries. The
+    Rust-tuned pins live in `parity/rust_tuned_pins.json`; `base_content`
+    leaves that file unread, as a `python-base` build has no overlay.
+    """
+    entries: list[dict] = []
+    if os.path.exists(DIVERGENCES):
+        entries = load_json(DIVERGENCES).get("entries", [])
+        validate_entries(DIVERGENCES, entries, tuned=False)
+    if base_content or not os.path.exists(TUNED_PINS):
+        return entries
+    tuned = load_json(TUNED_PINS).get("entries", [])
+    validate_entries(TUNED_PINS, tuned, tuned=True)
+    both = {(e["script"], e["check"]) for e in entries} & {(e["script"], e["check"]) for e in tuned}
+    if both:
+        raise SystemExit(f"a (script, check) pair is in both pin files: {sorted(both)}")
+    stripped = [{**e, "check": e["check"][len(TUNED_CHECK_PREFIX) :]} for e in tuned]
+    return entries + stripped
 
 
 def print_divergence_list(entries: list[dict]) -> None:
@@ -592,44 +617,63 @@ def report(
     print(f"{name}: {check} matches")
 
 
-def roundtrip_errors(name: str, script_path: str) -> tuple[list[str], dict, dict]:
+# Round-trip comparisons, each with its own check name so a pin records the
+# values of that comparison alone. The third keeps the name `roundtrip`.
+ROUNDTRIP_CHECKS = ("roundtrip_rust_save", "roundtrip_python_save", "roundtrip")
+
+
+def roundtrip_compare(name: str, script_path: str) -> dict[str, tuple[list[str], dict, dict]]:
     """Compare loaded snapshots, not the pre-save snapshot.
 
     `Session::load` and `GameSession.load` recalculate port prices with the
     captain's modifiers. A fresh game has not done that yet, so the loaded
     snapshot can differ from the live one even when both loaders agree.
 
-    The returned snapshots are the Rust load of the Python save and the Rust
-    load of the Rust save, without the log. Allowlist pins use that pair:
-    Python value on the left, Rust value on the right.
+    Three comparisons, each as (errors, python view, rust view), no log:
+    - `roundtrip_rust_save`: Rust's save, loaded by Python and by Rust.
+    - `roundtrip_python_save`: Python's save, loaded by Python and by Rust.
+    - `roundtrip`: the Rust load of the Python save against the Rust load of
+      the Rust save.
+    A path can differ in one comparison and not in another, so each pin is
+    checked against the values of its own comparison.
     """
-    errors: list[str] = []
+    out: dict[str, tuple[list[str], dict, dict]] = {}
     with tempfile.TemporaryDirectory(prefix=f"pl-rt-{name.replace('.txt', '')}-") as base:
         rust_dir = os.path.join(base, "from-rust")
         py_dir = os.path.join(base, "from-python")
         os.makedirs(rust_dir)
         os.makedirs(py_dir)
         run_rust_saved(script_path, rust_dir, "slot")
-        py_of_rust = run_python_load(rust_dir, "slot")
-        rust_reloaded = run_rust_load(rust_dir, "slot")
-        errors.extend(
-            f"{ROUNDTRIP_PREFIXES[0]}{line}"
-            for line in close(without_log(rust_reloaded), without_log(py_of_rust), "$")
+        py_of_rust = without_log(run_python_load(rust_dir, "slot"))
+        rust_reloaded = without_log(run_rust_load(rust_dir, "slot"))
+        out["roundtrip_rust_save"] = (
+            [
+                f"{ROUNDTRIP_PREFIXES[0]}{line}"
+                for line in close(rust_reloaded, py_of_rust, "$")
+            ],
+            py_of_rust,
+            rust_reloaded,
         )
         run_oracle_saved(script_path, py_dir, "slot")
-        rust_of_py = run_rust_load(py_dir, "slot")
-        py_reloaded = run_python_load(py_dir, "slot")
-        errors.extend(
-            f"{ROUNDTRIP_PREFIXES[1]}{line}"
-            for line in close(without_log(py_reloaded), without_log(rust_of_py), "$")
+        rust_of_py = without_log(run_rust_load(py_dir, "slot"))
+        py_reloaded = without_log(run_python_load(py_dir, "slot"))
+        out["roundtrip_python_save"] = (
+            [
+                f"{ROUNDTRIP_PREFIXES[1]}{line}"
+                for line in close(py_reloaded, rust_of_py, "$")
+            ],
+            py_reloaded,
+            rust_of_py,
         )
-        python_view = without_log(rust_of_py)
-        rust_view = without_log(rust_reloaded)
-        errors.extend(
-            f"{ROUNDTRIP_PREFIXES[2]}{line}"
-            for line in close(rust_view, python_view, "$")
+        out["roundtrip"] = (
+            [
+                f"{ROUNDTRIP_PREFIXES[2]}{line}"
+                for line in close(rust_reloaded, rust_of_py, "$")
+            ],
+            rust_of_py,
+            rust_reloaded,
         )
-    return errors, python_view, rust_view
+    return out
 
 
 def main() -> int:
@@ -650,8 +694,9 @@ def main() -> int:
         "--base-content",
         action="store_true",
         help=(
-            "check a binary built with --features python-base: drop the "
-            "rust-tuned entries, so every script must match as before the fork"
+            "check a binary built with --features python-base: leave "
+            "parity/rust_tuned_pins.json unread, so every script must match "
+            "with the original entries alone"
         ),
     )
     args = parser.parse_args()
@@ -722,16 +767,13 @@ def main() -> int:
                         )
                     if has_session(rust) and not args.skip_roundtrip:
                         counts["roundtrip_run"] += 1
-                        rt_errors, python_view, rust_view = roundtrip_errors(name, script_path)
-                        report(
-                            name,
-                            "roundtrip",
-                            rt_errors,
-                            entries,
-                            failed,
-                            python_view,
-                            rust_view,
-                        )
+                        for kind, (rt_errors, python_view, rust_view) in roundtrip_compare(
+                            name, script_path
+                        ).items():
+                            if kind == "roundtrip" or rt_errors or listed(entries, name, kind):
+                                report(
+                                    name, kind, rt_errors, entries, failed, python_view, rust_view
+                                )
                     elif not has_session(rust):
                         counts["roundtrip_skipped"] += 1
                         if listed(entries, name, "roundtrip"):
