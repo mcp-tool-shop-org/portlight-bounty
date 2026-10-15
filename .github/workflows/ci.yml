@@ -54,6 +54,29 @@ jobs:
       - name: Parity allowlist
         run: python3 tools/parity/test_check.py
 
+  # Type balance sweep: 9 types x 3 strategies x 30 seeds to day 60.
+  # Reported, not gating: the job fails only on a crash, a non-deterministic
+  # rerun, or a missing output file.
+  balance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.98.1
+      - uses: Swatinem/rust-cache@v2
+      - name: Balance sweep
+        env:
+          PT_S0R_OUT: ${{ runner.temp }}/pt-s0r
+        run: |
+          cargo test --locked --release -p portlight-sim --test balance_bot -- --ignored --test-threads=1
+          test -s "$PT_S0R_OUT/pt-s0r.csv"
+          test -s "$PT_S0R_OUT/pt-s0r-summary.md"
+          cat "$PT_S0R_OUT/pt-s0r-summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pt-s0r
+          path: ${{ runner.temp }}/pt-s0r
+
   # Patch coverage fails under 90%. The gate is codecov.yml. This job
   # measures the Rust crates except portlight-godot, which the godot job
   # builds. Upload uses OIDC. No token is stored in the repo.
