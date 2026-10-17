@@ -2102,7 +2102,7 @@
       "danger": 0.18,
       "min_ship_class": "galleon",
       "lore_name": "The Long Crossing",
-      "lore": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive."
+      "lore": "Weeks of open water. The route that separates traders from merchants. Many set out. Fewer arrive."
     },
     {
       "port_a": "iron_point",
@@ -2430,7 +2430,7 @@
     {
       "id": "privateer",
       "name": "The Privateer",
-      "title": "Licensed Hunter",
+      "title": "Letter of Marque",
       "home_region": "North Atlantic",
       "home_port_id": "stormwall",
       "mentor_npc_id": "sw_commander_vogt",
@@ -12240,7 +12240,7 @@
             "mechanical_effect": ""
           },
           {
-            "text": "Calm water, clear sky. The Grain Road earns its reputation as the gentlest route in the Known World.",
+            "text": "Calm water, clear sky. The Grain Road earns its reputation as a gentle route.",
             "category": "weather",
             "mechanical_effect": ""
           },

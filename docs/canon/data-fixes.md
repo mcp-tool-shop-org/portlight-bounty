@@ -234,7 +234,7 @@ Proposed fix: on load, refill lore_name and lore from content.json routes by por
 
 Why: after a save and load, the 15 named lanes stop showing their names on the chart and their 15 encounter tables never fire. Canon describes the fresh-session experience.
 
-## DF-23. 'The gentlest route in the Known World' is not the gentlest
+## DF-23. 'The gentlest route in the Known World' is not the gentlest (resolved)
 
 Where:
 - content.json:12243 (Grain Road encounter: "The Grain Road earns its reputation as the gentlest route in the Known World.")
@@ -244,7 +244,7 @@ Proposed fix: copy change to "The Grain Road earns its reputation as a gentle ro
 
 Why: a superlative the data contradicts.
 
-## DF-24. The Long Crossing says 'months'; the game says about 16 days
+## DF-24. The Long Crossing says 'months'; the game says about 16 days (resolved)
 
 Where:
 - content.json:2105 (lore: "Months of open water.")
@@ -265,7 +265,7 @@ Proposed fix: No data change. Canon reads 'profitable' as 'lawful': the Run is l
 
 Why: both superlatives appear in shipped voyage text.
 
-## DF-26. Two archetypes share the title 'Licensed Hunter'
+## DF-26. Two archetypes share the title 'Licensed Hunter' (resolved)
 
 Where:
 - content.json:2433 (privateer title 'Licensed Hunter')
