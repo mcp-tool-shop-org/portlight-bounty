@@ -9,7 +9,7 @@
 //! type by a measurable amount.
 //!
 //! The probe runs with the normal test suite (it takes well under a second).
-//! It writes its table to `$PT_S0R_OUT` (default `target/pt-s0r`) as
+//! It writes its table to `$PT_S0R_OUT` (default `target/pt-s0r` under the repo root, which is gitignored) as
 //! `contraband-probe.md`; the committed copy lives in `docs/playtest/balance/`.
 
 use std::fmt::Write as _;
@@ -372,7 +372,7 @@ fn contraband_probe_reachability_and_table() {
     let text = report(&rows, &enabling);
     let dir = std::env::var_os("PT_S0R_OUT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("target/pt-s0r"));
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/pt-s0r"));
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("contraband-probe.md"), &text).unwrap();
     println!("{text}");
