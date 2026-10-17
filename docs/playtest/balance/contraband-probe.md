@@ -94,3 +94,5 @@ One round trip is the best batch each way at day-0 stock. Two round trips assume
 | smuggler | opium spice_narrows->corsairs_rest 338 | 624 | 1248 | 922 | STOP |
 
 Verdict: STOP. Even the two-round-trip upper bound is under 1600 silver a run for every type, so a contraband strategy cannot move any type by a measurable amount.
+
+Decision: this probe is the record. The black market is measured dead content in this economy: no starter can run a loop, the best case is under the 1600 silver line, and reopening the economy would cascade through parity and the goldens. So no contraband strategy is built, contraband is left out of the balance model, and the smuggler stays improved but out of band.

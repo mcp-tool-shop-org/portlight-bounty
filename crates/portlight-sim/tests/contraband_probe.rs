@@ -349,6 +349,7 @@ fn report(rows: &[Row], enabling: &str) -> String {
                 .to_string()
         }
     );
+    let _ = writeln!(out, "\nDecision: this probe is the record. The black market is measured dead content in this economy: no starter can run a loop, the best case is under the {STOP_BELOW} silver line, and reopening the economy would cascade through parity and the goldens. So no contraband strategy is built, contraband is left out of the balance model, and the smuggler stays improved but out of band.");
     out
 }
 
