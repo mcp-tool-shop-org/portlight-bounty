@@ -94,4 +94,4 @@ Words, not art direction. Character plates stay held; canon sets no face, age, g
 
 ## 8. Flags
 
-- Shares home and mentor with the Bounty Hunter (inventory finding 4)
+- DF-33: shares home port and mentor with the Bounty Hunter
