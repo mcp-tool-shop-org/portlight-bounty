@@ -79,9 +79,11 @@ Batch = units bought one at a time (each lifts the next price) while the quote b
 
 ## Best realistic profit and the stop rule
 
-One round trip is the best batch each way at day-0 stock. Two round trips assumes the stock fully restocks between visits, which the restock rate does not give, so it is an upper bound. Seizure cost is the batch cost plus 90 per unit.
+One round trip is the best batch each way at day-0 stock. The two-round-trip figure is a deliberately generous ceiling, not a forecast: it assumes the stock fully restocks between visits, but restock at the key slots is only 0.3 to 0.5 a day. Travel time rules it out anyway. The two markets are 184 leagues apart over brigantine lanes, which is about 31 days one way at the brigantine's speed of 6, so a round trip is about 62 days, longer than the 60-day run, and the ship must first be bought and crewed. The cutter starters would take about 20 days one way (speed 9) over warning lanes. Seizure cost is the batch cost plus 90 per unit.
 
-| Type | Best leg | Round trip | Two round trips (upper bound) | Seizure cost of best leg | Stop (under 1600) |
+Pricing note: these quotes are read at day 0 from a new session, which prices the world without the captain's price multipliers on the first buy and on the far sell price. With the multipliers applied, the smuggler's round trip is about 693 (1386 for two) and the highest of any type is about 696 (1392 for two), so every type is still under 1600.
+
+| Type | Best leg | Round trip | Two round trips (generous ceiling) | Seizure cost of best leg | Stop (under 1600) |
 |---|---|---:|---:|---:|---|
 | bounty_hunter | opium spice_narrows->corsairs_rest 277 | 539 | 1078 | 773 | STOP |
 | corsair | opium spice_narrows->corsairs_rest 249 | 487 | 974 | 801 | STOP |
@@ -93,6 +95,13 @@ One round trip is the best batch each way at day-0 stock. Two round trips assume
 | scholar | opium spice_narrows->corsairs_rest 263 | 513 | 1026 | 787 | STOP |
 | smuggler | opium spice_narrows->corsairs_rest 338 | 624 | 1248 | 922 | STOP |
 
-Verdict: STOP. Even the two-round-trip upper bound is under 1600 silver a run for every type, so a contraband strategy cannot move any type by a measurable amount.
+Verdict: STOP. Even the generous two-round-trip ceiling is under 1600 silver a run for every type, so a contraband strategy cannot move any type by a measurable amount.
 
-Decision: this probe is the record. The black market is measured dead content in this economy: no starter can run a loop, the best case is under the 1600 silver line, and reopening the economy would cascade through parity and the goldens. So no contraband strategy is built, contraband is left out of the balance model, and the smuggler stays improved but out of band.
+Reading the reachability: no starter can loop on open lanes. The two cutter starters (bounty_hunter and privateer) can reach both markets over warning lanes, but none of them can afford the 1200 silver (1.5x the 800 silver brigantine) that the bot rule needs; the best starting purse is 700.
+
+## Decision
+
+- The black market is dead content for the balance bot: both markets sit behind brigantine or galleon lanes, no starter can afford the enabling ship, and the run is too short to use it.
+- Contraband leaves the balance model. The contraband strategy (`s4_shadow`) and the smuggler inspection change (1.3 to 1.1) are cancelled, not deferred.
+- The economy is not reopened: no lane, stock, price or ship change is proposed because of this probe, since that would cascade through parity and the goldens.
+- The smuggler stays improved but out of band. Any later non-price lever is a separate design note, not part of this change.
