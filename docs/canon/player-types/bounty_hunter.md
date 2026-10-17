@@ -97,3 +97,4 @@ Words, not art direction. Character plates stay held; canon sets no face, age, g
 
 - DF-3 region mismatch
 - DF-26 title
+- DF-33: shares home port and mentor with the Dockhand
