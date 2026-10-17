@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains); c413788 (phase 5: player types); 515a488 (phase 6A: companions and officers). Status: draft (docs/canon/). Written 2026-10-14; phase 6A written 2026-10-17. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains); c413788 (phase 5: player types); 515a488 (phase 6A: companions and officers); af3d105 (phase 6B: style masters and skill trainers). Status: draft (docs/canon/). Written 2026-10-14; phases 6A and 6B written 2026-10-17. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 
@@ -47,6 +47,14 @@ No canon rule names a fixed list of ports, blocs, goods or regions. The port set
 2. For a companion, create companions/<id>.md from any existing companion file and add its row to companions/README.md (index, gaps and region tables are hand-maintained); for a pool, add its file under officers/ and a row to officers/README.md.
 3. Quote every data line with its `C:n`. Mark anything canon adds [invented]. Put contradictions in data-fixes.md; never fix the data in the canon PR.
 4. Add one links-only line to the owning port file's section B ('Hire and training canon'). Add a timeline row only if no existing one fits.
+5. Review: design review (canon), sound review (ambience lines), art review only if look-and-feel changes (character plates are held).
+
+## How to add a style master or a skill trainer
+
+1. Add the record to the sim first (content.json `style_masters`, or `skills.trainers`), through a sim PR with its parity note. Canon never introduces a master, a style, a trainer or a skill.
+2. Create style-masters/<id>.md or skill-trainers/<id>.md from any existing file there and add its row to that README (index, gaps and region tables are hand-maintained).
+3. Quote every data line with its `C:n`. Mark anything canon adds [invented]. Put contradictions in data-fixes.md; never fix the data in a canon PR.
+4. Add the master or trainer to the owning port file's section B line 'Hire and training canon' (links only).
 5. Review: design review (canon), sound review (ambience lines), art review only if look-and-feel changes (character plates are held).
 
 ## Port file sections
@@ -186,7 +194,14 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - Officers are generated, not authored: officers/README.md explains how a hire draws a name and a trait, lists the six crew roles and the 15 traits, and holds the name-collision table. One file per regional name pool (5, `officer_names.regions`, C:6075).
 - Each companion's home port links the companion in section B (one links-only line). No lane, landmark, faction or player-type file is rewritten.
 - Companion role effects are authored and unread by the sim, and 11 of 13 morale triggers never fire; both are logged, not fixed (DF-34, DF-35). Phase 6A data issues are DF-34 to DF-38 in data-fixes.md.
-- Style masters, skill trainers and merchants are later phase 6 slices (captains/README.md still defers them).
+- Merchants are a later phase 6 slice (captains/README.md still defers them).
+- No new art, sound or spend; the character hold stands.
+
+## Style masters and skill trainers (phase 6B)
+
+- One file per style master (10, `style_masters`, C:6171) and per skill trainer (5, `skills.trainers`, C:5397): see style-masters/README.md and skill-trainers/README.md. Each index states what the crew desk shows today: the style row and the skill line, built in code; no master or trainer text.
+- Masters are authored and unread: the training gate is the style's own port list, and the master's record agrees with it today (DF-39). The style injury gate is dead and no path equips a style (DF-41). The Senora Vega line and the raw-id training notices are logged as copy items (DF-40). Phase 6B data issues are DF-39 to DF-41 in data-fixes.md.
+- Each master's and trainer's home port links them in section B (one links-only line, joined to the phase 6A line where a port has both). No lane, landmark, faction or player-type file is rewritten.
 - No new art, sound or spend; the character hold stands.
 
 ## Files
@@ -202,5 +217,7 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - player-types/README.md and player-types/<archetype>.md (9 files)
 - companions/README.md, companions/<companion_id>.md (10 files) and companions/roles/<role_id>.md (5 files)
 - officers/README.md and officers/<region>.md (5 files, one per name pool)
+- style-masters/README.md and style-masters/<master_id>.md (10 files)
+- skill-trainers/README.md and skill-trainers/<trainer_id>.md (5 files)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.
