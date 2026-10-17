@@ -107,6 +107,14 @@ const PIRATE_BOUNTIES: &[BountyRow] = &[
     },
 ];
 
+/// Every bounty in the table with its table reward, for tests.
+pub fn table_rewards() -> Vec<(&'static str, i64)> {
+    PIRATE_BOUNTIES
+        .iter()
+        .map(|row| (row.id, row.reward))
+        .collect()
+}
+
 fn is_live_captain(target_id: &str) -> bool {
     content().pirate(target_id).is_some()
 }
@@ -205,10 +213,11 @@ pub fn hunt_bounty(
 }
 
 /// The silver a claim pays: the table reward times the captain template's
-/// `bounty_reward_mult`, rounded to whole silver. A multiplier of 1.0 pays the
+/// `bounty_reward_mult`, rounded to whole silver the way Python's `round`
+/// does (half to even), so a halfway amount such as 187.5 pays 188. A multiplier of 1.0 pays the
 /// table reward exactly, as the Python game does.
 pub fn paid_reward(table_reward: i64, reward_mult: f64) -> i64 {
-    (table_reward as f64 * reward_mult).round() as i64
+    crate::util::py_round(table_reward as f64 * reward_mult)
 }
 
 /// `claim_bounty` (line 165). Silver on success, or the Python error sentence.

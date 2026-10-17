@@ -14,7 +14,7 @@ Field median: **54686**
 | scholar | 63643 | +16.3% | FLAG | s1_cautious | 52% |
 | merchant_prince | 54686 | +0.0% | PASS | s1_cautious | 48% |
 | dockhand | 58328 | +6.6% | PASS | s1_cautious | 69% |
-| bounty_hunter | 22312 | -59.1% | FLAG | s2_contracts | 13% |
+| bounty_hunter | 22322 | -59.1% | FLAG | s2_contracts | 13% |
 
 ## Per-strategy medians
 
@@ -28,7 +28,7 @@ Field median: **54686**
 | scholar | 48383 | 19829 | 38402 |
 | merchant_prince | 50868 | 24103 | 45803 |
 | dockhand | 50625 | 12635 | 43036 |
-| bounty_hunter | 16068 | 20684 | 13495 |
+| bounty_hunter | 16068 | 20684 | 13512 |
 
 ## Completion rates
 
@@ -47,7 +47,7 @@ Field median: **54686**
 | scholar | 0/30 | 0 | 0 | 0 | 0.00x |
 | merchant_prince | 0/30 | 0 | 0 | 0 | 0.00x |
 | dockhand | 0/30 | 0 | 0 | 0 | 0.00x |
-| bounty_hunter | 28/30 | 110 | 21168 | 705 | 1.15x |
+| bounty_hunter | 28/30 | 110 | 22060 | 735 | 1.20x |
 
 ## Game over by strategy
 

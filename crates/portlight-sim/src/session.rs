@@ -917,14 +917,20 @@ impl Session {
     /// The silver a claim of a bounty with this table reward pays this captain:
     /// the table reward times the template's `bounty_reward_mult`. Cards and
     /// notices show this, so a hunter sees what the claim will pay.
+    ///
+    /// This is the one place the multiplier is read: `claim_bounty` and every
+    /// card that shows a reward go through it.
     pub fn bounty_payout(&self, table_reward: i64) -> i64 {
-        let mult = crate::custom_captain::captain_template(&self.world).bounty_reward_mult;
-        crate::bounty::paid_reward(table_reward, mult)
+        crate::bounty::paid_reward(table_reward, self.bounty_reward_mult())
+    }
+
+    fn bounty_reward_mult(&self) -> f64 {
+        crate::custom_captain::captain_template(&self.world).bounty_reward_mult
     }
 
     /// `claim_bounty` (`engine/bounty.py` line 165). Pays the table reward.
     pub fn claim_bounty(&mut self, target_id: &str) -> Result<i64, SimError> {
-        let reward_mult = crate::custom_captain::captain_template(&self.world).bounty_reward_mult;
+        let reward_mult = self.bounty_reward_mult();
         crate::bounty::claim_bounty(
             &mut self.world.captain,
             &self.world.captain_memories,
@@ -3986,10 +3992,49 @@ mod tests {
                 assert_eq!(mult, 1.0);
                 assert_eq!(hunter, table);
             } else {
-                assert_eq!(mult, 1.2);
-                assert_eq!(hunter, table * 6 / 5, "{target}");
+                assert_eq!(mult, 1.25);
+                assert_eq!(
+                    hunter,
+                    crate::util::py_round(table as f64 * 1.25),
+                    "{target}"
+                );
             }
         }
+    }
+
+    #[test]
+    fn the_payout_function_equals_the_claim_for_every_bounty_and_type() {
+        // One assertion over the whole table: what a card shows (bounty_payout)
+        // is what the claim pays, for every bounty and every starting captain.
+        let types: Vec<String> = Session::starting_captains()
+            .into_iter()
+            .map(|c| c.id)
+            .collect();
+        assert_eq!(types.len(), 9);
+        let table = crate::bounty::table_rewards();
+        assert_eq!(table.len(), 8);
+        for ty in &types {
+            for (id, reward) in &table {
+                let shown = Session::new("Ada", ty, 1, None)
+                    .unwrap()
+                    .bounty_payout(*reward);
+                assert_eq!(claim_paid(ty, id), shown, "{ty} {id}");
+            }
+        }
+    }
+
+    #[test]
+    fn hunter_and_privateer_claim_fixtures() {
+        // Privateer pays the table; the hunter pays 25% more, half to even.
+        assert_eq!(claim_paid("privateer", "raj_the_quiet"), 120);
+        assert_eq!(claim_paid("privateer", "scarlet_ana"), 150);
+        let (raj, ana) = if cfg!(feature = "python-base") {
+            (120, 150)
+        } else {
+            (150, 188)
+        };
+        assert_eq!(claim_paid("bounty_hunter", "raj_the_quiet"), raj);
+        assert_eq!(claim_paid("bounty_hunter", "scarlet_ana"), ana);
     }
 
     #[test]

@@ -368,6 +368,12 @@ pub(crate) fn show_hunt(nodes: &mut HuntNodes, open: bool) {
     });
 }
 
+/// Every id in the display catalog, for tests.
+#[cfg(test)]
+pub(crate) fn catalog_ids() -> Vec<&'static str> {
+    CATALOG.iter().map(|row| row.id).collect()
+}
+
 pub(crate) fn catalog_card(id: &str) -> Option<BountyCard> {
     CATALOG
         .iter()
@@ -993,7 +999,7 @@ mod tests {
         if cfg!(feature = "python-base") {
             assert_eq!(hunter, table);
         } else {
-            assert_eq!(*hunter, table * 6 / 5);
+            assert_eq!(*hunter, portlight_sim::util::py_round(*table as f64 * 1.25));
         }
     }
 

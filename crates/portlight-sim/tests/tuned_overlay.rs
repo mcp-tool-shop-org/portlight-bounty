@@ -284,7 +284,7 @@ fn reward_row_is_bounded_and_hunter_only() {
 fn only_the_hunter_has_a_claim_multiplier() {
     for captain in &content().captains {
         let want = if captain.id == "bounty_hunter" && !cfg!(feature = "python-base") {
-            1.2
+            1.25
         } else {
             1.0
         };

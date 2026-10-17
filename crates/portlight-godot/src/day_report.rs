@@ -2165,7 +2165,11 @@ mod tests {
     /// Accept each bounty and mark it defeated once (claimable).
     /// Uses save/load so we do not need a Session world_mut API (Godot-only crate).
     fn session_with_defeated(ids: &[&str]) -> Session {
-        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        session_with_defeated_as("merchant", ids)
+    }
+
+    fn session_with_defeated_as(captain_type: &str, ids: &[&str]) -> Session {
+        let mut session = Session::new("Ada", captain_type, 1, Some("porto_novo")).unwrap();
         for id in ids {
             session.accept_bounty(id).unwrap();
         }
@@ -2316,6 +2320,106 @@ mod tests {
             .flat_map(|s| s.lines.iter())
             .filter(|l| l.text.starts_with('+') && l.text.ends_with(" more"))
             .count()
+    }
+
+    /// A card, the accepted row and the day report line show what the claim
+    /// pays, for every bounty and every captain type. One assertion each, so
+    /// a display can never differ from a claim again.
+    #[test]
+    fn every_display_equals_the_claim_for_every_bounty_and_type() {
+        use crate::hunt_screen::{catalog_card, catalog_ids, hunt_model, remember, HuntDesk};
+        let types: Vec<String> = Session::starting_captains()
+            .into_iter()
+            .map(|c| c.id)
+            .collect();
+        assert_eq!(types.len(), 9);
+        let ids = catalog_ids();
+        assert_eq!(ids.len(), 8);
+        for ty in &types {
+            for id in &ids {
+                let mut session = session_with_defeated_as(ty, &[id]);
+                let card = catalog_card(id).unwrap();
+                let target = portlight_sim::bounty::BountyTarget {
+                    captain_id: card.captain_id.clone(),
+                    captain_name: card.captain_name.clone(),
+                    faction_id: card.faction_id.clone(),
+                    region: card.region.clone(),
+                    reward: card.reward,
+                    difficulty: card.difficulty.clone(),
+                    description: card.description.clone(),
+                };
+                let mut desk = HuntDesk {
+                    board: vec![target.clone()],
+                    posted: true,
+                    ..HuntDesk::default()
+                };
+                remember(&mut desk.known, target.clone());
+                let shown = session.bounty_payout(target.reward);
+                let model = hunt_model(&session, &desk);
+                let want = format!("{shown} silver");
+                assert!(model.offers[0].text.contains(&want), "{ty} {id} offer");
+                assert!(model.active[0].text.contains(&want), "{ty} {id} active");
+                let mut memory = DayReportMemory::default();
+                let lines = bounty_lines(&session, &mut memory, false, &desk.known);
+                let ready = lines
+                    .iter()
+                    .find(|l| l.text.starts_with("Claim ready:"))
+                    .unwrap_or_else(|| panic!("{ty} {id}: no claim ready line"));
+                assert!(
+                    ready.text.contains(&format!("({shown} silver)")),
+                    "{ty} {id}"
+                );
+                // The catalog fallback (an id off the board) shows the same.
+                let off_board = bounty_lines(&session, &mut DayReportMemory::default(), false, &[]);
+                assert!(
+                    off_board
+                        .iter()
+                        .any(|l| l.text.contains(&format!("({shown} silver)"))),
+                    "{ty} {id} fallback"
+                );
+                assert_eq!(session.claim_bounty(id).unwrap(), shown, "{ty} {id} claim");
+            }
+        }
+    }
+
+    /// Hunter and privateer fixtures for the two bounties the notes name.
+    #[test]
+    fn claim_ready_line_fixtures_for_hunter_and_privateer() {
+        let ready = |ty: &str, id: &str, name: &str| {
+            let session = session_with_defeated_as(ty, &[id]);
+            let lines = bounty_lines(&session, &mut DayReportMemory::default(), false, &[]);
+            let line = lines
+                .iter()
+                .find(|l| l.text.starts_with("Claim ready:"))
+                .unwrap();
+            assert!(
+                line.text.starts_with(&format!("Claim ready: {name} (")),
+                "{}",
+                line.text
+            );
+            line.text.clone()
+        };
+        let (raj, ana) = if cfg!(feature = "python-base") {
+            (120, 150)
+        } else {
+            (150, 188)
+        };
+        assert_eq!(
+            ready("privateer", "raj_the_quiet", "Raj the Quiet"),
+            "Claim ready: Raj the Quiet (120 silver) - open Hunt."
+        );
+        assert_eq!(
+            ready("privateer", "scarlet_ana", "Scarlet Ana"),
+            "Claim ready: Scarlet Ana (150 silver) - open Hunt."
+        );
+        assert_eq!(
+            ready("bounty_hunter", "raj_the_quiet", "Raj the Quiet"),
+            format!("Claim ready: Raj the Quiet ({raj} silver) - open Hunt.")
+        );
+        assert_eq!(
+            ready("bounty_hunter", "scarlet_ana", "Scarlet Ana"),
+            format!("Claim ready: Scarlet Ana ({ana} silver) - open Hunt.")
+        );
     }
 
     /// C1: Claim ready then claimed inside Bounties. F5: no accepted line.
