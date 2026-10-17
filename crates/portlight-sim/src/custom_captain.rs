@@ -927,6 +927,11 @@ mod tests {
         assert!(validate_spec(&spec).is_empty());
     }
 
+    /// (captain id, Python title, port title). See `COPY_OVERRIDES` in
+    /// `tools/extract_content.py`.
+    const KNOWN_TITLE_DIVERGENCES: [(&str, &str, &str); 1] =
+        [("privateer", "Licensed Hunter", "Letter of Marque")];
+
     /// `parity/golden/roster_options.json` is Python `CAPTAIN_ORDER` plus the
     /// catalogs `validate_spec` accepts, written by `tools/parity/roster_options.py`.
     /// Captains, regions, ports, blocs, factions, and mentors match in that order.
@@ -964,7 +969,19 @@ mod tests {
                 })
             })
             .collect();
-        assert_eq!(&got_captains, golden["captains"].as_array().unwrap());
+        // The one known copy difference: the port retitled the Privateer (the
+        // golden is the Python snapshot). Each side must hold exactly its own
+        // value, so a stale allowance or a second difference fails here.
+        let mut want_captains = golden["captains"].as_array().unwrap().clone();
+        for (id, python_title, port_title) in KNOWN_TITLE_DIVERGENCES {
+            let row = want_captains
+                .iter_mut()
+                .find(|row| row["id"] == *id)
+                .unwrap_or_else(|| panic!("golden has no {id}"));
+            assert_eq!(row["title"], *python_title, "golden title for {id}");
+            row["title"] = serde_json::json!(port_title);
+        }
+        assert_eq!(&got_captains, &want_captains);
         assert_eq!(serde_json::json!(options.regions), golden["regions"]);
         let ports: Vec<serde_json::Value> = options
             .ports

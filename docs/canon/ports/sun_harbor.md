@@ -126,7 +126,7 @@ Hand-maintained from content.json. Disposition is bloc-to-bloc (symmetric in dat
 <!-- hand-maintained:end -->
 
 - Lane lore: "The Cotton Crossing": "Mediterranean grain south, Gold Coast cotton north. The route that clothed an empire." (C:2027). Lane canon: [The Cotton Crossing](../lanes/cotton_crossing.md).
-- Lane lore: "The Long Crossing": "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive." (C:2099). Lane canon: [The Long Crossing](../lanes/long_crossing.md).
+- Lane lore: "The Long Crossing": "Weeks of open water. The route that separates traders from merchants. Many set out. Fewer arrive." (C:2099). Lane canon: [The Long Crossing](../lanes/long_crossing.md).
 
 ## G. World details (undefined in data; all [invented] unless cited)
 

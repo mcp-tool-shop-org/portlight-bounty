@@ -21,7 +21,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 
 ## 1. Data cites
 
-- lore: "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive." [ascii-folded] (C:2105)
+- lore: "Weeks of open water. The route that separates traders from merchants. Many set out. Fewer arrive." [ascii-folded] (C:2105)
 - encounter (weather): "Open water. No land in any direction. The sky meets the sea in a circle that hasn't changed in three days. The crew goes quiet." [ascii-folded] (C:12398)
 - encounter (crew): "Day twelve of the crossing. Your navigator takes star readings twice a night. The slightest error here means weeks of drift." [ascii-folded] (C:12403)
 - encounter (lore): "A piece of driftwood with carved symbols floats past - a prayer marker from an island nobody's charted. Someone was here before you." [ascii-folded] (C:12408)
@@ -57,4 +57,4 @@ Galleon crews only (min class galleon); rationing cooks, star-reading navigators
 
 ## 7. Flags
 
-- 'Months of open water' (C:2105) vs 16 days at galleon speed: DF-24.
+- Resolved by DF-24: lore now says 'Weeks of open water' (C:2105); 16 days at galleon speed fits.

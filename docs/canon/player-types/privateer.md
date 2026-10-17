@@ -33,7 +33,7 @@ Perks:
 - Iron Wolves regard -5 from day 1 [exists C:2457]
 - Contract bias on weapons, garrison and Atlantic charter work [proposal; planned slice PT-S1]
 - Letter of marque: wins against Iron Wolves or Crimson Tide ships pay a small North Atlantic regard reward and no heat; copy states it. Trade-off: reward only in the North Atlantic, and the Wolves stay hostile [proposal; planned slice PT-S3]
-- Retitle to 'Letter of Marque' (DF-26) [proposal; planned slice PT-S3]
+- Title is 'Letter of Marque' (DF-26, resolved) [exists C:2433]
 
 ## 3. How the 20 ports treat this type
 
@@ -100,5 +100,5 @@ Words, not art direction. Character plates stay held; canon sets no face, age, g
 
 ## 8. Flags
 
-- DF-26 retitle pending (PT-S3)
+- DF-26 retitle done: title is 'Letter of Marque' (C:2433)
 - DF-32: the -5 Iron Wolves start is clamped to 0 on the first Iron Wolves duel win (C:2466)

@@ -28,7 +28,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 - encounter (lore): "Your bosun points at the coastline. 'See that cliff? They say the first Grain Exchange was carved into it - before Porto Novo even had a harbor.'" [ascii-folded] (C:12228)
 - encounter (lore): "An old sailor on deck murmurs a prayer as you pass a rocky outcrop. 'Every grain ship salutes the Stone. It's bad luck not to.' You can't see why the rock matters. He won't explain." [ascii-folded] (C:12233)
 - encounter (weather): "The Mediterranean breeze carries the smell of baking bread from the coastal villages. The crew breathes deep." [ascii-folded] (C:12238)
-- encounter (weather): "Calm water, clear sky. The Grain Road earns its reputation as the gentlest route in the Known World." [ascii-folded] (C:12243)
+- encounter (weather): "Calm water, clear sky. The Grain Road earns its reputation as a gentle route." [ascii-folded] (C:12243)
 - encounter (crew): "The crew is relaxed - they know this route. Someone starts humming a Porto Novo dock song. Others join." [ascii-folded] (C:12248)
 - encounter (crew): "Your navigator corrects course by a fraction. 'The current shifts here every spring,' he says. 'Old knowledge.'" [ascii-folded] (C:12253)
 
@@ -60,5 +60,5 @@ Exchange Guild grain convoys and Al-Manar feluccas with brass-bound spice chests
 
 ## 7. Flags
 
-- 'the gentlest route in the Known World' (C:12243) is not the lowest danger in data: DF-23.
+- Resolved by DF-23: the encounter now says 'a gentle route' (C:12243); no superlative remains.
 - Cliff-carved first Exchange (C:12228) vs temple ruins (C:12011): resolved in lore above.

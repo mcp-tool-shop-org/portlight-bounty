@@ -431,6 +431,48 @@ def _faction_relationships() -> list:
     ]
 
 
+# Player-facing copy where the port departs from the Python game on purpose.
+# Each row is (what, python text, port text). The Python text must still match
+# the extract, so a Python change fails here instead of being silently kept.
+COPY_OVERRIDES = [
+    (
+        "route lore",
+        "Months of open water. The route that separates traders from merchants. Many set out. Fewer arrive.",
+        "Weeks of open water. The route that separates traders from merchants. Many set out. Fewer arrive.",
+    ),
+    (
+        "route encounter text",
+        "Calm water, clear sky. The Grain Road earns its reputation as the gentlest route in the Known World.",
+        "Calm water, clear sky. The Grain Road earns its reputation as a gentle route.",
+    ),
+    ("privateer title", "Licensed Hunter", "Letter of Marque"),
+]
+
+
+def apply_copy_overrides(data: dict) -> None:
+    """Swap each COPY_OVERRIDES string for the port's text, once, in place."""
+    for what, python_text, port_text in COPY_OVERRIDES:
+        hits = 0
+        if what == "route lore":
+            for route in data["routes"]:
+                if route["lore"] == python_text:
+                    route["lore"] = port_text
+                    hits += 1
+        elif what == "route encounter text":
+            for table in data["sea_culture"]["route_encounters"]:
+                for enc in table["encounters"]:
+                    if enc["text"] == python_text:
+                        enc["text"] = port_text
+                        hits += 1
+        else:
+            for captain in data["captains"]:
+                if captain["id"] == "privateer" and captain["title"] == python_text:
+                    captain["title"] = port_text
+                    hits += 1
+        if hits != 1:
+            raise SystemExit(f"copy override '{what}': expected one match, found {hits}")
+
+
 def main() -> None:
     data = {
         "source_commit": "9b02494cca9cd8f58c4531c41f75be02c9720e43",
@@ -782,6 +824,7 @@ def main() -> None:
         "port_politics": _port_politics(),
         "faction_relationships": _faction_relationships(),
     }
+    apply_copy_overrides(data)
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "crates", "portlight-sim", "data", "content.json")
     with open(path, "w", encoding="utf-8") as fh:

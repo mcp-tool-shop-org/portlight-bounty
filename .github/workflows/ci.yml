@@ -183,6 +183,8 @@ jobs:
         run: |
           rustc --version
           cargo test --locked -p portlight-godot
+          # Second run with the overlay compiled out: the Godot display tests
+          # (cards equal the claim) must also hold on the Python-base content.
           cargo test --locked -p portlight-godot --features python-base
           cargo build --locked -p portlight-godot
       - name: Install Godot 4.7.2

@@ -8,7 +8,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Key | Value | Cite |
 |---|---|---|
 | Name | The Privateer | C:2432 |
-| Title | Licensed Hunter | C:2433 |
+| Title | Letter of Marque | C:2433 |
 | Home port | [Stormwall](../ports/stormwall.md) | C:2435 |
 | Home region (data) | North Atlantic | C:2434 |
 | Mentor | Commander Elias Vogt, Garrison Commander, at [Stormwall](../ports/stormwall.md) | C:2436; C:8194-8196 |
@@ -20,7 +20,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Inspection terms | chance x0.3 - seizure 0.0 - fines x0.5 | C:2453-2455 |
 | Starting regard (data keys, not player terms) | commercial_trust 8, mediterranean 3, north_atlantic 8 | C:2457 |
 | Pirate regard | The Iron Wolves -5 | C:2466 |
-| Player sees | "The Privateer  --  Licensed Hunter  --  Stormwall  --  cutter  --  475 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974 |
+| Player sees | "The Privateer  --  Letter of Marque  --  Stormwall  --  cutter  --  475 silver" on the new game captain button | crates/portlight-godot/src/logic.rs:1355-1366; game.rs:2967-2974 |
 
 ## 1. The archetype (cited)
 
@@ -40,5 +40,5 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 4. Flags
 
-- Same title as The Bounty Hunter (DF-26).
+- Title 'Letter of Marque' (C:2433); no longer shared with The Bounty Hunter (DF-26, resolved).
 - Starts at -5 with the Iron Wolves; any later change clamps to 0-100 (session.rs:3701, 3705). Open question Q4.

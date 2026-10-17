@@ -11,7 +11,7 @@ The new game screen lists these in `CAPTAIN_ORDER` (crates/portlight-sim/src/cus
 | The Merchant | Licensed Trader | [Porto Novo](../ports/porto_novo.md) | Mediterranean | Marta Soares | 550 | Coastal Sloop | - | C:2317 | [merchant.md](merchant.md) |
 | The Smuggler | Shadow Trader | [Palm Cove](../ports/palm_cove.md) | West Africa | Mama Joy | 500 | Coastal Sloop | - | C:2355 | [smuggler.md](smuggler.md) |
 | The Navigator | Route Specialist | [Silva Bay](../ports/silva_bay.md) | Mediterranean | Elena Madeira | 450 | Coastal Sloop | - | C:2393 | [navigator.md](navigator.md) |
-| The Privateer | Licensed Hunter | [Stormwall](../ports/stormwall.md) | North Atlantic | Commander Elias Vogt | 475 | Swift Cutter | The Iron Wolves -5 | C:2431 | [privateer.md](privateer.md) |
+| The Privateer | Letter of Marque | [Stormwall](../ports/stormwall.md) | North Atlantic | Commander Elias Vogt | 475 | Swift Cutter | The Iron Wolves -5 | C:2431 | [privateer.md](privateer.md) |
 | The Corsair | Crimson Tide Captain | [Corsair's Rest](../ports/corsairs_rest.md) | Mediterranean | No One | 500 | Coastal Sloop | The Crimson Tide 25 | C:2471 | [corsair.md](corsair.md) |
 | The Scholar | Wind Temple Student | [Monsoon Reach](../ports/monsoon_reach.md) | East Indies | Brother Anand | 400 | Coastal Sloop | - | C:2511 | [scholar.md](scholar.md) |
 | The Merchant Prince | Khoury Dynasty Scion | [Al-Manar](../ports/al_manar.md) | Mediterranean | Senhora Nadia Khoury | 700 | Coastal Sloop | - | C:2549 | [merchant_prince.md](merchant_prince.md) |

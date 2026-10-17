@@ -24,7 +24,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 
 ## 1. The archetype (cited)
 
-A licensed hunter working out of Crosswind Isle under Dock Master Tao (C:2627-2630). Shares the title 'Licensed Hunter' with the Privateer (DF-26) and a home-region mismatch (DF-3).
+A licensed hunter working out of Crosswind Isle under Dock Master Tao (C:2627-2630). Holds the title 'Licensed Hunter' alone (DF-26, resolved) and has a home-region mismatch (DF-3).
 
 ## 2. Background (all [invented])
 
@@ -40,4 +40,4 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 ## 4. Flags
 
 - Home region North Atlantic against home port Crosswind Isle (East Indies) (DF-3).
-- Same title as The Privateer (DF-26).
+- Title 'Licensed Hunter' (C:2627); no longer shared (DF-26, resolved).
