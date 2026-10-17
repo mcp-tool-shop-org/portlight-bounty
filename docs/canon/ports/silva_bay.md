@@ -63,7 +63,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 - Network (tavern, personal): Rosa Carvalho - Ingrid Norum, linking Stormwall (C:11568). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (broker, professional): Fernanda Reis - Ana Sousa, linking Porto Novo (C:11604). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Dimitri Andros (C:12804).
-- Hire and training canon (links only): [The Silva Bay Smithy](../skill-trainers/silva_bay_smiths.md) (skill trainer, Blacksmithing).
+- Hire and training canon (links only): [The Silva Bay Smithy](../skill-trainers/silva_bay_smiths.md) (skill trainer, Blacksmithing); [Old Silva](../merchants/old_silva.md) (merchant, Ship Outfitter).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

@@ -71,7 +71,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 - Network (inspector, respected): Inspector Salva - Inspector Sun, linking Dragon's Gate (C:11712). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Marta Soares (C:12810).
 - Sea sighting filed under this port: Inspector Salva (C:12822).
-- Hire and training canon (links only): [Maestro Luciano](../style-masters/maestro_luciano.md) (style master, La Destreza); [Old Vasquez](../skill-trainers/old_vasquez.md) (skill trainer, Blacksmithing).
+- Hire and training canon (links only): [Maestro Luciano](../style-masters/maestro_luciano.md) (style master, La Destreza); [Old Vasquez](../skill-trainers/old_vasquez.md) (skill trainer, Blacksmithing); [Marco](../merchants/marco_the_blade.md) (merchant, Master Weaponsmith).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

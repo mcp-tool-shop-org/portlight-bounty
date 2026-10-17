@@ -65,7 +65,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 - Network (merchant, rival): Yasmin al-Nadir - Priya Sundaram, linking Al-Manar (C:11496). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (broker, allied): Kamala Nair - Fatou Ndiaye, linking Sun Harbor (C:11616). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Brother Anand (C:12888).
-- Hire and training canon (links only): [Dewi Ayu](../style-masters/dewi_ayu.md) (style master, Silat); [Rajan the Tinker](../skill-trainers/monsoon_tinker.md) (skill trainer, Blacksmithing).
+- Hire and training canon (links only): [Dewi Ayu](../style-masters/dewi_ayu.md) (style master, Silat); [Rajan the Tinker](../skill-trainers/monsoon_tinker.md) (skill trainer, Blacksmithing); [Devi](../merchants/devi_arms.md) (merchant, Armorer).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

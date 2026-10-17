@@ -64,7 +64,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 - Network (broker, allied): Broker Ariki - Broker Tia, linking Ember Isle (C:11640). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Reef Pilot Iti (C:12924).
 - Sea sighting filed under this port: War Chief Tane (C:12930).
-- Hire and training canon (links only): [Kahoku the Elder](../style-masters/kahoku_the_elder.md) (style master, Lua).
+- Hire and training canon (links only): [Kahoku the Elder](../style-masters/kahoku_the_elder.md) (style master, Lua); [Tane](../merchants/tane_warrior.md) (merchant, Warrior Outfitter).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
