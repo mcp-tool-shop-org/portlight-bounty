@@ -30,7 +30,7 @@ Perks:
 - Swift Cutter start [exists C:2632]
 - Inspection x0.6, fines x0.5, fees x0.7 [exists C:2638, C:2647-2649]
 - North Atlantic regard 8 [exists C:2651]
-- Bounty edge: a claim pays x1.25 the table reward (silver only), and the hunt cards and day report show the paid amount; bounties stay open to all. Trade-off: poor trade terms (buy x1.05, sell x0.98) [exists S/bounty.rs paid_reward; tuned overlay]
+- Bounty edge: a claim pays x1.25 the table reward (silver only), and the hunt cards and day report show the paid amount (Raj the Quiet 120 on the table, 150 paid; Scarlet Ana 150 on the table, 188 paid, since 187.5 rounds half to even); bounties stay open to all. Trade-off: poor trade terms (buy x1.05, sell x0.98) [exists S/bounty.rs:219-220; overlay row captains[id=bounty_hunter].bounty_reward_mult in tuned_overlay.json]
 
 ## 3. How the 20 ports treat this type
 
@@ -70,7 +70,7 @@ Basis: [exists] means a real effect of this type's numbers (regional regard, pir
 
 Uses existing systems: milestone and career scoring (S/campaign.rs:1245-1310), the ship ladder (C:131 ships) and contract offers (S/contracts.rs:75-80).
 
-- Early: Cheap bounties: Raj the Quiet 120 (S/bounty.rs:59)
+- Early: Cheap bounties: Raj the Quiet 120 on the table, 150 paid (S/bounty.rs:59); Scarlet Ana 150 on the table, 188 paid (S/bounty.rs:41)
 - Mid: Strength 7 targets
 - Late: The Butcher (220) and Gnaw (200, DF-30)
 

@@ -1,4 +1,4 @@
-# Canon data fixes (proposals only; nothing changed)
+# Canon data fixes (proposals only; nothing changed; resolved items are marked)
 
 Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125) and 5 (player types, base c413788). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
