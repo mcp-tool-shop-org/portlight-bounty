@@ -71,7 +71,8 @@ fn overlay_reaches_only_the_allow_list() {
                     "pricing.buy_price_mult",
                     "pricing.sell_price_mult",
                     "pricing.port_fee_mult",
-                    "voyage.provision_burn"
+                    "voyage.provision_burn",
+                    "bounty_reward_mult"
                 ]
                 .iter()
                 .any(|f| path.ends_with(f)),
@@ -246,4 +247,53 @@ fn content_follows_the_feature() {
             .unwrap();
         assert_eq!(captain.starting_silver, silver, "{}", captain.id);
     }
+}
+
+#[test]
+fn reward_row_is_bounded_and_hunter_only() {
+    let row = |path: &str, base: f64, tuned: f64| {
+        overlay_of(json!([{"path": path, "base": base, "tuned": tuned}]))
+    };
+    let hunter = "captains[id=bounty_hunter].bounty_reward_mult";
+    rejects(row(hunter, 1.0, 1.3), "outside");
+    rejects(row(hunter, 1.0, 1.0), "outside");
+    rejects(row(hunter, 1.0, 0.9), "outside");
+    rejects(row(hunter, 1.1, 1.2), "must be the default");
+    for other in ["dockhand", "privateer", "merchant"] {
+        let path = format!("captains[id={other}].bounty_reward_mult");
+        let overlay = row(&path, 1.0, 1.2);
+        let base = base_value();
+        assert!(
+            catch_unwind(|| apply(&base, &overlay)).is_err(),
+            "{path} must be refused"
+        );
+    }
+    // The cap is allowed; the field then lands on the hunter alone.
+    let ok = apply(&base_value(), &row(hunter, 1.0, 1.25));
+    let mults: Vec<_> = ok["captains"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c.get("bounty_reward_mult").is_some())
+        .map(|c| c["id"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(mults, vec!["bounty_hunter"]);
+}
+
+#[test]
+fn only_the_hunter_has_a_claim_multiplier() {
+    for captain in &content().captains {
+        let want = if captain.id == "bounty_hunter" && !cfg!(feature = "python-base") {
+            1.25
+        } else {
+            1.0
+        };
+        assert_eq!(captain.bounty_reward_mult, want, "{}", captain.id);
+    }
+    // The extract itself has no such field.
+    assert!(base_value()["captains"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|c| c.get("bounty_reward_mult").is_none()));
 }

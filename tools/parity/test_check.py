@@ -427,6 +427,48 @@ class ClosedListTest(unittest.TestCase):
         self.assertEqual(len(loaded), len(UNTAGGED_PAIRS) + len(TUNED_PAIRS))
         self.assertEqual(len(set(TUNED_PAIRS)), len(TUNED_PAIRS))
 
+    def test_no_leaf_path_is_pinned_in_both_files(self) -> None:
+        self.assertEqual(check.overlapping_pins(self.original(), self.tuned()), [])
+        # Pins per script, whatever the check: how many paths the two files
+        # hold together, so the comparison above is not over an empty set.
+        original_paths = sum(len(e["paths"]) for e in self.original())
+        self.assertGreater(original_paths, 0)
+        self.assertGreater(sum(len(e["paths"]) for e in self.tuned()), original_paths)
+
+    def test_a_shared_leaf_path_is_found(self) -> None:
+        spec = {"path": "$.captain.silver", "python": 1, "rust": 2}
+        original = [{"script": "a.txt", "check": "oracle", "paths": [spec]}]
+        shared = [{"script": "a.txt", "check": "tuned_oracle", "paths": [dict(spec, rust=3)]}]
+        other_check = [{"script": "a.txt", "check": "tuned_roundtrip", "paths": [spec]}]
+        other_script = [{"script": "b.txt", "check": "tuned_oracle", "paths": [spec]}]
+        self.assertEqual(
+            check.overlapping_pins(original, shared), [("a.txt", "oracle", "$.captain.silver")]
+        )
+        self.assertEqual(check.overlapping_pins(original, other_check), [])
+        self.assertEqual(check.overlapping_pins(original, other_script), [])
+
+    def test_the_loader_refuses_a_shared_leaf_path(self) -> None:
+        import tempfile
+
+        first = check.load_json(check.DIVERGENCES)["entries"][0]
+        clash = {
+            **first,
+            "check": check.TUNED_CHECK_PREFIX + first["check"],
+            "category": check.TUNED_CATEGORY,
+            "paths": [dict(first["paths"][0], rust="other")],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "t.json")
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump({"note": "n", "entries": [clash]}, fh)
+            old = check.TUNED_PINS
+            check.TUNED_PINS = path
+            try:
+                with self.assertRaises(SystemExit):
+                    check.load_divergences()
+            finally:
+                check.TUNED_PINS = old
+
     def test_tuned_paths_are_exact_leaves_with_both_values(self) -> None:
         for entry in self.tuned():
             self.assertIn(entry["check"], TUNED_CHECKS)

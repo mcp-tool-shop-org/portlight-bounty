@@ -114,6 +114,7 @@ impl CustomCaptainTemplate {
             voyage: self.voyage.clone(),
             inspection: self.inspection.clone(),
             reputation: self.reputation.clone(),
+            bounty_reward_mult: 1.0,
         }
     }
 }

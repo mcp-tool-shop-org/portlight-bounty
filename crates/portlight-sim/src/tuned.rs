@@ -12,6 +12,10 @@
 //!   `captains[id=<id>].voyage.provision_burn`, on the captains in
 //!   [`TUNED_CAPTAINS`]. Starting silver, the luxury bonus, holds, ships and
 //!   inspection are not reachable.
+//! - `captains[id=bounty_hunter].bounty_reward_mult`: the claim reward
+//!   multiplier. The extract has no such field (its value is the default,
+//!   1.0, which the row's `base` must state), and `tuned` must be above 1.0 and
+//!   at most [`REWARD_MULT_MAX`].
 //! - `contracts[id=<template>].captain_bias`, append-only: `tuned` must be
 //!   `base` plus new ids from [`BIAS_CAPTAINS`].
 //!
@@ -40,6 +44,15 @@ pub const TUNED_CAPTAINS: [&str; 5] = [
 /// Captains the overlay may append to a contract template's `captain_bias`.
 pub const BIAS_CAPTAINS: [&str; 3] = ["dockhand", "merchant_prince", "privateer"];
 
+/// Captains whose claim reward the overlay may raise.
+pub const REWARD_CAPTAINS: [&str; 1] = ["bounty_hunter"];
+
+/// The claim reward multiplier has no field in the extract; this is its default.
+pub const REWARD_MULT_DEFAULT: f64 = 1.0;
+
+/// The largest claim reward multiplier the overlay may set (+25%).
+pub const REWARD_MULT_MAX: f64 = 1.25;
+
 const PRICING_FIELDS: [&str; 3] = ["buy_price_mult", "sell_price_mult", "port_fee_mult"];
 const VOYAGE_FIELDS: [&str; 1] = ["provision_burn"];
 
@@ -64,6 +77,8 @@ enum Target<'a> {
     },
     /// `contracts[id=..].captain_bias`
     Bias { template: &'a str },
+    /// `captains[id=..].bounty_reward_mult`
+    Reward { id: &'a str },
 }
 
 fn bracket_id<'a>(segment: &'a str, head: &str) -> Option<&'a str> {
@@ -106,6 +121,15 @@ fn parse_path(path: &str) -> Target<'_> {
                 _ => panic!("tuned overlay: path not allowed: {path}"),
             };
             Target::Captain { id, section, field }
+        }
+        [head, "bounty_reward_mult"] => {
+            let id = bracket_id(head, "captains")
+                .unwrap_or_else(|| panic!("tuned overlay: path not allowed: {path}"));
+            assert!(
+                REWARD_CAPTAINS.contains(&id),
+                "tuned overlay: captain not allowed: {path}"
+            );
+            Target::Reward { id }
         }
         [head, field] => {
             let template = bracket_id(head, "contracts")
@@ -186,6 +210,18 @@ pub fn rows(overlay: &Value) -> Vec<Row> {
                 );
                 assert!(b != t, "tuned overlay: row changes nothing: {path}");
             }
+            Target::Reward { .. } => {
+                let b = number(base, "base", path);
+                let t = number(tuned, "tuned", path);
+                assert!(
+                    b == REWARD_MULT_DEFAULT,
+                    "tuned overlay: base of a reward row must be the default {REWARD_MULT_DEFAULT}: {path}"
+                );
+                assert!(
+                    t > REWARD_MULT_DEFAULT && t <= REWARD_MULT_MAX,
+                    "tuned overlay: reward multiplier outside ({REWARD_MULT_DEFAULT}, {REWARD_MULT_MAX}]: {path}"
+                );
+            }
             Target::Bias { .. } => {
                 let b = base
                     .as_array()
@@ -237,6 +273,22 @@ pub fn apply(base: &Value, overlay: &Value) -> Value {
                     .get_mut(section)
                     .and_then(|s| s.get_mut(field))
                     .unwrap_or_else(|| panic!("tuned overlay: no such field: {}", row.path))
+            }
+            Target::Reward { id } => {
+                let captain = find_mut(&mut out, "captains", id, &row.path)
+                    .as_object_mut()
+                    .expect("captain is an object");
+                assert!(
+                    !captain.contains_key("bounty_reward_mult"),
+                    "tuned overlay: content.json already has bounty_reward_mult: {}",
+                    row.path
+                );
+                let tuned = number(&row.tuned, "tuned", &row.path);
+                captain.insert(
+                    "bounty_reward_mult".to_string(),
+                    Value::Number(Number::from_f64(tuned).expect("finite")),
+                );
+                continue;
             }
             Target::Bias { template } => {
                 let contract = find_mut(&mut out, "contracts", template, &row.path);
