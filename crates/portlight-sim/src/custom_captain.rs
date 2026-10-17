@@ -114,6 +114,8 @@ impl CustomCaptainTemplate {
             voyage: self.voyage.clone(),
             inspection: self.inspection.clone(),
             reputation: self.reputation.clone(),
+            // A custom captain always claims at the table reward. A claim reads
+            // the current template, so the multiplier is never saved.
             bounty_reward_mult: 1.0,
         }
     }
