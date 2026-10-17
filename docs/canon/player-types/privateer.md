@@ -100,5 +100,5 @@ Words, not art direction. Character plates stay held; canon sets no face, age, g
 
 ## 8. Flags
 
-- DF-26 retitle pending (PT-S3)
+- DF-26 retitle done: title is 'Letter of Marque' (C:2433)
 - DF-32: the -5 Iron Wolves start is clamped to 0 on the first Iron Wolves duel win (C:2466)
