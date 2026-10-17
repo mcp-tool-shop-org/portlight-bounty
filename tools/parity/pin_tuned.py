@@ -130,6 +130,10 @@ def levers_for(script: str, overlay_rows: list[dict]) -> str:
     bias: dict[str, int] = {}
     for row in overlay_rows:
         if row["path"].startswith("captains[id="):
+            # Rows that change a snapshot value. The claim reward changes only
+            # what a claim pays, and no parity script claims as that captain.
+            if ".pricing." not in row["path"] and ".voyage." not in row["path"]:
+                continue
             if captain is None or f"[id={captain}]" in row["path"]:
                 parts.append(f"{row['path']} {row['base']} -> {row['tuned']}")
         else:

@@ -90,6 +90,7 @@ struct Run {
     days_at_sea: i64,
     contracts_completed: i64,
     bounties_claimed: i64,
+    bounty_silver: i64,
     game_over: bool,
     worth: Worth,
 }
@@ -579,6 +580,7 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
     let mut guard = 0;
     // S3 hunts at most 6 times per run, so a hard target cannot eat the run.
     let mut hunted = 0;
+    let mut bounty_silver = 0;
     while session.world().day < END_DAY && guard < 2000 {
         guard += 1;
         if session.world().captain.ship.is_none() {
@@ -623,7 +625,9 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
                         // the board's median (accept rule), so the hunt is
                         // fought, not fled.
                         run_encounter(&mut session, &state.phase, Some(&target), true);
-                        let _ = session.claim_bounty(&target);
+                        if let Ok(paid) = session.claim_bounty(&target) {
+                            bounty_silver += paid;
+                        }
                     }
                     continue;
                 }
@@ -716,6 +720,7 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
         days_at_sea: stats.days_at_sea,
         contracts_completed: stats.contracts,
         bounties_claimed: captain.claimed_bounties.len() as i64,
+        bounty_silver,
         game_over: game_over || captain.ship.is_none(),
         worth: w,
     }
@@ -756,12 +761,12 @@ fn median(mut v: Vec<i64>) -> i64 {
 
 fn csv(runs: &[Run]) -> String {
     let mut out = String::from(
-        "type,strategy,seed,net_worth,duels_won,days_at_sea,contracts_completed,bounties_claimed,game_over,bust,silver,banked,cargo,ships,debt\n",
+        "type,strategy,seed,net_worth,duels_won,days_at_sea,contracts_completed,bounties_claimed,bounty_silver,game_over,bust,silver,banked,cargo,ships,debt\n",
     );
     for r in runs {
         let _ = writeln!(
             out,
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
             r.captain_type,
             r.strategy.id(),
             r.seed,
@@ -770,6 +775,7 @@ fn csv(runs: &[Run]) -> String {
             r.days_at_sea,
             r.contracts_completed,
             r.bounties_claimed,
+            r.bounty_silver,
             if r.game_over { "y" } else { "n" },
             if r.net_worth < BUST_BELOW { "y" } else { "n" },
             r.worth.silver,
@@ -888,6 +894,38 @@ fn summary(runs: &[Run], seeds: &[i128]) -> String {
         md,
         "- s3_opportunist: a bounty claimed on {b}/{bn} runs (reported, not gated). The opportunist hunts only if armed or holding at least {HUNT_RESERVE} silver."
     );
+    // The hunter's bounty edge, read from the s3 runs: claim seeds, and the
+    // bounty silver paid per run against the privateer's.
+    let _ = writeln!(md, "\n## Bounty edge (s3_opportunist)\n");
+    let _ = writeln!(
+        md,
+        "| Type | Claim seeds | Claims | Bounty silver | Silver per run | vs privateer |"
+    );
+    let _ = writeln!(md, "|---|---:|---:|---:|---:|---:|");
+    let edge = |t: &str| {
+        let all: Vec<_> = runs
+            .iter()
+            .filter(|r| r.strategy == Strategy::Opportunist && r.captain_type == t)
+            .collect();
+        let seeds = all.iter().filter(|r| r.bounties_claimed > 0).count();
+        let claims: i64 = all.iter().map(|r| r.bounties_claimed).sum();
+        let silver: i64 = all.iter().map(|r| r.bounty_silver).sum();
+        (seeds, all.len(), claims, silver)
+    };
+    let (_, _, _, privateer_silver) = edge("privateer");
+    for t in types.iter() {
+        let (seeds, n, claims, silver) = edge(t);
+        let per_run = if n > 0 { silver / n as i64 } else { 0 };
+        let ratio = if privateer_silver > 0 {
+            format!("{:.2}x", silver as f64 / privateer_silver as f64)
+        } else {
+            "n/a".into()
+        };
+        let _ = writeln!(
+            md,
+            "| {t} | {seeds}/{n} | {claims} | {silver} | {per_run} | {ratio} |"
+        );
+    }
     let _ = writeln!(md, "\n## Game over by strategy\n");
     let _ = writeln!(
         md,

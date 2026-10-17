@@ -303,6 +303,27 @@ def validate_entries(path: str, entries: list[dict], tuned: bool) -> None:
                 )
 
 
+def overlapping_pins(original: list[dict], tuned: list[dict]) -> list[tuple[str, str, str]]:
+    """Leaf paths pinned in both files for the same script and check.
+
+    `tuned` entries are the file's own, with the `tuned_` prefix on the check.
+    The prefix keeps the (script, check) names apart, so this compares the
+    pinned paths: one path must not be pinned twice for a script and check.
+    """
+    seen: set[tuple[str, str, str]] = set()
+    for entry in original:
+        for spec in entry["paths"]:
+            seen.add((entry["script"], entry["check"], spec["path"]))
+    both = []
+    for entry in tuned:
+        bare = entry["check"].removeprefix(TUNED_CHECK_PREFIX)
+        for spec in entry["paths"]:
+            key = (entry["script"], bare, spec["path"])
+            if key in seen:
+                both.append(key)
+    return sorted(both)
+
+
 def load_divergences(base_content: bool = False) -> list[dict]:
     """Expected divergences.
 
@@ -321,6 +342,9 @@ def load_divergences(base_content: bool = False) -> list[dict]:
     both = {(e["script"], e["check"]) for e in entries} & {(e["script"], e["check"]) for e in tuned}
     if both:
         raise SystemExit(f"a (script, check) pair is in both pin files: {sorted(both)}")
+    shared = overlapping_pins(entries, tuned)
+    if shared:
+        raise SystemExit(f"leaf paths pinned in both pin files: {shared[:5]}")
     stripped = [{**e, "check": e["check"][len(TUNED_CHECK_PREFIX) :]} for e in tuned]
     return entries + stripped
 

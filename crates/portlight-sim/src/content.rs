@@ -125,6 +125,14 @@ pub struct CaptainDef {
     pub voyage: VoyageModsDef,
     pub inspection: InspectionDef,
     pub reputation: ReputationDef,
+    /// Multiplier on the silver paid for a claimed bounty. It is not in the
+    /// Python extract: 1.0 unless the tuned overlay sets it.
+    #[serde(default = "default_bounty_reward_mult")]
+    pub bounty_reward_mult: f64,
+}
+
+fn default_bounty_reward_mult() -> f64 {
+    1.0
 }
 
 #[derive(Debug, Clone, Deserialize)]
