@@ -22,14 +22,14 @@ The ask: build out unique qualities for each player type. A player type is a cat
 | The Scholar | - | 400 | Coastal Sloop | x1.0 - x1.0 | x0.85 | x0.7 | x0.75 | route insight (PT-S5) | [scholar.md](scholar.md) |
 | The Merchant Prince | - | 700 | Coastal Sloop | x0.9 - x1.08 | x0.65 | x0.4 | x1.0 | family obligation (PT-S7) | [merchant_prince.md](merchant_prince.md) |
 | The Dockhand | - | 300 | Coastal Sloop | x1.0 - x1.0 | x1.0 | x1.0 | x0.85 | self-made growth (PT-S6) | [dockhand.md](dockhand.md) |
-| The Bounty Hunter | Bounty Hunter | 425 | Swift Cutter | x1.05 - x0.98 | x0.7 | x0.6 | x0.9 | bounty reward +15 pct (PT-S2) | [bounty_hunter.md](bounty_hunter.md) |
+| The Bounty Hunter | Bounty Hunter | 425 | Swift Cutter | x1.05 - x0.98 | x0.7 | x0.6 | x0.9 | bounty claim reward x1.25 | [bounty_hunter.md](bounty_hunter.md) |
 
 Values: C:2315-2660 (captains). Code branches exist only for The Smuggler (5), The Merchant (1) and The Navigator (1) (crates/portlight-sim/src/reputation.rs:58-60, 107-109; voyage.rs:295-300, 473-475; encounter.rs:49-56; campaign.rs:1304-1307).
 
 ## Balance note
 
 - On paper The Merchant Prince is the strongest start (most silver, best trade terms) and The Dockhand the weakest. Canon must not widen that gap.
-- Planned slices, in order, each its own gated PR after DF-22 and docked-consistency: PT-S0 balance sweep - PT-S1 favoured contracts (data only) - PT-S2 Bounty Hunter - PT-S3 Privateer - PT-S4 Corsair - PT-S5 Scholar - PT-S6 Dockhand - PT-S7 Merchant Prince. The Merchant, The Smuggler and The Navigator get no new perk unless PT-S0 says so.
+- Planned slices, in order, each its own gated PR after DF-22 and docked-consistency: PT-S0 balance sweep - PT-S1 favoured contracts (data only) - PT-S2 Bounty Hunter - PT-S3 Privateer - PT-S4 Corsair - PT-S5 Scholar - PT-S6 Dockhand - PT-S7 Merchant Prince. The Merchant, The Smuggler and The Navigator get no new perk planned; the Smuggler's contraband is measured dead content and leaves the balance model, with reopening the economy ruled out because it would cascade through parity and the goldens (record: docs/playtest/balance/contraband-probe.md).
 - Guardrail: each type's median day-60 net worth within +/-15 pct of the field median; no type best at trade, combat and route time at once.
 
 ## Sound

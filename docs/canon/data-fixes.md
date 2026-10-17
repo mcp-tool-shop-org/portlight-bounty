@@ -1,4 +1,4 @@
-# Canon data fixes (proposals only; nothing changed)
+# Canon data fixes (proposals only; nothing changed; resolved items are marked)
 
 Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125) and 5 (player types, base c413788). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
@@ -28,11 +28,13 @@ Why: 'Brotherhood' is Silva Bay's governing body and cultural group.
 ## DF-3. Bounty hunter home region does not match home port
 
 Where:
-- content.json:2625 (bounty_hunter: home_port_id crosswind_isle, home_region North Atlantic)
+- crates/portlight-sim/data/content.json:2628-2629 (bounty_hunter: home_region North Atlantic, home_port_id crosswind_isle)
+- crates/portlight-sim/data/content.json:1385 (Crosswind Isle region East Indies)
+- portlight@9b02494 src/portlight/engine/captain_identity.py:597-598 (the same two values: the Python reference has the same mismatch)
 
 Proposed fix: Set `home_region` to `East Indies`, or move `home_port_id` to a North Atlantic port. The design notes prefer `East Indies`, because Crosswind Isle as a free port suits a bounty hunter.
 
-Why: The region and port fields disagree. This is a sim data change and needs a parity note.
+Why: The region and port fields disagree, and the oracle has the same disagreement, so this is inherited, not a port error. This is a sim data change and needs a parity note naming the Python value it departs from.
 
 ## DF-4. Institutions of type `shipyard` at ports without the shipyard feature
 
@@ -222,7 +224,9 @@ Proposed fix: No data change. Canon reads them as long-haul open-ocean routes th
 
 Why: on the map they cross other regions. This is a flag, not an error.
 
-## DF-22. Saves drop lane names, so loaded games lose lane labels and route encounters
+## DF-22. Saves drop lane names, so loaded games lose lane labels and route encounters (resolved in #97)
+
+Status: resolved in #97 (merged 2026-10-14). The Rust loader now refills lore_name and lore from content.json routes by port pair (crates/portlight-sim/src/save.rs:727, 1860). The Python loader still leaves them empty; that is the Python bug, and the divergence is intended. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/src/save.rs:1832-1840 (`route_value` writes port_a, port_b, distance, danger, min_ship_class; no lore_name or lore)
@@ -230,7 +234,7 @@ Where:
 - crates/portlight-sim/tests/save_parity.rs:192-193 (the test asserts the empty values)
 - Effect: crates/portlight-chart/src/view.rs:214-215 falls back to the destination name only; crates/portlight-sim/src/sea_culture.rs:129-133 falls back to the region table.
 
-Proposed fix: on load, refill lore_name and lore from content.json routes by port pair (no save format change). Sim/parity PR with a parity note, since the test encodes the current behaviour. Verify in that PR that no other load path rebuilds routes from content.
+Fix applied: on load, refill lore_name and lore from content.json routes by port pair (no save format change). Sim/parity PR with a parity note, since the test encodes the current behaviour. Verify in that PR that no other load path rebuilds routes from content.
 
 Why: after a save and load, the 15 named lanes stop showing their names on the chart and their 15 encounter tables never fire. Canon describes the fresh-session experience.
 

@@ -28,7 +28,7 @@ Days = max(1, round(distance / minimum-class speed)) (voyage.rs:726-728); faster
 
 - Lane ids are canon-only, never data ids. The data key is the lore_name string itself (C:12210 area); renaming a lane in data breaks its encounter table, so canon never proposes renames.
 - Superlatives in data ('oldest', 'longest', 'gentlest') are checked against the 43 routes; contradictions are DF-23 to DF-25.
-- Saves drop lane names (DF-22). Canon describes the named-lane experience of a fresh session.
+- Lane names survive save and load (DF-22, resolved in #97).
 - Long-haul open-ocean reading of three west-east lanes stands (DF-21).
 
 ## Not in data (future phase)

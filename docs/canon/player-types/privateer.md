@@ -101,3 +101,4 @@ Words, not art direction. Character plates stay held; canon sets no face, age, g
 ## 8. Flags
 
 - DF-26 retitle pending (PT-S3)
+- DF-32: the -5 Iron Wolves start is clamped to 0 on the first Iron Wolves duel win (C:2466)
