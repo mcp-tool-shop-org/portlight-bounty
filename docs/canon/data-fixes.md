@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed; resolved items are marked)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125), 5 (player types, base c413788), 6A (companions and officers, base 515a488) and 6B (style masters and skill trainers, base af3d105). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125), 5 (player types, base c413788), 6A (companions and officers, base 515a488) and 6B (style masters and skill trainers, base af3d105) and 6C (merchants, base d2b544f). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 41.
+Count: 48.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -467,6 +467,101 @@ Why: the five styles cost 60 to 150 silver and 5 to 10 days each, and their pass
 
 Status: open, log only.
 
+## DF-42. Li Wei 'builds hand crossbows', but the Silk Haven shop cannot stock them
+
+Where:
+- crates/portlight-sim/data/content.json:6036 (the description: "A craftsman who builds hand crossbows from bamboo and horn. Quiet weapons for quiet work.")
+- content.json:4038 and :4047 (Hand Crossbow, available_regions Mediterranean only); content.json:5343 and :5348 (Crossbow Bolts, Mediterranean only); content.json:1298 (Silk Haven is East Indies)
+- crates/portlight-sim/src/session.rs:3553-3609 (stock is every item of the merchant's types whose region list holds the port's region). Li Wei's stock at Silk Haven, computed: Cutlass, Dagger, Kris, Arquebus Pistol, Throwing Knife, Blowgun, Pistol Shot & Powder, Blowgun Darts (poisoned); no hand crossbow and no crossbow bolts (merchants/li_crossbow.md section 1)
+- portlight@9b02494 src/portlight/engine/merchant.py:25-73 (the same rule in Python)
+
+Proposed fix: reword the description to what the shop can hold, for example the blowgun and the arquebus pistol of the region (owner: copy; size XS; one COPY_OVERRIDES entry, tools/extract_content.py:437). Not a stock change: adding East Indies to the hand crossbow's regions would alter every East Indies shop and the loot tables' reach. Check goldens and saves for the string first.
+
+Why: the one line a captain could read about this shop describes a weapon it never sells. The string is not shown in Godot today (no reader), so the defect is latent.
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing; until then canon reads the crossbows as the craftsman's own bench work, not his stock [invented].
+
+## DF-43. Hamish 'forges axes and broadswords', but no broadsword is in the catalog
+
+Where:
+- crates/portlight-sim/data/content.json:5951 (the description: "A Highland smith who forges axes and broadswords in a workshop built into the cliff face.")
+- content.json:3879 (Boarding Axe, North Atlantic only, the one axe) and :3890 (its compatible_styles holds highland_broadsword); content.json:4172 (Highland Broadsword is a fighting style, not a weapon); the eight melee records are C:3842 to C:3967 and none is a broadsword
+- Hamish's stock at Thornport, computed: Cutlass, Rapier, Boarding Axe, Dagger, Matchlock Pistol, Wheellock Pistol, Throwing Knife (merchants/hamish_iron.md section 1)
+
+Proposed fix: reword to axes and blades (owner: copy; size XS; one COPY_OVERRIDES entry). Not a catalog change.
+
+Why: the shop sells one axe and no broadsword; 'broadswords' is the style's name used as a weapon. The string is not shown in Godot today.
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing; until then canon reads 'broadswords' as the shop's word for the long blades it sells.
+
+## DF-44. War Chief Tane is blamed for a '700% markup' that no code applies
+
+Where:
+- crates/portlight-sim/data/content.json:11352 (the agenda: "He's the reason weapons sell for 700% markup at Coral Throne."), institution War Chief Tane, content.json:11346
+- content.json:6057 (the Coral Throne merchant's price_markup is 1.08); crates/portlight-sim/src/session.rs:3540-3542 (the only markup in the sim is the merchant's; rg of crates finds no 700% and no other markup)
+- crates/portlight-sim/src/content.rs:532 (agenda is a field; rg of crates/portlight-godot/src finds no reader, so the line is not shown today)
+- portlight@9b02494 src/portlight/content/port_institutions_east.py:725 (the same string)
+
+Proposed fix: soften the agenda line, for example 'weapons are dear at Coral Throne' (owner: copy; size XS; one COPY_OVERRIDES entry; the line is in gossip-adjacent institution text, so check goldens). Not a price change.
+
+Why: the line promises a price the game does not charge: the dearest item at the Coral Throne shop is Kris at 43 silver against a catalog cost of 40.
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing; until then canon reads 700% as a figure of speech for the tribute in arms that Tane demands (resolved in lore below).
+
+## DF-45. Merchant key malia_provisions: she sells arms and armour, not provisions
+
+Where:
+- crates/portlight-sim/data/content.json:6060 (id malia_provisions; title Outfitter, :6063; types melee, armor, ammo, :6067 to :6070)
+- crates/portlight-sim/src/session.rs:759 (provisions are bought at the crew desk by the provision call, not from a merchant)
+- the key is read only by the lookup at crates/portlight-sim/src/content.rs:997-998, whose one caller is a test (crates/portlight-sim/src/merchant.rs:19), and is never shown
+
+Proposed fix: rename the key, for example to malia_outfitter (owner: content; size XS), which touches that test and any save or golden that names the id; a parity note is needed. A copy-only variant is not needed: no player text uses the id.
+
+Why: a data key that names the wrong goods can mislead a writer who reads the data. It cannot mislead a player.
+
+Status: declined - resolved in lore. The id is a data key and never reaches a player; Malia is the Outfitter of her port, and 'provisions' in the key is read as the old word for general outfitting. Logged so the choice is on record.
+
+## DF-46. Merchants never reach Godot, and their text has no reader
+
+Where:
+- crates/portlight-sim/src/script.rs:422-428 and crates/portlight-sim/src/session.rs:3209-3245 (buy_gear: reachable only from the script runner's gear command and tests, session.rs:4816); rg of crates/portlight-godot/src finds no call and no merchant reader
+- crates/portlight-sim/src/content.rs:376-386 (personality, title, description, greeting are fields only; the lookups at content.rs:997-1006 read id and port)
+- two copies of the markup formula: crates/portlight-sim/src/merchant.rs:8-10 (used only by its own test) and crates/portlight-sim/src/session.rs:3540-3542 (the live one)
+- docs/PORTING-PLAN.md:326 (engine/merchant.py deprioritised; Session::buy_gear kept for the gear scripts)
+- noted while writing, Rust against Python: buy_gear takes an item id and buys one (session.rs:3243); Python takes merchant, item and quantity (portlight@9b02494 src/portlight/engine/merchant.py:76-113). Ammunition is stored on the weapon in Rust, so ammunition bought with no launcher of its kind carried spends the silver and adds nothing, and a launcher bought again resets its ammunition (session.rs:3242-3243, 3646-3692; by source reading, tests not run); Python keeps ammunition in counters (merchant.py:138-144). Python's armory and sell-gear commands (src/portlight/app/cli.py:2506-2560, 1143-1183) have no Rust counterpart.
+
+Proposed fix: none proposed; logged only. Building a gear shop, fixing the ammunition rule, removing the duplicate formula, or showing merchant text are design decisions (owner: sim and UI; size M), not copy. Until then canon says no player meets a merchant.
+
+Why: 14 authored shopkeepers, their stock rules and their lines are invisible in the game build, and the one buy path has a silent loss for ammunition. Canon documents each as it is.
+
+Status: open, log only.
+
+## DF-47. Coverage gaps: ports with no merchant, master, trainer or companion
+
+Where:
+- computed at the base commit from content.json, 20 ports:
+- 6 ports have no merchant: merchants[*].port_id, content.json:5868 to 6075 (Corsair's Rest, Iron Point, Crosswind Isle, Dragon's Gate, Spice Narrows, Ember Isle)
+- 10 ports have no style master (content.json:6171 to 6250), 15 have no skill trainer (content.json:5397 onward), 11 have no companion (content.json:5542 onward); only one skill exists (content.json:5367, id blacksmith)
+- portlight@9b02494 src/portlight/content/merchants.py:70, 130, 177, 202 (Python comments say why for merchants: black market, mining port, trade and pirate ports, volcanic outpost)
+
+Proposed fix: none proposed; logged only. Canon lists the gaps in each README (section G) and never invents data to fill them; an 'Invented filler (not in the game)' section exists in each, empty by default.
+
+Why: a writer who assumes every port has a shop, a master, a trainer or a companion would be wrong for most ports; the gaps are facts about the data, not errors.
+
+Status: open, log only.
+
+## DF-48. The training row says 'needs 1 styles'
+
+Where:
+- crates/portlight-godot/src/logic.rs:2042-2045 (the row text is built with the format 'needs {} styles' and the style's prerequisite_styles number, with no singular case)
+- content.json:4286 and :4327 (Silat and Lua, prerequisite_styles 1); the other three styles read 'needs 0 styles'
+
+Proposed fix: build the phrase with singular and plural handling, for example 'needs 1 style' (owner: copy; size XS; a Godot string change with a logic test, not a COPY_OVERRIDES entry). Route it with the later copy PR that carries DF-36, DF-37, DF-40, DF-42, DF-43 and DF-44.
+
+Why: a player-facing grammar slip on the crew desk, on every Silat and Lua row. Canon quotes the shipped row as it is.
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing.
+
 ## Resolved in lore (no data change)
 
 - Stormwall 'answers to the Pact, not the crown' (C:13570 area): the crown is the old Northern Crown that raised the Fortress (T3) and dissolved (T8).
@@ -504,5 +599,9 @@ Status: open, log only.
 - Senora Vega's 'only fencing school' (C:6185) against Maestro Luciano (C:6177): until DF-40 is applied, canon reads Luciano as teaching on a warehouse floor with no school, and Vega's as the one school with a hall and a ledger. [invented]
 - Nneka Ironfist teaches 'with bruises, not words' (C:6217) yet speaks a full line (C:6218): the line is her first-day speech.
 - Real-world words in master, trainer and style text (Scotsman, Norse, Castilian, Hausa, Polynesia, Hawaiian, Portuguese cannons, Spanish science of defense; C:6185, C:6193, C:6201, C:4215, C:4296, C:5431, C:4134): quoted as data and never extended; canon adds no real-world place.
-- The shipped desk row says 'needs 1 styles' (logic.rs:2041-2045): a copy nit, not logged.
 - Silva Bay's three uses of the name Silva (the port, Old Silva the outfitter at C:5900, the Silva Bay Smithy at C:5418): unrelated uses of a place name.
+- War Chief Tane's '700% markup' at Coral Throne (C:11352) against the Coral Throne shop's 1.08 markup (C:6057): a figure of speech for the tribute in arms the War Chief demands; no price is multiplied seven times (DF-44).
+- Hamish's 'broadswords' (C:5951), Li Wei's 'hand crossbows' (C:6036): until DF-42 and DF-43 are applied, canon reads the broadswords as the shop's word for long blades and the crossbows as the craftsman's own bench work, not his stock. [invented]
+- Malia's key 'provisions' (C:6060) with an Outfitter's stock: the key is a data key never shown to a player; DF-45 is declined.
+- Two titles shared by two merchants each: Armorer (Fatima, Devi) and Outfitter (Widow Kael, Malia) are trades, not offices; the shops are a coast apart.
+- Marco is 'Genoese' (C:5875): a real-world word in shipped data, quoted as data and never extended; canon adds no real-world place.

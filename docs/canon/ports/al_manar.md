@@ -66,7 +66,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 - Network (tavern, personal): Old Enzo - Old Farouk, linking Porto Novo (C:11520). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (broker, rival): Fernanda Reis - Tariq Sayed, linking Porto Novo (C:11592). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (inspector, professional): Inspector Salva - Inspector Zara, linking Porto Novo (C:11664). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
-- Hire and training canon (links only): [Coin Mariam](../companions/coin_mariam.md) (companion, Quartermaster); [Senora Vega](../style-masters/senora_vega.md) (style master, La Destreza).
+- Hire and training canon (links only): [Coin Mariam](../companions/coin_mariam.md) (companion, Quartermaster); [Senora Vega](../style-masters/senora_vega.md) (style master, La Destreza); [Fatima](../merchants/fatima_armorworks.md) (merchant, Armorer).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

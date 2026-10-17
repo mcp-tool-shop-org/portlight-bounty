@@ -64,6 +64,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 - Network (tavern, personal): Rosa Carvalho - Ingrid Norum, linking Silva Bay (C:11568). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (inspector, allied): Inspector Kross - Inspector Berg, linking Ironhaven (C:11688). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Siv Lindgren (C:12846).
+- Hire and training canon (links only): [Widow Kael](../merchants/widow_kael.md) (merchant, Outfitter).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

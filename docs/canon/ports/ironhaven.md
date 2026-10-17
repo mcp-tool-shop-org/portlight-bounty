@@ -66,7 +66,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 - Network (inspector, professional): Inspector Sun - Inspector Kross, linking Dragon's Gate (C:11700). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: The Smith (C:12834).
 - Sea sighting filed under this port: Sergeant Kruze (C:12840).
-- Hire and training canon (links only): [Iron Marta](../companions/iron_marta.md) (companion, Marine); [Red Hamish](../style-masters/red_hamish.md) (style master, Highland Broadsword); [Forge Master Erik](../skill-trainers/forge_master_erik.md) (skill trainer, Blacksmithing).
+- Hire and training canon (links only): [Iron Marta](../companions/iron_marta.md) (companion, Marine); [Red Hamish](../style-masters/red_hamish.md) (style master, Highland Broadsword); [Forge Master Erik](../skill-trainers/forge_master_erik.md) (skill trainer, Blacksmithing); [Sgt. Gruber](../merchants/sergeant_gruber.md) (merchant, Arsenal Master).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

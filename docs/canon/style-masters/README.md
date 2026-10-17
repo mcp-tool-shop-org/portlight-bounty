@@ -26,7 +26,7 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 
 | What | Reaches the player? | Cite |
 |---|---|---|
-| One row per style taught at the docked port: 'Name  N silver  N days  needs N styles  known yes or no' | Yes (the row is built in code; 'needs 1 styles' is the shipped plural) | logic.rs:2028-2062 (row at 2041-2045) |
+| One row per style taught at the docked port: 'Name  N silver  N days  needs N styles  known yes or no' | Yes (the row is built in code; 'needs 1 styles' is the shipped plural, DF-48) | logic.rs:2028-2062 (row at 2041-2045) |
 | 'Known styles: none' or the list of learned style names | Yes | logic.rs:2051-2062 |
 | 'No fighting master at this port.' | Yes, at a port that teaches no style: the only line where the word master reaches the player | logic.rs:1864; game.rs:5897-5898 |
 | A confirm line: 'Train Name for N silver. The calendar will advance N days.' | Yes, every training asks first | logic.rs:1884; game.rs:5608-5625 |
@@ -127,7 +127,7 @@ The two lore columns are data, shown to no player today (section 1). Quotes are 
 
 - DF-39: masters and the master text are unread; the real gate is the style's port list. DF-40: Senora Vega's 'only fencing school east of Gibraltar' contradicts Maestro Luciano; the train and skill notices print raw ids. DF-41: the style injury gate is dead and no path equips a style.
 - Showing master text, wiring the injury list, or adding an equip control is out of scope for canon; it is a design decision.
-- The shipped row says 'needs 1 styles' for Silat and Lua (logic.rs:2041-2045); a copy nit, not logged.
+- DF-48: the shipped row says 'needs 1 styles' for Silat and Lua (logic.rs:2042-2045); a copy item, logged with a proposed fix.
 
 ## G. Gaps in the data (computed from content.json at the base commit)
 
