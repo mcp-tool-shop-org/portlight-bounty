@@ -256,6 +256,7 @@ fn reward_row_is_bounded_and_hunter_only() {
     };
     let hunter = "captains[id=bounty_hunter].bounty_reward_mult";
     rejects(row(hunter, 1.0, 1.3), "outside");
+    rejects(row(hunter, 1.0, 1.2501), "outside");
     rejects(row(hunter, 1.0, 1.0), "outside");
     rejects(row(hunter, 1.0, 0.9), "outside");
     rejects(row(hunter, 1.1, 1.2), "must be the default");
