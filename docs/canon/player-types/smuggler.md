@@ -35,7 +35,7 @@ Perks:
 - Shadow-path career score +15 [exists S/campaign.rs:1304-1307]
 - Trade-off: inspection x1.3, seizure 0.05, fines x1.2, suspicion +1, starts with heat 8 [exists C:2377-2379, C:2381; S/reputation.rs:58-60]
 - Buy terms are x1.0, not the '5% cheaper buys' of the Python copy (DF-29) [exists C:2365]
-- No new perk planned: already the most distinct type; PT-S0 checks it [proposal; planned slice PT-S0]
+- No new perk planned: already the most distinct type, and improved but out of band. Contraband is measured dead content (no starter can afford the 1200 silver brigantine that a 31-day-each-way trip needs, and the best case is under 1600 silver a run); it leaves the balance model and the inspection change is cancelled (record: docs/playtest/balance/contraband-probe.md).
 
 ## 3. How the 20 ports treat this type
 

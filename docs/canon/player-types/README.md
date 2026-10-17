@@ -29,7 +29,7 @@ Values: C:2315-2660 (captains). Code branches exist only for The Smuggler (5), T
 ## Balance note
 
 - On paper The Merchant Prince is the strongest start (most silver, best trade terms) and The Dockhand the weakest. Canon must not widen that gap.
-- Planned slices, in order, each its own gated PR after DF-22 and docked-consistency: PT-S0 balance sweep - PT-S1 favoured contracts (data only) - PT-S2 Bounty Hunter - PT-S3 Privateer - PT-S4 Corsair - PT-S5 Scholar - PT-S6 Dockhand - PT-S7 Merchant Prince. The Merchant, The Smuggler and The Navigator get no new perk unless PT-S0 says so.
+- Planned slices, in order, each its own gated PR after DF-22 and docked-consistency: PT-S0 balance sweep - PT-S1 favoured contracts (data only) - PT-S2 Bounty Hunter - PT-S3 Privateer - PT-S4 Corsair - PT-S5 Scholar - PT-S6 Dockhand - PT-S7 Merchant Prince. The Merchant, The Smuggler and The Navigator get no new perk planned; the Smuggler's contraband is measured dead content and leaves the balance model, with reopening the economy ruled out because it would cascade through parity and the goldens (record: docs/playtest/balance/contraband-probe.md).
 - Guardrail: each type's median day-60 net worth within +/-15 pct of the field median; no type best at trade, combat and route time at once.
 
 ## Sound
