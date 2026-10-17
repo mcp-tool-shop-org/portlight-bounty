@@ -394,7 +394,7 @@ Where:
 - crates/portlight-godot/src/game.rs:5748 ('Recruited {id}.' reads 'Recruited iron_marta.')
 - crates/portlight-godot/src/logic.rs:1923 (the confirm line before it uses the catalog name: 'Recruit Iron Marta for 80 silver.')
 
-Proposed fix: build the notice from the catalog name, as arm_recruit does with the offer name (game.rs:5666), for example 'Recruited Iron Marta.' Owner: copy (godot); size XS; add a logic test. Route it with DF-37, DF-40, DF-42, DF-43 and DF-44 as one later copy PR.
+Proposed fix: build the notice from the catalog name, as arm_recruit does with the offer name (game.rs:5666), for example 'Recruited Iron Marta.' Owner: copy (godot); size XS; add a logic test. Route it with DF-37 as one later copy PR; the other copy items are logged in a later canon pass.
 
 Why: it breaks the no-raw-ids rule; ids are cite keys, not player words. The same notice is also pushed to the log (game.rs:5749).
 

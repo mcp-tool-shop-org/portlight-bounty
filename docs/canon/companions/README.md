@@ -150,7 +150,7 @@ The departure path is real for navigators and surgeons only; marines, smugglers 
 ## F. Flags
 
 - DF-34: role effects authored and unread. DF-35: 11 of 13 morale triggers never fire; loyalty and warning lines are unreachable. DF-36: the recruit notice prints the raw id. DF-37: same-name collisions with port NPCs.
-- Wiring companion effects, morale triggers or a dismiss control is out of scope for canon; it is a design decision for Mike.
+- Wiring companion effects, morale triggers or a dismiss control is out of scope for canon; it is a design decision.
 
 ## G. Gaps in the data (computed from content.json at the base commit)
 

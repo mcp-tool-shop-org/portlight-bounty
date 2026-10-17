@@ -49,7 +49,7 @@ Sailors are anonymous: no officer record (session.rs:743-750).
 | Quartermaster | 2 | 1 | 20 | daily wage bill cut by 10 percent; casualty weight 0.5 | session.rs:3900-3905; ship.rs:139-145 |
 <!-- hand-maintained:end -->
 
-Daily wage is the larger of the ship template's wage and the role wage (ship.rs:132-146). Hiring the Gunner role changes no firepower in the code read here (rg of .gunners finds only casualty and roster uses). The Python reference defines gunner, navigator storm, surgeon, marine and quartermaster sell effects (portlight@9b02494 src/portlight/engine/ship_stats.py:177-209) and rg of src finds no caller for them; whether Rust or Python should apply them is a design question for Mike, not logged as a DF in this slice (UNVERIFIED: not checked against Python tests).
+Daily wage is the larger of the ship template's wage and the role wage (ship.rs:132-146). Hiring the Gunner role changes no firepower in the code read here (rg of .gunners finds only casualty and roster uses). The Python reference defines gunner, navigator storm, surgeon, marine and quartermaster sell effects (portlight@9b02494 src/portlight/engine/ship_stats.py:177-209) and rg of src finds no caller for them; whether Rust or Python should apply them is a design question, not logged as a DF in this slice (UNVERIFIED: not checked against Python tests).
 
 Crew roles and companion roles share four names; they are separate systems (companions/roles/). Canon calls a hired role's person an officer and a named party member a companion.
 

@@ -59,7 +59,8 @@ There is no crew role called Smuggler. The crew desk lists the roles it hires an
 ## 4. Look and feel (words only)
 
 - Role text [cite]: "Knows every hidden compartment and customs loophole." (C:5520). Canon adds no dress, face or figure.
-- [invented] A smuggler companion knows the other side of the inspection desk. There is no hired crew Smuggler (crew_screen.rs:13); this role exists only as a named companion.
+- There is no hired crew Smuggler: the hire roles are sailor, gunner, navigator, surgeon, marine and quartermaster, and any other role is refused (session.rs:3868-3906); the crew screen says Smuggler is a companion role, not a hire row (crew_screen.rs:13). [exists]
+- [invented] A smuggler companion knows the other side of the inspection desk; this role exists only as a named companion.
 
 ## 5. [invented] lore
 

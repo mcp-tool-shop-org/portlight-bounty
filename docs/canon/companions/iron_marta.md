@@ -56,7 +56,7 @@ Quotes are as in content.json; only an em dash is folded to ' - ' and tagged.
 - [invented] The garrison she left is Stormwall's, the one the Iron Pact's foundries supply (factions/iron_pact.md; C:13416). Data says only 'the garrison' (C:5557, C:5549); this placement is canon's own (Q4), not data.
 - [invented] T38 (README timeline): she walks out of the Stormwall garrison about 26 BS, after No One (T31), Gunnar (T32) and the Iron Wolves (T33), and before the Wolves split from the Tide (T34). Unlike them she takes ship for the sea, not for the Crimson Tide.
 - [invented] She reaches Ironhaven because the foundries still feed the garrison she left, and the garrison's old comrades pass through the Pact's docks; she watches the quay from the bar for that reason.
-- [invented] She and Gunnar Stahl, the Iron Dock's harbor master, left the same garrison in different years (T32) and do not speak of it.
+- [invented] She and Gunnar Stahl, the Iron Dock's harbour master, left the same garrison in different years (T32) and do not speak of it.
 
 ## 5. Hooks ([proposal] only; never a mechanic)
 
