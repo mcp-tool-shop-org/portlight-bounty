@@ -1183,7 +1183,7 @@ pub(crate) fn bounty_lines(
     let claimables = claimable_ids(session);
     for id in &claimables {
         let name = hunt_screen::display_name(id, known);
-        let reward = hunt_screen::reward_for(id, known);
+        let reward = session.bounty_payout(hunt_screen::reward_for(id, known));
         let first_time = !memory.claimable_seen.contains(id);
         let notable = first_time || arrival_day;
         if first_time {

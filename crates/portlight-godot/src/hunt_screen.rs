@@ -555,7 +555,8 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
         .board
         .iter()
         .map(|target| {
-            let card = card_from_target(target);
+            let mut card = card_from_target(target);
+            card.reward = session.bounty_payout(card.reward);
             let enabled = accept_enabled(&card.captain_id, &active_ids, &claimed_ids);
             OfferRow {
                 id: card.captain_id.clone(),
@@ -567,7 +568,8 @@ pub(crate) fn hunt_model(session: &Session, desk: &HuntDesk) -> HuntModel {
     let active = active_ids
         .iter()
         .map(|id| {
-            let card = resolve_card(id, &desk.known);
+            let mut card = resolve_card(id, &desk.known);
+            card.reward = session.bounty_payout(card.reward);
             let defeats = times_defeated(session, id);
             let enabled = claim_enabled(defeats);
             let last_fight = desk
@@ -960,6 +962,38 @@ mod tests {
                 "{text}"
             );
             assert!(!text.contains(" will "), "{text}");
+        }
+    }
+
+    #[test]
+    fn cards_show_the_payout_for_the_captain() {
+        // The same board and active bounty: the card shows what a claim pays.
+        let mut texts = Vec::new();
+        for ty in ["privateer", "bounty_hunter"] {
+            let mut session = Session::new("Ada", ty, 7, None).unwrap();
+            let board = session.bounty_board();
+            let target = board[0].clone();
+            let mut desk = HuntDesk {
+                board,
+                posted: true,
+                ..HuntDesk::default()
+            };
+            remember(&mut desk.known, target.clone());
+            let paid = session.bounty_payout(target.reward);
+            let offer = hunt_model(&session, &desk).offers[0].text.clone();
+            assert!(offer.contains(&format!("| {paid} silver")), "{offer}");
+            session.accept_bounty(&target.captain_id).unwrap();
+            let active = hunt_model(&session, &desk).active[0].text.clone();
+            assert!(active.contains(&format!("{paid} silver")), "{active}");
+            texts.push((paid, target.reward, offer));
+        }
+        let (other, table, _) = &texts[0];
+        assert_eq!(other, table, "a default captain sees the table reward");
+        let (hunter, table, _) = &texts[1];
+        if cfg!(feature = "python-base") {
+            assert_eq!(hunter, table);
+        } else {
+            assert_eq!(*hunter, table * 6 / 5);
         }
     }
 

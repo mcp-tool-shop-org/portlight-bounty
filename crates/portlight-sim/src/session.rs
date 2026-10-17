@@ -914,6 +914,14 @@ impl Session {
         Ok(enc)
     }
 
+    /// The silver a claim of a bounty with this table reward pays this captain:
+    /// the table reward times the template's `bounty_reward_mult`. Cards and
+    /// notices show this, so a hunter sees what the claim will pay.
+    pub fn bounty_payout(&self, table_reward: i64) -> i64 {
+        let mult = crate::custom_captain::captain_template(&self.world).bounty_reward_mult;
+        crate::bounty::paid_reward(table_reward, mult)
+    }
+
     /// `claim_bounty` (`engine/bounty.py` line 165). Pays the table reward.
     pub fn claim_bounty(&mut self, target_id: &str) -> Result<i64, SimError> {
         let reward_mult = crate::custom_captain::captain_template(&self.world).bounty_reward_mult;
@@ -3969,6 +3977,11 @@ mod tests {
                 .unwrap()
                 .bounty_reward_mult;
             let hunter = claim_paid("bounty_hunter", target);
+            // The payout shown on a card is what the claim pays.
+            for ty in ["bounty_hunter", "merchant"] {
+                let session = Session::new("Ada", ty, 1, None).unwrap();
+                assert_eq!(session.bounty_payout(table), claim_paid(ty, target), "{ty}");
+            }
             if cfg!(feature = "python-base") {
                 assert_eq!(mult, 1.0);
                 assert_eq!(hunter, table);
