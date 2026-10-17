@@ -107,6 +107,14 @@ const PIRATE_BOUNTIES: &[BountyRow] = &[
     },
 ];
 
+/// Every bounty in the table with its table reward, for tests.
+pub fn table_rewards() -> Vec<(&'static str, i64)> {
+    PIRATE_BOUNTIES
+        .iter()
+        .map(|row| (row.id, row.reward))
+        .collect()
+}
+
 fn is_live_captain(target_id: &str) -> bool {
     content().pirate(target_id).is_some()
 }
@@ -204,11 +212,22 @@ pub fn hunt_bounty(
     encounter::create_encounter(world, rng, Some(target_id)).ok_or_else(|| "Unknown captain".into())
 }
 
+/// The silver a claim pays: the table reward times the captain template's
+/// `bounty_reward_mult`, rounded to whole silver the way Python's `round`
+/// does (half to even), so a halfway amount such as 187.5 pays 188. A multiplier of 1.0 pays the
+/// table reward exactly, as the Python game does.
+pub fn paid_reward(table_reward: i64, reward_mult: f64) -> i64 {
+    crate::util::py_round(table_reward as f64 * reward_mult)
+}
+
 /// `claim_bounty` (line 165). Silver on success, or the Python error sentence.
+/// `reward_mult` is the captain template's `bounty_reward_mult` (1.0 when the
+/// template has none, which is every captain but the tuned one).
 pub fn claim_bounty(
     captain: &mut Captain,
     memories: &[CaptainMemory],
     target_id: &str,
+    reward_mult: f64,
 ) -> Result<i64, String> {
     if !captain.active_bounties.iter().any(|id| id == target_id) {
         return Err("No active bounty for this target".into());
@@ -227,6 +246,7 @@ pub fn claim_bounty(
     if reward == 0 {
         return Err("Unknown bounty target".into());
     }
+    let reward = paid_reward(reward, reward_mult);
     captain.silver += reward;
     if let Some(index) = captain
         .active_bounties
@@ -295,14 +315,26 @@ mod tests {
             "Already hunting this target"
         );
         assert_eq!(
-            claim_bounty(&mut world.captain, &world.captain_memories, "raj_the_quiet").unwrap_err(),
+            claim_bounty(
+                &mut world.captain,
+                &world.captain_memories,
+                "raj_the_quiet",
+                1.0
+            )
+            .unwrap_err(),
             "Target not yet defeated. Find and defeat them at sea."
         );
         let memory = memory::get_or_create_memory(&mut world.captain_memories, "raj_the_quiet");
         memory.times_defeated_by_player = 1;
         let silver = world.captain.silver;
         assert_eq!(
-            claim_bounty(&mut world.captain, &world.captain_memories, "raj_the_quiet").unwrap(),
+            claim_bounty(
+                &mut world.captain,
+                &world.captain_memories,
+                "raj_the_quiet",
+                1.0
+            )
+            .unwrap(),
             120
         );
         assert_eq!(world.captain.silver, silver + 120);

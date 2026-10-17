@@ -103,7 +103,7 @@ Text the scripts never reach is not compared and so is not listed. The vendored 
 | `work()` | One day on the docks. Returns 3 to 5 silver. Does not tick markets, provisions, wages, or reputation. |
 | `duel(stances)` / `resolve_pending_duel()` | Clear a pending pirate duel. `duel` is the CLI stance fight (`thrust` / `slash` / `parry`, at least three). `resolve_pending_duel` is the bot auto-resolve. Both return `DuelOutcome`. The chart offers this fight. |
 | `hunt()` | Hunt or forage. Merged in the sim; the Godot Hunt overlay (#35) calls it. |
-| `bounty_board()` / `accept_bounty(id)` / `hunt_bounty(id)` / `claim_bounty(id)` | Bounty board, accept, hunt, and claim. Merged in the sim; the Godot Hunt overlay (#35) calls them. |
+| `bounty_board()` / `accept_bounty(id)` / `hunt_bounty(id)` / `claim_bounty(id)` | Bounty board, accept, hunt, and claim. Merged in the sim; the Godot Hunt overlay (#35) calls them. A claim pays the table reward times the captain template's `bounty_reward_mult`, which is 1.0 for every captain except the tuned bounty hunter (1.25, from the overlay, the cap); the Python game has no such field, and no parity script claims as a hunter. Cards and the day report show the same payout (`Session::bounty_payout`). A save does not store the multiplier, so an old save pays the new reward after loading. |
 | errors | `SimError`. `Display` text is the Python sentence. |
 
 `Session::save` and `Session::load` are merged in the sim. They speak the Python version-12 JSON slot. The Godot new-game screen (#30) and the chart Save button call them. Do not add a second format in the UI crate.
