@@ -1,5 +1,5 @@
 {
-  "note": "Rust-tuned deviations from the extracted Python content. Every row names its base value from content.json; the loader refuses anything else. See tuned.rs for the allow-list. The scholar response is a step, not a slope: the 28019 to 63643 median in the day-60 sweep came from the sell and burn levers together, with no intermediate result, so tune scholar by re-running the sweep rather than interpolating. Old saves reprice on load, so a save made before this overlay shows the tuned prices on the next load. This is a first fork, not a finished balance.",
+  "note": "Rust-tuned deviations from the extracted Python content. Every row names its base value from content.json; the loader refuses anything else. See tuned.rs for the allow-list. The scholar response is a step, not a slope: the 28019 to 63643 median in the day-60 sweep came from the sell and burn levers together, with no intermediate result, so tune scholar by re-running the sweep rather than interpolating. Old saves reprice on load, so a save made before this overlay shows the tuned prices on the next load. This is a first fork, not a finished balance. The one row with no field in content.json is bounty_reward_mult: its base is the default 1.0 and the loader adds the field; it only scales the silver a claim pays (about +20%, flavour, never used to reach the band).",
   "rows": [
     {
       "path": "captains[id=dockhand].pricing.buy_price_mult",
@@ -65,6 +65,11 @@
       "path": "captains[id=bounty_hunter].pricing.sell_price_mult",
       "base": 0.98,
       "tuned": 1.02
+    },
+    {
+      "path": "captains[id=bounty_hunter].bounty_reward_mult",
+      "base": 1.0,
+      "tuned": 1.2
     },
     {
       "path": "contracts[id=proc_grain_feed].captain_bias",

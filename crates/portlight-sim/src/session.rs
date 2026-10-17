@@ -916,10 +916,12 @@ impl Session {
 
     /// `claim_bounty` (`engine/bounty.py` line 165). Pays the table reward.
     pub fn claim_bounty(&mut self, target_id: &str) -> Result<i64, SimError> {
+        let reward_mult = crate::custom_captain::captain_template(&self.world).bounty_reward_mult;
         crate::bounty::claim_bounty(
             &mut self.world.captain,
             &self.world.captain_memories,
             target_id,
+            reward_mult,
         )
         .map_err(SimError::Sentence)
     }
@@ -3929,6 +3931,85 @@ fn officer_trait(rng: &mut PyRandom) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// What a claim pays each captain type, from the same table reward.
+    fn claim_paid(captain_type: &str, target: &str) -> i64 {
+        let mut session = Session::new("Ada", captain_type, 1, None).unwrap();
+        session
+            .world
+            .captain
+            .active_bounties
+            .push(target.to_string());
+        crate::memory::get_or_create_memory(&mut session.world.captain_memories, target)
+            .times_defeated_by_player = 1;
+        let before = session.world.captain.silver;
+        let paid = session.claim_bounty(target).unwrap();
+        assert_eq!(session.world.captain.silver, before + paid);
+        paid
+    }
+
+    #[test]
+    fn bounty_claim_reward_follows_the_captain_template() {
+        // raj_the_quiet pays 120; scarlet_ana 150 (the table).
+        for (target, table) in [("raj_the_quiet", 120), ("scarlet_ana", 150)] {
+            for other in [
+                "merchant",
+                "navigator",
+                "privateer",
+                "corsair",
+                "scholar",
+                "merchant_prince",
+                "dockhand",
+                "smuggler",
+            ] {
+                assert_eq!(claim_paid(other, target), table, "{other} {target}");
+            }
+            let mult = crate::content::content()
+                .captain("bounty_hunter")
+                .unwrap()
+                .bounty_reward_mult;
+            let hunter = claim_paid("bounty_hunter", target);
+            if cfg!(feature = "python-base") {
+                assert_eq!(mult, 1.0);
+                assert_eq!(hunter, table);
+            } else {
+                assert_eq!(mult, 1.2);
+                assert_eq!(hunter, table * 6 / 5, "{target}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_claim_changes_nothing_but_the_silver_for_the_hunter() {
+        // Same bookkeeping as any other type: the bounty leaves the active
+        // list and joins the claimed list; only the amount differs.
+        for ty in ["bounty_hunter", "privateer"] {
+            let mut session = Session::new("Ada", ty, 1, None).unwrap();
+            session
+                .world
+                .captain
+                .active_bounties
+                .push("raj_the_quiet".to_string());
+            crate::memory::get_or_create_memory(
+                &mut session.world.captain_memories,
+                "raj_the_quiet",
+            )
+            .times_defeated_by_player = 1;
+            session.claim_bounty("raj_the_quiet").unwrap();
+            assert!(session.world.captain.active_bounties.is_empty());
+            assert_eq!(
+                session.world.captain.claimed_bounties,
+                vec!["raj_the_quiet"]
+            );
+            assert_eq!(
+                session
+                    .claim_bounty("raj_the_quiet")
+                    .unwrap_err()
+                    .to_string(),
+                "No active bounty for this target"
+            );
+        }
+    }
 
     fn price_rows(port: &crate::model::Port) -> Vec<(String, i64, i64)> {
         port.market

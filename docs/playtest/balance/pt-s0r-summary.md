@@ -14,7 +14,7 @@ Field median: **54686**
 | scholar | 63643 | +16.3% | FLAG | s1_cautious | 52% |
 | merchant_prince | 54686 | +0.0% | PASS | s1_cautious | 48% |
 | dockhand | 58328 | +6.6% | PASS | s1_cautious | 69% |
-| bounty_hunter | 22272 | -59.2% | FLAG | s2_contracts | 13% |
+| bounty_hunter | 22312 | -59.1% | FLAG | s2_contracts | 13% |
 
 ## Per-strategy medians
 
@@ -28,12 +28,26 @@ Field median: **54686**
 | scholar | 48383 | 19829 | 38402 |
 | merchant_prince | 50868 | 24103 | 45803 |
 | dockhand | 50625 | 12635 | 43036 |
-| bounty_hunter | 16068 | 20684 | 13429 |
+| bounty_hunter | 16068 | 20684 | 13495 |
 
 ## Completion rates
 
 - s2_contracts: a contract completed on 265/270 runs (gate: at least 98%).
 - s3_opportunist: a bounty claimed on 58/270 runs (reported, not gated). The opportunist hunts only if armed or holding at least 1000 silver.
+
+## Bounty edge (s3_opportunist)
+
+| Type | Claim seeds | Claims | Bounty silver | Silver per run | vs privateer |
+|---|---:|---:|---:|---:|---:|
+| merchant | 0/30 | 0 | 0 | 0 | 0.00x |
+| smuggler | 0/30 | 0 | 0 | 0 | 0.00x |
+| navigator | 0/30 | 0 | 0 | 0 | 0.00x |
+| privateer | 30/30 | 115 | 18410 | 613 | 1.00x |
+| corsair | 0/30 | 0 | 0 | 0 | 0.00x |
+| scholar | 0/30 | 0 | 0 | 0 | 0.00x |
+| merchant_prince | 0/30 | 0 | 0 | 0 | 0.00x |
+| dockhand | 0/30 | 0 | 0 | 0 | 0.00x |
+| bounty_hunter | 28/30 | 110 | 21168 | 705 | 1.15x |
 
 ## Game over by strategy
 

@@ -1255,6 +1255,71 @@ fn no_script_check_pair_is_in_both_lists() {
     }
 }
 
+/// Leaf paths pinned in both files for the same script and check. The tuned
+/// check carries a `tuned_` prefix, which is stripped before comparing.
+fn shared_leaf_paths(original: &[Value], tuned: &[Value]) -> Vec<(String, String, String)> {
+    let mut seen = std::collections::HashSet::new();
+    for entry in original {
+        let (script, check) = pair(entry);
+        for spec in entry["paths"].as_array().expect("paths") {
+            seen.insert((
+                script.clone(),
+                check.clone(),
+                spec["path"].as_str().expect("path").to_string(),
+            ));
+        }
+    }
+    let mut both = Vec::new();
+    for entry in tuned {
+        let (script, check) = pair(entry);
+        let bare = check.strip_prefix(TUNED_CHECK_PREFIX).unwrap_or(&check);
+        for spec in entry["paths"].as_array().expect("paths") {
+            let key = (
+                script.clone(),
+                bare.to_string(),
+                spec["path"].as_str().expect("path").to_string(),
+            );
+            if seen.contains(&key) {
+                both.push(key);
+            }
+        }
+    }
+    both.sort();
+    both
+}
+
+#[test]
+fn no_leaf_path_is_pinned_in_both_files() {
+    let original = original_entries_in(&parity_root());
+    let tuned = tuned_entries_in(&parity_root());
+    assert_eq!(shared_leaf_paths(&original, &tuned), Vec::new());
+    let count = |list: &[Value]| -> usize {
+        list.iter()
+            .map(|e| e["paths"].as_array().map_or(0, Vec::len))
+            .sum()
+    };
+    assert!(count(&original) > 0 && count(&tuned) > count(&original));
+}
+
+#[test]
+fn a_shared_leaf_path_is_found() {
+    use serde_json::json;
+    let spec = json!({"path": "$.captain.silver", "python": 1, "rust": 2});
+    let original = vec![json!({"script": "a.txt", "check": "oracle", "paths": [spec]})];
+    let shared = vec![json!({
+        "script": "a.txt", "check": "tuned_oracle",
+        "paths": [{"path": "$.captain.silver", "python": 1, "rust": 3}]
+    })];
+    let other_check = vec![json!({"script": "a.txt", "check": "tuned_roundtrip", "paths": [spec]})];
+    let other_script = vec![json!({"script": "b.txt", "check": "tuned_oracle", "paths": [spec]})];
+    assert_eq!(
+        shared_leaf_paths(&original, &shared),
+        vec![("a.txt".into(), "oracle".into(), "$.captain.silver".into())]
+    );
+    assert!(shared_leaf_paths(&original, &other_check).is_empty());
+    assert!(shared_leaf_paths(&original, &other_script).is_empty());
+}
+
 #[test]
 fn the_build_reads_the_lists_it_should() {
     let entries = divergence_entries();
