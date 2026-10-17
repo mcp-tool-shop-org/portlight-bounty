@@ -60,6 +60,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 - Speech [cite]: built from the greeting lines in each NPC record above (greeting_neutral, friendly, hostile).
 - Temperament of the town: read from the power structure and tension in section E.
 - Sea sighting filed under this port: Elder Ama Diallo (C:12876).
+- Hire and training canon (links only): [Nneka Ironfist](../style-masters/nneka_ironfist.md) (style master, Dambe).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed; resolved items are marked)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125), 5 (player types, base c413788) and 6A (companions and officers, base 515a488). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125), 5 (player types, base c413788), 6A (companions and officers, base 515a488) and 6B (style masters and skill trainers, base af3d105). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 38.
+Count: 41.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -425,6 +425,48 @@ Why: a hired navigator named Tane can stand beside War Chief Tane of Coral Thron
 
 Status: declined - resolved in lore. A hired officer is a namesake of the authored person, not that person; two officers who share a name are told apart by role (officers/README.md section 5). Logged so the choice is on record.
 
+## DF-39. Style masters and skill trainers are authored and unread; the real gates are other lists
+
+Where:
+- crates/portlight-sim/src/content.rs:1027-1032 and crates/portlight-sim/src/training.rs:73-79 (masters_at and masters_at_port: no caller outside the test at training.rs:101)
+- crates/portlight-sim/src/training.rs:9-52 (the training gate is the style's own training_port_ids, content.json:4159, 4200, 4240, 4280, 4321 for the five styles; today all 10 masters sit in their style's list, content.json:6171-6250)
+- crates/portlight-sim/src/skills.rs:32-82 and crates/portlight-sim/src/content.rs:290 (the skill gate is the trainer list; training_port_feature, content.json:5370, has no reader; all 5 trainer ports have the shipyard feature, content.json:214, 382, 560, 1210, 1754)
+- crates/portlight-godot/src/logic.rs:2028-2128 (the desk builds style rows and skill lines from names and numbers; no master or trainer description or dialog; rg of crates/portlight-godot/src finds no reader)
+- crates/portlight-sim/src/session.rs:3249-3258, 1928-1960 and crates/portlight-sim/src/script.rs:427, 529 (the blacksmith effects: wear slowing is live only with a melee weapon or armour equipped; the maintenance discount is reachable only through the script runner; the upgrade discount and field repair have no Session caller)
+- portlight@9b02494 src/portlight/app/cli.py:2426-2455 and 2742-2760, src/portlight/app/combat_views.py:359-412 (Python prints master names and dialog, and every trainer's dialog)
+
+Proposed fix: none proposed; logged only. Showing master and trainer text on the crew desk, reading the master list as the gate, or building a gear shop so the blacksmith effects have a route, are separate design decisions (owner: UI and sim, size M). Until then canon says no master gates training and no trainer text is seen.
+
+Why: two lists (master port, style port list) hold one fact and can diverge silently; authored text reaches no player; and a 600-silver skill has no Godot route to its effects. Canon documents each as it is.
+
+Status: open, log only.
+
+## DF-40. Senora Vega's 'only fencing school east of Gibraltar' contradicts Maestro Luciano; the train and skill notices print raw ids
+
+Where:
+- crates/portlight-sim/data/content.json:6185 (Senora Vega: 'runs the only fencing school east of Gibraltar'), content.json:6177 (Maestro Luciano teaches 'the Spanish school from a warehouse overlooking the harbor' [data spelling]), content.json:6183 and 6175 (both teach La Destreza), content.json:4159 (the style's two training ports, Porto Novo and Al-Manar, both in the Mediterranean, content.json:4133). The Python text is the same (portlight@9b02494 src/portlight/content/fighting_styles.py:266-278).
+- crates/portlight-godot/src/game.rs:5708 (the style notice 'Learned dambe.' prints the style id) and game.rs:5731 (the skill notice 'Trained blacksmith.' prints the skill id); the confirm lines before them use catalog names (crates/portlight-godot/src/logic.rs:1884, 1889-1891). The empty-trainer line prints the skill's id word (logic.rs:2084).
+
+Proposed fix: (1) change 'the only' to 'a' in the one Vega string; (2) build the two notices from the style and skill catalog names, as DF-36 proposes for the recruit notice (for example 'Learned Dambe.' and 'Trained Blacksmithing.'); (3) read the skill's name in the empty-trainer line. Owner: copy; size XS to S. Route (1) as a COPY_OVERRIDES entry (tools/extract_content.py:437) and (2) to (3) as Godot copy changes with logic tests, in the same later copy PR as DF-36 and DF-37. Check goldens and saves for the Vega string first. Canon option while unfixed: Luciano keeps a warehouse floor, not a school (Vega's is the one with a hall and a register).
+
+Why: two masters of one style cannot both run 'the only' school; and raw ids break the no-raw-ids rule (ids are cite keys, not player words). The notices are also pushed to the log (game.rs:5709, 5732).
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing.
+
+## DF-41. The style injury gate is dead, and no path equips a learned style
+
+Where:
+- crates/portlight-sim/src/session.rs:3337 (train_crew passes an empty injury list to can_learn_style, so required_body_parts, content.json:4166, 4207, 4247, 4287, 4328, never block training); crates/portlight-godot/src/crew_screen.rs:11-12 and crates/portlight-godot/src/logic.rs:1881-1883 say so in comments
+- crates/portlight-sim/src/session.rs:1905-1912 and crates/portlight-sim/src/model.rs:535 (injuries are real: a lost personal fight can add one, so the list could be non-empty)
+- crates/portlight-sim/src/model.rs:523, crates/portlight-sim/src/world.rs:66 and crates/portlight-sim/src/save.rs:934 (the active style is None at a new game and is only loaded from a save; no Rust code writes it), crates/portlight-sim/src/combat.rs:104-112 and 273-283 (a style's passives and special action apply only through the active style)
+- portlight@9b02494 src/portlight/app/cli.py:2452-2459 (Python passes the captain's real injured parts) and 2475-2504 (equip-style sets the active style)
+
+Proposed fix: none proposed; logged only. Passing the real injury list, adding an equip control, or dropping the body-part data are design decisions (owner: sim and UI, size S to M), not copy. Until then canon says a learned style changes nothing in a game started in Rust.
+
+Why: the five styles cost 60 to 150 silver and 5 to 10 days each, and their passives and special actions are authored, but in Rust the training buys no effect and the injury gate never refuses.
+
+Status: open, log only.
+
 ## Resolved in lore (no data change)
 
 - Stormwall 'answers to the Pact, not the crown' (C:13570 area): the crown is the old Northern Crown that raised the Fortress (T3) and dissolved (T8).
@@ -456,3 +498,11 @@ Status: declined - resolved in lore. A hired officer is a namesake of the author
 - Iron Marta 'deserted the garrison' (C:5549, C:5557), with no garrison named: canon reads it as Stormwall's garrison, at T38, after No One, Gunnar and the Iron Wolves (T31 to T33). [invented]
 - Real-world words in data (Javanese, for Star Lila, C:5581): quoted as data and never extended; canon adds no real-world place.
 - Dr. Amara's 'dockside clinic' (C:5617): Sun Harbor has no apothecary institution in the data, so canon reads it as a room by the Welcome Dock. [invented]
+- Given-name overlap Red Hamish (Ironhaven, C:6190) and the bladesmith Hamish (Thornport, C:5947): two people. The same holds for Kai the Shaper (C:5436) with Shadow Kai (C:5641) and Elder Kai (C:10891), and for Forge Master Erik (C:5400) with Erik Strand (C:8533): namesakes, not kin (DF-37, DF-38).
+- 'Forge Master' as a title for Erik (C:5400) and for Henrik Brandt (C:7983), both at Ironhaven: a craft and an office. Henrik heads the Guild; Erik is a master smith of the same trade. [invented]
+- Three 'master' words in one trade: the skill level named Master (C:5388), the merchant Master Chen titled Master Smith (C:6004-6006) at Jade Port, and the fighting-style masters (style-masters/README.md): different things, read from context.
+- Senora Vega's 'only fencing school' (C:6185) against Maestro Luciano (C:6177): until DF-40 is applied, canon reads Luciano as teaching on a warehouse floor with no school, and Vega's as the one school with a hall and a ledger. [invented]
+- Nneka Ironfist teaches 'with bruises, not words' (C:6217) yet speaks a full line (C:6218): the line is her first-day speech.
+- Real-world words in master, trainer and style text (Scotsman, Norse, Castilian, Hausa, Polynesia, Hawaiian, Portuguese cannons, Spanish science of defense; C:6185, C:6193, C:6201, C:4215, C:4296, C:5431, C:4134): quoted as data and never extended; canon adds no real-world place.
+- The shipped desk row says 'needs 1 styles' (logic.rs:2041-2045): a copy nit, not logged.
+- Silva Bay's three uses of the name Silva (the port, Old Silva the outfitter at C:5900, the Silva Bay Smithy at C:5418): unrelated uses of a place name.
