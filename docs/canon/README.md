@@ -1,6 +1,6 @@
 # Portlight canon
 
-Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains); c413788 (phase 5: player types). Status: draft (docs/canon/). Written 2026-10-14. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
+Base commit: 143e284 (phase 1: ports); 71c6aaa (phase 2: landmarks); ab03ace (phase 3: lanes); 4f08125 (phase 4: factions and captains); c413788 (phase 5: player types); 515a488 (phase 6A: companions and officers). Status: draft (docs/canon/). Written 2026-10-14; phase 6A written 2026-10-17. Inputs: content.json and the sim at the base commit, plus design research notes (not in this repo).
 
 ## Purpose
 
@@ -40,6 +40,14 @@ No canon rule names a fixed list of ports, blocs, goods or regions. The port set
 4. Write sections B-E and G-I from cited data. Mark every invention. Place the port's history on the shared timeline below; add a timeline row only if no existing one fits.
 5. Add contradictions to data-fixes.md. Never fix the data in the canon PR.
 6. Review: design review (canon), art review (section C), analogy review (section D), sound review (section I).
+
+## How to add a companion or an officer pool
+
+1. Add the record to the sim first (content.json `companions.companions`, or `officer_names.regions`), through a sim PR with its parity note. Canon never introduces a companion, a role or a name pool.
+2. For a companion, create companions/<id>.md from any existing companion file and add its row to companions/README.md (index, gaps and region tables are hand-maintained); for a pool, add its file under officers/ and a row to officers/README.md.
+3. Quote every data line with its `C:n`. Mark anything canon adds [invented]. Put contradictions in data-fixes.md; never fix the data in the canon PR.
+4. Add one links-only line to the owning port file's section B ('Hire and training canon'). Add a timeline row only if no existing one fits.
+5. Review: design review (canon), sound review (ambience lines), art review only if look-and-feel changes (character plates are held).
 
 ## Port file sections
 
@@ -122,6 +130,12 @@ Rows T30 on were added with the faction and captain canon (phase 4). Read them b
 | T36 | ~8 BS | Iron Wolves try to run weapons through Dragon's Gate; fifteen are chained to the seabed (after T21) | C:13641; date [invented] |
 | T37 | ~40 BS | The present Coral King is crowned as a boy (after T12) | 'grown with him for forty years' (C:11288) |
 
+Rows T38 on were added with the companion canon (phase 6A). Read them by date, not by number:
+
+| Id | When | Event | Grounding |
+|---|---|---|---|
+| T38 | ~26 BS | Iron Marta walks out of the Stormwall garrison and takes ship for the sea (after T33, before T34) | 'deserted for the sea' (C:5549); garrison and date [invented] |
+
 Every port file's section G cites these IDs. A port history may add detail but must not move an event to another era.
 
 ## Pirate home ports ([invented]; data gives factions regions only)
@@ -166,6 +180,15 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - Every perk is tagged [exists file:line] or [proposal; planned slice PT-Sn]; the PT slices are separate sim PRs, not canon.
 - Each type file has a row for all 20 ports, linked to the port and its bloc file. No new timeline rows: types are roles, not events. Phase 5 data issues are DF-29 to DF-33 in data-fixes.md.
 
+## Companions and officers (phase 6A)
+
+- One file per named companion (10, `companions.companions`, C:5542) and per companion role (5, C:5480): see companions/README.md. The index states what the crew desk shows today: name, role, cost, required regional regard and region; the departure line after a victory; nothing else.
+- Officers are generated, not authored: officers/README.md explains how a hire draws a name and a trait, lists the six crew roles and the 15 traits, and holds the name-collision table. One file per regional name pool (5, `officer_names.regions`, C:6075).
+- Each companion's home port links the companion in section B (one links-only line). No lane, landmark, faction or player-type file is rewritten.
+- Companion role effects are authored and unread by the sim, and 11 of 13 morale triggers never fire; both are logged, not fixed (DF-34, DF-35). Phase 6A data issues are DF-34 to DF-38 in data-fixes.md.
+- Style masters, skill trainers and merchants are later phase 6 slices (captains/README.md still defers them).
+- No new art, sound or spend; the character hold stands.
+
 ## Files
 
 - README.md (this file)
@@ -177,5 +200,7 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - factions/README.md and factions/<faction>.md (11 files: 7 blocs, 4 pirate factions)
 - captains/README.md, captains/<archetype>.md (9 files) and captains/pirates/<pirate_id>.md (8 files)
 - player-types/README.md and player-types/<archetype>.md (9 files)
+- companions/README.md, companions/<companion_id>.md (10 files) and companions/roles/<role_id>.md (5 files)
+- officers/README.md and officers/<region>.md (5 files, one per name pool)
 
 Deepened thin ports (inventory 'Undefined'): Dragon's Gate, Spice Narrows, Silk Haven, Coral Throne, Ember Isle.

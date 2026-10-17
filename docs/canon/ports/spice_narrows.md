@@ -64,6 +64,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 - Network (tavern, personal): Mama Lucia - Mama Smoke, linking Corsair's Rest (C:11532). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (broker, allied): Ghost - The Ghost Broker, linking Corsair's Rest (C:11652). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Typhoon Mei (C:12894).
+- Hire and training canon (links only): [Shadow Kai](../companions/shadow_kai.md) (companion, Smuggler).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

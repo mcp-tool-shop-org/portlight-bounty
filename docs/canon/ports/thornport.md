@@ -62,6 +62,7 @@ Contract templates touching North Atlantic: `proc_weapons_garrison` (procurement
 - Temperament of the town: read from the power structure and tension in section E.
 - Network (merchant, professional): Sigrid Halvdan - Tea Merchant Liu, linking Dragon's Gate (C:11460). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Bones Thorsen (C:12852).
+- Hire and training canon (links only): [Old Henry](../companions/old_henry.md) (companion, Navigator).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

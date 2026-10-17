@@ -39,4 +39,4 @@ Named in encounters and the duel prompt (logic.rs:1086-1094, 2203-2212). Persona
 - Pirate captains are people, but canon sets no appearance, dress, ship art or portrait. Quoted sighting text stays data. The character hold stands; character plates are held.
 - Four pirates (The Butcher, Old Coral, The Diver, Gnaw) have only a record in data. Canon keeps them thin; any backstory beyond one [invented] line is a future data line.
 - Named NPCs (governors, mentors, merchants) stay in their port files. This index links mentors through the archetype files.
-- Not in scope: `merchants` (C:5868, shopkeepers), `style_masters` (C:6171), `officer_names` (C:6075) and companions; a future phase.
+- Companions and officer names: see [companions/README.md](../companions/README.md) and [officers/README.md](../officers/README.md) (phase 6A). Not in scope here: `merchants` (C:5868, shopkeepers) and `style_masters` (C:6171); later phase 6 slices.

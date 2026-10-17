@@ -63,6 +63,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 - Speech [cite]: built from the greeting lines in each NPC record above (greeting_neutral, friendly, hostile).
 - Temperament of the town: read from the power structure and tension in section E.
 - Network (tavern, professional): Mother Ko - Old Enzo, linking Porto Novo (C:11556). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
+- Hire and training canon (links only): [Star Lila](../companions/star_lila.md) (companion, Navigator).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

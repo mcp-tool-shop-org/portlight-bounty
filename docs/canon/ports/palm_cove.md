@@ -63,6 +63,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 - Network (merchant, allied): Old Cassius - Quartermaster Maren, linking Stormwall (C:11484). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (tavern, allied): Mama Joy - Yusuf Diallo, linking Sun Harbor (C:11544). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Old Cassius (C:12864).
+- Hire and training canon (links only): [Dockhand Pete](../companions/dockhand_pete.md) (companion, Quartermaster).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 
