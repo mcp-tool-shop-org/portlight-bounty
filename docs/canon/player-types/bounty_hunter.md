@@ -30,7 +30,7 @@ Perks:
 - Swift Cutter start [exists C:2632]
 - Inspection x0.6, fines x0.5, fees x0.7 [exists C:2638, C:2647-2649]
 - North Atlantic regard 8 [exists C:2651]
-- Bounty edge: +15 pct bounty reward, shown in bounty copy; bounties stay open to all. Trade-off: poor trade terms (buy x1.05, sell x0.98) [proposal; planned slice PT-S2]
+- Bounty edge: a claim pays x1.25 the table reward (silver only), and the hunt cards and day report show the paid amount; bounties stay open to all. Trade-off: poor trade terms (buy x1.05, sell x0.98) [exists S/bounty.rs paid_reward; tuned overlay]
 
 ## 3. How the 20 ports treat this type
 

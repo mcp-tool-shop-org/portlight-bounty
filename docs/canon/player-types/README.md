@@ -22,7 +22,7 @@ The ask: build out unique qualities for each player type. A player type is a cat
 | The Scholar | - | 400 | Coastal Sloop | x1.0 - x1.0 | x0.85 | x0.7 | x0.75 | route insight (PT-S5) | [scholar.md](scholar.md) |
 | The Merchant Prince | - | 700 | Coastal Sloop | x0.9 - x1.08 | x0.65 | x0.4 | x1.0 | family obligation (PT-S7) | [merchant_prince.md](merchant_prince.md) |
 | The Dockhand | - | 300 | Coastal Sloop | x1.0 - x1.0 | x1.0 | x1.0 | x0.85 | self-made growth (PT-S6) | [dockhand.md](dockhand.md) |
-| The Bounty Hunter | Bounty Hunter | 425 | Swift Cutter | x1.05 - x0.98 | x0.7 | x0.6 | x0.9 | bounty reward +15 pct (PT-S2) | [bounty_hunter.md](bounty_hunter.md) |
+| The Bounty Hunter | Bounty Hunter | 425 | Swift Cutter | x1.05 - x0.98 | x0.7 | x0.6 | x0.9 | bounty claim reward x1.25 | [bounty_hunter.md](bounty_hunter.md) |
 
 Values: C:2315-2660 (captains). Code branches exist only for The Smuggler (5), The Merchant (1) and The Navigator (1) (crates/portlight-sim/src/reputation.rs:58-60, 107-109; voyage.rs:295-300, 473-475; encounter.rs:49-56; campaign.rs:1304-1307).
 
