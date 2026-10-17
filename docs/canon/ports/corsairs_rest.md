@@ -65,6 +65,7 @@ Contract templates touching Mediterranean: `proc_iron_forge` (procurement), `sho
 - Network (broker, allied): Ghost - The Ghost Broker, linking Spice Narrows (C:11652). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Scarlet Ana (C:12816).
 - Sea sighting filed under this port: Ghost (C:12828).
+- Hire and training canon (links only): [Red Tomas](../companions/red_tomas.md) (companion, Marine); [Rosa the Fence](../companions/rosa_the_fence.md) (companion, Smuggler).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

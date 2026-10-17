@@ -63,6 +63,7 @@ Contract templates touching South Seas: `proc_grain_feed` (procurement), `proc_t
 - Network (tavern, personal): Cook Hine - Spring Keeper Olo, linking Ember Isle (C:11580). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Storm Chief Rangi (C:12912).
 - Sea sighting filed under this port: Dive Boss Moana (C:12918).
+- Hire and training canon (links only): [Patches](../companions/patches.md) (companion, Surgeon).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

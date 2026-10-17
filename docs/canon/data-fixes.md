@@ -1,8 +1,8 @@
 # Canon data fixes (proposals only; nothing changed; resolved items are marked)
 
-Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125) and 5 (player types, base c413788). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
+Written 2026-10-14. Found while writing docs/canon phases 1 (ports, base 143e284), 2 (landmarks, base 71c6aaa), 3 (lanes, base ab03ace), 4 (factions and captains, base 4f08125), 5 (player types, base c413788) and 6A (companions and officers, base 515a488). Each item gives where (file:line), the proposed fix and why. None is applied: the game is unchanged. Sim data changes need their own PR, with a parity note where gossip, sighting or save text is involved.
 
-Count: 33.
+Count: 38.
 
 Contradictions resolved in lore (no data fix needed) are listed at the end.
 
@@ -361,6 +361,70 @@ Proposed fix: flag only; no change proposed now. Revisit with DF-3 (Bounty Hunte
 
 Why: two of nine starts open in the same port with the same mentor, which weakens type identity.
 
+## DF-34. Companion role effects are authored and unread
+
+Where:
+- crates/portlight-sim/data/content.json:5480-5541 (companions.roles: damage, interception, speed, danger, heal, inspection evasion and trade numbers on 5 roles)
+- crates/portlight-sim/src/companion.rs:193, 211, 235, 269 (party_combat_bonus, roll_interception, party_summary, cohesion: no caller outside the test at companion.rs:327)
+- portlight@9b02494 src/portlight/engine/companion_engine.py:216, 245 (the same two combat functions; no caller in src). Python's `party` command does call get_party_summary and get_cohesion (src/portlight/app/cli.py:3183-3196); Rust has no such caller.
+
+Proposed fix: none proposed; logged only. Wiring the effects, or rewording the role text, is a separate design decision (owner: sim, size M). Until then canon says no role effect applies.
+
+Why: role text such as 'A trained fighter who stands at your side in combat.' (content.json:5484) promises effects the sim does not deliver. No shipped sentence repeats it today: the crew desk shows the role name only (crates/portlight-godot/src/logic.rs:2129-2181).
+
+Status: open, log only.
+
+## DF-35. 11 of 13 morale triggers never fire, so loyalty and warning lines are unreachable
+
+Where:
+- crates/portlight-sim/data/content.json:5704-5835 (13 triggers) and :5836-5867 (4 personalities)
+- crates/portlight-sim/src/session.rs:2074-2076 (only spared_enemy and took_all are fired, once per duel victory); companion.rs:124 has no other caller
+- crates/portlight-sim/src/companion.rs:130-141 (a personality delta applies only where the role delta for that trigger is not zero; the rest is dead data, for example the lawful spared_enemy +2, content.json:5838, on a role that ignores it)
+- portlight@9b02494 src/portlight/app/cli.py:2888-2906 and src/portlight/app/tui/screens/encounter.py:863-882 (the same two triggers)
+
+Proposed fix: none proposed; logged only. Firing the other triggers, or trimming the table, is a separate design decision (owner: sim, size M).
+
+Why: loyalty_line and warning_line (every companion record) imply a morale arc that only duel choices can drive. Today a departure is reachable only for navigators and surgeons, by repeated take-all victories (companions/README.md section 5). The pragmatic personality has no deltas at all (content.json:5846).
+
+Status: open, log only.
+
+## DF-36. The recruit notice prints a raw id
+
+Where:
+- crates/portlight-godot/src/game.rs:5748 ('Recruited {id}.' reads 'Recruited iron_marta.')
+- crates/portlight-godot/src/logic.rs:1923 (the confirm line before it uses the catalog name: 'Recruit Iron Marta for 80 silver.')
+
+Proposed fix: build the notice from the catalog name, as arm_recruit does with the offer name (game.rs:5666), for example 'Recruited Iron Marta.' Owner: copy (godot); size XS; add a logic test. Route it with DF-37 as one later copy PR; the other copy items are logged in a later canon pass.
+
+Why: it breaks the no-raw-ids rule; ids are cite keys, not player words. The same notice is also pushed to the log (game.rs:5749).
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing.
+
+## DF-37. Same-name people at the same port, and across ports
+
+Where:
+- Same port: companion Dr. Amara (content.json:5609) and Inspector Amara, Sun Harbor (content.json:8745); merchant Devi (content.json:6018) and Shipwright Devi, Monsoon Reach (content.json:9773); merchant Tane (content.json:6047) and War Chief Tane, Coral Throne (content.json:11346); merchant Master Chen (content.json:6004) and Kiln Master Chen Bai, Jade Port (content.json:9517)
+- Same full name, different ports: merchant Li Wei, Silk Haven (content.json:6032) and Harbor Director Li Wei, Jade Port (content.json:9495)
+- Given-name overlaps across ports are not logged as faults: Kofi, Yaa, Marta, Rosa, Erik, Kai (for example Iron Marta and Marta Soares, content.json:5545 and :7053; Rosa the Fence and Rosa Carvalho, content.json:5657 and :7581)
+
+Proposed fix: give about five display names a surname or a title in the content strings, one COPY_OVERRIDES entry each (owner: copy; size S). Check goldens and saves for those display strings before applying. Canon needs none of it.
+
+Why: two people with one name in one harbour cannot be told apart in any line that names them. Canon reads each pair as two different people until fixed (resolved in lore below for the given-name overlaps).
+
+Status: open; fix proposed for the later copy PR. Canon changes nothing.
+
+## DF-38. Officer name pools reuse 19 authored given names
+
+Where:
+- crates/portlight-sim/data/content.json:6078-6152 (5 pools of 10), against port NPC, merchant, companion, style master and skill trainer names. The 19 pool names are: Marco C:6080, Fatima C:6083, Dimitri C:6086, Henrik C:6097, Gunnar C:6101, Astrid C:6102, Kwame C:6110, Kofi C:6112, Adaeze C:6113, Mariam C:6115, Yusuf C:6118, Zara C:6119, Rajan C:6125, Kamala C:6134, Tane C:6140, Moana C:6141, Rangi C:6142, Leilani C:6143, Koa C:6146
+- portlight@9b02494 src/portlight/content/officer_names.py:12-33 (the same pools)
+
+Proposed fix: rename the pool entries in place (owner: content; size S, 19 strings). A rename does not change the number of random draws, but it changes receipts and any golden or save that prints an officer name, so it needs a parity note against the Python pools.
+
+Why: a hired navigator named Tane can stand beside War Chief Tane of Coral Throne, and the crew desk prints only the given name.
+
+Status: declined - resolved in lore. A hired officer is a namesake of the authored person, not that person; two officers who share a name are told apart by role (officers/README.md section 5). Logged so the choice is on record.
+
 ## Resolved in lore (no data change)
 
 - Stormwall 'answers to the Pact, not the crown' (C:13570 area): the crown is the old Northern Crown that raised the Fortress (T3) and dissolved (T8).
@@ -368,7 +432,7 @@ Why: two of nine starts open in the same port with the same mentor, which weaken
 - Al-Manar's 'Senhora' governor: 'Senhora' is the Alliance's court honorific for any governing lady, adopted from Porto Novo's usage at the Alliance's signing (T5).
 - Silva Bay tavern rumour about storm-lost ships: an in-world rumour, unreliable. Elena builds for anyone who respects ships.
 - Pirate factions with no home port: canon assigns invented homes (README).
-- Name reuse across ports (Mensah, Strand, Astrid, Esi): different people. Common names in a region, not kin.
+- Name reuse across ports (Mensah, Strand, Astrid, Esi): different people. Common names in a region, not kin. The same holds for given names shared between companions, merchants, trainers, officer-pool names and port NPCs (Marta, Rosa, Kai, Kofi, Yaa, Erik, Mariam; DF-37, DF-38): namesakes, not kin.
 - Map scale (route distance against chart distance): route distance is sailing days under prevailing winds, not straight-line distance.
 - Bloc against region mismatches (Free Ports and Shadow Ports span regions): blocs are political, regions are geographic, by design.
 - Thornport whaler names (C:8362 beams, C:8499 Arch, C:12348 Arch): the Arch holds the originals carved by Bones; the Whale Bone's beams hold copies (landmarks/whale_arch.md).
@@ -388,3 +452,7 @@ Why: two of nine starts open in the same port with the same mentor, which weaken
 - Raj the Quiet as a sea captain (C:2929) and as Kiran's intelligence chief (C:10703): Raj sails; his Shadow keeps the desk (C:10738).
 - An Iron Wolves captain trading at Coral Throne (C:11335), outside Wolf territory: Wolves sell anywhere and raid at home.
 - No One, Gunnar and the Iron Wolves all deserted 'the same garrison' (C:7781, C:7971): canon reads it as Stormwall's garrison, in order T31, T32, T33.
+- Crew roles against companion roles (Marine, Navigator, Surgeon, Quartermaster): two systems with the same four names. Canon calls the hired role's person an officer and the named party member a companion; a captain can have both and they never share a record (companions/README.md, officers/README.md).
+- Iron Marta 'deserted the garrison' (C:5549, C:5557), with no garrison named: canon reads it as Stormwall's garrison, at T38, after No One, Gunnar and the Iron Wolves (T31 to T33). [invented]
+- Real-world words in data (Javanese, for Star Lila, C:5581): quoted as data and never extended; canon adds no real-world place.
+- Dr. Amara's 'dockside clinic' (C:5617): Sun Harbor has no apothecary institution in the data, so canon reads it as a room by the Welcome Dock. [invented]
