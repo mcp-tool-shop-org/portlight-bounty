@@ -11,7 +11,7 @@
 
 Portlight Bounty is a trade game. You buy, you sail, you take a contract, and you try not to arrive broke. The line under the mark is the whole pitch: trade, sail, prosper.
 
-This repository is the Rust port of [Portlight](https://github.com/mcp-tool-shop-org/portlight). The simulation is the rules. The Godot 4.7 chart is the game you play. Version 0.1.0 is the first GitHub release of that pair.
+This repository is the Rust port of [Portlight](https://github.com/mcp-tool-shop-org/portlight). The simulation is the rules. The Godot 4.7 chart is the game you play. Version 0.2.0 is the current release of that pair.
 
 The docked chart, with the market open at Al-Manar:
 
@@ -30,7 +30,7 @@ cargo build -p portlight-godot
 godot --path godot
 ```
 
-New game, then The Merchant, and leave the name as Ada if you want the voyage the screenshots show. Sail, trade, and take a contract from the port row. Save writes a version-12 slot beside New game. A loaded custom captain keeps the name, the silver, and the day. The custom template itself is not in the save, so prices after a load are the merchant's. That matches the Python game.
+New game, then The Merchant, and leave the name as Ada if you want the voyage the screenshots show. Sail, trade, and take a contract from the port row. Save writes a version-12 or version-13 slot beside New game (version 13 once a counting-house account is open). A loaded custom captain keeps the name, the silver, and the day. The custom template itself is not in the save, so prices after a load are the merchant's. That matches the Python game.
 
 At sea the port row hides. Next day advances the voyage. The day's report opens over the chart when the day has something to say.
 
@@ -48,13 +48,11 @@ cargo test --locked --workspace --exclude portlight-godot
 
 `portlight --help` lists every script command. Exit codes are 0 when the run worked, 1 when the simulation or a file failed, and 2 when the command was not understood. Failures are sentences. There is no telemetry and no `--debug` switch.
 
-The Python game at commit `9b02494` is the source of the rules. A number both sides agree on stays, including the ones that look odd. The handbook names them.
+The Python game at commit `9b02494` is the source of the rules. Five captain archetypes carry a small Rust-tuned pricing and burn overlay (`crates/portlight-sim/data/tuned_overlay.json`), and The Bounty Hunter claims +25% on bounties; building with `--features python-base` turns the overlay off so the simulation matches Python unmodified.
 
-## What 0.1.0 is
+## What 0.2.0 is
 
-A playable Mediterranean chart: ports, lanes, market, contracts, crew, the yard, the harbour desk, hunt, the journal, and a fight at sea. The landing bundle is manifest 0.4.3. `godot/assets/landing/MANIFEST.json` is the list of plates. An older note that said "70 PNGs, v0.3.0" is out of date.
-
-Draft pull requests for extra fight and contract lines are not in this tag.
+A playable chart across 20 ports and 43 sea lanes: market, contracts, crew and fighting-style training/equipping, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, combat and contract recap cards, sinking and tow recovery, and sea fights. The world canon (Phases 1–6) lives under `docs/canon/`. The landing bundle is manifest 0.4.3 (`godot/assets/landing/MANIFEST.json`).
 
 ## Pictures
 
@@ -68,12 +66,12 @@ There is no ElevenLabs voice in this release.
 
 ## Trust
 
-The game is local. It does not open a network connection, it does not have an account, and it does not send telemetry. It reads the catalog baked into the binary, a script you name, and a save you name. It writes a version-12 save into a folder you choose. The chart's default folder is `saves/` under the working directory.
+The game is local. It does not open a network connection, it does not have an account, and it does not send telemetry. It reads the catalog baked into the binary, a script you name, and a save you name. It writes a version-12 or version-13 save into a folder you choose. The chart's default folder is `saves/` under the working directory.
 
 Report a vulnerability in private on this repository. See [SECURITY.md](SECURITY.md). There is no separate mailbox.
 
 ## Support
 
-0.1.0 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
+0.2.0 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
 
 Built by [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code and art: mcp-tool-shop contributors.

@@ -1,10 +1,10 @@
 # Scorecard
 
 **Repo:** portlight-bounty
-**Date:** 2026-10-09
+**Date:** 2026-10-17
 **Type tags:** `[all]` local game, Rust workspace, Godot chart. Not npm.
 
-## Pre-remediation
+## Pre-remediation (pre-0.1.0)
 
 | Category | Score | Notes |
 |----------|-------|-------|
@@ -21,6 +21,6 @@
 2. The MIT file covered the pictures by silence, and the five vendored props have no recorded maker or license.
 3. No release, no landing page, no security policy.
 
-## This release
+## This release (0.2.0)
 
-Hard gates A–D are checked or skipped in SHIP_GATE.md. Translations are skipped on purpose. The landing page and the GitHub homepage land in the same release.
+Hard gates A–D are checked or skipped in SHIP_GATE.md. Translations are skipped on purpose. The landing page, handbook, canon (Phases 1–6), and workspace version are aligned at 0.2.0.

@@ -11,7 +11,7 @@ export const config: SiteConfig = {
     'MIT license. Built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v0.1.0',
+    badge: 'v0.2.0',
     headline: 'Portlight Bounty',
     headlineAccent: 'Trade, sail, prosper.',
     description:
@@ -39,7 +39,7 @@ export const config: SiteConfig = {
       kind: 'features',
       id: 'features',
       title: 'What you get',
-      subtitle: 'Version 0.1.0 is the first GitHub release.',
+      subtitle: 'Version 0.2.0 is the current release.',
       features: [
         {
           title: 'A chart you can sail',

@@ -5,7 +5,7 @@ sidebar:
   order: 5
 ---
 
-`portlight --help` is the list the binary prints. This page matches version 0.1.0.
+`portlight --help` is the list the binary prints. This page matches version 0.2.0.
 
 ```text
 portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]
@@ -17,9 +17,9 @@ portlight help
 
 `new` defaults to captain merchant, name Captain, seed 1. `--json` prints the canonical snapshot. Without it, `new` prints a short summary and the market at the dock.
 
-`script -` reads the script from stdin. `--save-dir` writes a version-12 slot. `--slot` names that slot and is used together with `--save-dir`. The default slot name is `default`.
+`script -` reads the script from stdin. `--save-dir` writes a version-12 or version-13 slot (version 13 once a counting-house account is open). `--slot` names that slot and is used together with `--save-dir`. The default slot name is `default`.
 
-`load` prints one version-12 save.
+`load` prints one version-12 or version-13 save.
 
 ## Exit codes
 

@@ -1,13 +1,13 @@
 ---
 title: Portlight Bounty
-description: What this game is, and what version 0.1.0 includes.
+description: What this game is, and what version 0.2.0 includes.
 sidebar:
   order: 0
 ---
 
 Portlight Bounty is a trade game. You buy goods, sail a lane, take a contract, and try to arrive with silver still in the box. The Rust simulation is the rules. The Godot chart is the game you sit down at.
 
-This is the handbook for version 0.1.0, the first GitHub release. The Python game that the rules are checked against is [Portlight](https://github.com/mcp-tool-shop-org/portlight) at commit `9b02494`.
+This is the handbook for version 0.2.0. The Python game that the rules are checked against is [Portlight](https://github.com/mcp-tool-shop-org/portlight) at commit `9b02494`.
 
 ## Start here
 
@@ -17,13 +17,11 @@ This is the handbook for version 0.1.0, the first GitHub release. The Python gam
 4. [Pictures and the license](./art/) before you reuse anything you see.
 5. [Commands](./reference/) for the script runner.
 
-## What 0.1.0 includes
+## What 0.2.0 includes
 
-A Mediterranean chart. New game and load. Sail, the market, contracts, crew, the yard, the harbour desk, hunt, the journal, the day's report, and a fight at sea.
+A chart across 20 ports and 43 lanes. New game, save, and load. Sail, the market, contracts, crew and fighting-style training/equipping, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, the day's report, combat and contract recap cards, sinking and tow recovery, and sea fights.
 
 The plates in the landing bundle are listed in `godot/assets/landing/MANIFEST.json` (manifest 0.4.3). An older note that said "70 PNGs, v0.3.0" does not describe this release.
-
-Draft pull requests that add extra fight and contract lines are not in this tag.
 
 ## What it does not do
 

@@ -31,7 +31,7 @@ Sail uses the lane list. Days on the picker are the ship's raw speed. Crew, mora
 
 ## Save and load
 
-Save sits with New game and writes a version-12 slot. Load lists the captain and the day. A loaded custom captain keeps the name, the type, the silver, and the day. Version 12 does not store the custom template, so prices and voyage modifiers after a load are the merchant's. That is the same limit as Python.
+Save sits with New game and writes a version-12 or version-13 slot (version 13 once a counting-house account is open). Load lists the captain and the day. A loaded custom captain keeps the name, the type, the silver, and the day. Saves do not store the custom template, so prices and voyage modifiers after a load are the merchant's. That is the same limit as Python.
 
 The chart writes `saves/` under the working directory when you launch Godot from this checkout. That folder is gitignored.
 

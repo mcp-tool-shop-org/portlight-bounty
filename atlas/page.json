@@ -46,6 +46,17 @@
     {
       "kind": "place",
       "readers": [
+        "portlight-sim",
+        "tools"
+      ],
+      "target": "crates/portlight-sim/data/content.json",
+      "writers": [
+        "tools"
+      ]
+    },
+    {
+      "kind": "place",
+      "readers": [
         "tools"
       ],
       "target": "parity/golden/",
@@ -56,120 +67,71 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 25,
-      "changed": 3,
+      "added": 188,
+      "changed": 109,
       "moved": 0,
-      "parts": 4,
+      "parts": 11,
       "removed": 0
     },
     "items": [
       {
         "kind": "door",
-        "sentence": "Deploy site to GitHub Pages (.github/workflows/pages.yml) is a new door. It starts on a push to main touching 2 paths; or by hand. It runs site/astro.config.mjs and site/src/.",
+        "sentence": "CI now also runs crates/portlight-godot/src/hints.rs, crates/portlight-godot/src/recap.rs, crates/portlight-godot/src/recap_card.rs and 1 more.",
         "subjects": [
-          ".github/workflows/pages.yml",
-          "site/astro.config.mjs",
-          "site/src/"
+          ".github/workflows/ci.yml",
+          "crates/portlight-godot/src/hints.rs",
+          "crates/portlight-godot/src/recap.rs",
+          "crates/portlight-godot/src/recap_card.rs",
+          "crates/portlight-sim/tests/balance_bot.rs"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "godot/ is now also read by site/src/content/docs/handbook/getting-started.md.",
+        "sentence": "crates/portlight-godot/src/game.rs is now also read by crates/portlight-godot/src/game.rs and crates/portlight-godot/src/recap_card.rs.",
         "subjects": [
-          "godot/",
-          "site/src/content/docs/handbook/getting-started.md"
+          "crates/portlight-godot/src/game.rs",
+          "crates/portlight-godot/src/game.rs",
+          "crates/portlight-godot/src/recap_card.rs"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "site/src/content/docs/ is now read by site/astro.config.mjs.",
+        "sentence": "crates/portlight-sim/data/content.json is now also read by crates/portlight-sim/src/tuned.rs and tools/parity/check.py.",
         "subjects": [
-          "site/src/content/docs/",
-          "site/astro.config.mjs"
+          "crates/portlight-sim/data/content.json",
+          "crates/portlight-sim/src/tuned.rs",
+          "tools/parity/check.py"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "site/src/content/docs/handbook/ is now read by site/astro.config.mjs.",
+        "sentence": "crates/portlight-sim/data/tuned_overlay.json is now read by crates/portlight-sim/src/tuned.rs and tools/parity/pin_tuned.py.",
         "subjects": [
-          "site/src/content/docs/handbook/",
-          "site/astro.config.mjs"
+          "crates/portlight-sim/data/tuned_overlay.json",
+          "crates/portlight-sim/src/tuned.rs",
+          "tools/parity/pin_tuned.py"
         ]
       },
       {
-        "kind": "part",
-        "sentence": "scripts is a new part, drawn from `scripts/**`.",
-        "subjects": [
-          "scripts"
-        ]
-      },
-      {
-        "kind": "part",
-        "sentence": "site is a new part, drawn from `site/**`.",
-        "subjects": [
-          "site"
-        ]
+        "kind": "landing",
+        "sentence": "And 2 more new writers and readers of places.",
+        "subjects": []
       },
       {
         "kind": "counts",
-        "sentence": "25 files added and 3 changed content, across 4 parts.",
+        "sentence": "188 files added and 109 changed content, across 11 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "776b2b1cb127f95fe67858567ff0f3da16d0d3a6",
-      "generatedAt": "2026-10-09T21:09:25.841Z"
+      "commit": "3bea25f9917fae3585f68f699456600171964817",
+      "generatedAt": "2026-10-09T21:18:10.765Z"
     },
     "unchanged": false
   },
   "changesTogether": [
     {
-      "a": "crates/portlight-sim/src/script.rs",
-      "b": "tools/parity/oracle.py",
-      "either": 9,
-      "partLabels": [
-        "portlight-sim",
-        "tools"
-      ],
-      "parts": [
-        "portlight-sim",
-        "tools"
-      ],
-      "relation": "none",
-      "shared": 7
-    },
-    {
-      "a": "crates/portlight-sim/src/lib.rs",
-      "b": "crates/portlight-sim/src/script.rs",
-      "either": 8,
-      "partLabels": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "parts": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "relation": "inside",
-      "shared": 6
-    },
-    {
-      "a": "crates/portlight-sim/src/lib.rs",
-      "b": "crates/portlight-sim/src/model.rs",
-      "either": 7,
-      "partLabels": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "parts": [
-        "portlight-sim",
-        "portlight-sim"
-      ],
-      "relation": "inside",
-      "shared": 5
-    },
-    {
-      "a": "crates/portlight-sim/src/lib.rs",
+      "a": "crates/portlight-sim/src/model.rs",
       "b": "crates/portlight-sim/src/snapshot.rs",
       "either": 7,
       "partLabels": [
@@ -184,9 +146,9 @@
       "shared": 5
     },
     {
-      "a": "crates/portlight-sim/src/model.rs",
-      "b": "crates/portlight-sim/src/script.rs",
-      "either": 7,
+      "a": "crates/portlight-sim/src/lib.rs",
+      "b": "crates/portlight-sim/src/model.rs",
+      "either": 9,
       "partLabels": [
         "portlight-sim",
         "portlight-sim"
@@ -196,17 +158,62 @@
         "portlight-sim"
       ],
       "relation": "inside",
-      "shared": 5
+      "shared": 6
+    },
+    {
+      "a": "crates/portlight-sim/src/lib.rs",
+      "b": "crates/portlight-sim/src/snapshot.rs",
+      "either": 9,
+      "partLabels": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "parts": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "relation": "inside",
+      "shared": 6
+    },
+    {
+      "a": "crates/portlight-sim/src/model.rs",
+      "b": "crates/portlight-sim/src/script.rs",
+      "either": 9,
+      "partLabels": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "parts": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "relation": "inside",
+      "shared": 6
+    },
+    {
+      "a": "crates/portlight-sim/src/script.rs",
+      "b": "crates/portlight-sim/src/snapshot.rs",
+      "either": 9,
+      "partLabels": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "parts": [
+        "portlight-sim",
+        "portlight-sim"
+      ],
+      "relation": "inside",
+      "shared": 6
     }
   ],
   "changesTogetherNote": [
     "Confidence is low: fewer than 25 source files reach 10 revisions in the window.",
-    "Window: 180 days; a pair counts from 3 shared commits, since 8 source files reach 10 revisions; the floor rises to 10 when 25 do."
+    "Window: 180 days; a pair counts from 3 shared commits, since 11 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "3bea25f9917fae3585f68f699456600171964817",
+  "commit": "6713cc28969ebb482c48f19dd6c28096a211fa6c",
   "defaultBranch": "main",
-  "derived": "12 parts, mostly Rust (75 files), Python (12), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
+  "derived": "12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
     {
       "checks": [
@@ -245,17 +252,17 @@
         {
           "boundary": "portlight-godot",
           "depth": 0,
-          "files": 20
+          "files": 23
         },
         {
           "boundary": "portlight-sim",
           "depth": 0,
-          "files": 44
+          "files": 49
         },
         {
           "boundary": "tools",
           "depth": 0,
-          "files": 8
+          "files": 9
         }
       ],
       "runs": [
@@ -283,11 +290,14 @@
         "crates/portlight-godot/src/game.rs",
         "crates/portlight-godot/src/harbour.rs",
         "crates/portlight-godot/src/harbour_screen.rs",
+        "crates/portlight-godot/src/hints.rs",
         "crates/portlight-godot/src/hunt_screen.rs",
         "crates/portlight-godot/src/journal_screen.rs",
         "crates/portlight-godot/src/logic.rs",
         "crates/portlight-godot/src/market.rs",
         "crates/portlight-godot/src/playtest.rs",
+        "crates/portlight-godot/src/recap.rs",
+        "crates/portlight-godot/src/recap_card.rs",
         "crates/portlight-godot/tests/",
         "crates/portlight-sim/src/bounty.rs",
         "crates/portlight-sim/src/campaign.rs",
@@ -322,8 +332,8 @@
         "crates/portlight-sim/src/world.rs",
         "crates/portlight-sim/tests/"
       ],
-      "runsCount": 62,
-      "runsMore": 61,
+      "runsCount": 65,
+      "runsMore": 67,
       "sends": [
         "uploads coverage to Codecov"
       ],
@@ -386,7 +396,7 @@
         {
           "boundary": "portlight-sim",
           "depth": 3,
-          "files": 41
+          "files": 43
         }
       ],
       "runs": [
@@ -418,7 +428,7 @@
         {
           "boundary": "portlight-sim",
           "depth": 1,
-          "files": 41
+          "files": 43
         }
       ],
       "runs": [
@@ -509,10 +519,10 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-09T21:18:10.765Z",
+  "generatedAt": "2026-10-18T01:04:10.164Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
-    "1 write and 14 reads use paths built at run time and are not named here.",
+    "6 writes and 19 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
     "7 writes and 15 reads go to a path their caller passes, not to this repository.",
     "1 write and 1 read go to a temporary directory, not to this repository.",
@@ -576,13 +586,13 @@
   "startReason": "This path follows gen_placeholders (a command built from crates/portlight-chart, which nothing ships) from its entry, since CI runs only tests, scripts that import no code here and checks.",
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 57,
+  "testFiles": 63,
   "testedBy": {
     "godot": 0,
     "portlight-chart": 7,
     "portlight-cli": 0,
-    "portlight-godot": 13,
-    "portlight-sim": 34,
+    "portlight-godot": 16,
+    "portlight-sim": 37,
     "site": 0,
     "tools": 2
   },
@@ -590,7 +600,7 @@
     "portlight-chart",
     "portlight-godot"
   ],
-  "unnamedWrites": 1,
+  "unnamedWrites": 6,
   "unread": [],
   "unreadCode": [
     "scripts"

@@ -1,24 +1,23 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-09 from commit 3bea25f by Atlas 1.24.0.
+Mapped at 2026-10-18 from commit 6713cc2 by Atlas 1.24.0.
 
 ## What this is
 
-12 parts, mostly Rust (75 files), Python (12), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
+12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-09 (776b2b1)
+## What changed since 2026-10-09 (3bea25f)
 
-- Deploy site to GitHub Pages (.github/workflows/pages.yml) is a new door. It starts on a push to main touching 2 paths; or by hand. It runs site/astro.config.mjs and site/src/.
-- godot/ is now also read by site/src/content/docs/handbook/getting-started.md.
-- site/src/content/docs/ is now read by site/astro.config.mjs.
-- site/src/content/docs/handbook/ is now read by site/astro.config.mjs.
-- scripts is a new part, drawn from `scripts/**`.
-- site is a new part, drawn from `site/**`.
-- 25 files added and 3 changed content, across 4 parts.
+- CI now also runs crates/portlight-godot/src/hints.rs, crates/portlight-godot/src/recap.rs, crates/portlight-godot/src/recap_card.rs and 1 more.
+- crates/portlight-godot/src/game.rs is now also read by crates/portlight-godot/src/game.rs and crates/portlight-godot/src/recap_card.rs.
+- crates/portlight-sim/data/content.json is now also read by crates/portlight-sim/src/tuned.rs and tools/parity/check.py.
+- crates/portlight-sim/data/tuned_overlay.json is now read by crates/portlight-sim/src/tuned.rs and tools/parity/pin_tuned.py.
+- And 2 more new writers and readers of places.
+- 188 files added and 109 changed content, across 11 parts.
 
 ## What comes in
 
-1. **CI.** On a pull request except when only **/*.md or docs/** change; on a push to main except when only **/*.md or docs/** change; or by hand. Runs godot/scenes/harbour_seam.tscn, godot/scenes/main.tscn, tools/parity/check.py and 61 more; checks crates/portlight-chart/src/bin/gen_placeholders.rs, crates/portlight-chart/src/lib.rs, crates/portlight-cli/src/main.rs and 2 more.
+1. **CI.** On a pull request except when only **/*.md or docs/** change; on a push to main except when only **/*.md or docs/** change; or by hand. Runs godot/scenes/harbour_seam.tscn, godot/scenes/main.tscn, tools/parity/check.py and 67 more; checks crates/portlight-chart/src/bin/gen_placeholders.rs, crates/portlight-chart/src/lib.rs, crates/portlight-cli/src/main.rs and 2 more.
 2. **Deploy site to GitHub Pages.** On a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
 3. **gen_placeholders** (a command built from crates/portlight-chart, which nothing ships). Runs crates/portlight-chart/src/bin/gen_placeholders.rs.
 4. **portlight** (a command people run). Runs crates/portlight-cli/src/main.rs.
@@ -26,7 +25,7 @@ Mapped at 2026-10-09 from commit 3bea25f by Atlas 1.24.0.
 
 ## What happens through CI
 
-1. The workflow runs godot/scenes/harbour_seam.tscn and godot/scenes/main.tscn in godot, 7 files in portlight-chart, 14 files in portlight-godot, 34 files in portlight-sim, and 7 files in tools; it checks crates/portlight-chart/src/bin/gen_placeholders.rs and crates/portlight-chart/src/lib.rs in portlight-chart, crates/portlight-cli/src/main.rs in portlight-cli, crates/portlight-godot/src/lib.rs in portlight-godot, and crates/portlight-sim/src/lib.rs in portlight-sim.
+1. The workflow runs godot/scenes/harbour_seam.tscn and godot/scenes/main.tscn in godot, 7 files in portlight-chart, 17 files in portlight-godot, 37 files in portlight-sim, and 7 files in tools; it checks crates/portlight-chart/src/bin/gen_placeholders.rs and crates/portlight-chart/src/lib.rs in portlight-chart, crates/portlight-cli/src/main.rs in portlight-cli, crates/portlight-godot/src/lib.rs in portlight-godot, and crates/portlight-sim/src/lib.rs in portlight-sim.
    1. Inside tools/parity/test_check.py, `broker_paths` does, in order: `load_divergences` and `listed`.
 2. It writes to parity/golden/ and parity/saves/custom_captain_v12.json.
 3. It also writes to portlight-newgame-smoke/, which is not tracked.
@@ -52,21 +51,22 @@ Mapped at 2026-10-09 from commit 3bea25f by Atlas 1.24.0.
 - **portlight-chart** is imported by 1 part (portlight-godot) and sits on the path of 2 doors.
 - **godot** is imported by no other part and sits on the path of 2 doors.
 - **portlight-cli** is imported by no other part and sits on the path of 2 doors.
+- **crates/portlight-sim/data/content.json** is written by tools and read by portlight-sim and tools; a hand edit reaches every reader.
 - **parity/golden/** is written by tools and read by tools; a hand edit reaches every reader.
 
 scripts holds only PowerShell and shell files, which this map does not read, so what uses it cannot be seen.
 
 ## What tends to change together
 
-- **crates/portlight-sim/src/script.rs** and **tools/parity/oracle.py** changed together in 7 of 9 commits, though neither part imports the other.
-- **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/script.rs** changed together in 6 of 8 commits, inside the portlight-sim part.
-- **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/model.rs** changed together in 5 of 7 commits, inside the portlight-sim part.
-- **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/snapshot.rs** changed together in 5 of 7 commits, inside the portlight-sim part.
-- **crates/portlight-sim/src/model.rs** and **crates/portlight-sim/src/script.rs** changed together in 5 of 7 commits, inside the portlight-sim part.
+- **crates/portlight-sim/src/model.rs** and **crates/portlight-sim/src/snapshot.rs** changed together in 5 of 7 commits, inside the portlight-sim part.
+- **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/model.rs** changed together in 6 of 9 commits, inside the portlight-sim part.
+- **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/snapshot.rs** changed together in 6 of 9 commits, inside the portlight-sim part.
+- **crates/portlight-sim/src/model.rs** and **crates/portlight-sim/src/script.rs** changed together in 6 of 9 commits, inside the portlight-sim part.
+- **crates/portlight-sim/src/script.rs** and **crates/portlight-sim/src/snapshot.rs** changed together in 6 of 9 commits, inside the portlight-sim part.
 
 Confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
-Window: 180 days; a pair counts from 3 shared commits, since 8 source files reach 10 revisions; the floor rises to 10 when 25 do.
+Window: 180 days; a pair counts from 3 shared commits, since 11 source files reach 10 revisions; the floor rises to 10 when 25 do.
 
 ## What no test touches
 
@@ -98,7 +98,7 @@ No two parts export a helper that looks alike.
 
 ## Hand-authored
 
-People write .github/, docs/ and the repository root; 1 write with a path built at run time may land here.
+People write .github/, docs/ and the repository root; 6 writes with paths built at run time may land here.
 
 ## Where to start
 
@@ -109,7 +109,7 @@ Read those in order to follow one run of gen_placeholders end to end. This path 
 ## What this map cannot see
 
 - 2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.
-- 1 write and 14 reads use paths built at run time and are not named here.
+- 6 writes and 19 reads use paths built at run time and are not named here.
 - 1 write goes to places this repository does not track, so it is not listed as generated.
 - 7 writes and 15 reads go to a path their caller passes, not to this repository.
 - 1 write and 1 read go to a temporary directory, not to this repository.

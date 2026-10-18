@@ -4,9 +4,10 @@
 
 | Version | Supported |
 |---------|-----------|
-| 0.1.0   | Yes       |
+| 0.2.0   | Yes       |
+| 0.1.0   | No        |
 
-0.1.0 is the first GitHub release. Older commits are history, not a supported line.
+0.2.0 is the supported GitHub release. Older tags and commits are history, not a supported line.
 
 ## Reporting a vulnerability
 
@@ -33,8 +34,8 @@ Portlight Bounty is a local game. The simulation does not open a
 network connection. The Godot chart does not phone home. There is no
 account, no telemetry, and no crash uploader.
 
-Data it writes: a version-12 save, in a folder you choose from the
-chart, or in the directory you pass to `portlight script --save-dir`
+Data it writes: a version-12 or version-13 save, in a folder you choose
+from the chart, or in the directory you pass to `portlight script --save-dir`
 and `portlight load`. The chart's default folder is `saves/` under
 the working directory.
 

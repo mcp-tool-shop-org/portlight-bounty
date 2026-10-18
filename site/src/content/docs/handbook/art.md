@@ -23,4 +23,4 @@ Code and art in this release are credited to mcp-tool-shop contributors. That is
 
 ## A batch that is not in the game
 
-A later starter batch of twelve pictures (props, tiles, and three UI pieces) was generated for review and is not in this tag. Several of those UI pieces were not game-ready, and the props were on a grey background. They are not part of 0.1.0.
+A later starter batch of twelve pictures (props, tiles, and three UI pieces) was generated for review and is not in this tag. Several of those UI pieces were not game-ready, and the props were on a grey background. They are not part of 0.2.0.
