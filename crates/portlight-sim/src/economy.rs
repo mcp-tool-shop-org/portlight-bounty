@@ -35,7 +35,7 @@ pub fn slot_buy_price(
     cap_scarcity: bool,
 ) -> i64 {
     let mut scarcity = slot.stock_target as f64 / stock.max(1) as f64;
-    if cap_scarcity {
+    if cap_scarcity && stock <= 0 {
         scarcity = scarcity.min(3.5);
     }
     let raw = base_price as f64 * scarcity / slot.local_affinity.max(0.1);
@@ -53,7 +53,7 @@ pub fn slot_sell_price(
     cap_scarcity: bool,
 ) -> i64 {
     let mut scarcity = slot.stock_target as f64 / stock.max(1) as f64;
-    if cap_scarcity {
+    if cap_scarcity && stock <= 0 {
         scarcity = scarcity.min(3.5);
     }
     let raw = base_price as f64 * scarcity / slot.local_affinity.max(0.1);
@@ -112,13 +112,14 @@ pub fn quote_buy(
     }
     let slot = port.slot(good_id)?;
     let good = content::content().good(good_id)?;
+    let base_unit = slot.buy_price.max(1);
     let mut total = 0i64;
     for u in 0..qty {
-        let s = (slot.stock_current - u).max(0);
-        let unit = if u == 0 && pricing.is_none() {
-            slot.buy_price
+        let unit = if u < 5 {
+            base_unit
         } else {
-            slot_buy_price(slot, good.base_price, pricing, s, true)
+            let stepped = (slot.stock_current - u / 5).max(0);
+            slot_buy_price(slot, good.base_price, pricing, stepped, true).max(base_unit)
         };
         total = total.saturating_add(unit);
     }
@@ -143,14 +144,16 @@ pub fn quote_sell(
     let mut cargo_copy = captain.cargo.clone();
     let slices = consume_cargo_fifo(&mut cargo_copy, good_id, qty);
     let target = slot.stock_target.max(1) as f64;
-    let mut sim_stock = slot.stock_current;
-    let mut sim_flood = slot.flood_penalty;
+    let base_sell = slot.sell_price.max(1);
+    let mut u_idx = 0i64;
     let mut total = 0i64;
     if slices.is_empty() {
         for u in 0..qty {
-            let unit = if u == 0 && pricing.is_none() {
-                slot.sell_price
+            let unit = if u < 5 {
+                base_sell
             } else {
+                let sim_stock = slot.stock_current.saturating_add(u / 5);
+                let sim_flood = 1.0_f64.min(slot.flood_penalty + (u as f64 / 5.0) / target * 0.3);
                 slot_sell_price(
                     slot,
                     good.base_price,
@@ -160,10 +163,9 @@ pub fn quote_sell(
                     sim_flood,
                     true,
                 )
+                .min(base_sell)
             };
             total = total.saturating_add(unit);
-            sim_stock = sim_stock.saturating_add(1);
-            sim_flood = 1.0_f64.min(sim_flood + 1.0 / target * 0.3);
         }
     } else {
         for slice in &slices {
@@ -175,23 +177,30 @@ pub fn quote_sell(
                 None
             };
             for _ in 0..slice.quantity {
-                let mut unit_price = slot_sell_price(
-                    slot,
-                    good.base_price,
-                    &good.category,
-                    pricing,
-                    sim_stock,
-                    sim_flood,
-                    true,
-                );
+                let mut unit_price = if u_idx < 5 {
+                    base_sell
+                } else {
+                    let sim_stock = slot.stock_current.saturating_add(u_idx / 5);
+                    let sim_flood =
+                        1.0_f64.min(slot.flood_penalty + (u_idx as f64 / 5.0) / target * 0.3);
+                    slot_sell_price(
+                        slot,
+                        good.base_price,
+                        &good.category,
+                        pricing,
+                        sim_stock,
+                        sim_flood,
+                        true,
+                    )
+                    .min(base_sell)
+                };
                 if let Some(cpu) = cost_per_unit {
                     if (unit_price as f64) > cpu {
                         unit_price = 1.max(py_round(cpu));
                     }
                 }
                 total = total.saturating_add(unit_price);
-                sim_stock = sim_stock.saturating_add(1);
-                sim_flood = 1.0_f64.min(sim_flood + 1.0 / target * 0.3);
+                u_idx += 1;
             }
         }
     }
@@ -525,8 +534,8 @@ pub fn execute_sell_order(
     let target = port.market[slot_idx].stock_target.max(1) as f64;
     let mut total = 0i64;
     if let (Some(pricing), Some(good)) = (curve_pricing, content::content().good(good_id)) {
-        let mut sim_stock = port.market[slot_idx].stock_current;
-        let mut sim_flood = port.market[slot_idx].flood_penalty;
+        let base_sell = sell_price.max(1);
+        let mut u_idx = 0i64;
         for slice in &slices {
             let same_port =
                 slice.acquired_port == port.id && (captain.day - slice.acquired_day) <= 3;
@@ -536,23 +545,33 @@ pub fn execute_sell_order(
                 None
             };
             for _ in 0..slice.quantity {
-                let mut unit_price = slot_sell_price(
-                    &port.market[slot_idx],
-                    good.base_price,
-                    &good.category,
-                    Some(pricing),
-                    sim_stock,
-                    sim_flood,
-                    true,
-                );
+                let mut unit_price = if u_idx < 5 {
+                    base_sell
+                } else {
+                    let sim_stock = port.market[slot_idx]
+                        .stock_current
+                        .saturating_add(u_idx / 5);
+                    let sim_flood = 1.0_f64.min(
+                        port.market[slot_idx].flood_penalty + (u_idx as f64 / 5.0) / target * 0.3,
+                    );
+                    slot_sell_price(
+                        &port.market[slot_idx],
+                        good.base_price,
+                        &good.category,
+                        Some(pricing),
+                        sim_stock,
+                        sim_flood,
+                        true,
+                    )
+                    .min(base_sell)
+                };
                 if let Some(cpu) = cost_per_unit {
                     if (unit_price as f64) > cpu {
                         unit_price = 1.max(py_round(cpu));
                     }
                 }
                 total = total.saturating_add(unit_price);
-                sim_stock = sim_stock.saturating_add(1);
-                sim_flood = 1.0_f64.min(sim_flood + 1.0 / target * 0.3);
+                u_idx += 1;
             }
         }
     } else {

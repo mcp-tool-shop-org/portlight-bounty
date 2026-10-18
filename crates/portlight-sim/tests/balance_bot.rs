@@ -282,15 +282,25 @@ fn count_completed(outcomes: &[portlight_sim::model::ContractOutcome]) -> i64 {
         .count() as i64
 }
 
-fn buy_for(session: &mut Session, here: &str, good: &str, cap_qty: i64) {
+fn buy_for(session: &mut Session, here: &str, to: &str, good: &str, cap_qty: i64) {
     let Some(s) = slot(session, here, good) else {
         return;
     };
+    let target_sell = slot(session, to, good)
+        .map(|s| s.sell_price)
+        .unwrap_or(i64::MAX);
     let price = s.buy_price.max(1);
     let stock = s.stock_current;
     let budget = session.world().captain.silver * 6 / 10;
     let space = (capacity(session) - held(session)).max(0);
-    let qty = (budget / price).min(space).min(stock).min(cap_qty);
+    let mut qty = (budget / price).min(space).min(stock).min(cap_qty);
+    while qty > 0
+        && session
+            .quote_buy(good, qty)
+            .is_none_or(|(total, _)| total > budget || total >= target_sell.saturating_mul(qty))
+    {
+        qty -= 1;
+    }
     if qty > 0 {
         let _ = session.buy(good, qty);
     }
@@ -411,7 +421,10 @@ fn take_contract(session: &mut Session, here: &str) {
         let Some(s) = slot(session, here, &offer.good_id) else {
             continue;
         };
-        if s.stock_current < offer.quantity || s.buy_price * offer.quantity > silver {
+        let Some((order_cost, _)) = session.quote_buy(&offer.good_id, offer.quantity) else {
+            continue;
+        };
+        if s.stock_current < offer.quantity || order_cost > silver {
             continue;
         }
         let per_day = (offer.reward_silver + offer.bonus_reward) / days;
@@ -427,7 +440,9 @@ fn take_contract(session: &mut Session, here: &str) {
                 .captain
                 .cargo
                 .iter()
-                .filter(|c| c.good_id == active.good_id)
+                .filter(|c| {
+                    c.good_id == active.good_id && c.acquired_port != active.destination_port_id
+                })
                 .map(|c| c.quantity)
                 .sum();
             if qty > have {
@@ -657,7 +672,7 @@ fn play(captain_type: &str, strategy: Strategy, seed: i128) -> Run {
                         if have < need {
                             let _ = session.provision(need - have);
                         }
-                        buy_for(&mut session, &here, &good, i64::MAX);
+                        buy_for(&mut session, &here, &to, &good, i64::MAX);
                         dest = Some(to);
                     }
                     _ => {

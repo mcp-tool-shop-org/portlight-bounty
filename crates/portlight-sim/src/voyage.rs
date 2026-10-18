@@ -1105,12 +1105,6 @@ pub fn advance_day_ext(
         }
         fleet::wear_convoy(&mut world.captain);
     }
-    if !oracle_compat
-        && world.pending_duel.is_some()
-        && world.voyage.progress >= world.voyage.distance
-    {
-        world.voyage.progress = (world.voyage.distance - 1).max(0);
-    }
     if world.voyage.progress >= world.voyage.distance {
         world.voyage.status = VoyageStatus::Arrived;
     }

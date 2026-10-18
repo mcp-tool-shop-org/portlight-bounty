@@ -13243,6 +13243,7 @@ impl PortlightGame {
             self.recap_fail("Recap smoke two: no seed-86 session.");
             return false;
         };
+        session.set_oracle_compat(true);
         let ids: Vec<String> = session
             .available_contracts()
             .into_iter()

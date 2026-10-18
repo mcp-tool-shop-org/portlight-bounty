@@ -2700,11 +2700,8 @@ impl Session {
         // before infrastructure upkeep. The captain is omitted, so a default
         // does not record a breach.
         let contracts = self.expire_contracts();
-        let contract_claim_notes = self.file_contract_claims(&contracts);
+        let _ = self.file_contract_claims(&contracts);
         let mut notes = self.tick_upkeep();
-        if !self.oracle_compat {
-            notes.extend(contract_claim_notes);
-        }
         notes.extend(self.heal_injuries());
         let sailed = self.world.voyage.status == VoyageStatus::AtSea;
         let mut day_sink: Option<SinkOutcome> = None;

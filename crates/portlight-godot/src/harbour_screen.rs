@@ -517,7 +517,7 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         ));
     }
     credit_lines.push(
-        "Emergency loans are capped at 200 silver (max 1 active) and add a deferred fee of about 15%.".to_string(),
+        "Emergency loans are capped at 200 silver and add a deferred fee of about 15%.".to_string(),
     );
 
     let active_tier = infra

@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "3dbcce071f5171c791909523a4f1716e5b9b44f671f79ec1a4cc3cb7c37cd887",
+          "hash": "51e5350ad989ea992bd4b36b329e2b7a916a872a0c951e4134e7403166ea7956",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -4088,35 +4088,35 @@
             {
               "in": "advance_encounter_shot",
               "kind": "match-err",
-              "line": 13795
+              "line": 13796
             },
             {
               "in": "prepare_scripted_voyage",
               "kind": "match-err",
-              "line": 13908
+              "line": 13909
             },
             {
               "in": "prepare_scripted_voyage",
               "kind": "match-err",
-              "line": 13914
+              "line": 13915
             },
             {
               "in": "run_report_same_tick_encounter",
               "kind": "match-err",
-              "line": 14385
+              "line": 14386
             },
             {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 14495
+              "line": 14496
             },
             {
               "in": "run_bounty_encounter",
               "kind": "match-err",
-              "line": 14510
+              "line": 14511
             }
           ],
-          "hash": "d64604bac50216a285aa4fa5b5a71e4b3a65934e63117fde311d0f3d72028b25",
+          "hash": "969772c0f7702fb0e445e39585d56208be564c4d253d83bb6e488441dad50073",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -4237,7 +4237,7 @@
               "line": 1269
             }
           ],
-          "hash": "a1e38c510b83fa455771e72274cfab0bee521ae8ebb0f92e42d539bf7b0140ab",
+          "hash": "3d75924e7a1d35d682af7e998bdf9e33f478a335feb2eb462a0a9747ac7fa3eb",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -5222,32 +5222,27 @@
             {
               "in": "execute_buy_order",
               "kind": "err",
-              "line": 386
+              "line": 395
             },
             {
               "in": "execute_buy_order",
               "kind": "err",
-              "line": 394
+              "line": 403
             },
             {
               "in": "execute_buy_order",
               "kind": "err",
-              "line": 401
+              "line": 410
             },
             {
               "in": "execute_buy_order",
               "kind": "err",
-              "line": 405
+              "line": 414
             },
             {
               "in": "execute_buy_order",
               "kind": "err",
-              "line": 422
-            },
-            {
-              "in": "execute_buy_order",
-              "kind": "err",
-              "line": 428
+              "line": 431
             },
             {
               "in": "execute_buy_order",
@@ -5255,27 +5250,32 @@
               "line": 437
             },
             {
-              "in": "execute_sell_order",
+              "in": "execute_buy_order",
               "kind": "err",
-              "line": 500
+              "line": 446
             },
             {
               "in": "execute_sell_order",
               "kind": "err",
-              "line": 506
+              "line": 509
             },
             {
               "in": "execute_sell_order",
               "kind": "err",
-              "line": 512
+              "line": 515
             },
             {
               "in": "execute_sell_order",
               "kind": "err",
-              "line": 516
+              "line": 521
+            },
+            {
+              "in": "execute_sell_order",
+              "kind": "err",
+              "line": 525
             }
           ],
-          "hash": "0ac4a561fc2139c7d33578e343f4bf63e74a973be531a71f26719e755f3eec8e",
+          "hash": "3fcb38369fba90b5bffc71b110b664bdf9d0d831a21f4ceb84cab83177ed8034",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/error.rs",
@@ -6628,62 +6628,67 @@
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 2965
+              "line": 2962
             },
             {
               "in": "complete_contract",
               "kind": "err",
-              "line": 2968
+              "line": 2965
             },
             {
               "in": "lease_warehouse",
               "kind": "err",
-              "line": 3122
+              "line": 3119
             },
             {
               "in": "lease_warehouse",
               "kind": "err",
-              "line": 3136
+              "line": 3133
             },
             {
               "in": "open_broker",
               "kind": "err",
-              "line": 3154
+              "line": 3151
             },
             {
               "in": "purchase_license",
               "kind": "err",
-              "line": 3172
+              "line": 3169
             },
             {
               "in": "dry_dock",
               "kind": "err",
-              "line": 3201
+              "line": 3198
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 3235
+              "line": 3232
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 3247
+              "line": 3244
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 3251
+              "line": 3248
             },
             {
               "in": "dry_dock_fleet_ship",
               "kind": "err",
-              "line": 3256
+              "line": 3253
             },
             {
               "in": "buy_ship",
               "kind": "err",
-              "line": 3328
+              "line": 3325
+            },
+            {
+              "in": "buy_ship",
+              "kind": "err",
+              "line": 3339
             },
             {
               "in": "buy_ship",
@@ -6691,127 +6696,122 @@
               "line": 3342
             },
             {
-              "in": "buy_ship",
+              "in": "install_upgrade",
               "kind": "err",
-              "line": 3345
+              "line": 3385
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 3388
+              "line": 3393
             },
             {
               "in": "install_upgrade",
               "kind": "err",
-              "line": 3396
-            },
-            {
-              "in": "install_upgrade",
-              "kind": "err",
-              "line": 3402
+              "line": 3399
             },
             {
               "in": "remove_upgrade",
               "kind": "err",
-              "line": 3437
+              "line": 3434
             },
             {
               "in": "remove_upgrade",
               "kind": "err",
-              "line": 3448
+              "line": 3445
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 3490
+              "line": 3487
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 3500
+              "line": 3497
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 3513
+              "line": 3510
             },
             {
               "in": "buy_gear",
               "kind": "err",
-              "line": 3522
+              "line": 3519
             },
             {
               "in": "maintain_weapon",
               "kind": "err",
-              "line": 3538
+              "line": 3535
             },
             {
               "in": "maintain_weapon",
               "kind": "err",
-              "line": 3544
+              "line": 3541
             },
             {
               "in": "upgrade_weapon",
               "kind": "err",
-              "line": 3565
+              "line": 3562
             },
             {
               "in": "upgrade_weapon",
               "kind": "err",
-              "line": 3570
+              "line": 3567
             },
             {
               "in": "upgrade_weapon",
               "kind": "err",
-              "line": 3574
+              "line": 3571
             },
             {
               "in": "upgrade_weapon",
               "kind": "err",
-              "line": 3582
+              "line": 3579
             },
             {
               "in": "field_repair_weapon",
               "kind": "err",
-              "line": 3602
+              "line": 3599
             },
             {
               "in": "train_crew",
               "kind": "err",
-              "line": 3726
+              "line": 3723
             },
             {
               "in": "equip_style",
               "kind": "err",
-              "line": 3748
+              "line": 3745
             },
             {
               "in": "equip_style",
               "kind": "err",
-              "line": 3752
+              "line": 3749
             },
             {
               "in": "recruit_companion",
               "kind": "err",
-              "line": 3769
+              "line": 3766
             },
             {
               "in": "dismiss_companion",
               "kind": "err",
-              "line": 3786
+              "line": 3783
             },
             {
               "in": "spend_skill_point",
               "kind": "err",
-              "line": 3808
+              "line": 3805
             },
             {
               "in": "remember_captain",
               "kind": "err",
-              "line": 3895
+              "line": 3892
             }
           ],
-          "hash": "5f7cbe749846bb9e12569010a0343176f5dd81b739eee276e6e5163562485ad8",
+          "hash": "8a3b518e66196e2cd30bc9a67fa18ce50540dc95f87f850896eae4ec0b8dfc69",
           "importOrder": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/combat.rs",
@@ -7099,10 +7099,10 @@
             {
               "in": "arrive",
               "kind": "err",
-              "line": 1122
+              "line": 1116
             }
           ],
-          "hash": "ea2f4ddc2a027387150e243b2231ee925db04ee58b89cde37afb2d3749a18a32",
+          "hash": "cc65ea27d9e135d425a49f2350aca2e51eceb4dd768cf4824b47b2c13d9c0b06",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -7197,7 +7197,7 @@
           "testsInside": true
         },
         {
-          "hash": "7afe6461d6f9239075e6f2383bb9f7695c00b0577941db2d52641623417dd61a",
+          "hash": "e859b0f7c4fd0c6a3d9444f320d7d1406c9f32f0618c763d9ff9d71940834d13",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/model.rs",
@@ -11312,7 +11312,7 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "3ccd897105989a3e4994e3368b43a11e12a032d1",
+    "commit": "429510b11cb85c39b2686bbfa688949475b3f2a8",
     "tracked": 859
   },
   "landings": [
