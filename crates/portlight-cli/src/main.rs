@@ -245,3 +245,85 @@ fn new_cmd(args: &[String]) -> ExitCode {
     }
     ExitCode::SUCCESS
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cli_help_new_script_and_load_paths_work() {
+        print_help();
+
+        assert_eq!(new_cmd(&[]), ExitCode::SUCCESS);
+        assert_eq!(
+            new_cmd(&[
+                "--captain".to_string(),
+                "smuggler".to_string(),
+                "--name".to_string(),
+                "Rosa".to_string(),
+                "--seed".to_string(),
+                "7".to_string(),
+            ]),
+            ExitCode::SUCCESS
+        );
+        assert_eq!(
+            new_cmd(&["--json".to_string(), "--seed".to_string(), "3".to_string()]),
+            ExitCode::SUCCESS
+        );
+        assert_eq!(new_cmd(&["--unknown".to_string()]), ExitCode::from(2));
+        assert_eq!(
+            new_cmd(&["--captain".to_string(), "not_a_captain".to_string()]),
+            ExitCode::from(1)
+        );
+
+        assert_eq!(script_cmd(&[]), ExitCode::from(2));
+        assert_eq!(script_cmd(&["--save-dir".to_string()]), ExitCode::from(2));
+        assert_eq!(script_cmd(&["--slot".to_string()]), ExitCode::from(2));
+        assert_eq!(script_cmd(&["--bad-flag".to_string()]), ExitCode::from(2));
+        assert_eq!(
+            script_cmd(&["nonexistent_script_file_12345.txt".to_string()]),
+            ExitCode::from(1)
+        );
+
+        let tmp = env::temp_dir().join("portlight_cli_unit_test");
+        let _ = fs::remove_dir_all(&tmp);
+        fs::create_dir_all(&tmp).unwrap();
+        let ok_script = tmp.join("ok.txt");
+        fs::write(&ok_script, "new merchant Ada 1\nbuy grain 1\n").unwrap();
+        assert_eq!(
+            script_cmd(&[
+                ok_script.to_string_lossy().to_string(),
+                "--save-dir".to_string(),
+                tmp.to_string_lossy().to_string(),
+                "--slot".to_string(),
+                "slot1".to_string(),
+            ]),
+            ExitCode::SUCCESS
+        );
+        assert_eq!(
+            script_cmd(&[ok_script.to_string_lossy().to_string()]),
+            ExitCode::SUCCESS
+        );
+
+        let err_script = tmp.join("err.txt");
+        fs::write(&err_script, "new merchant Ada 1\nbuy grain 99999\n").unwrap();
+        assert_eq!(
+            script_cmd(&[err_script.to_string_lossy().to_string()]),
+            ExitCode::from(1)
+        );
+
+        assert_eq!(load_cmd(&[]), ExitCode::from(2));
+        assert_eq!(
+            load_cmd(&[tmp.to_string_lossy().to_string(), "slot1".to_string()]),
+            ExitCode::SUCCESS
+        );
+        assert_eq!(
+            load_cmd(&[
+                tmp.to_string_lossy().to_string(),
+                "missing_slot".to_string()
+            ]),
+            ExitCode::from(1)
+        );
+        let _ = fs::remove_dir_all(&tmp);
+    }
+}

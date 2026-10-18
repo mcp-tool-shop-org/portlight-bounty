@@ -357,3 +357,159 @@ impl fmt::Display for SimError {
 }
 
 impl std::error::Error for SimError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_sim_error_variants_format_cleanly() {
+        let samples = vec![
+            SimError::NotDocked,
+            SimError::NoShip,
+            SimError::AlreadyAtSea,
+            SimError::AlreadyAtThisPort,
+            SimError::NoRoute {
+                from: "porto_novo".to_string(),
+                to: "jade_port".to_string(),
+            },
+            SimError::RouteBlocked("BLOCKED".to_string()),
+            SimError::CrewMinimum { need: 5, have: 3 },
+            SimError::NeedSilver {
+                need: 100,
+                have: 50,
+            },
+            SimError::HullTooLowToHunt { need: 20, have: 10 },
+            SimError::NeedPortFee { fee: 15, have: 5 },
+            SimError::QuantityMustBePositive,
+            SimError::QuantityMustBeAPositiveNumber,
+            SimError::GoodNotAvailable {
+                good_id: "silks".to_string(),
+                port_name: "Porto Novo".to_string(),
+                suggestion: Some("silk".to_string()),
+            },
+            SimError::GoodNotAvailable {
+                good_id: "uranium".to_string(),
+                port_name: "Porto Novo".to_string(),
+                suggestion: None,
+            },
+            SimError::OnlyStock {
+                stock: 4,
+                good_id: "grain".to_string(),
+            },
+            SimError::NotEnoughCargoSpace,
+            SimError::Harbormaster {
+                good_id: "opium".to_string(),
+            },
+            SimError::PortDoesNotTrade {
+                port_name: "Porto Novo".to_string(),
+                good_id: "silk".to_string(),
+            },
+            SimError::OnlyHave {
+                have: 2,
+                good_id: "grain".to_string(),
+            },
+            SimError::NotArrivedYet,
+            SimError::UnknownCaptainType("wizard".to_string()),
+            SimError::UnknownShip("submarine".to_string()),
+            SimError::NoActiveGame,
+            SimError::UsageNew,
+            SimError::UsageBuy,
+            SimError::UsageSell,
+            SimError::UsageDepart,
+            SimError::UsageHire,
+            SimError::UsageProvision,
+            SimError::UsageWork,
+            SimError::UsageDuel,
+            SimError::InvalidNumber("abc".to_string()),
+            SimError::UnknownCommand("fly".to_string()),
+            SimError::MustBeDockedToHire,
+            SimError::CrewFull,
+            SimError::UnknownRole("cook".to_string()),
+            SimError::RoleMaximum {
+                name: "surgeon".to_string(),
+                max: 1,
+            },
+            SimError::NeedCrewSilver {
+                cost: 40,
+                count: 2,
+                name: "gunner".to_string(),
+                each: 20,
+                have: 10,
+            },
+            SimError::MustBeDockedToProvision,
+            SimError::MustBeDockedToWork,
+            SimError::NeedProvisions {
+                cost: 20,
+                days: 10,
+                per_day: 2,
+                have: 5,
+            },
+            SimError::NoPendingDuel,
+            SimError::InvalidStance("jump".to_string()),
+            SimError::TooFewStances,
+            SimError::UsageBuyInfrastructure,
+            SimError::UsageTakeCredit,
+            SimError::UsageBuyInsurance,
+            SimError::UsageDeposit,
+            SimError::UsageWithdraw,
+            SimError::UsageRepayCredit,
+            SimError::SaveVersion {
+                found: 99,
+                supported: 13,
+            },
+            SimError::SaveMigration {
+                found: 8,
+                supported: 12,
+            },
+            SimError::SaveIo("disk full".to_string()),
+            SimError::SaveCorrupt,
+            SimError::OfferNotFound,
+            SimError::TooManyContracts,
+            SimError::NoActiveContract,
+            SimError::ContractNotFulfilled,
+            SimError::UsageAcceptContract,
+            SimError::UsageCompleteContract,
+            SimError::NoActiveEncounter,
+            SimError::NotInNavalCombat,
+            SimError::NotBoarding,
+            SimError::NotInPersonalCombat,
+            SimError::ChooseApproach,
+            SimError::InvalidAction("dance".to_string()),
+            SimError::NoPirateCaptain,
+            SimError::UnknownPirate("blackbeard".to_string()),
+            SimError::UsageEncounter,
+            SimError::UsageNaval,
+            SimError::UsageBoard,
+            SimError::UsageFight,
+            SimError::UsageCapture,
+            SimError::CannotCapture("hull too low".to_string()),
+            SimError::MustBeDockedToTrain,
+            SimError::MustBeDockedToLearnSkill,
+            SimError::MustBeDockedToRecruit,
+            SimError::UsageTrain,
+            SimError::UsageSkill,
+            SimError::UsageRecruit,
+            SimError::UsageAgency,
+            SimError::UsageRemember,
+            SimError::MustBeDockedToBank,
+            SimError::NoCountingHouse,
+            SimError::BelowBankMinimum { minimum: 50 },
+            SimError::InsufficientBalance {
+                port: "Porto Novo".to_string(),
+                have: 10,
+            },
+            SimError::InsufficientSilver { have: 25 },
+            SimError::BelowBankFee { fee: 5 },
+            SimError::LetterOnLocalAccount,
+            SimError::UsageBankDeposit,
+            SimError::UsageBankWithdraw,
+            SimError::UsageBankLetter,
+            SimError::Rejected("Rejected".to_string()),
+            SimError::Sentence("Sentence".to_string()),
+        ];
+        for err in samples {
+            assert!(!err.to_string().is_empty());
+        }
+    }
+}

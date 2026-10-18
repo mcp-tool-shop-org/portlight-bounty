@@ -101,7 +101,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "portlight-cli",
-      "qualifyingSourceCommits": 4,
+      "qualifyingSourceCommits": 5,
       "rebaseline": null
     },
     {
@@ -139,7 +139,7 @@
       "confidence": "full",
       "highWater": null,
       "name": "portlight-sim",
-      "qualifyingSourceCommits": 36,
+      "qualifyingSourceCommits": 37,
       "rebaseline": null
     },
     {
@@ -187,7 +187,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "site",
-      "qualifyingSourceCommits": 3,
+      "qualifyingSourceCommits": 4,
       "rebaseline": null
     },
     {
@@ -229,8 +229,8 @@
         "path": ".gitignore"
       },
       {
-        "commits": 4,
-        "lines": 66,
+        "commits": 5,
+        "lines": 82,
         "path": "CHANGELOG.md"
       },
       {
@@ -239,13 +239,13 @@
         "path": "CONTRIBUTING.md"
       },
       {
-        "commits": 5,
-        "lines": 464,
+        "commits": 6,
+        "lines": 472,
         "path": "Cargo.lock"
       },
       {
-        "commits": 3,
-        "lines": 18,
+        "commits": 4,
+        "lines": 20,
         "path": "Cargo.toml"
       },
       {
@@ -254,28 +254,63 @@
         "path": "LICENSE"
       },
       {
-        "commits": 28,
-        "lines": 611,
+        "commits": 1,
+        "lines": 81,
+        "path": "README.es.md"
+      },
+      {
+        "commits": 1,
+        "lines": 81,
+        "path": "README.fr.md"
+      },
+      {
+        "commits": 1,
+        "lines": 81,
+        "path": "README.hi.md"
+      },
+      {
+        "commits": 1,
+        "lines": 81,
+        "path": "README.it.md"
+      },
+      {
+        "commits": 1,
+        "lines": 81,
+        "path": "README.ja.md"
+      },
+      {
+        "commits": 29,
+        "lines": 623,
         "path": "README.md"
       },
       {
-        "commits": 2,
-        "lines": 34,
+        "commits": 1,
+        "lines": 81,
+        "path": "README.pt-BR.md"
+      },
+      {
+        "commits": 1,
+        "lines": 81,
+        "path": "README.zh.md"
+      },
+      {
+        "commits": 3,
+        "lines": 40,
         "path": "SCORECARD.md"
       },
       {
-        "commits": 2,
-        "lines": 61,
+        "commits": 3,
+        "lines": 66,
         "path": "SECURITY.md"
       },
       {
-        "commits": 2,
-        "lines": 114,
+        "commits": 3,
+        "lines": 148,
         "path": "SHIP_GATE.md"
       },
       {
-        "commits": 7,
-        "lines": 364,
+        "commits": 8,
+        "lines": 383,
         "path": "atlas/README.md"
       },
       {
@@ -284,18 +319,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 7,
-        "lines": 1576,
+        "commits": 8,
+        "lines": 1664,
         "path": "atlas/page.json"
       },
       {
-        "commits": 7,
-        "lines": 11860,
+        "commits": 8,
+        "lines": 12158,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 7,
-        "lines": 24355,
+        "commits": 8,
+        "lines": 29600,
         "path": "atlas/structure.json"
       },
       {
@@ -364,8 +399,8 @@
         "path": "crates/portlight-cli/Cargo.toml"
       },
       {
-        "commits": 7,
-        "lines": 309,
+        "commits": 8,
+        "lines": 313,
         "path": "crates/portlight-cli/src/main.rs"
       },
       {
@@ -664,8 +699,8 @@
         "path": "crates/portlight-sim/src/sea_culture.rs"
       },
       {
-        "commits": 29,
-        "lines": 8142,
+        "commits": 30,
+        "lines": 8156,
         "path": "crates/portlight-sim/src/session.rs"
       },
       {
@@ -4459,8 +4494,8 @@
         "path": "site/src/content.config.ts"
       },
       {
-        "commits": 3,
-        "lines": 38,
+        "commits": 4,
+        "lines": 40,
         "path": "site/src/content/docs/handbook/art.md"
       },
       {
@@ -4469,8 +4504,8 @@
         "path": "site/src/content/docs/handbook/getting-started.md"
       },
       {
-        "commits": 3,
-        "lines": 42,
+        "commits": 4,
+        "lines": 50,
         "path": "site/src/content/docs/handbook/index.md"
       },
       {
@@ -4479,8 +4514,8 @@
         "path": "site/src/content/docs/handbook/play.md"
       },
       {
-        "commits": 3,
-        "lines": 50,
+        "commits": 4,
+        "lines": 54,
         "path": "site/src/content/docs/handbook/reference.md"
       },
       {
@@ -4494,8 +4529,8 @@
         "path": "site/src/pages/index.astro"
       },
       {
-        "commits": 3,
-        "lines": 84,
+        "commits": 4,
+        "lines": 88,
         "path": "site/src/site-config.ts"
       },
       {
@@ -4584,51 +4619,79 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-10-18T04:11:26.610Z",
+  "generatedAt": "2026-10-18T04:36:18.076Z",
   "generatedFrom": {
-    "commit": "c068ce4d3ae8cc08471dbe2da06364c2d6fc87f6"
+    "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8"
   },
   "pairs": [
     {
+      "a": "CHANGELOG.md",
+      "b": "atlas/README.md",
+      "either": 8,
+      "shared": 4,
+      "strength": 0.5
+    },
+    {
+      "a": "CHANGELOG.md",
+      "b": "atlas/page.json",
+      "either": 8,
+      "shared": 4,
+      "strength": 0.5
+    },
+    {
+      "a": "CHANGELOG.md",
+      "b": "atlas/statistics.json",
+      "either": 8,
+      "shared": 4,
+      "strength": 0.5
+    },
+    {
+      "a": "CHANGELOG.md",
+      "b": "atlas/structure.json",
+      "either": 8,
+      "shared": 4,
+      "strength": 0.5
+    },
+    {
       "a": "atlas/README.md",
       "b": "atlas/page.json",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/statistics.json",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/structure.json",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/statistics.json",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/structure.json",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "atlas/statistics.json",
       "b": "atlas/structure.json",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
@@ -5041,16 +5104,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-10-18T00:03:39-04:00",
-    "inScopeFiles": 873,
+    "headDate": "2026-10-18T00:18:09-04:00",
+    "inScopeFiles": 880,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 112,
+    "qualifyingCommits": 113,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-21T04:03:39.000Z",
+    "since": "2026-04-21T04:18:09.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

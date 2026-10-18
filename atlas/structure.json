@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "acee850f043f46686ef72c5f9ced369d3bdb7c8e11ee351648a950c5340df938",
+          "hash": "a639b77fb61c693ac764ede8b7400a0db77d62fec7f5c05ccb3f9fa41966117f",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -3257,7 +3257,7 @@
         {
           "entry": "main",
           "entryRule": 1,
-          "hash": "77eba69bf42e8efcbdd76c560feb8f0a0dc11dd07ef62f0b1c8c0f1ad3750b1c",
+          "hash": "a92200b6b257346f05dcc96a0ab1c689c0295e70793c88fc53440d155b9e737b",
           "importsFiles": [
             "crates/portlight-sim/src/lib.rs"
           ],
@@ -3372,7 +3372,8 @@
               "isDefaultExport": false,
               "name": "new_cmd"
             }
-          ]
+          ],
+          "testsInside": true
         }
       ],
       "globs": [
@@ -3382,7 +3383,8 @@
       "name": "portlight-cli",
       "origin": "authored",
       "role": "code",
-      "testedBy": 0,
+      "testedBy": 1,
+      "testedInside": true,
       "unresolvedSites": 0
     },
     {
@@ -4437,7 +4439,7 @@
             "check_sea_consequences",
             "port_effect_note"
           ],
-          "hash": "3eb5ae287e19a99289749bfdc61d30c35b4c1d66640fbd69c3929e0f7388e339",
+          "hash": "a674164f46c748846ac4f94a828ccc2bb336d66688f1b39e2ad9177efd891d07",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/cross_port_networks.rs",
@@ -4640,8 +4642,9 @@
           "path": "crates/portlight-sim/src/encounter.rs"
         },
         {
-          "hash": "ebae5f66455d48eb39ed2b4ec521216ddce77a45dc2c65b6d3822dc56de44d97",
-          "path": "crates/portlight-sim/src/error.rs"
+          "hash": "0d9a4b29eb13de4aa7b7c47f580868327fbc3dc335244bfe60bbeeda89fd1b94",
+          "path": "crates/portlight-sim/src/error.rs",
+          "testsInside": true
         },
         {
           "exports": [
@@ -5012,7 +5015,7 @@
             "worst_route_pirate_damage",
             "worst_storm_damage"
           ],
-          "hash": "365429922cd2467d7be92d0ecc9965294f2e8464a8bfa7c243d6a02b6bd7fc34",
+          "hash": "9bd099e2e8abb6e62dcc3b167546812486b0ba2c371a1dc5ba13b2ea8e24d426",
           "importOrder": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/combat.rs",
@@ -5050,8 +5053,7 @@
             "crates/portlight-sim/src/culture.rs",
             "crates/portlight-sim/src/port_arrival_engine.rs",
             "crates/portlight-sim/src/consequences.rs",
-            "crates/portlight-sim/src/narrative.rs",
-            "crates/portlight-sim/src/lib.rs"
+            "crates/portlight-sim/src/narrative.rs"
           ],
           "importsFiles": [
             "crates/portlight-sim/src/bank.rs",
@@ -5072,7 +5074,6 @@
             "crates/portlight-sim/src/hunting.rs",
             "crates/portlight-sim/src/infrastructure.rs",
             "crates/portlight-sim/src/injuries.rs",
-            "crates/portlight-sim/src/lib.rs",
             "crates/portlight-sim/src/loot.rs",
             "crates/portlight-sim/src/memory.rs",
             "crates/portlight-sim/src/merchant.rs",
@@ -5429,7 +5430,7 @@
       "outsideReads": 2,
       "outsideWrites": 3,
       "role": "code",
-      "testedBy": 37,
+      "testedBy": 38,
       "unresolvedNamed": [
         {
           "path": "crates/portlight-sim/src/memory.rs",
@@ -5477,8 +5478,36 @@
           "path": "LICENSE"
         },
         {
-          "hash": "eb20acc798c668848adb390f10480dd94c8815c9db7a20ce8d60407156de94f6",
+          "hash": "b8ffeb5cde22449cf1325ff696479d7bd90cf3e2acc546243d8b010d70555023",
+          "path": "README.es.md"
+        },
+        {
+          "hash": "f9f883266dc356019a086b1eeddca7a50ae4af0059c6aabf825af3b7ff5b0762",
+          "path": "README.fr.md"
+        },
+        {
+          "hash": "b5d885db7845c49896ecc908133f9c50440beb26fcd46940dad2e8212b251118",
+          "path": "README.hi.md"
+        },
+        {
+          "hash": "452c632934d143b66be7dade8265e6fc223656f218b8b211a648602e59118251",
+          "path": "README.it.md"
+        },
+        {
+          "hash": "883542b0cf223d76e31ebebc530d05e5ccac0ada758a17aa8e94519c17581e69",
+          "path": "README.ja.md"
+        },
+        {
+          "hash": "6affb40f3202c0b28fb93dc4cf4ab98704779c27f329372a04672bf9d510dcf6",
           "path": "README.md"
+        },
+        {
+          "hash": "79540982ef324845f5e0978edf429e68e31d98a9053d5c579af6882cb67f6346",
+          "path": "README.pt-BR.md"
+        },
+        {
+          "hash": "67630c76c1c82c8c59d38ba46af480a268fb7bea7a8704a7b6d99de7b2d1ce95",
+          "path": "README.zh.md"
         },
         {
           "hash": "0e5b098c481dd7fa06832ce417e70ffe9fe3cac91aab6f40573004cb9cbcebec",
@@ -5493,7 +5522,7 @@
           "path": "SHIP_GATE.md"
         },
         {
-          "hash": "49a029d658ccbdbbae25fbb3f3b55befdd2c7e35d8102473c82423468f0b488e",
+          "hash": "aa2e3d4d43de4257d97c126990a85cba93c37fb50f56dbcf24f0548c8ac6ab1b",
           "path": "codecov.yml"
         },
         {
@@ -6367,6 +6396,7 @@
             "cat",
             "cmp",
             "cmp_committed",
+            "cp",
             "echo",
             "expect_explicit_headless_shot_fails",
             "expect_illegal_seam",
@@ -6558,18 +6588,19 @@
           "via": "cargo test"
         },
         {
+          "directory": true,
+          "job": "test",
+          "matched": true,
+          "path": "crates/portlight-cli/",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "oracle",
           "matched": true,
           "path": "crates/portlight-cli/src/main.rs",
           "runKind": "checks",
           "via": "cargo build"
-        },
-        {
-          "job": "test",
-          "matched": true,
-          "path": "crates/portlight-cli/src/main.rs",
-          "runKind": "checks",
-          "via": "cargo clippy"
         },
         {
           "job": "godot",
@@ -6772,6 +6803,13 @@
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/custom_captain.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "test",
+          "matched": true,
+          "path": "crates/portlight-sim/src/error.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -7002,7 +7040,7 @@
           "runKind": "executes"
         }
       ],
-      "runsCount": 72,
+      "runsCount": 74,
       "secrets": [
         "GITHUB_TOKEN"
       ],
@@ -7316,8 +7354,8 @@
   ],
   "engine": "1.23.0",
   "generatedFrom": {
-    "commit": "c068ce4d3ae8cc08471dbe2da06364c2d6fc87f6",
-    "tracked": 868
+    "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8",
+    "tracked": 875
   },
   "landings": [
     {
@@ -7529,7 +7567,42 @@
     {
       "readers": [
         {
+          "by": "README.es.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "README.fr.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "README.hi.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "README.it.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "README.ja.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
           "by": "README.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "README.pt-BR.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
+          "by": "README.zh.md",
           "call": "--path",
           "confidence": "text"
         },
@@ -8701,7 +8774,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 63,
+  "testFiles": 65,
   "unassigned": [
     {
       "hash": "1c8830ddb1c538312e96ca26b2d402b453d1909b07ab9208d9c46ff82e7c4949",

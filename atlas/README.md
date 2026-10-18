@@ -1,18 +1,20 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-18 from commit c068ce4 by Atlas 1.23.0.
+Mapped at 2026-10-18 from commit 4f509e7 by Atlas 1.23.0.
 
 ## What this is
 
 12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-18 (6713cc2)
+## What changed since 2026-10-18 (c068ce4)
 
-Nothing structural changed since 2026-10-18; 39 files changed content.
+- CI now also runs crates/portlight-cli/ and crates/portlight-sim/src/error.rs.
+- godot/ is now also read by README.es.md, README.fr.md, README.hi.md, README.it.md, README.ja.md, README.pt-BR.md and README.zh.md.
+- 7 files added and 7 changed content, across 4 parts.
 
 ## What comes in
 
-1. **CI.** On a pull request except when only **/*.md or docs/** change; on a push to main except when only **/*.md or docs/** change; or by hand. Runs godot/scenes/harbour_seam.tscn, godot/scenes/main.tscn, tools/parity/check.py and 67 more; checks crates/portlight-chart/src/bin/gen_placeholders.rs, crates/portlight-chart/src/lib.rs, crates/portlight-cli/src/main.rs and 2 more.
+1. **CI.** On a pull request except when only **/*.md or docs/** change; on a push to main except when only **/*.md or docs/** change; or by hand. Runs godot/scenes/harbour_seam.tscn, godot/scenes/main.tscn, tools/parity/check.py and 69 more; checks crates/portlight-chart/src/bin/gen_placeholders.rs, crates/portlight-chart/src/lib.rs, crates/portlight-godot/src/lib.rs and 1 more.
 2. **Deploy site to GitHub Pages.** On a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
 3. **gen_placeholders** (a command built from crates/portlight-chart, which nothing ships). Runs crates/portlight-chart/src/bin/gen_placeholders.rs.
 4. **portlight** (a command people run). Runs crates/portlight-cli/src/main.rs.
@@ -20,7 +22,7 @@ Nothing structural changed since 2026-10-18; 39 files changed content.
 
 ## What happens through CI
 
-1. The workflow runs godot/scenes/harbour_seam.tscn and godot/scenes/main.tscn in godot, 7 files in portlight-chart, 17 files in portlight-godot, 37 files in portlight-sim, and 7 files in tools; it checks crates/portlight-chart/src/bin/gen_placeholders.rs and crates/portlight-chart/src/lib.rs in portlight-chart, crates/portlight-cli/src/main.rs in portlight-cli, crates/portlight-godot/src/lib.rs in portlight-godot, and crates/portlight-sim/src/lib.rs in portlight-sim.
+1. The workflow runs godot/scenes/harbour_seam.tscn and godot/scenes/main.tscn in godot, 7 files in portlight-chart, crates/portlight-cli/ in portlight-cli, 17 files in portlight-godot, 38 files in portlight-sim, and 7 files in tools; it checks crates/portlight-chart/src/bin/gen_placeholders.rs and crates/portlight-chart/src/lib.rs in portlight-chart, crates/portlight-godot/src/lib.rs in portlight-godot, and crates/portlight-sim/src/lib.rs in portlight-sim.
    1. Inside tools/parity/test_check.py, `broker_paths` does, in order: `load_divergences` and `listed`.
 2. It writes to parity/golden/ and parity/saves/custom_captain_v12.json.
 3. It also writes to portlight-newgame-smoke/, which is not tracked.
@@ -68,10 +70,11 @@ Window: 180 days; a pair counts from 3 shared commits, since 13 source files rea
 ## What no test touches
 
 - **godot** is imported by no test.
-- **portlight-cli** is imported by no test.
 - **site** is imported by no test.
 
 portlight-chart is tested only by the unit tests in its own files.
+
+portlight-cli is tested only by the unit tests in its own files.
 
 portlight-godot is tested only by the unit tests in its own files.
 

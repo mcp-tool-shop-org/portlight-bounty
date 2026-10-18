@@ -498,4 +498,329 @@ mod tests {
         );
         assert_eq!(world.captain.standing.commercial_trust, before - 1);
     }
+
+    fn sample_receipt(port_id: &str, good_id: &str, action: &'static str) -> TradeReceipt {
+        TradeReceipt {
+            receipt_id: "r1".to_string(),
+            captain_name: "Ada".to_string(),
+            port_id: port_id.to_string(),
+            good_id: good_id.to_string(),
+            action,
+            quantity: 5,
+            unit_price: 10,
+            total_price: 50,
+            day: 1,
+            stock_before: 20,
+            stock_after: 15,
+        }
+    }
+
+    fn sample_failed_outcome(outcome_type: &str, summary: &str) -> ContractOutcome {
+        ContractOutcome {
+            contract_id: "c1".to_string(),
+            outcome_type: outcome_type.to_string(),
+            silver_delta: 0,
+            trust_delta: -2,
+            standing_delta: -1,
+            heat_delta: 0,
+            completion_day: 5,
+            summary: summary.to_string(),
+            family: "procurement".to_string(),
+            good_id: "grain".to_string(),
+            required_quantity: 10,
+            delivered_quantity: 0,
+            destination_port_id: "porto_novo".to_string(),
+            deadline_day: 10,
+            reward_silver: 100,
+        }
+    }
+
+    #[test]
+    fn sea_consequences_cover_reward_threat_information_and_veteran_branches() {
+        let board = ContractBoard::default();
+
+        // 1. fair_trader_gift
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.commercial_trust = 15;
+        let mut hit_fair = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 12, &board, &mut rng);
+            if res.iter().any(|c| c.id == "fair_trader_gift") {
+                hit_fair = true;
+                break;
+            }
+        }
+        assert!(hit_fair);
+
+        // 2. faction_warning
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world
+            .captain
+            .standing
+            .underworld
+            .push(("crimson_tide".to_string(), 0));
+        let mut hit_warn = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "faction_warning") {
+                hit_warn = true;
+                break;
+            }
+        }
+        assert!(hit_warn);
+
+        // 3. spared_pirate_gratitude
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        world.captain.duels_won = 1;
+        world
+            .captain
+            .encounters
+            .push(crate::model::PirateEncounterRecord {
+                captain_id: "scarlet_ana".to_string(),
+                faction_id: "crimson_tide".to_string(),
+                day: 2,
+                region: "Mediterranean".to_string(),
+                outcome: "duel_win".to_string(),
+            });
+        let mut hit_spared = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "spared_pirate_gratitude") {
+                hit_spared = true;
+                break;
+            }
+        }
+        assert!(hit_spared);
+
+        // 4. nemesis_shadow
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        world.nemesis_id = Some("the_butcher".to_string());
+        let mut hit_nemesis = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "nemesis_shadow") {
+                hit_nemesis = true;
+                break;
+            }
+        }
+        assert!(hit_nemesis);
+
+        // 5. trade_intelligence
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        if let Some(port) = world.port_mut("porto_novo") {
+            for slot in &mut port.market {
+                slot.stock_current = 0;
+                slot.stock_target = 50;
+            }
+        }
+        let receipts: Vec<TradeReceipt> = (0..22)
+            .map(|_| sample_receipt("porto_novo", "grain", "buy"))
+            .collect();
+        let mut hit_intel = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &receipts, 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "trade_intelligence") {
+                hit_intel = true;
+                break;
+            }
+        }
+        assert!(hit_intel);
+
+        // 6. broken_contract_haunts
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        let mut failed_board = ContractBoard::default();
+        failed_board
+            .completed
+            .push(sample_failed_outcome("expired", "Missed grain delivery"));
+        let mut hit_broken = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 0, &failed_board, &mut rng);
+            if res.iter().any(|c| c.id == "broken_contract_haunts") {
+                hit_broken = true;
+                break;
+            }
+        }
+        assert!(hit_broken);
+
+        // 7. regional_escort
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        world.captain.standing.set_regional("Mediterranean", 20);
+        let mut hit_escort = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "regional_escort") {
+                hit_escort = true;
+                break;
+            }
+        }
+        assert!(hit_escort);
+
+        // 8. contraband_reputation
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        world.captain.standing.set_heat("Mediterranean", 15);
+        let contra_receipts = vec![
+            sample_receipt("porto_novo", "opium", "sell"),
+            sample_receipt("porto_novo", "black_powder", "sell"),
+            sample_receipt("porto_novo", "stolen_cargo", "sell"),
+        ];
+        let mut hit_contra = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &contra_receipts, 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "contraband_reputation") {
+                hit_contra = true;
+                break;
+            }
+        }
+        assert!(hit_contra);
+
+        // 9. old_crew_memory
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        world.captain.day = 120;
+        let mut hit_vet = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_sea_consequences(&world, &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "old_crew_memory") {
+                hit_vet = true;
+                break;
+            }
+        }
+        assert!(hit_vet);
+    }
+
+    #[test]
+    fn port_consequences_and_apply_helpers_cover_all_branches() {
+        let board = ContractBoard::default();
+
+        // 1. loyal_customer
+        let world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let loyal_receipts = vec![
+            sample_receipt("porto_novo", "grain", "sell"),
+            sample_receipt("porto_novo", "grain", "sell"),
+            sample_receipt("porto_novo", "grain", "sell"),
+            sample_receipt("porto_novo", "grain", "buy"),
+            sample_receipt("porto_novo", "grain", "buy"),
+        ];
+        let mut hit_loyal = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res =
+                check_port_consequences(&world, "porto_novo", &loyal_receipts, 3, &board, &mut rng);
+            if res.iter().any(|c| c.id == "loyal_customer") {
+                hit_loyal = true;
+                break;
+            }
+        }
+        assert!(hit_loyal);
+
+        // 2. contract_shame
+        let mut failed_board = ContractBoard::default();
+        failed_board
+            .completed
+            .push(sample_failed_outcome("abandoned", "Abandoned contract"));
+        let one_receipt = vec![sample_receipt("porto_novo", "grain", "buy")];
+        let mut hit_shame = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_port_consequences(
+                &world,
+                "porto_novo",
+                &one_receipt,
+                0,
+                &failed_board,
+                &mut rng,
+            );
+            if res.iter().any(|c| c.id == "contract_shame") {
+                hit_shame = true;
+                break;
+            }
+        }
+        assert!(hit_shame);
+
+        // 3. faction_favor
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld = vec![("crimson_tide".to_string(), 30)];
+        let mut hit_favor = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_port_consequences(&world, "porto_novo", &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "faction_favor") {
+                hit_favor = true;
+                break;
+            }
+        }
+        assert!(hit_favor);
+
+        // 4. heat_scrutiny
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.underworld.clear();
+        world.captain.standing.set_heat("Mediterranean", 25);
+        let mut hit_heat = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_port_consequences(&world, "porto_novo", &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "heat_scrutiny") {
+                hit_heat = true;
+                break;
+            }
+        }
+        assert!(hit_heat);
+
+        // 5. homecoming
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        world.captain.standing.commercial_trust = 0;
+        world.captain.day = 40;
+        let mut hit_home = false;
+        for seed in 1..200 {
+            let mut rng = PyRandom::from_seed(seed);
+            let res = check_port_consequences(&world, "porto_novo", &[], 0, &board, &mut rng);
+            if res.iter().any(|c| c.id == "homecoming") {
+                hit_home = true;
+                break;
+            }
+        }
+        assert!(hit_home);
+
+        // 6. apply_consequence + port_effect_note
+        let mut world = new_game("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let reward = Consequence {
+            id: "test_reward".to_string(),
+            category: "port".to_string(),
+            trigger: String::new(),
+            text: String::new(),
+            effect_type: "reward".to_string(),
+            silver_delta: 25,
+            standing_delta: 3,
+            heat_delta: 4,
+            trust_delta: 2,
+            region: "Mediterranean".to_string(),
+        };
+        apply_consequence(&mut world, &reward);
+        assert_eq!(port_effect_note(&reward), " (+25 silver)");
+        let penalty = Consequence {
+            silver_delta: -10,
+            ..reward.clone()
+        };
+        assert_eq!(port_effect_note(&penalty), " (-10 silver)");
+        let neutral = Consequence {
+            silver_delta: 0,
+            ..reward
+        };
+        assert_eq!(port_effect_note(&neutral), "");
+    }
 }

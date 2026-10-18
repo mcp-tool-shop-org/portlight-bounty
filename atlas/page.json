@@ -67,24 +67,47 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 0,
-      "changed": 39,
+      "added": 7,
+      "changed": 7,
       "moved": 0,
-      "parts": 8,
+      "parts": 4,
       "removed": 0
     },
     "items": [
       {
+        "kind": "door",
+        "sentence": "CI now also runs crates/portlight-cli/ and crates/portlight-sim/src/error.rs.",
+        "subjects": [
+          ".github/workflows/ci.yml",
+          "crates/portlight-cli/",
+          "crates/portlight-sim/src/error.rs"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "godot/ is now also read by README.es.md, README.fr.md, README.hi.md, README.it.md, README.ja.md, README.pt-BR.md and README.zh.md.",
+        "subjects": [
+          "godot/",
+          "README.es.md",
+          "README.fr.md",
+          "README.hi.md",
+          "README.it.md",
+          "README.ja.md",
+          "README.pt-BR.md",
+          "README.zh.md"
+        ]
+      },
+      {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-10-18; 39 files changed content.",
+        "sentence": "7 files added and 7 changed content, across 4 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "6713cc28969ebb482c48f19dd6c28096a211fa6c",
-      "generatedAt": "2026-10-18T01:04:10.164Z"
+      "commit": "c068ce4d3ae8cc08471dbe2da06364c2d6fc87f6",
+      "generatedAt": "2026-10-18T04:11:26.610Z"
     },
-    "unchanged": true
+    "unchanged": false
   },
   "changesTogether": [
     {
@@ -169,7 +192,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 13 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 1,
-  "commit": "c068ce4d3ae8cc08471dbe2da06364c2d6fc87f6",
+  "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8",
   "defaultBranch": "main",
   "derived": "12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
@@ -177,12 +200,11 @@
       "checks": [
         "crates/portlight-chart/src/bin/gen_placeholders.rs",
         "crates/portlight-chart/src/lib.rs",
-        "crates/portlight-cli/src/main.rs",
         "crates/portlight-godot/src/lib.rs",
         "crates/portlight-sim/src/lib.rs"
       ],
-      "checksCount": 5,
-      "checksMore": 2,
+      "checksCount": 4,
+      "checksMore": 1,
       "file": ".github/workflows/ci.yml",
       "id": ".github/workflows/ci.yml",
       "landings": [
@@ -240,6 +262,7 @@
         "crates/portlight-chart/src/project.rs",
         "crates/portlight-chart/src/seam.rs",
         "crates/portlight-chart/src/view.rs",
+        "crates/portlight-cli/",
         "crates/portlight-godot/src/contract_strip.rs",
         "crates/portlight-godot/src/contracts_screen.rs",
         "crates/portlight-godot/src/day_report.rs",
@@ -266,6 +289,7 @@
         "crates/portlight-sim/src/cross_port_networks.rs",
         "crates/portlight-sim/src/culture.rs",
         "crates/portlight-sim/src/custom_captain.rs",
+        "crates/portlight-sim/src/error.rs",
         "crates/portlight-sim/src/fleet.rs",
         "crates/portlight-sim/src/hunting.rs",
         "crates/portlight-sim/src/infrastructure.rs",
@@ -290,8 +314,8 @@
         "crates/portlight-sim/src/world.rs",
         "crates/portlight-sim/tests/"
       ],
-      "runsCount": 65,
-      "runsMore": 67,
+      "runsCount": 67,
+      "runsMore": 69,
       "sends": [
         "uploads coverage to Codecov"
       ],
@@ -477,7 +501,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-18T04:11:26.610Z",
+  "generatedAt": "2026-10-18T04:36:18.076Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "6 writes and 19 reads use paths built at run time and are not named here.",
@@ -544,18 +568,19 @@
   "startReason": "This path follows gen_placeholders (a command built from crates/portlight-chart, which nothing ships) from its entry, since CI runs only tests, scripts that import no code here and checks.",
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 63,
+  "testFiles": 65,
   "testedBy": {
     "godot": 0,
     "portlight-chart": 7,
-    "portlight-cli": 0,
+    "portlight-cli": 1,
     "portlight-godot": 16,
-    "portlight-sim": 37,
+    "portlight-sim": 38,
     "site": 0,
     "tools": 2
   },
   "testedInside": [
     "portlight-chart",
+    "portlight-cli",
     "portlight-godot"
   ],
   "unnamedWrites": 6,
@@ -573,11 +598,6 @@
       "testedBy": 0
     },
     {
-      "part": "portlight-cli",
-      "partLabel": "portlight-cli",
-      "testedBy": 0
-    },
-    {
       "part": "site",
       "partLabel": "site",
       "testedBy": 0
@@ -585,6 +605,7 @@
   ],
   "untestedNote": [
     "portlight-chart is tested only by the unit tests in its own files.",
+    "portlight-cli is tested only by the unit tests in its own files.",
     "portlight-godot is tested only by the unit tests in its own files.",
     "scripts holds only PowerShell and shell files, which this map does not read, so whether a test touches it cannot be seen."
   ],

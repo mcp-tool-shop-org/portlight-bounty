@@ -966,6 +966,7 @@ jobs:
           # run lists all moved frames with their before and after hashes. The
           # step fails once, after the last comparison.
           moved_frames=0
+          mkdir -p /tmp/moved-frames
           cmp_committed() {
             local name="$1"
             local fresh="$2"
@@ -974,6 +975,7 @@ jobs:
             if ! cmp -s "docs/screenshots/${name}" "$fresh"; then
               fresh_sum=$(sha256sum "$fresh" 2>/dev/null | awk '{print $1}')
               echo "MOVED docs/screenshots/${name} committed sha256=${sum} fresh sha256=${fresh_sum:-missing} (${fresh})"
+              cp "$fresh" "/tmp/moved-frames/${name}" 2>/dev/null || true
               moved_frames=$((moved_frames + 1))
               return 0
             fi
@@ -1051,6 +1053,11 @@ jobs:
             echo "${moved_frames} committed frame(s) differ from the fresh render"
             exit 1
           fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: moved-frames
+          path: /tmp/moved-frames
 
   audit:
     runs-on: ubuntu-latest
