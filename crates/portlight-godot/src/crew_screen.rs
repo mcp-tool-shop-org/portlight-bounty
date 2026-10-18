@@ -8,9 +8,9 @@
 //!
 //! Follow-on, not this screen: `train` / `recruit` / `skill` on the GameSession
 //! runner. The buttons call [`portlight_sim::Session`] directly.
-//! `train_crew` passes an empty injury list into `can_learn_style`, so this
-//! desk has no injury control. The skill button says Learn and still calls
-//! `spend_skill_point`. Smuggler is a companion role, not a hire row.
+//! `train_crew` and `equip_style` enforce active injury gates. The skill button
+//! says Learn and still calls `spend_skill_point`. Smuggler is a companion
+//! role, not a hire row.
 
 use godot::classes::control::{MouseFilter, SizeFlags};
 use godot::classes::text_server::AutowrapMode;

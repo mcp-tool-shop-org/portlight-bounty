@@ -175,6 +175,21 @@ pub fn blocks_style(injury_ids: &[String], required_body_parts: &[String]) -> bo
     false
 }
 
+/// Active body parts affected by the captain's injuries (`get_injured_body_parts`).
+pub fn injured_body_parts(injuries: &[Injury]) -> Vec<&'static str> {
+    let catalog = content::content();
+    let mut parts = Vec::new();
+    for injury in injuries {
+        if let Some(def) = catalog.injury(&injury.injury_id) {
+            let part = def.body_part.as_str();
+            if !parts.contains(&part) {
+                parts.push(part);
+            }
+        }
+    }
+    parts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -252,5 +267,11 @@ mod tests {
             &["hand".into(), "arm".into()]
         ));
         assert!(!blocks_style(&["cut_hand".into()], &["leg".into()]));
+        let wounds = vec![
+            create_injury("cut_hand", 1),
+            create_injury("severed_fingers", 2),
+            create_injury("shattered_knee", 3),
+        ];
+        assert_eq!(injured_body_parts(&wounds), vec!["hand", "leg"]);
     }
 }

@@ -22,11 +22,11 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Player sees today | nothing: no gear shop in the Godot build | rg of crates/portlight-godot/src finds no reader; script.rs:422-428 |
 | Not shown | name, title, description, greeting, personality, stock, prices | no reader in the crates (section 2) |
 | Mechanic status | name, port, types and markup are live in the sim (script and tests only); personality, description, greeting and title are [flavour, no mechanic] | session.rs:3209-3245; content.rs:376-386 |
-| Python record | same strings (compared field by field, no differences); Python's merchant command lists the greeting, types and markup, and sells | portlight@9b02494 src/portlight/content/merchants.py:96; src/portlight/app/cli.py:1072-1136 |
+| Python record | same strings except description (`COPY_OVERRIDES`: 'forges axes and blades' vs Python's 'forges axes and broadswords', DF-43 resolved); Python's merchant command lists the greeting, types and markup, and sells | portlight@9b02494 src/portlight/content/merchants.py:96; src/portlight/app/cli.py:1072-1136 |
 
 ## 1. Grounded facts (every data line quoted) and the stock
 
-- description: "A Highland smith who forges axes and broadswords in a workshop built into the cliff face." (C:5951)
+- description: "A Highland smith who forges axes and blades in a workshop built into the cliff face." (C:5951; `COPY_OVERRIDES` in tools/extract_content.py, DF-43 resolved)
 - greeting (a spoken line, quoted inside the data string): "If it's sharp and it swings, I made it. If it's dull, someone else made it." (C:5952)
 - title: "Bladesmith" (C:5949)
 - personality: "gruff" (C:5950)
@@ -62,7 +62,7 @@ Stock at Thornport, computed at the base commit: every catalog item of a type th
 
 - Voice [cite]: gruff and boastful about his trade - "If it's sharp and it swings, I made it. If it's dull, someone else made it." (C:5952).
 - Manner [invented] He tests an edge on a hanging rope before he names the price, and the rope is always the same rope.
-- Setting [cite]: "A Highland smith who forges axes and broadswords in a workshop built into the cliff face." (C:5951). [invented] The shop is the cliff itself: racks cut into the rock, with the forge at the back warming the whole wall.
+- Setting [cite]: "A Highland smith who forges axes and blades in a workshop built into the cliff face." (C:5951). [invented] The shop is the cliff itself: racks cut into the rock, with the forge at the back warming the whole wall.
 - No face, age, build or dress is set beyond the quoted data lines; canon adds none. Character plates are held.
 
 ## 4. [invented] lore
@@ -87,5 +87,5 @@ Stock at Thornport, computed at the base commit: every catalog item of a type th
 ## 7. Flags and open questions
 
 - DF-46 (merchants never reach Godot; no reader for their text), DF-47 (coverage gaps): see ../data-fixes.md.
-- DF-43: his description names broadswords that the catalog does not hold. Given-name overlap: Red Hamish teaches at Ironhaven (style-masters/red_hamish.md): two people.
+- DF-43 (resolved): his description now names axes and blades via `COPY_OVERRIDES` in tools/extract_content.py. Given-name overlap: Red Hamish teaches at Ironhaven (style-masters/red_hamish.md): two people.
 - Building a shop, or showing any merchant text, is out of scope for canon; it is a design decision.

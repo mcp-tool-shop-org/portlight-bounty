@@ -27,9 +27,9 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 |---|---|---|
 | A skill line at the docked port: 'Blacksmithing  <level>. <trainer names> (teaches to N).' | Yes (built in code from the trainer names and the highest teaching limit) | logic.rs:2063-2128 (line at 2112-2115) |
 | 'Next: <level>  N silver  N days.' or 'Already at maximum.' | Yes | logic.rs:2098-2111 |
-| 'No blacksmith trainer at this port.' | Yes, at a port with none (it prints the skill's id word) | logic.rs:2073-2085; DF-40 |
-| A confirm line: 'Learn <level> Blacksmithing for N silver. The calendar will advance N days.' | Yes | logic.rs:1889-1891; game.rs:5627-5650 |
-| A notice after learning: 'Trained blacksmith. The calendar advanced N days.' | Yes, with the raw id (DF-40) | game.rs:5716-5735 (line 5731) |
+| 'No Blacksmithing trainer at this port.' | Yes, at a port with none (uses the skill's catalog name; DF-40 resolved) | logic.rs:2150-2162 |
+| A confirm line: 'Learn <level> Blacksmithing for N silver. The calendar will advance N days.' | Yes | logic.rs:1896-1898; game.rs:5627-5650 |
+| A notice after learning: 'Trained Blacksmithing. The calendar advanced N days.' | Yes, with the catalog name (DF-40 resolved) | logic.rs:1954-1963; game.rs:5733-5754 |
 | Trainer description and dialog | No: no reader in the crates | content.rs:296-304 (fields only); rg of crates |
 | Skill description and the level descriptions | No | logic.rs:2063-2128 |
 | The level effects (maintenance discount, slower wear, field repair, cheaper upgrades) | No: see section 3 | session.rs:3249-3258; session.rs:1928-1960 |
@@ -94,7 +94,7 @@ The cite is the name line. Rows are in data order. Each port has one trainer, so
 
 ## F. Flags
 
-- DF-39: trainer text unread; skill training_port_feature is data only; most skill effects have no Godot route. DF-40: the skill notice prints a raw id and the empty-trainer line prints the skill's id word.
+- DF-39: trainer text unread; skill training_port_feature is data only; most skill effects have no Godot route. DF-40 (resolved): the skill notice and empty-trainer line now use the catalog name ('Blacksmithing').
 - Showing trainer text or adding a gear shop that would make the effects reachable is out of scope for canon; it is a design decision (a shop is logged in a later canon pass).
 - Only one skill exists in the data; canon does not invent a second.
 

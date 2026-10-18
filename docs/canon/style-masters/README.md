@@ -14,9 +14,9 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Masters per style | 2 (one at each of the style's two training ports) | C:6171 |
 | Ports with a master | 10 of 20 | style_masters[*].port_id |
 | Region coverage | each of the 5 regions has 2 masters | style_masters[*].port_id |
-| Training gate in the sim | the style's own port list, silver, styles known, and (never, today) injuries | training.rs:9-52 |
+| Training gate in the sim | the style's own port list, silver, styles known, and active injuries | training.rs:9-52; session.rs:3331-3354 |
 | Rust record shape | id, name, style, port, description, dialog | content.rs:401-408 |
-| Python reference | same 10 records, same strings (compared field by field, no differences) | portlight@9b02494 src/portlight/content/fighting_styles.py:251-392 |
+| Python reference | same 10 records, same strings except Senora Vega's COPY_OVERRIDES description (DF-40) | portlight@9b02494 src/portlight/content/fighting_styles.py:251-392 |
 
 Masters are the authored teachers of the five fighting styles. Skill trainers (the blacksmith skill) are a separate index: [skill-trainers/README.md](../skill-trainers/README.md). Port NPCs, merchants, companions and officers stay in their own files.
 
@@ -26,15 +26,15 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 
 | What | Reaches the player? | Cite |
 |---|---|---|
-| One row per style taught at the docked port: 'Name  N silver  N days  needs N styles  known yes or no' | Yes (the row is built in code; 'needs 1 styles' is the shipped plural, DF-48) | logic.rs:2028-2062 (row at 2041-2045) |
-| 'Known styles: none' or the list of learned style names | Yes | logic.rs:2051-2062 |
-| 'No fighting master at this port.' | Yes, at a port that teaches no style: the only line where the word master reaches the player | logic.rs:1864; game.rs:5897-5898 |
-| A confirm line: 'Train Name for N silver. The calendar will advance N days.' | Yes, every training asks first | logic.rs:1884; game.rs:5608-5625 |
-| A notice after training: 'Learned dambe. The calendar advanced N days.' | Yes, with the raw id (DF-40) | game.rs:5693-5714 (line 5708) |
+| One row per style taught at the docked port: 'Name  N silver  N days  needs N style(s)  known yes or no' | Yes (the row is built in code; 'needs 1 style' for Silat and Lua, DF-48 resolved) | logic.rs:2104-2128 |
+| 'Known styles: none' or the list of learned style names, plus one 'Name  ready/active/injured' row and an Equip button per learned style | Yes | logic.rs:2080-2103, 2129-2149; game.rs:5897-5903 |
+| 'No fighting master at this port.' | Yes, at a port that teaches no style: the only line where the word master reaches the player | logic.rs:1864; game.rs:5904-5905 |
+| A confirm line: 'Train Name for N silver. The calendar will advance N days.' | Yes, every training asks first | logic.rs:1890; game.rs:5608-5625 |
+| A notice after training: 'Learned Dambe. The calendar advanced N days.' (or 'Equipped Dambe.' on Equip) | Yes, with the catalog name (DF-40, DF-41 resolved) | logic.rs:1934-1952; game.rs:5694-5732 |
 | Master name, description, dialog | No: no reader in the crates | content.rs:401-408 (fields only); rg of crates |
-| Style description, historical note, passives, special action | No: the desk shows name, cost, days, styles needed, known | logic.rs:2028-2062 |
-| Style passives and special action in a duel | No in a game started in Rust: no code sets the active style | combat.rs:273-283; model.rs:523; DF-41 |
-| An injury refusal | No: the gate gets an empty list | session.rs:3337; DF-41 |
+| Style description, historical note, passives, special action | No on the desk: the desk shows name, cost, days, styles needed, known | logic.rs:2104-2128 |
+| Style passives and special action in a duel | Yes once a learned style is equipped (`Session::equip_style` / `Equip` button, DF-41 resolved) | combat.rs:273-283; session.rs:3356-3379 |
+| An injury refusal | Yes: `train_crew` and `equip_style` check active captain injuries (DF-41 resolved) | session.rs:3331-3379; injuries.rs:60-69 |
 | Character art | None: the character hold stands | crew_screen.rs:3-6 |
 
 ## 2. Index (10 masters)
@@ -80,7 +80,7 @@ Silat and Lua each need one known style first (C:4286, C:4327), so a captain mee
 | Lua | parry 1, injury 0.2 | Joint Lock (joint_lock): utility, stamina 3, beats parry, loses to thrust, slash, damage +0, cooldown 3 | C:4298-4304, C:4305 |
 <!-- hand-maintained:end -->
 
-All passives and special actions are [flavour, no mechanic] for a Rust-started game: nothing equips a style (DF-41). They are authored and wired in combat.rs, and a save that carries an active style from Python would use them (save.rs:934; combat.rs:104-112, 273-283).
+Passives and special actions apply in personal combat when the captain has equipped a learned style (`Session::equip_style` or the Crew desk `Equip` button, DF-41 resolved; combat.rs:104-112, 273-283).
 
 <!-- hand-maintained:begin -->
 | Style | Description (data) | Historical note (data, real-world) | Cite |
@@ -96,22 +96,22 @@ The two lore columns are data, shown to no player today (section 1). Quotes are 
 
 ## 4. How training works
 
-- [exists] The call chain: the crew desk button asks to confirm, then calls train_crew, which calls can_learn_style and then learn_style, and advances the calendar one day at a time (game.rs:5608-5625, 5693-5714; session.rs:3331-3351; training.rs:9-65).
-- [exists] can_learn_style refuses, in order: an unknown style; a style already known; a port not in the style's list ('No <style> master at this port.'); too little silver; too few styles known; injured body parts (training.rs:9-52). The desk lists only styles taught at the port, so the third refusal is not reachable from the desk (logic.rs:2028-2036).
+- [exists] The call chain: the crew desk button asks to confirm, then calls train_crew, which calls can_learn_style and then learn_style, and advances the calendar one day at a time (game.rs:5608-5625, 5694-5715; session.rs:3331-3354; training.rs:9-65).
+- [exists] can_learn_style refuses, in order: an unknown style; a style already known; a port not in the style's list ('No <style> master at this port.'); too little silver; too few styles known; injured body parts (training.rs:9-52). The desk lists only styles taught at the port, so the third refusal is not reachable from the desk (logic.rs:2104-2106).
 - [exists] Masters play no part: masters_at (content.rs:1027-1032) and masters_at_port (training.rs:73-79) have no non-test caller (training.rs:101). All 10 master ports sit in their style's port list today (computed from C:6171-6250 and the style lists; DF-39).
-- [exists] Injuries are real: a lost personal fight can add one to the captain (session.rs:1905-1912; model.rs:535), but train_crew passes an empty list, so the check never fires (session.rs:3337; crew_screen.rs:11-12; DF-41).
-- [exists] Equip: Python has an equip-style command that sets the active style (portlight@9b02494 src/portlight/app/cli.py:2475-2504). Rust has no equivalent, and nothing else writes the active style (model.rs:523; world.rs:66; save.rs:934 loads it).
+- [exists] Injuries are checked: a lost personal fight can add an injury to the captain (session.rs:1905-1912; model.rs:535), and `train_crew` and `equip_style` pass `injuries::injured_body_parts(&self.world.captain.injuries)` into `can_learn_style` / `style_usable` (session.rs:3334-3379; DF-41 resolved).
+- [exists] Equip: `Session::equip_style` sets or clears the active style and the Crew desk offers an `Equip` button per learned style (`Action::CrewEquipStyle` / `crew.equip.<id>`, DF-41 resolved).
 
 ## 5. Duel screens: any style text?
 
 - [exists] The Godot duel screen has no style word: rg for special, style and the style fields in encounter_screen.rs finds only UI style boxes (crates/portlight-godot/src/encounter_screen.rs).
-- [exists] The only authored style text in the duel path is a special action's flavour line. It would show as the round's flavour only if a special action were offered, and one is offered only when the combatant has an active style (combat.rs:273-283; resolve_style_action, combat.rs:414-433; the flavour at 426; the round text path, session.rs:2231-2232, logic.rs:313-319). No Rust code sets the active style, so the line never shows in a game started in Rust (DF-41).
+- [exists] The only authored style text in the duel path is a special action's flavour line, shown as the round's flavour when the captain uses the active style's special action (combat.rs:273-283; resolve_style_action, combat.rs:414-433; the flavour at 426; the round text path, session.rs:2231-2232, logic.rs:313-319; DF-41 resolved).
 - [exists] The style description and historical note have no reader in the Godot crate; the sim reads only the passives and the special action (rg of crates).
-- [exists] The built refusal 'Your Estocada is countered!' and 'Your Estocada meets resistance.' are code strings that use the special action's catalog name (combat.rs:429-431); they share the same unreachable path.
+- [exists] The built refusal 'Your Estocada is countered!' and 'Your Estocada meets resistance.' are code strings that use the special action's catalog name (combat.rs:429-431).
 
 ## 6. Python reference
 
-- [exists] The 10 master records and 5 style records are the same in Rust and Python, field by field (portlight@9b02494 src/portlight/content/fighting_styles.py:56-63, 71-247, 251-392).
+- [exists] The 10 master records and 5 style records match Python field by field, except Senora Vega's description which uses `COPY_OVERRIDES` ('runs a fencing school east of Gibraltar', DF-40 resolved; portlight@9b02494 src/portlight/content/fighting_styles.py:56-63, 71-247, 251-392).
 - [exists] Python's train command with no argument lists the masters at the port and prints the first master's dialog with the master's name; with a style it checks the captain's real injuries (src/portlight/app/cli.py:2426-2472; src/portlight/app/combat_views.py:359-412; src/portlight/engine/training.py:10-33, 54-56).
 - [exists] Python's equip-style command sets the active style and refuses an injured captain (src/portlight/app/cli.py:2475-2504).
 - [exists] Python's training view reads a 'prerequisites' key that the command does not pass (it passes 'prereqs'), so its 'Requires' column always reads none (src/portlight/app/combat_views.py:385; src/portlight/app/cli.py:2436-2446). Noted, not logged: Python is the reference, not the game.
@@ -125,9 +125,9 @@ The two lore columns are data, shown to no player today (section 1). Quotes are 
 
 ## F. Flags
 
-- DF-39: masters and the master text are unread; the real gate is the style's port list. DF-40: Senora Vega's 'only fencing school east of Gibraltar' contradicts Maestro Luciano; the train and skill notices print raw ids. DF-41: the style injury gate is dead and no path equips a style.
-- Showing master text, wiring the injury list, or adding an equip control is out of scope for canon; it is a design decision.
-- DF-48: the shipped row says 'needs 1 styles' for Silat and Lua (logic.rs:2042-2045); a copy item, logged with a proposed fix.
+- DF-39: masters and the master text are unread; the real gate is the style's port list. DF-40 (resolved): Senora Vega's description now reads 'a fencing school east of Gibraltar' and the train/skill notices use catalog names. DF-41 (resolved): the style injury gate and `equip_style` / `Equip` button are wired.
+- Showing master text is out of scope for canon; it is a design decision.
+- DF-48 (resolved): the row now says 'needs 1 style' for Silat and Lua (logic.rs:2111-2125).
 
 ## G. Gaps in the data (computed from content.json at the base commit)
 

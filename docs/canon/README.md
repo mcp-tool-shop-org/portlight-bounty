@@ -201,20 +201,20 @@ Every port file's section G cites these IDs. A port history may add detail but m
 - One file per named companion (10, `companions.companions`, C:5542) and per companion role (5, C:5480): see companions/README.md. The index states what the crew desk shows today: name, role, cost, required regional regard and region; the departure line after a victory; nothing else.
 - Officers are generated, not authored: officers/README.md explains how a hire draws a name and a trait, lists the six crew roles and the 15 traits, and holds the name-collision table. One file per regional name pool (5, `officer_names.regions`, C:6075).
 - Each companion's home port links the companion in section B (one links-only line). No lane, landmark, faction or player-type file is rewritten.
-- Companion role effects are authored and unread by the sim, and 11 of 13 morale triggers never fire; both are logged, not fixed (DF-34, DF-35). Phase 6A data issues are DF-34 to DF-38 in data-fixes.md.
+- Companion role effects are authored and unread by the sim, and 11 of 13 morale triggers never fire; both are logged, not fixed (DF-34, DF-35). The recruit notice now uses the catalog display name (DF-36 resolved). Phase 6A data issues are DF-34 to DF-38 in data-fixes.md.
 - No new art, sound or spend; the character hold stands.
 
 ## Style masters and skill trainers (phase 6B)
 
-- One file per style master (10, `style_masters`, C:6171) and per skill trainer (5, `skills.trainers`, C:5397): see style-masters/README.md and skill-trainers/README.md. Each index states what the crew desk shows today: the style row and the skill line, built in code; no master or trainer text.
-- Masters are authored and unread: the training gate is the style's own port list, and the master's record agrees with it today (DF-39). The style injury gate is dead and no path equips a style (DF-41). The Senora Vega line and the raw-id training notices are logged as copy items (DF-40). Phase 6B data issues are DF-39 to DF-41 in data-fixes.md.
+- One file per style master (10, `style_masters`, C:6171) and per skill trainer (5, `skills.trainers`, C:5397): see style-masters/README.md and skill-trainers/README.md. Each index states what the crew desk shows today: the style row, learned style equip row, and the skill line, built in code; no master or trainer text.
+- Masters are authored and unread: the training gate is the style's own port list, and the master's record agrees with it today (DF-39). The style injury gate and style equipping (`Session::equip_style` and the Crew desk `Equip` button) are wired (DF-41 resolved). The Senora Vega line and the training notices are resolved (DF-40 resolved), as is the singular prerequisite grammar (`needs 1 style`, DF-48 resolved). Phase 6B data issues are DF-39 to DF-41 in data-fixes.md.
 - Each master's and trainer's home port links them in section B (one links-only line, joined to the phase 6A line where a port has both). No lane, landmark, faction or player-type file is rewritten.
 - No new art, sound or spend; the character hold stands.
 
 ## Merchants (phase 6C)
 
 - One file per merchant (14, `merchants`, C:5868): see merchants/README.md. The index states what the player sees today (nothing: the Godot build has no gear shop), the stock by region as computed from the catalog, how a purchase works in the sim, and where Python differs.
-- Merchants are authored and unread outside the script runner: personality, description, greeting and title have no reader; the markup formula exists twice (DF-46). Hamish's broadswords, Li Wei's hand crossbows and War Chief Tane's 700% markup contradict the data (DF-42, DF-43, DF-44); Malia's key is declined and resolved in lore (DF-45); coverage gaps are DF-47. Phase 6C data issues are DF-42 to DF-48 in data-fixes.md.
+- Merchants are authored and unread outside the script runner: personality, description, greeting and title have no reader; the markup formula exists twice (DF-46; the orphan-ammunition purchase refusal and launcher-upgrade ammunition preservation are resolved in the sim). Hamish's, Li Wei's and War Chief Tane's copy overrides are resolved (DF-42, DF-43, DF-44); Malia's key is declined and resolved in lore (DF-45); coverage gaps are DF-47. Phase 6C data issues are DF-42 to DF-48 in data-fixes.md.
 - Each merchant's home port links them in section B (one links-only line, joined to the earlier phase 6 line where a port has one). No lane, landmark, faction or player-type file is rewritten.
 - No new art, sound or spend; the character hold stands.
 

@@ -60,6 +60,7 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::CrewFire { role, count } => format!("crew.fire.{role}.{count}"),
         Action::CrewProvision(count) => format!("crew.provision.{count}"),
         Action::CrewTrain(role) => format!("crew.train.{role}"),
+        Action::CrewEquipStyle(id) => format!("crew.equip.{id}"),
         Action::CrewSkill(id) => format!("crew.skill.{id}"),
         Action::CrewRecruit(id) => format!("crew.recruit.{id}"),
         Action::CrewConfirm => "crew.confirm".into(),
@@ -206,6 +207,9 @@ fn action_from_id(id: &str) -> Option<Action> {
     }
     if let Some(rest) = id.strip_prefix("crew.train.") {
         return Some(Action::CrewTrain(rest.to_string()));
+    }
+    if let Some(rest) = id.strip_prefix("crew.equip.") {
+        return Some(Action::CrewEquipStyle(rest.to_string()));
     }
     if let Some(rest) = id.strip_prefix("crew.skill.") {
         return Some(Action::CrewSkill(rest.to_string()));
@@ -1572,6 +1576,7 @@ mod tests {
             role: "sailor".into(),
             count: 1,
         });
+        roundtrip_action(Action::CrewEquipStyle("la_destreza".into()));
         roundtrip_action(Action::Stance(Stance::Parry));
         roundtrip_action(Action::ShipyardArm(ShipyardArm::Buy("sloop".into())));
         roundtrip_action(Action::HarbourPrepare(HarbourIntent::OpenBroker {

@@ -70,6 +70,6 @@ Quotes are as in content.json; an em dash is folded to ' - ' and a tilde n to n,
 
 ## 7. Flags and open questions
 
-- DF-39 (masters and master text unread), DF-41 (the style injury gate is dead and no path equips a style): see ../data-fixes.md.
-- DF-40: Senora Vega's description claims 'the only fencing school east of Gibraltar'. Canon reading while unfixed: Luciano keeps no school, only a warehouse floor; Vega's is the one school with a hall and a register ([invented]).
-- Wiring master text into the desk, or a style equip control, is out of scope for canon; it is a design decision.
+- DF-39 (masters and master text unread): see ../data-fixes.md. DF-41 (resolved): the style injury gate and `equip_style` / `Equip` control are wired.
+- DF-40 (resolved): Senora Vega's description now reads 'runs a fencing school east of Gibraltar' via `COPY_OVERRIDES` in tools/extract_content.py. Canon reading: Luciano keeps no school, only a warehouse floor; Vega's is the school with a hall and a register ([invented]).
+- Wiring master text into the desk is out of scope for canon; it is a design decision.

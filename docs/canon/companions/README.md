@@ -26,7 +26,7 @@ Named companions are the authored party members. Officers are generated crew rec
 | One row per companion for hire at the docked port: name, role, silver cost, required regional regard and its region | Yes. The shipped row reads 'Name  Role  N silver  standing N in Region' | logic.rs:2150-2181 (row at 2176) |
 | 'No companions for hire at this port.' | Yes, at a port with none or with all hired or departed | logic.rs:1865; game.rs:5932 |
 | A confirm line before hiring: 'Recruit Name for N silver.' | Yes, every recruit asks first | logic.rs:1923; game.rs:5652-5667 |
-| A notice after hiring: 'Recruited iron_marta.' | Yes, with the raw id (DF-36) | game.rs:5739-5754 (line 5748) |
+| A notice after hiring: 'Recruited Iron Marta.' | Yes, with the catalog display name (DF-36 resolved) | logic.rs:1948-1953; game.rs:5748 |
 | 'Party n/2.' and one row per member: 'Name  Role  morale N' | Yes | logic.rs:2129-2149 |
 | 'Name approves. (+N morale)' or 'Name disapproves. (-N morale)' after a duel victory | Yes, built in code, not authored | companion.rs:147-151; recap.rs:1085-1093 |
 | 'Name leaves. <departure line>' after a victory | Yes: the only authored companion text a player can read | recap.rs:1085-1093; logic.rs:940-949 |
@@ -74,7 +74,7 @@ All seven effect fields are summed by `party_combat_bonus` and nothing calls it 
 1. The captain docks at a port. The crew desk lists the companions whose home port is that port and who are neither in the party nor departed (logic.rs:2150-2181).
 2. The captain picks one. The desk asks 'Recruit Name for N silver.' and waits for a confirm (game.rs:5652-5667).
 3. The sim checks, in order: right port, not already aboard, not departed, party under 2, silver, regional regard (companion.rs:51-93). Any failure is a plain sentence ('Party is full (max 2 companions).') shown as the notice (game.rs:5739-5754).
-4. On success the cost is taken and the companion starts at morale 70 (session.rs:3359-3373; companion.rs:95-108). The notice reads 'Recruited <id>.' (DF-36).
+4. On success the cost is taken and the companion starts at morale 70 (session.rs:3359-3373; companion.rs:95-108). The notice reads 'Recruited <Name>.' (DF-36 resolved).
 5. Nothing else happens: no greeting, no hire dialog, no role effect.
 
 ## 5. Morale and departure
@@ -149,7 +149,7 @@ The departure path is real for navigators and surgeons only; marines, smugglers 
 
 ## F. Flags
 
-- DF-34: role effects authored and unread. DF-35: 11 of 13 morale triggers never fire; loyalty and warning lines are unreachable. DF-36: the recruit notice prints the raw id. DF-37: same-name collisions with port NPCs.
+- DF-34: role effects authored and unread. DF-35: 11 of 13 morale triggers never fire; loyalty and warning lines are unreachable. DF-36 (resolved): the recruit notice now prints the catalog display name. DF-37: same-name collisions with port NPCs.
 - Wiring companion effects, morale triggers or a dismiss control is out of scope for canon; it is a design decision.
 
 ## G. Gaps in the data (computed from content.json at the base commit)

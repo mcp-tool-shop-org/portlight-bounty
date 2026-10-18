@@ -3232,6 +3232,21 @@ impl Session {
                 merchant.name
             )));
         };
+        if entry.item_type == "ammo" {
+            if let Some(ammo) = content::content().ammo(gear_id) {
+                let has_launcher = match ammo.weapon_type.as_str() {
+                    "firearm" => self.world.captain.firearm.is_some(),
+                    "mechanical" => self.world.captain.mechanical.is_some(),
+                    _ => false,
+                };
+                if !has_launcher {
+                    return Err(SimError::Rejected(format!(
+                        "Need a {} weapon before buying {}.",
+                        ammo.weapon_type, ammo.name
+                    )));
+                }
+            }
+        }
         let total = entry.silver_cost;
         if total > self.world.captain.silver {
             return Err(SimError::NeedSilver {
@@ -3332,9 +3347,10 @@ impl Session {
         let port_id = current_port_id(&self.world)
             .map(str::to_string)
             .ok_or(SimError::MustBeDockedToTrain)?;
+        let injured = injuries::injured_body_parts(&self.world.captain.injuries);
         if let Some(error) = training::can_learn_style(
             &self.world.captain.learned_styles,
-            &[],
+            &injured,
             self.world.captain.silver,
             &port_id,
             style_id,
@@ -3349,6 +3365,27 @@ impl Session {
         for _ in 0..days {
             self.advance()?;
         }
+        Ok(())
+    }
+
+    /// Equip or unequip a learned fighting style (`portlight equip-style`).
+    ///
+    /// Passing `None` or an empty string clears `active_style`.
+    pub fn equip_style(&mut self, style_id: Option<&str>) -> Result<(), SimError> {
+        let Some(id) = style_id.filter(|id| !id.is_empty()) else {
+            self.world.captain.active_style = None;
+            return Ok(());
+        };
+        if !self.world.captain.learned_styles.iter().any(|s| s == id) {
+            return Err(SimError::Rejected(format!("You haven't learned {id}.")));
+        }
+        let injured = injuries::injured_body_parts(&self.world.captain.injuries);
+        if !training::style_usable(id, &injured) {
+            return Err(SimError::Rejected(
+                "Your injuries prevent using this style.".into(),
+            ));
+        }
+        self.world.captain.active_style = Some(id.to_string());
         Ok(())
     }
 
@@ -3655,8 +3692,16 @@ fn apply_purchased_item(
                 ammo: 0,
             };
             match weapon.weapon_type.as_str() {
-                "firearm" => captain.firearm = Some(carried),
-                "mechanical" => captain.mechanical = Some(carried),
+                "firearm" => {
+                    let mut carried = carried;
+                    carried.ammo = captain.firearm.as_ref().map_or(0, |w| w.ammo);
+                    captain.firearm = Some(carried);
+                }
+                "mechanical" => {
+                    let mut carried = carried;
+                    carried.ammo = captain.mechanical.as_ref().map_or(0, |w| w.ammo);
+                    captain.mechanical = Some(carried);
+                }
                 "thrown" => {
                     if let Some(existing) =
                         captain.throwing.iter_mut().find(|item| item.id == item_id)
@@ -5514,6 +5559,111 @@ mod tests {
                 "Healed: Cut Hand.".to_string(),
                 "Healing: Cut Hand (9 days left).".to_string(),
             ]
+        );
+    }
+
+    #[test]
+    fn train_crew_and_equip_style_respect_active_injuries() {
+        let mut session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        assert_eq!(
+            session
+                .equip_style(Some("la_destreza"))
+                .unwrap_err()
+                .to_string(),
+            "You haven't learned la_destreza."
+        );
+        session
+            .world
+            .captain
+            .injuries
+            .push(injuries::create_injury("cut_hand", 1));
+        assert_eq!(
+            session.train_crew("la_destreza").unwrap_err().to_string(),
+            "Your injuries (hand) prevent learning La Destreza."
+        );
+        session.world.captain.injuries.clear();
+        session.train_crew("la_destreza").unwrap();
+        assert_eq!(
+            session.world.captain.learned_styles,
+            vec!["la_destreza".to_string()]
+        );
+        session.equip_style(Some("la_destreza")).unwrap();
+        assert_eq!(
+            session.world.captain.active_style.as_deref(),
+            Some("la_destreza")
+        );
+        session.equip_style(None).unwrap();
+        assert!(session.world.captain.active_style.is_none());
+        session
+            .world
+            .captain
+            .injuries
+            .push(injuries::create_injury("cut_hand", 1));
+        assert_eq!(
+            session
+                .equip_style(Some("la_destreza"))
+                .unwrap_err()
+                .to_string(),
+            "Your injuries prevent using this style."
+        );
+    }
+
+    #[test]
+    fn buy_gear_refuses_orphan_ammo_and_preserves_ammo_on_launcher_upgrade() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let before = session.world.captain.silver;
+        assert_eq!(
+            session.buy_gear("pistol_shot").unwrap_err().to_string(),
+            "Need a firearm weapon before buying Pistol Shot & Powder."
+        );
+        assert_eq!(
+            session.buy_gear("crossbow_bolts").unwrap_err().to_string(),
+            "Need a mechanical weapon before buying Crossbow Bolts."
+        );
+        assert_eq!(session.world.captain.silver, before);
+
+        session.buy_gear("matchlock_pistol").unwrap();
+        session.buy_gear("pistol_shot").unwrap();
+        assert_eq!(
+            session
+                .world
+                .captain
+                .firearm
+                .as_ref()
+                .map(|w| (&w.id[..], w.ammo)),
+            Some(("matchlock_pistol", 3))
+        );
+        session.buy_gear("wheellock_pistol").unwrap();
+        assert_eq!(
+            session
+                .world
+                .captain
+                .firearm
+                .as_ref()
+                .map(|w| (&w.id[..], w.ammo)),
+            Some(("wheellock_pistol", 3))
+        );
+
+        session.buy_gear("hand_crossbow").unwrap();
+        session.buy_gear("crossbow_bolts").unwrap();
+        assert_eq!(
+            session
+                .world
+                .captain
+                .mechanical
+                .as_ref()
+                .map(|w| (&w.id[..], w.ammo)),
+            Some(("hand_crossbow", 5))
+        );
+        session.buy_gear("hand_crossbow").unwrap();
+        assert_eq!(
+            session
+                .world
+                .captain
+                .mechanical
+                .as_ref()
+                .map(|w| (&w.id[..], w.ammo)),
+            Some(("hand_crossbow", 5))
         );
     }
 }

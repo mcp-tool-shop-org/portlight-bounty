@@ -16,7 +16,7 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Markup range | x1.05 to x1.15 | merchants[*].price_markup |
 | Where the sim uses them | buy_gear: script runner and tests only | session.rs:3209-3245; script.rs:422-428 |
 | Rust record shape | id, name, port, title, personality, description, greeting, types, markup | content.rs:376-386 |
-| Python reference | same 14 records, same strings (compared field by field, no differences) | portlight@9b02494 src/portlight/content/merchants.py:36-203 |
+| Python reference | same 14 records, same strings except Hamish's and Li Wei's `COPY_OVERRIDES` descriptions (DF-42, DF-43) | portlight@9b02494 src/portlight/content/merchants.py:36-203 |
 
 Merchants are the authored gear sellers (weapons, armour, ammunition). Port NPCs, companions, officers, style masters and skill trainers stay in their own files; the port files already carry a one-line row for each merchant (section B).
 
@@ -123,15 +123,15 @@ Items per region by type (computed from the tables above; a type with 0 in a reg
 
 - [exists] buy_gear(gear_id) needs the captain docked, reads the port's region, takes the merchants at the port and picks the first whose stock holds the item (session.rs:3209-3227). With none at the port it answers 'Unknown merchant' (session.rs:3219-3221); with the item missing it answers that the merchant does not sell it, by raw item id (session.rs:3229-3234).
 - [exists] The price is max(1, round(cost x markup)), with Python's half-to-even rounding (session.rs:3540-3542; util.rs:7-17). The same formula is also in merchant.rs:8-10, used only by its own test; two copies of one formula (DF-46).
-- [exists] A purchase takes the silver first (session.rs:3235-3242), then equips: a melee weapon or armour replaces the one carried; a firearm or a mechanical weapon is stored with 0 ammunition; a thrown weapon adds 1 to the stack; ammunition is added to the carried launcher of its kind (session.rs:3611-3695).
-- [exists] Buying ammunition with no launcher of that kind carried spends the silver and adds nothing, because the ammunition is stored on the weapon (session.rs:3242-3243 and 3674-3692, by source reading; tests were not run). A launcher bought again resets its ammunition to 0 (session.rs:3646-3660). See section 6 for which shops sell ammunition without a launcher.
+- [exists] Buying ammunition when the captain does not carry a matching firearm or mechanical launcher is refused before taking silver ('Need a <weapon_type> weapon before buying <ammo>.', session.rs:3235-3246). Otherwise the purchase takes the silver, then equips: a melee weapon or armour replaces the one carried; a firearm or a mechanical weapon replaces the one carried while preserving its existing ammunition; a thrown weapon adds 1 to the stack; ammunition is added to the carried launcher of its kind (session.rs:3651-3739; DF-46 ammo fix).
+- [exists] See section 6 for which shops sell ammunition without a launcher.
 - [exists] The sale is not recorded as a purchase for provenance or quality tier (session.rs:3204-3208).
 
 ## 5. Python versus Rust (noting only; no wiring is proposed)
 
-- [exists] The 14 merchant records are the same in Rust and Python, field by field (portlight@9b02494 src/portlight/content/merchants.py:36-203).
+- [exists] The 14 merchant records match Python field by field, except Hamish's and Li Wei's descriptions which use `COPY_OVERRIDES` (DF-42, DF-43; portlight@9b02494 src/portlight/content/merchants.py:36-203).
 - [exists] Python's merchant command lists the merchants at the port with greeting, types and markup, shows one merchant's stock with an affordability mark, and buys by merchant id, item id and quantity (src/portlight/app/cli.py:1072-1136; src/portlight/app/combat_views.py:727-785; src/portlight/engine/merchant.py:76-113). Rust has the buy only: no list, no per-merchant stock view, no quantity (session.rs:3209-3245; script.rs:422-428).
-- [exists] Python keeps ammunition in counters on the captain, so ammunition bought without a launcher is kept and a launcher bought later keeps it (src/portlight/engine/merchant.py:138-144). Rust stores ammunition on the weapon (section 4). This is a model difference, noted and not logged apart from DF-46.
+- [exists] Python keeps ammunition in counters on the captain, so ammunition bought without a launcher is kept and a launcher bought later keeps it (src/portlight/engine/merchant.py:138-144). Rust stores ammunition on the weapon and refuses orphan ammunition purchases (section 4).
 - [exists] Python has two more gear commands: armory, a no-markup quick-buy for ranged weapons and ammunition, and sell-gear, which pays 50 percent of a carried weapon or armour back (src/portlight/app/cli.py:2506-2560; src/portlight/app/cli.py:1143-1183). rg of the Rust crates finds neither.
 - [exists] The porting plan marks engine/merchant.py deprioritised, because the Python session never calls it, and says Session::buy_gear buys one stocked item at a merchant markup for the gear scripts (docs/PORTING-PLAN.md:326).
 
@@ -169,7 +169,7 @@ Because each port has one merchant, a port whose shop sells ammunition without a
 
 ## F. Flags
 
-- DF-42: Li Wei's hand crossbows cannot be stocked at Silk Haven. DF-43: Hamish's broadswords are not a catalog weapon. DF-44: War Chief Tane's 700% markup contradicts the 1.08 shop markup. DF-45 (declined - resolved in lore): Malia's key says provisions but she sells arms. DF-46: merchants never reach Godot. DF-47: coverage gaps.
+- DF-42 (resolved): Li Wei's description now names blowguns and arquebus pistols. DF-43 (resolved): Hamish's description now names axes and blades. DF-44 (resolved): War Chief Tane's agenda now says weapons are dear at Coral Throne. DF-45 (declined - resolved in lore): Malia's key says provisions but she sells arms. DF-46: merchants never reach Godot (orphan-ammunition refusal and launcher-upgrade preservation are resolved in the sim). DF-47: coverage gaps.
 - Building a shop, wiring merchant text, or changing a stock list is out of scope for canon; it is a design decision.
 
 ## G. Gaps in the data (computed from content.json at the base commit)
