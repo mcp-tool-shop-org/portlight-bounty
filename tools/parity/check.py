@@ -199,6 +199,34 @@ def shortage_reworded(path: str, a, b) -> bool:
     return shortage_transform(a) == b or shortage_transform(b) == a
 
 
+ANDROS_EVENT_MESSAGE_PATH = re.compile(
+    r"^(?:\$\.voyage\.recent_events\[\d+\]|\$\.log\[\d+\]\.events\[\d+\]\.message)$"
+)
+ANDROS_EVENT_FLAVOR_PATH = re.compile(r"^\$\.log\[\d+\]\.events\[\d+\]\.flavor$")
+PY_ANDROS_TEXT = (
+    "A Silva Bay hull \u2014 unmistakable lines \u2014 cuts across your bow. "
+    "Dimitri Andros stands at the prow, examining the waterline of a new build. "
+    "He's testing it himself. He always does."
+)
+RS_ANDROS_TEXT = (
+    "A Porto Novo hull \u2014 unmistakable lines \u2014 cuts across your bow. "
+    "Dimitri Andros stands at the prow, examining the waterline of a new build. "
+    "He's testing it himself. He always does."
+)
+PY_ANDROS_FLAVOR = "[Dimitri Andros from silva_bay]"
+RS_ANDROS_FLAVOR = "[Dimitri Andros from porto_novo]"
+
+
+def andros_sighting_reworded(path: str, a, b) -> bool:
+    if not (isinstance(a, str) and isinstance(b, str)):
+        return False
+    if ANDROS_EVENT_MESSAGE_PATH.search(path):
+        return (a, b) in ((PY_ANDROS_TEXT, RS_ANDROS_TEXT), (RS_ANDROS_TEXT, PY_ANDROS_TEXT))
+    if ANDROS_EVENT_FLAVOR_PATH.search(path):
+        return (a, b) in ((PY_ANDROS_FLAVOR, RS_ANDROS_FLAVOR), (RS_ANDROS_FLAVOR, PY_ANDROS_FLAVOR))
+    return False
+
+
 def close(a, b, path: str) -> list[str]:
     if isinstance(a, bool) or isinstance(b, bool):
         if a != b:
@@ -211,7 +239,7 @@ def close(a, b, path: str) -> list[str]:
             return []
         return [f"{path}: {a!r} != {b!r}"]
     if isinstance(a, str) and isinstance(b, str):
-        if a != b and not shortage_reworded(path, a, b):
+        if a != b and not shortage_reworded(path, a, b) and not andros_sighting_reworded(path, a, b):
             return [f"{path}: {a!r} != {b!r}"]
         return []
     if a is None and b is None:

@@ -466,6 +466,67 @@ COPY_OVERRIDES = [
         "The Crown's defense. Tane wants weapons \u2014 swords, bows, gunpowder, anything that gives the war canoes an edge. He's the reason weapons sell for 700% markup at Coral Throne. He also assesses every visiting captain as a potential ally or threat. His war canoes can sink a galleon in the shallows.",
         "The Crown's defense. Tane wants weapons \u2014 swords, bows, gunpowder, anything that gives the war canoes an edge. He's the reason weapons are dear at Coral Throne. He also assesses every visiting captain as a potential ally or threat. His war canoes can sink a galleon in the shallows.",
     ),
+    # DF-1: Dimitri Andros sighting filed under Porto Novo
+    ("sighting port", "Dimitri Andros:silva_bay", "porto_novo"),
+    (
+        "sighting text",
+        "A Silva Bay hull \u2014 unmistakable lines \u2014 cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does.",
+        "A Porto Novo hull \u2014 unmistakable lines \u2014 cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does.",
+    ),
+    # DF-2: Porto Novo power structure
+    (
+        "power structure",
+        "Porto Novo is governed by Senhora Costa, but real power is triangulated: Costa sets policy, Marta controls prices through the Exchange Guild, and Salva enforces the law. Dimitri's shipyard is independent \u2014 the Brotherhood answers to craft, not politics. Old Enzo's tavern is the shadow channel where information flows that the official institutions pretend doesn't exist. Fernanda's broker desk is where policy meets practice \u2014 she decides which contracts reach which captains.",
+        "Porto Novo is governed by Senhora Costa, but real power is triangulated: Costa sets policy, Marta controls prices through the Exchange Guild, and Salva enforces the law. Dimitri's shipyard is independent \u2014 the yard answers to craft, not politics. Old Enzo's tavern is the shadow channel where information flows that the official institutions pretend doesn't exist. Fernanda's broker desk is where policy meets practice \u2014 she decides which contracts reach which captains.",
+    ),
+    # DF-8: NPC name drift across records & Silva Bay Timber Yard
+    ("network npc name", "Henrik Brandt", "Forge Master Henrik Brandt"),
+    ("network npc name", "Herbalist Sera", "Head Herbalist Sera"),
+    ("network npc name", "Dr. Halvorsen", "Dr. Kristian Halvorsen"),
+    ("network npc name", "Quartermaster Maren", "Quartermaster Maren Dahl"),
+    ("network npc name", "Kiln Master Chen", "Kiln Master Chen Bai"),
+    ("network npc name", "Inspector Zara", "Inspector Zara Osman"),
+    ("sighting npc name", "Healer Sera", "Head Herbalist Sera"),
+    (
+        "npc description",
+        "Quiet, deliberate, with the slow-moving confidence of a man who has handled every kind of wood that grows. Tom\u00e1s runs the Timber Exchange \u2014 not an auction house like Porto Novo's grain operation, but a grading yard where every log is assessed by hand. He can tell oak from elm by the sound it makes when he taps it with his knuckle.",
+        "Quiet, deliberate, with the slow-moving confidence of a man who has handled every kind of wood that grows. Tom\u00e1s runs the Timber Yard \u2014 not an auction house like Porto Novo's grain operation, but a grading yard where every log is assessed by hand. He can tell oak from elm by the sound it makes when he taps it with his knuckle.",
+    ),
+    # DF-12: Rosa and Ingrid network description
+    (
+        "network description",
+        "Northern solidarity. Rosa lost her husband to the Smuggler's Run; Ingrid lost hers on Stormwall patrol. Two women who kept working because the people around them needed them. They've never met but exchange messages through northern trade captains. Short messages. Direct. The way northern women communicate.",
+        "Sea-widows' solidarity. Rosa lost her husband to the Smuggler's Run; Ingrid lost hers on Stormwall patrol. Two women who kept working because the people around them needed them. They've never met but exchange messages through northern trade captains. Short messages. Direct. The way working-harbour women communicate.",
+    ),
+    # DF-13: Silva Bay cheapest repairs tie
+    (
+        "institution function",
+        "Ship repairs, upgrades, and purchases. The best work in the game \u2014 cheapest repairs (1 silver/hull point). Elena's standards are the price of admission.",
+        "Ship repairs, upgrades, and purchases. The best work in the game \u2014 among the cheapest repairs (1 silver/hull point). Elena's standards are the price of admission.",
+    ),
+    # DF-14: Brotherhood war fleet wording
+    (
+        "npc agenda",
+        "The craft and the Brotherhood's independence. Elena will build for anyone who respects ships \u2014 pirate, merchant, navy, she doesn't care. But she will NEVER build warships. The Brotherhood builds vessels to carry cargo and people, not weapons of war. She turned down the Iron Pact's contract personally, and she'd do it again. Her loyalty is to wood, not politics.",
+        "The craft and the Brotherhood's independence. Elena will build for anyone who respects ships \u2014 pirate, merchant, navy, she doesn't care. But she will never build a war fleet to a power's order. The Brotherhood builds vessels to carry cargo and people, not armadas for empires. She turned down the Iron Pact's contract personally, and she'd do it again. Her loyalty is to wood, not politics.",
+    ),
+    (
+        "port grudge",
+        "The Shipwrights' Brotherhood refused to build warships for the Iron Pact. Stormwall hasn't forgotten.",
+        "The Shipwrights' Brotherhood refused to build a war fleet for the Iron Pact. Stormwall hasn't forgotten.",
+    ),
+    # DF-18: Porto Novo beacon lamp on the Harbor Master's Tower
+    (
+        "institution description",
+        "A stone tower at the harbor mouth with a brass telescope on the roof and a ledger room that smells of ink and sealing wax. Every ship is logged, every berth assigned, every fee collected here.",
+        "A stone tower at the harbor mouth with a brass telescope on the roof and a ledger room that smells of ink and sealing wax. A beacon lamp burns on the roof from dusk to dawn. Every ship is logged, every berth assigned, every fee collected here.",
+    ),
+    # DF-37: Same-name disambiguation at the same port and across ports
+    ("companion name", "dr_amara:Dr. Amara", "Dr. Amara Osei"),
+    ("merchant name", "devi_arms:Devi", "Armorer Devi"),
+    ("merchant name", "tane_warrior:Tane", "Outfitter Tane"),
+    ("merchant name", "chen_forge:Master Chen", "Bladesmith Chen"),
+    ("merchant name", "li_crossbow:Li Wei", "Mechanist Li Wei"),
 ]
 
 
@@ -494,6 +555,18 @@ def apply_copy_overrides(data: dict) -> None:
                 if merchant["description"] == python_text:
                     merchant["description"] = port_text
                     hits += 1
+        elif what == "merchant name":
+            merchant_id, old_name = python_text.split(":", 1)
+            for merchant in data["merchants"]:
+                if merchant["id"] == merchant_id and merchant["name"] == old_name:
+                    merchant["name"] = port_text
+                    hits += 1
+        elif what == "companion name":
+            comp_id, old_name = python_text.split(":", 1)
+            for comp in data["companions"]["companions"]:
+                if comp["id"] == comp_id and comp["name"] == old_name:
+                    comp["name"] = port_text
+                    hits += 1
         elif what == "npc agenda":
             for key in ("port_institutions", "port_institutions_east"):
                 for profile in data[key]:
@@ -501,6 +574,67 @@ def apply_copy_overrides(data: dict) -> None:
                         if npc["agenda"] == python_text:
                             npc["agenda"] = port_text
                             hits += 1
+        elif what == "npc description":
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    for npc in profile["npcs"]:
+                        if npc["description"] == python_text:
+                            npc["description"] = port_text
+                            hits += 1
+        elif what == "power structure":
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    if profile["power_structure"] == python_text:
+                        profile["power_structure"] = port_text
+                        hits += 1
+        elif what == "institution description":
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    for inst in profile["institutions"]:
+                        if inst["description"] == python_text:
+                            inst["description"] = port_text
+                            hits += 1
+        elif what == "institution function":
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    for inst in profile["institutions"]:
+                        if inst["function"] == python_text:
+                            inst["function"] = port_text
+                            hits += 1
+        elif what == "port grudge":
+            for port_pol in data["port_politics"]["ports"]:
+                if port_pol["port_grudge"] == python_text:
+                    port_pol["port_grudge"] = port_text
+                    hits += 1
+        elif what == "network npc name":
+            for net in data["cross_port_networks"]:
+                if net["npc_a_name"] == python_text:
+                    net["npc_a_name"] = port_text
+                    hits += 1
+                if net["npc_b_name"] == python_text:
+                    net["npc_b_name"] = port_text
+                    hits += 1
+        elif what == "network description":
+            for net in data["cross_port_networks"]:
+                if net["description"] == python_text:
+                    net["description"] = port_text
+                    hits += 1
+        elif what == "sighting port":
+            npc_name, old_port = python_text.split(":", 1)
+            for sight in data["sea_culture"]["npc_sightings"]:
+                if sight["npc_name"] == npc_name and sight["port_id"] == old_port:
+                    sight["port_id"] = port_text
+                    hits += 1
+        elif what == "sighting text":
+            for sight in data["sea_culture"]["npc_sightings"]:
+                if sight["text"] == python_text:
+                    sight["text"] = port_text
+                    hits += 1
+        elif what == "sighting npc name":
+            for sight in data["sea_culture"]["npc_sightings"]:
+                if sight["npc_name"] == python_text:
+                    sight["npc_name"] = port_text
+                    hits += 1
         else:
             for captain in data["captains"]:
                 if captain["id"] == "privateer" and captain["title"] == python_text:

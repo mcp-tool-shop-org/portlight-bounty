@@ -81,6 +81,20 @@ class ShortageReasonTest(unittest.TestCase):
         self.assertEqual([check.error_path(line) for line in errors], ["$.offers[0].id"])
 
 
+class AndrosSightingTest(unittest.TestCase):
+    def test_andros_sighting_pair_passes_on_event_paths(self) -> None:
+        for path in ("$.voyage.recent_events[2]", "$.log[6].events[1].message"):
+            self.assertEqual(check.close(check.PY_ANDROS_TEXT, check.RS_ANDROS_TEXT, path), [])
+            self.assertEqual(check.close(check.RS_ANDROS_TEXT, check.PY_ANDROS_TEXT, path), [])
+            self.assertEqual(len(check.close("Other", "Changed", path)), 1)
+        flavor_path = "$.log[6].events[1].flavor"
+        self.assertEqual(check.close(check.PY_ANDROS_FLAVOR, check.RS_ANDROS_FLAVOR, flavor_path), [])
+        self.assertEqual(check.close(check.RS_ANDROS_FLAVOR, check.PY_ANDROS_FLAVOR, flavor_path), [])
+        self.assertEqual(len(check.close("[Other]", "[Changed]", flavor_path)), 1)
+        for wrong_path in ("$.captain.name", "$.log[6].events[1].flavor"):
+            self.assertEqual(len(check.close(check.PY_ANDROS_TEXT, check.RS_ANDROS_TEXT, wrong_path)), 1)
+
+
 class AllowlistTest(unittest.TestCase):
     def test_broker_board_gamesession_allowlist_is_closed(self) -> None:
         entries = check.load_divergences()

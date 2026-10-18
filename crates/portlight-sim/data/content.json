@@ -5606,7 +5606,7 @@
       },
       {
         "id": "dr_amara",
-        "name": "Dr. Amara",
+        "name": "Dr. Amara Osei",
         "role_id": "surgeon",
         "home_port_id": "sun_harbor",
         "region": "West Africa",
@@ -6001,7 +6001,7 @@
     },
     {
       "id": "chen_forge",
-      "name": "Master Chen",
+      "name": "Bladesmith Chen",
       "port_id": "jade_port",
       "title": "Master Smith",
       "personality": "quiet",
@@ -6015,7 +6015,7 @@
     },
     {
       "id": "devi_arms",
-      "name": "Devi",
+      "name": "Armorer Devi",
       "port_id": "monsoon_reach",
       "title": "Armorer",
       "personality": "charming",
@@ -6029,7 +6029,7 @@
     },
     {
       "id": "li_crossbow",
-      "name": "Li Wei",
+      "name": "Mechanist Li Wei",
       "port_id": "silk_haven",
       "title": "Mechanist",
       "personality": "shrewd",
@@ -6044,7 +6044,7 @@
     },
     {
       "id": "tane_warrior",
-      "name": "Tane",
+      "name": "Outfitter Tane",
       "port_id": "coral_throne",
       "title": "Warrior Outfitter",
       "personality": "gruff",
@@ -6951,7 +6951,7 @@
     {
       "port_id": "porto_novo",
       "governor_title": "Port Governor",
-      "power_structure": "Porto Novo is governed by Senhora Costa, but real power is triangulated: Costa sets policy, Marta controls prices through the Exchange Guild, and Salva enforces the law. Dimitri's shipyard is independent \u2014 the Brotherhood answers to craft, not politics. Old Enzo's tavern is the shadow channel where information flows that the official institutions pretend doesn't exist. Fernanda's broker desk is where policy meets practice \u2014 she decides which contracts reach which captains.",
+      "power_structure": "Porto Novo is governed by Senhora Costa, but real power is triangulated: Costa sets policy, Marta controls prices through the Exchange Guild, and Salva enforces the law. Dimitri's shipyard is independent \u2014 the yard answers to craft, not politics. Old Enzo's tavern is the shadow channel where information flows that the official institutions pretend doesn't exist. Fernanda's broker desk is where policy meets practice \u2014 she decides which contracts reach which captains.",
       "internal_tension": "The core tension is between Marta and Costa. Marta wants market dominance \u2014 she'd squeeze every margin to make the Exchange richer. Costa wants political stability \u2014 she'd sacrifice some profit for Alliance cohesion. They need each other: Costa can't govern without the Guild's revenue, and Marta can't trade without Costa's political protection. The tension keeps Porto Novo honest. Meanwhile, Old Enzo quietly facilitates the grey economy that neither woman acknowledges exists, and Inspector Salva watches everything with the patience of a man who knows that sooner or later, everyone makes a mistake.",
       "institutions": [
         {
@@ -6959,7 +6959,7 @@
           "name": "The Harbor Master's Tower",
           "port_id": "porto_novo",
           "institution_type": "harbor_master",
-          "description": "A stone tower at the harbor mouth with a brass telescope on the roof and a ledger room that smells of ink and sealing wax. Every ship is logged, every berth assigned, every fee collected here.",
+          "description": "A stone tower at the harbor mouth with a brass telescope on the roof and a ledger room that smells of ink and sealing wax. A beacon lamp burns on the roof from dusk to dawn. Every ship is logged, every berth assigned, every fee collected here.",
           "function": "Controls docking, assigns berths, collects port fees. Clean records earn faster processing.",
           "political_leaning": "Alliance loyalist. Vasco runs a tight harbor that reflects Alliance standards.",
           "npc_id": "pn_vasco"
@@ -7422,7 +7422,7 @@
           "port_id": "silva_bay",
           "institution_type": "shipyard",
           "description": "The largest shipyard in the Mediterranean \u2014 three slipways, two dry docks, a steam box for bending timber, and a mast pond where logs season for years before they're touched. The sign over the gate reads 'BUILT TO SAIL, NOT TO SINK.' It's not a motto. It's a threat.",
-          "function": "Ship repairs, upgrades, and purchases. The best work in the game \u2014 cheapest repairs (1 silver/hull point). Elena's standards are the price of admission.",
+          "function": "Ship repairs, upgrades, and purchases. The best work in the game \u2014 among the cheapest repairs (1 silver/hull point). Elena's standards are the price of admission.",
           "political_leaning": "Apolitical. The yard builds for anyone. ANYONE. Except warmongers.",
           "npc_id": "sb_elena"
         },
@@ -7496,7 +7496,7 @@
           "institution": "shipyard",
           "personality": "exacting",
           "description": "Broad hands scarred by adze and chisel, hair tied back with a leather thong, and sawdust permanently ground into the creases of her knuckles. Elena is the Brotherhood's elected Master \u2014 the finest shipwright in the Mediterranean and possibly the world. She can look at a hull and tell you where it was built, when, and whether the builder rushed the keel.",
-          "agenda": "The craft and the Brotherhood's independence. Elena will build for anyone who respects ships \u2014 pirate, merchant, navy, she doesn't care. But she will NEVER build warships. The Brotherhood builds vessels to carry cargo and people, not weapons of war. She turned down the Iron Pact's contract personally, and she'd do it again. Her loyalty is to wood, not politics.",
+          "agenda": "The craft and the Brotherhood's independence. Elena will build for anyone who respects ships \u2014 pirate, merchant, navy, she doesn't care. But she will never build a war fleet to a power's order. The Brotherhood builds vessels to carry cargo and people, not armadas for empires. She turned down the Iron Pact's contract personally, and she'd do it again. Her loyalty is to wood, not politics.",
           "greeting_neutral": "\"Show me your ship. I'll tell you what she needs and what it'll cost. I don't need your name \u2014 I need to see your keel.\"",
           "greeting_friendly": "\"Captain! Brought her back in one piece, I see. Good sailor. Come \u2014 I've been experimenting with a new hull design. I want your opinion.\"",
           "greeting_hostile": "\"I'll repair your ship because the sea doesn't care about grudges. But I'm charging double, and I'm not smiling about it.\"",
@@ -7539,7 +7539,7 @@
           "port_id": "silva_bay",
           "institution": "exchange",
           "personality": "patient",
-          "description": "Quiet, deliberate, with the slow-moving confidence of a man who has handled every kind of wood that grows. Tom\u00e1s runs the Timber Exchange \u2014 not an auction house like Porto Novo's grain operation, but a grading yard where every log is assessed by hand. He can tell oak from elm by the sound it makes when he taps it with his knuckle.",
+          "description": "Quiet, deliberate, with the slow-moving confidence of a man who has handled every kind of wood that grows. Tom\u00e1s runs the Timber Yard \u2014 not an auction house like Porto Novo's grain operation, but a grading yard where every log is assessed by hand. He can tell oak from elm by the sound it makes when he taps it with his knuckle.",
           "agenda": "Quality timber at honest prices. Tom\u00e1s has no interest in cornering markets or playing politics. He grades wood, sets fair prices, and goes home. His one passion outside timber is protecting the forests \u2014 he's pushed the Brotherhood to limit harvests, arguing that a forest cut too fast won't grow back. This makes him unpopular with merchants who want volume.",
           "greeting_neutral": "\"Looking for timber? Let me show you what's in the yard. I'll grade it while you watch \u2014 no surprises.\"",
           "greeting_friendly": "\"Captain \u2014 I've been setting aside a batch of coastal oak. Perfect for hull planking. Thought of you when it came in.\"",
@@ -11446,7 +11446,7 @@
     },
     {
       "npc_a_id": "ih_forge_master",
-      "npc_a_name": "Henrik Brandt",
+      "npc_a_name": "Forge Master Henrik Brandt",
       "npc_a_port": "ironhaven",
       "npc_b_id": "ip_foreman_kofi",
       "npc_b_name": "Foreman Kofi Mensah",
@@ -11470,10 +11470,10 @@
     },
     {
       "npc_a_id": "ei_head_herbalist",
-      "npc_a_name": "Herbalist Sera",
+      "npc_a_name": "Head Herbalist Sera",
       "npc_a_port": "ember_isle",
       "npc_b_id": "sw_dr_halvorsen",
-      "npc_b_name": "Dr. Halvorsen",
+      "npc_b_name": "Dr. Kristian Halvorsen",
       "npc_b_port": "stormwall",
       "network": "merchant",
       "disposition": "allied",
@@ -11485,7 +11485,7 @@
       "npc_a_name": "Old Cassius",
       "npc_a_port": "palm_cove",
       "npc_b_id": "sw_quartermaster",
-      "npc_b_name": "Quartermaster Maren",
+      "npc_b_name": "Quartermaster Maren Dahl",
       "npc_b_port": "stormwall",
       "network": "merchant",
       "disposition": "allied",
@@ -11509,7 +11509,7 @@
       "npc_a_name": "Merchant Feng",
       "npc_a_port": "silk_haven",
       "npc_b_id": "jp_master_chen",
-      "npc_b_name": "Kiln Master Chen",
+      "npc_b_name": "Kiln Master Chen Bai",
       "npc_b_port": "jade_port",
       "network": "merchant",
       "disposition": "rival",
@@ -11573,7 +11573,7 @@
       "npc_b_port": "stormwall",
       "network": "tavern",
       "disposition": "personal",
-      "description": "Northern solidarity. Rosa lost her husband to the Smuggler's Run; Ingrid lost hers on Stormwall patrol. Two women who kept working because the people around them needed them. They've never met but exchange messages through northern trade captains. Short messages. Direct. The way northern women communicate.",
+      "description": "Sea-widows' solidarity. Rosa lost her husband to the Smuggler's Run; Ingrid lost hers on Stormwall patrol. Two women who kept working because the people around them needed them. They've never met but exchange messages through northern trade captains. Short messages. Direct. The way working-harbour women communicate.",
       "player_impact": "Captains who are trusted at both the Dry Dock and the Watchtower carry a northern credibility that opens doors in the Atlantic."
     },
     {
@@ -11665,7 +11665,7 @@
       "npc_a_name": "Inspector Salva",
       "npc_a_port": "porto_novo",
       "npc_b_id": "am_inspector_zara",
-      "npc_b_name": "Inspector Zara",
+      "npc_b_name": "Inspector Zara Osman",
       "npc_b_port": "al_manar",
       "network": "inspector",
       "disposition": "professional",
@@ -12802,9 +12802,9 @@
     "npc_sightings": [
       {
         "npc_name": "Dimitri Andros",
-        "port_id": "silva_bay",
+        "port_id": "porto_novo",
         "region": "Mediterranean",
-        "text": "A Silva Bay hull \u2014 unmistakable lines \u2014 cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does."
+        "text": "A Porto Novo hull \u2014 unmistakable lines \u2014 cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does."
       },
       {
         "npc_name": "Marta Soares",
@@ -12933,7 +12933,7 @@
         "text": "War canoes appear \u2014 painted to match the coral, nearly invisible until they're alongside. War Chief Tane's escort. They watch you pass. The spears stay lowered. Today."
       },
       {
-        "npc_name": "Healer Sera",
+        "npc_name": "Head Herbalist Sera",
         "port_id": "ember_isle",
         "region": "South Seas",
         "text": "An Ember Isle medicine boat passes, volcanic-stone hull and eucalyptus smoke trailing behind. Head Herbalist Sera waves from the deck, surrounded by crates of freshly harvested remedies."
@@ -13553,7 +13553,7 @@
         "rivalry_reason": "",
         "trade_embargo": [],
         "political_flavor": "Silva Bay stays out of politics and builds ships. The Alliance needs them too much to push.",
-        "port_grudge": "The Shipwrights' Brotherhood refused to build warships for the Iron Pact. Stormwall hasn't forgotten."
+        "port_grudge": "The Shipwrights' Brotherhood refused to build a war fleet for the Iron Pact. Stormwall hasn't forgotten."
       },
       {
         "port_id": "ironhaven",

@@ -49,6 +49,57 @@ fn shortage_reworded(path: &str, a: &str, b: &str) -> bool {
             || shortage_transform(b).as_deref() == Some(a))
 }
 
+const PY_ANDROS_TEXT: &str = "A Silva Bay hull \u{2014} unmistakable lines \u{2014} cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does.";
+const RS_ANDROS_TEXT: &str = "A Porto Novo hull \u{2014} unmistakable lines \u{2014} cuts across your bow. Dimitri Andros stands at the prow, examining the waterline of a new build. He's testing it himself. He always does.";
+const PY_ANDROS_FLAVOR: &str = "[Dimitri Andros from silva_bay]";
+const RS_ANDROS_FLAVOR: &str = "[Dimitri Andros from porto_novo]";
+
+fn is_digits(s: &str) -> bool {
+    !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+}
+
+fn on_andros_message_path(path: &str) -> bool {
+    if let Some(idx) = path
+        .strip_prefix("$.voyage.recent_events[")
+        .and_then(|s| s.strip_suffix(']'))
+    {
+        return is_digits(idx);
+    }
+    if let Some(rest) = path
+        .strip_prefix("$.log[")
+        .and_then(|s| s.strip_suffix("].message"))
+    {
+        if let Some((log_idx, event_idx)) = rest.split_once("].events[") {
+            return is_digits(log_idx) && is_digits(event_idx);
+        }
+    }
+    false
+}
+
+fn on_andros_flavor_path(path: &str) -> bool {
+    if let Some(rest) = path
+        .strip_prefix("$.log[")
+        .and_then(|s| s.strip_suffix("].flavor"))
+    {
+        if let Some((log_idx, event_idx)) = rest.split_once("].events[") {
+            return is_digits(log_idx) && is_digits(event_idx);
+        }
+    }
+    false
+}
+
+fn andros_sighting_reworded(path: &str, a: &str, b: &str) -> bool {
+    if on_andros_message_path(path) {
+        return (a == PY_ANDROS_TEXT && b == RS_ANDROS_TEXT)
+            || (a == RS_ANDROS_TEXT && b == PY_ANDROS_TEXT);
+    }
+    if on_andros_flavor_path(path) {
+        return (a == PY_ANDROS_FLAVOR && b == RS_ANDROS_FLAVOR)
+            || (a == RS_ANDROS_FLAVOR && b == PY_ANDROS_FLAVOR);
+    }
+    false
+}
+
 fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
     match (left, right) {
         (Value::Number(a), Value::Number(b)) => {
@@ -60,7 +111,7 @@ fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
             }
         }
         (Value::String(a), Value::String(b)) => {
-            if a != b && !shortage_reworded(path, a, b) {
+            if a != b && !shortage_reworded(path, a, b) && !andros_sighting_reworded(path, a, b) {
                 errors.push(format!("{path}: {a:?} != {b:?}"));
             }
         }
@@ -315,10 +366,10 @@ fn pattern_names_container(left: &Value, right: &Value, pattern: &str) -> Result
     Ok(false)
 }
 
-fn assert_close(left: &Value, right: &Value, path: &str) {
+fn assert_close(left: &Value, right: &Value, label: &str) {
     let mut errors = Vec::new();
-    close(left, right, path, &mut errors);
-    assert!(errors.is_empty(), "{path}: {errors:?}");
+    close(left, right, "$", &mut errors);
+    assert!(errors.is_empty(), "{label}: {errors:?}");
 }
 
 #[test]
@@ -586,6 +637,55 @@ fn only_the_shortage_rewording_passes_on_an_offer_reason() {
     close(&left, &right, "$", &mut errors);
     assert_eq!(errors.len(), 1, "{errors:?}");
     assert!(errors[0].starts_with("$.offers[0].id:"), "{errors:?}");
+}
+
+#[test]
+fn only_the_andros_sighting_rewording_passes_on_sighting_paths() {
+    let differs = |a: &str, b: &str, path: &str| {
+        let mut errors = Vec::new();
+        close(&Value::from(a), &Value::from(b), path, &mut errors);
+        errors.len()
+    };
+    for path in ["$.voyage.recent_events[2]", "$.log[6].events[1].message"] {
+        assert_eq!(differs(PY_ANDROS_TEXT, RS_ANDROS_TEXT, path), 0, "{path}");
+        assert_eq!(differs(RS_ANDROS_TEXT, PY_ANDROS_TEXT, path), 0, "{path}");
+        assert_eq!(differs("Other event", "Changed event", path), 1, "{path}");
+    }
+    assert_eq!(
+        differs(
+            PY_ANDROS_FLAVOR,
+            RS_ANDROS_FLAVOR,
+            "$.log[6].events[1].flavor"
+        ),
+        0
+    );
+    assert_eq!(
+        differs(
+            RS_ANDROS_FLAVOR,
+            PY_ANDROS_FLAVOR,
+            "$.log[6].events[1].flavor"
+        ),
+        0
+    );
+    assert_eq!(
+        differs(
+            "[Other from silva_bay]",
+            "[Other from porto_novo]",
+            "$.log[6].events[1].flavor"
+        ),
+        1
+    );
+    for wrong_path in [
+        "$.voyage.recent_events",
+        "$.log[6].events[1].flavor",
+        "$.captain.name",
+    ] {
+        assert_eq!(
+            differs(PY_ANDROS_TEXT, RS_ANDROS_TEXT, wrong_path),
+            1,
+            "{wrong_path}"
+        );
+    }
 }
 
 #[test]
