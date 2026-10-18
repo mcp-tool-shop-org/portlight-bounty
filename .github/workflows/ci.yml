@@ -1053,6 +1053,8 @@ jobs:
             echo "${moved_frames} committed frame(s) differ from the fresh render"
             exit 1
           fi
+      # Upload any moved screenshots on failure so golden refreshes can pull
+      # the exact Xvfb + OpenGL frames rendered by this runner.
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
