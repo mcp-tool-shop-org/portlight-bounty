@@ -323,7 +323,7 @@ Mark an item when its rules are in `portlight-sim` and a test or golden script w
 
 ### Deprioritized
 
-- [ ] `engine/underworld.py` and `engine/merchant.py`. Deprioritized, because the Python session never calls them. There is no `underworld.rs`. `encounter.rs` has its own hostility function. `merchant.rs` is the markup helper, and `Session` does not call that module. `Session::buy_gear` still buys one stocked item at a merchant markup for the gear scripts.
+- [ ] `engine/underworld.py`. Deprioritized, because the Python session never calls it. There is no `underworld.rs`. `encounter.rs` has its own hostility function. `merchant.rs` (`marked_price`, `merchant_inventory`) is shared by `Session::buy_gear` and the Godot Crew desk's Armoury section.
 - [ ] `gunner_damage_mult`, `marine_boarding_bonus`, and `surgeon_death_reduction` are defined in `ship_stats.py` but never called by the Python game; not applied, matching Python.
 - [ ] `get_fee_modifier` is called only by the Python reputation view, not by gameplay; not applied, matching Python.
 

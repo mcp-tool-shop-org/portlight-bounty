@@ -1,4 +1,4 @@
-//! Docked crew desk: roster, provisions, training, skills, and companions.
+//! Docked crew desk: roster, provisions, training, skills, companions, and armoury.
 //!
 //! The plate column and the button fill are the encounter screen's. Ships
 //! are drawn with [`crate::encounter_screen::set_ship_plate`] at exact 2×.
@@ -31,6 +31,7 @@ pub(crate) const SECTION_ROSTER: &str = "RosterSection";
 pub(crate) const SECTION_PROVISIONS: &str = "ProvisionsSection";
 pub(crate) const SECTION_TRAINING: &str = "TrainingSection";
 pub(crate) const SECTION_COMPANIONS: &str = "CompanionsSection";
+pub(crate) const SECTION_GEAR: &str = "GearSection";
 
 #[derive(Clone)]
 pub(crate) struct CrewNodes {

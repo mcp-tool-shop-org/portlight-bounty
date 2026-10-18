@@ -67,6 +67,7 @@ use crate::infrastructure::{self, dry_dock_service};
 use crate::injuries;
 use crate::loot;
 use crate::memory;
+use crate::merchant::merchant_inventory;
 use crate::model::{
     ActiveContract, Armor, CargoItem, Consequence, Contract, ContractBoard, ContractOutcome,
     InfrastructureRecord, Injury, InstalledUpgrade, NarrativeState, Officer, PendingDuel,
@@ -79,7 +80,7 @@ use crate::save::{self, LoadedGame};
 use crate::ship::{self, wage_bill};
 use crate::skills;
 use crate::training;
-use crate::util::{py_round, py_trunc};
+use crate::util::py_trunc;
 use crate::voyage::{self, sail_lanes, SailLane, VoyageEvent};
 use crate::weapon_provenance;
 use crate::weapon_quality;
@@ -3565,84 +3566,6 @@ fn heal_notes(before: &[Injury], after: &[Injury]) -> Vec<String> {
         }
     }
     notes
-}
-
-struct ShopEntry {
-    item_type: String,
-    item_id: String,
-    silver_cost: i64,
-}
-
-/// `merchant._markup`: `max(1, round(base * markup))`.
-fn merchant_price(base: i64, markup: f64) -> i64 {
-    1.max(py_round(base as f64 * markup))
-}
-
-fn merchant_sells(types: &[String], kind: &str) -> bool {
-    types.iter().any(|item| item == kind)
-}
-
-fn in_region(regions: &[String], region: &str) -> bool {
-    regions.iter().any(|item| item == region)
-}
-
-/// `get_merchant_inventory` for the port's region.
-fn merchant_inventory(merchant: &content::MerchantDef, region: &str) -> Vec<ShopEntry> {
-    let catalog = content::content();
-    let mut items = Vec::new();
-    if merchant_sells(&merchant.inventory_types, "melee") {
-        for weapon in catalog
-            .melee_weapons
-            .iter()
-            .filter(|weapon| in_region(&weapon.available_regions, region))
-        {
-            items.push(ShopEntry {
-                item_type: "melee".into(),
-                item_id: weapon.id.clone(),
-                silver_cost: merchant_price(weapon.silver_cost, merchant.price_markup),
-            });
-        }
-    }
-    if merchant_sells(&merchant.inventory_types, "armor") {
-        for armor in catalog
-            .armor
-            .iter()
-            .filter(|armor| in_region(&armor.available_regions, region))
-        {
-            items.push(ShopEntry {
-                item_type: "armor".into(),
-                item_id: armor.id.clone(),
-                silver_cost: merchant_price(armor.silver_cost, merchant.price_markup),
-            });
-        }
-    }
-    if merchant_sells(&merchant.inventory_types, "ranged") {
-        for weapon in catalog
-            .ranged_weapons
-            .iter()
-            .filter(|weapon| in_region(&weapon.available_regions, region))
-        {
-            items.push(ShopEntry {
-                item_type: "ranged".into(),
-                item_id: weapon.id.clone(),
-                silver_cost: merchant_price(weapon.silver_cost, merchant.price_markup),
-            });
-        }
-    }
-    if merchant_sells(&merchant.inventory_types, "ammo") {
-        for ammo in catalog
-            .ammo
-            .iter()
-            .filter(|ammo| in_region(&ammo.available_regions, region))
-        {
-            items.push(ShopEntry {
-                item_type: "ammo".into(),
-                item_id: ammo.id.clone(),
-                silver_cost: merchant_price(ammo.silver_cost, merchant.price_markup),
-            });
-        }
-    }
-    items
 }
 
 /// `merchant._apply_item`. Does not stamp quality or provenance.

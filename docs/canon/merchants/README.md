@@ -12,9 +12,9 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Merchants (named, authored) | 14 | C:5868 |
 | Ports with a merchant | 14 of 20 (one each) | merchants[*].port_id |
 | Ports with none | 6 (section G) | ports[*].id against merchants[*].port_id |
-| Item types a merchant may sell | melee, armor, ranged, ammo | content.rs:376-386; session.rs:3553-3609 |
+| Item types a merchant may sell | melee, armor, ranged, ammo | content.rs:376-386; merchant.rs:31-85 |
 | Markup range | x1.05 to x1.15 | merchants[*].price_markup |
-| Where the sim uses them | buy_gear: script runner and tests only | session.rs:3209-3245; script.rs:422-428 |
+| Where the sim and Godot use them | Session::buy_gear, merchant::merchant_inventory, and the Godot Crew desk Armoury section | session.rs:3209-3260; merchant.rs:15-85; logic.rs:2331-2484; game.rs:5977-6000 |
 | Rust record shape | id, name, port, title, personality, description, greeting, types, markup | content.rs:376-386 |
 | Python reference | same 14 records, same strings except Hamish's and Li Wei's `COPY_OVERRIDES` descriptions (DF-42, DF-43) | portlight@9b02494 src/portlight/content/merchants.py:36-203 |
 
@@ -26,9 +26,9 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 
 | What | Reaches the player? | Cite |
 |---|---|---|
-| A gear shop, a merchant list, or any merchant name | No: the Godot build has no shop and no merchant screen | rg of crates/portlight-godot/src for buy_gear and merchants finds nothing |
-| Merchant title, personality, description, greeting | No: no reader in the crates | content.rs:376-386 (fields only) |
-| Markup and stock | No: reachable only by the script runner's gear command | script.rs:422-428; session.rs:3209-3245 |
+| A gear shop, merchant header, and stock rows | Yes: the Godot Crew desk renders an `Armoury` section (`SECTION_GEAR`) with `Buy` buttons (`crew.gear.<id>`) | crew_screen.rs:33; logic.rs:2331-2484; game.rs:5977-6000 |
+| Merchant title, personality, description, greeting | Yes: shown in the Crew desk `Armoury` section when a merchant is at the port | logic.rs:2334-2342; game.rs:5981-5988 |
+| Markup and stock | Yes: computed via `merchant::merchant_inventory` and `merchant::marked_price` | merchant.rs:15-85; session.rs:3223-3228 |
 | Gear gained after a fight | Yes, in the sim: loot can equip a weapon, armour or ammunition | loot.rs:113-160 |
 | Character art | None: the character hold stands | crew_screen.rs:3-6 |
 
@@ -122,18 +122,18 @@ Items per region by type (computed from the tables above; a type with 0 in a reg
 ## 4. How buying works (code, today)
 
 - [exists] buy_gear(gear_id) needs the captain docked, reads the port's region, takes the merchants at the port and picks the first whose stock holds the item (session.rs:3209-3227). With none at the port it answers 'Unknown merchant' (session.rs:3219-3221); with the item missing it answers that the merchant does not sell it, by raw item id (session.rs:3229-3234).
-- [exists] The price is max(1, round(cost x markup)), with Python's half-to-even rounding (session.rs:3540-3542; util.rs:7-17). The same formula is also in merchant.rs:8-10, used only by its own test; two copies of one formula (DF-46).
-- [exists] Buying ammunition when the captain does not carry a matching firearm or mechanical launcher is refused before taking silver ('Need a <weapon_type> weapon before buying <ammo>.', session.rs:3235-3246). Otherwise the purchase takes the silver, then equips: a melee weapon or armour replaces the one carried; a firearm or a mechanical weapon replaces the one carried while preserving its existing ammunition; a thrown weapon adds 1 to the stack; ammunition is added to the carried launcher of its kind (session.rs:3651-3739; DF-46 ammo fix).
+- [exists] The price is max(1, round(cost x markup)), with Python's half-to-even rounding (`merchant::marked_price` in merchant.rs:15-17; util.rs:7-17). Both `Session::buy_gear` and the Godot Crew desk call `merchant::merchant_inventory` (DF-46 resolved).
+- [exists] Buying ammunition when the captain does not carry a matching firearm or mechanical launcher is refused before taking silver ('Need a <weapon_type> weapon before buying <ammo>.', session.rs:3235-3246). Otherwise the purchase takes the silver, then equips: a melee weapon or armour replaces the one carried; a firearm or a mechanical weapon replaces the one carried while preserving its existing ammunition; a thrown weapon adds 1 to the stack; ammunition is added to the carried launcher of its kind (session.rs:3573-3661; DF-46 resolved).
 - [exists] See section 6 for which shops sell ammunition without a launcher.
 - [exists] The sale is not recorded as a purchase for provenance or quality tier (session.rs:3204-3208).
 
 ## 5. Python versus Rust (noting only; no wiring is proposed)
 
 - [exists] The 14 merchant records match Python field by field, except Hamish's and Li Wei's descriptions which use `COPY_OVERRIDES` (DF-42, DF-43; portlight@9b02494 src/portlight/content/merchants.py:36-203).
-- [exists] Python's merchant command lists the merchants at the port with greeting, types and markup, shows one merchant's stock with an affordability mark, and buys by merchant id, item id and quantity (src/portlight/app/cli.py:1072-1136; src/portlight/app/combat_views.py:727-785; src/portlight/engine/merchant.py:76-113). Rust has the buy only: no list, no per-merchant stock view, no quantity (session.rs:3209-3245; script.rs:422-428).
+- [exists] Python's merchant command lists the merchants at the port with greeting, types and markup, shows one merchant's stock with an affordability mark, and buys by merchant id, item id and quantity (src/portlight/app/cli.py:1072-1136; src/portlight/app/combat_views.py:727-785; src/portlight/engine/merchant.py:76-113). Rust exposes the merchant header, description, greeting, and regional stock on the Godot Crew desk (`SECTION_GEAR`) and buys one item per confirmation via `Session::buy_gear` (`crew.gear.<id>`).
 - [exists] Python keeps ammunition in counters on the captain, so ammunition bought without a launcher is kept and a launcher bought later keeps it (src/portlight/engine/merchant.py:138-144). Rust stores ammunition on the weapon and refuses orphan ammunition purchases (section 4).
 - [exists] Python has two more gear commands: armory, a no-markup quick-buy for ranged weapons and ammunition, and sell-gear, which pays 50 percent of a carried weapon or armour back (src/portlight/app/cli.py:2506-2560; src/portlight/app/cli.py:1143-1183). rg of the Rust crates finds neither.
-- [exists] The porting plan marks engine/merchant.py deprioritised, because the Python session never calls it, and says Session::buy_gear buys one stocked item at a merchant markup for the gear scripts (docs/PORTING-PLAN.md:326).
+- [exists] `merchant.rs` (`marked_price`, `merchant_inventory`) is shared by `Session::buy_gear` and the Godot Crew desk's `Armoury` section (docs/PORTING-PLAN.md:326).
 
 ## 6. Shop shape (computed from the stock at the base commit)
 
@@ -164,13 +164,13 @@ Because each port has one merchant, a port whose shop sells ammunition without a
 
 - Names are the catalog names (Sgt. Gruber, Master Chen, Widow Kael keep their shipped titles); ids appear only in cite tables and file names.
 - Quote every data line with its C:n; mark every addition [invented]; put contradictions in data-fixes.md and never fix the data in a canon PR.
-- A merchant is never described as a shop the player can visit, or as setting a price by personality: the sim does neither (DF-46).
+- A merchant does not set a price by personality: markup comes from `price_markup` only.
 - Stock tables are computed from the catalog region lists; a new item or merchant appears only through a sim PR with a parity note.
 
 ## F. Flags
 
-- DF-42 (resolved): Li Wei's description now names blowguns and arquebus pistols. DF-43 (resolved): Hamish's description now names axes and blades. DF-44 (resolved): War Chief Tane's agenda now says weapons are dear at Coral Throne. DF-45 (declined - resolved in lore): Malia's key says provisions but she sells arms. DF-46: merchants never reach Godot (orphan-ammunition refusal and launcher-upgrade preservation are resolved in the sim). DF-47: coverage gaps.
-- Building a shop, wiring merchant text, or changing a stock list is out of scope for canon; it is a design decision.
+- DF-42 (resolved): Li Wei's description now names blowguns and arquebus pistols. DF-43 (resolved): Hamish's description now names axes and blades. DF-44 (resolved): War Chief Tane's agenda now says weapons are dear at Coral Throne. DF-45 (declined - resolved in lore): Malia's key says provisions but she sells arms. DF-46 (resolved): merchants and regional gear stock are wired onto the Godot Crew desk (`SECTION_GEAR`) and share `merchant::merchant_inventory` with `Session::buy_gear`. DF-47: coverage gaps.
+- Changing a stock list is out of scope for canon; it is a design decision.
 
 ## G. Gaps in the data (computed from content.json at the base commit)
 

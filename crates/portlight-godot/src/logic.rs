@@ -1850,6 +1850,15 @@ pub(crate) struct CrewOfferLine {
     pub text: String,
 }
 
+pub(crate) struct CrewGearLine {
+    pub id: String,
+    pub name: String,
+    pub merchant_name: String,
+    pub cost: i64,
+    pub equipped: bool,
+    pub text: String,
+}
+
 /// Read-only desk. `None` when the captain is not in port.
 pub(crate) struct CrewDesk {
     pub port_name: String,
@@ -1867,10 +1876,16 @@ pub(crate) struct CrewDesk {
     pub party_line: String,
     pub party: Vec<String>,
     pub offers: Vec<CrewOfferLine>,
+    pub gear_line: String,
+    pub merchant_header: Option<String>,
+    pub merchant_description: Option<String>,
+    pub merchant_greeting: Option<String>,
+    pub gear_offers: Vec<CrewGearLine>,
 }
 
 pub(crate) const NO_FIGHTING_MASTER: &str = "No fighting master at this port.";
 pub(crate) const NO_COMPANIONS_FOR_HIRE: &str = "No companions for hire at this port.";
+pub(crate) const NO_GEAR_MERCHANT: &str = "No gear merchant at this port.";
 
 /// Hire of 50 silver or more asks before `Session::hire_crew`.
 pub(crate) fn hire_needs_confirm(cost: i64) -> bool {
@@ -1929,6 +1944,60 @@ pub(crate) fn full_repair_price(world: &portlight_sim::model::World) -> i64 {
 
 pub(crate) fn recruit_confirm_line(name: &str, cost: i64) -> String {
     format!("Recruit {name} for {cost} silver.")
+}
+
+pub(crate) fn gear_confirm_line(name: &str, merchant_name: &str, cost: i64) -> String {
+    format!("Buy {name} from {merchant_name} for {cost} silver.")
+}
+
+pub(crate) fn gear_item_name(id: &str) -> String {
+    let catalog = portlight_sim::content::content();
+    let display = catalog
+        .melee_weapon(id)
+        .map(|w| w.name.as_str())
+        .or_else(|| catalog.armor(id).map(|a| a.name.as_str()))
+        .or_else(|| catalog.ranged_weapon(id).map(|w| w.name.as_str()))
+        .or_else(|| catalog.ammo(id).map(|a| a.name.as_str()));
+    display_or_humanized(display, id)
+}
+
+pub(crate) fn gear_notice_line(id: &str, silver: i64) -> String {
+    let name = gear_item_name(id);
+    format!("Bought {name}. Silver {silver}.")
+}
+
+fn captain_gear_line(captain: &portlight_sim::model::Captain) -> String {
+    let melee = captain
+        .melee
+        .as_ref()
+        .map(|w| display_or_humanized(Some(&w.name), &w.id))
+        .unwrap_or_else(|| "none".to_string());
+    let armor = captain
+        .armor
+        .as_ref()
+        .map(|a| display_or_humanized(Some(&a.name), &a.id))
+        .unwrap_or_else(|| "none".to_string());
+    let mut ranged = Vec::new();
+    if let Some(w) = &captain.firearm {
+        let name = display_or_humanized(Some(&w.name), &w.id);
+        let word = if w.ammo == 1 { "shot" } else { "shots" };
+        ranged.push(format!("{name} ({} {word})", w.ammo));
+    }
+    if let Some(w) = &captain.mechanical {
+        let name = display_or_humanized(Some(&w.name), &w.id);
+        let word = if w.ammo == 1 { "shot" } else { "shots" };
+        ranged.push(format!("{name} ({} {word})", w.ammo));
+    }
+    for w in &captain.throwing {
+        let name = display_or_humanized(Some(&w.name), &w.id);
+        ranged.push(format!("{name} x{}", w.ammo));
+    }
+    let ranged_text = if ranged.is_empty() {
+        "none".to_string()
+    } else {
+        ranged.join(", ")
+    };
+    format!("Carried: Melee {melee} - Armor {armor} - Ranged {ranged_text}.")
 }
 
 pub(crate) fn train_notice_line(id: &str, advanced: i64) -> String {
@@ -2259,6 +2328,157 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
             }
         })
         .collect();
+    let gear_line = captain_gear_line(&world.captain);
+    let merchants = catalog.merchants_at(port_id);
+    let (merchant_header, merchant_description, merchant_greeting, gear_offers) =
+        if let Some(merchant) = merchants.first().copied() {
+            let merchant_name = display_or_humanized(Some(&merchant.name), &merchant.id);
+            let title = ascii_owned(&merchant.title, "Merchant");
+            let personality = humanize_id(&merchant.personality);
+            let markup_pct = portlight_sim::util::py_round((merchant.price_markup - 1.0) * 100.0);
+            let header =
+                format!("{merchant_name} - {title} ({personality}, markup +{markup_pct}%)");
+            let description = ui_sentence(&merchant.description);
+            let greeting = format!("\"{}\"", ui_sentence(&merchant.greeting));
+            let stock = portlight_sim::merchant::merchant_inventory(merchant, &port.region);
+            let mut items = Vec::new();
+            for entry in stock {
+                let (name, equipped, detail) = match entry.item_type.as_str() {
+                    "melee" => {
+                        let Some(w) = catalog.melee_weapon(&entry.item_id) else {
+                            continue;
+                        };
+                        let name = display_or_humanized(Some(&w.name), &w.id);
+                        let class = humanize_id(&w.weapon_class);
+                        let eq = world.captain.melee.as_ref().is_some_and(|m| m.id == w.id);
+                        let status = if eq { "  equipped" } else { "" };
+                        (
+                            name,
+                            eq,
+                            format!(
+                                "Melee ({class})  +{} dmg  {} silver{status}",
+                                w.damage_bonus, entry.silver_cost
+                            ),
+                        )
+                    }
+                    "armor" => {
+                        let Some(a) = catalog.armor(&entry.item_id) else {
+                            continue;
+                        };
+                        let name = display_or_humanized(Some(&a.name), &a.id);
+                        let kind = humanize_id(&a.armor_type);
+                        let eq = world.captain.armor.as_ref().is_some_and(|c| c.id == a.id);
+                        let status = if eq { "  equipped" } else { "" };
+                        (
+                            name,
+                            eq,
+                            format!(
+                                "Armor ({kind})  DR {}  {} silver{status}",
+                                a.damage_reduction, entry.silver_cost
+                            ),
+                        )
+                    }
+                    "ranged" => {
+                        let Some(w) = catalog.ranged_weapon(&entry.item_id) else {
+                            continue;
+                        };
+                        let name = display_or_humanized(Some(&w.name), &w.id);
+                        let kind = humanize_id(&w.weapon_type);
+                        let (eq, status) = match w.weapon_type.as_str() {
+                            "firearm" => {
+                                let eq =
+                                    world.captain.firearm.as_ref().is_some_and(|f| f.id == w.id);
+                                (
+                                    eq,
+                                    if eq {
+                                        "  equipped".to_string()
+                                    } else {
+                                        String::new()
+                                    },
+                                )
+                            }
+                            "mechanical" => {
+                                let eq = world
+                                    .captain
+                                    .mechanical
+                                    .as_ref()
+                                    .is_some_and(|m| m.id == w.id);
+                                (
+                                    eq,
+                                    if eq {
+                                        "  equipped".to_string()
+                                    } else {
+                                        String::new()
+                                    },
+                                )
+                            }
+                            "thrown" => {
+                                let count = world
+                                    .captain
+                                    .throwing
+                                    .iter()
+                                    .find(|t| t.id == w.id)
+                                    .map_or(0, |t| t.ammo);
+                                let s = if count > 0 {
+                                    format!("  carried x{count}")
+                                } else {
+                                    String::new()
+                                };
+                                (false, s)
+                            }
+                            _ => (false, String::new()),
+                        };
+                        (
+                            name,
+                            eq,
+                            format!(
+                                "Ranged ({kind})  {}-{} dmg  {} silver{status}",
+                                w.damage_min, w.damage_max, entry.silver_cost
+                            ),
+                        )
+                    }
+                    "ammo" => {
+                        let Some(ammo) = catalog.ammo(&entry.item_id) else {
+                            continue;
+                        };
+                        let name = display_or_humanized(Some(&ammo.name), &ammo.id);
+                        let kind = humanize_id(&ammo.weapon_type);
+                        let has_launcher = match ammo.weapon_type.as_str() {
+                            "firearm" => world.captain.firearm.is_some(),
+                            "mechanical" => world.captain.mechanical.is_some(),
+                            _ => false,
+                        };
+                        let status = if has_launcher {
+                            ""
+                        } else if ammo.weapon_type == "firearm" {
+                            "  needs firearm"
+                        } else {
+                            "  needs mechanical"
+                        };
+                        (
+                            name,
+                            false,
+                            format!(
+                                "Ammo ({kind})  +{} shots  {} silver{status}",
+                                ammo.quantity, entry.silver_cost
+                            ),
+                        )
+                    }
+                    _ => continue,
+                };
+                items.push(CrewGearLine {
+                    id: entry.item_id,
+                    name: name.clone(),
+                    merchant_name: merchant_name.clone(),
+                    cost: entry.silver_cost,
+                    equipped,
+                    text: format!("{name}  {detail}"),
+                });
+            }
+            (Some(header), Some(description), Some(greeting), items)
+        } else {
+            (None, None, None, Vec::new())
+        };
     Some(CrewDesk {
         port_name,
         status,
@@ -2273,6 +2493,11 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         party_line,
         party: party_rows,
         offers,
+        gear_line,
+        merchant_header,
+        merchant_description,
+        merchant_greeting,
+        gear_offers,
     })
 }
 
@@ -3989,6 +4214,16 @@ mod tests {
         assert!(desk.provision_text.is_ascii());
         assert!(desk.known_styles.is_ascii());
         assert!(desk.party_line.is_ascii());
+        assert!(desk.gear_line.is_ascii(), "{}", desk.gear_line);
+        if let Some(header) = &desk.merchant_header {
+            assert!(header.is_ascii(), "{header}");
+        }
+        if let Some(desc) = &desk.merchant_description {
+            assert!(desc.is_ascii(), "{desc}");
+        }
+        if let Some(greeting) = &desk.merchant_greeting {
+            assert!(greeting.is_ascii(), "{greeting}");
+        }
         for role in &desk.roles {
             assert!(role.text.is_ascii(), "{}", role.text);
         }
@@ -4013,6 +4248,10 @@ mod tests {
         }
         for offer in &desk.offers {
             assert!(offer.text.is_ascii(), "{}", offer.text);
+        }
+        for gear in &desk.gear_offers {
+            assert!(gear.text.is_ascii(), "{}", gear.text);
+            assert!(!gear.text.contains('_'), "{}", gear.text);
         }
     }
 
@@ -4077,6 +4316,7 @@ mod tests {
         desk_strings_are_ascii(&desk);
         assert!(NO_COMPANIONS_FOR_HIRE.is_ascii());
         assert!(NO_FIGHTING_MASTER.is_ascii());
+        assert!(NO_GEAR_MERCHANT.is_ascii());
     }
 
     #[test]
@@ -4094,6 +4334,14 @@ mod tests {
             "Trained Blacksmithing. The calendar advanced 3 days."
         );
         assert_eq!(recruit_notice_line("iron_marta"), "Recruited Iron Marta.");
+        assert_eq!(
+            gear_confirm_line("Cutlass", "Marco", 28),
+            "Buy Cutlass from Marco for 28 silver."
+        );
+        assert_eq!(
+            gear_notice_line("matchlock_pistol", 445),
+            "Bought Matchlock Pistol. Silver 445."
+        );
 
         let session = Session::new("Ada", "merchant", 1, Some("jade_port")).unwrap();
         let jade_desk = crew_desk(&session).unwrap();
@@ -4119,6 +4367,85 @@ mod tests {
         assert!(active_desk.learned_styles[0].usable);
         assert_eq!(active_desk.learned_styles[0].text, "La Destreza  active");
         desk_strings_are_ascii(&active_desk);
+    }
+
+    #[test]
+    fn crew_desk_shows_merchant_stock_and_carried_gear() {
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        let desk = crew_desk(&session).unwrap();
+        assert_eq!(
+            desk.gear_line,
+            "Carried: Melee none - Armor none - Ranged none."
+        );
+        assert_eq!(
+            desk.merchant_header.as_deref(),
+            Some("Marco - Master Weaponsmith (Charming, markup +10%)")
+        );
+        assert!(desk
+            .merchant_description
+            .as_ref()
+            .unwrap()
+            .contains("Genoese"));
+        assert!(desk
+            .merchant_greeting
+            .as_ref()
+            .unwrap()
+            .contains("forged this week"));
+        assert_eq!(desk.gear_offers.len(), 10);
+        let shot = desk
+            .gear_offers
+            .iter()
+            .find(|g| g.id == "pistol_shot")
+            .unwrap();
+        assert!(shot.text.contains("needs firearm"), "{}", shot.text);
+
+        session.buy_gear("cutlass").unwrap();
+        session.buy_gear("matchlock_pistol").unwrap();
+        session.buy_gear("pistol_shot").unwrap();
+        session.buy_gear("throwing_knife").unwrap();
+        let armed_desk = crew_desk(&session).unwrap();
+        assert_eq!(
+            armed_desk.gear_line,
+            "Carried: Melee Cutlass - Armor none - Ranged Matchlock Pistol (3 shots), Throwing Knife x1."
+        );
+        let cutlass = armed_desk
+            .gear_offers
+            .iter()
+            .find(|g| g.id == "cutlass")
+            .unwrap();
+        assert!(cutlass.equipped);
+        assert!(cutlass.text.ends_with("  equipped"), "{}", cutlass.text);
+        let pistol = armed_desk
+            .gear_offers
+            .iter()
+            .find(|g| g.id == "matchlock_pistol")
+            .unwrap();
+        assert!(pistol.equipped);
+        let knife = armed_desk
+            .gear_offers
+            .iter()
+            .find(|g| g.id == "throwing_knife")
+            .unwrap();
+        assert!(!knife.equipped);
+        assert!(knife.text.contains("carried x1"), "{}", knife.text);
+        let shot_after = armed_desk
+            .gear_offers
+            .iter()
+            .find(|g| g.id == "pistol_shot")
+            .unwrap();
+        assert!(
+            !shot_after.text.contains("needs firearm"),
+            "{}",
+            shot_after.text
+        );
+        desk_strings_are_ascii(&armed_desk);
+
+        // Corsair's Rest has no merchant.
+        let corsair_session = Session::new("Ada", "corsair", 1, None).unwrap();
+        let corsair_desk = crew_desk(&corsair_session).unwrap();
+        assert!(corsair_desk.merchant_header.is_none());
+        assert!(corsair_desk.gear_offers.is_empty());
+        desk_strings_are_ascii(&corsair_desk);
     }
 
     #[test]

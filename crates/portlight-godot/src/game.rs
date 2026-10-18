@@ -84,18 +84,19 @@ use crate::logic::{
     cycle_index, day_log_lines, departed_line, dimmed_frame_rejected, display_or_humanized,
     dock_confirm_line, duel_button_enabled, empty_lane_note, encounter_frame_rejected,
     equip_style_notice_line, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id,
-    install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
-    present, recruit_confirm_line, recruit_notice_line, save_confirm_title, save_slot_label,
-    sell_confirm_line, services_line, session_text, shipyard_frame_rejected, shipyard_model,
-    skill_confirm_line, skill_notice_line, stance_duel_visible, status_header,
-    template_player_ship, train_confirm_line, train_notice_line, ui_sentence,
-    victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool,
-    ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE,
-    CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
-    NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W,
-    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
-    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    frame_mostly_flat, frame_samples, gear_confirm_line, gear_notice_line, hire_confirm_line,
+    hire_needs_confirm, humanize_id, install_confirm_line, layout_fits_window, newgame_copy,
+    newgame_frame_rejected, player_ship, present, recruit_confirm_line, recruit_notice_line,
+    save_confirm_title, save_slot_label, sell_confirm_line, services_line, session_text,
+    shipyard_frame_rejected, shipyard_model, skill_confirm_line, skill_notice_line,
+    stance_duel_visible, status_header, template_player_ship, train_confirm_line,
+    train_notice_line, ui_sentence, victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts,
+    NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE,
+    CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD, NEWGAME_SHOT_H,
+    NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_GEAR_MERCHANT,
+    NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
+    SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H,
+    WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -158,6 +159,7 @@ pub(crate) enum Action {
     CrewEquipStyle(String),
     CrewSkill(String),
     CrewRecruit(String),
+    CrewBuyGear(String),
     CrewConfirm,
     CrewCancel,
     Stance(Stance),
@@ -443,6 +445,7 @@ enum CrewPending {
     Train { id: String },
     Skill { id: String },
     Recruit { id: String },
+    Gear { id: String },
 }
 
 #[derive(Clone, Copy)]
@@ -4323,6 +4326,7 @@ impl PortlightGame {
             Action::CrewEquipStyle(id) => self.crew_equip_style(&id),
             Action::CrewSkill(id) => self.arm_skill(&id),
             Action::CrewRecruit(id) => self.arm_recruit(&id),
+            Action::CrewBuyGear(id) => self.arm_gear(&id),
             Action::CrewConfirm => self.confirm_crew(),
             Action::CrewCancel => self.cancel_crew(),
             Action::Stance(stance) => self.push_stance(stance),
@@ -5672,6 +5676,28 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn arm_gear(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(desk) = self.session.as_ref().and_then(crew_desk) else {
+            return;
+        };
+        if desk.merchant_header.is_none() {
+            self.crew_notice = NO_GEAR_MERCHANT.to_string();
+            self.refresh();
+            return;
+        }
+        let Some(offer) = desk.gear_offers.into_iter().find(|offer| offer.id == id) else {
+            self.crew_notice = "Item not in stock.".to_string();
+            self.refresh();
+            return;
+        };
+        self.crew_notice = gear_confirm_line(&offer.name, &offer.merchant_name, offer.cost);
+        self.crew_pending = Some(CrewPending::Gear { id: id.to_string() });
+        self.refresh();
+    }
+
     fn confirm_crew(&mut self) {
         let Some(pending) = self.crew_pending.clone() else {
             return;
@@ -5682,6 +5708,7 @@ impl PortlightGame {
             CrewPending::Train { id } => self.apply_train(&id),
             CrewPending::Skill { id } => self.apply_skill(&id),
             CrewPending::Recruit { id } => self.apply_recruit(&id),
+            CrewPending::Gear { id } => self.apply_gear(&id),
         }
     }
 
@@ -5767,6 +5794,24 @@ impl PortlightGame {
         match result {
             Ok(()) => {
                 self.crew_notice = recruit_notice_line(id);
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn apply_gear(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.buy_gear(id)
+        };
+        match result {
+            Ok(()) => {
+                let (_, silver) = self.crew_counts();
+                self.crew_notice = gear_notice_line(id, silver);
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -5973,6 +6018,29 @@ impl PortlightGame {
             pad.set_mouse_filter(MouseFilter::IGNORE);
             pad.set_custom_minimum_size(Vector2::new(0.0, 640.0));
             body.add_child(&pad);
+        } else {
+            let mut gear = crew_section(crew_screen::SECTION_GEAR);
+            gear.add_child(&crew_subhead("Armoury"));
+            gear.add_child(&crew_copy(&desk.gear_line));
+            if let Some(header) = &desk.merchant_header {
+                gear.add_child(&crew_copy(header));
+                if let Some(desc) = &desk.merchant_description {
+                    gear.add_child(&crew_muted(desc));
+                }
+                if let Some(greeting) = &desk.merchant_greeting {
+                    gear.add_child(&crew_muted(greeting));
+                }
+                for offer in &desk.gear_offers {
+                    gear.add_child(&crew_copy(&offer.text));
+                    let mut buy =
+                        crew_button("Buy", game_id, Action::CrewBuyGear(offer.id.clone()));
+                    buy.set_disabled(locked || offer.equipped);
+                    gear.add_child(&buy);
+                }
+            } else {
+                gear.add_child(&crew_copy(NO_GEAR_MERCHANT));
+            }
+            body.add_child(&gear);
         }
     }
 
@@ -6040,6 +6108,7 @@ impl PortlightGame {
             return true;
         }
         self.crew_shot = None;
+        self.refresh();
         self.run_crew_actions();
         false
     }
@@ -6055,7 +6124,7 @@ impl PortlightGame {
         if !text.contains("advance") || !text.contains("days") {
             godot_print!("Crew smoke: notice bar missing the day-advance warning: {text:?}");
             return false;
-        }
+        };
         if !nodes.confirm.is_visible() {
             godot_print!("Crew smoke: the train confirm was hidden.");
             return false;
@@ -6243,6 +6312,44 @@ impl PortlightGame {
             self.fail_crew(
                 "Crew smoke: skill training did not reach Apprentice or advance 3 days.",
             );
+            return;
+        }
+        let silver_pre_gear = self
+            .session
+            .as_ref()
+            .map(|session| session.world().captain.silver);
+        self.arm_gear("pistol_shot");
+        self.confirm_crew();
+        if !self.crew_notice.contains("Need a firearm weapon")
+            || self
+                .session
+                .as_ref()
+                .map(|session| session.world().captain.silver)
+                != silver_pre_gear
+        {
+            self.fail_crew("Crew smoke: orphan ammo purchase did not refuse before taking silver.");
+            return;
+        }
+        self.arm_gear("matchlock_pistol");
+        if self.crew_pending.is_none()
+            || self.crew_notice != "Buy Matchlock Pistol from Marco for 55 silver."
+        {
+            self.fail_crew("Crew smoke: gear confirm did not quote Marco's price.");
+            return;
+        }
+        self.confirm_crew();
+        self.arm_gear("pistol_shot");
+        self.confirm_crew();
+        let armed = self.session.as_ref().is_some_and(|session| {
+            session
+                .world()
+                .captain
+                .firearm
+                .as_ref()
+                .is_some_and(|w| w.id == "matchlock_pistol" && w.ammo == 5)
+        }) && self.crew_notice.starts_with("Bought Pistol Shot & Powder.");
+        if !armed {
+            self.fail_crew("Crew smoke: buying pistol and shot did not equip 5 shots.");
             return;
         }
         self.close_crew();

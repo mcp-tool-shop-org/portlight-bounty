@@ -521,7 +521,9 @@ Why: a data key that names the wrong goods can mislead a writer who reads the da
 
 Status: declined - resolved in lore. The id is a data key and never reaches a player; Malia is the Outfitter of her port, and 'provisions' in the key is read as the old word for general outfitting. Logged so the choice is on record.
 
-## DF-46. Merchants never reach Godot, and their text has no reader (ammunition loss resolved)
+## DF-46. Merchants never reach Godot, and their text has no reader (resolved)
+
+Status: resolved (sim + Godot). `merchant::marked_price` and `merchant::merchant_inventory` are consolidated in `crates/portlight-sim/src/merchant.rs`; `Session::buy_gear` refuses orphan ammunition purchases and preserves ammunition across launcher upgrades; and the Godot Crew desk renders an `Armoury` section (`SECTION_GEAR`) with the captain's carried gear, the port merchant's name, title, personality, markup, description, greeting, and regional stock rows (`Action::CrewBuyGear` / `crew.gear.<id>`). The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/src/script.rs:422-428 and crates/portlight-sim/src/session.rs:3209-3245 (buy_gear: reachable only from the script runner's gear command and tests, session.rs:4816); rg of crates/portlight-godot/src finds no call and no merchant reader
@@ -530,11 +532,9 @@ Where:
 - docs/PORTING-PLAN.md:326 (engine/merchant.py deprioritised; Session::buy_gear kept for the gear scripts)
 - noted while writing, Rust against Python: buy_gear takes an item id and buys one (session.rs:3243); Python takes merchant, item and quantity (portlight@9b02494 src/portlight/engine/merchant.py:76-113). Ammunition is stored on the weapon in Rust (`Session::buy_gear` now refuses `"ammo"` before taking silver when the captain carries no matching `firearm` or `mechanical` launcher, and `apply_purchased_item` preserves existing ammunition when replacing a `firearm` or `mechanical` weapon); Python keeps ammunition in counters (merchant.py:138-144). Python's armory and sell-gear commands (src/portlight/app/cli.py:2506-2560, 1143-1183) have no Rust counterpart.
 
-Proposed fix: none proposed for the Godot shop; the orphan-ammunition purchase refusal and launcher-upgrade ammunition preservation are resolved in `Session::buy_gear`. Building a gear shop, removing the duplicate formula, or showing merchant text remain design decisions (owner: sim and UI; size M). Until then canon says no player meets a merchant.
+Proposed fix: none proposed in canon; resolved in code across `portlight-sim` (`merchant.rs`, `session.rs`) and `portlight-godot` (`crew_screen.rs`, `logic.rs`, `game.rs`, `playtest.rs`).
 
 Why: 14 authored shopkeepers, their stock rules and their lines are invisible in the game build. Canon documents each as it is.
-
-Status: ammunition loss resolved in sim; Godot merchant UI open, log only.
 
 ## DF-47. Coverage gaps: ports with no merchant, master, trainer or companion
 
