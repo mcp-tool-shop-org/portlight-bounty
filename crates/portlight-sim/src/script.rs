@@ -386,6 +386,13 @@ fn dispatch(
             }
             session.recruit_companion(&tokens[1])
         }
+        "dismiss" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: dismiss <companion_id>".into()));
+            }
+            session.dismiss_companion(&tokens[1])
+        }
         "skill" => {
             let session = active(session)?;
             if tokens.len() != 2 {

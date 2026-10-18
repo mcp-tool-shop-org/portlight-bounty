@@ -361,7 +361,9 @@ Proposed fix: flag only; no change proposed now. Revisit with DF-3 (Bounty Hunte
 
 Why: two of nine starts open in the same port with the same mentor, which weakens type identity.
 
-## DF-34. Companion role effects are authored and unread
+## DF-34. Companion role effects are authored and unread (resolved)
+
+Status: resolved (sim + Godot). `companion::party_combat_bonus` and `companion::roll_interception` are now wired across voyage speed/danger/inspection evasion (`voyage::advance_day`), market pricing (`session::pricing`), injury healing (`session::heal_injuries`), and personal combat (`Session::fight`), and the Godot Crew desk now surfaces `cohesion`, `party_summary`, role descriptions, and `Session::dismiss_companion`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:5480-5541 (companions.roles: damage, interception, speed, danger, heal, inspection evasion and trade numbers on 5 roles)
@@ -372,9 +374,9 @@ Proposed fix: none proposed; logged only. Wiring the effects, or rewording the r
 
 Why: role text such as 'A trained fighter who stands at your side in combat.' (content.json:5484) promises effects the sim does not deliver. No shipped sentence repeats it today: the crew desk shows the role name only (crates/portlight-godot/src/logic.rs:2129-2181).
 
-Status: open, log only.
+## DF-35. 11 of 13 morale triggers never fire, so loyalty and warning lines are unreachable (resolved)
 
-## DF-35. 11 of 13 morale triggers never fire, so loyalty and warning lines are unreachable
+Status: resolved (sim + Godot). All 13 morale triggers (`combat_won`, `combat_lost`, `crew_killed`, `profitable_trade`, `losing_trade`, `contraband_trade`, `spared_enemy`, `took_all`, `fled_combat`, `injury_sustained`, `long_voyage`, `port_arrival`, `nemesis_defeated`) now fire in `Session`, `apply_morale_trigger` applies personality deltas even when the role base delta is `0`, and the Godot Crew desk surfaces `loyalty_line` (morale >= 80) and `warning_line` (morale <= 29). The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:5704-5835 (13 triggers) and :5836-5867 (4 personalities)
@@ -385,8 +387,6 @@ Where:
 Proposed fix: none proposed; logged only. Firing the other triggers, or trimming the table, is a separate design decision (owner: sim, size M).
 
 Why: loyalty_line and warning_line (every companion record) imply a morale arc that only duel choices can drive. Today a departure is reachable only for navigators and surgeons, by repeated take-all victories (companions/README.md section 5). The pragmatic personality has no deltas at all (content.json:5846).
-
-Status: open, log only.
 
 ## DF-36. The recruit notice prints a raw id (resolved)
 

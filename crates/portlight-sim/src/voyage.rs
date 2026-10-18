@@ -887,8 +887,9 @@ pub fn advance_day(
         return Ok(Vec::new());
     }
     let mods = captain_mods(world);
+    let party_bonus = crate::companion::party_combat_bonus(&world.captain);
     let provision_burn = mods.map(|m| m.voyage.provision_burn).unwrap_or(1.0);
-    let speed_bonus = mods.map(|m| m.voyage.speed_bonus).unwrap_or(0.0);
+    let speed_bonus = mods.map(|m| m.voyage.speed_bonus).unwrap_or(0.0) + party_bonus.speed_bonus;
     let mut inspection_mult = mods
         .map(|m| m.inspection.inspection_chance_mult)
         .unwrap_or(1.0);
@@ -901,6 +902,9 @@ pub fn advance_day(
         inspection_mult *= 1.5;
     } else if world.captain.wanted_level >= 1 {
         inspection_mult *= 1.2;
+    }
+    if party_bonus.inspection_evasion > 0.0 {
+        inspection_mult *= (1.0 - party_bonus.inspection_evasion).max(0.1);
     }
 
     let mut events = Vec::new();
@@ -950,6 +954,9 @@ pub fn advance_day(
     }
     if let Some(profile) = content::content().season_profile(&dest_region, world.day) {
         danger *= profile.danger_mult;
+    }
+    if party_bonus.danger_reduction > 0.0 {
+        danger = (danger - party_bonus.danger_reduction).max(0.01);
     }
     let recent = world.voyage.recent_events.clone();
     let event_type = pick_event(danger, rng, inspection_mult, &recent);

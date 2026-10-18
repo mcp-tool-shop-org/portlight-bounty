@@ -149,8 +149,7 @@ The departure path is real for navigators and surgeons only; marines, smugglers 
 
 ## F. Flags
 
-- DF-34: role effects authored and unread. DF-35: 11 of 13 morale triggers never fire; loyalty and warning lines are unreachable. DF-36 (resolved): the recruit notice now prints the catalog display name. DF-37: same-name collisions with port NPCs.
-- Wiring companion effects, morale triggers or a dismiss control is out of scope for canon; it is a design decision.
+- DF-34 (resolved): companion role effects, cohesion, party summary, and dismiss are now wired in sim and Godot. DF-35 (resolved): all 13 morale triggers and personality deltas now fire, and loyalty/warning lines are surfaced on the Crew desk. DF-36 (resolved): the recruit notice now prints the catalog display name. DF-37: same-name collisions with port NPCs.
 
 ## G. Gaps in the data (computed from content.json at the base commit)
 

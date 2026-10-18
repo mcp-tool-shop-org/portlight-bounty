@@ -1849,11 +1849,23 @@ pub(crate) struct CrewSkillLine {
     pub empty_trainer: Option<String>,
 }
 
+pub(crate) struct CrewPartyMemberLine {
+    pub id: String,
+    pub name: String,
+    pub text: String,
+    pub role_description: Option<String>,
+    pub status_line: Option<String>,
+}
+
 pub(crate) struct CrewOfferLine {
     pub id: String,
     pub name: String,
     pub cost: i64,
     pub text: String,
+    pub description: String,
+    pub role_description: String,
+    pub greeting: String,
+    pub hire_dialog: String,
 }
 
 pub(crate) struct CrewGearLine {
@@ -1892,7 +1904,7 @@ pub(crate) struct CrewDesk {
     pub styles: Vec<CrewStyleLine>,
     pub skills: Vec<CrewSkillLine>,
     pub party_line: String,
-    pub party: Vec<String>,
+    pub party: Vec<CrewPartyMemberLine>,
     pub offers: Vec<CrewOfferLine>,
     pub gear_line: String,
     pub carried_gear: Vec<CrewCarriedGearLine>,
@@ -1963,6 +1975,10 @@ pub(crate) fn full_repair_price(world: &portlight_sim::model::World) -> i64 {
 
 pub(crate) fn recruit_confirm_line(name: &str, cost: i64) -> String {
     format!("Recruit {name} for {cost} silver.")
+}
+
+pub(crate) fn dismiss_confirm_line(name: &str) -> String {
+    format!("Dismiss {name} from your party.")
 }
 
 pub(crate) fn gear_confirm_line(name: &str, merchant_name: &str, cost: i64) -> String {
@@ -2162,6 +2178,16 @@ pub(crate) fn recruit_notice_line(id: &str) -> String {
         id,
     );
     format!("Recruited {name}.")
+}
+
+pub(crate) fn dismiss_notice_line(id: &str) -> String {
+    let name = display_or_humanized(
+        portlight_sim::content::content()
+            .companion(id)
+            .map(|comp| comp.name.as_str()),
+        id,
+    );
+    format!("Dismissed {name}.")
 }
 
 fn ascii_owned(text: &str, fallback: &str) -> String {
@@ -2434,24 +2460,47 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         })
         .collect();
     let party = &world.captain.party;
-    let party_line = format!("Party {}/{}.", party.companions.len(), party.max_size);
+    let party_line = if party.companions.is_empty() {
+        format!("Party {}/{}.", party.companions.len(), party.max_size)
+    } else {
+        let cohesion = portlight_sim::companion::cohesion(&world.captain);
+        format!(
+            "Party {}/{}. Cohesion {cohesion}.",
+            party.companions.len(),
+            party.max_size
+        )
+    };
+    let summaries = portlight_sim::companion::party_summary(&world.captain);
     let party_rows = party
         .companions
         .iter()
-        .map(|member| {
-            let name = display_or_humanized(
-                catalog
-                    .companion(&member.companion_id)
-                    .map(|comp| comp.name.as_str()),
-                &member.companion_id,
-            );
-            let role = display_or_humanized(
-                catalog
-                    .companion_role(&member.role_id)
-                    .map(|role| role.name.as_str()),
-                &member.role_id,
-            );
-            format!("{name}  {role}  morale {}", member.morale)
+        .zip(summaries)
+        .map(|(member, summary)| {
+            let comp = catalog.companion(&member.companion_id);
+            let name = display_or_humanized(comp.map(|c| c.name.as_str()), &summary.id);
+            let role = display_or_humanized(Some(&summary.role), &member.role_id);
+            let role_description = catalog
+                .companion_role(&member.role_id)
+                .map(|r| ui_sentence(&r.description));
+            let status_line = comp.and_then(|c| {
+                if summary.morale >= 60 {
+                    Some(format!("\"{}\"", ui_sentence(&c.loyalty_line)))
+                } else if summary.morale < 30 {
+                    Some(format!("\"{}\"", ui_sentence(&c.warning_line)))
+                } else {
+                    None
+                }
+            });
+            CrewPartyMemberLine {
+                id: member.companion_id.clone(),
+                name: name.clone(),
+                text: format!(
+                    "{name}  {role}  morale {} ({})",
+                    summary.morale, summary.morale_status
+                ),
+                role_description,
+                status_line,
+            }
         })
         .collect();
     let offers = catalog
@@ -2468,13 +2517,15 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         .filter(|comp| !party.departed.iter().any(|id| id == &comp.id))
         .map(|comp| {
             let name = display_or_humanized(Some(&comp.name), &comp.id);
-            let role = display_or_humanized(
-                catalog
-                    .companion_role(&comp.role_id)
-                    .map(|role| role.name.as_str()),
-                &comp.role_id,
-            );
+            let role_def = catalog.companion_role(&comp.role_id);
+            let role = display_or_humanized(role_def.map(|r| r.name.as_str()), &comp.role_id);
             let region = ascii_owned(&comp.region, "region");
+            let description = ui_sentence(&comp.description);
+            let role_description = role_def
+                .map(|r| ui_sentence(&r.description))
+                .unwrap_or_default();
+            let greeting = format!("\"{}\"", ui_sentence(&comp.greeting));
+            let hire_dialog = format!("\"{}\"", ui_sentence(&comp.hire_dialog));
             CrewOfferLine {
                 id: comp.id.clone(),
                 name: name.clone(),
@@ -2483,6 +2534,10 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                     "{name}  {role}  {} silver  standing {} in {region}",
                     comp.hire_cost, comp.required_standing
                 ),
+                description,
+                role_description,
+                greeting,
+                hire_dialog,
             }
         })
         .collect();
@@ -4425,10 +4480,24 @@ mod tests {
             }
         }
         for member in &desk.party {
-            assert!(member.is_ascii(), "{member}");
+            assert!(member.text.is_ascii(), "{}", member.text);
+            if let Some(role_desc) = &member.role_description {
+                assert!(role_desc.is_ascii(), "{role_desc}");
+            }
+            if let Some(status) = &member.status_line {
+                assert!(status.is_ascii(), "{status}");
+            }
         }
         for offer in &desk.offers {
             assert!(offer.text.is_ascii(), "{}", offer.text);
+            assert!(offer.description.is_ascii(), "{}", offer.description);
+            assert!(
+                offer.role_description.is_ascii(),
+                "{}",
+                offer.role_description
+            );
+            assert!(offer.greeting.is_ascii(), "{}", offer.greeting);
+            assert!(offer.hire_dialog.is_ascii(), "{}", offer.hire_dialog);
         }
         for carried in &desk.carried_gear {
             assert!(carried.text.is_ascii(), "{}", carried.text);
@@ -4720,6 +4789,10 @@ mod tests {
             .find(|offer| offer.id == "rosa_the_fence")
             .unwrap();
         assert!(rosa.text.contains("Smuggler"), "{}", rosa.text);
+        assert!(!rosa.description.is_empty());
+        assert!(!rosa.role_description.is_empty());
+        assert!(!rosa.greeting.is_empty());
+        assert!(!rosa.hire_dialog.is_empty());
         assert!(desk.roles.iter().all(|role| role.id != "smuggler"));
         assert!(matches!(
             session.hire_crew(1, "smuggler"),
@@ -4735,6 +4808,28 @@ mod tests {
             Some("No Blacksmithing trainer at this port.")
         );
         desk_strings_are_ascii(&desk);
+
+        // Recruit Red Tomas and verify party_line cohesion, status_line, and dismiss.
+        let mut hire_session = Session::new("Ada", "merchant", 1, Some("corsairs_rest")).unwrap();
+        hire_session.recruit_companion("red_tomas").unwrap();
+        let hired_desk = crew_desk(&hire_session).unwrap();
+        assert_eq!(hired_desk.party_line, "Party 1/2. Cohesion 70.");
+        assert_eq!(hired_desk.party.len(), 1);
+        assert_eq!(hired_desk.party[0].id, "red_tomas");
+        assert!(hired_desk.party[0]
+            .text
+            .contains("Red Tomas  Marine  morale 70 (happy)"));
+        assert!(hired_desk.party[0].role_description.is_some());
+        assert!(hired_desk.party[0].status_line.is_some());
+        assert_eq!(
+            dismiss_confirm_line("Red Tomas"),
+            "Dismiss Red Tomas from your party."
+        );
+        assert_eq!(dismiss_notice_line("red_tomas"), "Dismissed Red Tomas.");
+        desk_strings_are_ascii(&hired_desk);
+        hire_session.dismiss_companion("red_tomas").unwrap();
+        let after_dismiss = crew_desk(&hire_session).unwrap();
+        assert!(after_dismiss.party.is_empty());
     }
 
     #[test]
@@ -5019,6 +5114,7 @@ mod tests {
         for text in desk
             .party
             .iter()
+            .map(|member| &member.text)
             .chain(desk.offers.iter().map(|offer| &offer.text))
             .chain(std::iter::once(&desk.known_styles))
         {

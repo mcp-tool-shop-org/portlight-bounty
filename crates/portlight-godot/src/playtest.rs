@@ -63,6 +63,7 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::CrewEquipStyle(id) => format!("crew.equip.{id}"),
         Action::CrewSkill(id) => format!("crew.skill.{id}"),
         Action::CrewRecruit(id) => format!("crew.recruit.{id}"),
+        Action::CrewDismiss(id) => format!("crew.dismiss.{id}"),
         Action::CrewBuyGear(id) => format!("crew.gear.{id}"),
         Action::CrewMaintainGear(id) => format!("crew.maintain.{id}"),
         Action::CrewUpgradeGear(id) => format!("crew.upgrade.{id}"),
@@ -219,6 +220,9 @@ fn action_from_id(id: &str) -> Option<Action> {
     }
     if let Some(rest) = id.strip_prefix("crew.recruit.") {
         return Some(Action::CrewRecruit(rest.to_string()));
+    }
+    if let Some(rest) = id.strip_prefix("crew.dismiss.") {
+        return Some(Action::CrewDismiss(rest.to_string()));
     }
     if let Some(rest) = id.strip_prefix("crew.gear.") {
         return Some(Action::CrewBuyGear(rest.to_string()));

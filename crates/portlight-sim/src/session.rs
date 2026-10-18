@@ -597,7 +597,14 @@ impl Session {
             economy::execute_buy(&mut world.captain, port, good_id, qty, seq)?
         };
         record_receipt(self, &receipt);
-        let mods = pricing(&self.world).clone();
+        if content::content()
+            .good(good_id)
+            .is_some_and(|good| good.category == "contraband")
+        {
+            companion::apply_morale_trigger(&mut self.world.captain, "contraband_trade");
+            companion::check_departures(&mut self.world.captain);
+        }
+        let mods = pricing(&self.world);
         if let Some(port) = self.world.port_mut(&port_id) {
             recalculate_prices(port, Some(&mods));
         }
@@ -625,6 +632,7 @@ impl Session {
             .find(|item| item.good_id == good_id)
             .map(|item| (item.acquired_port.clone(), item.acquired_region.clone()))
             .unwrap_or_default();
+        let pre_sale_basis = economy::estimate_cost_basis(&self.world.captain, good_id, qty);
         let seq = self.trade_seq;
         let receipt = {
             let world = &mut self.world;
@@ -660,6 +668,15 @@ impl Session {
             stock_target,
             flood_before,
         );
+        if category == "contraband" {
+            companion::apply_morale_trigger(&mut self.world.captain, "contraband_trade");
+        }
+        if receipt.total_price < pre_sale_basis {
+            companion::apply_morale_trigger(&mut self.world.captain, "losing_trade");
+        } else if receipt.total_price > pre_sale_basis {
+            companion::apply_morale_trigger(&mut self.world.captain, "profitable_trade");
+        }
+        companion::check_departures(&mut self.world.captain);
         let credited = contracts::check_delivery(
             &mut self.board,
             &port_id,
@@ -673,7 +690,7 @@ impl Session {
         } else {
             self.settle_fulfilled()
         };
-        let mods = pricing(&self.world).clone();
+        let mods = pricing(&self.world);
         if let Some(port) = self.world.port_mut(&port_id) {
             recalculate_prices(port, Some(&mods));
         }
@@ -860,6 +877,7 @@ impl Session {
             if let Some(ship) = self.world.captain.ship.as_mut() {
                 naval::apply_crew_casualties(ship, result.crew_lost, 1);
             }
+            companion::apply_morale_trigger(&mut self.world.captain, "crew_killed");
         }
         if result.hull_damage > 0 {
             if let Some(ship) = self.world.captain.ship.as_mut() {
@@ -1021,8 +1039,13 @@ impl Session {
         });
         if outcome.player_won {
             self.world.captain.duels_won += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_won");
+            if self.is_nemesis_or_bounty(&pending.captain_id) {
+                companion::apply_morale_trigger(&mut self.world.captain, "nemesis_defeated");
+            }
         } else if !outcome.draw {
             self.world.captain.duels_lost += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_lost");
         }
         self.world.pending_duel = None;
         Ok(outcome)
@@ -1124,6 +1147,9 @@ impl Session {
             ship.hull = 0.max(ship.hull + round.player_hull_delta);
             naval::apply_crew_loss(ship, crew_lost);
         }
+        if crew_lost > 0 {
+            companion::apply_morale_trigger(&mut self.world.captain, "crew_killed");
+        }
         let enemy_sunk = self
             .encounter
             .as_ref()
@@ -1156,6 +1182,16 @@ impl Session {
         );
         if enemy_sunk {
             self.world.captain.naval_victories += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_won");
+            if let Some(id) = self
+                .encounter
+                .as_ref()
+                .map(|enc| enc.enemy_captain_id.clone())
+            {
+                if self.is_nemesis_or_bounty(&id) {
+                    companion::apply_morale_trigger(&mut self.world.captain, "nemesis_defeated");
+                }
+            }
             if prize_ok {
                 if let Some(enc) = self.encounter.as_mut() {
                     enc.phase = "capture_available".to_string();
@@ -1171,6 +1207,7 @@ impl Session {
                 self.plunder();
             }
             self.world.captain.naval_defeats += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_lost");
             self.clear_encounter();
             step.phase = "resolved".into();
             step.player_sunk = player_sunk;
@@ -1205,6 +1242,9 @@ impl Session {
         if let Some(ship) = self.world.captain.ship.as_mut() {
             naval::apply_crew_loss(ship, outcome.player_crew_lost);
         }
+        if outcome.player_crew_lost > 0 {
+            companion::apply_morale_trigger(&mut self.world.captain, "crew_killed");
+        }
         self.player_combat = None;
         self.opponent_combat = None;
         Ok(self.board_step(outcome))
@@ -1225,7 +1265,7 @@ impl Session {
         if !valid.iter().any(|item| item == &action) {
             return Err(SimError::InvalidAction(valid.join(", ")));
         }
-        let round = {
+        let mut round = {
             let encounter = self
                 .encounter
                 .as_mut()
@@ -1240,8 +1280,42 @@ impl Session {
                 .ok_or(SimError::NotInPersonalCombat)?;
             encounter::resolve_duel_turn(encounter, &action, player, opponent, &mut self.rng)
         };
+        let party_bonus = companion::party_combat_bonus(&self.world.captain);
+        if round.damage_to_opponent > 0 && party_bonus.damage_bonus > 0 {
+            round.damage_to_opponent += party_bonus.damage_bonus;
+            if let Some(opponent) = self.opponent_combat.as_mut() {
+                opponent.hp -= party_bonus.damage_bonus;
+            }
+        }
+        if round.damage_to_player > 0 && party_bonus.interception_chance > 0.0 {
+            let (intercepted, intercept_line) =
+                companion::roll_interception(&mut self.world.captain, &mut self.rng);
+            if intercepted {
+                if let Some(player) = self.player_combat.as_mut() {
+                    player.hp = (player.hp + round.damage_to_player).min(player.hp_max);
+                    if round.injury_inflicted.is_some() {
+                        player.injury_ids.pop();
+                        round.injury_inflicted = None;
+                    }
+                }
+                round.damage_to_player = 0;
+                if round.flavor.is_empty() {
+                    round.flavor = intercept_line;
+                } else {
+                    round.flavor.push(' ');
+                    round.flavor.push_str(&intercept_line);
+                }
+            }
+        }
         let player_hp = self.player_combat.as_ref().map(|c| c.hp).unwrap_or(0);
         let opponent_hp = self.opponent_combat.as_ref().map(|c| c.hp).unwrap_or(0);
+        if let Some(enc) = self.encounter.as_mut() {
+            if player_hp <= 0 || opponent_hp <= 0 {
+                enc.phase = "resolved".to_string();
+            } else {
+                enc.phase = "duel".to_string();
+            }
+        }
         let finished = self.encounter.as_ref().map(|enc| enc.phase.as_str()) == Some("resolved");
         let mut player_won = false;
         let mut draw = false;
@@ -1622,6 +1696,7 @@ impl Session {
             // Hull 0 from the flee's shot is a sinking, escaped or not.
             let mut step = self.choice_step("flee", escaped, escaped, damage, message);
             self.world.captain.naval_defeats += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_lost");
             self.clear_encounter();
             step.phase = "resolved".into();
             step.player_sunk = true;
@@ -1634,6 +1709,7 @@ impl Session {
             if let Some(enc) = self.encounter.clone() {
                 encounter::remember(&mut self.world.captain, &enc, self.world.day, "fled");
             }
+            companion::apply_morale_trigger(&mut self.world.captain, "fled_combat");
             let step = self.choice_step("flee", true, true, damage, message);
             self.clear_encounter();
             Ok(step)
@@ -1703,6 +1779,7 @@ impl Session {
             if let Some(enc) = self.encounter.clone() {
                 encounter::remember(&mut self.world.captain, &enc, self.world.day, "fled");
             }
+            companion::apply_morale_trigger(&mut self.world.captain, "fled_combat");
             self.clear_encounter();
             step.phase = "resolved".into();
         } else if player_sunk || crew_gone {
@@ -1712,6 +1789,7 @@ impl Session {
                 step.message = message;
             }
             self.world.captain.naval_defeats += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_lost");
             self.clear_encounter();
             step.phase = "resolved".into();
             if player_sunk {
@@ -1869,6 +1947,26 @@ impl Session {
             .unwrap_or(0)
     }
 
+    fn is_nemesis_or_bounty(&self, captain_id: &str) -> bool {
+        if self
+            .world
+            .captain
+            .active_bounties
+            .iter()
+            .any(|id| id == captain_id)
+        {
+            return true;
+        }
+        self.world
+            .captain_memories
+            .iter()
+            .find(|mem| mem.captain_id == captain_id)
+            .is_some_and(|mem| {
+                memory::derive_breakpoint(&mem.relationship) == "nemesis"
+                    || mem.times_defeated_by_player >= 1
+            })
+    }
+
     fn ensure_combatants(&mut self) {
         if self.player_combat.is_some() && self.opponent_combat.is_some() {
             return;
@@ -1910,10 +2008,12 @@ impl Session {
                 .captain
                 .injuries
                 .push(injuries::create_injury(&step.injury, day));
+            companion::apply_morale_trigger(&mut self.world.captain, "injury_sustained");
         }
         self.degrade_equipped();
         self.sync_combat_ammo();
         if player_won {
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_won");
             self.pending_victory = true;
         } else if draw {
             self.world.captain.duels_won += 1;
@@ -1922,6 +2022,7 @@ impl Session {
             let loss = 15 + self.enemy_strength() * 3;
             self.world.captain.silver = 0.max(self.world.captain.silver - loss);
             self.world.captain.duels_lost += 1;
+            companion::apply_morale_trigger(&mut self.world.captain, "combat_lost");
             self.clear_encounter();
         }
     }
@@ -2014,6 +2115,7 @@ impl Session {
             }));
         }
         let enc = self.encounter.clone().ok_or(SimError::NoActiveEncounter)?;
+        let was_nemesis = self.is_nemesis_or_bounty(&enc.enemy_captain_id);
         let silver_gain = if spared {
             20 + enc.enemy_strength * 3
         } else {
@@ -2073,7 +2175,13 @@ impl Session {
             (drops, messages)
         };
         let trigger = if spared { "spared_enemy" } else { "took_all" };
-        let reactions = companion::apply_morale_trigger(&mut self.world.captain, trigger);
+        let mut reactions = companion::apply_morale_trigger(&mut self.world.captain, trigger);
+        if was_nemesis {
+            reactions.extend(companion::apply_morale_trigger(
+                &mut self.world.captain,
+                "nemesis_defeated",
+            ));
+        }
         let departures = companion::check_departures(&mut self.world.captain);
         let receipt = VictoryReceipt {
             spared,
@@ -2513,6 +2621,12 @@ impl Session {
             );
             let destination = self.world.voyage.destination_id.clone();
             record_sea_consequences(&mut self.world, &mut self.infra, &events, &destination);
+            if events.iter().any(|event| event.crew_delta < 0) {
+                companion::apply_morale_trigger(&mut self.world.captain, "crew_killed");
+            }
+            if self.world.voyage.days_elapsed > 0 && self.world.voyage.days_elapsed % 10 == 0 {
+                companion::apply_morale_trigger(&mut self.world.captain, "long_voyage");
+            }
             if self.player_lost_ship()
                 && matches!(
                     self.world.voyage.status,
@@ -2538,6 +2652,7 @@ impl Session {
             }
             if self.world.voyage.status == VoyageStatus::Arrived {
                 let _ = voyage::arrive(&mut self.world);
+                companion::apply_morale_trigger(&mut self.world.captain, "port_arrival");
                 notes.extend(infrastructure::expire_voyage_policies(&mut self.infra));
                 if let Some(port) = self.world.port(&self.world.voyage.destination_id) {
                     let port_id = port.id.clone();
@@ -2598,6 +2713,12 @@ impl Session {
                 sink: None,
             }
         };
+        for dep in companion::check_departures(&mut self.world.captain) {
+            turn.notes.push(format!(
+                "{} leaves: {}",
+                dep.companion_name, dep.departure_line
+            ));
+        }
         turn.contracts = contracts;
         turn.sink = day_sink;
         self.project_books();
@@ -3023,9 +3144,12 @@ impl Session {
                 .iter()
                 .any(|upgrade| upgrade.upgrade_id == "surgeons_bay")
         });
-        if !(in_port || bay) {
+        let party_bonus = companion::party_combat_bonus(&self.world.captain);
+        let surgeon_aboard = party_bonus.heal_rate_bonus > 0.0;
+        if !(in_port || bay || surgeon_aboard) {
             return Vec::new();
         }
+        let extra_days = py_trunc(party_bonus.heal_rate_bonus).max(0);
         let before = self.world.captain.injuries.clone();
         let medicines = self
             .world
@@ -3033,7 +3157,7 @@ impl Session {
             .cargo
             .iter()
             .any(|item| item.good_id == "medicines");
-        let after = injuries::heal_injury_tick(&before, 1, true, medicines);
+        let after = injuries::heal_injury_tick(&before, 1 + extra_days, true, medicines);
         let notes = heal_notes(&before, &after);
         self.world.captain.injuries = after;
         notes
@@ -3468,6 +3592,18 @@ impl Session {
             .hire_cost;
         self.world.captain.silver -= cost;
         companion::recruit(&mut self.world.captain, companion_id, self.world.day);
+        if companion::party_combat_bonus(&self.world.captain).trade_bonus > 0.0 {
+            reprice_all(&mut self.world);
+        }
+        Ok(())
+    }
+
+    /// Dismiss a companion from the party (`portlight dismiss`).
+    pub fn dismiss_companion(&mut self, companion_id: &str) -> Result<(), SimError> {
+        if let Some(error) = companion::dismiss(&mut self.world.captain, companion_id) {
+            return Err(SimError::Rejected(error));
+        }
+        reprice_all(&mut self.world);
         Ok(())
     }
 
@@ -3803,12 +3939,19 @@ fn record_receipt(session: &mut Session, receipt: &TradeReceipt) {
     session.receipts.push(receipt.clone());
 }
 
-/// `GameSession._pricing` (`app/session.py` lines 540–543).
+/// `GameSession._pricing` (`app/session.py` lines 540–543) plus Quartermaster
+/// companion `trade_bonus`.
 ///
 /// Reads [`custom_captain::captain_template`], so a missing custom template
 /// and an unknown captain type both price as the merchant.
-fn pricing(world: &World) -> &PricingDef {
-    &custom_captain::captain_template(world).pricing
+fn pricing(world: &World) -> PricingDef {
+    let mut mods = custom_captain::captain_template(world).pricing.clone();
+    let trade_bonus = companion::party_combat_bonus(&world.captain).trade_bonus;
+    if trade_bonus > 0.0 {
+        mods.sell_price_mult += trade_bonus;
+        mods.buy_price_mult = (mods.buy_price_mult - trade_bonus).max(0.5);
+    }
+    mods
 }
 
 fn current_port_id(world: &World) -> Option<&str> {
@@ -3896,7 +4039,7 @@ fn settle_event_insurance(
 }
 
 fn reprice_all(world: &mut World) {
-    let mods = pricing(world).clone();
+    let mods = pricing(world);
     for port in &mut world.ports {
         recalculate_prices(port, Some(&mods));
     }
@@ -5426,9 +5569,9 @@ mod tests {
     #[test]
     fn spare_receipt_keeps_the_purse_standing_and_reaction() {
         let mut session = Session::new("Ada", "privateer", 4, None).unwrap();
-        seat_companion(&mut session, "red_tomas", "marine", "pragmatic", 70);
         let silver_before = session.world.captain.silver;
         win_raj_duel(&mut session);
+        seat_companion(&mut session, "red_tomas", "marine", "pragmatic", 70);
         let strength = session.encounter.as_ref().unwrap().enemy_strength;
         let faction = session.encounter.as_ref().unwrap().enemy_faction_id.clone();
         let receipt = session.spare().unwrap();
@@ -7052,5 +7195,100 @@ mod bank_tests {
         // The snapshot's infrastructure block stays hidden, as before.
         assert!(!session.infra.is_visible());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn companion_role_effects_morale_triggers_and_dismiss_work() {
+        let seat = |session: &mut Session, id: &str, role: &str, personality: &str, morale: i64| {
+            session
+                .world
+                .captain
+                .party
+                .companions
+                .push(crate::model::Companion {
+                    companion_id: id.to_string(),
+                    role_id: role.to_string(),
+                    morale,
+                    joined_day: session.world.day,
+                    personality: personality.to_string(),
+                });
+        };
+
+        // 1. Quartermaster trade_bonus reprices port markets on recruit and dismiss.
+        let mut session = Session::new("Ada", "merchant", 1, Some("palm_cove")).unwrap();
+        reprice_all(&mut session.world);
+        let before_buy = session.world.port("palm_cove").unwrap().market[0].buy_price;
+        session.recruit_companion("dockhand_pete").unwrap();
+        assert_eq!(session.world.captain.party.companions.len(), 1);
+        let mods_with_qm = pricing(&session.world);
+        let base_mods = &custom_captain::captain_template(&session.world).pricing;
+        assert!((mods_with_qm.sell_price_mult - (base_mods.sell_price_mult + 0.05)).abs() < 1e-9);
+        assert!((mods_with_qm.buy_price_mult - (base_mods.buy_price_mult - 0.05)).abs() < 1e-9);
+        // Profitable and losing trade triggers move Quartermaster morale (+5 / -3).
+        session.buy("timber", 2).unwrap();
+        session.world.captain.cargo[0].cost_basis = 1;
+        session.sell("timber", 1).unwrap();
+        assert_eq!(session.world.captain.party.companions[0].morale, 75);
+        session.world.captain.cargo[0].cost_basis = 999;
+        session.sell("timber", 1).unwrap();
+        assert_eq!(session.world.captain.party.companions[0].morale, 72);
+        session.dismiss_companion("dockhand_pete").unwrap();
+        assert!(session.world.captain.party.companions.is_empty());
+        let after_dismiss_buy = session.world.port("palm_cove").unwrap().market[0].buy_price;
+        assert_eq!(before_buy, after_dismiss_buy);
+
+        // 2. Surgeon heal_rate_bonus heals 2 days per tick and works at sea without surgeons_bay.
+        let mut sea_session = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        seat(&mut sea_session, "dr_amara", "surgeon", "gentle", 70);
+        sea_session
+            .world
+            .captain
+            .injuries
+            .push(injuries::create_injury("cut_hand", 1));
+        sea_session.depart("al_manar").unwrap();
+        let turn = sea_session.advance().unwrap();
+        assert_eq!(sea_session.injuries()[0].heal_remaining, Some(8));
+        assert!(turn.notes.iter().any(|n| n.contains("Healing: Cut Hand")));
+
+        // 3. Personality modifier applies even when role base_delta is 0 (Coin Mariam lawful +2 on spared_enemy).
+        let mut lawful_session = Session::new("Ada", "merchant", 1, Some("al_manar")).unwrap();
+        seat(
+            &mut lawful_session,
+            "coin_mariam",
+            "quartermaster",
+            "lawful",
+            70,
+        );
+        let reactions =
+            companion::apply_morale_trigger(&mut lawful_session.world.captain, "spared_enemy");
+        assert_eq!(reactions.len(), 1);
+        assert_eq!(reactions[0].1, 2);
+        assert_eq!(lawful_session.world.captain.party.companions[0].morale, 72);
+
+        // 4. Marine damage_bonus adds +1 damage on hit in Session::fight.
+        let mut hit_checked = false;
+        for seed in 1..30 {
+            let mut fight_plain = Session::new("Ada", "privateer", seed, None).unwrap();
+            let mut fight_marine = Session::new("Ada", "privateer", seed, None).unwrap();
+            seat(&mut fight_marine, "red_tomas", "marine", "pragmatic", 70);
+            for s in [&mut fight_plain, &mut fight_marine] {
+                let mut enc =
+                    encounter::create_encounter(&s.world, &mut s.rng, Some("raj_the_quiet"))
+                        .expect("raj_the_quiet");
+                enc.phase = "duel".to_string();
+                s.encounter = Some(enc);
+            }
+            let step_plain = fight_plain.fight("thrust").unwrap();
+            if step_plain.damage_to_opponent > 0 {
+                let step_marine = fight_marine.fight("thrust").unwrap();
+                assert_eq!(
+                    step_marine.damage_to_opponent,
+                    step_plain.damage_to_opponent + 1
+                );
+                hit_checked = true;
+                break;
+            }
+        }
+        assert!(hit_checked);
     }
 }

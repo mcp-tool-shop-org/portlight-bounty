@@ -128,9 +128,6 @@ pub fn apply_morale_trigger(captain: &mut Captain, trigger: &str) -> Vec<(String
     let mut results = Vec::new();
     for member in &mut captain.party.companions {
         let base_delta = row.deltas.get(&member.role_id).copied().unwrap_or(0);
-        if base_delta == 0 {
-            continue;
-        }
         let pers_delta = content::content()
             .personality_modifier(&member.personality)
             .and_then(|mods| mods.deltas.get(trigger).copied())

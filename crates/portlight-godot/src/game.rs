@@ -81,23 +81,23 @@ use crate::journal_screen::{self, JournalNodes};
 use crate::logic::{
     action_caption, action_list_from_error, at_sea, board_confirm_line, buy_confirm_line,
     buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
-    cycle_index, day_log_lines, departed_line, dimmed_frame_rejected, display_or_humanized,
-    dock_confirm_line, duel_button_enabled, empty_lane_note, encounter_frame_rejected,
-    equip_style_notice_line, facts_for_catalog_captain, facts_from_agency, facts_from_step,
-    frame_mostly_flat, frame_samples, gear_confirm_line, gear_notice_line, hire_confirm_line,
-    hire_needs_confirm, humanize_id, install_confirm_line, layout_fits_window,
-    maintain_gear_confirm_line, maintain_gear_notice_line, newgame_copy, newgame_frame_rejected,
-    player_ship, present, recruit_confirm_line, recruit_notice_line, save_confirm_title,
-    save_slot_label, sell_confirm_line, services_line, session_text, shipyard_frame_rejected,
-    shipyard_model, skill_confirm_line, skill_notice_line, stance_duel_visible, status_header,
-    template_player_ship, train_confirm_line, train_notice_line, ui_sentence,
-    upgrade_gear_confirm_line, upgrade_gear_notice_line, victory_receipt_lines, CrewDesk,
-    CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel,
-    StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD,
-    NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE,
-    NO_GEAR_MERCHANT, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
-    SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
-    SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    cycle_index, day_log_lines, departed_line, dimmed_frame_rejected, dismiss_confirm_line,
+    dismiss_notice_line, display_or_humanized, dock_confirm_line, duel_button_enabled,
+    empty_lane_note, encounter_frame_rejected, equip_style_notice_line, facts_for_catalog_captain,
+    facts_from_agency, facts_from_step, frame_mostly_flat, frame_samples, gear_confirm_line,
+    gear_notice_line, hire_confirm_line, hire_needs_confirm, humanize_id, install_confirm_line,
+    layout_fits_window, maintain_gear_confirm_line, maintain_gear_notice_line, newgame_copy,
+    newgame_frame_rejected, player_ship, present, recruit_confirm_line, recruit_notice_line,
+    save_confirm_title, save_slot_label, sell_confirm_line, services_line, session_text,
+    shipyard_frame_rejected, shipyard_model, skill_confirm_line, skill_notice_line,
+    stance_duel_visible, status_header, template_player_ship, train_confirm_line,
+    train_notice_line, ui_sentence, upgrade_gear_confirm_line, upgrade_gear_notice_line,
+    victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool,
+    ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE,
+    CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
+    NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_GEAR_MERCHANT, NO_SHIPYARD_BODY,
+    PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART,
+    SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -160,6 +160,7 @@ pub(crate) enum Action {
     CrewEquipStyle(String),
     CrewSkill(String),
     CrewRecruit(String),
+    CrewDismiss(String),
     CrewBuyGear(String),
     CrewMaintainGear(String),
     CrewUpgradeGear(String),
@@ -448,6 +449,7 @@ enum CrewPending {
     Train { id: String },
     Skill { id: String },
     Recruit { id: String },
+    Dismiss { id: String },
     Gear { id: String },
     MaintainGear { id: String },
     UpgradeGear { id: String },
@@ -4331,6 +4333,7 @@ impl PortlightGame {
             Action::CrewEquipStyle(id) => self.crew_equip_style(&id),
             Action::CrewSkill(id) => self.arm_skill(&id),
             Action::CrewRecruit(id) => self.arm_recruit(&id),
+            Action::CrewDismiss(id) => self.arm_dismiss(&id),
             Action::CrewBuyGear(id) => self.arm_gear(&id),
             Action::CrewMaintainGear(id) => self.arm_maintain_gear(&id),
             Action::CrewUpgradeGear(id) => self.arm_upgrade_gear(&id),
@@ -5683,6 +5686,25 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn arm_dismiss(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(member) = self
+            .session
+            .as_ref()
+            .and_then(crew_desk)
+            .and_then(|desk| desk.party.into_iter().find(|member| member.id == id))
+        else {
+            self.crew_notice = "Companion not in party.".to_string();
+            self.refresh();
+            return;
+        };
+        self.crew_notice = dismiss_confirm_line(&member.name);
+        self.crew_pending = Some(CrewPending::Dismiss { id: id.to_string() });
+        self.refresh();
+    }
+
     fn arm_gear(&mut self, id: &str) {
         if self.crew_pending.is_some() {
             return;
@@ -5761,6 +5783,7 @@ impl PortlightGame {
             CrewPending::Train { id } => self.apply_train(&id),
             CrewPending::Skill { id } => self.apply_skill(&id),
             CrewPending::Recruit { id } => self.apply_recruit(&id),
+            CrewPending::Dismiss { id } => self.apply_dismiss(&id),
             CrewPending::Gear { id } => self.apply_gear(&id),
             CrewPending::MaintainGear { id } => self.apply_maintain_gear(&id),
             CrewPending::UpgradeGear { id } => self.apply_upgrade_gear(&id),
@@ -5840,6 +5863,13 @@ impl PortlightGame {
     }
 
     fn apply_recruit(&mut self, id: &str) {
+        let dialog = self
+            .session
+            .as_ref()
+            .and_then(crew_desk)
+            .and_then(|desk| desk.offers.into_iter().find(|offer| offer.id == id))
+            .map(|offer| offer.hire_dialog)
+            .unwrap_or_default();
         let result = {
             let Some(session) = self.session.as_mut() else {
                 return;
@@ -5848,7 +5878,29 @@ impl PortlightGame {
         };
         match result {
             Ok(()) => {
-                self.crew_notice = recruit_notice_line(id);
+                let notice = recruit_notice_line(id);
+                self.crew_notice = if dialog.is_empty() {
+                    notice
+                } else {
+                    format!("{notice} \"{dialog}\"")
+                };
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn apply_dismiss(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.dismiss_companion(id)
+        };
+        match result {
+            Ok(()) => {
+                self.crew_notice = dismiss_notice_line(id);
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -6119,13 +6171,40 @@ impl PortlightGame {
             companions.add_child(&crew_copy("In party: none."));
         }
         for member in &desk.party {
-            companions.add_child(&crew_copy(member));
+            companions.add_child(&crew_copy(&member.text));
+            if self.crew_shot.is_none() {
+                if let Some(role_desc) = &member.role_description {
+                    if !role_desc.is_empty() {
+                        companions.add_child(&crew_muted(role_desc));
+                    }
+                }
+                if let Some(status_line) = &member.status_line {
+                    if !status_line.is_empty() {
+                        companions.add_child(&crew_muted(status_line));
+                    }
+                }
+                let mut dismiss =
+                    crew_button("Dismiss", game_id, Action::CrewDismiss(member.id.clone()));
+                dismiss.set_disabled(locked);
+                companions.add_child(&dismiss);
+            }
         }
         if desk.offers.is_empty() {
             companions.add_child(&crew_copy(NO_COMPANIONS_FOR_HIRE));
         }
         for offer in &desk.offers {
             companions.add_child(&crew_copy(&offer.text));
+            if self.crew_shot.is_none() {
+                if !offer.description.is_empty() {
+                    companions.add_child(&crew_muted(&offer.description));
+                }
+                if !offer.role_description.is_empty() {
+                    companions.add_child(&crew_muted(&offer.role_description));
+                }
+                if !offer.greeting.is_empty() {
+                    companions.add_child(&crew_muted(&offer.greeting));
+                }
+            }
             let mut recruit =
                 crew_button("Recruit", game_id, Action::CrewRecruit(offer.id.clone()));
             recruit.set_disabled(locked);
