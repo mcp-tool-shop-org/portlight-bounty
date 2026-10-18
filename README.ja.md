@@ -15,7 +15,7 @@
 
 ポートライト・バウンティは、貿易をテーマにしたゲームです。商品を買い、航海し、契約を結び、破産せずに目的地に到着できるようにします。マークの下にある一文が、ゲームの概要です。貿易、航海、そして繁栄。
 
-これは、[Portlight](https://github.com/mcp-tool-shop-org/portlight)のRust版のリポジトリです。シミュレーションはルールに従って行われます。Godot 4.7のチャートは、実際にプレイするゲームです。バージョン0.3.1は、この2つの組み合わせの現在のリリースです。
+これは、[Portlight](https://github.com/mcp-tool-shop-org/portlight)のRust版のリポジトリです。シミュレーションはルールに従って行われます。Godot 4.7のチャートは、実際にプレイするゲームです。バージョン0.3.2は、この2つの組み合わせの現在の開発者向けソースコード限定リリースです。
 
 アル・マナールで市場が開いている、停泊中のチャート：
 
@@ -25,11 +25,13 @@
 
 ![ポルト・ノヴォのチャート上に表示されている、現在進行中の契約](docs/screenshots/contract-strip-active.png)
 
-## プレイ
+## プレイ（ソースから）
 
 Rust 1.98.1（`rust-toolchain.toml`で指定）と、公式ビルドのGodot 4.7.2が必要です。Linux CIでは、この組み合わせを使用します。拡張機能のWindowsビルドは実行済みです。macOSビルドはまだ実行されていません。新しいクローンを作成した場合、チャートを開く前に、Godotのヘッドレスアセットインポートを一度実行してください。
 
 ```
+git clone https://github.com/mcp-tool-shop-org/portlight-bounty.git
+cd portlight-bounty
 cargo build -p portlight-godot
 godot --headless --path godot --import --quit
 godot --path godot
@@ -55,7 +57,7 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Python版のゲーム（コミット`9b02494`）が、ルールのソースです。5つの船長のアーキタイプは、Rustで調整された価格と消耗のオーバーレイ（`crates/portlight-sim/data/tuned_overlay.json`）を持ち、The Bounty Hunterは賞金に+25%のボーナスを与えます。`--features python-base`でビルドすると、オーバーレイが無効になり、シミュレーションは変更されていないPython版と一致します。
 
-## 0.3.1とは
+## 0.3.2とは
 
 20の港と43の海路を舞台にした、プレイ可能なチャートです。市場、契約、乗組員（コンパニオンの役割と士気ライン付き）、戦闘スタイルの達人やスキルを教えてくれるトレーナー、装備のメンテナンスと鍛冶品質のアップグレードを行う武器庫の商人、造船所、港の事務室（7つの港での会計を含む）、狩りや賞金、日記、戦闘と契約の概要カード、沈没と曳航回収、そして海戦などが含まれます。世界の正史（フェーズ1～6）は、`docs/canon/`にあります。初期のパッケージはマニフェスト0.3.0（`godot/assets/landing/MANIFEST.json`）です。
 
@@ -67,7 +69,7 @@ Python版のゲーム（コミット`9b02494`）が、ルールのソースで�
 
 3つの埠頭の旗は、ローカルのComfyUI環境（Qwen Imageの重みとSalt Road LoRA）で描画され、その後、固定カラーマップで再調整されました。
 
-バージョン0.3.1には、音声アセットが含まれていません（チャートは無音で実行されます）。また、ElevenLabsの音声も含まれていません。
+バージョン0.3.2には、音声アセットが含まれていません（チャートは無音で実行されます）。また、ElevenLabsの音声も含まれていません。
 
 ## 信頼
 
@@ -77,6 +79,6 @@ Python版のゲーム（コミット`9b02494`）が、ルールのソースで�
 
 ## サポート
 
-0.3.1はサポート対象のリリースです。問題やプルリクエストは大歓迎です。送信する前に、[CONTRIBUTING.md](CONTRIBUTING.md)をお読みください。コードと画像はMITライセンスです。
+0.3.2はサポート対象のリリースです。問題やプルリクエストは大歓迎です。送信する前に、[CONTRIBUTING.md](CONTRIBUTING.md)をお読みください。コードと画像はMITライセンスです。
 
 [MCP Tool Shop](https://mcp-tool-shop.github.io/)によって作成されました。コードとアート：mcp-tool-shopの貢献者。

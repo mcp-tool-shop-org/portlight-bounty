@@ -1,15 +1,14 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-18 from commit f100375 by Atlas 1.24.0.
+Mapped at 2026-10-18 from commit 3ccd897 by Atlas 1.24.0.
 
 ## What this is
 
 12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-18 (30fd2dd)
+## What changed since 2026-10-18 (f100375)
 
-- godot/ is now also read by CHANGELOG.md.
-- 20 files changed content, across 2 parts.
+Nothing structural changed since 2026-10-18; 43 files changed content.
 
 ## What comes in
 
@@ -57,14 +56,14 @@ scripts holds only PowerShell and shell files, which this map does not read, so 
 - **crates/portlight-sim/src/model.rs** and **crates/portlight-sim/src/snapshot.rs** changed together in 5 of 7 commits, inside the portlight-sim part.
 - **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/model.rs** changed together in 6 of 9 commits, inside the portlight-sim part.
 - **crates/portlight-sim/src/lib.rs** and **crates/portlight-sim/src/snapshot.rs** changed together in 6 of 9 commits, inside the portlight-sim part.
-- **crates/portlight-sim/src/model.rs** and **crates/portlight-sim/src/save.rs** changed together in 6 of 10 commits, inside the portlight-sim part.
-- **crates/portlight-godot/src/game.rs** and **crates/portlight-godot/src/logic.rs** changed together in 33 of 56 commits, inside the portlight-godot part.
+- **crates/portlight-godot/src/game.rs** and **crates/portlight-godot/src/logic.rs** changed together in 34 of 57 commits, inside the portlight-godot part.
+- **crates/portlight-sim/src/content.rs** and **crates/portlight-sim/tests/parity.rs** changed together in 6 of 11 commits, inside the portlight-sim part.
 
 1 file changed together with its own test, as expected.
 
 Confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
-Window: 180 days; a pair counts from 3 shared commits, since 13 source files reach 10 revisions; the floor rises to 10 when 25 do.
+Window: 180 days; a pair counts from 3 shared commits, since 14 source files reach 10 revisions; the floor rises to 10 when 25 do.
 
 ## What no test touches
 
@@ -110,7 +109,7 @@ Read those in order to follow one run of gen_placeholders end to end. This path 
 - 2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.
 - 6 writes and 19 reads use paths built at run time and are not named here.
 - 1 write goes to places this repository does not track, so it is not listed as generated.
-- 7 writes and 15 reads go to a path their caller passes, not to this repository.
+- 9 writes and 16 reads go to a path their caller passes, not to this repository.
 - 1 write and 1 read go to a temporary directory, not to this repository.
 - 3 files belong to no part: playtest/README.md, playtest/portlight-godot.playtest.json and playtest/probe-bridge.mjs.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.

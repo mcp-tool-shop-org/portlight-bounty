@@ -4,12 +4,13 @@
 
 | Version | Supported |
 |---------|-----------|
-| 0.3.1   | Yes       |
+| 0.3.2   | Yes       |
+| 0.3.1   | No        |
 | 0.3.0   | No        |
 | 0.2.0   | No        |
 | 0.1.0   | No        |
 
-0.3.1 is the supported GitHub release. Older tags and commits are history, not a supported line.
+0.3.2 is the supported GitHub release. Older tags and commits are history, not a supported line.
 
 ## Reporting a vulnerability
 

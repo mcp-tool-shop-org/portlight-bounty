@@ -5,7 +5,7 @@ sidebar:
   order: 5
 ---
 
-`portlight --help` is the list the binary prints. This page matches version 0.3.1.
+`portlight --help` is the list the binary prints. This page matches version 0.3.2.
 
 ```text
 portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]
@@ -33,9 +33,9 @@ portlight help
 
 One command per line. `portlight --help` prints the same set.
 
-`new`, `custom`, `buy`, `sell`, `depart`, `advance`, `arrival_narrative`, `evaluate_consequences`, `accept_contract`, `complete_contract`, `abandon_contract`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `deposit`, `withdraw`, `repay_credit`, `bank_deposit`, `bank_withdraw`, `bank_letter`, `save`, `load`, `hire`, `provision`, `work`, `duel`, `resolve_duel`, `encounter`, `naval`, `board`, `fight`, `capture`, `spare`, `take_all`, `train`, `equip_style`, `recruit`, `dismiss_companion`, `skill`, `remember`, `agency`, `gear`, `buy_ship`, `upgrade`, `form_convoy`, `repair_fleet`, `repair`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `transfer`, `maintain`, `smith`, `field_repair`, `hunt`, `bounty`, `wanted`.
+`new`, `custom`, `buy`, `sell`, `depart`, `advance`, `arrival_narrative`, `evaluate_consequences`, `accept_contract`, `complete_contract`, `abandon_contract`, `buy_infrastructure`, `take_credit`, `buy_insurance`, `deposit`, `withdraw`, `repay_credit`, `bank_deposit`, `bank_withdraw`, `bank_letter`, `save`, `load`, `hire`, `provision`, `work`, `duel`, `resolve_duel`, `pay_off_duel`, `encounter`, `naval`, `board`, `fight`, `capture`, `spare`, `take_all`, `train`, `equip_style`, `recruit`, `dismiss_companion`, `skill`, `remember`, `agency`, `gear`, `buy_ship`, `upgrade`, `form_convoy`, `repair_fleet`, `repair`, `rename_ship`, `dock_current_ship`, `board_fleet_ship`, `sell_fleet_ship`, `fire`, `transfer`, `maintain`, `smith`, `field_repair`, `hunt`, `bounty`, `wanted`.
 
-`bounty` takes `accept`, `hunt`, or `claim`, then a captain id. `dismiss` is accepted as a shorthand for `dismiss_companion`.
+`bounty` alone (or `bounty list`) lists the board; `bounty accept`, `hunt`, or `claim` takes a captain id. `dismiss` is accepted as a shorthand for `dismiss_companion`.
 
 `deposit` and `withdraw` move cargo. The `bank_` verbs move silver at a counting house: `bank_deposit N` (at least 50, free), `bank_withdraw N` (this port's account, fee 1%, at least 1), `bank_letter PORT N` (another port's account, fee 5%, at least 5). The fee comes out of N.
 

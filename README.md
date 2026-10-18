@@ -15,7 +15,7 @@
 
 Portlight Bounty is a trade game. You buy, you sail, you take a contract, and you try not to arrive broke. The line under the mark is the whole pitch: trade, sail, prosper.
 
-This repository is the Rust port of [Portlight](https://github.com/mcp-tool-shop-org/portlight). The simulation is the rules. The Godot 4.7 chart is the game you play. Version 0.3.1 is the current release of that pair.
+This repository is the Rust port of [Portlight](https://github.com/mcp-tool-shop-org/portlight). The simulation is the rules. The Godot 4.7 chart is the game you play. Version 0.3.2 is the current **source-only developer release** of that pair (pre-built binary exports are planned for a later minor release).
 
 The docked chart, with the market open at Al-Manar:
 
@@ -25,11 +25,13 @@ Two live contracts on the strip. The numbers are cargo delivered, cargo owed, an
 
 ![Active contract strip over the chart at Porto Novo](docs/screenshots/contract-strip-active.png)
 
-## Play
+## Play (from source)
 
-You need Rust 1.98.1 (the pin in `rust-toolchain.toml`) and Godot 4.7.2, the official build. Linux CI uses that pair. A Windows build of the extension has been run. A macOS build has not. On a fresh clone, run Godot's headless asset import once before opening the chart:
+This release ships as source code only (no pre-built binaries or export presets yet). You need Rust 1.98.1 (the pin in `rust-toolchain.toml`) and Godot 4.7.2, the official build. Linux CI uses that pair. A Windows build of the extension has been run. A macOS build has not. Clone the repository and run Godot's headless asset import once before opening the chart:
 
 ```
+git clone https://github.com/mcp-tool-shop-org/portlight-bounty.git
+cd portlight-bounty
 cargo build -p portlight-godot
 godot --headless --path godot --import --quit
 godot --path godot
@@ -55,7 +57,7 @@ cargo test --locked --workspace --exclude portlight-godot
 
 The Python game at commit `9b02494` is the source of the rules. Five captain archetypes carry a small Rust-tuned pricing and burn overlay (`crates/portlight-sim/data/tuned_overlay.json`), and The Bounty Hunter claims +25% on bounties; building with `--features python-base` turns the overlay off so the simulation matches Python unmodified.
 
-## What 0.3.1 is
+## What 0.3.2 is
 
 A playable chart across 20 ports and 43 sea lanes: market, contracts, crew with companion role effects and morale lines, fighting-style masters and skill trainers, an Armoury merchant shop with gear maintenance and blacksmith quality upgrades, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, combat and contract recap cards, sinking and tow recovery, and sea fights. The world canon (Phases 1-6) lives under `docs/canon/`. The landing bundle is manifest 0.3.0 (`godot/assets/landing/MANIFEST.json`).
 
@@ -67,7 +69,7 @@ The barrel, bollard, cart, crate, and torch are built by `build_prop()` in [ai-r
 
 The three quay flags were painted on a local ComfyUI setup (a Qwen Image weight and the Salt Road LoRA) and then retoned with a fixed color map.
 
-Version 0.3.1 ships without audio assets (the chart runs silent) and has no ElevenLabs voice.
+Version 0.3.2 ships without audio assets (the chart runs silent) and has no ElevenLabs voice.
 
 ## Trust
 
@@ -77,6 +79,6 @@ Report a vulnerability in private on this repository. See [SECURITY.md](SECURITY
 
 ## Support
 
-0.3.1 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
+0.3.2 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
 
 Built by [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code and art: mcp-tool-shop contributors.

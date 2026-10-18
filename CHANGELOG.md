@@ -7,25 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.1] - 2026-10-18
+## [0.3.2] - 2026-10-18
+
+Source-only developer release closing the 11-seat `v0.3.1` audit across simulation data safety, economy & contract balance, duel resolution, insurance & debt rules, Godot UI feedback, CLI diagnostics, canon sync, and GitHub Pages workflow hardening.
+
+### Added
+
+- Duel pay-off option (`Session::pay_off_duel`, script verb `pay_off_duel`, and Godot encounter `Pay off` button) and round-by-round duel exchange recaps (`logic::duel_exchange_lines`) in the Godot chart log.
+- Per-unit curved order pricing quotes (`economy::quote_buy`, `economy::quote_sell`, `Session::quote_buy`, `Session::quote_sell`) used by the Godot market affordability stepper (`clamped_trade_qty`).
 
 ### Changed
 
-- Hardened CI workflows (`ci.yml`, `pages.yml`, `codeql.yml`): pinned all runner images to `ubuntu-24.04` and set explicit top-level `permissions: contents: read`.
-- Synchronized canon status tables across `docs/canon/` for `DF-34` through `DF-48` and updated the handbook for first-time headless Godot asset import (`godot --headless --path godot --import --quit`) and manifest `0.3.0`.
+- **Pending-duel freeze:** A pending duel now freezes `Session::advance` in both sea and harbour without ticking reputation, contracts, or upkeep, holds arrival short of port when a duel triggers on the final voyage leg day, blocks `voyage::depart` and the departure-check modal, and disables/relabels the Godot Next Day button (`"Resolve the duel first"`).
+- **Duel winnability & standing:** Time-out duels are now won by the player when leading by 3 or more HP (`(player_hp - opponent_hp) >= 3`), and `Session::finish_duel` applies `standing_delta` to `standing.underworld`.
+- **Order pricing & scarcity:** Multi-unit `buy` and `sell` orders walk the per-unit supply/demand curve (`execute_buy_order` / `execute_sell_order`), and 0-stock scarcity spikes are dampened (`scarcity.min(3.5)`).
+- **Contracts & bounties:** Delivery and shortage contracts reject cargo bought at the destination port (`source_port == port_id`), `Session::sell` checks contract delivery per consumed FIFO cargo slice, contract completion applies `trust_delta`/`standing_delta`/`heat_delta` to captain reputation, and accepted bounties block repeat farming once a target has been defeated (`times_defeated > 0`).
+- **Emergency loans & debt visibility:** Capped emergency loans to 1 active unpaid loan in `deferred_fees` (200 silver ceiling), allowed `repay_credit` to pay down `deferred_fees`, subtracted unpaid emergency loans from victory wealth checks (`campaign::wealth` and `evaluate_shadow`), and surfaced total debt on the Harbour desk and `Ledger:` status line.
+- **Insurance & crew starvation/desertion:** Enforced 1 active policy per family (`hull`, `premium_cargo`, `contract_guarantee`), separated hull vs. cargo claim triggers, capped total claim payouts at `loss_value`, floored unpaid-wage desertion at `crew_min`, prevented morale gain at 0 crew, warned on departing with 0 provisions (`" - crew will starve"`), and logged insurance payouts and crew losses in the Day's Report.
+- **Data safety & CLI:** Made `write_save` atomic via synced `.tmp` + `.bak` rename, validated save `voyage.origin_id`/`destination_id` against loaded ports and clamped numeric fields in `save::decode`, guarded seed increment (`wrapping_add`) and silver/day math (`saturating_add`/`saturating_sub`), verified weapon ownership before charging for `maintain_weapon`/`upgrade_weapon`/`field_repair_weapon`, honoured `PORTLIGHT_SAVE_ROOT` and distinguished damaged vs. empty save slots in `portlight-godot`, and printed failing script errors to `stderr` in `portlight-cli`.
+- **Canon & CI:** Synced Bounty Hunter and Shadow Kai canon tables (`DF-3`, `DF-34`, `DF-35`) with simulation values, clarified source-only developer release instructions across `README*` and the handbook, and pinned `pages.yml` to `ubuntu-24.04` with `persist-credentials: false` and `contents: read` top-level permissions.
+
+## [0.3.1] - 2026-10-18
+
+Source-only developer release (`1cdadb2`) adding documentation, handbook, translation, and repository atlas updates on top of the re-cut `v0.3.0` (`f1003751`).
+
+### Changed
+
+- Synchronized canon status tables across `docs/canon/` for `DF-34` through `DF-48` and updated the handbook, landing site, and multi-language READMEs for first-time headless Godot asset import (`godot --headless --path godot --import --quit`), manifest `0.3.0`, and the silent-chart disclosure.
+- Regenerated the `atlas/` codebase index and statistics against `f1003751`.
+
+### Fixed (landed in re-cut `v0.3.0` tag `f1003751`, documented in `0.3.1`)
+
+- Hardened `ci.yml` by pinning runner images to `ubuntu-24.04` and setting explicit top-level `permissions: contents: read` (note: `pages.yml` runner pinning and job-scoped write permissions landed after `v0.3.1`, and CodeQL uses GitHub's default setup rather than a separate `codeql.yml`).
 - Clarified `LICENSE` with the canonical `MIT License` header at line 1 ahead of the deck-prop provenance note.
-
-### Fixed
-
-- Scrubbed internal studio and local playtest artifact paths from public documentation (`docs/DESIGN-FIXES.md`, `docs/PORTING-PLAN.md`, `docs/UI-UX-AUDIT.md`) and removed non-shipped dev artifacts (`.claude/scheduled_tasks.lock`, `docs/Chart Audit.md`, `tools/balance_345.txt`, `tools/probe_all_types.txt`).
-- Guarded simulation economy, bank, fleet, crew, and provision mutations against negative inputs and integer overflow (`buy`, `sell`, `bank_deposit`, `bank_withdraw`, `bank_letter`, `deposit_to_warehouse`, `withdraw_from_warehouse`, `repay_credit`, `hire_crew`, `fire_crew`, `provision`, `transfer_cargo`, `transfer_crew`).
+- Scrubbed local playtest artifact paths from public documentation (`docs/DESIGN-FIXES.md`, `docs/PORTING-PLAN.md`, `docs/UI-UX-AUDIT.md`), deleted 13 internal playtest/handoff files under `docs/playtest/` and `docs/`, and removed non-shipped dev artifacts (`.claude/scheduled_tasks.lock`).
+- Rewrote `godot/assets/landing/MANIFEST.json` version metadata from `0.4.3` to `0.3.0`, scrubbed local source paths, updated the manifest SHA-256 pin in `crates/portlight-godot/src/landing.rs`, and removed unshipped `well_1x1` from `portlight-chart` seam allowances so the 5-id runtime seam allowlist matches the 17 reachable harbour/flag/prop plates (out of 78 total entries in `MANIFEST.json`).
+- Guarded single-call simulation economy, bank, fleet, crew, and provision mutations against negative inputs and integer overflow (`buy`, `sell`, `bank_deposit`, `bank_withdraw`, `bank_letter`, `deposit_to_warehouse`, `withdraw_from_warehouse`, `repay_credit`, `hire_crew`, `fire_crew`, `provision`, `transfer_cargo`, `transfer_crew`).
 - Fixed `portlight script -` so reading from stdin executes the script instead of exiting early, and rejected unknown flags or missing values in `portlight new` with exit code 2.
-- Added `equip_style` and `dismiss` (alias for `dismiss_companion`) to the CLI script runner and `--help` output.
+- Added `equip_style` and `dismiss` (alias for `dismiss_companion`) to the CLI script runner.
 - Fixed Godot route-pirate boarding duel resolution so `take_all` and `spare` log honest route-pirate messages without claiming unapplied underworld standing deltas, and exposed `state.pending_duel` in the headless playtest snapshot.
 - Fixed recruit notice formatting on the Godot Crew desk so companion `greeting` lines render without doubled quotes.
-- Removed unshipped `well_1x1` from `portlight-chart` seam allowances so the runtime allowlist matches the 20 assets in `godot/assets/landing/MANIFEST.json`.
 
 ## [0.3.0] - 2026-10-18
+
+> **Tag disclosure:** `v0.3.0` was initially published at `30fd2dd` (00:18 ET) and re-pointed to annotated tag `f1003751` (03:32 ET) to include the `f1003751` audit fixes listed above before `v0.3.1` (`1cdadb2`) was cut. Published tags will not be moved going forward.
 
 ### Added
 

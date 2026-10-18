@@ -15,7 +15,7 @@
 
 《港口财富》是一款贸易游戏。你购买商品，航行，接受合同，并努力避免破产。下方线条所描述的就是游戏的核心：贸易、航行、致富。
 
-这个仓库是 [Portlight](https://github.com/mcp-tool-shop-org/portlight) 的 Rust 移植版本。模拟的是规则。Godot 4.7 图表是您玩的游戏。0.3.1 版本是该组合的当前发布版本。
+这个仓库是 [Portlight](https://github.com/mcp-tool-shop-org/portlight) 的 Rust 移植版本。模拟的是规则。Godot 4.7 图表是您玩的游戏。0.3.2 版本是该组合的当前仅限源代码的开发者发布版本。
 
 停靠的港口，在阿尔-马纳尔港口开放市场：
 
@@ -25,11 +25,13 @@
 
 ![在波尔图诺沃港口的地图上显示可用的合同](docs/screenshots/contract-strip-active.png)
 
-## 开始游戏
+## 开始游戏（从源代码）
 
 您需要 Rust 1.98.1（在 `rust-toolchain.toml` 中指定）和 Godot 4.7.2，这是官方构建版本。Linux CI 使用该组合。已经运行了扩展程序的 Windows 构建。尚未运行 macOS 构建。在全新克隆后，在打开图表之前，先运行一次 Godot 的无头资源导入：
 
 ```
+git clone https://github.com/mcp-tool-shop-org/portlight-bounty.git
+cd portlight-bounty
 cargo build -p portlight-godot
 godot --headless --path godot --import --quit
 godot --path godot
@@ -55,7 +57,7 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Python 游戏在提交 `9b02494` 处是规则的来源。五个船长原型具有少量经过 Rust 优化的定价和消耗叠加层（`crates/portlight-sim/data/tuned_overlay.json`），并且“赏金猎人”可以获得 25% 的赏金；使用 `--features python-base` 构建会关闭叠加层，以便模拟与未修改的 Python 游戏匹配。
 
-## 0.3.1 版本的内容
+## 0.3.2 版本的内容
 
 一个可在 20 个港口和 43 条航线上游玩的图表：市场、合同、具有同伴角色效果和士气值的船员，具有战斗风格的大师和技能训练师，一个军械商铺，提供装备维护和铁匠质量升级，船坞，港口办公室（包括七个港口的会计银币），狩猎和赏金，日志，战斗和合同回顾卡，沉船和拖船回收，以及海上战斗。世界背景（阶段 1-6）位于 `docs/canon/` 下。初始资源包是 0.3.0 版本（`godot/assets/landing/MANIFEST.json`）。
 
@@ -67,7 +69,7 @@ Python 游戏在提交 `9b02494` 处是规则的来源。五个船长原型具�
 
 三个码头旗帜是在本地 ComfyUI 设置（Qwen Image 权重和 Salt Road LoRA）上绘制的，然后使用固定的颜色映射重新调整。
 
-0.3.1 版本不包含音频资源（图表静默运行），也没有 ElevenLabs 语音。
+0.3.2 版本不包含音频资源（图表静默运行），也没有 ElevenLabs 语音。
 
 ## 信任
 
@@ -77,6 +79,6 @@ Python 游戏在提交 `9b02494` 处是规则的来源。五个船长原型具�
 
 ## 支持
 
-0.3.1 是受支持的发布版本。欢迎提交问题和拉取请求。在提交之前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。代码和图片采用 MIT 许可。
+0.3.2 是受支持的发布版本。欢迎提交问题和拉取请求。在提交之前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。代码和图片采用 MIT 许可。
 
 由 [MCP Tool Shop](https://mcp-tool-shop.github.io/) 构建。代码和艺术作品：mcp-tool-shop 贡献者。
