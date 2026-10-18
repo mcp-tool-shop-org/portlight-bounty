@@ -5,7 +5,7 @@
 
 **Tags:** `[all]` every repo · `[npm]` `[pypi]` `[vsix]` `[desktop]` `[container]` published artifacts · `[mcp]` MCP servers · `[cli]` CLI tools
 
-**Repo:** portlight-bounty 0.3.0. A local game. Not an npm package, not an MCP server.
+**Repo:** portlight-bounty 0.3.1. A local game. Not an npm package, not an MCP server.
 
 ---
 
@@ -46,7 +46,7 @@
 ## D. Shipping Hygiene
 
 - [x] `[all]` `verify` script exists (test + build + smoke in one command) (2026-10-18)
-- [x] `[all]` Version in manifest matches git tag (Cargo.toml 0.3.0, release tag v0.3.0) (2026-10-18)
+- [x] `[all]` Version in manifest matches git tag (Cargo.toml 0.3.1, release tag v0.3.1) (2026-10-18)
 - [x] `[all]` Dependency scanning runs in CI (ecosystem-appropriate) (2026-10-18)
 - [ ] `[all]` SKIP: Dependabot stays off unless the Director asks. No update bot in this release.
 - [ ] `[npm]` SKIP: not published to npm. `publish = false` in Cargo.toml.

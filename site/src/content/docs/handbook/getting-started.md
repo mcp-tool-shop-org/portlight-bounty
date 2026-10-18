@@ -14,10 +14,11 @@ The Godot CI job sets `RUSTUP_TOOLCHAIN=stable`, which overrides the pin for tha
 
 ## Build and open
 
-From the repository root:
+From the repository root, run Godot's headless asset import once on a fresh clone before opening the chart:
 
 ```bash
 cargo build -p portlight-godot
+godot --headless --path godot --import --quit
 godot --path godot
 ```
 

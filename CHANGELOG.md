@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-18
+
+### Changed
+
+- Hardened CI workflows (`ci.yml`, `pages.yml`, `codeql.yml`): pinned all runner images to `ubuntu-24.04` and set explicit top-level `permissions: contents: read`.
+- Synchronized canon status tables across `docs/canon/` for `DF-34` through `DF-48` and updated the handbook for first-time headless Godot asset import (`godot --headless --path godot --import --quit`) and manifest `0.3.0`.
+- Clarified `LICENSE` with the canonical `MIT License` header at line 1 ahead of the deck-prop provenance note.
+
+### Fixed
+
+- Scrubbed internal studio and local playtest artifact paths from public documentation (`docs/DESIGN-FIXES.md`, `docs/PORTING-PLAN.md`, `docs/UI-UX-AUDIT.md`) and removed non-shipped dev artifacts (`.claude/scheduled_tasks.lock`, `docs/Chart Audit.md`, `tools/balance_345.txt`, `tools/probe_all_types.txt`).
+- Guarded simulation economy, bank, fleet, crew, and provision mutations against negative inputs and integer overflow (`buy`, `sell`, `bank_deposit`, `bank_withdraw`, `bank_letter`, `deposit_to_warehouse`, `withdraw_from_warehouse`, `repay_credit`, `hire_crew`, `fire_crew`, `provision`, `transfer_cargo`, `transfer_crew`).
+- Fixed `portlight script -` so reading from stdin executes the script instead of exiting early, and rejected unknown flags or missing values in `portlight new` with exit code 2.
+- Added `equip_style` and `dismiss` (alias for `dismiss_companion`) to the CLI script runner and `--help` output.
+- Fixed Godot route-pirate boarding duel resolution so `take_all` and `spare` log honest route-pirate messages without claiming unapplied underworld standing deltas, and exposed `state.pending_duel` in the headless playtest snapshot.
+- Fixed recruit notice formatting on the Godot Crew desk so companion `greeting` lines render without doubled quotes.
+- Removed unshipped `well_1x1` from `portlight-chart` seam allowances so the runtime allowlist matches the 20 assets in `godot/assets/landing/MANIFEST.json`.
+
 ## [0.3.0] - 2026-10-18
 
 ### Added

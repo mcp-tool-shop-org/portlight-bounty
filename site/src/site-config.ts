@@ -11,7 +11,7 @@ export const config: SiteConfig = {
     'MIT license. Built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v0.3.0',
+    badge: 'v0.3.1',
     headline: 'Portlight Bounty',
     headlineAccent: 'Trade, sail, prosper.',
     description:
@@ -21,7 +21,7 @@ export const config: SiteConfig = {
     previews: [
       {
         label: 'Chart',
-        code: 'cargo build -p portlight-godot\ngodot --path godot',
+        code: 'cargo build -p portlight-godot\ngodot --headless --path godot --import --quit\ngodot --path godot',
       },
       {
         label: 'First voyage',
@@ -39,7 +39,7 @@ export const config: SiteConfig = {
       kind: 'features',
       id: 'features',
       title: 'What you get',
-      subtitle: 'Version 0.3.0 is the current release.',
+      subtitle: 'Version 0.3.1 is the current release.',
       features: [
         {
           title: 'A chart you can sail',
@@ -62,7 +62,7 @@ export const config: SiteConfig = {
       cards: [
         {
           title: 'Play the chart',
-          code: 'cargo build -p portlight-godot\ngodot --path godot',
+          code: 'cargo build -p portlight-godot\ngodot --headless --path godot --import --quit\ngodot --path godot',
         },
         {
           title: 'Check the simulation',

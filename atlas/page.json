@@ -68,38 +68,29 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 91,
+      "changed": 20,
       "moved": 0,
-      "parts": 12,
-      "removed": 16
+      "parts": 2,
+      "removed": 0
     },
     "items": [
       {
         "kind": "landing",
-        "sentence": "godot/ is now also read by CONTRIBUTING.md.",
+        "sentence": "godot/ is now also read by CHANGELOG.md.",
         "subjects": [
           "godot/",
-          "CONTRIBUTING.md"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "tools/build_manifest_pb002.py is now also read by godot/assets/landing/MANIFEST.json and tools/build_manifest_pb002.py.",
-        "subjects": [
-          "tools/build_manifest_pb002.py",
-          "godot/assets/landing/MANIFEST.json",
-          "tools/build_manifest_pb002.py"
+          "CHANGELOG.md"
         ]
       },
       {
         "kind": "counts",
-        "sentence": "16 files removed and 91 changed content, across 12 parts.",
+        "sentence": "20 files changed content, across 2 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8",
-      "generatedAt": "2026-10-18T04:36:18.076Z"
+      "commit": "30fd2ddaa3c9ffd844036a7409bacdacd847b510",
+      "generatedAt": "2026-10-18T07:26:36.901Z"
     },
     "unchanged": false
   },
@@ -186,7 +177,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 13 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 1,
-  "commit": "30fd2ddaa3c9ffd844036a7409bacdacd847b510",
+  "commit": "f1003751de450c7d1c970bdabe95b752c2d4fc6c",
   "defaultBranch": "main",
   "derived": "12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
@@ -495,7 +486,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-18T07:26:36.901Z",
+  "generatedAt": "2026-10-18T07:56:54.717Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "6 writes and 19 reads use paths built at run time and are not named here.",

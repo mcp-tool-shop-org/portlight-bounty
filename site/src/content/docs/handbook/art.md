@@ -9,7 +9,7 @@ The MIT license covers this repository, including the pictures in `godot/assets/
 
 ## What we know
 
-The landing bundle is manifest 0.4.3. The manifest file is the list.
+The landing bundle is manifest 0.3.0 (`godot/assets/landing/MANIFEST.json`). The manifest file is the list.
 
 The barrel, bollard, cart, crate, and torch are built by `build_prop()` in ai-rpg-stage, file `assets/dimetric/camera/dimetric_60_45.py`, from Blender primitives. That function landed in commit `55ac9b2`. The plates were copied into this bundle and not remade. The manifest called that copy a vendor drop.
 
@@ -23,4 +23,4 @@ Code and art in this release are credited to mcp-tool-shop contributors. That is
 
 ## A batch that is not in the game
 
-A later starter batch of twelve pictures (props, tiles, and three UI pieces) was generated for review and is not in this tag. Several of those UI pieces were not game-ready, and the props were on a grey background. They are not part of 0.3.0.
+A later starter batch of twelve pictures (props, tiles, and three UI pieces) was generated for review and is not in this tag. Several of those UI pieces were not game-ready, and the props were on a grey background. They are not part of 0.3.1.

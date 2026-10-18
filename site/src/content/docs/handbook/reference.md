@@ -5,7 +5,7 @@ sidebar:
   order: 5
 ---
 
-`portlight --help` is the list the binary prints. This page matches version 0.3.0.
+`portlight --help` is the list the binary prints. This page matches version 0.3.1.
 
 ```text
 portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]

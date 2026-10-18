@@ -28,8 +28,8 @@ Python and the goldens agree. A later screen calls the simulation. It does not c
 - The picker lists lanes that depart may then block. A rank gap of 1 is a warning. A gap of 2 or more is blocked.
 - The victory path id `commercial_empire` is not the milestone family `commercial_finance`.
 - Advancing the day passes day 0 into the market tick on that path. Seasonal stock drains stay off. Python does the same.
-- A duel's standing change is shown and is not written onto reputation.
-- The navigator's storm resistance and the quartermaster's sell bonus exist and are never called. Leave them uncalled.
+- In the CLI `duel` verb, the standing change is returned in the result sentence and is not written onto reputation (`resolve_duel` and bounty/hunt duels do record underworld standing).
+- The ship-officer `crew_roles` entries (`navigator` storm resistance and `quartermaster` sell bonus) exist in the catalog and are never called; named companion role bonuses on the Crew desk are separate and active.
 
 ## Errors
 

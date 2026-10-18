@@ -15,7 +15,7 @@
 
 Portlight Bounty es un juego de comercio. Compras, navegas, aceptas un contrato e intentas no quedarte sin dinero. La línea debajo del marcador resume el juego: comercio, navegación, prosperidad.
 
-Este repositorio es la versión en Rust de [Portlight](https://github.com/mcp-tool-shop-org/portlight). La simulación son las reglas. El mapa de Godot 4.7 es el juego que juegas. La versión 0.3.0 es la versión actual de este conjunto.
+Este repositorio es la versión en Rust de [Portlight](https://github.com/mcp-tool-shop-org/portlight). La simulación se basa en las reglas. El mapa de Godot 4.7 es el juego que se juega. La versión 0.3.1 es la versión actual de este conjunto.
 
 El mapa del puerto, con el mercado abierto en Al-Manar:
 
@@ -27,7 +27,7 @@ Dos contratos activos en la barra. Los números representan la carga entregada, 
 
 ## Jugar
 
-Necesitas Rust 1.98.1 (la versión especificada en `rust-toolchain.toml`) y Godot 4.7.2, la versión oficial. Linux CI utiliza esta combinación. Se ha ejecutado una versión para Windows de la extensión. No se ha ejecutado una versión para macOS.
+Necesita Rust 1.98.1 (la versión especificada en `rust-toolchain.toml`) y Godot 4.7.2, la versión oficial. El entorno de integración continua (CI) de Linux utiliza este conjunto. Se ha ejecutado una versión para Windows de la extensión. No se ha ejecutado una versión para macOS. En una copia nueva, ejecute una vez la importación de recursos sin interfaz gráfica de Godot antes de abrir el mapa:
 
 ```
 cargo build -p portlight-godot
@@ -55,9 +55,9 @@ cargo test --locked --workspace --exclude portlight-godot
 
 El juego de Python en el commit `9b02494` es la fuente de las reglas. Cinco arquetipos de capitán tienen una pequeña capa de precios y consumo ajustada para Rust (`crates/portlight-sim/data/tuned_overlay.json`), y "The Bounty Hunter" obtiene un +25% en las recompensas; la compilación con `--features python-base` desactiva la capa para que la simulación coincida con Python sin modificaciones.
 
-## De qué se trata la versión 0.3.0
+## Qué es la versión 0.3.1
 
-Un mapa jugable que abarca 20 puertos y 43 rutas marítimas: mercado, contratos, tripulación con efectos de rol y líneas de moral, maestros de estilos de lucha y entrenadores de habilidades, una tienda de comerciantes de armería con mantenimiento de equipo y mejoras de calidad de herrero, el astillero, el escritorio del puerto (incluidas las cuentas de plata de la casa de contabilidad en siete puertos), caza y recompensas, el diario, tarjetas de resumen de combate y contratos, hundimiento y recuperación de remolque, y combates marítimos. El canon del mundo (Fases 1-6) se encuentra en `docs/canon/`. El paquete de inicio es la versión 0.4.3 (`godot/assets/landing/MANIFEST.json`).
+Un mapa jugable que abarca 20 puertos y 43 rutas marítimas: mercado, contratos, tripulación con efectos de roles de compañeros y niveles de moral, maestros de estilos de combate y entrenadores de habilidades, una tienda de armería con mantenimiento de equipos y mejoras de calidad de herrero, el astillero, el escritorio del puerto (incluidas las cuentas de plata de la casa de contabilidad en siete puertos), caza y recompensas, el diario, tarjetas de resumen de combate y contratos, rescate de barcos hundidos y remolque, y combates marítimos. El canon del mundo (Fases 1-6) se encuentra en `docs/canon/`. El paquete de inicio es la versión 0.3.0 (`godot/assets/landing/MANIFEST.json`).
 
 ## Imágenes
 
@@ -67,7 +67,7 @@ El barril, el poste de amarre, el carro, la caja y la antorcha son creados por `
 
 Las tres banderas del muelle fueron pintadas en una configuración local de ComfyUI (un peso de imagen de Qwen y el LoRA de Salt Road) y luego se volvieron a tonalizar con un mapa de colores fijo.
 
-No hay voz de ElevenLabs en esta versión.
+La versión 0.3.1 se distribuye sin recursos de audio (el mapa se ejecuta sin sonido) y no tiene voces de ElevenLabs.
 
 ## Confianza
 
@@ -77,6 +77,6 @@ Informa sobre una vulnerabilidad de forma privada en este repositorio. Consulta 
 
 ## Soporte
 
-0.3.0 es la versión con soporte. Los problemas y las solicitudes de incorporación son bienvenidas. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviarla. El código y las imágenes están bajo la licencia MIT.
+La versión 0.3.1 es la versión con soporte. Se aceptan informes de errores y solicitudes de incorporación de código. Lea [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar una. El código y las imágenes tienen licencia MIT.
 
 Creado por [MCP Tool Shop](https://mcp-tool-shop.github.io/). Código y arte: colaboradores de mcp-tool-shop.

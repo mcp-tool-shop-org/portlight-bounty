@@ -1,16 +1,15 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-18 from commit 30fd2dd by Atlas 1.24.0.
+Mapped at 2026-10-18 from commit f100375 by Atlas 1.24.0.
 
 ## What this is
 
 12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-18 (4f509e7)
+## What changed since 2026-10-18 (30fd2dd)
 
-- godot/ is now also read by CONTRIBUTING.md.
-- tools/build_manifest_pb002.py is now also read by godot/assets/landing/MANIFEST.json and tools/build_manifest_pb002.py.
-- 16 files removed and 91 changed content, across 12 parts.
+- godot/ is now also read by CHANGELOG.md.
+- 20 files changed content, across 2 parts.
 
 ## What comes in
 

@@ -15,7 +15,7 @@
 
 Portlight Bounty est un jeu de commerce. Vous achetez, vous naviguez, vous acceptez un contrat et vous essayez de ne pas finir à découvert. La ligne sous le repère résume le jeu : commerce, navigation, prospérité.
 
-Ce dépôt est la version Rust de [Portlight](https://github.com/mcp-tool-shop-org/portlight). La simulation correspond aux règles. La carte Godot 4.7 est le jeu auquel vous jouez. La version 0.3.0 est la version actuelle de cet ensemble.
+Ce dépôt est la version Rust de [Portlight](https://github.com/mcp-tool-shop-org/portlight). La simulation est basée sur les règles. Le diagramme Godot 4.7 représente le jeu auquel vous jouez. La version 0.3.1 est la version actuelle de cet ensemble.
 
 La carte du port, avec le marché ouvert à Al-Manar :
 
@@ -27,7 +27,7 @@ Deux contrats actifs affichés sur la carte. Les chiffres représentent les marc
 
 ## Jouer
 
-Vous avez besoin de Rust 1.98.1 (la version indiquée dans `rust-toolchain.toml`) et de Godot 4.7.2, la version officielle. Linux CI utilise cet ensemble. Une version Windows de l’extension a été exécutée. Une version macOS n’a pas été créée.
+Vous avez besoin de Rust 1.98.1 (la version spécifiée dans `rust-toolchain.toml`) et de Godot 4.7.2, la version officielle. L’intégration continue (CI) pour Linux utilise cet ensemble. Une version Windows de l’extension a été exécutée. Une version macOS n’a pas été exécutée. Sur un clone récent, exécutez une fois l’importation d’actifs en mode « headless » de Godot avant d’ouvrir le diagramme :
 
 ```
 cargo build -p portlight-godot
@@ -55,9 +55,9 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Le jeu Python à la version `9b02494` est la source des règles. Cinq archétypes de capitaine possèdent une petite superposition Rust optimisée pour les prix et la consommation (`crates/portlight-sim/data/tuned_overlay.json`), et The Bounty Hunter obtient +25 % sur les primes ; la compilation avec `--features python-base` désactive la superposition afin que la simulation corresponde à la version Python non modifiée.
 
-## Ce qu’est la version 0.3.0
+## Ce qu’est la version 0.3.1
 
-Une carte jouable avec 20 ports et 43 voies maritimes : marché, contrats, équipage avec des effets de rôle et des lignes de moral, maîtres de différents styles de combat et formateurs de compétences, un magasin d’armurerie proposant de l’équipement, de l’entretien et des améliorations de qualité de forgeron, la cour, le bureau du port (y compris les comptes d’argent des comptoirs dans sept ports), chasse et primes, le journal, des cartes récapitulatives des combats et des contrats, naufrage et récupération, et combats maritimes. Le canon de l’univers (phases 1 à 6) est disponible sous `docs/canon/`. Le paquet de lancement est la version 0.4.3 (`godot/assets/landing/MANIFEST.json`).
+Un diagramme jouable couvrant 20 ports et 43 routes maritimes : marché, contrats, équipage avec des effets de rôle et des lignes de moral, maîtres de différents styles de combat et entraîneurs de compétences, un magasin d’armurerie proposant l’entretien de l’équipement et des améliorations de qualité de forgeron, le chantier, le bureau du port (y compris les comptes d’argent des comptoirs dans sept ports), la chasse et les primes, le journal, les cartes récapitulatives des combats et des contrats, la récupération des navires coulés et des navires remorqués, et les combats maritimes. Le canon de l’univers (phases 1 à 6) est disponible sous `docs/canon/`. Le paquet d’installation initial est la version 0.3.0 (`godot/assets/landing/MANIFEST.json`).
 
 ## Images
 
@@ -67,7 +67,7 @@ Le tonneau, le bollard, le chariot, la caisse et la torche sont créés par `bui
 
 Les trois drapeaux du quai ont été peints sur une configuration locale de ComfyUI (un poids Qwen Image et le LoRA Salt Road), puis retouchés avec une carte de couleurs fixe.
 
-Il n’y a pas de voix ElevenLabs dans cette version.
+La version 0.3.1 est livrée sans fichiers audio (le diagramme s’exécute sans son) et ne contient pas de voix ElevenLabs.
 
 ## Confiance
 
@@ -77,6 +77,6 @@ Signalez une vulnérabilité en privé dans ce dépôt. Consultez [SECURITY.md](
 
 ## Assistance
 
-La version 0.3.0 est la version prise en charge. Les problèmes et les demandes de modification sont les bienvenus. Lisez [CONTRIBUTING.md](CONTRIBUTING.md) avant de les envoyer. Le code et les images sont sous licence MIT.
+La version 0.3.1 est la version prise en charge. Les problèmes et les demandes de contribution sont les bienvenus. Lisez le fichier [CONTRIBUTING.md](CONTRIBUTING.md) avant de les soumettre. Le code et les images sont sous licence MIT.
 
 Créé par [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code et illustrations : contributeurs de MCP Tool Shop.

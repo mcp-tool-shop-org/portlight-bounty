@@ -15,7 +15,7 @@
 
 Portlight Bounty è un gioco di commercio. Si acquistano merci, si naviga, si accettano contratti e si cerca di non finire in bancarotta. La frase che riassume il gioco è: commercio, navigazione, prosperità.
 
-Questo repository contiene la versione in Rust di [Portlight](https://github.com/mcp-tool-shop-org/portlight). La simulazione rappresenta le regole del gioco. La mappa di Godot 4.7 è il gioco vero e proprio. La versione 0.3.0 è l'ultima versione disponibile.
+Questo repository contiene la versione in Rust di [Portlight](https://github.com/mcp-tool-shop-org/portlight). La simulazione si basa sulle regole. La mappa di Godot 4.7 rappresenta il gioco a cui si gioca. La versione 0.3.1 è l'ultima versione disponibile di questo pacchetto.
 
 La mappa del porto, con il mercato aperto ad Al-Manar:
 
@@ -27,7 +27,7 @@ Due contratti attivi sulla mappa. I numeri indicano la quantità di merci conseg
 
 ## Gioca
 
-È necessario avere Rust 1.98.1 (indicato in `rust-toolchain.toml`) e Godot 4.7.2, la versione ufficiale. Linux CI utilizza questa combinazione. È stata eseguita una build per Windows. Non è stata eseguita una build per macOS.
+È necessario Rust 1.98.1 (la versione specificata in `rust-toolchain.toml`) e Godot 4.7.2, la versione ufficiale. Il sistema di integrazione continua (CI) per Linux utilizza questa combinazione. È stata eseguita una build per Windows dell'estensione. Non è stata eseguita una build per macOS. Dopo aver clonato il repository, eseguire una sola volta l'importazione delle risorse in modalità "headless" di Godot prima di aprire la mappa:
 
 ```
 cargo build -p portlight-godot
@@ -55,9 +55,9 @@ cargo test --locked --workspace --exclude portlight-godot
 
 Il gioco Python alla commit `9b02494` è la fonte delle regole. Cinque archetipi di capitano hanno un piccolo overlay di prezzi e consumi ottimizzato per Rust (`crates/portlight-sim/data/tuned_overlay.json`), e "The Bounty Hunter" ottiene un bonus del 25% sulle taglie; la compilazione con `--features python-base` disattiva l'overlay in modo che la simulazione corrisponda alla versione Python non modificata.
 
-## Cos'è la versione 0.3.0
+## Cos'è la versione 0.3.1
 
-Una mappa giocabile che comprende 20 porti e 43 rotte marittime: mercato, contratti, equipaggio con effetti di ruolo e linee di morale, maestri di diversi stili di combattimento e istruttori di abilità, un negozio di armi con manutenzione dell'equipaggiamento e miglioramenti di qualità, il cantiere navale, l'ufficio del porto (inclusi i conti bancari in sette porti), missioni di caccia e taglie, il diario, riepiloghi di combattimento e contratti, affondamento e recupero di navi, e combattimenti in mare. La cronologia del mondo (Fasi 1-6) è disponibile all'indirizzo `docs/canon/`. Il pacchetto di lancio è la versione 0.4.3 (`godot/assets/landing/MANIFEST.json`).
+Una mappa giocabile che comprende 20 porti e 43 rotte marittime: mercato, contratti, equipaggio con effetti di ruolo e indicatori di morale, maestri di diversi stili di combattimento e istruttori di abilità, un negozio di armi con servizi di manutenzione dell'equipaggiamento e potenziamenti di qualità, il cantiere navale, l'ufficio del porto (compresi i conti in argento di sette porti), caccia e taglie, il diario, le schede riepilogative dei combattimenti e dei contratti, il recupero di navi affondate e rimorchiate, e i combattimenti in mare. Il canone del mondo (Fasi 1-6) è disponibile all'indirizzo `docs/canon/`. Il pacchetto iniziale è la versione 0.3.0 (`godot/assets/landing/MANIFEST.json`).
 
 ## Immagini
 
@@ -67,7 +67,7 @@ La botte, il bitte, il carrello, la cassa e la torcia sono create da `build_prop
 
 Le tre bandiere sul molo sono state disegnate utilizzando un'installazione locale di ComfyUI (un peso di Qwen Image e il LoRA di Salt Road) e quindi ritoccate con una mappa di colori fissa.
 
-Non è presente la voce di ElevenLabs in questa versione.
+La versione 0.3.1 viene distribuita senza risorse audio (la mappa viene eseguita senza audio) e non include la voce di ElevenLabs.
 
 ## Affidabilità
 
@@ -77,6 +77,6 @@ Segnala una vulnerabilità in privato in questo repository. Consulta [SECURITY.m
 
 ## Supporto
 
-La versione 0.3.0 è la versione supportata. Sono benvenuti problemi e richieste di pull. Leggi [CONTRIBUTING.md](CONTRIBUTING.md) prima di inviarne una. Il codice e le immagini sono soggetti alla licenza MIT.
+La versione 0.3.1 è la versione supportata. Sono benvenuti segnalazioni di problemi e richieste di modifica. Prima di inviare una richiesta, leggere il file [CONTRIBUTING.md](CONTRIBUTING.md). Il codice e le immagini sono distribuiti con licenza MIT.
 
 Creato da [MCP Tool Shop](https://mcp-tool-shop.github.io/). Codice e grafica: collaboratori di MCP Tool Shop.

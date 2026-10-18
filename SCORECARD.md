@@ -21,6 +21,6 @@
 2. Before remediation, the MIT file covered the pictures by silence and did not record the `ai-rpg-stage` provenance for the five vendored props (now documented in `LICENSE`).
 3. No release, no landing page, no security policy.
 
-## This release (0.3.0)
+## This release (0.3.1)
 
-Hard gates A–D and soft gates E (including 8-language polyglot-mcp README translations) are checked or justified in SHIP_GATE.md. The landing page, handbook, canon (Phases 1–6), and workspace version are aligned at 0.3.0.
+Hard gates A–D and soft gates E (including 8-language polyglot-mcp README translations) are checked or justified in SHIP_GATE.md. The landing page, handbook, canon (Phases 1–6), and workspace version are aligned at 0.3.1.
