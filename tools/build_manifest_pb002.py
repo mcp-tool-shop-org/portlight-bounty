@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""build_manifest_pb002.py - derive MANIFEST.json for the portlight-bounty PB-002 landing bundle.
+"""build_manifest_pb002.py - derive MANIFEST.json for the portlight-bounty landing bundle.
 
     python3 tools/build_manifest_pb002.py --out-dir landing-next --version 0.3.0 [--check] [--studio DIR]
-    (--out-dir is relative to pb-002-plates/ unless absolute; default "landing")
+    (--out-dir is relative to plates/ unless absolute; default "landing")
 
-Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + outbox docs:
+Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + spec docs:
 
   ships (36, P1)     ids/anchor/LOA/mesh      <- asset-list.csv; canvas <- PNG; sha256 computed
                      gates: art-gate.md Addendum D, retrieval-ships.md 36 PASS/0 FAIL; renderer <- ships/<class>/sidecar.json
-                     sha vs source and vs grok-bot-verifier/PB-002/ships_results.json
+                     sha vs source and vs verifier/ships_results.json
                      ships inventory must equal the 36 ids (empty fails). A missing row refuses the build.
                      A row passes when `pass` is true. `exit`, if present, must be 0. A missing
                      `exit` is fine when `pass` is true. `v011_exit` is not a pass criterion.
@@ -25,14 +25,14 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
   chart (4, P0/P1)   ids/canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv
                      gates: Addendum F (PASS), retrieval-chart.md 4 PASS/0 FAIL + "Builder may land";
                      renderer <- <id>.render.json; andon gate of record <- <id>.andon.json
-                     sha vs source and vs grok-bot-verifier/PB-002/chart/chart_retrieval_results.json
+                     sha vs source and vs verifier/chart/chart_retrieval_results.json
   quay_flag (3, P0)  ids quay_flag_a..c: painterly v5p quay stone (procedural v5 base + Salt Road img2img brushwork),
                      art-gate Addendum V.2 PASS; placement per Addendum U.4 (asset-list rows unchanged)
                      canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv; source ground/<id>.png;
                      <id>.andon.json must be v0.1.1 pass (kind ground); renderer <- <id>.render.json
                      (must carry base_square, source_square and brushwork{seed, graph_sha256});
-                     MANDATORY Verifier gate (B1): grok-bot-verifier/PB-002/quay_flag_painterly_results.json
-                     (3 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-quay_flag_painterly.md
+                     MANDATORY Verifier gate (B1): verifier/quay_flag_painterly_results.json
+                     (3 rows pass/exit 0, inventory sha == plate) + spec/retrieval-quay_flag_painterly.md
                      ("Result: **3/3 PASS**", ends "✅ Builder may land")
                      B2: every gate input (ships, harbour, chart, quay_flag results JSON) refuses a key
                      whose tokens include stub (any case, any depth), including _STUB, _stub, and stub.
@@ -58,8 +58,8 @@ Never hand-edit MANIFEST.json; rerun this. Everything is derived from files + ou
                      canvas/anchor/footprint/layer/offsets/andon_kind <- asset-list.csv; source props/<id>/beauty.png;
                      landed path props/<id>/beauty.png; <id> beauty.andon.json must be v0.1.1 prop pass;
                      renderer <- beauty.render.json; sha256 must equal Y.1.a lock table (hardcoded) and source bytes
-                     MANDATORY Verifier gate: grok-bot-verifier/PB-002/harbour_props_results.json
-                     (5 rows pass/exit 0, inventory sha == plate) + outbox-PB-002/retrieval-harbour_props.md
+                     MANDATORY Verifier gate: verifier/harbour_props_results.json
+                     (5 rows pass/exit 0, inventory sha == plate) + spec/retrieval-harbour_props.md
                      ("Result: **5/5 PASS**", ends "✅ Builder may land"); results sha256 must appear in the doc
                      B2 stub-key refusal applies to harbour_props_results.json like other gate inputs
   import settings    per plate, from the plate's .import file if one exists (chart), else derived from
@@ -70,14 +70,14 @@ structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png, props/<
 Sidecars and .import files are NOT copied into the bundle (Coordinator ruling); their values are carried here.
 
 Emitted paths: entry `path` is relative to the bundle root; provenance paths are relative to the studio
-workspace root. The script refuses to write if any emitted string starts with '/' or contains '/workspace'.
+root. The script refuses to write if any emitted string starts with '/' or contains '/workspace'.
 csv "-" = not applicable by spec -> null + raw csv string kept; empty/unparseable -> null + reported.
 --check: recompute and compare byte-for-byte against <out-dir>/MANIFEST.json; exit 1 on difference/problems.
 """
 from __future__ import annotations
 import argparse, csv, hashlib, json, os, re, struct, sys
 
-DEFAULT_STUDIO = "/workspace/studio"  # read-side only; never emitted
+DEFAULT_STUDIO = os.environ.get("PORTLIGHT_STUDIO_ROOT", ".")
 HARB_SRC_DIRS = ["ground", "quay", "pier", "props"]
 CLASSES = ["sloop", "cutter", "brigantine", "galleon"]
 FRAMES = [f"f{k}" for k in range(8)] + ["wake"]
@@ -107,9 +107,9 @@ def bind_studio(studio):
     global VJ_SHIPS, VJ_HARB, VJ_CHART, SHIP_SRC, CHART_SRC
     global QUAY_FLAG_SRC, VJ_QUAY_FLAG, HARBOUR_PROPS_SRC, VJ_HARBOUR_PROPS
     STUDIO = studio
-    PLATES = os.path.join(STUDIO, "pb-002-plates")
-    OUTBOX = os.path.join(STUDIO, "outbox-PB-002")
-    VERIFIER = os.path.join(STUDIO, "grok-bot-verifier", "PB-002")
+    PLATES = os.path.join(STUDIO, "plates")
+    OUTBOX = os.path.join(STUDIO, "spec")
+    VERIFIER = os.path.join(STUDIO, "verifier")
     CSV = os.path.join(OUTBOX, "asset-list.csv")
     SPEC = os.path.join(OUTBOX, "asset-spec.md")
     GATE = os.path.join(OUTBOX, "art-gate.md")
@@ -562,8 +562,8 @@ def cross_check_sidecar_mip(aid, val, where, problems):
 # ---------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--version", default="0.1.0")
-    ap.add_argument("--out-dir", default="landing", help="bundle dir (relative to pb-002-plates/ unless absolute)")
+    ap.add_argument("--version", default="0.3.0")
+    ap.add_argument("--out-dir", default="landing", help="bundle dir (relative to plates/ unless absolute)")
     ap.add_argument("--groups", default="ships,harbour,chart,quay_flag,harbour_props")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--studio", default=DEFAULT_STUDIO, help="studio root holding plates, outbox, and verifier inputs")
@@ -920,7 +920,7 @@ def main(argv=None):
                     "andon": {"version": andon.get("andon_version") if andon else None,
                               "kind": andon.get("kind") if andon else None, "pass": andon.get("pass") if andon else None},
                     "gate": {"art_director": qgate["art_director"],
-                             "verifier": ("grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS" if qj else None)},
+                             "verifier": ("verifier/quay_flag_painterly_results.json; spec/retrieval-quay_flag_painterly.md 3/3 PASS" if qj else None)},
                     "render_sidecar": srel(base + ".render.json"),
                     "source_path": srel(src)}})
         qorder = {e: i for i, e in enumerate(EXP_QUAY_FLAG)}
@@ -1006,7 +1006,7 @@ def main(argv=None):
                     "andon": {"version": andon.get("andon_version") if andon else None,
                               "kind": andon.get("kind") if andon else None, "pass": andon.get("pass") if andon else None},
                     "gate": {"art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
-                             "verifier": ("grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS" if hpj else None),
+                             "verifier": ("verifier/harbour_props_results.json; spec/retrieval-harbour_props.md 5/5 PASS" if hpj else None),
                              "y1a_sha_lock": lock},
                     "render_sidecar": srel(base + ".render.json"),
                     "source_path": srel(src_png)}})
@@ -1030,16 +1030,15 @@ def main(argv=None):
         imp_summary[k] = imp_summary.get(k, 0) + 1
 
     man = {
-        "manifest": "portlight-bounty PB-002 landing bundle",
+        "manifest": "portlight-bounty landing bundle",
         "consumer": "portlight-bounty",
-        "task": "PB-002",
         "version": a.version,
-        "generator": "pb-002-plates/tools/build_manifest_pb002.py",
+        "generator": "tools/build_manifest_pb002.py",
         "path_convention": {"entry.path": "relative to the bundle root (this MANIFEST's directory)",
-                            "provenance.*": "relative to the studio workspace root"},
-        "sources": {"asset_list": "outbox-PB-002/asset-list.csv", "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-                    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" + ("" if qgate["addendum"] == "V.2" else ", " + qgate["addendum"]) if "quay_flag" in groups else "") + (", Y.1.a" if "harbour_props" in groups else ""),
-                    "verifier": [f"outbox-PB-002/retrieval-{g}.md" for g in ("ships", "harbour", "chart", "quay_flag_painterly", "harbour_props") if (g.split("_painterly")[0] in groups or g in groups)]},
+                            "provenance.*": "relative to the studio root"},
+        "sources": {"asset_list": "spec/asset-list.csv", "asset_spec": "spec/asset-spec.md (Rev 4)",
+                    "art_gate": "spec/art-gate.md Addenda D, E, E.1, F" + (", U.4, V.2" + ("" if qgate["addendum"] == "V.2" else ", " + qgate["addendum"]) if "quay_flag" in groups else "") + (", Y.1.a" if "harbour_props" in groups else ""),
+                    "verifier": [f"spec/retrieval-{g}.md" for g in ("ships", "harbour", "chart", "quay_flag_painterly", "harbour_props") if (g.split("_painterly")[0] in groups or g in groups)]},
         "layout": {"ships": "chart/ships/ship_<class>/ship_<class>_{f0..f7,wake}.png (asset-spec §7g)",
                    "harbour": "ground/water_*.png, structures/<quay|pier id>/beauty.png, props/pier_pilings_1x1/beauty.png (asset-spec §4 Output)",
                    "chart": "chart/<id>.png (asset-spec §4 Output)",

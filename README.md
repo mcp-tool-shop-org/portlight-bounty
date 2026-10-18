@@ -27,10 +27,11 @@ Two live contracts on the strip. The numbers are cargo delivered, cargo owed, an
 
 ## Play
 
-You need Rust 1.98.1 (the pin in `rust-toolchain.toml`) and Godot 4.7.2, the official build. Linux CI uses that pair. A Windows build of the extension has been run. A macOS build has not.
+You need Rust 1.98.1 (the pin in `rust-toolchain.toml`) and Godot 4.7.2, the official build. Linux CI uses that pair. A Windows build of the extension has been run. A macOS build has not. On a fresh clone, run Godot's headless asset import once before opening the chart:
 
 ```
 cargo build -p portlight-godot
+godot --headless --path godot --import --quit
 godot --path godot
 ```
 
@@ -56,7 +57,7 @@ The Python game at commit `9b02494` is the source of the rules. Five captain arc
 
 ## What 0.3.0 is
 
-A playable chart across 20 ports and 43 sea lanes: market, contracts, crew with companion role effects and morale lines, fighting-style masters and skill trainers, an Armoury merchant shop with gear maintenance and blacksmith quality upgrades, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, combat and contract recap cards, sinking and tow recovery, and sea fights. The world canon (Phases 1–6) lives under `docs/canon/`. The landing bundle is manifest 0.4.3 (`godot/assets/landing/MANIFEST.json`).
+A playable chart across 20 ports and 43 sea lanes: market, contracts, crew with companion role effects and morale lines, fighting-style masters and skill trainers, an Armoury merchant shop with gear maintenance and blacksmith quality upgrades, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, combat and contract recap cards, sinking and tow recovery, and sea fights. The world canon (Phases 1-6) lives under `docs/canon/`. The landing bundle is manifest 0.3.0 (`godot/assets/landing/MANIFEST.json`).
 
 ## Pictures
 
@@ -66,7 +67,7 @@ The barrel, bollard, cart, crate, and torch are built by `build_prop()` in [ai-r
 
 The three quay flags were painted on a local ComfyUI setup (a Qwen Image weight and the Salt Road LoRA) and then retoned with a fixed color map.
 
-There is no ElevenLabs voice in this release.
+Version 0.3.0 ships without audio assets (the chart runs silent) and has no ElevenLabs voice.
 
 ## Trust
 

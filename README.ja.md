@@ -31,6 +31,7 @@ Rust 1.98.1（`rust-toolchain.toml`に記載）と、公式ビルドのGodot 4.7
 
 ```
 cargo build -p portlight-godot
+godot --headless --path godot --import --quit
 godot --path godot
 ```
 

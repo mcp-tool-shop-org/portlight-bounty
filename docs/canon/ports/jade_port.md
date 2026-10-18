@@ -67,7 +67,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 - Network (inspector, professional): Inspector Zhao Min - Inspector Yuki, linking Silk Haven (C:11676). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Factor Wu Jian (C:12882).
 - Sea sighting filed under this port: Apprentice Lin Yue (C:12906).
-- Hire and training canon (links only): [Pak Reza](../style-masters/pak_reza.md) (style master, Silat); [Master Chen](../merchants/chen_forge.md) (merchant, Master Smith).
+- Hire and training canon (links only): [Pak Reza](../style-masters/pak_reza.md) (style master, Silat); [Bladesmith Chen](../merchants/chen_forge.md) (merchant, Master Smith).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

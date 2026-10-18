@@ -18,7 +18,7 @@
 ## Key gaps
 
 1. The public README described an older art bundle and read as a porting log.
-2. The MIT file covered the pictures by silence, and the five vendored props have no recorded maker or license.
+2. Before remediation, the MIT file covered the pictures by silence and did not record the `ai-rpg-stage` provenance for the five vendored props (now documented in `LICENSE`).
 3. No release, no landing page, no security policy.
 
 ## This release (0.3.0)

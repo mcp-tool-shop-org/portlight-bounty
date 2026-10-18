@@ -27,9 +27,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +65,7 @@ jobs:
   # Reported, not gating: the job fails only on a crash, a non-deterministic
   # rerun, or a missing output file.
   balance:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -92,7 +95,7 @@ jobs:
   # measures the Rust crates except portlight-godot, which the godot job
   # builds. Upload uses OIDC. No token is stored in the repo.
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -122,7 +125,7 @@ jobs:
   # The Python game is public, so CI can check the live oracle out at the
   # source commit. Goldens alone still run in the test job.
   oracle:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -161,7 +164,7 @@ jobs:
         run: PYTHONPATH=${{ github.workspace }}/vendor/portlight/src python3 tools/parity/custom_captain_save.py --check
 
   godot:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -189,7 +192,7 @@ jobs:
           cargo build --locked -p portlight-godot
       - name: Install Godot 4.7.2
         # The official Linux binary dlopens X11, GL, and fontconfig even for
-        # --headless. ubuntu-latest usually has them; install them so a thinner
+        # --headless. ubuntu-24.04 usually has them; install them so a thinner
         # image does not fail the smoke after the extension builds.
         run: |
           sudo apt-get update
@@ -1062,7 +1065,7 @@ jobs:
           path: /tmp/moved-frames
 
   audit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read

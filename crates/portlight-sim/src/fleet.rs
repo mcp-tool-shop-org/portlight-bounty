@@ -132,6 +132,9 @@ pub fn transfer_cargo(
     to_ship_name: &str,
     port_id: &str,
 ) -> Result<(), String> {
+    if qty <= 0 {
+        return Err("Quantity must be a positive number".to_string());
+    }
     let src_flag = is_flagship(captain, from_ship_name);
     let dst_flag = is_flagship(captain, to_ship_name);
     if !src_flag && find_fleet(captain, from_ship_name, port_id).is_none() {

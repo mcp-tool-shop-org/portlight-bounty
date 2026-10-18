@@ -379,6 +379,20 @@ fn dispatch(
             }
             session.train_crew(&tokens[1])
         }
+        "equip_style" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence(
+                    "Usage: equip_style <style_id|none>".into(),
+                ));
+            }
+            let style = if tokens[1].eq_ignore_ascii_case("none") {
+                None
+            } else {
+                Some(tokens[1].as_str())
+            };
+            session.equip_style(style)
+        }
         "recruit" => {
             let session = active(session)?;
             if tokens.len() != 2 {
@@ -386,7 +400,7 @@ fn dispatch(
             }
             session.recruit_companion(&tokens[1])
         }
-        "dismiss" => {
+        "dismiss" | "dismiss_companion" => {
             let session = active(session)?;
             if tokens.len() != 2 {
                 return Err(SimError::Sentence("Usage: dismiss <companion_id>".into()));
@@ -890,5 +904,38 @@ mod tests {
         let snap = run_script("new merchant Ada 9223372036854775808\n");
         assert!(snap.log[0].error.is_none(), "{:?}", snap.log[0].error);
         assert_eq!(snap.seed, 1i128 << 63);
+    }
+
+    #[test]
+    fn equip_style_and_dismiss_aliases_and_overflow_inputs_work() {
+        let snap = run_script(
+            "new merchant Ada 1\ntrain la_destreza\nequip_style none\nequip_style la_destreza\n",
+        );
+        assert!(
+            snap.log.iter().all(|entry| entry.error.is_none()),
+            "{:?}",
+            snap.log
+        );
+
+        let snap2 = run_script(
+            "new merchant Ada 1 corsairs_rest\nrecruit red_tomas\ndismiss_companion red_tomas\nrecruit red_tomas\ndismiss red_tomas\n",
+        );
+        assert!(
+            snap2.log.iter().all(|entry| entry.error.is_none()),
+            "{:?}",
+            snap2.log
+        );
+
+        for line in [
+            "sell grain 9223372036854775807",
+            "provision 9223372036854775807",
+            "bank_letter al_manar 9223372036854775807",
+        ] {
+            let overflow_snap = run_script(&format!("new merchant Ada 1\n{line}\n"));
+            assert!(
+                overflow_snap.log[1].error.is_some(),
+                "expected clean error on {line}"
+            );
+        }
     }
 }

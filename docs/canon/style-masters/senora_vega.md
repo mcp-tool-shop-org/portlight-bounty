@@ -19,8 +19,8 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Styles needed first | 0 | C:4165 |
 | Body parts the style needs (live gate, DF-41 resolved) | hand, arm | C:4166 |
 | Player sees today | the style row at this port (name, silver, days, styles needed, known yes or no), a confirm line, a notice after training, and a learned-style row with an `Equip` control; never the master | logic.rs:2028-2062; logic.rs:1884; game.rs:5693-5714 |
-| Not shown | master name, description, dialog | no reader in the crates (section 2) |
-| Mechanic status | the master record is [flavour, no mechanic]; the real training gate is the style's own port list (DF-39) | training.rs:9-52; content.rs:1027-1032 |
+| Master text on desk | master name, description, dialog, and style description are shown on the Crew desk (DF-39 resolved) | logic.rs; game.rs |
+| Mechanic status | masters_at_port gates training alongside the style's port list, and learned styles can be equipped (DF-39, DF-41 resolved) | training.rs:9-52; session.rs |
 | Python record | same strings except description (`COPY_OVERRIDES`: 'runs a fencing school east of Gibraltar' vs Python's 'runs the only fencing school east of Gibraltar', DF-40 resolved); Python's train command prints the master name and dialog | portlight@9b02494 src/portlight/content/fighting_styles.py:266; src/portlight/app/cli.py:2426-2455 |
 
 ## 1. Grounded facts (every data line quoted)

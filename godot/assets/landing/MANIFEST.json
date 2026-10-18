@@ -1,23 +1,22 @@
 {
-  "manifest": "portlight-bounty PB-002 landing bundle",
+  "manifest": "portlight-bounty landing bundle",
   "consumer": "portlight-bounty",
-  "task": "PB-002",
-  "version": "0.4.3",
-  "generator": "pb-002-plates/tools/build_manifest_pb002.py",
+  "version": "0.3.0",
+  "generator": "tools/build_manifest_pb002.py",
   "path_convention": {
     "entry.path": "relative to the bundle root (this MANIFEST's directory)",
-    "provenance.*": "relative to the studio workspace root"
+    "provenance.*": "relative to the studio root"
   },
   "sources": {
-    "asset_list": "outbox-PB-002/asset-list.csv",
-    "asset_spec": "outbox-PB-002/asset-spec.md (Rev 4)",
-    "art_gate": "outbox-PB-002/art-gate.md Addenda D, E, E.1, F, U.4, V.2, W.3, Y.1.a",
+    "asset_list": "spec/asset-list.csv",
+    "asset_spec": "spec/asset-spec.md (Rev 4)",
+    "art_gate": "spec/art-gate.md Addenda D, E, E.1, F, U.4, V.2, W.3, Y.1.a",
     "verifier": [
-      "outbox-PB-002/retrieval-ships.md",
-      "outbox-PB-002/retrieval-harbour.md",
-      "outbox-PB-002/retrieval-chart.md",
-      "outbox-PB-002/retrieval-quay_flag_painterly.md",
-      "outbox-PB-002/retrieval-harbour_props.md"
+      "spec/retrieval-ships.md",
+      "spec/retrieval-harbour.md",
+      "spec/retrieval-chart.md",
+      "spec/retrieval-quay_flag_painterly.md",
+      "spec/retrieval-harbour_props.md"
     ]
   },
   "layout": {
@@ -86,7 +85,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -102,8 +101,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f0.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f0.png"
       }
     },
     {
@@ -142,7 +141,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -158,8 +157,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f1.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f1.png"
       }
     },
     {
@@ -198,7 +197,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -214,8 +213,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f2.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f2.png"
       }
     },
     {
@@ -254,7 +253,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -270,8 +269,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f3.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f3.png"
       }
     },
     {
@@ -310,7 +309,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -326,8 +325,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f4.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f4.png"
       }
     },
     {
@@ -366,7 +365,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -382,8 +381,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f5.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f5.png"
       }
     },
     {
@@ -422,7 +421,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -438,8 +437,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f6.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f6.png"
       }
     },
     {
@@ -478,7 +477,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": null
         },
@@ -494,8 +493,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_f7.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_f7.png"
       }
     },
     {
@@ -534,7 +533,7 @@
       "provenance": {
         "mesh": {
           "hull": "sloop",
-          "file": "pb-002-plates/meshes/sloop__01-pristine__sails-open.glb",
+          "file": "plates/meshes/sloop__01-pristine__sails-open.glb",
           "sha256": "ae89e545018561d6e9af813ae8ea477bcc37b3d2090fb34b095e22d24971a42e",
           "note": "wake: rig only, disc (no mesh in frame)"
         },
@@ -550,8 +549,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_sloop/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_sloop/ship_sloop_wake.png"
+        "render_sidecar": "plates/ships/ship_sloop/sidecar.json",
+        "source_path": "plates/ships/ship_sloop/ship_sloop_wake.png"
       }
     },
     {
@@ -590,7 +589,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -606,8 +605,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f0.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f0.png"
       }
     },
     {
@@ -646,7 +645,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -662,8 +661,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f1.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f1.png"
       }
     },
     {
@@ -702,7 +701,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -718,8 +717,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f2.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f2.png"
       }
     },
     {
@@ -758,7 +757,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -774,8 +773,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f3.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f3.png"
       }
     },
     {
@@ -814,7 +813,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -830,8 +829,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f4.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f4.png"
       }
     },
     {
@@ -870,7 +869,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -886,8 +885,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f5.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f5.png"
       }
     },
     {
@@ -926,7 +925,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -942,8 +941,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f6.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f6.png"
       }
     },
     {
@@ -982,7 +981,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": null
         },
@@ -998,8 +997,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_f7.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_f7.png"
       }
     },
     {
@@ -1038,7 +1037,7 @@
       "provenance": {
         "mesh": {
           "hull": "schooner",
-          "file": "pb-002-plates/meshes/schooner__01-pristine__sails-open.glb",
+          "file": "plates/meshes/schooner__01-pristine__sails-open.glb",
           "sha256": "e37f928f8aa71e94b8921422c65f2d90592ae3f942e2974e5da12f81de69cca9",
           "note": "wake: rig only, disc (no mesh in frame)"
         },
@@ -1054,8 +1053,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_cutter/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_cutter/ship_cutter_wake.png"
+        "render_sidecar": "plates/ships/ship_cutter/sidecar.json",
+        "source_path": "plates/ships/ship_cutter/ship_cutter_wake.png"
       }
     },
     {
@@ -1094,7 +1093,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1110,8 +1109,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f0.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f0.png"
       }
     },
     {
@@ -1150,7 +1149,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1166,8 +1165,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f1.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f1.png"
       }
     },
     {
@@ -1206,7 +1205,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1222,8 +1221,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f2.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f2.png"
       }
     },
     {
@@ -1262,7 +1261,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1278,8 +1277,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f3.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f3.png"
       }
     },
     {
@@ -1318,7 +1317,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1334,8 +1333,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f4.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f4.png"
       }
     },
     {
@@ -1374,7 +1373,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1390,8 +1389,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f5.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f5.png"
       }
     },
     {
@@ -1430,7 +1429,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1446,8 +1445,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f6.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f6.png"
       }
     },
     {
@@ -1486,7 +1485,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": null
         },
@@ -1502,8 +1501,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_f7.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_f7.png"
       }
     },
     {
@@ -1542,7 +1541,7 @@
       "provenance": {
         "mesh": {
           "hull": "brigantine",
-          "file": "pb-002-plates/meshes/brigantine__01-pristine__sails-open.glb",
+          "file": "plates/meshes/brigantine__01-pristine__sails-open.glb",
           "sha256": "a6275d1f6011f0512b5a30783a82d0b55757b3edc06d0b499900df0c2a49f527",
           "note": "wake: rig only, disc (no mesh in frame)"
         },
@@ -1558,8 +1557,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_brigantine/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_brigantine/ship_brigantine_wake.png"
+        "render_sidecar": "plates/ships/ship_brigantine/sidecar.json",
+        "source_path": "plates/ships/ship_brigantine/ship_brigantine_wake.png"
       }
     },
     {
@@ -1598,7 +1597,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1614,8 +1613,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f0.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f0.png"
       }
     },
     {
@@ -1654,7 +1653,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1670,8 +1669,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f1.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f1.png"
       }
     },
     {
@@ -1710,7 +1709,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1726,8 +1725,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f2.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f2.png"
       }
     },
     {
@@ -1766,7 +1765,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1782,8 +1781,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f3.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f3.png"
       }
     },
     {
@@ -1822,7 +1821,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1838,8 +1837,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f4.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f4.png"
       }
     },
     {
@@ -1878,7 +1877,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1894,8 +1893,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f5.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f5.png"
       }
     },
     {
@@ -1934,7 +1933,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -1950,8 +1949,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f6.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f6.png"
       }
     },
     {
@@ -1990,7 +1989,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": null
         },
@@ -2006,8 +2005,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_f7.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_f7.png"
       }
     },
     {
@@ -2046,7 +2045,7 @@
       "provenance": {
         "mesh": {
           "hull": "galleon",
-          "file": "pb-002-plates/meshes/galleon__01-pristine__sails-open.glb",
+          "file": "plates/meshes/galleon__01-pristine__sails-open.glb",
           "sha256": "b46f3ab4ba94a8b4af3b6295ab4f9e1b06855c160a27332f6195181824bbd9ec",
           "note": "wake: rig only, disc (no mesh in frame)"
         },
@@ -2062,8 +2061,8 @@
           "verifier": "retrieval-ships.md: 36 PASS / 0 FAIL",
           "andon_profile": "andon-chart-profile.md Rev 1 (ship) + art-gate Addenda B/C"
         },
-        "render_sidecar": "pb-002-plates/ships/ship_galleon/sidecar.json",
-        "source_path": "pb-002-plates/ships/ship_galleon/ship_galleon_wake.png"
+        "render_sidecar": "plates/ships/ship_galleon/sidecar.json",
+        "source_path": "plates/ships/ship_galleon/ship_galleon_wake.png"
       }
     },
     {
@@ -2139,8 +2138,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/ground/water_a.render.json",
-        "source_path": "pb-002-plates/ground/water_a.png"
+        "render_sidecar": "plates/ground/water_a.render.json",
+        "source_path": "plates/ground/water_a.png"
       }
     },
     {
@@ -2216,8 +2215,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/ground/water_b.render.json",
-        "source_path": "pb-002-plates/ground/water_b.png"
+        "render_sidecar": "plates/ground/water_b.render.json",
+        "source_path": "plates/ground/water_b.png"
       }
     },
     {
@@ -2293,8 +2292,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/ground/water_c.render.json",
-        "source_path": "pb-002-plates/ground/water_c.png"
+        "render_sidecar": "plates/ground/water_c.render.json",
+        "source_path": "plates/ground/water_c.png"
       }
     },
     {
@@ -2373,8 +2372,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0001.render.json",
-        "source_path": "pb-002-plates/quay/quay_0001.png"
+        "render_sidecar": "plates/quay/quay_0001.render.json",
+        "source_path": "plates/quay/quay_0001.png"
       }
     },
     {
@@ -2453,8 +2452,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0010.render.json",
-        "source_path": "pb-002-plates/quay/quay_0010.png"
+        "render_sidecar": "plates/quay/quay_0010.render.json",
+        "source_path": "plates/quay/quay_0010.png"
       }
     },
     {
@@ -2533,8 +2532,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0011.render.json",
-        "source_path": "pb-002-plates/quay/quay_0011.png"
+        "render_sidecar": "plates/quay/quay_0011.render.json",
+        "source_path": "plates/quay/quay_0011.png"
       }
     },
     {
@@ -2613,8 +2612,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0100.render.json",
-        "source_path": "pb-002-plates/quay/quay_0100.png"
+        "render_sidecar": "plates/quay/quay_0100.render.json",
+        "source_path": "plates/quay/quay_0100.png"
       }
     },
     {
@@ -2693,8 +2692,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0101.render.json",
-        "source_path": "pb-002-plates/quay/quay_0101.png"
+        "render_sidecar": "plates/quay/quay_0101.render.json",
+        "source_path": "plates/quay/quay_0101.png"
       }
     },
     {
@@ -2773,8 +2772,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0110.render.json",
-        "source_path": "pb-002-plates/quay/quay_0110.png"
+        "render_sidecar": "plates/quay/quay_0110.render.json",
+        "source_path": "plates/quay/quay_0110.png"
       }
     },
     {
@@ -2853,8 +2852,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_0111.render.json",
-        "source_path": "pb-002-plates/quay/quay_0111.png"
+        "render_sidecar": "plates/quay/quay_0111.render.json",
+        "source_path": "plates/quay/quay_0111.png"
       }
     },
     {
@@ -2933,8 +2932,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1000.render.json",
-        "source_path": "pb-002-plates/quay/quay_1000.png"
+        "render_sidecar": "plates/quay/quay_1000.render.json",
+        "source_path": "plates/quay/quay_1000.png"
       }
     },
     {
@@ -3013,8 +3012,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1001.render.json",
-        "source_path": "pb-002-plates/quay/quay_1001.png"
+        "render_sidecar": "plates/quay/quay_1001.render.json",
+        "source_path": "plates/quay/quay_1001.png"
       }
     },
     {
@@ -3093,8 +3092,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1010.render.json",
-        "source_path": "pb-002-plates/quay/quay_1010.png"
+        "render_sidecar": "plates/quay/quay_1010.render.json",
+        "source_path": "plates/quay/quay_1010.png"
       }
     },
     {
@@ -3173,8 +3172,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1011.render.json",
-        "source_path": "pb-002-plates/quay/quay_1011.png"
+        "render_sidecar": "plates/quay/quay_1011.render.json",
+        "source_path": "plates/quay/quay_1011.png"
       }
     },
     {
@@ -3253,8 +3252,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1100.render.json",
-        "source_path": "pb-002-plates/quay/quay_1100.png"
+        "render_sidecar": "plates/quay/quay_1100.render.json",
+        "source_path": "plates/quay/quay_1100.png"
       }
     },
     {
@@ -3333,8 +3332,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1101.render.json",
-        "source_path": "pb-002-plates/quay/quay_1101.png"
+        "render_sidecar": "plates/quay/quay_1101.render.json",
+        "source_path": "plates/quay/quay_1101.png"
       }
     },
     {
@@ -3413,8 +3412,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1110.render.json",
-        "source_path": "pb-002-plates/quay/quay_1110.png"
+        "render_sidecar": "plates/quay/quay_1110.render.json",
+        "source_path": "plates/quay/quay_1110.png"
       }
     },
     {
@@ -3493,8 +3492,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/quay/quay_1111.render.json",
-        "source_path": "pb-002-plates/quay/quay_1111.png"
+        "render_sidecar": "plates/quay/quay_1111.render.json",
+        "source_path": "plates/quay/quay_1111.png"
       }
     },
     {
@@ -3573,8 +3572,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UL_DR.render.json",
-        "source_path": "pb-002-plates/pier/pier_UL_DR.png"
+        "render_sidecar": "plates/pier/pier_UL_DR.render.json",
+        "source_path": "plates/pier/pier_UL_DR.png"
       }
     },
     {
@@ -3653,8 +3652,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UR_DL.render.json",
-        "source_path": "pb-002-plates/pier/pier_UR_DL.png"
+        "render_sidecar": "plates/pier/pier_UR_DL.render.json",
+        "source_path": "plates/pier/pier_UR_DL.png"
       }
     },
     {
@@ -3733,8 +3732,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UL.render.json",
-        "source_path": "pb-002-plates/pier/pier_UL.png"
+        "render_sidecar": "plates/pier/pier_UL.render.json",
+        "source_path": "plates/pier/pier_UL.png"
       }
     },
     {
@@ -3813,8 +3812,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UR.render.json",
-        "source_path": "pb-002-plates/pier/pier_UR.png"
+        "render_sidecar": "plates/pier/pier_UR.render.json",
+        "source_path": "plates/pier/pier_UR.png"
       }
     },
     {
@@ -3893,8 +3892,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_DR.render.json",
-        "source_path": "pb-002-plates/pier/pier_DR.png"
+        "render_sidecar": "plates/pier/pier_DR.render.json",
+        "source_path": "plates/pier/pier_DR.png"
       }
     },
     {
@@ -3973,8 +3972,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_DL.render.json",
-        "source_path": "pb-002-plates/pier/pier_DL.png"
+        "render_sidecar": "plates/pier/pier_DL.render.json",
+        "source_path": "plates/pier/pier_DL.png"
       }
     },
     {
@@ -4053,8 +4052,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UL_UR_DR.render.json",
-        "source_path": "pb-002-plates/pier/pier_UL_UR_DR.png"
+        "render_sidecar": "plates/pier/pier_UL_UR_DR.render.json",
+        "source_path": "plates/pier/pier_UL_UR_DR.png"
       }
     },
     {
@@ -4133,8 +4132,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UR_DR_DL.render.json",
-        "source_path": "pb-002-plates/pier/pier_UR_DR_DL.png"
+        "render_sidecar": "plates/pier/pier_UR_DR_DL.render.json",
+        "source_path": "plates/pier/pier_UR_DR_DL.png"
       }
     },
     {
@@ -4213,8 +4212,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_DR_DL_UL.render.json",
-        "source_path": "pb-002-plates/pier/pier_DR_DL_UL.png"
+        "render_sidecar": "plates/pier/pier_DR_DL_UL.render.json",
+        "source_path": "plates/pier/pier_DR_DL_UL.png"
       }
     },
     {
@@ -4293,8 +4292,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_DL_UL_UR.render.json",
-        "source_path": "pb-002-plates/pier/pier_DL_UL_UR.png"
+        "render_sidecar": "plates/pier/pier_DL_UL_UR.render.json",
+        "source_path": "plates/pier/pier_DL_UL_UR.png"
       }
     },
     {
@@ -4373,8 +4372,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/pier/pier_UL_UR_DR_DL.render.json",
-        "source_path": "pb-002-plates/pier/pier_UL_UR_DR_DL.png"
+        "render_sidecar": "plates/pier/pier_UL_UR_DR_DL.render.json",
+        "source_path": "plates/pier/pier_UL_UR_DR_DL.png"
       }
     },
     {
@@ -4453,8 +4452,8 @@
           "art_director": "art-gate.md Addendum E (05:20 ET): PASS, 30 will-use; Addendum E.1 (05:25 ET): seams Pass under Godot sRGB, hdr_2d=false",
           "verifier": "retrieval-harbour.md: 30 PASS / 0 FAIL on iso_andon v0.1.1"
         },
-        "render_sidecar": "pb-002-plates/props/pier_pilings_1x1.render.json",
-        "source_path": "pb-002-plates/props/pier_pilings_1x1.png"
+        "render_sidecar": "plates/props/pier_pilings_1x1.render.json",
+        "source_path": "plates/props/pier_pilings_1x1.png"
       }
     },
     {
@@ -4498,7 +4497,7 @@
         "premult_alpha": false,
         "compress": "Lossless",
         "size_limit": 0,
-        "source": "pb-002-plates/chart/chart_water_a.png.import (agrees with asset-spec Rev 4 R11)"
+        "source": "plates/chart/chart_water_a.png.import (agrees with asset-spec Rev 4 R11)"
       },
       "provenance": {
         "mesh": null,
@@ -4537,9 +4536,9 @@
           "art_director": "art-gate.md Addendum F (06:35 ET): chart set PASS, 4 will-use (marker mipmaps OFF)",
           "verifier": "retrieval-chart.md: 4 PASS / 0 FAIL (chart profile Rev 1, simulated), '\u2705 Builder may land'"
         },
-        "render_sidecar": "pb-002-plates/chart/chart_water_a.render.json",
-        "import_sidecar": "pb-002-plates/chart/chart_water_a.png.import",
-        "source_path": "pb-002-plates/chart/chart_water_a.png"
+        "render_sidecar": "plates/chart/chart_water_a.render.json",
+        "import_sidecar": "plates/chart/chart_water_a.png.import",
+        "source_path": "plates/chart/chart_water_a.png"
       }
     },
     {
@@ -4583,7 +4582,7 @@
         "premult_alpha": false,
         "compress": "Lossless",
         "size_limit": 0,
-        "source": "pb-002-plates/chart/chart_water_b.png.import (agrees with asset-spec Rev 4 R11)"
+        "source": "plates/chart/chart_water_b.png.import (agrees with asset-spec Rev 4 R11)"
       },
       "provenance": {
         "mesh": null,
@@ -4622,9 +4621,9 @@
           "art_director": "art-gate.md Addendum F (06:35 ET): chart set PASS, 4 will-use (marker mipmaps OFF)",
           "verifier": "retrieval-chart.md: 4 PASS / 0 FAIL (chart profile Rev 1, simulated), '\u2705 Builder may land'"
         },
-        "render_sidecar": "pb-002-plates/chart/chart_water_b.render.json",
-        "import_sidecar": "pb-002-plates/chart/chart_water_b.png.import",
-        "source_path": "pb-002-plates/chart/chart_water_b.png"
+        "render_sidecar": "plates/chart/chart_water_b.render.json",
+        "import_sidecar": "plates/chart/chart_water_b.png.import",
+        "source_path": "plates/chart/chart_water_b.png"
       }
     },
     {
@@ -4668,7 +4667,7 @@
         "premult_alpha": false,
         "compress": "Lossless",
         "size_limit": 0,
-        "source": "pb-002-plates/chart/chart_water_c.png.import (agrees with asset-spec Rev 4 R11)"
+        "source": "plates/chart/chart_water_c.png.import (agrees with asset-spec Rev 4 R11)"
       },
       "provenance": {
         "mesh": null,
@@ -4707,9 +4706,9 @@
           "art_director": "art-gate.md Addendum F (06:35 ET): chart set PASS, 4 will-use (marker mipmaps OFF)",
           "verifier": "retrieval-chart.md: 4 PASS / 0 FAIL (chart profile Rev 1, simulated), '\u2705 Builder may land'"
         },
-        "render_sidecar": "pb-002-plates/chart/chart_water_c.render.json",
-        "import_sidecar": "pb-002-plates/chart/chart_water_c.png.import",
-        "source_path": "pb-002-plates/chart/chart_water_c.png"
+        "render_sidecar": "plates/chart/chart_water_c.render.json",
+        "import_sidecar": "plates/chart/chart_water_c.png.import",
+        "source_path": "plates/chart/chart_water_c.png"
       }
     },
     {
@@ -4753,7 +4752,7 @@
         "premult_alpha": false,
         "compress": "Lossless",
         "size_limit": 0,
-        "source": "pb-002-plates/chart/chart_port_marker.png.import (agrees with asset-spec Rev 4 R11)"
+        "source": "plates/chart/chart_port_marker.png.import (agrees with asset-spec Rev 4 R11)"
       },
       "provenance": {
         "mesh": null,
@@ -4792,9 +4791,9 @@
           "art_director": "art-gate.md Addendum F (06:35 ET): chart set PASS, 4 will-use (marker mipmaps OFF)",
           "verifier": "retrieval-chart.md: 4 PASS / 0 FAIL (chart profile Rev 1, simulated), '\u2705 Builder may land'"
         },
-        "render_sidecar": "pb-002-plates/chart/chart_port_marker.render.json",
-        "import_sidecar": "pb-002-plates/chart/chart_port_marker.png.import",
-        "source_path": "pb-002-plates/chart/chart_port_marker.png"
+        "render_sidecar": "plates/chart/chart_port_marker.render.json",
+        "import_sidecar": "plates/chart/chart_port_marker.png.import",
+        "source_path": "plates/chart/chart_port_marker.png"
       }
     },
     {
@@ -4887,10 +4886,10 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum W.3 (2026-09-29): PASS, quay_flag_w2 a/b/c plate check (Addendum W.2 \u00a71 retone of the V.2 painterly v5p bytes); placement Addendum U.4",
-          "verifier": "grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS"
+          "verifier": "verifier/quay_flag_painterly_results.json; spec/retrieval-quay_flag_painterly.md 3/3 PASS"
         },
-        "render_sidecar": "pb-002-plates/ground/quay_flag_a.render.json",
-        "source_path": "pb-002-plates/ground/quay_flag_a.png"
+        "render_sidecar": "plates/ground/quay_flag_a.render.json",
+        "source_path": "plates/ground/quay_flag_a.png"
       }
     },
     {
@@ -4983,10 +4982,10 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum W.3 (2026-09-29): PASS, quay_flag_w2 a/b/c plate check (Addendum W.2 \u00a71 retone of the V.2 painterly v5p bytes); placement Addendum U.4",
-          "verifier": "grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS"
+          "verifier": "verifier/quay_flag_painterly_results.json; spec/retrieval-quay_flag_painterly.md 3/3 PASS"
         },
-        "render_sidecar": "pb-002-plates/ground/quay_flag_b.render.json",
-        "source_path": "pb-002-plates/ground/quay_flag_b.png"
+        "render_sidecar": "plates/ground/quay_flag_b.render.json",
+        "source_path": "plates/ground/quay_flag_b.png"
       }
     },
     {
@@ -5079,10 +5078,10 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum W.3 (2026-09-29): PASS, quay_flag_w2 a/b/c plate check (Addendum W.2 \u00a71 retone of the V.2 painterly v5p bytes); placement Addendum U.4",
-          "verifier": "grok-bot-verifier/PB-002/quay_flag_painterly_results.json; outbox-PB-002/retrieval-quay_flag_painterly.md 3/3 PASS"
+          "verifier": "verifier/quay_flag_painterly_results.json; spec/retrieval-quay_flag_painterly.md 3/3 PASS"
         },
-        "render_sidecar": "pb-002-plates/ground/quay_flag_c.render.json",
-        "source_path": "pb-002-plates/ground/quay_flag_c.png"
+        "render_sidecar": "plates/ground/quay_flag_c.render.json",
+        "source_path": "plates/ground/quay_flag_c.png"
       }
     },
     {
@@ -5156,11 +5155,11 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
-          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "verifier": "verifier/harbour_props_results.json; spec/retrieval-harbour_props.md 5/5 PASS",
           "y1a_sha_lock": "9ed994925f8ff489c3ec73d6aa9464d16332978cf4e8014f4c1f83a606d57af9"
         },
-        "render_sidecar": "pb-002-plates/props/bollard_1x1/beauty.render.json",
-        "source_path": "pb-002-plates/props/bollard_1x1/beauty.png"
+        "render_sidecar": "plates/props/bollard_1x1/beauty.render.json",
+        "source_path": "plates/props/bollard_1x1/beauty.png"
       }
     },
     {
@@ -5230,11 +5229,11 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
-          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "verifier": "verifier/harbour_props_results.json; spec/retrieval-harbour_props.md 5/5 PASS",
           "y1a_sha_lock": "9b47c0a242aac8434f87a59aaff30e91aeb16d83bdf234d0b6dfdef0fe124441"
         },
-        "render_sidecar": "pb-002-plates/props/torch_1x1/beauty.render.json",
-        "source_path": "pb-002-plates/props/torch_1x1/beauty.png"
+        "render_sidecar": "plates/props/torch_1x1/beauty.render.json",
+        "source_path": "plates/props/torch_1x1/beauty.png"
       }
     },
     {
@@ -5304,11 +5303,11 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
-          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "verifier": "verifier/harbour_props_results.json; spec/retrieval-harbour_props.md 5/5 PASS",
           "y1a_sha_lock": "d9b98a098a2b3bcbdabbcec0d015c4198e19a8fa017ab01dac26a6e45f20690a"
         },
-        "render_sidecar": "pb-002-plates/props/barrel_1x1/beauty.render.json",
-        "source_path": "pb-002-plates/props/barrel_1x1/beauty.png"
+        "render_sidecar": "plates/props/barrel_1x1/beauty.render.json",
+        "source_path": "plates/props/barrel_1x1/beauty.png"
       }
     },
     {
@@ -5382,11 +5381,11 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
-          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "verifier": "verifier/harbour_props_results.json; spec/retrieval-harbour_props.md 5/5 PASS",
           "y1a_sha_lock": "8d7161050c8185e489a18677e1951edee0262674e663895d21980b44854f13f6"
         },
-        "render_sidecar": "pb-002-plates/props/crate_1x1/beauty.render.json",
-        "source_path": "pb-002-plates/props/crate_1x1/beauty.png"
+        "render_sidecar": "plates/props/crate_1x1/beauty.render.json",
+        "source_path": "plates/props/crate_1x1/beauty.png"
       }
     },
     {
@@ -5456,11 +5455,11 @@
         },
         "gate": {
           "art_director": "art-gate.md Addendum Y.1.a (2026-10-05): PASS amend, 5 Phase-2 will-use props vendor",
-          "verifier": "grok-bot-verifier/PB-002/harbour_props_results.json; outbox-PB-002/retrieval-harbour_props.md 5/5 PASS",
+          "verifier": "verifier/harbour_props_results.json; spec/retrieval-harbour_props.md 5/5 PASS",
           "y1a_sha_lock": "df4b6553025bdb11dcdbbbc42627e9155259a942600543f62675de6a7452b7c9"
         },
-        "render_sidecar": "pb-002-plates/props/cart_1x1/beauty.render.json",
-        "source_path": "pb-002-plates/props/cart_1x1/beauty.png"
+        "render_sidecar": "plates/props/cart_1x1/beauty.render.json",
+        "source_path": "plates/props/cart_1x1/beauty.png"
       }
     }
   ]

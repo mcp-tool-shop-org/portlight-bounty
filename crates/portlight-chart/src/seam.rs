@@ -318,16 +318,25 @@ fn pier_path(id: &str) -> &'static str {
     }
 }
 
+/// Shipped Phase-2 will-use prop plates (ai-rpg-stage).
+#[cfg(test)]
+pub(crate) const HARBOUR_PROP_IDS: [&str; 5] = [
+    "bollard_1x1",
+    "torch_1x1",
+    "barrel_1x1",
+    "crate_1x1",
+    "cart_1x1",
+];
+
 /// Shipped Phase-2 will-use prop plates (ai-rpg-stage). Paths match the
 /// landing `props/<id>/beauty.png` convention used by `pier_pilings_1x1`.
-fn prop_path(id: &str) -> &'static str {
+pub(crate) fn prop_path(id: &str) -> &'static str {
     match id {
         "bollard_1x1" => "res://assets/landing/props/bollard_1x1/beauty.png",
         "torch_1x1" => "res://assets/landing/props/torch_1x1/beauty.png",
         "barrel_1x1" => "res://assets/landing/props/barrel_1x1/beauty.png",
         "crate_1x1" => "res://assets/landing/props/crate_1x1/beauty.png",
         "cart_1x1" => "res://assets/landing/props/cart_1x1/beauty.png",
-        "well_1x1" => "res://assets/landing/props/well_1x1/beauty.png",
         _ => panic!("unknown harbour prop id {id}"),
     }
 }

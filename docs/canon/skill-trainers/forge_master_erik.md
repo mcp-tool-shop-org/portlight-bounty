@@ -16,10 +16,10 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Region | North Atlantic | C:559 |
 | Teaches up to | level 3 (Master) | C:5403 |
 | Silver and days for the levels taught | Apprentice 50 silver, 3 days; Journeyman 150 silver, 5 days; Master 400 silver, 8 days | C:5374, C:5381, C:5388 |
-| Port has the shipyard feature | yes (the skill's training_port_feature is shipyard; the sim does not read it) | C:560; C:5370; skills.rs:51 |
+| Port has the shipyard feature | yes (the skill's training_port_feature is shipyard; checked in skills::can_learn_skill, DF-39 resolved) | C:560; C:5370; skills.rs:51 |
 | Player sees today | the trainer's name in the skill line, '(teaches to 3)', and the next level's cost and days; never the description or dialog | logic.rs:2063-2128 |
-| Not shown | description, dialog | no reader in the crates (section 2) |
-| Mechanic status | the trainer's port and teaching level are live (they gate the skill); the text is [flavour, no mechanic] | skills.rs:32-82; DF-39 |
+| Trainer text on desk | trainer description, dialog, and level description are shown on the Crew desk (DF-39 resolved) | logic.rs; game.rs |
+| Mechanic status | trainer port, 	raining_port_feature, teaching level, and Blacksmithing maintain/upgrade discounts are live (DF-39 resolved) | skills.rs:32-95; session.rs |
 | Python record | same strings (compared field by field, no differences); Python's learn-skill command prints the trainer name and dialog | portlight@9b02494 src/portlight/content/skills.py:103; src/portlight/app/cli.py:2733-2760 |
 
 ## 1. Grounded facts (every data line quoted)
@@ -66,6 +66,6 @@ Quotes are as in content.json.
 
 ## 7. Flags and open questions
 
-- DF-39 (trainer text unread; skill training_port_feature is data only): see ../data-fixes.md. DF-40 (the skill notice prints a raw id).
-- Title overlap: 'Forge Master' is also Henrik Brandt's title (C:7983); resolved in lore as a craft and an office. Given-name overlap: Erik Strand at Thornport (C:8533) is a different person (DF-37).
+- DF-39 (resolved: trainer text, 	raining_port_feature, and Blacksmithing maintain/upgrade routes wired): see ../data-fixes.md. DF-40 (resolved: catalog name in skill notice and empty-trainer line).
+- Title overlap: 'Forge Master' is also Henrik Brandt's title (C:7983); resolved in lore as a craft and an office. Given-name overlap: Erik Strand at Thornport (C:8533) is a different person (DF-37 resolved).
 - Wiring trainer text into the desk is out of scope for canon; it is a design decision.

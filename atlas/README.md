@@ -1,16 +1,16 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-18 from commit 4f509e7 by Atlas 1.23.0.
+Mapped at 2026-10-18 from commit 30fd2dd by Atlas 1.24.0.
 
 ## What this is
 
 12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-18 (c068ce4)
+## What changed since 2026-10-18 (4f509e7)
 
-- CI now also runs crates/portlight-cli/ and crates/portlight-sim/src/error.rs.
-- godot/ is now also read by README.es.md, README.fr.md, README.hi.md, README.it.md, README.ja.md, README.pt-BR.md and README.zh.md.
-- 7 files added and 7 changed content, across 4 parts.
+- godot/ is now also read by CONTRIBUTING.md.
+- tools/build_manifest_pb002.py is now also read by godot/assets/landing/MANIFEST.json and tools/build_manifest_pb002.py.
+- 16 files removed and 91 changed content, across 12 parts.
 
 ## What comes in
 
@@ -113,7 +113,7 @@ Read those in order to follow one run of gen_placeholders end to end. This path 
 - 1 write goes to places this repository does not track, so it is not listed as generated.
 - 7 writes and 15 reads go to a path their caller passes, not to this repository.
 - 1 write and 1 read go to a temporary directory, not to this repository.
-- 4 files belong to no part: playtest/README.md, playtest/_plumbing-fixture.playtest.json, playtest/portlight-godot.playtest.json and 1 more.
+- 3 files belong to no part: playtest/README.md, playtest/portlight-godot.playtest.json and playtest/probe-bridge.mjs.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
 Regenerate with `npx --yes @dogfood-lab/atlas map`.

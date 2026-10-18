@@ -1,4 +1,4 @@
-# Tane (tane_warrior)
+# Outfitter Tane (tane_warrior)
 
 Base commit: d2b544f (main, which includes phases 6A and 6B; content.json, the sim and the godot UI as cited are unchanged since 515a488). Status: draft canon, phase 6. Written 2026-10-17. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n at d2b544f. Python cites read portlight@9b02494 path:line. Legend: [exists] code or data fact with a cite | [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | UNVERIFIED | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
@@ -9,7 +9,7 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 
 | Key | Value | Cite |
 |---|---|---|
-| Catalog name | Tane | C:6047 |
+| Catalog name | Outfitter Tane (DF-37 resolved) | C:6047 |
 | Title | Warrior Outfitter | C:6049 |
 | Home port | [Coral Throne](../ports/coral_throne.md) | C:6048 |
 | Bloc of the home port | [The Coral Crown](../factions/coral_crown.md) | ports/coral_throne.md section 0 |
@@ -19,9 +19,8 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Markup | x1.08 (+8% in Python's merchant list) | C:6057; portlight@9b02494 src/portlight/app/combat_views.py:740 |
 | Items in stock at this port today | 8 (section 1) | session.rs:3553-3609 |
 | Cheapest and dearest, at markup | Sling 5 silver; Kris 43 silver | section 1 table |
-| Player sees today | nothing: no gear shop in the Godot build | rg of crates/portlight-godot/src finds no reader; script.rs:422-428 |
-| Not shown | name, title, description, greeting, personality, stock, prices | no reader in the crates (section 2) |
-| Mechanic status | name, port, types and markup are live in the sim (script and tests only); personality, description, greeting and title are [flavour, no mechanic] | session.rs:3209-3245; content.rs:376-386 |
+| Player sees today | the Godot Crew desk Armoury section (SECTION_GEAR): name, title, personality, markup, description, greeting, and regional stock rows with Buy buttons (DF-46 resolved) | crew_screen.rs; logic.rs; game.rs |
+| Mechanic status | name, port, title, personality, description, greeting, types, and markup are live in merchant.rs, Session::buy_gear, and the Godot Crew desk (DF-46 resolved) | merchant.rs:15-85; session.rs; logic.rs |
 | Python record | same strings (compared field by field, no differences); Python's merchant command lists the greeting, types and markup, and sells | portlight@9b02494 src/portlight/content/merchants.py:181; src/portlight/app/cli.py:1072-1136 |
 
 ## 1. Grounded facts (every data line quoted) and the stock
@@ -86,6 +85,6 @@ Stock at Coral Throne, computed at the base commit: every catalog item of a type
 
 ## 7. Flags and open questions
 
-- DF-46 (merchants never reach Godot; no reader for their text), DF-47 (coverage gaps): see ../data-fixes.md.
-- DF-44 (resolved): War Chief Tane's agenda now says weapons are dear at Coral Throne via `COPY_OVERRIDES` in tools/extract_content.py; this shop's markup is 1.08. DF-37: same-port namesake. Given-name overlap: officer name Tane (officers/south_seas.md; DF-38).
+- DF-46 (resolved: Armoury section and merchant text/stock wired on the Godot Crew desk), DF-47 (coverage gaps): see ../data-fixes.md.
+- DF-44 (resolved): War Chief Tane's agenda now says weapons are dear at Coral Throne via `COPY_OVERRIDES` in tools/extract_content.py; this shop's markup is 1.08. DF-37 (resolved): same-port namesake. Given-name overlap: officer name Tane (officers/south_seas.md; DF-38).
 - Building a shop, or showing any merchant text, is out of scope for canon; it is a design decision.

@@ -31,6 +31,7 @@ Due contratti attivi sulla mappa. I numeri indicano la quantità di merci conseg
 
 ```
 cargo build -p portlight-godot
+godot --headless --path godot --import --quit
 godot --path godot
 ```
 

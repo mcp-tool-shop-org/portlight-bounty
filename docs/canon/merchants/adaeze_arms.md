@@ -19,9 +19,8 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Markup | x1.08 (+8% in Python's merchant list) | C:5973; portlight@9b02494 src/portlight/app/combat_views.py:740 |
 | Items in stock at this port today | 9 (section 1) | session.rs:3553-3609 |
 | Cheapest and dearest, at markup | Pistol Shot & Powder 5 silver; Brigandine 97 silver | section 1 table |
-| Player sees today | nothing: no gear shop in the Godot build | rg of crates/portlight-godot/src finds no reader; script.rs:422-428 |
-| Not shown | name, title, description, greeting, personality, stock, prices | no reader in the crates (section 2) |
-| Mechanic status | name, port, types and markup are live in the sim (script and tests only); personality, description, greeting and title are [flavour, no mechanic] | session.rs:3209-3245; content.rs:376-386 |
+| Player sees today | the Godot Crew desk Armoury section (SECTION_GEAR): name, title, personality, markup, description, greeting, and regional stock rows with Buy buttons (DF-46 resolved) | crew_screen.rs; logic.rs; game.rs |
+| Mechanic status | name, port, title, personality, description, greeting, types, and markup are live in merchant.rs, Session::buy_gear, and the Godot Crew desk (DF-46 resolved) | merchant.rs:15-85; session.rs; logic.rs |
 | Python record | same strings (compared field by field, no differences); Python's merchant command lists the greeting, types and markup, and sells | portlight@9b02494 src/portlight/content/merchants.py:109; src/portlight/app/cli.py:1072-1136 |
 
 ## 1. Grounded facts (every data line quoted) and the stock
@@ -88,6 +87,6 @@ Stock at Sun Harbor, computed at the base commit: every catalog item of a type t
 
 ## 7. Flags and open questions
 
-- DF-46 (merchants never reach Godot; no reader for their text), DF-47 (coverage gaps): see ../data-fixes.md.
+- DF-46 (resolved: Armoury section and merchant text/stock wired on the Godot Crew desk), DF-47 (coverage gaps): see ../data-fixes.md.
 - Given-name overlap: Adaeze is also an officer name in the West Africa pool (officers/west_africa.md; DF-38).
 - Building a shop, or showing any merchant text, is out of scope for canon; it is a design decision.

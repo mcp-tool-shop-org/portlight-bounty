@@ -718,6 +718,9 @@ impl Session {
                 .ok_or(SimError::MustBeDockedToHire)?;
             (port.crew_cost, port.region.clone())
         };
+        if count <= 0 {
+            return Err(SimError::QuantityMustBeAPositiveNumber);
+        }
         let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
         let space = ship::resolve_crew_max(ship) - ship.crew;
         if space <= 0 {
@@ -743,7 +746,7 @@ impl Session {
         } else {
             spec.wage * 10
         };
-        let cost = count * cost_per;
+        let cost = count.saturating_mul(cost_per);
         if cost > self.world.captain.silver {
             return Err(SimError::NeedCrewSilver {
                 cost,
@@ -788,7 +791,7 @@ impl Session {
             .provision_cost;
         let mult = reputation::service_modifier(&self.world.captain.standing, &port_id);
         let per_day = 1.max(py_trunc(provision_cost as f64 * mult));
-        let cost = days * per_day;
+        let cost = days.saturating_mul(per_day);
         if cost > self.world.captain.silver {
             return Err(SimError::NeedProvisions {
                 cost,
@@ -1494,6 +1497,9 @@ impl Session {
     /// `GameSession.fire_crew`. Specialists lose named officers from the end
     /// of the list. Sailors have no officer records.
     pub fn fire_crew(&mut self, count: i64, role: &str) -> Result<(), SimError> {
+        if count <= 0 {
+            return Err(SimError::QuantityMustBeAPositiveNumber);
+        }
         if current_port_id(&self.world).is_none() {
             return Err(SimError::Sentence("Must be docked to fire crew".into()));
         }
@@ -1578,7 +1584,7 @@ impl Session {
             .as_ref()
             .map(|ship| ship.crew)
             .unwrap_or(0);
-        let leftover = have - crew_to_prize;
+        let leftover = have.saturating_sub(crew_to_prize);
         if leftover < current_min {
             return Err(SimError::CannotCapture(format!(
                 "Would leave your flagship with {leftover} crew (need {current_min})."
@@ -7376,5 +7382,39 @@ mod bank_tests {
             .unwrap()
             .1;
         assert_eq!(wolves, -3);
+    }
+
+    #[test]
+    fn quantity_overflow_and_negative_inputs_return_errors_without_panicking() {
+        let mut s = Session::new("Ada", "merchant", 1, None).unwrap();
+        let max = i64::MAX;
+
+        assert!(s.buy("grain", max).is_err());
+        assert!(s.buy("grain", -1).is_err());
+        assert!(s.sell("grain", max).is_err());
+        assert!(s.sell("grain", -1).is_err());
+        assert!(s.provision(max).is_err());
+        assert!(s.provision(-1).is_err());
+        assert!(s.hire_crew(max, "sailor").is_ok()); // clamps to available ship space
+        assert!(s.hire_crew(max, "sailor").is_err()); // now CrewFull
+        assert!(s.hire_crew(-1, "sailor").is_err());
+        assert!(s.fire_crew(max, "sailor").is_ok()); // fires available sailors
+        assert!(s.fire_crew(-1, "sailor").is_err());
+        assert!(s.deposit_cargo("grain", max).is_err());
+        assert!(s.deposit_cargo("grain", -1).is_err());
+        assert!(s.withdraw_cargo("grain", max, None).is_err());
+        assert!(s.withdraw_cargo("grain", -1, None).is_err());
+        assert!(s.deposit_silver(max).is_err());
+        assert!(s.deposit_silver(-1).is_err());
+        assert!(s.withdraw_silver(max).is_err());
+        assert!(s.withdraw_silver(-1).is_err());
+        assert!(s.draw_letter("al_manar", max).is_err());
+        assert!(s.draw_letter("al_manar", -1).is_err());
+        assert!(s.take_credit("merchant_line", max).is_err());
+        assert!(s.repay_credit(max).is_err());
+        assert!(s.repay_credit(-1).is_err());
+        assert!(s.transfer_cargo("grain", max, "sloop", "sloop").is_err());
+        assert!(s.transfer_cargo("grain", -1, "sloop", "sloop").is_err());
+        assert!(s.capture(max).is_err());
     }
 }

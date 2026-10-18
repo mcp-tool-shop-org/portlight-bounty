@@ -17,4 +17,5 @@ Portlight Bounty is a public game. Issues and pull requests are welcome.
 
 ## Checks
 
-`scripts/verify.ps1` (or `scripts/verify.sh`) runs the sim tests, builds the CLI, and checks `--help`. The Godot frame compare stays on the Linux CI job. Say so if you could not run it.
+`scripts/verify.ps1` (or `scripts/verify.sh`) runs the sim tests (both default and `--features python-base`), runs `cargo clippy -- -D warnings`, builds the CLI, and checks `--help`. Before launching or testing the Godot project on a fresh clone, run `godot --headless --path godot --import --quit` so `.godot/imported/` is populated. The Godot frame compare stays on the Linux CI job. Say so if you could not run it.
+

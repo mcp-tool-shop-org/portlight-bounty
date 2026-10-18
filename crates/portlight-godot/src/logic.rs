@@ -36,6 +36,24 @@ pub(crate) fn layout_fits_window() -> bool {
 /// Empty strings are dropped. A missing voyage line adds nothing. Notes sit
 /// with the day's events so upkeep, seizure, default, and claim text are not
 /// discarded before the docked or at-sea line.
+/// Sanitizes a sim `VoyageEvent` message for the Godot chart log:
+/// collapses doubled `"of the The "` when a faction's display name already
+/// starts with `"The "` (e.g., `"The Iron Wolves"`), and replaces the CLI
+/// `"Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds)."`
+/// prompt with Godot chart copy.
+pub(crate) fn clean_event_message(message: &str) -> String {
+    message
+        .replace(" of the The ", " of the ")
+        .replace(
+            "Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds).",
+            "Pick stances on the chart, or auto-resolve.",
+        )
+        .replace(
+            "Use portlight duel <stance> to fight (thrust/slash/parry, 5 rounds).",
+            "Pick stances on the chart, or auto-resolve.",
+        )
+}
+
 pub(crate) fn day_log_lines(
     event_messages: &[String],
     shocks: &[String],
@@ -44,10 +62,10 @@ pub(crate) fn day_log_lines(
 ) -> Vec<String> {
     let mut lines: Vec<String> = event_messages
         .iter()
-        .chain(shocks.iter())
-        .chain(notes.iter())
+        .map(|msg| clean_event_message(msg))
+        .chain(shocks.iter().cloned())
+        .chain(notes.iter().cloned())
         .filter(|line| !line.is_empty())
-        .cloned()
         .collect();
     if let Some(line) = voyage_line.filter(|line| !line.is_empty()) {
         lines.push(line.to_string());
@@ -2739,8 +2757,15 @@ pub(crate) fn duel_prompt(duel: &portlight_sim::model::PendingDuel) -> String {
 }
 
 /// R11. One log line for a finished duel, zero terms dropped (R4).
-/// `result` is `Won`, `Drew` or `Lost`.
-pub(crate) fn duel_result_line(result: &str, opponent: &str, silver: i64, standing: i64) -> String {
+/// `result` is `Won`, `Drew` or `Lost`. `standing` is not applied by
+/// `Session::duel` / `Session::resolve_pending_duel`, so it is omitted from
+/// player copy rather than printed with a debug disclaimer.
+pub(crate) fn duel_result_line(
+    result: &str,
+    opponent: &str,
+    silver: i64,
+    _standing: i64,
+) -> String {
     let mut line = if opponent.is_empty() {
         format!("{result} the duel.")
     } else {
@@ -2748,9 +2773,6 @@ pub(crate) fn duel_result_line(result: &str, opponent: &str, silver: i64, standi
     };
     if silver != 0 {
         line.push_str(&format!(" Silver {silver:+}."));
-    }
-    if standing != 0 {
-        line.push_str(&format!(" Standing {standing:+}, shown only."));
     }
     line
 }
@@ -5046,7 +5068,7 @@ mod tests {
     fn duel_result_line_drops_zero_terms() {
         assert_eq!(
             duel_result_line("Won", "Bram", 40, 1),
-            "Won the duel with Bram. Silver +40. Standing +1, shown only."
+            "Won the duel with Bram. Silver +40."
         );
         assert_eq!(
             duel_result_line("Lost", "Bram", -36, 0),
@@ -5056,16 +5078,31 @@ mod tests {
             duel_result_line("Drew", "Bram", 0, 0),
             "Drew the duel with Bram."
         );
-        assert_eq!(
-            duel_result_line("Won", "", 0, 2),
-            "Won the duel. Standing +2, shown only."
-        );
+        assert_eq!(duel_result_line("Won", "", 0, 2), "Won the duel.");
         for line in [
             duel_result_line("Lost", "Bram", -36, 0),
             duel_result_line("Won", "Bram", 0, 0),
+            duel_result_line("Won", "Bram", 40, 1),
         ] {
             assert!(!line.contains("+0"), "{line}");
+            assert!(!line.contains("shown only"), "{line}");
         }
+        let cleaned = day_log_lines(
+            &[
+                "Gnaw of the The Iron Wolves blocks your path and demands a duel! Use [bold]portlight duel <stance>[/bold] to fight (thrust/slash/parry, 5 rounds)."
+                    .to_string(),
+            ],
+            &[],
+            &[],
+            None,
+        );
+        assert_eq!(
+            cleaned,
+            vec![
+                "Gnaw of the Iron Wolves blocks your path and demands a duel! Pick stances on the chart, or auto-resolve."
+                    .to_string()
+            ]
+        );
     }
 
     #[test]

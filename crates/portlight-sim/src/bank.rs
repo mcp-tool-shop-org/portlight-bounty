@@ -43,7 +43,7 @@ pub fn local_fee(amount: i64) -> i64 {
 
 /// 5% of `amount`, rounded down, at least 5.
 pub fn letter_fee(amount: i64) -> i64 {
-    (amount * 5 / 100).max(5)
+    (amount.max(0) / 20).max(5)
 }
 
 pub fn balance_at(state: &InfrastructureRecord, port_id: &str) -> i64 {

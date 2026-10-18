@@ -65,7 +65,7 @@ Contract templates touching West Africa: `proc_grain_feed` (procurement), `proc_
 - Network (tavern, allied): Mama Joy - Yusuf Diallo, linking Palm Cove (C:11544). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (broker, allied): Kamala Nair - Fatou Ndiaye, linking Monsoon Reach (C:11616). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Ama Mensah (C:12858).
-- Hire and training canon (links only): [Dr. Amara](../companions/dr_amara.md) (companion, Surgeon); [Kolo the Fist](../style-masters/kolo_the_fist.md) (style master, Dambe); [Adaeze](../merchants/adaeze_arms.md) (merchant, Arms Dealer).
+- Hire and training canon (links only): [Dr. Amara Osei](../companions/dr_amara.md) (companion, Surgeon); [Kolo the Fist](../style-masters/kolo_the_fist.md) (style master, Dambe); [Adaeze](../merchants/adaeze_arms.md) (merchant, Arms Dealer).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

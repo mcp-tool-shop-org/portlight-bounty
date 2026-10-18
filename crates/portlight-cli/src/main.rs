@@ -98,7 +98,9 @@ fn script_cmd(args: &[String]) -> ExitCode {
                 };
                 slot = name.clone();
             }
-            other if file.is_none() && !other.starts_with('-') => file = Some(other.to_string()),
+            other if file.is_none() && (!other.starts_with('-') || other == "-") => {
+                file = Some(other.to_string());
+            }
             _ => {
                 eprintln!("Usage: portlight script <file> [--save-dir DIR --slot NAME]");
                 return ExitCode::from(2);
@@ -188,15 +190,37 @@ fn new_cmd(args: &[String]) -> ExitCode {
         match args[i].as_str() {
             "--captain" => {
                 i += 1;
-                captain = args.get(i).cloned().unwrap_or_default();
+                let Some(val) = args.get(i).map(|s| s.trim()).filter(|s| !s.is_empty()) else {
+                    eprintln!(
+                        "Usage: portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]"
+                    );
+                    return ExitCode::from(2);
+                };
+                captain = val.to_string();
             }
             "--name" => {
                 i += 1;
-                name = args.get(i).cloned().unwrap_or_default();
+                let Some(val) = args.get(i).map(|s| s.trim()).filter(|s| !s.is_empty()) else {
+                    eprintln!(
+                        "Usage: portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]"
+                    );
+                    return ExitCode::from(2);
+                };
+                name = val.to_string();
             }
             "--seed" => {
                 i += 1;
-                seed = args.get(i).and_then(|s| s.parse().ok()).unwrap_or(1);
+                let Some(raw) = args.get(i) else {
+                    eprintln!(
+                        "Usage: portlight new [--captain TYPE] [--name NAME] [--seed N] [--json]"
+                    );
+                    return ExitCode::from(2);
+                };
+                let Ok(parsed) = raw.parse::<i128>() else {
+                    eprintln!("Invalid seed: {raw}");
+                    return ExitCode::from(2);
+                };
+                seed = parsed;
             }
             "--json" => json = true,
             other => {
@@ -271,6 +295,21 @@ mod tests {
             ExitCode::SUCCESS
         );
         assert_eq!(new_cmd(&["--unknown".to_string()]), ExitCode::from(2));
+        assert_eq!(new_cmd(&["--seed".to_string()]), ExitCode::from(2));
+        assert_eq!(
+            new_cmd(&["--seed".to_string(), "abc".to_string()]),
+            ExitCode::from(2)
+        );
+        assert_eq!(new_cmd(&["--name".to_string()]), ExitCode::from(2));
+        assert_eq!(
+            new_cmd(&["--name".to_string(), "".to_string()]),
+            ExitCode::from(2)
+        );
+        assert_eq!(new_cmd(&["--captain".to_string()]), ExitCode::from(2));
+        assert_eq!(
+            new_cmd(&["--captain".to_string(), "".to_string()]),
+            ExitCode::from(2)
+        );
         assert_eq!(
             new_cmd(&["--captain".to_string(), "not_a_captain".to_string()]),
             ExitCode::from(1)

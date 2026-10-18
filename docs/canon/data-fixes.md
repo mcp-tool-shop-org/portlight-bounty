@@ -8,7 +8,7 @@ Contradictions resolved in lore (no data fix needed) are listed at the end.
 
 ## DF-1. Dimitri Andros sighting filed under Silva Bay (resolved)
 
-Status: resolved (copy override + parity note). The Dimitri Andros sighting is now filed under `porto_novo` and its text reads "A Porto Novo hull — unmistakable lines — cuts across your bow..." via `COPY_OVERRIDES` in `tools/extract_content.py`, with a parity allowance in `tools/parity/check.py` and `crates/portlight-sim/tests/parity.rs` and a note in `parity/expected_divergences.json`. The text below records the problem as found.
+Status: resolved (copy override + parity note). The Dimitri Andros sighting is now filed under `porto_novo` and its text reads "A Porto Novo hull - unmistakable lines - cuts across your bow..." via `COPY_OVERRIDES` in `tools/extract_content.py`, with a parity allowance in `tools/parity/check.py` and `crates/portlight-sim/tests/parity.rs` and a note in `parity/expected_divergences.json`. The text below records the problem as found.
 
 Where:
 - content.json:12804 (sighting port_id silva_bay)
@@ -96,7 +96,7 @@ Why: The relationships table is symmetric; the per-bloc lists are not.
 
 ## DF-8. NPC name drift across records (resolved)
 
-Status: resolved (copy override). Cross-port network NPC names (`Forge Master Henrik Brandt`, `Head Herbalist Sera`, `Dr. Kristian Halvorsen`, `Quartermaster Maren Dahl`, `Kiln Master Chen Bai`, `Inspector Zara Osman`), the `Head Herbalist Sera` sighting name, and Tomás's `Timber Yard` description at Silva Bay are now aligned via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
+Status: resolved (copy override). Cross-port network NPC names (`Forge Master Henrik Brandt`, `Head Herbalist Sera`, `Dr. Kristian Halvorsen`, `Quartermaster Maren Dahl`, `Kiln Master Chen Bai`, `Inspector Zara Osman`), the `Head Herbalist Sera` sighting name, and Tomas's `Timber Yard` description at Silva Bay are now aligned via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - content.json:11448 network name 'Henrik Brandt' vs record 'Forge Master Henrik Brandt' (C:7982)
@@ -143,7 +143,7 @@ Why: Ids must be ASCII (copy rule R5). Prose already says 'Tomas'.
 
 ## DF-12. Rosa and Ingrid network says 'Northern solidarity' (resolved)
 
-Status: resolved (copy override + parity note). The Rosa/Ingrid network description now reads "Sea-widows' solidarity — both women lost husbands to the sea and now run the taverns where captains drink and talk. Information flows between their establishments like current between connected waters. Neither knows how the other gets her news. Neither asks. The way working-harbour women communicate." via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
+Status: resolved (copy override + parity note). The Rosa/Ingrid network description now reads "Sea-widows' solidarity - both women lost husbands to the sea and now run the taverns where captains drink and talk. Information flows between their establishments like current between connected waters. Neither knows how the other gets her news. Neither asks. The way working-harbour women communicate." via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:11576
@@ -154,7 +154,7 @@ Why: Rosa is Mediterranean.
 
 ## DF-13. Silva Bay 'cheapest repairs' is a tie (resolved)
 
-Status: resolved (copy override). The Master Shipyards `function` at Silva Bay now reads "Ship repairs, hull upgrades, new vessel construction — among the cheapest repairs (1 silver/hull point)" via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
+Status: resolved (copy override). The Master Shipyards `function` at Silva Bay now reads "Ship repairs, hull upgrades, new vessel construction - among the cheapest repairs (1 silver/hull point)" via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:7425
@@ -165,7 +165,7 @@ Why: Ironhaven also has repair_cost 1.
 
 ## DF-14. Brotherhood 'never builds warships' conflicts with the sim (resolved)
 
-Status: resolved (copy override). Elena Madeira's agenda now reads "...But she will never build a war fleet to a power's order. The Brotherhood builds vessels to carry cargo and people, not armadas for empires." and Silva Bay's `port_grudge` reads "Ironhaven — the Shipwrights' Brotherhood refused to build a war fleet for the Iron Pact..." via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
+Status: resolved (copy override). Elena Madeira's agenda now reads "...But she will never build a war fleet to a power's order. The Brotherhood builds vessels to carry cargo and people, not armadas for empires." and Silva Bay's `port_grudge` reads "Ironhaven - the Shipwrights' Brotherhood refused to build a war fleet for the Iron Pact..." via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:7499

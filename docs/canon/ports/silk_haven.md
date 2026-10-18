@@ -65,7 +65,7 @@ Contract templates touching East Indies: `proc_grain_feed` (procurement), `proc_
 - Network (broker, professional): Broker Chang - Fernanda Reis, linking Porto Novo (C:11628). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Network (inspector, professional): Inspector Zhao Min - Inspector Yuki, linking Jade Port (C:11676). Surfaces as sim gossip (crates/portlight-sim/src/cross_port_networks.rs:49).
 - Sea sighting filed under this port: Master Ink (C:12900).
-- Hire and training canon (links only): [Li Wei](../merchants/li_crossbow.md) (merchant, Mechanist).
+- Hire and training canon (links only): [Mechanist Li Wei](../merchants/li_crossbow.md) (merchant, Mechanist).
 
 ## C. Visual identity (guidance only; commissions nothing; the character hold stands)
 

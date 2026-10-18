@@ -9,7 +9,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 515a488. Python
 |---|---|---|
 | Companions (named, hireable) | 10 | C:5542 |
 | Companion roles | 5 | C:5480 |
-| Morale triggers | 13, of which 2 fire | C:5704; session.rs:2074-2076 |
+| Morale triggers | 13, all 13 fire (DF-35 resolved) | C:5704; session.rs:2074-2076 |
 | Personality modifiers | 4 | C:5836 |
 | Ports with a companion | 9 of 20 | companions[*].home_port_id |
 | Party size | at most 2 | model.rs:431,439 |
@@ -30,9 +30,9 @@ Named companions are the authored party members. Officers are generated crew rec
 | 'Party n/2.' and one row per member: 'Name  Role  morale N' | Yes | logic.rs:2129-2149 |
 | 'Name approves. (+N morale)' or 'Name disapproves. (-N morale)' after a duel victory | Yes, built in code, not authored | companion.rs:147-151; recap.rs:1085-1093 |
 | 'Name leaves. <departure line>' after a victory | Yes: the only authored companion text a player can read | recap.rs:1085-1093; logic.rs:940-949 |
-| Description, greeting, hire dialog, loyalty line, warning line | No: no reader in the crates | content.rs:338-356 (fields only); rg of crates |
-| Role description and the seven effect numbers | No: the role name only | logic.rs:2129-2181 |
-| A dismiss control | No: Session has no dismiss method | crew_screen.rs:6-7 |
+| Description, greeting, hire dialog, loyalty line, warning line | Loyalty line (morale >= 80) and warning line (morale <= 29) reach the Crew desk (DF-35 resolved); description, greeting, and hire dialog are data only | content.rs:338-356; logic.rs; game.rs |
+| Role description and the seven effect numbers | Yes: role description, party summary, and cohesion reach the Crew desk, and all seven effect numbers are live in the sim (DF-34 resolved) | companion.rs:193-280; logic.rs; game.rs |
+| A dismiss control | Yes: Session::dismiss_companion and the Crew desk Dismiss button (DF-34 resolved) | session.rs; logic.rs; game.rs |
 | A departed companion | Gone for the save: cannot be hired again and is hidden from the desk | companion.rs:66-70; logic.rs:2161 |
 | Character art | None: the character hold stands | crew_screen.rs:3-6 |
 
@@ -45,7 +45,7 @@ Named companions are the authored party members. Officers are generated crew rec
 | Red Tomas | Marine | pragmatic | [Corsair's Rest](../ports/corsairs_rest.md) | Mediterranean | 60 | 0 | C:5560 | [red_tomas.md](red_tomas.md) |
 | Star Lila | Navigator | gentle | [Crosswind Isle](../ports/crosswind_isle.md) | East Indies | 100 | 10 | C:5576 | [star_lila.md](star_lila.md) |
 | Old Henry | Navigator | pragmatic | [Thornport](../ports/thornport.md) | North Atlantic | 70 | 5 | C:5592 | [old_henry.md](old_henry.md) |
-| Dr. Amara | Surgeon | gentle | [Sun Harbor](../ports/sun_harbor.md) | West Africa | 120 | 10 | C:5608 | [dr_amara.md](dr_amara.md) |
+| Dr. Amara Osei | Surgeon | gentle | [Sun Harbor](../ports/sun_harbor.md) | West Africa | 120 | 10 | C:5608 | [dr_amara.md](dr_amara.md) |
 | Patches | Surgeon | reckless | [Typhoon Anchorage](../ports/typhoon_anchorage.md) | South Seas | 50 | 0 | C:5624 | [patches.md](patches.md) |
 | Shadow Kai | Smuggler | pragmatic | [Spice Narrows](../ports/spice_narrows.md) | East Indies | 90 | 5 | C:5640 | [shadow_kai.md](shadow_kai.md) |
 | Rosa the Fence | Smuggler | pragmatic | [Corsair's Rest](../ports/corsairs_rest.md) | Mediterranean | 70 | 0 | C:5656 | [rosa_the_fence.md](rosa_the_fence.md) |
@@ -62,7 +62,7 @@ The cite is the record's id line; every field line is in the entity file. Rows a
 |---|---|---|---|---|
 | Marine | combat damage bonus 1, interception chance 0.25 | Iron Marta, Red Tomas | C:5482 | [roles/marine.md](roles/marine.md) |
 | Navigator | speed bonus 0.5, danger reduction 0.03 | Star Lila, Old Henry | C:5494 | [roles/navigator.md](roles/navigator.md) |
-| Surgeon | heal rate bonus 1.0 | Dr. Amara, Patches | C:5506 | [roles/surgeon.md](roles/surgeon.md) |
+| Surgeon | heal rate bonus 1.0 | Dr. Amara Osei, Patches | C:5506 | [roles/surgeon.md](roles/surgeon.md) |
 | Smuggler | inspection evasion 0.3 | Shadow Kai, Rosa the Fence | C:5518 | [roles/smuggler.md](roles/smuggler.md) |
 | Quartermaster | trade bonus 0.05 | Coin Mariam, Dockhand Pete | C:5530 | [roles/quartermaster.md](roles/quartermaster.md) |
 <!-- hand-maintained:end -->
@@ -75,32 +75,32 @@ All seven effect fields are summed by `party_combat_bonus` and nothing calls it 
 2. The captain picks one. The desk asks 'Recruit Name for N silver.' and waits for a confirm (game.rs:5652-5667).
 3. The sim checks, in order: right port, not already aboard, not departed, party under 2, silver, regional regard (companion.rs:51-93). Any failure is a plain sentence ('Party is full (max 2 companions).') shown as the notice (game.rs:5739-5754).
 4. On success the cost is taken and the companion starts at morale 70 (session.rs:3359-3373; companion.rs:95-108). The notice reads 'Recruited <Name>.' (DF-36 resolved).
-5. Nothing else happens: no greeting, no hire dialog, no role effect.
+5. Role effects, party summary, cohesion, and morale lines take effect immediately (DF-34, DF-35 resolved); greeting and hire dialog remain data only.
 
 ## 5. Morale and departure
 
-- Morale runs 0 to 100 and clamps (companion.rs:142). Below 30 a companion's effects would scale down (companion.rs:185-191; moot, DF-34). At 10 or less after a victory they leave and cannot return (companion.rs:157-176).
-- A trigger moves a companion only when the role's delta for it is not zero; the personality delta is then added; a total of zero does nothing (companion.rs:130-141). A personality delta on a trigger the role ignores is dead data.
-- Only spared_enemy and took_all are ever fired, once per duel victory (session.rs:2074-2076). The other 11 triggers have no caller in Rust. Python fires the same two (portlight@9b02494 src/portlight/app/cli.py:2888-2906; src/portlight/app/tui/screens/encounter.py:863-882). DF-35.
+- Morale runs 0 to 100 and clamps (companion.rs:142). Below 30 a companion's effects scale down by morale/30 (companion.rs:185-191; DF-34 resolved). At 10 or less they leave and cannot return (companion.rs:157-176).
+- Every trigger adds the role delta and the personality delta (even when the role base delta is zero; DF-35 resolved); a total of zero does nothing (companion.rs:130-141).
+- All 13 triggers fire in Rust across combat, trade, voyage, and arrival hooks (DF-35 resolved).
 
 Triggers (hand-maintained from C:5704-5835; deltas by role in data order: Marine, Navigator, Surgeon, Smuggler, Quartermaster):
 
 <!-- hand-maintained:begin -->
 | Trigger | Deltas | Fired by | Cite |
 |---|---|---|---|
-| combat_won | +5, +1, -1, +0, +0 | nothing in Rust | C:5706 |
-| combat_lost | -3, -2, -2, -1, -2 | nothing in Rust | C:5716 |
-| crew_killed | -2, -1, -5, +0, -1 | nothing in Rust | C:5726 |
-| profitable_trade | +0, +0, +0, +2, +5 | nothing in Rust | C:5736 |
-| losing_trade | +0, +0, +0, -1, -3 | nothing in Rust | C:5746 |
-| contraband_trade | -2, -1, -3, +5, -1 | nothing in Rust | C:5756 |
+| combat_won | +5, +1, -1, +0, +0 | Session (DF-35 resolved) | C:5706 |
+| combat_lost | -3, -2, -2, -1, -2 | Session (DF-35 resolved) | C:5716 |
+| crew_killed | -2, -1, -5, +0, -1 | Session (DF-35 resolved) | C:5726 |
+| profitable_trade | +0, +0, +0, +2, +5 | Session (DF-35 resolved) | C:5736 |
+| losing_trade | +0, +0, +0, -1, -3 | Session (DF-35 resolved) | C:5746 |
+| contraband_trade | -2, -1, -3, +5, -1 | Session (DF-35 resolved) | C:5756 |
 | spared_enemy | +2, +1, +5, +0, +0 | session.rs:2074-2076 | C:5766 |
 | took_all | +1, -1, -3, +3, +2 | session.rs:2074-2076 | C:5776 |
-| fled_combat | -5, +2, +2, +1, +0 | nothing in Rust | C:5786 |
-| injury_sustained | -1, -2, -1, -2, -2 | nothing in Rust | C:5796 |
-| long_voyage | -1, +2, -1, -1, -1 | nothing in Rust | C:5806 |
-| port_arrival | +1, +1, +1, +1, +2 | nothing in Rust | C:5816 |
-| nemesis_defeated | +8, +3, +2, +3, +3 | nothing in Rust | C:5826 |
+| fled_combat | -5, +2, +2, +1, +0 | Session (DF-35 resolved) | C:5786 |
+| injury_sustained | -1, -2, -1, -2, -2 | Session (DF-35 resolved) | C:5796 |
+| long_voyage | -1, +2, -1, -1, -1 | Session (DF-35 resolved) | C:5806 |
+| port_arrival | +1, +1, +1, +1, +2 | Session (DF-35 resolved) | C:5816 |
+| nemesis_defeated | +8, +3, +2, +3, +3 | Session (DF-35 resolved) | C:5826 |
 <!-- hand-maintained:end -->
 
 Personality modifiers (added to the role delta, only where the role delta is not zero):
@@ -123,7 +123,7 @@ What the two live triggers do to each companion today [inferred from companion.r
 | Red Tomas | +2 | +1 | never |
 | Star Lila | +4 | -4 | 15 |
 | Old Henry | +1 | -1 | 60 |
-| Dr. Amara | +8 | -6 | 10 |
+| Dr. Amara Osei | +8 | -6 | 10 |
 | Patches | +5 | -3 | 20 |
 | Shadow Kai | +0 | +3 | never |
 | Rosa the Fence | +0 | +3 | never |
@@ -149,7 +149,7 @@ The departure path is real for navigators and surgeons only; marines, smugglers 
 
 ## F. Flags
 
-- DF-34 (resolved): companion role effects, cohesion, party summary, and dismiss are now wired in sim and Godot. DF-35 (resolved): all 13 morale triggers and personality deltas now fire, and loyalty/warning lines are surfaced on the Crew desk. DF-36 (resolved): the recruit notice now prints the catalog display name. DF-37: same-name collisions with port NPCs.
+- DF-34 (resolved): companion role effects, cohesion, party summary, and dismiss are now wired in sim and Godot. DF-35 (resolved): all 13 morale triggers and personality deltas now fire, and loyalty/warning lines are surfaced on the Crew desk. DF-36 (resolved): the recruit notice now prints the catalog display name. DF-37 (resolved): same-name collisions with port NPCs disambiguated (Dr. Amara Osei).
 
 ## G. Gaps in the data (computed from content.json at the base commit)
 
@@ -178,7 +178,7 @@ Ports in `ports[*].id` with no companion (no record has that port as `home_port_
 |---|---|---|
 | Mediterranean | Red Tomas, Rosa the Fence, Coin Mariam | C:5542 |
 | North Atlantic | Iron Marta, Old Henry | C:5542 |
-| West Africa | Dr. Amara, Dockhand Pete | C:5542 |
+| West Africa | Dr. Amara Osei, Dockhand Pete | C:5542 |
 | East Indies | Star Lila, Shadow Kai | C:5542 |
 | South Seas | Patches | C:5542 |
 <!-- hand-maintained:end -->

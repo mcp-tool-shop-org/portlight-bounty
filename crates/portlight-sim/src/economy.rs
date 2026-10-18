@@ -250,7 +250,7 @@ pub fn execute_buy(
         });
     }
     let unit = port.market[slot_idx].buy_price;
-    let total = unit * qty;
+    let total = unit.saturating_mul(qty);
     if total > captain.silver {
         return Err(SimError::NeedSilver {
             need: total,
@@ -353,7 +353,7 @@ pub fn execute_sell(
                 unit_price = 1.max(py_round(cost_per_unit));
             }
         }
-        total += unit_price * slice.quantity;
+        total = total.saturating_add(unit_price.saturating_mul(slice.quantity));
     }
     captain.silver += total;
     port.market[slot_idx].stock_current += qty;
@@ -392,8 +392,8 @@ pub fn estimate_cost_basis(captain: &Captain, good_id: &str, qty: i64) -> i64 {
     }
     content::content()
         .good(good_id)
-        .map(|g| g.base_price * qty)
-        .unwrap_or(qty * 10)
+        .map(|g| g.base_price.saturating_mul(qty))
+        .unwrap_or_else(|| qty.saturating_mul(10))
 }
 
 pub fn is_contraband(good_id: &str) -> bool {

@@ -67,45 +67,39 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 7,
-      "changed": 7,
+      "added": 0,
+      "changed": 91,
       "moved": 0,
-      "parts": 4,
-      "removed": 0
+      "parts": 12,
+      "removed": 16
     },
     "items": [
       {
-        "kind": "door",
-        "sentence": "CI now also runs crates/portlight-cli/ and crates/portlight-sim/src/error.rs.",
+        "kind": "landing",
+        "sentence": "godot/ is now also read by CONTRIBUTING.md.",
         "subjects": [
-          ".github/workflows/ci.yml",
-          "crates/portlight-cli/",
-          "crates/portlight-sim/src/error.rs"
+          "godot/",
+          "CONTRIBUTING.md"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "godot/ is now also read by README.es.md, README.fr.md, README.hi.md, README.it.md, README.ja.md, README.pt-BR.md and README.zh.md.",
+        "sentence": "tools/build_manifest_pb002.py is now also read by godot/assets/landing/MANIFEST.json and tools/build_manifest_pb002.py.",
         "subjects": [
-          "godot/",
-          "README.es.md",
-          "README.fr.md",
-          "README.hi.md",
-          "README.it.md",
-          "README.ja.md",
-          "README.pt-BR.md",
-          "README.zh.md"
+          "tools/build_manifest_pb002.py",
+          "godot/assets/landing/MANIFEST.json",
+          "tools/build_manifest_pb002.py"
         ]
       },
       {
         "kind": "counts",
-        "sentence": "7 files added and 7 changed content, across 4 parts.",
+        "sentence": "16 files removed and 91 changed content, across 12 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "c068ce4d3ae8cc08471dbe2da06364c2d6fc87f6",
-      "generatedAt": "2026-10-18T04:11:26.610Z"
+      "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8",
+      "generatedAt": "2026-10-18T04:36:18.076Z"
     },
     "unchanged": false
   },
@@ -192,7 +186,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 13 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 1,
-  "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8",
+  "commit": "30fd2ddaa3c9ffd844036a7409bacdacd847b510",
   "defaultBranch": "main",
   "derived": "12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
@@ -465,7 +459,7 @@
       "to": "portlight-sim"
     }
   ],
-  "engine": "1.23.0",
+  "engine": "1.24.0",
   "generated": [
     {
       "place": "crates/portlight-sim/data/content.json",
@@ -501,14 +495,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-18T04:36:18.076Z",
+  "generatedAt": "2026-10-18T07:26:36.901Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "6 writes and 19 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
     "7 writes and 15 reads go to a path their caller passes, not to this repository.",
     "1 write and 1 read go to a temporary directory, not to this repository.",
-    "4 files belong to no part: playtest/README.md, playtest/_plumbing-fixture.playtest.json, playtest/portlight-godot.playtest.json and 1 more.",
+    "3 files belong to no part: playtest/README.md, playtest/portlight-godot.playtest.json and playtest/probe-bridge.mjs.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",

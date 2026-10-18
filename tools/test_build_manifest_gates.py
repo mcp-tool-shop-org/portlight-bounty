@@ -623,9 +623,9 @@ def build_fixture(studio):
     png_sha = hashlib.sha256(png).hexdigest()
     mesh = b"plate-mesh"
     prefix = hashlib.sha256(mesh).hexdigest()[:12]
-    plates = os.path.join(studio, "pb-002-plates")
-    outbox = os.path.join(studio, "outbox-PB-002")
-    verifier = os.path.join(studio, "grok-bot-verifier", "PB-002")
+    plates = os.path.join(studio, "plates")
+    outbox = os.path.join(studio, "spec")
+    verifier = os.path.join(studio, "verifier")
     landing = os.path.join(plates, "landing")
     rows = []
 
@@ -846,11 +846,11 @@ RETRIEVAL_DOCS = (
     "retrieval-harbour_props.md",
 )
 RESULT_FILES = {
-    "quay": os.path.join("grok-bot-verifier", "PB-002", "quay_flag_painterly_results.json"),
-    "harbour": os.path.join("grok-bot-verifier", "PB-002", "harbour_andon_results.json"),
-    "ships": os.path.join("grok-bot-verifier", "PB-002", "ships_results.json"),
-    "chart": os.path.join("grok-bot-verifier", "PB-002", "chart", "chart_retrieval_results.json"),
-    "harbour_props": os.path.join("grok-bot-verifier", "PB-002", "harbour_props_results.json"),
+    "quay": os.path.join("verifier", "quay_flag_painterly_results.json"),
+    "harbour": os.path.join("verifier", "harbour_andon_results.json"),
+    "ships": os.path.join("verifier", "ships_results.json"),
+    "chart": os.path.join("verifier", "chart", "chart_retrieval_results.json"),
+    "harbour_props": os.path.join("verifier", "harbour_props_results.json"),
 }
 
 
@@ -863,7 +863,7 @@ def studio(tmp_path_factory):
 
 def clone_studio(studio, dest):
     shutil.copytree(studio, dest)
-    csv_path = os.path.join(dest, "outbox-PB-002", "asset-list.csv")
+    csv_path = os.path.join(dest, "spec", "asset-list.csv")
     text = open(csv_path, encoding="utf-8").read().replace(studio, dest)
     write_text(csv_path, text)
     return dest
@@ -886,7 +886,7 @@ def mutate_results(copy, which, mutate):
     mutate(body)
     raw = write_json(path, body)
     if which == "quay":
-        doc = os.path.join(copy, "outbox-PB-002", "retrieval-quay_flag_painterly.md")
+        doc = os.path.join(copy, "spec", "retrieval-quay_flag_painterly.md")
         text = open(doc, encoding="utf-8").read()
         old_sha = hashlib.sha256(old).hexdigest()
         new_sha = hashlib.sha256(raw).hexdigest()
@@ -909,7 +909,7 @@ def mutate_results(copy, which, mutate):
 )
 def test_fail_verdict_anywhere_in_retrieval_doc(studio, tmp_path, doc, verdict):
     copy = clone_studio(studio, str(tmp_path / "copy"))
-    insert_middle(os.path.join(copy, "outbox-PB-002", doc), verdict)
+    insert_middle(os.path.join(copy, "spec", doc), verdict)
     status, out = run_main(main_argv(copy))
     assert status != 0
     assert "FAIL result" in out
@@ -919,7 +919,7 @@ def test_fail_verdict_anywhere_in_retrieval_doc(studio, tmp_path, doc, verdict):
 def test_bold_fail_row_refuses_each_retrieval_doc(studio, tmp_path, doc):
     """Main refuses a quay_flag_b row whose cell is bold **FAIL** in every retrieval doc."""
     copy = clone_studio(studio, str(tmp_path / "copy"))
-    insert_middle(os.path.join(copy, "outbox-PB-002", doc), "| quay_flag_b | **FAIL** |")
+    insert_middle(os.path.join(copy, "spec", doc), "| quay_flag_b | **FAIL** |")
     status, out = run_main(main_argv(copy))
     assert status == 1
     assert "FAIL result" in out
@@ -1173,7 +1173,7 @@ def test_ships_empty_fails_passes(studio, tmp_path, fails):
 def test_ships_exit_n_verdict_in_retrieval_doc_fails(studio, tmp_path):
     copy = clone_studio(studio, str(tmp_path / "copy"))
     insert_middle(
-        os.path.join(copy, "outbox-PB-002", "retrieval-ships.md"),
+        os.path.join(copy, "spec", "retrieval-ships.md"),
         "| id | Result |\n| --- | --- |\n| quay_flag_b | FAIL (exit 2) |",
     )
     status, out = run_main(main_argv(copy))
@@ -1184,13 +1184,13 @@ def test_ships_exit_n_verdict_in_retrieval_doc_fails(studio, tmp_path):
 def test_harbour_stock_marked_water_a_fails(studio, tmp_path):
     """Harbour water_a is a tile. A stock mark there does not exempt FAIL (exit 1)."""
     copy = clone_studio(studio, str(tmp_path / "copy"))
-    harbour = os.path.join(copy, "outbox-PB-002", "retrieval-harbour.md")
+    harbour = os.path.join(copy, "spec", "retrieval-harbour.md")
     insert_middle(harbour, "Documented stock v0.1.1 canvas-size failure.")
     insert_middle(harbour, "| water_a | FAIL (exit 1) |")
     status, out = run_main(main_argv(copy))
     assert status == 1
     assert "retrieval-harbour.md has a FAIL result line: | water_a | FAIL (exit 1) |" in out
-    chart = open(os.path.join(studio, "outbox-PB-002", "retrieval-chart.md"), encoding="utf-8").read()
+    chart = open(os.path.join(studio, "spec", "retrieval-chart.md"), encoding="utf-8").read()
     assert "| water_a..c | FAIL (exit 1) |" in chart
     assert "| chart_port_marker | FAIL (exit 1) |" in chart
     assert mod.fail_result_lines(chart, "retrieval-chart.md") == []
@@ -1199,7 +1199,7 @@ def test_harbour_stock_marked_water_a_fails(studio, tmp_path):
 def test_chart_water_exit_2_is_not_stock_exempt(studio, tmp_path):
     copy = clone_studio(studio, str(tmp_path / "copy"))
     insert_middle(
-        os.path.join(copy, "outbox-PB-002", "retrieval-chart.md"),
+        os.path.join(copy, "spec", "retrieval-chart.md"),
         "| chart_water_a | FAIL (exit 2) |",
     )
     status, out = run_main(main_argv(copy))
@@ -1210,7 +1210,7 @@ def test_chart_water_exit_2_is_not_stock_exempt(studio, tmp_path):
 def test_undocumented_exit_1_is_not_stock_exempt(studio, tmp_path):
     copy = clone_studio(studio, str(tmp_path / "copy"))
     insert_middle(
-        os.path.join(copy, "outbox-PB-002", "retrieval-chart.md"),
+        os.path.join(copy, "spec", "retrieval-chart.md"),
         "| chart_new | FAIL (exit 1) |",
     )
     status, out = run_main(main_argv(copy))
@@ -1221,7 +1221,7 @@ def test_undocumented_exit_1_is_not_stock_exempt(studio, tmp_path):
 def test_headerless_fail_exit_row_is_recognised(studio, tmp_path):
     copy = clone_studio(studio, str(tmp_path / "copy"))
     insert_middle(
-        os.path.join(copy, "outbox-PB-002", "retrieval-ships.md"),
+        os.path.join(copy, "spec", "retrieval-ships.md"),
         "| chart_new | FAIL (exit 1) |",
     )
     status, out = run_main(main_argv(copy))
@@ -1233,7 +1233,7 @@ def test_spread_stock_terms_do_not_exempt_new_chart_row(studio, tmp_path):
     """A new chart FAIL (exit 1) row fails when the stock terms are not on one line."""
     copy = clone_studio(studio, str(tmp_path / "copy"))
     write_text(
-        os.path.join(copy, "outbox-PB-002", "retrieval-chart.md"),
+        os.path.join(copy, "spec", "retrieval-chart.md"),
         "**Chart profile (SIMULATED): 4 PASS, 0 FAIL.**\n"
         "Documented stock\n"
         "v0.1.1\n"

@@ -16,9 +16,9 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 515a488. Python
 | Heal rate bonus | 1.0 | C:5513 |
 | Inspection evasion | 0.0 | C:5514 |
 | Trade bonus | 0.0 | C:5515 |
-| Companions with this role | [Dr. Amara](../dr_amara.md), [Patches](../patches.md) | C:5610-5626 |
-| Player sees today | the role name on the offer row and the party row; never the description or the numbers | logic.rs:2129-2181 |
-| Mechanic status | every effect number is [flavour, no mechanic] (DF-34) | companion.rs:193-233 |
+| Companions with this role | [Dr. Amara Osei](../dr_amara.md), [Patches](../patches.md) | C:5610-5626 |
+| Player sees today | the role name, role description, and party summary on the Crew desk (DF-34 resolved) | logic.rs; game.rs |
+| Mechanic status | every effect number is live in the sim via party_combat_bonus (DF-34 resolved) | companion.rs:193-280; session.rs |
 
 Role ids are cite keys only; the player-facing word is the catalog name above.
 
@@ -30,19 +30,19 @@ Role ids are cite keys only; the player-facing word is the catalog name above.
 <!-- hand-maintained:begin -->
 | Trigger | Delta for this role | Fired by | Cite |
 |---|---|---|---|
-| combat_won | -1 | nothing in Rust | C:5706 |
-| combat_lost | -2 | nothing in Rust | C:5716 |
-| crew_killed | -5 | nothing in Rust | C:5726 |
-| profitable_trade | +0 | nothing in Rust | C:5736 |
-| losing_trade | +0 | nothing in Rust | C:5746 |
-| contraband_trade | -3 | nothing in Rust | C:5756 |
+| combat_won | -1 | Session (DF-35 resolved) | C:5706 |
+| combat_lost | -2 | Session (DF-35 resolved) | C:5716 |
+| crew_killed | -5 | Session (DF-35 resolved) | C:5726 |
+| profitable_trade | +0 | Session (DF-35 resolved) | C:5736 |
+| losing_trade | +0 | Session (DF-35 resolved) | C:5746 |
+| contraband_trade | -3 | Session (DF-35 resolved) | C:5756 |
 | spared_enemy | +5 | session.rs:2074-2076 | C:5766 |
 | took_all | -3 | session.rs:2074-2076 | C:5776 |
-| fled_combat | +2 | nothing in Rust | C:5786 |
-| injury_sustained | -1 | nothing in Rust | C:5796 |
-| long_voyage | -1 | nothing in Rust | C:5806 |
-| port_arrival | +1 | nothing in Rust | C:5816 |
-| nemesis_defeated | +2 | nothing in Rust | C:5826 |
+| fled_combat | +2 | Session (DF-35 resolved) | C:5786 |
+| injury_sustained | -1 | Session (DF-35 resolved) | C:5796 |
+| long_voyage | -1 | Session (DF-35 resolved) | C:5806 |
+| port_arrival | +1 | Session (DF-35 resolved) | C:5816 |
+| nemesis_defeated | +2 | Session (DF-35 resolved) | C:5826 |
 <!-- hand-maintained:end -->
 
 ## 2. Role in play
@@ -79,10 +79,10 @@ A hired Surgeon is an officer (officers/README.md): a generated name and trait, 
 
 ## 7. Links
 
-- Companions: [Dr. Amara](../dr_amara.md), [Patches](../patches.md)
+- Companions: [Dr. Amara Osei](../dr_amara.md), [Patches](../patches.md)
 - Index: [companions/README.md](../README.md); crew system: [officers/README.md](../../officers/README.md)
 
 ## 8. Flags
 
-- DF-34: role effects authored and unread. DF-35: morale triggers. See ../../data-fixes.md.
+- DF-34 (resolved): role effects, party summary, cohesion, and dismiss wired. DF-35 (resolved): all 13 morale triggers wired. See ../../data-fixes.md.
 - Crew role against companion role: resolved in lore (../../data-fixes.md).

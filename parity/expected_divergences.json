@@ -44,7 +44,7 @@
     {
       "script": "bounty_claim.txt",
       "check": "oracle",
-      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "summary": "Hunt-fight crew loss is a deliberate maintainer-approved divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
       "paths": [
         {
           "path": "$.captain.ship.crew",
@@ -124,7 +124,7 @@
     {
       "script": "bounty_claim.txt",
       "check": "roundtrip",
-      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "summary": "Hunt-fight crew loss is a deliberate maintainer-approved divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
       "paths": [
         {
           "path": "$.captain.ship.crew",
@@ -144,7 +144,7 @@
     {
       "script": "bounty_claim_sail.txt",
       "check": "oracle",
-      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "summary": "Hunt-fight crew loss is a deliberate maintainer-approved divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
       "paths": [
         {
           "path": "$.captain.ship.crew",
@@ -224,7 +224,7 @@
     {
       "script": "bounty_claim_sail.txt",
       "check": "roundtrip",
-      "summary": "Hunt-fight crew loss is a deliberate Mike-authorized divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
+      "summary": "Hunt-fight crew loss is a deliberate maintainer-approved divergence. On an active unclaimed bounty, Rust drops the enemy rake's crew result (roll still drawn, hull kept) and re-reads the boarding player roll as min(cap, floor(0.15+0.025*crew+u), r) with sail-minimum floor. A privateer cutter starts at crew_min 5, so these scripts keep crew 5 (sail hires to 9) where Python keeps 1 (sail hires to 5).",
       "paths": [
         {
           "path": "$.captain.ship.crew",

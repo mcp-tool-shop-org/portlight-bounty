@@ -1,10 +1,9 @@
 # playtest/
 
-OpenRouter is off. Seats stay dark. Do not `ai-playtest run` until the GPU is cleared for playtest or a RunPod seat is named. A scripted probe is not a product score.
+Headless JSON-RPC bridge specification and deterministic smoke probe for the Godot 4.7 view.
 
-- `_plumbing-fixture.playtest.json` — echo fixture. `ai-playtest check` was green on 2026-10-05.
-- `portlight-godot.playtest.json` — rpc driver, headless Godot, the locked criteria from the v0 list (15 core + 2 tip, plus the soft pair and the known-fail trio inside that 17, plus `contract-strip-glance` still ARMED). Choice ids other than the six tip rows are a local scheme.
-- `probe-bridge.mjs` — no model. Hello, a second client refused, a bad line answered, Title, captains, the name Ada, Merchant (Ada docked, Hire offered). Then Contracts open and close, the board cards read, the cheapest run the market stocks accepted (seed 1: grain x23 to Corsair's Rest), the order bought with a margin, Hire, a sail to the destination while the strip counts down, the Arrival card read from `state.day_report` on the docking day before Escape dismisses it, and the sale there. The sale is the delivery: the contract leaves Active, silver goes up, and the strip clears. Complete is not offered (R10), so pressing it is the offered-check. The strip's own id `chart.contract_strip` opens Contracts. Each lane's offered label reads `Sail - {Port}`. If the port has a shipyard, `line` types `Gull` into the rename field and `shipyard.rename` is offered only after that. Journal open (read from `state.journal`) and close, then reset to Title. Then, from port, it opens Hunt, accepts the first offer, sails (sailing anyway if a Departure check appears), and hunts the target at sea. On the seed-1 run, that opens the bounty encounter. Under an encounter, the probe asserts no `chart.*` or `pier.*` id is offered (F10-2), and the Hunt desk offers only its own ids. The Arrival card over the chart must still offer chart ids (F10-4). A Day's report over an encounter must offer only its Close (F10-3). The seed-1 spine never reaches that state, so the F10-3 check only runs when it happens. The unit test `f10_3_one_layer_at_a_time` covers it.
+- `portlight-godot.playtest.json` — RPC driver configuration for headless Godot (`127.0.0.1:47119`).
+- `probe-bridge.mjs` — deterministic headless bridge probe. Hello, a second client refused, a bad line answered, Title, captains, the name Ada, Merchant (Ada docked, Hire offered). Then Contracts open and close, the board cards read, the cheapest run the market stocks accepted (seed 1: grain x23 to Corsair's Rest), the order bought with a margin, Hire, a sail to the destination while the strip counts down, the Arrival card read from `state.day_report` on the docking day before Escape dismisses it, and the sale there. The sale is the delivery: the contract leaves Active, silver goes up, and the strip clears. Complete is not offered (R10), so pressing it is the offered-check. The strip's own id `chart.contract_strip` opens Contracts. Each lane's offered label reads `Sail - {Port}`. If the port has a shipyard, `line` types `Gull` into the rename field and `shipyard.rename` is offered only after that. Journal open (read from `state.journal`) and close, then reset to Title. Then, from port, it opens Hunt, accepts the first offer, sails (sailing anyway if a Departure check appears), and hunts the target at sea. On the seed-1 run, that opens the bounty encounter. Under an encounter, the probe asserts no `chart.*` or `pier.*` id is offered (F10-2), and the Hunt desk offers only its own ids. The Arrival card over the chart must still offer chart ids (F10-4). A Day's report over an encounter must offer only its Close (F10-3). The seed-1 spine never reaches that state, so the F10-3 check only runs when it happens. The unit test `f10_3_one_layer_at_a_time` covers it.
 
 ## Observation
 
@@ -33,13 +32,7 @@ OpenRouter is off. Seats stay dark. Do not `ai-playtest run` until the GPU is cl
 - **Insurance ids.** Empty segments are dropped. The forms are `harbour.prepare.insurance.{policy}`, `.{policy}.{target}`, or `.{policy}.{origin}.{destination}`. Any other mix keeps all four segments. For one release, the old form with trailing empty segments still parses.
 - **`line`.** Types into the text field that is showing: the Shipyard rename field while the Shipyard is open, else the new-game name.
 
-Check the Godot config (no seat is started):
-
-```
-node ../ai-playtest/dist/cli.js check playtest/portlight-godot.playtest.json
-```
-
-Run that from the repo root after `ai-playtest` has been built. The probe, also from the repo root:
+Run the deterministic bridge probe from the repo root:
 
 ```
 cargo build -p portlight-godot
@@ -49,4 +42,3 @@ node playtest/probe-bridge.mjs
 
 Reports name the editor. CI pins Godot 4.7.2.
 
-The consult for the next harden pass is `docs/playtest/playtest-bridge-consult-brief.md`.

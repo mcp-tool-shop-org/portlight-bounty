@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "a639b77fb61c693ac764ede8b7400a0db77d62fec7f5c05ccb3f9fa41966117f",
+          "hash": "3dbcce071f5171c791909523a4f1716e5b9b44f671f79ec1a4cc3cb7c37cd887",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -36,19 +36,11 @@
       "externals": 0,
       "files": [
         {
-          "hash": "03ad7533e0e6cc20603aef4dfeb029736a441338431b8e15894cdc19e8ff9670",
-          "path": "docs/BUILD-CHECK-WIN-MAC.md"
-        },
-        {
-          "hash": "6a4dc3fe87f1ef62c5c71edf4dce09fec1d9598f0ad329086b388049a464d349",
-          "path": "docs/HANDOFF-GROK-BOTS.md"
-        },
-        {
-          "hash": "2a6a2bc8c3b49aa4edbfa9df722573cc7e65765dc55a65dfce52cc2e21068c0e",
+          "hash": "570300c2d79cead82bcbd144f0f27863c6c4d81cce08c8774351825e853f9bc4",
           "path": "docs/PORTING-PLAN.md"
         },
         {
-          "hash": "242207792ea717c004b65722f799243bd5bd543590345a2cb458216157fccaf9",
+          "hash": "83bc9cf9acea11c1cfc781feec15f79c778863cb3e775fdc5f28ab937d5358aa",
           "path": "docs/canon/README.md"
         },
         {
@@ -124,71 +116,71 @@
           "path": "docs/canon/captains/smuggler.md"
         },
         {
-          "hash": "179d6c5c5ef55600b898e8979bee02bc8328dec72374892c6f480061b712c8fb",
+          "hash": "f57b6f323d430c3d89e4c34172d2bc499f58ed6da39fa5da0adc6d8ce51dc0e8",
           "path": "docs/canon/companions/README.md"
         },
         {
-          "hash": "cee225d62efd35813b7914609ba29ad5d8c3c849d496556f463ee0ecec169f03",
+          "hash": "e16f7262f7f48e51f46fd6035edca1f60453f7705b8f1adaa8e82755beecd714",
           "path": "docs/canon/companions/coin_mariam.md"
         },
         {
-          "hash": "4af79c4aae752a430ee363a71fdcbccc66b6d628d6d7db79ac1182bd5a5bce28",
+          "hash": "ed2fc2445899a4d9b637a2ad555d2db57d191698a4048b909be22358175f1f73",
           "path": "docs/canon/companions/dockhand_pete.md"
         },
         {
-          "hash": "c8ab0c9b38c293e2ece7722aad0dbe8598a0cbca6c7420c3777e3269120a6ef3",
+          "hash": "6fe19f670d5b640439755971f7f07fe32c5ddbf8d26f4f74885c121bb7a0bd19",
           "path": "docs/canon/companions/dr_amara.md"
         },
         {
-          "hash": "0a36978a00ac9680b80a7ad76d904082e0c353e6de64b34913469479c3462426",
+          "hash": "95db8df7e570ddc752b18177b5e3c1bda740fda3d42ed968a83ca4cc8da7d404",
           "path": "docs/canon/companions/iron_marta.md"
         },
         {
-          "hash": "a613b16ef08a0ab8ad2eb98f0e78a903c14ddae9d5dd1cd464914eb6cf971af6",
+          "hash": "73f726a6ea97a859c17d3a0d44bd42bb7d0dd9f047be0688bc9500f18afdc8f9",
           "path": "docs/canon/companions/old_henry.md"
         },
         {
-          "hash": "2045477b1060fc8f846a69c256c639a636108d0e15617d0fee04453610fe4c67",
+          "hash": "9d1c2c9c7775283e8ef392855432a6cfbc2045ffc7e39d683d16c5833110fb32",
           "path": "docs/canon/companions/patches.md"
         },
         {
-          "hash": "e59397a1487a0cb5d9931d702d71f6b1b89be3905d6abc414013498cbb811993",
+          "hash": "1734ef846d0c6c71c39df5f1eba7ba0736cd7348bd87bb4f1038eae0bb68c5f3",
           "path": "docs/canon/companions/red_tomas.md"
         },
         {
-          "hash": "e65b3b7786f901b6915602f6c59df12d36c19fa7ce916a98b81c17fa215fe4fc",
+          "hash": "22ec448c7d60d0ae3066d21f506f564943a6de9ace85de96caa5bd2d0e91d39d",
           "path": "docs/canon/companions/roles/marine.md"
         },
         {
-          "hash": "b0e74cb4fc0e8d7828178d1940abf5832c93c0b4ae6b7ccdb63afc551c0edead",
+          "hash": "ccb1501b5ad9cd3b6a26f73c444399e02b2dac122faf44b048fbe12c25113e70",
           "path": "docs/canon/companions/roles/navigator.md"
         },
         {
-          "hash": "7f25843dfa723c6432b9f7db4f8227460290aac6ec151523fc72a9a12844e41d",
+          "hash": "80905d6459fbf071b5d504ba5f0b634d83d8d0625d26af3e0b9dbeab7d8bcba6",
           "path": "docs/canon/companions/roles/quartermaster.md"
         },
         {
-          "hash": "8c0e59bea1e639576a0a48f603b97f99f9fea511dbb603b6dafb70183e54bcb5",
+          "hash": "73881c331e0819d8031d6599933ca83270458a65c344a088a8b2cba0c537c442",
           "path": "docs/canon/companions/roles/smuggler.md"
         },
         {
-          "hash": "8da1df465433bf782272991b6dece368f3fe17b89b2bd06759ea9a188ef7d3b5",
+          "hash": "5a2c4a4b434e6c755929b4c3d8b1a9dab36819f94f2ecdb3fc97d2d27bfe4d0b",
           "path": "docs/canon/companions/roles/surgeon.md"
         },
         {
-          "hash": "655181378fed4ba91fefa463238150dbacdc6b16ed985e988e9ace920aded807",
+          "hash": "a5dcc962c0277e177166db6ed5407be3c4050cd0e32a88c71c81d8a057792920",
           "path": "docs/canon/companions/rosa_the_fence.md"
         },
         {
-          "hash": "4fada4e254749e8d248bb6f6f1349a0474563edf405450a752057d3796246bae",
+          "hash": "570b2ccdb42771a5419047668281b26e9927ae4cd3437c13bcb8c4b9ab74d85b",
           "path": "docs/canon/companions/shadow_kai.md"
         },
         {
-          "hash": "4fcacda64f6e03351bb6545ec7d1b0dcbb64226f35e3841fd59fba788d9d6f15",
+          "hash": "c83aa9705f5813360838887cf6a0fcf60a5ac911068cb6ed479579a13eaf0078",
           "path": "docs/canon/companions/star_lila.md"
         },
         {
-          "hash": "2444b70b53566503d5b42535f52abd987b7f618dc287de0b28cbd59e1c2417e7",
+          "hash": "b381797b60a7cb9f3c9cfaa35f6d48d9c1c63931513e0aa00c5b797db9aa53e5",
           "path": "docs/canon/data-fixes.md"
         },
         {
@@ -392,63 +384,63 @@
           "path": "docs/canon/lanes/volcanic_passage.md"
         },
         {
-          "hash": "fe611bd6e26787fc1f513e45aa3765e7fe645c27bee4ba11539f8c2dc335555a",
+          "hash": "d8aaf840550d9a192f3355bbe8f3536dd01f2a20de5740ed642447d14d05e71b",
           "path": "docs/canon/merchants/README.md"
         },
         {
-          "hash": "5076a5d607c893cc94cfdeead51af9058c7d7206854cc19ad2a8e790171970cc",
+          "hash": "f753639dd5b591f991324145c47b82f3ea7925ad907109650e93d6e0e5d62986",
           "path": "docs/canon/merchants/adaeze_arms.md"
         },
         {
-          "hash": "86577ac34fa3a9b063b8362a8ba902d4ffde4fea428139527774c1af960cf985",
+          "hash": "cd023625ac6a69a133860a3148467b5cc2e4a6bdda7d3d8ca37cf2f0a5cda46a",
           "path": "docs/canon/merchants/chen_forge.md"
         },
         {
-          "hash": "1f9587f92e2e2b785efdcc058ac33d69cd428d05cce6f0f9fd6385e46214e610",
+          "hash": "f161ad2fffd2e0ba3f752e3111f4d91ae6e6fd8614f5c871b7330de26fa4de30",
           "path": "docs/canon/merchants/devi_arms.md"
         },
         {
-          "hash": "b05d0dd281c0c6301d277692cd190c0ef59adc973dcb15067261a452c7241d1b",
+          "hash": "004e2fa4e7212e70125938c6c8b11710982b283f5d9c1ce432e9861b063e9425",
           "path": "docs/canon/merchants/fatima_armorworks.md"
         },
         {
-          "hash": "32e1dbec9e27b50990853e4a2e90f694ba155ec51f7f9e038420d4364bbcdad8",
+          "hash": "91b6b84a7218fc057b803f5456f56f0a41bbdfaa7ddec2d00b205c1812da3a9a",
           "path": "docs/canon/merchants/hamish_iron.md"
         },
         {
-          "hash": "1375e55ba0b0d2f6c0dfc01059d722149ba9c9d5b847e5efc6783f1353a07171",
+          "hash": "d8d41da0ee0b68d90bd0661bdab755e0a9fc47911d3e1790b98eb4a8cf1f3feb",
           "path": "docs/canon/merchants/kofi_leather.md"
         },
         {
-          "hash": "4caff0e4273b0ff50ea7c41f4df9b37a9cea207429054198a47ab0520fc200b9",
+          "hash": "5ef6a262fe28a607566f8ca8b219929ee568f536f2020291b89a30cab0df4411",
           "path": "docs/canon/merchants/li_crossbow.md"
         },
         {
-          "hash": "66cc03893d9a91e4cc353634fef3519ed35ebdb242ac7f0f5cd18a67b88c8c47",
+          "hash": "3baea609c8ffaeee6dbe52872b515d2b415c13f203c4a09d661424239e369665",
           "path": "docs/canon/merchants/malia_provisions.md"
         },
         {
-          "hash": "05db8122a709bb5cf9622485ed628f48dcba2b5b64ec25909b38ea005fd89e52",
+          "hash": "6244d32938a7b81ac2ab5f79f74dd337ea38f0d8e2131f4455ec03321fee3149",
           "path": "docs/canon/merchants/marco_the_blade.md"
         },
         {
-          "hash": "6ccf393a292d42c20be766bfb2e2d6b4b146256106e2218732fd1f75d491d2a4",
+          "hash": "ca7a698df4a56132378e92555f4e98dbe18c380b7ce8596e682d9ccb8e9e7c11",
           "path": "docs/canon/merchants/old_silva.md"
         },
         {
-          "hash": "7095da7f3341e8ad8db358f3f5d430f76bb36c18a48106f75547b038b6a47e15",
+          "hash": "0ec469e29ee0034ac542bae52b8e3cb2341892527bacd35062ecf1c23b816af9",
           "path": "docs/canon/merchants/sergeant_gruber.md"
         },
         {
-          "hash": "542ccf56d9d7a1368bfde09fb467835e4aee235495b94b64abd33ae2ffd8999f",
+          "hash": "f2e995ee0e35388e13b078f1e59bd72858674becb133e043f4cdc89c5168902b",
           "path": "docs/canon/merchants/tane_warrior.md"
         },
         {
-          "hash": "2f8cd982d07ea9b3621336bac758e94d0bfd7b07c30fbb595c5e42f14bf1e6c3",
+          "hash": "1c32719017e50bb69ca50e1282e9e24c4095eea5fc1858f8cd542948fea1d37a",
           "path": "docs/canon/merchants/widow_kael.md"
         },
         {
-          "hash": "3b5020eca2245b1fc1b6aff1574855e891875b685bec0d8436347e1a17c97da0",
+          "hash": "8e6ee876f564b7385bf8cd71098c62b36c45c056b7ac1de57f05ca8c8447a0b9",
           "path": "docs/canon/merchants/yaa_sharpedge.md"
         },
         {
@@ -520,7 +512,7 @@
           "path": "docs/canon/ports/al_manar.md"
         },
         {
-          "hash": "d64f82977fc03b013fc8d8f33a55fbe3ec2a28afabf096fdac414cd1fc4ede38",
+          "hash": "9ed210f321b953e9d28046d4a0682db8344e5a1950dd8633b7c10ffd6486cc4d",
           "path": "docs/canon/ports/coral_throne.md"
         },
         {
@@ -548,11 +540,11 @@
           "path": "docs/canon/ports/ironhaven.md"
         },
         {
-          "hash": "39bb5c4c1a08987eac8e9f21853ca8042f6f6c88e05ab918488a149a304fdc9b",
+          "hash": "d03e81908a13a7a5ab21c55b6e57a1040da7167c90664b663eb2a4c9c5ddb416",
           "path": "docs/canon/ports/jade_port.md"
         },
         {
-          "hash": "1b140f25f9a96d8981250082dba8c1a4924c86f9394b4fe9b0c04ec6f20d0643",
+          "hash": "038d02e02ef4536dcd9d0148282bd9921561e0aabca89824e3abcefbb572cb52",
           "path": "docs/canon/ports/monsoon_reach.md"
         },
         {
@@ -568,7 +560,7 @@
           "path": "docs/canon/ports/porto_novo.md"
         },
         {
-          "hash": "aeee5908ec61d51f94b0624a45163f0195c3adbba7ef7f047b6aff1a3044a714",
+          "hash": "4a4f1839591cec7705f2f7c372b16f0390289247a8fddb6d2ea1e048d3f014b6",
           "path": "docs/canon/ports/silk_haven.md"
         },
         {
@@ -584,7 +576,7 @@
           "path": "docs/canon/ports/stormwall.md"
         },
         {
-          "hash": "1c65e7086fd18cf2116e214d5b46a9938633df82824f7af6fd0dd4d2f242ec77",
+          "hash": "ea3932b7e7e9055afe1d12bba076b82673b966fc6740ee4775430ae2429b3b93",
           "path": "docs/canon/ports/sun_harbor.md"
         },
         {
@@ -604,23 +596,23 @@
           "path": "docs/canon/skill-trainers/README.md"
         },
         {
-          "hash": "7cf1aada3025c54f96ec7c131e948d894acdddc4e6be228461066ec0dc4c1b8b",
+          "hash": "b68c146a287c5b6c370e6a66054dda72adf6d9734997d3622fa8b03949fcbcc6",
           "path": "docs/canon/skill-trainers/forge_master_erik.md"
         },
         {
-          "hash": "0f197c5c0afb547c99b324c20ec2b41c5aca79a9309cf5e9f9f6c2f0119f3674",
+          "hash": "86a98ce8325a499370666c0bca1d1bff722354f15113eb363e04e8c61545ecc4",
           "path": "docs/canon/skill-trainers/monsoon_tinker.md"
         },
         {
-          "hash": "4956fe71ae926e2e93e32b91f34530ea9d70e53ee789d6564b1a79c733057018",
+          "hash": "9f4717a23bcb4456c69b0cbf5280863e904640296866405eaac86a6a5760d407",
           "path": "docs/canon/skill-trainers/old_vasquez.md"
         },
         {
-          "hash": "64590358c0a3287f3e0feafd740bc94831f41c986cacd7c201d5342fd2aa7e10",
+          "hash": "2153c0c903d199806471b5ec009cb9f45f5b70e4cb2c9095dd385ec90632f39b",
           "path": "docs/canon/skill-trainers/silva_bay_smiths.md"
         },
         {
-          "hash": "7717bbc562cf69bc72cc4c266b2aef81320ced3b33ad96f7fde85d3ddd1011be",
+          "hash": "f3b6d7f3444acb596fb4a81056f8fb79aecd84cdd61f9eecd07fb04bf58cfefc",
           "path": "docs/canon/skill-trainers/typhoon_smith.md"
         },
         {
@@ -628,48 +620,44 @@
           "path": "docs/canon/style-masters/README.md"
         },
         {
-          "hash": "1b2e64ea1fc9c906402bc12e21941e9219af8d489c88f0fd8af1faf0cea4fd0d",
+          "hash": "5726d6df16470208511537a0f6ec0ae7728546fd54f6fe9c1dfd0d2728a8ce9d",
           "path": "docs/canon/style-masters/dewi_ayu.md"
         },
         {
-          "hash": "79fefffcadee16cc8a084b96f553fe2fd24274a66972cacce2deebd27396c100",
+          "hash": "f07c37bd6a4677da05356b4415feb85cb92f83c6583df2b200b241568671959a",
           "path": "docs/canon/style-masters/jarl_solveig.md"
         },
         {
-          "hash": "f64437849ecf1c2105936d998fdc5c2bcc7b5d216428c81fd0d6f7a83806b418",
+          "hash": "8261c69d1efc72e832efb82a6d0b4dae62a50be1c7fe0caed4b240a65a8c7dca",
           "path": "docs/canon/style-masters/kahoku_the_elder.md"
         },
         {
-          "hash": "d210267ae12070a2830b68027848fdd35baac520c15ab79fe99ddfb60b38b175",
+          "hash": "57bf033b891ecde50cb41c1a69890fe45d95d9e0cb79098e75c371ed413057f0",
           "path": "docs/canon/style-masters/kolo_the_fist.md"
         },
         {
-          "hash": "9c35220c90adf904753cba67d0586bb37ac50c0b496bb95a1d5ddf394ab40cf2",
+          "hash": "762d6776f74f0169d35369a3ca228fffb22b0bd590585b74886b328ecef7e496",
           "path": "docs/canon/style-masters/leilani_bonecatcher.md"
         },
         {
-          "hash": "1ecb49fb6d40fb772987bc7033a1f289ee1c264641164bfc87d7648101d2003b",
+          "hash": "2f0f4a271bb1c807245d71770e8472f44fec59eaafa3a8d0a36224ec0a926d77",
           "path": "docs/canon/style-masters/maestro_luciano.md"
         },
         {
-          "hash": "c12a6abb1aee82c2777e02608f6568518e954569da7d2ae280d756e4d1bcad19",
+          "hash": "28ad6397300491e432c30922fe4aa508d13cd7e34642ad9b4757a9feddeaaec8",
           "path": "docs/canon/style-masters/nneka_ironfist.md"
         },
         {
-          "hash": "0eb59634b21f19aeea2bc1da5dcadd6b83f453e8286b696d64b643c9f9c04278",
+          "hash": "69c9d59c2e0a65e017646020c95c945c0e180ebc9ceec23b7a4547fdb7f120ef",
           "path": "docs/canon/style-masters/pak_reza.md"
         },
         {
-          "hash": "b0dd945beec15e78c88cf88dd61cdeb97adb46753dc7859990ecf9213cc729a2",
+          "hash": "b69e1da348d75e04315a170c766972175e52786387e1211ffc6f5500ad57977b",
           "path": "docs/canon/style-masters/red_hamish.md"
         },
         {
-          "hash": "eb2796cde735d30f8d0d49ed6546a2bb957cb280f291d3a9a5d2a21b85bf5a08",
+          "hash": "95e48e30bb201b05601377e4e4fa1d00940ddb72513fecfcecadeec92731d2d0",
           "path": "docs/canon/style-masters/senora_vega.md"
-        },
-        {
-          "hash": "3f017abae64d01b8841e94013f35ac16ad65a866fd5a6c1581d3497c436ef44c",
-          "path": "docs/playtest/README.md"
         },
         {
           "hash": "c0cc1b1a3587241b3c35540b8397512e8ecceb310126a08dac4c9f5d1edd9640",
@@ -682,54 +670,6 @@
         {
           "hash": "2887f8fff9ef996ac3e322d4a12842975ebcc052c40ea9bc977eff531505ffbb",
           "path": "docs/playtest/balance/pt-s0r.csv"
-        },
-        {
-          "hash": "9b51512142772771f7ca2b6108ac3d4401abf0117c65bf6d6e96c6b924e7a802",
-          "path": "docs/playtest/fix-a-acceptance-player.md"
-        },
-        {
-          "hash": "e711e1b07b45638d34a4113525b486a6e551f215d1f1f801a442d37182a14993",
-          "path": "docs/playtest/playtest-bridge-consult-brief.md"
-        },
-        {
-          "hash": "bc35f9221d8b9d1a054ff0f9f541f81d3977fb3f6b56fbbb38348f58dd3ffd5f",
-          "path": "docs/playtest/playtest-contract-strip-criteria-STUB.md"
-        },
-        {
-          "hash": "125196fdcc2a1223fac2b5c6582786da56a16548a105446d3b1ef5fc32884eb9",
-          "path": "docs/playtest/playtest-criteria-draft.md"
-        },
-        {
-          "hash": "e44f2abf55b4a82e7604997d2a5e56a263b92c997ef7690cbf6572a7c439e943",
-          "path": "docs/playtest/playtest-escape-undock-criteria.md"
-        },
-        {
-          "hash": "10995a34861495cf3b256be3c4f196c1bd8f3076cc15f2fee1d8216779b960d9",
-          "path": "docs/playtest/playtest-harness-status.md"
-        },
-        {
-          "hash": "1827f2eaf5632d10e8ae3bf6be98fd91154cf3f0fa7ee188d55ec5ae19d0b92f",
-          "path": "docs/playtest/playtest-mike-runbook.md"
-        },
-        {
-          "hash": "cfd78c7816e18b0ab8924a36128ca4aa4866b61ae5d71c18eb612ddf4a6d15db",
-          "path": "docs/playtest/playtest-pier-after-fix-a-STUB.md"
-        },
-        {
-          "hash": "2ab88986a9dbecaea1af78e0c287af5e181bd48a906b54fe716bff41a5b4f318",
-          "path": "docs/playtest/playtest-plan-portable-for-mike.md"
-        },
-        {
-          "hash": "114b1feb54cf9e4ba47227acfa1f3089f0d0f7f14e04b8769afa8ab2fa2d9ade",
-          "path": "docs/playtest/playtest-portlight-v0.playtest.json"
-        },
-        {
-          "hash": "4ade90a47d157c72c1043c2e304e639b0ea7d90f223b531b7b65bcb89183497e",
-          "path": "docs/playtest/playtest-rpc-choice-ids.md"
-        },
-        {
-          "hash": "95aaba6a2e2fcbe2d1bcbeba83f0cb2593b227b4ec0a555cec99f8c65ca62f6e",
-          "path": "docs/playtest/playtest-seats-README.md"
         },
         {
           "hash": "005d35d5265e2fcb089989c7d05aafdc6080262bd930a4a7d13ff29bad850f45",
@@ -912,15 +852,15 @@
           "path": "docs/screenshots/harbour-warehouse.png"
         },
         {
-          "hash": "dba81368df06b08c7053eaa3350c4e70ab337402f8ea4399377937679ced8f7a",
+          "hash": "54b183e85978e38ba0ecd921497d8eec734bfb5ae9a456c0b5fe6d78fe9db184",
           "path": "docs/screenshots/hunt-active.png"
         },
         {
-          "hash": "e60ad4ed7b76b2d8a97cd6abc402d24a64debb7fa689fffb4b9cac56996db557",
+          "hash": "7dd8f938ba0b07fd46dd554dfeefce9b0bbd913a2470c384b967f129014a9927",
           "path": "docs/screenshots/hunt-board.png"
         },
         {
-          "hash": "a154c324f74df8689e165e4e0c6ef2126fd2a2d623297af393bbebaba8db19ec",
+          "hash": "569533b3e707e2ba0226dcca236ef63e12c861cdc6a137fe80566449b9327ff6",
           "path": "docs/screenshots/hunt-confirm.png"
         },
         {
@@ -1042,7 +982,7 @@
           "path": "godot/assets/catalog/locked-ids.csv"
         },
         {
-          "hash": "16661b56a83487a385ee04fc208c155450a3abeee9d10c80a446b0068a1907b1",
+          "hash": "b9ec1fce1c72162ba46af3096ebd70e41e32c98a2b1f58b3a73e14ac359143ba",
           "path": "godot/assets/landing/MANIFEST.json"
         },
         {
@@ -1721,7 +1661,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "db7c7e9f18bfcf6d62a8603b5db75531f8aa9a3199ef5025c10fc643ed3ef8dc",
+          "hash": "9cff98576f14e803d1d78bb03b7f6a8f82b9e8909c062ad4cc5d788426e29dda",
           "path": "parity/expected_divergences.json"
         },
         {
@@ -1841,11 +1781,11 @@
           "path": "parity/golden/bounty_board.json"
         },
         {
-          "hash": "b50594d0f97c8802b9f89c1c481ab01bea0f545663af89d08a45d423a7677220",
+          "hash": "7582808edb3b09d5d7cbd3f2ffa2682ce644562a47263fff6ce0660af76a3a31",
           "path": "parity/golden/bounty_claim.json"
         },
         {
-          "hash": "0d3cf8860bef9278076837d0060f172856313d859d2e5aee83f1e0abbafe9159",
+          "hash": "b8f49bb00bca32621506e34267d450c68911493fccd1502a3dd9b05b44d08e27",
           "path": "parity/golden/bounty_claim_sail.json"
         },
         {
@@ -3045,6 +2985,13 @@
         {
           "entry": "main",
           "entryRule": 1,
+          "failurePaths": [
+            {
+              "in": "main",
+              "kind": "match-err",
+              "line": 19
+            }
+          ],
           "hash": "f7465e4e3b3165dc931b322cad1cce6830c88a1f37db65155152c20a7cb246fa",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs"
@@ -3100,6 +3047,28 @@
             "validate_flat_deck",
             "validate_harbour"
           ],
+          "failurePaths": [
+            {
+              "in": "quay_flag_u4",
+              "kind": "err",
+              "line": 248
+            },
+            {
+              "in": "validate_harbour",
+              "kind": "err",
+              "line": 371
+            },
+            {
+              "in": "validate_flat_deck",
+              "kind": "err",
+              "line": 453
+            },
+            {
+              "in": "build_harbour_with_deck",
+              "kind": "err",
+              "line": 496
+            }
+          ],
           "hash": "d22ef6196c4fb40b926b565f38f0be1468a7d4449f0f00244d8ae7f87cc84a7f",
           "importOrder": [
             "crates/portlight-chart/src/cover.rs",
@@ -3115,7 +3084,10 @@
           "testsInside": true
         },
         {
-          "hash": "2acd7eb60fd2c68469aa8e59cd4265e2659154f724b730066d3e42f15d3f790d",
+          "hash": "e4faec8ea579f2024c0813e9930feae482bca8f2deecb9462cc5326e4d9cf8ef",
+          "importsFiles": [
+            "crates/portlight-chart/src/seam.rs"
+          ],
           "path": "crates/portlight-chart/src/landing.rs",
           "testsInside": true
         },
@@ -3174,13 +3146,14 @@
             "flat_deck_crop",
             "harbour_seam",
             "pier_plate_id",
+            "prop_path",
             "quay_paving_crop",
             "seam_camera_center",
             "seam_deck_blocks",
             "seam_flat_deck",
             "seam_interior_vertex"
           ],
-          "hash": "d21f4663b76f49251eeb166861e5bef52511c3314aa28b5c5847aad77f987d2d",
+          "hash": "ba350dadfc54b23def10d902ac4bca6cad8f8051ed1b518fc2e49ac19ad7e702",
           "importsFiles": [
             "crates/portlight-chart/src/harbour.rs",
             "crates/portlight-chart/src/project.rs"
@@ -3236,6 +3209,9 @@
       "outsideReads": 1,
       "outsideWrites": 4,
       "role": "code",
+      "testRunners": [
+        "cargo test"
+      ],
       "testedBy": 7,
       "testedInside": true,
       "unresolvedSites": 0
@@ -3257,7 +3233,39 @@
         {
           "entry": "main",
           "entryRule": 1,
-          "hash": "a92200b6b257346f05dcc96a0ab1c689c0295e70793c88fc53440d155b9e737b",
+          "failurePaths": [
+            {
+              "in": "script_cmd",
+              "kind": "match-err",
+              "line": 125
+            },
+            {
+              "in": "script_cmd",
+              "kind": "match-err",
+              "line": 134
+            },
+            {
+              "in": "script_cmd",
+              "kind": "match-err",
+              "line": 144
+            },
+            {
+              "in": "load_cmd",
+              "kind": "match-err",
+              "line": 167
+            },
+            {
+              "in": "load_cmd",
+              "kind": "match-err",
+              "line": 176
+            },
+            {
+              "in": "new_cmd",
+              "kind": "match-err",
+              "line": 235
+            }
+          ],
+          "hash": "c7a2a7ebdcb71200a05a0b238d5d0cb9eda83cfc9d3bf6e93c45a21ca7f56ae6",
           "importsFiles": [
             "crates/portlight-sim/src/lib.rs"
           ],
@@ -3266,7 +3274,7 @@
             {
               "calls": [
                 {
-                  "line": 130,
+                  "line": 132,
                   "name": "run_and_save",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3274,7 +3282,7 @@
                   "via": "script_cmd"
                 },
                 {
-                  "line": 138,
+                  "line": 140,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3282,7 +3290,7 @@
                   "via": "script_cmd"
                 },
                 {
-                  "line": 159,
+                  "line": 161,
                   "name": "load_snapshot",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3290,7 +3298,7 @@
                   "via": "load_cmd"
                 },
                 {
-                  "line": 209,
+                  "line": 233,
                   "name": "new_game",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3299,7 +3307,7 @@
                 },
                 {
                   "branch": "json",
-                  "line": 218,
+                  "line": 242,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3315,14 +3323,14 @@
             {
               "calls": [
                 {
-                  "line": 130,
+                  "line": 132,
                   "name": "run_and_save",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
                   }
                 },
                 {
-                  "line": 138,
+                  "line": 140,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3337,7 +3345,7 @@
             {
               "calls": [
                 {
-                  "line": 159,
+                  "line": 161,
                   "name": "load_snapshot",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3352,7 +3360,7 @@
             {
               "calls": [
                 {
-                  "line": 209,
+                  "line": 233,
                   "name": "new_game",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3360,7 +3368,7 @@
                 },
                 {
                   "branch": "json",
-                  "line": 218,
+                  "line": 242,
                   "name": "run_script",
                   "target": {
                     "file": "crates/portlight-sim/src/lib.rs"
@@ -3383,6 +3391,9 @@
       "name": "portlight-cli",
       "origin": "authored",
       "role": "code",
+      "testRunners": [
+        "cargo test"
+      ],
       "testedBy": 1,
       "testedInside": true,
       "unresolvedSites": 0
@@ -3673,7 +3684,434 @@
             "cargo_held",
             "rename_ready"
           ],
-          "hash": "ca962d3f059b9c024e5f86a0527a64be765b0dbd4ba28ae66862f39faba0e66c",
+          "failurePaths": [
+            {
+              "in": "start_game",
+              "kind": "match-err",
+              "line": 1967
+            },
+            {
+              "in": "start_captain",
+              "kind": "match-err",
+              "line": 2113
+            },
+            {
+              "in": "begin_custom",
+              "kind": "match-err",
+              "line": 2122
+            },
+            {
+              "in": "load_slot",
+              "kind": "match-err",
+              "line": 2178
+            },
+            {
+              "in": "save_current_game",
+              "kind": "match-err",
+              "line": 2203
+            },
+            {
+              "in": "run_newgame_smoke",
+              "kind": "match-err",
+              "line": 2226
+            },
+            {
+              "in": "run_newgame_smoke",
+              "kind": "match-err",
+              "line": 2233
+            },
+            {
+              "in": "run_newgame_smoke",
+              "kind": "match-err",
+              "line": 2268
+            },
+            {
+              "in": "run_newgame_smoke",
+              "kind": "match-err",
+              "line": 2281
+            },
+            {
+              "in": "run_newgame_smoke",
+              "kind": "match-err",
+              "line": 2286
+            },
+            {
+              "in": "journal_sea_check",
+              "kind": "match-err",
+              "line": 2509
+            },
+            {
+              "in": "stage_harbour_insurance",
+              "kind": "match-err",
+              "line": 2689
+            },
+            {
+              "in": "stage_harbour_bank",
+              "kind": "match-err",
+              "line": 2699
+            },
+            {
+              "in": "shipyard_repair",
+              "kind": "match-err",
+              "line": 3192
+            },
+            {
+              "in": "shipyard_rename",
+              "kind": "match-err",
+              "line": 3217
+            },
+            {
+              "in": "buy_hull",
+              "kind": "match-err",
+              "line": 3308
+            },
+            {
+              "in": "install_hull_upgrade",
+              "kind": "match-err",
+              "line": 3325
+            },
+            {
+              "in": "sell_docked_hull",
+              "kind": "match-err",
+              "line": 3338
+            },
+            {
+              "in": "dock_flagship",
+              "kind": "match-err",
+              "line": 3351
+            },
+            {
+              "in": "board_docked_hull",
+              "kind": "match-err",
+              "line": 3364
+            },
+            {
+              "in": "run_harbour_smoke",
+              "kind": "match-err",
+              "line": 3967
+            },
+            {
+              "in": "run_art",
+              "kind": "match-err",
+              "line": 4122
+            },
+            {
+              "in": "sail_until_duel",
+              "kind": "match-err",
+              "line": 4260
+            },
+            {
+              "in": "sail_until_duel",
+              "kind": "match-err",
+              "line": 4267
+            },
+            {
+              "in": "sail_until_duel",
+              "kind": "match-err",
+              "line": 4271
+            },
+            {
+              "in": "sail_until_duel",
+              "kind": "match-err",
+              "line": 4279
+            },
+            {
+              "in": "depart_now",
+              "kind": "match-err",
+              "line": 4569
+            },
+            {
+              "in": "next_day",
+              "kind": "match-err",
+              "line": 4654
+            },
+            {
+              "in": "trade",
+              "kind": "match-err",
+              "line": 4749
+            },
+            {
+              "in": "trade",
+              "kind": "err",
+              "line": 4749
+            },
+            {
+              "in": "trade",
+              "kind": "match-err",
+              "line": 4778
+            },
+            {
+              "in": "trade",
+              "kind": "err",
+              "line": 4778
+            },
+            {
+              "in": "trade",
+              "kind": "match-err",
+              "line": 4790
+            },
+            {
+              "in": "work_docks",
+              "kind": "match-err",
+              "line": 4859
+            },
+            {
+              "in": "hire_sailor",
+              "kind": "match-err",
+              "line": 4901
+            },
+            {
+              "in": "buy_provisions",
+              "kind": "match-err",
+              "line": 4939
+            },
+            {
+              "in": "apply_harbour",
+              "kind": "match-err",
+              "line": 5065
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "match-err",
+              "line": 5075
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "match-err",
+              "line": 5089
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "match-err",
+              "line": 5098
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "match-err",
+              "line": 5112
+            },
+            {
+              "in": "repay_from_field",
+              "kind": "match-err",
+              "line": 5121
+            },
+            {
+              "in": "repay_credit",
+              "kind": "match-err",
+              "line": 5148
+            },
+            {
+              "in": "draw_from_field",
+              "kind": "match-err",
+              "line": 5157
+            },
+            {
+              "in": "bank_from_field",
+              "kind": "match-err",
+              "line": 5177
+            },
+            {
+              "in": "emergency_from_field",
+              "kind": "match-err",
+              "line": 5188
+            },
+            {
+              "in": "apply_hire",
+              "kind": "match-err",
+              "line": 5570
+            },
+            {
+              "in": "crew_fire",
+              "kind": "match-err",
+              "line": 5591
+            },
+            {
+              "in": "crew_provision",
+              "kind": "match-err",
+              "line": 5621
+            },
+            {
+              "in": "apply_train",
+              "kind": "match-err",
+              "line": 5820
+            },
+            {
+              "in": "crew_equip_style",
+              "kind": "match-err",
+              "line": 5837
+            },
+            {
+              "in": "apply_skill",
+              "kind": "match-err",
+              "line": 5860
+            },
+            {
+              "in": "apply_recruit",
+              "kind": "match-err",
+              "line": 5889
+            },
+            {
+              "in": "apply_dismiss",
+              "kind": "match-err",
+              "line": 5906
+            },
+            {
+              "in": "apply_gear",
+              "kind": "match-err",
+              "line": 5924
+            },
+            {
+              "in": "apply_maintain_gear",
+              "kind": "match-err",
+              "line": 5942
+            },
+            {
+              "in": "apply_upgrade_gear",
+              "kind": "match-err",
+              "line": 5966
+            },
+            {
+              "in": "finish_duel_result",
+              "kind": "match-err",
+              "line": 6658
+            },
+            {
+              "in": "check_report_under_bounty_fight",
+              "kind": "match-err",
+              "line": 6921
+            },
+            {
+              "in": "check_report_under_bounty_fight",
+              "kind": "match-err",
+              "line": 6927
+            },
+            {
+              "in": "accept_contract_offer",
+              "kind": "match-err",
+              "line": 7653
+            },
+            {
+              "in": "complete_contract_offer",
+              "kind": "match-err",
+              "line": 7670
+            },
+            {
+              "in": "confirm_abandon",
+              "kind": "match-err",
+              "line": 7724
+            },
+            {
+              "in": "stage_progress_abandon",
+              "kind": "match-err",
+              "line": 8093
+            },
+            {
+              "in": "finish_victory",
+              "kind": "match-err",
+              "line": 9378
+            },
+            {
+              "in": "run_capture_cost",
+              "kind": "match-err",
+              "line": 9444
+            },
+            {
+              "in": "open_bounty_hunt",
+              "kind": "match-err",
+              "line": 9541
+            },
+            {
+              "in": "open_bounty_hunt",
+              "kind": "match-err",
+              "line": 9544
+            },
+            {
+              "in": "ingest",
+              "kind": "match-err",
+              "line": 9560
+            },
+            {
+              "in": "adopt_step",
+              "kind": "match-err",
+              "line": 9598
+            },
+            {
+              "in": "adopt_step",
+              "kind": "match-err",
+              "line": 9606
+            },
+            {
+              "in": "probe_naval",
+              "kind": "match-err",
+              "line": 9730
+            },
+            {
+              "in": "run_hunt_smoke",
+              "kind": "match-err",
+              "line": 9972
+            },
+            {
+              "in": "run_day_report_smoke",
+              "kind": "match-err",
+              "line": 10435
+            },
+            {
+              "in": "run_contract_strip_smoke",
+              "kind": "match-err",
+              "line": 11658
+            },
+            {
+              "in": "forage_day",
+              "kind": "match-err",
+              "line": 12317
+            },
+            {
+              "in": "accept_listed",
+              "kind": "match-err",
+              "line": 12344
+            },
+            {
+              "in": "pursue_bounty",
+              "kind": "match-err",
+              "line": 12396
+            },
+            {
+              "in": "claim_listed",
+              "kind": "match-err",
+              "line": 12413
+            },
+            {
+              "in": "advance_encounter_shot",
+              "kind": "match-err",
+              "line": 13686
+            },
+            {
+              "in": "prepare_scripted_voyage",
+              "kind": "match-err",
+              "line": 13799
+            },
+            {
+              "in": "prepare_scripted_voyage",
+              "kind": "match-err",
+              "line": 13805
+            },
+            {
+              "in": "run_report_same_tick_encounter",
+              "kind": "match-err",
+              "line": 14276
+            },
+            {
+              "in": "run_bounty_encounter",
+              "kind": "match-err",
+              "line": 14386
+            },
+            {
+              "in": "run_bounty_encounter",
+              "kind": "match-err",
+              "line": 14401
+            }
+          ],
+          "hash": "546017091ef7b5f79df7641aa16971431b768f15e67cda92ab8cfd71549e0529",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/economy.rs",
@@ -3779,6 +4217,18 @@
             "style_danger_button",
             "trust_block",
             "warehouse_name"
+          ],
+          "failurePaths": [
+            {
+              "in": "insurance_stage_session",
+              "kind": "err",
+              "line": 1164
+            },
+            {
+              "in": "parse_positive",
+              "kind": "err",
+              "line": 1239
+            }
           ],
           "hash": "cfe0137ecfe13d19b6d3f9f9c72b31adfb3eed1f7d422e1beeba81b1e053be8e",
           "importOrder": [
@@ -3968,6 +4418,7 @@
             "chart_host_width",
             "choice_preview",
             "class_label",
+            "clean_event_message",
             "crew_desk",
             "cycle_index",
             "day_log_lines",
@@ -4047,7 +4498,7 @@
             "upgrade_summary",
             "victory_receipt_lines"
           ],
-          "hash": "40efdba78a0f4fe0525e6ff5980e90ada66b1b5c250361ddf3b21255edc62157",
+          "hash": "7d118b1082b89cb740f6bf4a91ab12b8e357dbd24938332a1c8f574b4670b7c9",
           "importOrder": [
             "crates/portlight-chart/src/lib.rs",
             "crates/portlight-sim/src/encounter.rs",
@@ -4147,6 +4598,7 @@
             "log_tail",
             "offer_scope",
             "parse_playtest_id",
+            "pending_duel_key",
             "policies_key",
             "recap_key",
             "sail_offer_label",
@@ -4154,7 +4606,7 @@
             "split_rows",
             "strip_text"
           ],
-          "hash": "421a8c0012f10f65796c9d51e03324acefe36ed9850043fdf09f4614188f5f13",
+          "hash": "3d255c8a4ed06d95ffab0fd099c872d146db7a5ec5f5c688587b4c5ecde9e5ae",
           "importOrder": [
             "crates/portlight-godot/src/contracts_screen.rs",
             "crates/portlight-godot/src/game.rs",
@@ -4257,6 +4709,13 @@
           "testsInside": true
         },
         {
+          "failurePaths": [
+            {
+              "in": "ready",
+              "kind": "match-err",
+              "line": 57
+            }
+          ],
           "hash": "41d877607e175188ee794d8dc3de5561b516e19d0140dc232d8d590821d2312d",
           "importsFiles": [
             "crates/portlight-chart/src/lib.rs",
@@ -4288,6 +4747,9 @@
       "name": "portlight-godot",
       "origin": "authored",
       "role": "code",
+      "testRunners": [
+        "cargo test"
+      ],
       "testedBy": 16,
       "testedInside": true,
       "unresolvedSites": 0
@@ -4328,7 +4790,54 @@
             "withdraw",
             "withdraw_message"
           ],
-          "hash": "f99027c816a1c9f8e9d321708e120a5b29fc5b5a0175483c7ea19fd3ef6cc9dc",
+          "failurePaths": [
+            {
+              "in": "deposit",
+              "kind": "err",
+              "line": 75
+            },
+            {
+              "in": "deposit",
+              "kind": "err",
+              "line": 78
+            },
+            {
+              "in": "deposit",
+              "kind": "err",
+              "line": 83
+            },
+            {
+              "in": "deposit",
+              "kind": "match-err",
+              "line": 93
+            },
+            {
+              "in": "draw",
+              "kind": "err",
+              "line": 120
+            },
+            {
+              "in": "draw",
+              "kind": "err",
+              "line": 126
+            },
+            {
+              "in": "withdraw",
+              "kind": "err",
+              "line": 151
+            },
+            {
+              "in": "draw_letter",
+              "kind": "err",
+              "line": 165
+            },
+            {
+              "in": "draw_letter",
+              "kind": "err",
+              "line": 168
+            }
+          ],
+          "hash": "a7387783316bf7da453638d663afaf70092091d315a771bceb75f9750fb1387e",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/error.rs",
@@ -4344,6 +4853,63 @@
             "hunt_bounty",
             "paid_reward",
             "table_rewards"
+          ],
+          "failurePaths": [
+            {
+              "in": "accept_bounty",
+              "kind": "err",
+              "line": 169
+            },
+            {
+              "in": "accept_bounty",
+              "kind": "err",
+              "line": 172
+            },
+            {
+              "in": "accept_bounty",
+              "kind": "err",
+              "line": 175
+            },
+            {
+              "in": "accept_bounty",
+              "kind": "err",
+              "line": 178
+            },
+            {
+              "in": "hunt_bounty",
+              "kind": "err",
+              "line": 194
+            },
+            {
+              "in": "hunt_bounty",
+              "kind": "err",
+              "line": 202
+            },
+            {
+              "in": "hunt_bounty",
+              "kind": "err",
+              "line": 210
+            },
+            {
+              "in": "claim_bounty",
+              "kind": "err",
+              "line": 233
+            },
+            {
+              "in": "claim_bounty",
+              "kind": "err",
+              "line": 236
+            },
+            {
+              "in": "claim_bounty",
+              "kind": "err",
+              "line": 239
+            },
+            {
+              "in": "claim_bounty",
+              "kind": "err",
+              "line": 247
+            }
           ],
           "hash": "95e4c83934def505a696f9bde0b2f6c36eacf9f2ca258fea2446fd26efa255e0",
           "importOrder": [
@@ -4489,6 +5055,23 @@
             "resolve_completed",
             "tick_contracts"
           ],
+          "failurePaths": [
+            {
+              "in": "accept_offer",
+              "kind": "err",
+              "line": 230
+            },
+            {
+              "in": "complete_contract",
+              "kind": "err",
+              "line": 330
+            },
+            {
+              "in": "complete_contract",
+              "kind": "err",
+              "line": 333
+            }
+          ],
           "hash": "496963d514f6045cad4b7dd3ccaec766ecb27524c8de0919af27fcf3039d0437",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
@@ -4553,6 +5136,23 @@
             "starting_captains",
             "validate_spec"
           ],
+          "failurePaths": [
+            {
+              "in": "parse_script_spec",
+              "kind": "err",
+              "line": 370
+            },
+            {
+              "in": "parse_script_spec",
+              "kind": "err",
+              "line": 382
+            },
+            {
+              "in": "parse_script_spec",
+              "kind": "err",
+              "line": 404
+            }
+          ],
           "hash": "0fc24fc7def749b84cc1f22cbba9bc16322a481970523c46b51fc0086150c2a5",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
@@ -4596,7 +5196,64 @@
             "tick_markets",
             "work_docks"
           ],
-          "hash": "11533ac3aaadf22b0f1c1b1bf2994fcd27bc5e65230e2a2f30db9331620a498a",
+          "failurePaths": [
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 228
+            },
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 236
+            },
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 243
+            },
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 247
+            },
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 255
+            },
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 261
+            },
+            {
+              "in": "execute_buy",
+              "kind": "err",
+              "line": 270
+            },
+            {
+              "in": "execute_sell",
+              "kind": "err",
+              "line": 321
+            },
+            {
+              "in": "execute_sell",
+              "kind": "err",
+              "line": 327
+            },
+            {
+              "in": "execute_sell",
+              "kind": "err",
+              "line": 333
+            },
+            {
+              "in": "execute_sell",
+              "kind": "err",
+              "line": 337
+            }
+          ],
+          "hash": "8a877a4f0490655800a554319ddd0fc2bc9d1d63c42c52855ad10fd0146097c4",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
             "crates/portlight-sim/src/error.rs",
@@ -4659,7 +5316,64 @@
             "transfer_cargo",
             "wear_convoy"
           ],
-          "hash": "ba9213be095d185d348a8e8915f4b27a3a01410315472f0f4b88a38e34532d72",
+          "failurePaths": [
+            {
+              "in": "dock_flagship",
+              "kind": "err",
+              "line": 83
+            },
+            {
+              "in": "dock_flagship",
+              "kind": "err",
+              "line": 90
+            },
+            {
+              "in": "board_ship",
+              "kind": "err",
+              "line": 98
+            },
+            {
+              "in": "board_ship",
+              "kind": "err",
+              "line": 106
+            },
+            {
+              "in": "transfer_cargo",
+              "kind": "err",
+              "line": 136
+            },
+            {
+              "in": "transfer_cargo",
+              "kind": "err",
+              "line": 141
+            },
+            {
+              "in": "transfer_cargo",
+              "kind": "err",
+              "line": 144
+            },
+            {
+              "in": "transfer_cargo",
+              "kind": "err",
+              "line": 153
+            },
+            {
+              "in": "transfer_cargo",
+              "kind": "err",
+              "line": 170
+            },
+            {
+              "in": "sell_docked_ship",
+              "kind": "err",
+              "line": 215
+            },
+            {
+              "in": "sell_docked_ship",
+              "kind": "err",
+              "line": 218
+            }
+          ],
+          "hash": "afd57048e741804dadea79913d8702ed808a772433bd6ce58453c536466bc104",
           "importOrder": [
             "crates/portlight-sim/src/economy.rs",
             "crates/portlight-sim/src/model.rs",
@@ -4719,6 +5433,233 @@
             "tick_infrastructure",
             "withdraw_cargo"
           ],
+          "failurePaths": [
+            {
+              "in": "lease_warehouse",
+              "kind": "err",
+              "line": 154
+            },
+            {
+              "in": "lease_warehouse",
+              "kind": "err",
+              "line": 158
+            },
+            {
+              "in": "lease_warehouse",
+              "kind": "err",
+              "line": 168
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "err",
+              "line": 204
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "err",
+              "line": 207
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "err",
+              "line": 211
+            },
+            {
+              "in": "deposit_cargo",
+              "kind": "err",
+              "line": 218
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "err",
+              "line": 258
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "err",
+              "line": 261
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "err",
+              "line": 264
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "err",
+              "line": 268
+            },
+            {
+              "in": "withdraw_cargo",
+              "kind": "err",
+              "line": 285
+            },
+            {
+              "in": "open_broker_office",
+              "kind": "err",
+              "line": 467
+            },
+            {
+              "in": "open_broker_office",
+              "kind": "err",
+              "line": 470
+            },
+            {
+              "in": "open_broker_office",
+              "kind": "err",
+              "line": 474
+            },
+            {
+              "in": "check_license_eligibility",
+              "kind": "err",
+              "line": 514
+            },
+            {
+              "in": "check_license_eligibility",
+              "kind": "err",
+              "line": 518
+            },
+            {
+              "in": "check_license_eligibility",
+              "kind": "err",
+              "line": 527
+            },
+            {
+              "in": "check_license_eligibility",
+              "kind": "err",
+              "line": 536
+            },
+            {
+              "in": "check_license_eligibility",
+              "kind": "err",
+              "line": 554
+            },
+            {
+              "in": "check_license_eligibility",
+              "kind": "err",
+              "line": 558
+            },
+            {
+              "in": "purchase_license",
+              "kind": "err",
+              "line": 576
+            },
+            {
+              "in": "purchase_policy",
+              "kind": "err",
+              "line": 671
+            },
+            {
+              "in": "purchase_policy",
+              "kind": "err",
+              "line": 680
+            },
+            {
+              "in": "purchase_policy",
+              "kind": "err",
+              "line": 690
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 882
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 890
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 899
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 906
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 915
+            },
+            {
+              "in": "check_credit_eligibility",
+              "kind": "err",
+              "line": 918
+            },
+            {
+              "in": "open_credit_line",
+              "kind": "err",
+              "line": 943
+            },
+            {
+              "in": "draw_credit",
+              "kind": "err",
+              "line": 966
+            },
+            {
+              "in": "draw_credit",
+              "kind": "err",
+              "line": 969
+            },
+            {
+              "in": "draw_credit",
+              "kind": "err",
+              "line": 973
+            },
+            {
+              "in": "repay_credit",
+              "kind": "err",
+              "line": 992
+            },
+            {
+              "in": "repay_credit",
+              "kind": "err",
+              "line": 995
+            },
+            {
+              "in": "repay_credit",
+              "kind": "err",
+              "line": 999
+            },
+            {
+              "in": "repay_credit",
+              "kind": "err",
+              "line": 1003
+            },
+            {
+              "in": "emergency_loan",
+              "kind": "err",
+              "line": 1095
+            },
+            {
+              "in": "emergency_loan",
+              "kind": "err",
+              "line": 1098
+            },
+            {
+              "in": "dry_dock",
+              "kind": "err",
+              "line": 1121
+            },
+            {
+              "in": "dry_dock",
+              "kind": "err",
+              "line": 1130
+            },
+            {
+              "in": "dry_dock",
+              "kind": "err",
+              "line": 1134
+            },
+            {
+              "in": "dry_dock",
+              "kind": "err",
+              "line": 1139
+            }
+          ],
           "hash": "77a593e97663991b8cad82c77f5806d3d22d0a682793e25e0151df142085a1b6",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
@@ -4742,6 +5683,28 @@
             "injured_body_parts",
             "roll_injury",
             "treat_injury"
+          ],
+          "failurePaths": [
+            {
+              "in": "treat_injury",
+              "kind": "err",
+              "line": 137
+            },
+            {
+              "in": "treat_injury",
+              "kind": "err",
+              "line": 140
+            },
+            {
+              "in": "treat_injury",
+              "kind": "err",
+              "line": 143
+            },
+            {
+              "in": "treat_injury",
+              "kind": "err",
+              "line": 147
+            }
           ],
           "hash": "54e730010a4bdb9fbb73387d8e585f153ed4d44243ab858b5af140d84e6ebd23",
           "importsFiles": [
@@ -4954,6 +5917,73 @@
             "save_filename",
             "write_save"
           ],
+          "failurePaths": [
+            {
+              "in": "list_save_slots",
+              "kind": "match-err",
+              "line": 137
+            },
+            {
+              "in": "read_save",
+              "kind": "match-err",
+              "line": 294
+            },
+            {
+              "in": "read_save",
+              "kind": "err",
+              "line": 294
+            },
+            {
+              "in": "read_save",
+              "kind": "match-err",
+              "line": 298
+            },
+            {
+              "in": "read_save",
+              "kind": "match-err",
+              "line": 302
+            },
+            {
+              "in": "read_save",
+              "kind": "err",
+              "line": 302
+            },
+            {
+              "in": "read_save",
+              "kind": "match-err",
+              "line": 303
+            },
+            {
+              "in": "migrate_inner",
+              "kind": "err",
+              "line": 318
+            },
+            {
+              "in": "migrate_inner",
+              "kind": "err",
+              "line": 346
+            },
+            {
+              "in": "migrate_inner",
+              "kind": "err",
+              "line": 354
+            },
+            {
+              "in": "read_version",
+              "kind": "err",
+              "line": 364
+            },
+            {
+              "in": "object_clone",
+              "kind": "err",
+              "line": 642
+            },
+            {
+              "in": "truthy_object",
+              "kind": "err",
+              "line": 652
+            }
+          ],
           "hash": "b68b0f5fd6b6edf00f83c4452e3f9949de4e79b74df7ef0b519b38c56eae57ef",
           "importsFiles": [
             "crates/portlight-sim/src/campaign.rs",
@@ -4973,7 +6003,284 @@
             "run_and_save",
             "run_script"
           ],
-          "hash": "bdefb804b50a1fac4bf48480cd0dc203fb7ad5dd477b6ad3dfd70773ae425a90",
+          "failurePaths": [
+            {
+              "in": "execute",
+              "kind": "match-err",
+              "line": 57
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 93
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 113
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 123
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 138
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 172
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 181
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 190
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 198
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 207
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 217
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 226
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 236
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 245
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 254
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 263
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 271
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 278
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 281
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 289
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 298
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 306
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 315
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 331
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 341
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 350
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 359
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 368
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 378
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 385
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 399
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 406
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 413
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 420
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 427
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 446
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 453
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 460
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 475
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 487
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 497
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 504
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 511
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 518
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 527
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 538
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 548
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 555
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 562
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 569
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 595
+            },
+            {
+              "in": "dispatch",
+              "kind": "err",
+              "line": 601
+            },
+            {
+              "in": "dispatch_bounty",
+              "kind": "err",
+              "line": 614
+            },
+            {
+              "in": "dispatch_bounty",
+              "kind": "err",
+              "line": 639
+            },
+            {
+              "in": "dispatch_bounty",
+              "kind": "err",
+              "line": 663
+            }
+          ],
+          "hash": "fe66fb018f9dd69e3fee0c535677c5900a4cc7041ff76d6679c8d768e7aed89d",
           "importsFiles": [
             "crates/portlight-sim/src/custom_captain.rs",
             "crates/portlight-sim/src/error.rs",
@@ -5015,7 +6322,429 @@
             "worst_route_pirate_damage",
             "worst_storm_damage"
           ],
-          "hash": "9bd099e2e8abb6e62dcc3b167546812486b0ba2c371a1dc5ba13b2ea8e24d426",
+          "failurePaths": [
+            {
+              "in": "new_custom",
+              "kind": "err",
+              "line": 397
+            },
+            {
+              "in": "buy",
+              "kind": "err",
+              "line": 587
+            },
+            {
+              "in": "sell",
+              "kind": "err",
+              "line": 616
+            },
+            {
+              "in": "hire_crew",
+              "kind": "err",
+              "line": 722
+            },
+            {
+              "in": "hire_crew",
+              "kind": "err",
+              "line": 727
+            },
+            {
+              "in": "hire_crew",
+              "kind": "err",
+              "line": 736
+            },
+            {
+              "in": "hire_crew",
+              "kind": "err",
+              "line": 751
+            },
+            {
+              "in": "provision",
+              "kind": "err",
+              "line": 782
+            },
+            {
+              "in": "provision",
+              "kind": "err",
+              "line": 796
+            },
+            {
+              "in": "work",
+              "kind": "err",
+              "line": 815
+            },
+            {
+              "in": "hunt",
+              "kind": "err",
+              "line": 833
+            },
+            {
+              "in": "hunt_bounty",
+              "kind": "err",
+              "line": 916
+            },
+            {
+              "in": "duel",
+              "kind": "err",
+              "line": 980
+            },
+            {
+              "in": "duel",
+              "kind": "err",
+              "line": 986
+            },
+            {
+              "in": "duel",
+              "kind": "err",
+              "line": 991
+            },
+            {
+              "in": "resolve_pending_duel",
+              "kind": "err",
+              "line": 1000
+            },
+            {
+              "in": "encounter_choice_with",
+              "kind": "err",
+              "line": 1076
+            },
+            {
+              "in": "encounter_choice_with",
+              "kind": "err",
+              "line": 1080
+            },
+            {
+              "in": "encounter_choice_with",
+              "kind": "err",
+              "line": 1083
+            },
+            {
+              "in": "encounter_choice_with",
+              "kind": "err",
+              "line": 1089
+            },
+            {
+              "in": "naval_round",
+              "kind": "err",
+              "line": 1123
+            },
+            {
+              "in": "naval_round",
+              "kind": "err",
+              "line": 1134
+            },
+            {
+              "in": "resolve_boarding",
+              "kind": "err",
+              "line": 1231
+            },
+            {
+              "in": "fight",
+              "kind": "err",
+              "line": 1260
+            },
+            {
+              "in": "fight",
+              "kind": "err",
+              "line": 1269
+            },
+            {
+              "in": "repair",
+              "kind": "err",
+              "line": 1396
+            },
+            {
+              "in": "repair",
+              "kind": "err",
+              "line": 1402
+            },
+            {
+              "in": "repair",
+              "kind": "err",
+              "line": 1418
+            },
+            {
+              "in": "rename_ship",
+              "kind": "err",
+              "line": 1435
+            },
+            {
+              "in": "rename_ship",
+              "kind": "err",
+              "line": 1445
+            },
+            {
+              "in": "sell_fleet_ship",
+              "kind": "err",
+              "line": 1491
+            },
+            {
+              "in": "fire_crew",
+              "kind": "err",
+              "line": 1501
+            },
+            {
+              "in": "fire_crew",
+              "kind": "err",
+              "line": 1504
+            },
+            {
+              "in": "fire_crew",
+              "kind": "err",
+              "line": 1511
+            },
+            {
+              "in": "capture",
+              "kind": "err",
+              "line": 1543
+            },
+            {
+              "in": "capture",
+              "kind": "err",
+              "line": 1560
+            },
+            {
+              "in": "capture",
+              "kind": "err",
+              "line": 1576
+            },
+            {
+              "in": "capture",
+              "kind": "err",
+              "line": 1589
+            },
+            {
+              "in": "ensure_encounter",
+              "kind": "err",
+              "line": 1636
+            },
+            {
+              "in": "ensure_encounter",
+              "kind": "err",
+              "line": 1649
+            },
+            {
+              "in": "finalize_victory",
+              "kind": "err",
+              "line": 2113
+            },
+            {
+              "in": "finalize_victory",
+              "kind": "err",
+              "line": 2117
+            },
+            {
+              "in": "buy_infrastructure",
+              "kind": "err",
+              "line": 2373
+            },
+            {
+              "in": "buy_infrastructure",
+              "kind": "err",
+              "line": 2379
+            },
+            {
+              "in": "buy_infrastructure",
+              "kind": "err",
+              "line": 2386
+            },
+            {
+              "in": "buy_infrastructure",
+              "kind": "err",
+              "line": 2391
+            },
+            {
+              "in": "take_credit",
+              "kind": "err",
+              "line": 2405
+            },
+            {
+              "in": "take_credit",
+              "kind": "err",
+              "line": 2421
+            },
+            {
+              "in": "take_credit",
+              "kind": "err",
+              "line": 2434
+            },
+            {
+              "in": "buy_insurance",
+              "kind": "err",
+              "line": 2462
+            },
+            {
+              "in": "complete_contract",
+              "kind": "err",
+              "line": 2832
+            },
+            {
+              "in": "complete_contract",
+              "kind": "err",
+              "line": 2835
+            },
+            {
+              "in": "lease_warehouse",
+              "kind": "err",
+              "line": 2983
+            },
+            {
+              "in": "lease_warehouse",
+              "kind": "err",
+              "line": 2997
+            },
+            {
+              "in": "open_broker",
+              "kind": "err",
+              "line": 3015
+            },
+            {
+              "in": "purchase_license",
+              "kind": "err",
+              "line": 3033
+            },
+            {
+              "in": "dry_dock",
+              "kind": "err",
+              "line": 3062
+            },
+            {
+              "in": "dry_dock_fleet_ship",
+              "kind": "err",
+              "line": 3096
+            },
+            {
+              "in": "dry_dock_fleet_ship",
+              "kind": "err",
+              "line": 3108
+            },
+            {
+              "in": "dry_dock_fleet_ship",
+              "kind": "err",
+              "line": 3112
+            },
+            {
+              "in": "dry_dock_fleet_ship",
+              "kind": "err",
+              "line": 3117
+            },
+            {
+              "in": "buy_ship",
+              "kind": "err",
+              "line": 3189
+            },
+            {
+              "in": "buy_ship",
+              "kind": "err",
+              "line": 3203
+            },
+            {
+              "in": "buy_ship",
+              "kind": "err",
+              "line": 3206
+            },
+            {
+              "in": "install_upgrade",
+              "kind": "err",
+              "line": 3249
+            },
+            {
+              "in": "install_upgrade",
+              "kind": "err",
+              "line": 3257
+            },
+            {
+              "in": "install_upgrade",
+              "kind": "err",
+              "line": 3263
+            },
+            {
+              "in": "remove_upgrade",
+              "kind": "err",
+              "line": 3298
+            },
+            {
+              "in": "remove_upgrade",
+              "kind": "err",
+              "line": 3309
+            },
+            {
+              "in": "buy_gear",
+              "kind": "err",
+              "line": 3351
+            },
+            {
+              "in": "buy_gear",
+              "kind": "err",
+              "line": 3361
+            },
+            {
+              "in": "buy_gear",
+              "kind": "err",
+              "line": 3374
+            },
+            {
+              "in": "buy_gear",
+              "kind": "err",
+              "line": 3383
+            },
+            {
+              "in": "maintain_weapon",
+              "kind": "err",
+              "line": 3402
+            },
+            {
+              "in": "upgrade_weapon",
+              "kind": "err",
+              "line": 3423
+            },
+            {
+              "in": "upgrade_weapon",
+              "kind": "err",
+              "line": 3429
+            },
+            {
+              "in": "upgrade_weapon",
+              "kind": "err",
+              "line": 3437
+            },
+            {
+              "in": "train_crew",
+              "kind": "err",
+              "line": 3550
+            },
+            {
+              "in": "equip_style",
+              "kind": "err",
+              "line": 3572
+            },
+            {
+              "in": "equip_style",
+              "kind": "err",
+              "line": 3576
+            },
+            {
+              "in": "recruit_companion",
+              "kind": "err",
+              "line": 3593
+            },
+            {
+              "in": "dismiss_companion",
+              "kind": "err",
+              "line": 3610
+            },
+            {
+              "in": "spend_skill_point",
+              "kind": "err",
+              "line": 3632
+            },
+            {
+              "in": "remember_captain",
+              "kind": "err",
+              "line": 3719
+            }
+          ],
+          "hash": "2e72964821d8397082e1f77f7fffcb6e69f4fc5b970c77b7f8135843e87ceb17",
           "importOrder": [
             "crates/portlight-sim/src/campaign.rs",
             "crates/portlight-sim/src/combat.rs",
@@ -5141,6 +6870,13 @@
             "skill_display",
             "skill_level"
           ],
+          "failurePaths": [
+            {
+              "in": "field_repair_weapon",
+              "kind": "err",
+              "line": 143
+            }
+          ],
           "hash": "93e55ebbf12116e4cba6e5248fedc1e112f8bcd5ce36dd05cc5615ef8ac6afc1",
           "importsFiles": [
             "crates/portlight-sim/src/content.rs",
@@ -5236,6 +6972,63 @@
             "sail_lanes",
             "storm_damage"
           ],
+          "failurePaths": [
+            {
+              "in": "resolve_event",
+              "kind": "err",
+              "line": 183
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 811
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 814
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 818
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 821
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 829
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 833
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 838
+            },
+            {
+              "in": "depart",
+              "kind": "err",
+              "line": 856
+            },
+            {
+              "in": "advance_day",
+              "kind": "err",
+              "line": 1048
+            },
+            {
+              "in": "arrive",
+              "kind": "err",
+              "line": 1085
+            }
+          ],
           "hash": "d6fa5d791d3b876af0dd5914df4c58f560fc1401c22f89ad13adeede0366ddb4",
           "importOrder": [
             "crates/portlight-sim/src/content.rs",
@@ -5299,6 +7092,13 @@
             "upgrade_cost",
             "upgrade_days",
             "upgrade_weapon"
+          ],
+          "failurePaths": [
+            {
+              "in": "maintain_weapon",
+              "kind": "err",
+              "line": 130
+            }
           ],
           "hash": "5885458bc03354bc166218a10f748d511c839c5847c338ab1a1fb5e6dc777c73",
           "importsFiles": [
@@ -5430,6 +7230,9 @@
       "outsideReads": 2,
       "outsideWrites": 3,
       "role": "code",
+      "testRunners": [
+        "cargo test"
+      ],
       "testedBy": 38,
       "unresolvedNamed": [
         {
@@ -5462,7 +7265,7 @@
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "137defe43efa5eaaed29d50aab972113ab0f450f404a1169d362d14fbb30de9e",
+          "hash": "e084f989c2e38174b3dac65ef9e14e6f42621c4ba947e1c770e5748ed1f62d9b",
           "path": "CONTRIBUTING.md"
         },
         {
@@ -5470,47 +7273,47 @@
           "path": "Cargo.lock"
         },
         {
-          "hash": "4da442b993c2c5761d62143cbf3850e019d897c8affa60563bd71637cf5fa7ce",
+          "hash": "e5866ad11c4a5fbbb8e64bf559fd3eb96d8e4e6aa5c73b6e8ca4ba1aab074162",
           "path": "Cargo.toml"
         },
         {
-          "hash": "6ca8fb876d42cbbf7201662f518832c5f3f24e0d924ea8b3e00dd3cf62c4e0b6",
+          "hash": "0d06c4ab6570ee04b3c316dfda85dcdb5cc926d8abb004dd683f7db143abedf9",
           "path": "LICENSE"
         },
         {
-          "hash": "b8ffeb5cde22449cf1325ff696479d7bd90cf3e2acc546243d8b010d70555023",
+          "hash": "b74454a673db3904ca228cca0cbfdec58091fad6f0d476dec151e2076db77d56",
           "path": "README.es.md"
         },
         {
-          "hash": "f9f883266dc356019a086b1eeddca7a50ae4af0059c6aabf825af3b7ff5b0762",
+          "hash": "41bab594d561513144e5364cbb7d52bfb48b79a2e5d9a2bc358d4178b61ab7e8",
           "path": "README.fr.md"
         },
         {
-          "hash": "b5d885db7845c49896ecc908133f9c50440beb26fcd46940dad2e8212b251118",
+          "hash": "10710f616f3e9310cba05623b00f1f0492c4ef88c5ac7880e9f0c6f8d4df4cc3",
           "path": "README.hi.md"
         },
         {
-          "hash": "452c632934d143b66be7dade8265e6fc223656f218b8b211a648602e59118251",
+          "hash": "575d1ebebcae78fc1fe9d2c34fd0a0fd1a83d5b7865cee98605d3237bdeaaff4",
           "path": "README.it.md"
         },
         {
-          "hash": "883542b0cf223d76e31ebebc530d05e5ccac0ada758a17aa8e94519c17581e69",
+          "hash": "16c0ee3ab0e8733990f4a9e1acd4f6829584f13d5cb850e4449b7f7c1ba6b9bb",
           "path": "README.ja.md"
         },
         {
-          "hash": "6affb40f3202c0b28fb93dc4cf4ab98704779c27f329372a04672bf9d510dcf6",
+          "hash": "40e7d41f37c6c621da39a6a31cb2b48c594beef106f64165c21c2140ca2a90f5",
           "path": "README.md"
         },
         {
-          "hash": "79540982ef324845f5e0978edf429e68e31d98a9053d5c579af6882cb67f6346",
+          "hash": "0e864af082ac1cd7d537c23d52492870bed6ada9731fb6c263f5adb6e7ed81e9",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "67630c76c1c82c8c59d38ba46af480a268fb7bea7a8704a7b6d99de7b2d1ce95",
+          "hash": "4e87f05767bd7e8cdce15f46dfeab3a7de011919e9a276e539084ce6b2cc98b2",
           "path": "README.zh.md"
         },
         {
-          "hash": "0e5b098c481dd7fa06832ce417e70ffe9fe3cac91aab6f40573004cb9cbcebec",
+          "hash": "2ed8d1c06b895fb486534b4db1eab10b6ff62a6393214238be18beca37de46dd",
           "path": "SCORECARD.md"
         },
         {
@@ -5549,11 +7352,11 @@
       "externals": 0,
       "files": [
         {
-          "hash": "a3b5b49945b6fc69d841fed1c9b72613ff106e9ffad38476c03621e04e065ef7",
+          "hash": "5f7466df0fd8349ceba4aa7d20a8e89b1802db46c04f136e65b513ace93e37f0",
           "path": "scripts/verify.ps1"
         },
         {
-          "hash": "b6526d443a6a788083d8a3f902099951b9913c13033c484f9462b0e46945e1b2",
+          "hash": "fd6758d78817f75770348c7c0f337cfc8482c9c008a472ad8d280c37bd505f18",
           "path": "scripts/verify.sh"
         }
       ],
@@ -5617,7 +7420,7 @@
           "path": "site/src/content/docs/handbook/play.md"
         },
         {
-          "hash": "325ac050fc6c9668f50359cb089bb1ea4cd7e1dda4c68b05f5a1f5b53bb2e390",
+          "hash": "7f6e6e02e34d55a4e6e26dd0048cab457959304b2a31da358a0c36f31c598b08",
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
@@ -5699,7 +7502,24 @@
             "srel",
             "walk_strings"
           ],
-          "hash": "ba9534fbc43add092021c642a5e0d257a6a834bc22dcbd5df2395c16cd585090",
+          "failurePaths": [
+            {
+              "in": "png_size",
+              "kind": "raise",
+              "line": 148
+            },
+            {
+              "in": "srel",
+              "kind": "raise",
+              "line": 158
+            },
+            {
+              "in": "parse_json_object",
+              "kind": "except",
+              "line": 225
+            }
+          ],
+          "hash": "36704880eb1dd33471ca5f3240cc7c5b59d7922e192b86b7c833edd18f03c137",
           "path": "tools/build_manifest_pb002.py"
         },
         {
@@ -5712,6 +7532,13 @@
             "officer_names_payload",
             "skills_payload",
             "style_masters_payload"
+          ],
+          "failurePaths": [
+            {
+              "in": "apply_copy_overrides",
+              "kind": "raise",
+              "line": 698
+            }
           ],
           "hash": "7d2b614e9f2eec3fc6693db4dc877c90a9e1ccc90c60e4a78d08347ce6f8bc96",
           "path": "tools/extract_content.py"
@@ -5765,6 +7592,127 @@
             "values_equal",
             "without_log"
           ],
+          "failurePaths": [
+            {
+              "in": "run_json",
+              "kind": "raise",
+              "line": 91
+            },
+            {
+              "in": "run_json",
+              "kind": "except",
+              "line": 94
+            },
+            {
+              "in": "run_json",
+              "kind": "raise",
+              "line": 95
+            },
+            {
+              "in": "run_session",
+              "kind": "raise",
+              "line": 126
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 328
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 330
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 332
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 334
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 337
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 342
+            },
+            {
+              "in": "validate_entries",
+              "kind": "raise",
+              "line": 344
+            },
+            {
+              "in": "load_divergences",
+              "kind": "raise",
+              "line": 388
+            },
+            {
+              "in": "load_divergences",
+              "kind": "raise",
+              "line": 391
+            },
+            {
+              "in": "lookup",
+              "kind": "raise",
+              "line": 495
+            },
+            {
+              "in": "lookup",
+              "kind": "raise",
+              "line": 512
+            },
+            {
+              "in": "lookup",
+              "kind": "raise",
+              "line": 515
+            },
+            {
+              "in": "lookup",
+              "kind": "raise",
+              "line": 522
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 772
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 779
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 791
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 792
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 801
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 803
+            },
+            {
+              "kind": "raise",
+              "line": 894
+            }
+          ],
           "hash": "602f66463f0c4731c407b545287f26fed1e315be6530571e244207754567da17",
           "path": "tools/parity/check.py",
           "sequences": [
@@ -5807,6 +7755,62 @@
             "porcelain",
             "spec",
             "write_save"
+          ],
+          "failurePaths": [
+            {
+              "in": "write_save",
+              "kind": "raise",
+              "line": 75
+            },
+            {
+              "in": "porcelain",
+              "kind": "raise",
+              "line": 90
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 98
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 101
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 103
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 105
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 107
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 109
+            },
+            {
+              "in": "assert_loaded",
+              "kind": "raise",
+              "line": 114
+            },
+            {
+              "in": "assert_custom_differs",
+              "kind": "raise",
+              "line": 123
+            },
+            {
+              "kind": "raise",
+              "line": 166
+            }
           ],
           "hash": "9dd21dcd1e0d68f6f04aa053aa2ea3fba61b1aaefdea40d15470e66f70c98104",
           "path": "tools/parity/custom_captain_save.py",
@@ -5926,6 +7930,1142 @@
             "sync_combat_ammo",
             "victory_view"
           ],
+          "failurePaths": [
+            {
+              "in": "pricing_of",
+              "kind": "except",
+              "line": 134
+            },
+            {
+              "in": "do_buy",
+              "kind": "raise",
+              "line": 271
+            },
+            {
+              "in": "do_buy",
+              "kind": "raise",
+              "line": 274
+            },
+            {
+              "in": "do_sell",
+              "kind": "raise",
+              "line": 285
+            },
+            {
+              "in": "do_sell",
+              "kind": "raise",
+              "line": 294
+            },
+            {
+              "in": "parse_custom",
+              "kind": "raise",
+              "line": 572
+            },
+            {
+              "in": "parse_custom",
+              "kind": "except",
+              "line": 576
+            },
+            {
+              "in": "parse_custom",
+              "kind": "raise",
+              "line": 577
+            },
+            {
+              "in": "parse_custom",
+              "kind": "raise",
+              "line": 582
+            },
+            {
+              "in": "parse_custom",
+              "kind": "raise",
+              "line": 609
+            },
+            {
+              "in": "_custom_points",
+              "kind": "except",
+              "line": 616
+            },
+            {
+              "in": "_custom_points",
+              "kind": "raise",
+              "line": 617
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 624
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 627
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 628
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 632
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 633
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 640
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 645
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 648
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 651
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 652
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 656
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 659
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 660
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 664
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 667
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 707
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 710
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 711
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 716
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 719
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 720
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 724
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 728
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 735
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 741
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 744
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 745
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 749
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 756
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 759
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 760
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 764
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 767
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 768
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 773
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 776
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 777
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 781
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 785
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 789
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 794
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 798
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 802
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 806
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 809
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 810
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 814
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 818
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 822
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 826
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 830
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 834
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 838
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 842
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 846
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 850
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 854
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 858
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 862
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 867
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 868
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 872
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 877
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 881
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 885
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 889
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 892
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 893
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 898
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 902
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 905
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 906
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 910
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 914
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 920
+            },
+            {
+              "in": "dispatch",
+              "kind": "except",
+              "line": 923
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 924
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 928
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 932
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 935
+            },
+            {
+              "in": "do_accept",
+              "kind": "raise",
+              "line": 941
+            },
+            {
+              "in": "do_complete",
+              "kind": "raise",
+              "line": 984
+            },
+            {
+              "in": "do_complete",
+              "kind": "raise",
+              "line": 988
+            },
+            {
+              "in": "do_complete",
+              "kind": "raise",
+              "line": 990
+            },
+            {
+              "in": "do_complete",
+              "kind": "raise",
+              "line": 993
+            },
+            {
+              "in": "parse_encounter_target",
+              "kind": "except",
+              "line": 1015
+            },
+            {
+              "in": "parse_encounter_target",
+              "kind": "raise",
+              "line": 1016
+            },
+            {
+              "in": "ensure_encounter",
+              "kind": "raise",
+              "line": 1051
+            },
+            {
+              "in": "ensure_encounter",
+              "kind": "raise",
+              "line": 1084
+            },
+            {
+              "in": "do_encounter",
+              "kind": "raise",
+              "line": 1150
+            },
+            {
+              "in": "do_encounter",
+              "kind": "raise",
+              "line": 1154
+            },
+            {
+              "in": "do_encounter",
+              "kind": "raise",
+              "line": 1162
+            },
+            {
+              "in": "do_naval",
+              "kind": "raise",
+              "line": 1215
+            },
+            {
+              "in": "do_naval",
+              "kind": "raise",
+              "line": 1219
+            },
+            {
+              "in": "do_naval",
+              "kind": "raise",
+              "line": 1225
+            },
+            {
+              "in": "do_board",
+              "kind": "raise",
+              "line": 1308
+            },
+            {
+              "in": "do_fight",
+              "kind": "raise",
+              "line": 1332
+            },
+            {
+              "in": "do_fight",
+              "kind": "raise",
+              "line": 1340
+            },
+            {
+              "in": "do_capture",
+              "kind": "raise",
+              "line": 1373
+            },
+            {
+              "in": "do_capture",
+              "kind": "raise",
+              "line": 1388
+            },
+            {
+              "in": "do_capture",
+              "kind": "raise",
+              "line": 1394
+            },
+            {
+              "in": "do_capture",
+              "kind": "raise",
+              "line": 1398
+            },
+            {
+              "in": "do_spare",
+              "kind": "raise",
+              "line": 1601
+            },
+            {
+              "in": "do_spare",
+              "kind": "raise",
+              "line": 1603
+            },
+            {
+              "in": "do_spare",
+              "kind": "raise",
+              "line": 1604
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1651
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1653
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1656
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1659
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1661
+            },
+            {
+              "in": "do_buy_ship",
+              "kind": "raise",
+              "line": 1663
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1684
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1686
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1689
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1692
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1694
+            },
+            {
+              "in": "do_install_upgrade",
+              "kind": "raise",
+              "line": 1698
+            },
+            {
+              "in": "do_form_convoy",
+              "kind": "raise",
+              "line": 1707
+            },
+            {
+              "in": "do_repair",
+              "kind": "raise",
+              "line": 1730
+            },
+            {
+              "in": "do_repair",
+              "kind": "raise",
+              "line": 1733
+            },
+            {
+              "in": "do_repair",
+              "kind": "raise",
+              "line": 1736
+            },
+            {
+              "in": "do_repair",
+              "kind": "raise",
+              "line": 1738
+            },
+            {
+              "in": "do_repair",
+              "kind": "raise",
+              "line": 1747
+            },
+            {
+              "in": "do_rename_ship",
+              "kind": "raise",
+              "line": 1757
+            },
+            {
+              "in": "do_rename_ship",
+              "kind": "raise",
+              "line": 1762
+            },
+            {
+              "in": "do_rename_ship",
+              "kind": "raise",
+              "line": 1772
+            },
+            {
+              "in": "do_dock_current_ship",
+              "kind": "raise",
+              "line": 1782
+            },
+            {
+              "in": "do_dock_current_ship",
+              "kind": "raise",
+              "line": 1785
+            },
+            {
+              "in": "do_board_fleet_ship",
+              "kind": "raise",
+              "line": 1795
+            },
+            {
+              "in": "do_board_fleet_ship",
+              "kind": "raise",
+              "line": 1798
+            },
+            {
+              "in": "do_sell_fleet_ship",
+              "kind": "raise",
+              "line": 1808
+            },
+            {
+              "in": "do_sell_fleet_ship",
+              "kind": "raise",
+              "line": 1810
+            },
+            {
+              "in": "do_sell_fleet_ship",
+              "kind": "raise",
+              "line": 1813
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1824
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1827
+            },
+            {
+              "in": "do_fire",
+              "kind": "except",
+              "line": 1830
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1831
+            },
+            {
+              "in": "do_fire",
+              "kind": "raise",
+              "line": 1834
+            },
+            {
+              "in": "do_abandon",
+              "kind": "raise",
+              "line": 1855
+            },
+            {
+              "in": "do_transfer",
+              "kind": "raise",
+              "line": 1872
+            },
+            {
+              "in": "do_transfer",
+              "kind": "raise",
+              "line": 1875
+            },
+            {
+              "in": "do_gear",
+              "kind": "raise",
+              "line": 1885
+            },
+            {
+              "in": "do_gear",
+              "kind": "raise",
+              "line": 1888
+            },
+            {
+              "in": "do_gear",
+              "kind": "raise",
+              "line": 1899
+            },
+            {
+              "in": "do_maintain",
+              "kind": "raise",
+              "line": 1908
+            },
+            {
+              "in": "do_maintain",
+              "kind": "raise",
+              "line": 1914
+            },
+            {
+              "in": "do_train",
+              "kind": "raise",
+              "line": 1978
+            },
+            {
+              "in": "do_train",
+              "kind": "raise",
+              "line": 1983
+            },
+            {
+              "in": "do_skill",
+              "kind": "raise",
+              "line": 1999
+            },
+            {
+              "in": "do_skill",
+              "kind": "raise",
+              "line": 2008
+            },
+            {
+              "in": "do_remember",
+              "kind": "raise",
+              "line": 2061
+            },
+            {
+              "in": "do_recruit",
+              "kind": "raise",
+              "line": 2160
+            },
+            {
+              "in": "do_recruit",
+              "kind": "raise",
+              "line": 2170
+            },
+            {
+              "in": "do_hire",
+              "kind": "raise",
+              "line": 2187
+            },
+            {
+              "in": "do_hire",
+              "kind": "raise",
+              "line": 2190
+            },
+            {
+              "in": "do_hire",
+              "kind": "raise",
+              "line": 2193
+            },
+            {
+              "in": "do_hire",
+              "kind": "except",
+              "line": 2196
+            },
+            {
+              "in": "do_hire",
+              "kind": "raise",
+              "line": 2198
+            },
+            {
+              "in": "do_hire",
+              "kind": "raise",
+              "line": 2204
+            },
+            {
+              "in": "do_hire",
+              "kind": "raise",
+              "line": 2213
+            },
+            {
+              "in": "do_hunt",
+              "kind": "raise",
+              "line": 2241
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2316
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2322
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2325
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2330
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2333
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2350
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2353
+            },
+            {
+              "in": "do_bounty",
+              "kind": "raise",
+              "line": 2356
+            },
+            {
+              "in": "do_work",
+              "kind": "raise",
+              "line": 2365
+            },
+            {
+              "in": "do_provision",
+              "kind": "raise",
+              "line": 2374
+            },
+            {
+              "in": "do_provision",
+              "kind": "raise",
+              "line": 2377
+            },
+            {
+              "in": "do_provision",
+              "kind": "raise",
+              "line": 2381
+            },
+            {
+              "in": "_apply_duel",
+              "kind": "raise",
+              "line": 2392
+            },
+            {
+              "in": "_apply_duel",
+              "kind": "raise",
+              "line": 2399
+            },
+            {
+              "in": "_apply_duel",
+              "kind": "raise",
+              "line": 2402
+            },
+            {
+              "in": "do_resolve_duel",
+              "kind": "raise",
+              "line": 2464
+            },
+            {
+              "in": "_engine_result",
+              "kind": "raise",
+              "line": 2797
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 2803
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 2809
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 2815
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 2822
+            },
+            {
+              "in": "do_lease_warehouse",
+              "kind": "raise",
+              "line": 2831
+            },
+            {
+              "in": "do_lease_warehouse",
+              "kind": "except",
+              "line": 2834
+            },
+            {
+              "in": "do_lease_warehouse",
+              "kind": "raise",
+              "line": 2835
+            },
+            {
+              "in": "do_lease_warehouse",
+              "kind": "raise",
+              "line": 2838
+            },
+            {
+              "in": "do_open_broker",
+              "kind": "except",
+              "line": 2845
+            },
+            {
+              "in": "do_open_broker",
+              "kind": "raise",
+              "line": 2846
+            },
+            {
+              "in": "do_open_broker",
+              "kind": "raise",
+              "line": 2848
+            },
+            {
+              "in": "do_purchase_license",
+              "kind": "raise",
+              "line": 2855
+            },
+            {
+              "in": "_dry_dock_ship",
+              "kind": "raise",
+              "line": 2864
+            },
+            {
+              "in": "_dry_dock_ship",
+              "kind": "raise",
+              "line": 2867
+            },
+            {
+              "in": "_dry_dock_ship",
+              "kind": "raise",
+              "line": 2872
+            },
+            {
+              "in": "do_dry_dock",
+              "kind": "raise",
+              "line": 2884
+            },
+            {
+              "in": "do_dry_dock",
+              "kind": "raise",
+              "line": 2886
+            },
+            {
+              "in": "do_dry_dock",
+              "kind": "raise",
+              "line": 2896
+            },
+            {
+              "in": "do_dry_dock",
+              "kind": "raise",
+              "line": 2899
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "except",
+              "line": 2910
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2911
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2913
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2923
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2927
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2929
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 2933
+            },
+            {
+              "in": "do_buy_insurance",
+              "kind": "raise",
+              "line": 2939
+            },
+            {
+              "in": "do_deposit",
+              "kind": "raise",
+              "line": 2959
+            },
+            {
+              "in": "do_withdraw",
+              "kind": "raise",
+              "line": 2967
+            },
+            {
+              "in": "do_repay_credit",
+              "kind": "raise",
+              "line": 2974
+            },
+            {
+              "in": "reprice_loaded",
+              "kind": "except",
+              "line": 3379
+            },
+            {
+              "in": "do_save",
+              "kind": "raise",
+              "line": 3387
+            },
+            {
+              "in": "do_save",
+              "kind": "raise",
+              "line": 3394
+            },
+            {
+              "in": "do_load",
+              "kind": "raise",
+              "line": 3416
+            },
+            {
+              "in": "do_load",
+              "kind": "raise",
+              "line": 3419
+            },
+            {
+              "in": "execute_script",
+              "kind": "except",
+              "line": 3456
+            },
+            {
+              "kind": "raise",
+              "line": 3509
+            }
+          ],
           "hash": "35bd8f3aa1a6c9250d404f48571cf8f3b495b4ec301d74d0ebe1e8f0358b95b9",
           "path": "tools/parity/oracle.py"
         },
@@ -5938,6 +9078,27 @@
             "pin_value",
             "render",
             "sweep_one"
+          ],
+          "failurePaths": [
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 171
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 174
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 175
+            },
+            {
+              "kind": "raise",
+              "line": 266
+            }
           ],
           "hash": "9927533c66dcebddce35aa6373158d3792807e6f4425218e9644345655cfbb68",
           "importsFiles": [
@@ -5952,6 +9113,22 @@
             "main",
             "payload"
           ],
+          "failurePaths": [
+            {
+              "in": "payload",
+              "kind": "raise",
+              "line": 50
+            },
+            {
+              "in": "payload",
+              "kind": "raise",
+              "line": 89
+            },
+            {
+              "kind": "raise",
+              "line": 126
+            }
+          ],
           "hash": "f0216670a38107f8aee63fb32d650ee350c8ce8d8a9b6fab2ae8139294d3d80e",
           "path": "tools/parity/roster_options.py",
           "sequences": []
@@ -5960,6 +9137,17 @@
           "exports": [
             "main",
             "pricing_for"
+          ],
+          "failurePaths": [
+            {
+              "in": "pricing_for",
+              "kind": "except",
+              "line": 29
+            },
+            {
+              "kind": "raise",
+              "line": 63
+            }
           ],
           "hash": "e08cf077a8014aff0f4204342ac7184a4a63e92b70df598600bf2e88c1873743",
           "importsFiles": [
@@ -5974,6 +9162,17 @@
             "copy_saves",
             "listing",
             "main"
+          ],
+          "failurePaths": [
+            {
+              "in": "listing",
+              "kind": "except",
+              "line": 41
+            },
+            {
+              "kind": "raise",
+              "line": 123
+            }
           ],
           "hash": "0b6c024e03148a3651a74db4ade27647f2d25e3b845852254050541f124e7007",
           "path": "tools/parity/save_slots.py",
@@ -5995,6 +9194,132 @@
             "run",
             "tokens_of"
           ],
+          "failurePaths": [
+            {
+              "in": "parse_int",
+              "kind": "except",
+              "line": 87
+            },
+            {
+              "in": "parse_int",
+              "kind": "raise",
+              "line": 88
+            },
+            {
+              "in": "require",
+              "kind": "raise",
+              "line": 93
+            },
+            {
+              "in": "check_result",
+              "kind": "raise",
+              "line": 98
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "except",
+              "line": 124
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 125
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "except",
+              "line": 131
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 132
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 134
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 140
+            },
+            {
+              "in": "do_buy_infrastructure",
+              "kind": "raise",
+              "line": 145
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "except",
+              "line": 159
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 160
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 162
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 172
+            },
+            {
+              "in": "do_take_credit",
+              "kind": "raise",
+              "line": 176
+            },
+            {
+              "in": "do_buy_insurance",
+              "kind": "raise",
+              "line": 185
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 195
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 276
+            },
+            {
+              "in": "dispatch",
+              "kind": "raise",
+              "line": 294
+            },
+            {
+              "in": "run",
+              "kind": "except",
+              "line": 313
+            },
+            {
+              "in": "run",
+              "kind": "raise",
+              "line": 314
+            },
+            {
+              "in": "run",
+              "kind": "except",
+              "line": 315
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 362
+            },
+            {
+              "kind": "raise",
+              "line": 373
+            }
+          ],
           "hash": "c09931eb83601b43034c4a63201c803c75e6c9d875ac74f95c2aedc39b9f9f98",
           "importsFiles": [
             "tools/parity/oracle.py"
@@ -6012,6 +9337,9 @@
           "importsFiles": [
             "tools/parity/check.py",
             "tools/parity/pin_tuned.py"
+          ],
+          "names": [
+            "crates/portlight-sim/src/session.rs"
           ],
           "path": "tools/parity/test_check.py",
           "sequences": [
@@ -6059,7 +9387,8 @@
               "isDefaultExport": false,
               "name": "report_failed"
             }
-          ]
+          ],
+          "testFramework": "unittest"
         },
         {
           "entry": "main",
@@ -6068,6 +9397,12 @@
             "apply",
             "main",
             "view"
+          ],
+          "failurePaths": [
+            {
+              "kind": "raise",
+              "line": 308
+            }
           ],
           "hash": "d81fc2efa17b1a2aad5f698d6c41b98bbe896eab889ccf58b782efbc23b11ccc",
           "path": "tools/parity/victory_cases.py",
@@ -6136,7 +9471,7 @@
             "write_json",
             "write_text"
           ],
-          "hash": "7fb26b01d708ed88dba9f2351aafae0da02f1d8d5f8d1bd211329853f6b84397",
+          "hash": "0bc1fb470e1b810d628121a9de9ff0d829008260c4b1ccae8b468759c56fddc4",
           "importsFiles": [
             "tools/build_manifest_pb002.py"
           ],
@@ -6196,7 +9531,8 @@
               "isDefaultExport": false,
               "name": "test_ci_compare_mismatch_reports_both_hashes_and_keeps_going"
             }
-          ]
+          ],
+          "testFramework": "pytest"
         }
       ],
       "globs": [
@@ -6224,6 +9560,9 @@
       "outsideReads": 13,
       "outsideWrites": 1,
       "role": "code",
+      "testRunners": [
+        "python"
+      ],
       "testedBy": 2,
       "unresolvedSites": 0
     }
@@ -6233,6 +9572,7 @@
       "checksCount": 6,
       "commands": [
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "npx"
@@ -6240,6 +9580,7 @@
           "step": "Atlas check"
         },
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "cargo"
@@ -6247,6 +9588,7 @@
           "step": "Format"
         },
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "cargo"
@@ -6254,6 +9596,7 @@
           "step": "Clippy"
         },
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "cargo"
@@ -6261,6 +9604,7 @@
           "step": "Test"
         },
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "cargo"
@@ -6268,6 +9612,7 @@
           "step": "Test (python-base, tuned overlay off)"
         },
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "python3"
@@ -6275,6 +9620,7 @@
           "step": "Manifest gate fixtures"
         },
         {
+          "dir": "",
           "job": "test",
           "programs": [
             "python3"
@@ -6282,6 +9628,7 @@
           "step": "Parity allowlist"
         },
         {
+          "dir": "",
           "job": "balance",
           "programs": [
             "cargo",
@@ -6293,6 +9640,7 @@
           "step": "Balance sweep"
         },
         {
+          "dir": "",
           "job": "coverage",
           "programs": [
             "cargo",
@@ -6301,6 +9649,7 @@
           "step": "Test with coverage"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "cargo"
@@ -6308,6 +9657,7 @@
           "step": "Build"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "cargo"
@@ -6315,6 +9665,7 @@
           "step": "Build (python-base, tuned overlay off)"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6322,6 +9673,7 @@
           "step": "Live Python oracle"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6329,6 +9681,7 @@
           "step": "Live Python oracle (python-base, tuned overlay off)"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6336,6 +9689,7 @@
           "step": "Parity allowlist and golden bytes"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6343,6 +9697,7 @@
           "step": "Victory fixtures"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6350,6 +9705,7 @@
           "step": "Roster and custom-captain options"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6357,6 +9713,7 @@
           "step": "Save-slot listing"
         },
         {
+          "dir": "",
           "job": "oracle",
           "programs": [
             "python3"
@@ -6364,6 +9721,7 @@
           "step": "Custom-captain save"
         },
         {
+          "dir": "",
           "job": "godot",
           "programs": [
             "cargo"
@@ -6371,6 +9729,7 @@
           "step": "Clippy (portlight-godot)"
         },
         {
+          "dir": "",
           "job": "godot",
           "programs": [
             "cargo",
@@ -6379,6 +9738,7 @@
           "step": "Build the GDExtension"
         },
         {
+          "dir": "",
           "job": "godot",
           "programs": [
             "curl",
@@ -6389,6 +9749,7 @@
           "step": "Install Godot 4.7.2"
         },
         {
+          "dir": "",
           "job": "godot",
           "programs": [
             "1",
@@ -6403,7 +9764,6 @@
             "find",
             "grep",
             "mkdir",
-            "moved_frames",
             "reject_renderer_errors",
             "rm",
             "run_godot",
@@ -6415,6 +9775,130 @@
       ],
       "elsewhere": [],
       "file": ".github/workflows/ci.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "test",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-24.04"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "balance",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-24.04"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "coverage",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-24.04"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "oracle",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-24.04"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "3.12",
+                  "range": ">=3.12.0 <3.13.0-0"
+                }
+              ],
+              "step": "4",
+              "uses": "actions/setup-python",
+              "version": "3.12"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "godot",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-24.04"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "audit",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-24.04"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
       "landings": [
         "parity/golden",
         "parity/golden/roster_options.json",
@@ -6525,6 +10009,13 @@
       ],
       "runs": [
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/assets.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/assets.rs",
@@ -6539,9 +10030,23 @@
           "via": "cargo clippy"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/harbour.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/harbour.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/landing.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6560,9 +10065,23 @@
           "via": "cargo clippy"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/placeholder.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-chart/src/placeholder.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-chart/src/project.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6574,7 +10093,7 @@
           "via": "cargo test"
         },
         {
-          "job": "test",
+          "job": "coverage",
           "matched": true,
           "path": "crates/portlight-chart/src/seam.rs",
           "runKind": "executes",
@@ -6583,7 +10102,29 @@
         {
           "job": "test",
           "matched": true,
+          "path": "crates/portlight-chart/src/seam.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
           "path": "crates/portlight-chart/src/view.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "test",
+          "matched": true,
+          "path": "crates/portlight-chart/src/view.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "directory": true,
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-cli/",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6744,9 +10285,23 @@
           "via": "cargo fmt"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/bounty.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/bounty.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/campaign.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6758,9 +10313,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/combat.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/combat.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/companion.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6772,9 +10341,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/consequences.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/consequences.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/contracts.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6786,9 +10369,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/cross_port_networks.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/cross_port_networks.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/culture.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6800,9 +10397,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/custom_captain.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/custom_captain.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/error.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6814,9 +10425,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/fleet.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/fleet.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/hunting.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6828,9 +10453,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/infrastructure.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/infrastructure.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/injuries.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6849,9 +10488,23 @@
           "via": "cargo clippy"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/loot.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/loot.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/memory.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6863,9 +10516,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/merchant.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/merchant.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/narrative.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6877,9 +10544,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/naval.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/naval.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/port_arrival_engine.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6891,9 +10572,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/pyrand.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/pyrand.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/save.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6905,9 +10600,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/script.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/script.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/sea_culture.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6919,9 +10628,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/session.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/session.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/skills.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6933,9 +10656,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/training.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/training.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/util.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6947,9 +10684,23 @@
           "via": "cargo test"
         },
         {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/voyage.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
           "job": "test",
           "matched": true,
           "path": "crates/portlight-sim/src/voyage.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/src/weapon_provenance.rs",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -6961,7 +10712,7 @@
           "via": "cargo test"
         },
         {
-          "job": "test",
+          "job": "coverage",
           "matched": true,
           "path": "crates/portlight-sim/src/weapon_quality.rs",
           "runKind": "executes",
@@ -6970,7 +10721,29 @@
         {
           "job": "test",
           "matched": true,
+          "path": "crates/portlight-sim/src/weapon_quality.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "coverage",
+          "matched": true,
           "path": "crates/portlight-sim/src/world.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "job": "test",
+          "matched": true,
+          "path": "crates/portlight-sim/src/world.rs",
+          "runKind": "executes",
+          "via": "cargo test"
+        },
+        {
+          "directory": true,
+          "job": "coverage",
+          "matched": true,
+          "path": "crates/portlight-sim/tests/",
           "runKind": "executes",
           "via": "cargo test"
         },
@@ -7055,6 +10828,66 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "files": 46,
+          "job": "test",
+          "runner": "cargo test",
+          "step": "Test"
+        },
+        {
+          "files": 46,
+          "job": "test",
+          "runner": "cargo test",
+          "step": "Test (python-base, tuned overlay off)"
+        },
+        {
+          "files": 1,
+          "job": "test",
+          "runner": "python",
+          "step": "Manifest gate fixtures"
+        },
+        {
+          "files": 1,
+          "job": "test",
+          "runner": "python",
+          "step": "Parity allowlist"
+        },
+        {
+          "files": 1,
+          "job": "balance",
+          "runner": "cargo test",
+          "step": "Balance sweep"
+        },
+        {
+          "coverage": true,
+          "files": 46,
+          "job": "coverage",
+          "runner": "cargo test",
+          "step": "Test with coverage"
+        },
+        {
+          "files": 1,
+          "job": "oracle",
+          "runner": "python",
+          "step": "Parity allowlist and golden bytes"
+        },
+        {
+          "files": 17,
+          "job": "godot",
+          "runner": "cargo test",
+          "step": "Build the GDExtension"
+        },
+        {
+          "job": "godot",
+          "ran": [
+            "godot/scenes/harbour_seam.tscn",
+            "godot/scenes/main.tscn"
+          ],
+          "runner": null,
+          "step": "Import and smoke-test the chart"
+        }
+      ],
       "triggers": [
         {
           "event": "pull_request",
@@ -7097,6 +10930,7 @@
       "checksCount": 0,
       "commands": [
         {
+          "dir": "site",
           "job": "build",
           "programs": [
             "npm"
@@ -7104,6 +10938,7 @@
           "step": "Install site dependencies"
         },
         {
+          "dir": "site",
           "job": "build",
           "programs": [
             "npm"
@@ -7113,6 +10948,56 @@
       ],
       "elsewhere": [],
       "file": ".github/workflows/pages.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "build",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "environment": {
+            "name": "github-pages"
+          },
+          "name": "deploy",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
       "landings": [],
       "mentions": [],
       "name": "Deploy site to GitHub Pages",
@@ -7352,10 +11237,10 @@
       "to": "portlight-sim"
     }
   ],
-  "engine": "1.23.0",
+  "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "4f509e74f9592b60e30fcd73f528f4f31d7f95c8",
-    "tracked": 875
+    "commit": "30fd2ddaa3c9ffd844036a7409bacdacd847b510",
+    "tracked": 859
   },
   "landings": [
     {
@@ -7567,6 +11452,11 @@
     {
       "readers": [
         {
+          "by": "CONTRIBUTING.md",
+          "call": "--path",
+          "confidence": "text"
+        },
+        {
           "by": "README.es.md",
           "call": "--path",
           "confidence": "text"
@@ -7603,16 +11493,6 @@
         },
         {
           "by": "README.zh.md",
-          "call": "--path",
-          "confidence": "text"
-        },
-        {
-          "by": "docs/BUILD-CHECK-WIN-MAC.md",
-          "call": "--path",
-          "confidence": "text"
-        },
-        {
-          "by": "docs/playtest/playtest-bridge-consult-brief.md",
           "call": "--path",
           "confidence": "text"
         },
@@ -8728,6 +12608,16 @@
     {
       "readers": [
         {
+          "by": "godot/assets/landing/MANIFEST.json",
+          "call": "configuration",
+          "confidence": "config"
+        },
+        {
+          "by": "tools/build_manifest_pb002.py",
+          "call": "literal",
+          "confidence": "ast"
+        },
+        {
           "by": "tools/test_build_manifest_gates.py",
           "call": "literal",
           "confidence": "ast",
@@ -8777,18 +12667,40 @@
   "testFiles": 65,
   "unassigned": [
     {
-      "hash": "1c8830ddb1c538312e96ca26b2d402b453d1909b07ab9208d9c46ff82e7c4949",
+      "hash": "21d5fd749b7c12747cc08b93c99dabff98a757498270e401400c4b069ec6f0ec",
       "path": "playtest/README.md"
-    },
-    {
-      "hash": "6d09b4ce8e0927929defb37966abfa5554155e24023a9872a8b28a0896313efb",
-      "path": "playtest/_plumbing-fixture.playtest.json"
     },
     {
       "hash": "a02a77fd2b9e7e7576a9f2bc7ac32cb8b9b1e94aaa67bd3645e5cf7e3a9c370d",
       "path": "playtest/portlight-godot.playtest.json"
     },
     {
+      "failurePaths": [
+        {
+          "in": "assert",
+          "kind": "throw",
+          "line": 127
+        },
+        {
+          "in": "clearOverlays",
+          "kind": "throw",
+          "line": 212
+        },
+        {
+          "in": "clearEncounterOnly",
+          "kind": "throw",
+          "line": 235
+        },
+        {
+          "in": "voyage",
+          "kind": "catch",
+          "line": 582
+        },
+        {
+          "kind": "catch",
+          "line": 703
+        }
+      ],
       "hash": "e65c8f2a22379294991bc903188daa33a0459531639892620b5a485cc5dc854b",
       "path": "playtest/probe-bridge.mjs"
     }

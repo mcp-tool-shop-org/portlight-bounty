@@ -46,10 +46,10 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Adaeze | Arms Dealer | [Sun Harbor](../ports/sun_harbor.md) | West Africa | [The Gold Coast Compact](../factions/gold_coast_compact.md) | melee, armor, ranged, ammo | x1.08 | C:5960 | [adaeze_arms.md](adaeze_arms.md) |
 | Kofi | Leatherworker | [Palm Cove](../ports/palm_cove.md) | West Africa | [The Gold Coast Compact](../factions/gold_coast_compact.md) | armor | x1.05 | C:5976 | [kofi_leather.md](kofi_leather.md) |
 | Yaa | Blade Merchant | [Pearl Shallows](../ports/pearl_shallows.md) | West Africa | [The Gold Coast Compact](../factions/gold_coast_compact.md) | melee, ranged | x1.12 | C:5989 | [yaa_sharpedge.md](yaa_sharpedge.md) |
-| Master Chen | Master Smith | [Jade Port](../ports/jade_port.md) | East Indies | [The Silk Circle](../factions/silk_circle.md) | melee, armor | x1.15 | C:6003 | [chen_forge.md](chen_forge.md) |
-| Devi | Armorer | [Monsoon Reach](../ports/monsoon_reach.md) | East Indies | [The Free Ports](../factions/free_ports.md) | armor, ammo | x1.1 | C:6017 | [devi_arms.md](devi_arms.md) |
-| Li Wei | Mechanist | [Silk Haven](../ports/silk_haven.md) | East Indies | [The Silk Circle](../factions/silk_circle.md) | ranged, ammo, melee | x1.12 | C:6031 | [li_crossbow.md](li_crossbow.md) |
-| Tane | Warrior Outfitter | [Coral Throne](../ports/coral_throne.md) | South Seas | [The Coral Crown](../factions/coral_crown.md) | melee, ranged | x1.08 | C:6046 | [tane_warrior.md](tane_warrior.md) |
+| Bladesmith Chen | Master Smith | [Jade Port](../ports/jade_port.md) | East Indies | [The Silk Circle](../factions/silk_circle.md) | melee, armor | x1.15 | C:6003 | [chen_forge.md](chen_forge.md) |
+| Armorer Devi | Armorer | [Monsoon Reach](../ports/monsoon_reach.md) | East Indies | [The Free Ports](../factions/free_ports.md) | armor, ammo | x1.1 | C:6017 | [devi_arms.md](devi_arms.md) |
+| Mechanist Li Wei | Mechanist | [Silk Haven](../ports/silk_haven.md) | East Indies | [The Silk Circle](../factions/silk_circle.md) | ranged, ammo, melee | x1.12 | C:6031 | [li_crossbow.md](li_crossbow.md) |
+| Outfitter Tane | Warrior Outfitter | [Coral Throne](../ports/coral_throne.md) | South Seas | [The Coral Crown](../factions/coral_crown.md) | melee, ranged | x1.08 | C:6046 | [tane_warrior.md](tane_warrior.md) |
 | Malia | Outfitter | [Typhoon Anchorage](../ports/typhoon_anchorage.md) | South Seas | [The Coral Crown](../factions/coral_crown.md) | melee, armor, ammo | x1.1 | C:6060 | [malia_provisions.md](malia_provisions.md) |
 <!-- hand-maintained:end -->
 

@@ -1,12 +1,3 @@
-The MIT license below covers this repository, including the pictures
-in godot/assets/ and docs/screenshots/.
-
-The barrel, bollard, cart, crate, and torch are built by build_prop()
-in ai-rpg-stage, file assets/dimetric/camera/dimetric_60_45.py, from
-Blender primitives. That function landed in commit 55ac9b2. The
-manifest note "vendor; no remake" means those plates were copied from
-that repository and not remade.
-
 MIT License
 
 Copyright (c) 2026 mcp-tool-shop
@@ -28,3 +19,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+The MIT license above covers this repository, including the pictures
+in godot/assets/ and docs/screenshots/.
+
+The barrel, bollard, cart, crate, and torch are built by build_prop()
+in ai-rpg-stage, file assets/dimetric/camera/dimetric_60_45.py, from
+Blender primitives. That function landed in commit 55ac9b2. The
+manifest note "vendor; no remake" means those plates were copied from
+that repository and not remade.
+

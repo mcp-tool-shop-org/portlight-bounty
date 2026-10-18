@@ -5882,7 +5882,7 @@ impl PortlightGame {
                 self.crew_notice = if dialog.is_empty() {
                     notice
                 } else {
-                    format!("{notice} \"{dialog}\"")
+                    format!("{notice} {dialog}")
                 };
                 self.push_log(self.crew_notice.clone());
             }
@@ -15698,6 +15698,11 @@ impl PortlightGame {
                     ),
                     None => state.set("last_claim", &Variant::nil()),
                 }
+                match crate::playtest::pending_duel_key(world.pending_duel.as_ref(), &self.stances)
+                {
+                    Some(duel) => state.set("pending_duel", &duel.to_dictionary()),
+                    None => state.set("pending_duel", &Variant::nil()),
+                }
             }
             None => {
                 state.set("log_tail", &Variant::nil());
@@ -15708,6 +15713,7 @@ impl PortlightGame {
                 state.set("policies", &Variant::nil());
                 state.set("banked", &Variant::nil());
                 state.set("last_claim", &Variant::nil());
+                state.set("pending_duel", &Variant::nil());
             }
         }
         let mut result = VarDictionary::new();

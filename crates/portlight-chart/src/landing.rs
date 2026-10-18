@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-const MANIFEST_SHA256: &str = "16661b56a83487a385ee04fc208c155450a3abeee9d10c80a446b0068a1907b1";
+const MANIFEST_SHA256: &str = "b9ec1fce1c72162ba46af3096ebd70e41e32c98a2b1f58b3a73e14ac359143ba";
 
 fn landing_dir() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../godot/assets/landing")
@@ -57,7 +57,7 @@ fn manifest_hashes_match_the_committed_files() {
     assert_eq!(sha256(&manifest_bytes), MANIFEST_SHA256);
 
     let manifest: Value = serde_json::from_slice(&manifest_bytes).expect("manifest json");
-    assert_eq!(manifest["version"], "0.4.3");
+    assert_eq!(manifest["version"], "0.3.0");
     assert_eq!(manifest["count"], 78);
     assert_eq!(manifest["counts"]["ships"], 36);
     assert_eq!(manifest["counts"]["harbour"], 30);
@@ -284,4 +284,34 @@ fn plate_imports_follow_the_manifest_and_hdr_2d_is_off() {
             .any(|line| line == "textures/canvas_textures/default_texture_filter=0"),
         "canvas filter must be Nearest (0)"
     );
+}
+
+#[test]
+fn prop_paths_exist_in_manifest_and_manifest_has_no_banned_strings() {
+    let raw = fs::read_to_string(landing_dir().join("MANIFEST.json")).expect("MANIFEST.json");
+    for banned in [
+        "pb-002-plates",
+        "outbox-PB-002",
+        "grok-bot-verifier",
+        "/workspace",
+    ] {
+        assert!(
+            !raw.contains(banned),
+            "MANIFEST.json contains banned internal string `{banned}`"
+        );
+    }
+    let manifest: Value = serde_json::from_str(&raw).expect("manifest json");
+    let entries = manifest["entries"].as_array().expect("entries");
+    for id in crate::seam::HARBOUR_PROP_IDS {
+        let res_path = crate::seam::prop_path(id);
+        let rel = res_path
+            .strip_prefix("res://assets/landing/")
+            .expect("landing prefix");
+        let entry = entries
+            .iter()
+            .find(|entry| entry["id"] == id)
+            .unwrap_or_else(|| panic!("missing manifest entry for harbour prop {id}"));
+        assert_eq!(entry["path"], rel, "manifest path mismatch for {id}");
+        assert!(landing_dir().join(rel).is_file(), "missing prop file {rel}");
+    }
 }

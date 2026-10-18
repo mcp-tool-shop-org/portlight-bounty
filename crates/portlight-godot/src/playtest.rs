@@ -1285,6 +1285,54 @@ impl VoyageKey {
     }
 }
 
+/// `state.pending_duel`: the route-pirate stance duel waiting on the chart,
+/// or null when none is pending.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PendingDuelKey {
+    pub captain_id: String,
+    pub captain_name: String,
+    pub faction_id: String,
+    pub personality: String,
+    pub strength: i64,
+    pub region: String,
+    pub stances: Vec<String>,
+}
+
+pub(crate) fn pending_duel_key(
+    duel: Option<&portlight_sim::model::PendingDuel>,
+    stances: &[String],
+) -> Option<PendingDuelKey> {
+    let duel = duel?;
+    Some(PendingDuelKey {
+        captain_id: duel.captain_id.clone(),
+        captain_name: duel.captain_name.clone(),
+        faction_id: duel.faction_id.clone(),
+        personality: duel.personality.clone(),
+        strength: duel.strength,
+        region: duel.region.clone(),
+        stances: stances.to_vec(),
+    })
+}
+
+impl PendingDuelKey {
+    pub(crate) fn to_dictionary(&self) -> VarDictionary {
+        let mut stances = VarArray::new();
+        for stance in &self.stances {
+            stances.push(stance.as_str());
+        }
+        let mut dict = vdict! {
+            "captain_id" => self.captain_id.as_str(),
+            "captain_name" => self.captain_name.as_str(),
+            "faction_id" => self.faction_id.as_str(),
+            "personality" => self.personality.as_str(),
+            "strength" => self.strength,
+            "region" => self.region.as_str(),
+        };
+        dict.set("stances", &stances);
+        dict
+    }
+}
+
 fn rows_array(rows: &[ContractRow]) -> VarArray {
     let mut out = VarArray::new();
     for row in rows {
@@ -2255,5 +2303,24 @@ mod tests {
             policies_key(&infra).1,
             Some(("pirates".to_string(), 40, false))
         );
+    }
+
+    #[test]
+    fn state_pending_duel_key() {
+        assert_eq!(pending_duel_key(None, &[]), None);
+        let duel = portlight_sim::model::PendingDuel {
+            captain_id: "gnaw".into(),
+            captain_name: "Gnaw".into(),
+            faction_id: "iron_wolves".into(),
+            personality: "aggressive".into(),
+            strength: 4,
+            region: "North Atlantic".into(),
+        };
+        let key = pending_duel_key(Some(&duel), &["thrust".into(), "parry".into()]).unwrap();
+        assert_eq!(key.captain_id, "gnaw");
+        assert_eq!(key.captain_name, "Gnaw");
+        assert_eq!(key.faction_id, "iron_wolves");
+        assert_eq!(key.strength, 4);
+        assert_eq!(key.stances, vec!["thrust".to_string(), "parry".to_string()]);
     }
 }

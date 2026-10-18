@@ -1,4 +1,4 @@
-# Li Wei (li_crossbow)
+# Mechanist Li Wei (li_crossbow)
 
 Base commit: d2b544f (main, which includes phases 6A and 6B; content.json, the sim and the godot UI as cited are unchanged since 515a488). Status: draft canon, phase 6. Written 2026-10-17. Tables are hand-maintained from content.json; there is no generator.
 Cites `C:n` are crates/portlight-sim/data/content.json line n at d2b544f. Python cites read portlight@9b02494 path:line. Legend: [exists] code or data fact with a cite | [cite] grounded | [invented] | [flavour, no mechanic] | [ascii-folded] | [proposal] | UNVERIFIED | DF-n see ../data-fixes.md | T-n see ../README.md shared timeline.
@@ -9,7 +9,7 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 
 | Key | Value | Cite |
 |---|---|---|
-| Catalog name | Li Wei | C:6032 |
+| Catalog name | Mechanist Li Wei (DF-37 resolved) | C:6032 |
 | Title | Mechanist | C:6034 |
 | Home port | [Silk Haven](../ports/silk_haven.md) | C:6033 |
 | Bloc of the home port | [The Silk Circle](../factions/silk_circle.md) | ports/silk_haven.md section 0 |
@@ -19,9 +19,8 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Markup | x1.12 (+12% in Python's merchant list) | C:6043; portlight@9b02494 src/portlight/app/combat_views.py:740 |
 | Items in stock at this port today | 8 (section 1) | session.rs:3553-3609 |
 | Cheapest and dearest, at markup | Blowgun Darts (poisoned) 3 silver; Arquebus Pistol 73 silver | section 1 table |
-| Player sees today | nothing: no gear shop in the Godot build | rg of crates/portlight-godot/src finds no reader; script.rs:422-428 |
-| Not shown | name, title, description, greeting, personality, stock, prices | no reader in the crates (section 2) |
-| Mechanic status | name, port, types and markup are live in the sim (script and tests only); personality, description, greeting and title are [flavour, no mechanic] | session.rs:3209-3245; content.rs:376-386 |
+| Player sees today | the Godot Crew desk Armoury section (SECTION_GEAR): name, title, personality, markup, description, greeting, and regional stock rows with Buy buttons (DF-46 resolved) | crew_screen.rs; logic.rs; game.rs |
+| Mechanic status | name, port, title, personality, description, greeting, types, and markup are live in merchant.rs, Session::buy_gear, and the Godot Crew desk (DF-46 resolved) | merchant.rs:15-85; session.rs; logic.rs |
 | Python record | same strings except description (`COPY_OVERRIDES`: 'fittings for blowguns and arquebus pistols' vs Python's 'hand crossbows', DF-42 resolved); Python's merchant command lists the greeting, types and markup, and sells | portlight@9b02494 src/portlight/content/merchants.py:167; src/portlight/app/cli.py:1072-1136 |
 
 ## 1. Grounded facts (every data line quoted) and the stock
@@ -85,6 +84,6 @@ Stock at Silk Haven, computed at the base commit: every catalog item of a type t
 
 ## 7. Flags and open questions
 
-- DF-46 (merchants never reach Godot; no reader for their text), DF-47 (coverage gaps): see ../data-fixes.md.
+- DF-46 (resolved: Armoury section and merchant text/stock wired on the Godot Crew desk), DF-47 (coverage gaps): see ../data-fixes.md.
 - DF-42 (resolved): his description now names fittings for blowguns and arquebus pistols via `COPY_OVERRIDES` in tools/extract_content.py. Same full name: Harbor Director Li Wei at Jade Port (C:9495; DF-37): two people.
 - Building a shop, or showing any merchant text, is out of scope for canon; it is a design decision.

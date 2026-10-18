@@ -17,10 +17,10 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | Training cost | 150 silver | C:4325 |
 | Training time | 10 days | C:4326 |
 | Styles needed first | 1 | C:4327 |
-| Body parts the style needs (gate is dead, DF-41) | hand, arm | C:4328 |
+| Body parts the style needs (checked on train and equip, DF-41 resolved) | hand, arm | C:4328 |
 | Player sees today | the style row at this port (name, silver, days, styles needed, known yes or no), a confirm line, and a notice after training; never the master | logic.rs:2028-2062; logic.rs:1884; game.rs:5693-5714 |
-| Not shown | master name, description, dialog | no reader in the crates (section 2) |
-| Mechanic status | the master record is [flavour, no mechanic]; the real training gate is the style's own port list (DF-39) | training.rs:9-52; content.rs:1027-1032 |
+| Master text on desk | master name, description, dialog, and style description are shown on the Crew desk (DF-39 resolved) | logic.rs; game.rs |
+| Mechanic status | masters_at_port gates training alongside the style's port list, and learned styles can be equipped (DF-39, DF-41 resolved) | training.rs:9-52; session.rs |
 | Python record | same strings (compared field by field, no differences); Python's train command prints the master name and dialog | portlight@9b02494 src/portlight/content/fighting_styles.py:379; src/portlight/app/cli.py:2426-2455 |
 
 ## 1. Grounded facts (every data line quoted)
@@ -72,6 +72,6 @@ Quotes are as in content.json; an em dash is folded to ' - ' and a tilde n to n,
 
 ## 7. Flags and open questions
 
-- DF-39 (masters and master text unread), DF-41 (the style injury gate is dead and no path equips a style): see ../data-fixes.md.
+- DF-39 (resolved: master gate and desk text wired), DF-40 (resolved: Senora Vega line and catalog-name notices), DF-41 (resolved: injury gate and style equipping wired), DF-48 (resolved: singular prerequisite grammar): see ../data-fixes.md.
 - Given-name overlap: an officer name pool entry Leilani (C:6143) is a namesake (DF-38, declined, resolved in lore). Real-world words in data: Lua, Hawaiian (C:4296-4297).
 - Wiring master text into the desk, or a style equip control, is out of scope for canon; it is a design decision.

@@ -31,6 +31,7 @@ Você precisa do Rust 1.98.1 (o indicado em `rust-toolchain.toml`) e do Godot 4.
 
 ```
 cargo build -p portlight-godot
+godot --headless --path godot --import --quit
 godot --path godot
 ```
 

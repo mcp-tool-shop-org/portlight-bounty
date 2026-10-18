@@ -18,8 +18,8 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n at 515a488. Python
 | Hire gate | docked at the home port; not already in the party; not departed; party under 2; silver enough; regional regard enough | companion.rs:51-93; model.rs:431,439 |
 | Starting morale | 70 | companion.rs:95-108 (morale at line 102) |
 | Player sees today | offer row (name, role, silver, regard and region), a confirm line, a notice, a party row, and the departure line in the victory recap | logic.rs:2150-2181; logic.rs:1923; game.rs:5748; logic.rs:2129-2149; recap.rs:1085-1093 |
-| Not shown | description, greeting, hire dialog, loyalty line, warning line | no reader in crates (section 2) |
-| Mechanic status | role effects [flavour, no mechanic] (DF-34); morale reacts to 2 of 13 triggers (DF-35) | companion.rs:193-281; session.rs:2074-2076 |
+| Not shown | description, greeting, hire dialog | loyalty/warning lines and role description reach the Crew desk (DF-34, DF-35 resolved) |
+| Mechanic status | role effects, cohesion, dismiss, and all 13 morale triggers are live (DF-34, DF-35 resolved) | companion.rs:124-280; session.rs |
 | Python record | same strings in the Python reference (compared field by field, no differences) | portlight@9b02494 src/portlight/content/companions.py:202 |
 
 ## 1. Grounded facts (every data line quoted)
@@ -37,12 +37,12 @@ Quotes are as in content.json; only an em dash is folded to ' - ' and tagged.
 
 - Recruit: only at Spice Narrows, for 90 silver, with regional regard 5 or more in East Indies, a free party slot and a companion who has not already left (companion.rs:51-93). The cost is taken in the session, then morale starts at 70 (session.rs:3359-3373; companion.rs:95-108).
 - Regional regard is a per-region number (model.rs:283-287). It rises by 1 on each arrival at a port of that region (reputation.rs:137-141) and moves with trades and inspections (reputation.rs:111, 172); the sources were not traced further here.
-- Role effect: Shadow Kai is a Smuggler. Every effect number on the role is authored and unread (roles/smuggler.md; DF-34). Aboard, this companion changes no price, speed, damage, danger, healing or inspection in the sim.
-- Morale that can move today: only after a duel victory, as spared_enemy or took_all (session.rs:2074-2076). For this companion those total +0 (spared) and +3 (took all): role delta plus the pragmatic personality delta, applied only where the role delta is not zero (companion.rs:130-141; C:5766, C:5776).
+- Role effect: Shadow Kai is a Smuggler. Every effect number on the role is live in the sim (DF-34 resolved; formerly authored and unread (roles/smuggler.md; DF-34). Aboard, this companion contributes its role effects to party_combat_bonus (DF-34 resolved).
+- Morale triggers: all 13 morale triggers and personality deltas now fire in Session (DF-35 resolved; at the phase 6A base commit, only after a duel victory as spared_enemy or took_all (session.rs:2074-2076). For this companion those total +0 (spared) and +3 (took all): role delta plus the pragmatic personality delta, applied only where the role delta is not zero (companion.rs:130-141; C:5766, C:5776).
 - Departure is not reachable today [inferred from companion.rs:130-176]: take-all victories give +3 and spared victories +0, so morale never falls toward the departure line (10 or less) from the two live triggers. The departure line, the loyalty line and the warning line have no live path for this companion (DF-35).
 - Text reach: the crew desk shows name, role, cost, required regard and region only (logic.rs:2150-2181); greeting, hire dialog, loyalty line, warning line and description have no reader in the crates. Only the departure line is read (companion.rs:157-176; recap.rs:1085-1093).
-- Dismiss: there is no control and no Session method, so a recruited companion stays until they leave (crew_screen.rs:6-7).
-- DF-36: after a confirmed recruit the notice reads 'Recruited shadow_kai.' with the raw id (game.rs:5748); the confirm line before it uses the catalog name (logic.rs:1923).
+- Dismiss: Session::dismiss_companion and the Crew desk Dismiss button remove a companion from the party (DF-34 resolved).
+- DF-36 (resolved): the recruit notice now prints the catalog display name (at the base commit it read 'Recruited shadow_kai.' with the raw id (game.rs:5748); the confirm line before it uses the catalog name (logic.rs:1923).
 
 ## 3. Look and feel (words only; the character hold stands)
 
@@ -74,7 +74,7 @@ Quotes are as in content.json; only an em dash is folded to ' - ' and tagged.
 
 ## 7. Flags and open questions
 
-- DF-34 (role effects unread), DF-35 (morale triggers), DF-36 (raw id in the recruit notice): see ../data-fixes.md.
+- DF-34 (resolved: role effects, cohesion, party summary, and dismiss wired), DF-35 (resolved: all 13 morale triggers and loyalty/warning lines wired), DF-36 (resolved: catalog name in recruit notice): see ../data-fixes.md.
 - Given-name overlap with Elder Kai (C:10891) and Kai the Shaper (C:5436): DF-37, resolved in lore.
 - warning_line uses 'heat' (C:5652), a term canon does not use as a player word (Option A); the line is unreachable today (DF-35).
 - Crew role and companion role share a name but are separate systems: resolved in lore (../data-fixes.md).
