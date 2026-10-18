@@ -5631,7 +5631,7 @@ mod tests {
             .clone();
         assert_eq!(receipt.departures.len(), 1);
         assert_eq!(receipt.departures[0].companion_id, "dr_amara");
-        assert_eq!(receipt.departures[0].companion_name, "Dr. Amara");
+        assert_eq!(receipt.departures[0].companion_name, "Dr. Amara Osei");
         assert_eq!(receipt.departures[0].departure_line, line);
         assert!(session.world.captain.party.companions.is_empty());
         assert_eq!(session.world.captain.party.departed, vec!["dr_amara"]);
@@ -7320,9 +7320,9 @@ mod bank_tests {
             assert_eq!(inst.institution_type, expected_type, "{inst_id}");
         }
 
-        // DF-5: Ironhaven embargoes contraband, not weapons
+        // DF-5: Ironhaven does not embargo its own weapons export
         let ih_pol = cat.port_politics("ironhaven").unwrap();
-        assert_eq!(ih_pol.trade_embargo, vec!["contraband"]);
+        assert!(ih_pol.trade_embargo.is_empty());
 
         // DF-7 & DF-27: Symmetric bloc rival and hostile lists
         let iron_pact = cat.trade_bloc("iron_pact").unwrap();
@@ -7343,10 +7343,10 @@ mod bank_tests {
         assert_eq!(jp_quality.name, "The Quality Hall");
 
         // DF-30 & DF-31: Gnaw pays 250 silver; Scarlet Ana is in the Mediterranean
-        let rewards = bounty::table_rewards();
+        let rewards = crate::bounty::table_rewards();
         assert!(rewards.contains(&("gnaw", 250)));
-        let mut rng = crate::rng::PyRandom::from_seed(1);
-        let full_board = bounty::generate_bounty_board(&[], &mut rng, 10);
+        let mut rng = PyRandom::from_seed(1);
+        let full_board = crate::bounty::generate_bounty_board(&[], &mut rng, 10);
         let ana = full_board
             .iter()
             .find(|t| t.captain_id == "scarlet_ana")
@@ -7357,7 +7357,7 @@ mod bank_tests {
         let mut priv_session = Session::new("Ada", "privateer", 1, None).unwrap();
         assert_eq!(
             priv_session.world.captain.standing.underworld,
-            vec![("crimson_tide".to_string(), 10), ("iron_wolves".to_string(), -5)]
+            vec![("iron_wolves".to_string(), -5)]
         );
         let delta = record_duel_standing(
             &mut priv_session.world.captain.standing,

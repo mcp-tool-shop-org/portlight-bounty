@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "portlight-chart"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "png",
  "portlight-sim",
@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "portlight-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "portlight-sim",
  "serde_json",
@@ -307,7 +307,7 @@ dependencies = [
 
 [[package]]
 name = "portlight-godot"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "godot",
  "portlight-chart",
@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "portlight-sim"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "indexmap",
  "md-5",

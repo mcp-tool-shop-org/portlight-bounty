@@ -5,16 +5,16 @@
 
 **Tags:** `[all]` every repo · `[npm]` `[pypi]` `[vsix]` `[desktop]` `[container]` published artifacts · `[mcp]` MCP servers · `[cli]` CLI tools
 
-**Repo:** portlight-bounty 0.2.0. A local game. Not an npm package, not an MCP server.
+**Repo:** portlight-bounty 0.3.0. A local game. Not an npm package, not an MCP server.
 
 ---
 
 ## A. Security Baseline
 
-- [x] `[all]` SECURITY.md exists (report path, supported versions, response timeline) (2026-10-17)
-- [x] `[all]` README includes threat model paragraph (data touched, data NOT touched, permissions required) (2026-10-17)
-- [x] `[all]` No secrets, tokens, or credentials in source or diagnostics output (2026-10-17)
-- [x] `[all]` No telemetry by default — state it explicitly even if obvious (2026-10-17)
+- [x] `[all]` SECURITY.md exists (report path, supported versions, response timeline) (2026-10-18)
+- [x] `[all]` README includes threat model paragraph (data touched, data NOT touched, permissions required) (2026-10-18)
+- [x] `[all]` No secrets, tokens, or credentials in source or diagnostics output (2026-10-18)
+- [x] `[all]` No telemetry by default — state it explicitly even if obvious (2026-10-18)
 
 ### Default safety posture
 
@@ -35,32 +35,32 @@
 
 ## C. Operator Docs
 
-- [x] `[all]` README is current: what it does, install, usage, supported platforms + runtime versions (2026-10-17)
-- [x] `[all]` CHANGELOG.md (Keep a Changelog format) (2026-10-17)
-- [x] `[all]` LICENSE file present and repo states support status (2026-10-17)
-- [x] `[cli]` `--help` output accurate for all commands and flags (2026-10-17)
+- [x] `[all]` README is current: what it does, install, usage, supported platforms + runtime versions (2026-10-18)
+- [x] `[all]` CHANGELOG.md (Keep a Changelog format) (2026-10-18)
+- [x] `[all]` LICENSE file present and repo states support status (2026-10-18)
+- [x] `[cli]` `--help` output accurate for all commands and flags (2026-10-18)
 - [ ] `[cli|mcp|desktop]` SKIP: no silent/normal/verbose/debug pipeline. The CLI prints the play log and error sentences. It does not handle credentials.
 - [ ] `[mcp]` SKIP: not an MCP server.
 - [ ] `[complex]` SKIP: not a daemon. Player docs are the Starlight handbook.
 
 ## D. Shipping Hygiene
 
-- [x] `[all]` `verify` script exists (test + build + smoke in one command) (2026-10-17)
-- [x] `[all]` Version in manifest matches git tag (Cargo.toml 0.2.0, release tag v0.2.0) (2026-10-17)
-- [x] `[all]` Dependency scanning runs in CI (ecosystem-appropriate) (2026-10-17)
+- [x] `[all]` `verify` script exists (test + build + smoke in one command) (2026-10-18)
+- [x] `[all]` Version in manifest matches git tag (Cargo.toml 0.3.0, release tag v0.3.0) (2026-10-18)
+- [x] `[all]` Dependency scanning runs in CI (ecosystem-appropriate) (2026-10-18)
 - [ ] `[all]` SKIP: Dependabot stays off unless the Director asks. No update bot in this release.
 - [ ] `[npm]` SKIP: not published to npm. `publish = false` in Cargo.toml.
 - [ ] `[npm]` SKIP: not an npm or PyPI package.
-- [x] `[npm]` Lockfile committed (Cargo.lock). Not an npm or PyPI package (2026-10-17)
+- [x] `[npm]` Lockfile committed (Cargo.lock). Not an npm or PyPI package (2026-10-18)
 - [ ] `[vsix]` SKIP: not a VS Code extension.
 - [ ] `[desktop]` SKIP: no installer. Players build with cargo and open godot/. Linux CI builds the extension. macOS has not been run.
 
 ## E. Identity (soft gate — does not block ship)
 
-- [x] `[all]` Logo in README header (2026-10-17)
-- [ ] `[all]` SKIP: no translations this pass. The Director held them because the GPU is booked. English is the source.
-- [x] `[org]` Landing page (@mcptoolshop/site-theme) (2026-10-17)
-- [x] `[all]` GitHub repo metadata: description, homepage, topics (2026-10-17)
+- [x] `[all]` Logo in README header (2026-10-18)
+- [x] `[all]` Translations (polyglot-mcp, 8 languages) (2026-10-18)
+- [x] `[org]` Landing page (@mcptoolshop/site-theme) (2026-10-18)
+- [x] `[all]` GitHub repo metadata: description, homepage, topics (2026-10-18)
 
 ---
 

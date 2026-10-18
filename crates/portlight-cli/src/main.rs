@@ -64,10 +64,10 @@ Script commands, one per line:
   bank_deposit, bank_withdraw, bank_letter
   hire, provision, work, duel, resolve_duel
   encounter, naval, board, fight, capture, spare, take_all
-  train, recruit, skill, remember, agency, gear
+  train, equip_style, recruit, dismiss_companion, skill, remember, agency, gear
   buy_ship, upgrade, form_convoy, repair_fleet, repair
   rename_ship, dock_current_ship, board_fleet_ship, sell_fleet_ship
-  fire, transfer, maintain, hunt, bounty, wanted
+  fire, transfer, maintain, smith, field_repair, hunt, bounty, wanted
 
 bounty takes accept, hunt, or claim, then a captain id.
 ",

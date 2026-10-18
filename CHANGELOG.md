@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-18
+
+### Added
+
+- Armoury merchant shop on the Crew desk (`SECTION_GEAR`): displays carried melee, ranged, and armour gear alongside the docked port merchant's name, title, personality, markup, description, greeting, and regional stock (`DF-46`).
+- Style master and skill trainer port presence on the Crew desk (`SECTION_TRAINING`): renders resident master and trainer descriptions and dialog, gates fighting-style learning on `training_port_ids` or `masters_at_port`, and gates skill learning on `trainers_at` or `training_port_feature` (`DF-39`).
+- Gear maintenance and blacksmith quality upgrades (`Session::upgrade_weapon`, `Session::field_repair_weapon`, Crew desk `Maintain` and `Upgrade` buttons, and script runner `smith` and `field_repair` verbs) (`DF-39`).
+- Companion role effects wired across voyage speed, route danger, customs inspection evasion, market buy/sell pricing, injury healing rate (including at-sea surgeon treatment), and personal combat damage/interception, plus party cohesion, summary, role descriptions, and companion dismissal (`Session::dismiss_companion`, `dismiss_companion` script verb) on the Crew desk (`DF-34`).
+- Full companion morale trigger coverage (`combat_won`, `combat_lost`, `crew_killed`, `profitable_trade`, `losing_trade`, `contraband_trade`, `spared_enemy`, `took_all`, `fled_combat`, `injury_sustained`, `long_voyage`, `port_arrival`, `nemesis_defeated`), personality modifier application when a role's base delta is zero, and companion `loyalty_line` / `warning_line` display on the Crew desk (`DF-35`).
+- Multi-language README translations (`README.ja.md`, `README.zh.md`, `README.es.md`, `README.fr.md`, `README.hi.md`, `README.it.md`, `README.pt-BR.md`).
+
+### Changed
+
+- Canon lore and catalog alignment (`DF-1`–`DF-8`, `DF-12`–`DF-16`, `DF-18`, `DF-20`, `DF-27`, `DF-28`, `DF-37`): Dimitri Andros's sea sighting is filed under `porto_novo`, Porto Novo's power structure and Harbor Master's Tower beacon are aligned with canon, Silva Bay's repair and war-fleet prose matches the simulation, cross-port network NPC names and the Rosa/Ingrid sea-widows description use canonical names and regions, same-name NPCs/merchants/companions are disambiguated, The Bounty Hunter's `home_region` is `East Indies` (`crosswind_isle`), non-shipyard institutions use accurate `institution_type` values, Ironhaven's `trade_embargo` omits `weapons`, trade-bloc `rivals` and `hostile_to` lists are symmetric, and Jade Port's `jp_quality` is `The Quality Hall`.
+- Bounty balance and standing fixes (`DF-30`, `DF-31`, `DF-32`): Gnaw's bounty reward is raised from 200 to 250 silver, Scarlet Ana's bounty region is set to `Mediterranean` (matching her Corsair's Rest sighting), and `record_duel_standing` preserves existing negative underworld standing down to `-100` so The Privateer's `-5` Iron Wolves grudge moves to `-3` on a take-all win instead of clamping to `0`.
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

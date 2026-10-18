@@ -1,4 +1,8 @@
 <p align="center">
+  <a href="README.md">English</a> | <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+</p>
+
+<p align="center">
   <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/portlight-bounty/readme.png" alt="Portlight Bounty" width="400">
 </p>
 
@@ -11,7 +15,7 @@
 
 Portlight Bounty is a trade game. You buy, you sail, you take a contract, and you try not to arrive broke. The line under the mark is the whole pitch: trade, sail, prosper.
 
-This repository is the Rust port of [Portlight](https://github.com/mcp-tool-shop-org/portlight). The simulation is the rules. The Godot 4.7 chart is the game you play. Version 0.2.0 is the current release of that pair.
+This repository is the Rust port of [Portlight](https://github.com/mcp-tool-shop-org/portlight). The simulation is the rules. The Godot 4.7 chart is the game you play. Version 0.3.0 is the current release of that pair.
 
 The docked chart, with the market open at Al-Manar:
 
@@ -50,9 +54,9 @@ cargo test --locked --workspace --exclude portlight-godot
 
 The Python game at commit `9b02494` is the source of the rules. Five captain archetypes carry a small Rust-tuned pricing and burn overlay (`crates/portlight-sim/data/tuned_overlay.json`), and The Bounty Hunter claims +25% on bounties; building with `--features python-base` turns the overlay off so the simulation matches Python unmodified.
 
-## What 0.2.0 is
+## What 0.3.0 is
 
-A playable chart across 20 ports and 43 sea lanes: market, contracts, crew and fighting-style training/equipping, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, combat and contract recap cards, sinking and tow recovery, and sea fights. The world canon (Phases 1–6) lives under `docs/canon/`. The landing bundle is manifest 0.4.3 (`godot/assets/landing/MANIFEST.json`).
+A playable chart across 20 ports and 43 sea lanes: market, contracts, crew with companion role effects and morale lines, fighting-style masters and skill trainers, an Armoury merchant shop with gear maintenance and blacksmith quality upgrades, the yard, the harbour desk (including counting-house silver accounts at seven ports), hunt and bounties, the journal, combat and contract recap cards, sinking and tow recovery, and sea fights. The world canon (Phases 1–6) lives under `docs/canon/`. The landing bundle is manifest 0.4.3 (`godot/assets/landing/MANIFEST.json`).
 
 ## Pictures
 
@@ -72,6 +76,6 @@ Report a vulnerability in private on this repository. See [SECURITY.md](SECURITY
 
 ## Support
 
-0.2.0 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
+0.3.0 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
 
 Built by [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code and art: mcp-tool-shop contributors.

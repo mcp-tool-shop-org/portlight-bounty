@@ -117,7 +117,7 @@
       "confidence": "full",
       "highWater": null,
       "name": "portlight-godot",
-      "qualifyingSourceCommits": 62,
+      "qualifyingSourceCommits": 66,
       "rebaseline": null
     },
     {
@@ -134,12 +134,12 @@
           "portlight-godot"
         ]
       },
-      "cohesion": 0.759759,
+      "cohesion": 0.758597,
       "cohesionDropped": false,
       "confidence": "full",
       "highWater": null,
       "name": "portlight-sim",
-      "qualifyingSourceCommits": 31,
+      "qualifyingSourceCommits": 36,
       "rebaseline": null
     },
     {
@@ -187,7 +187,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "site",
-      "qualifyingSourceCommits": 2,
+      "qualifyingSourceCommits": 3,
       "rebaseline": null
     },
     {
@@ -201,12 +201,12 @@
         "importsAndCoChanges": [],
         "importsOnly": []
       },
-      "cohesion": 0.15942,
+      "cohesion": 0.344371,
       "cohesionDropped": false,
       "confidence": "low",
       "highWater": null,
       "name": "tools",
-      "qualifyingSourceCommits": 23,
+      "qualifyingSourceCommits": 25,
       "rebaseline": null
     }
   ],
@@ -229,8 +229,8 @@
         "path": ".gitignore"
       },
       {
-        "commits": 3,
-        "lines": 31,
+        "commits": 4,
+        "lines": 66,
         "path": "CHANGELOG.md"
       },
       {
@@ -239,13 +239,13 @@
         "path": "CONTRIBUTING.md"
       },
       {
-        "commits": 4,
-        "lines": 456,
+        "commits": 5,
+        "lines": 464,
         "path": "Cargo.lock"
       },
       {
-        "commits": 2,
-        "lines": 16,
+        "commits": 3,
+        "lines": 18,
         "path": "Cargo.toml"
       },
       {
@@ -254,28 +254,28 @@
         "path": "LICENSE"
       },
       {
-        "commits": 27,
-        "lines": 595,
+        "commits": 28,
+        "lines": 611,
         "path": "README.md"
       },
       {
-        "commits": 1,
-        "lines": 26,
+        "commits": 2,
+        "lines": 34,
         "path": "SCORECARD.md"
       },
       {
-        "commits": 1,
-        "lines": 52,
+        "commits": 2,
+        "lines": 61,
         "path": "SECURITY.md"
       },
       {
-        "commits": 1,
-        "lines": 82,
+        "commits": 2,
+        "lines": 114,
         "path": "SHIP_GATE.md"
       },
       {
-        "commits": 6,
-        "lines": 324,
+        "commits": 7,
+        "lines": 364,
         "path": "atlas/README.md"
       },
       {
@@ -284,18 +284,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 6,
-        "lines": 1432,
+        "commits": 7,
+        "lines": 1576,
         "path": "atlas/page.json"
       },
       {
-        "commits": 6,
-        "lines": 8009,
+        "commits": 7,
+        "lines": 11860,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 6,
-        "lines": 22164,
+        "commits": 7,
+        "lines": 24355,
         "path": "atlas/structure.json"
       },
       {
@@ -389,8 +389,8 @@
         "path": "crates/portlight-godot/src/contracts_screen.rs"
       },
       {
-        "commits": 2,
-        "lines": 161,
+        "commits": 3,
+        "lines": 164,
         "path": "crates/portlight-godot/src/crew_screen.rs"
       },
       {
@@ -409,8 +409,8 @@
         "path": "crates/portlight-godot/src/encounter_screen.rs"
       },
       {
-        "commits": 53,
-        "lines": 18503,
+        "commits": 56,
+        "lines": 18941,
         "path": "crates/portlight-godot/src/game.rs"
       },
       {
@@ -429,8 +429,8 @@
         "path": "crates/portlight-godot/src/hints.rs"
       },
       {
-        "commits": 13,
-        "lines": 1479,
+        "commits": 14,
+        "lines": 1485,
         "path": "crates/portlight-godot/src/hunt_screen.rs"
       },
       {
@@ -444,8 +444,8 @@
         "path": "crates/portlight-godot/src/lib.rs"
       },
       {
-        "commits": 32,
-        "lines": 5003,
+        "commits": 35,
+        "lines": 5728,
         "path": "crates/portlight-godot/src/logic.rs"
       },
       {
@@ -459,8 +459,8 @@
         "path": "crates/portlight-godot/src/newgame_screen.rs"
       },
       {
-        "commits": 20,
-        "lines": 2406,
+        "commits": 23,
+        "lines": 2425,
         "path": "crates/portlight-godot/src/playtest.rs"
       },
       {
@@ -494,8 +494,8 @@
         "path": "crates/portlight-sim/Cargo.toml"
       },
       {
-        "commits": 9,
-        "lines": 13942,
+        "commits": 11,
+        "lines": 14014,
         "path": "crates/portlight-sim/data/content.json"
       },
       {
@@ -509,8 +509,8 @@
         "path": "crates/portlight-sim/src/bank.rs"
       },
       {
-        "commits": 2,
-        "lines": 352,
+        "commits": 3,
+        "lines": 356,
         "path": "crates/portlight-sim/src/bounty.rs"
       },
       {
@@ -524,8 +524,8 @@
         "path": "crates/portlight-sim/src/combat.rs"
       },
       {
-        "commits": 2,
-        "lines": 336,
+        "commits": 3,
+        "lines": 339,
         "path": "crates/portlight-sim/src/companion.rs"
       },
       {
@@ -534,8 +534,8 @@
         "path": "crates/portlight-sim/src/consequences.rs"
       },
       {
-        "commits": 9,
-        "lines": 1253,
+        "commits": 10,
+        "lines": 1259,
         "path": "crates/portlight-sim/src/content.rs"
       },
       {
@@ -614,8 +614,8 @@
         "path": "crates/portlight-sim/src/memory.rs"
       },
       {
-        "commits": 1,
-        "lines": 29,
+        "commits": 2,
+        "lines": 126,
         "path": "crates/portlight-sim/src/merchant.rs"
       },
       {
@@ -654,8 +654,8 @@
         "path": "crates/portlight-sim/src/save.rs"
       },
       {
-        "commits": 14,
-        "lines": 889,
+        "commits": 16,
+        "lines": 910,
         "path": "crates/portlight-sim/src/script.rs"
       },
       {
@@ -664,8 +664,8 @@
         "path": "crates/portlight-sim/src/sea_culture.rs"
       },
       {
-        "commits": 25,
-        "lines": 7597,
+        "commits": 29,
+        "lines": 8142,
         "path": "crates/portlight-sim/src/session.rs"
       },
       {
@@ -674,8 +674,8 @@
         "path": "crates/portlight-sim/src/ship.rs"
       },
       {
-        "commits": 1,
-        "lines": 228,
+        "commits": 2,
+        "lines": 236,
         "path": "crates/portlight-sim/src/skills.rs"
       },
       {
@@ -684,8 +684,8 @@
         "path": "crates/portlight-sim/src/snapshot.rs"
       },
       {
-        "commits": 1,
-        "lines": 135,
+        "commits": 2,
+        "lines": 151,
         "path": "crates/portlight-sim/src/training.rs"
       },
       {
@@ -699,8 +699,8 @@
         "path": "crates/portlight-sim/src/util.rs"
       },
       {
-        "commits": 6,
-        "lines": 1296,
+        "commits": 7,
+        "lines": 1305,
         "path": "crates/portlight-sim/src/voyage.rs"
       },
       {
@@ -709,8 +709,8 @@
         "path": "crates/portlight-sim/src/weapon_provenance.rs"
       },
       {
-        "commits": 1,
-        "lines": 325,
+        "commits": 2,
+        "lines": 353,
         "path": "crates/portlight-sim/src/weapon_quality.rs"
       },
       {
@@ -734,8 +734,8 @@
         "path": "crates/portlight-sim/tests/invariants.rs"
       },
       {
-        "commits": 13,
-        "lines": 1453,
+        "commits": 15,
+        "lines": 1583,
         "path": "crates/portlight-sim/tests/parity.rs"
       },
       {
@@ -759,8 +759,8 @@
         "path": "docs/HANDOFF-GROK-BOTS.md"
       },
       {
-        "commits": 21,
-        "lines": 599,
+        "commits": 23,
+        "lines": 603,
         "path": "docs/PORTING-PLAN.md"
       },
       {
@@ -859,8 +859,8 @@
         "path": "docs/canon/captains/smuggler.md"
       },
       {
-        "commits": 2,
-        "lines": 197,
+        "commits": 3,
+        "lines": 200,
         "path": "docs/canon/companions/README.md"
       },
       {
@@ -939,8 +939,8 @@
         "path": "docs/canon/companions/star_lila.md"
       },
       {
-        "commits": 11,
-        "lines": 705,
+        "commits": 16,
+        "lines": 815,
         "path": "docs/canon/data-fixes.md"
       },
       {
@@ -1194,8 +1194,8 @@
         "path": "docs/canon/lanes/volcanic_passage.md"
       },
       {
-        "commits": 2,
-        "lines": 218,
+        "commits": 3,
+        "lines": 242,
         "path": "docs/canon/merchants/README.md"
       },
       {
@@ -1454,8 +1454,8 @@
         "path": "docs/canon/relations-matrix.md"
       },
       {
-        "commits": 2,
-        "lines": 149,
+        "commits": 3,
+        "lines": 170,
         "path": "docs/canon/skill-trainers/README.md"
       },
       {
@@ -1484,8 +1484,8 @@
         "path": "docs/canon/skill-trainers/typhoon_smith.md"
       },
       {
-        "commits": 3,
-        "lines": 213,
+        "commits": 4,
+        "lines": 227,
         "path": "docs/canon/style-masters/README.md"
       },
       {
@@ -2804,8 +2804,8 @@
         "path": "godot/scenes/main.tscn"
       },
       {
-        "commits": 9,
-        "lines": 962,
+        "commits": 11,
+        "lines": 966,
         "path": "parity/expected_divergences.json"
       },
       {
@@ -4459,18 +4459,18 @@
         "path": "site/src/content.config.ts"
       },
       {
-        "commits": 2,
-        "lines": 36,
+        "commits": 3,
+        "lines": 38,
         "path": "site/src/content/docs/handbook/art.md"
       },
       {
-        "commits": 1,
-        "lines": 40,
+        "commits": 2,
+        "lines": 42,
         "path": "site/src/content/docs/handbook/getting-started.md"
       },
       {
-        "commits": 2,
-        "lines": 32,
+        "commits": 3,
+        "lines": 42,
         "path": "site/src/content/docs/handbook/index.md"
       },
       {
@@ -4479,8 +4479,8 @@
         "path": "site/src/content/docs/handbook/play.md"
       },
       {
-        "commits": 2,
-        "lines": 44,
+        "commits": 3,
+        "lines": 50,
         "path": "site/src/content/docs/handbook/reference.md"
       },
       {
@@ -4494,8 +4494,8 @@
         "path": "site/src/pages/index.astro"
       },
       {
-        "commits": 2,
-        "lines": 80,
+        "commits": 3,
+        "lines": 84,
         "path": "site/src/site-config.ts"
       },
       {
@@ -4519,13 +4519,13 @@
         "path": "tools/build_manifest_pb002.py"
       },
       {
-        "commits": 9,
-        "lines": 878,
+        "commits": 11,
+        "lines": 1068,
         "path": "tools/extract_content.py"
       },
       {
-        "commits": 6,
-        "lines": 1044,
+        "commits": 8,
+        "lines": 1092,
         "path": "tools/parity/check.py"
       },
       {
@@ -4564,8 +4564,8 @@
         "path": "tools/parity/session_runner.py"
       },
       {
-        "commits": 5,
-        "lines": 715,
+        "commits": 7,
+        "lines": 737,
         "path": "tools/parity/test_check.py"
       },
       {
@@ -4584,51 +4584,51 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-10-18T01:04:10.164Z",
+  "generatedAt": "2026-10-18T04:11:26.610Z",
   "generatedFrom": {
-    "commit": "6713cc28969ebb482c48f19dd6c28096a211fa6c"
+    "commit": "c068ce4d3ae8cc08471dbe2da06364c2d6fc87f6"
   },
   "pairs": [
     {
       "a": "atlas/README.md",
       "b": "atlas/page.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/statistics.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/structure.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/statistics.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/structure.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/statistics.json",
       "b": "atlas/structure.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
@@ -4704,9 +4704,9 @@
     {
       "a": "crates/portlight-godot/src/game.rs",
       "b": "crates/portlight-godot/src/logic.rs",
-      "either": 53,
-      "shared": 30,
-      "strength": 0.566038
+      "either": 56,
+      "shared": 33,
+      "strength": 0.589286
     },
     {
       "a": "crates/portlight-godot/src/harbour_screen.rs",
@@ -4725,16 +4725,16 @@
     {
       "a": "crates/portlight-sim/data/content.json",
       "b": "tools/extract_content.py",
-      "either": 5,
-      "shared": 5,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "crates/portlight-sim/src/content.rs",
       "b": "crates/portlight-sim/tests/parity.rs",
-      "either": 9,
-      "shared": 5,
-      "strength": 0.555556
+      "either": 11,
+      "shared": 6,
+      "strength": 0.545455
     },
     {
       "a": "crates/portlight-sim/src/error.rs",
@@ -4760,9 +4760,9 @@
     {
       "a": "crates/portlight-sim/src/lib.rs",
       "b": "crates/portlight-sim/src/script.rs",
-      "either": 11,
+      "either": 13,
       "shared": 7,
-      "strength": 0.636364
+      "strength": 0.538462
     },
     {
       "a": "crates/portlight-sim/src/lib.rs",
@@ -4788,9 +4788,9 @@
     {
       "a": "crates/portlight-sim/src/model.rs",
       "b": "crates/portlight-sim/src/script.rs",
-      "either": 9,
+      "either": 11,
       "shared": 6,
-      "strength": 0.666667
+      "strength": 0.545455
     },
     {
       "a": "crates/portlight-sim/src/model.rs",
@@ -4816,16 +4816,16 @@
     {
       "a": "crates/portlight-sim/src/script.rs",
       "b": "crates/portlight-sim/src/snapshot.rs",
-      "either": 9,
+      "either": 11,
       "shared": 6,
-      "strength": 0.666667
+      "strength": 0.545455
     },
     {
       "a": "crates/portlight-sim/src/script.rs",
       "b": "tools/parity/oracle.py",
-      "either": 11,
+      "either": 13,
       "shared": 7,
-      "strength": 0.636364
+      "strength": 0.538462
     },
     {
       "a": "crates/portlight-sim/src/snapshot.rs",
@@ -4837,9 +4837,9 @@
     {
       "a": "docs/canon/README.md",
       "b": "docs/canon/data-fixes.md",
-      "either": 9,
+      "either": 14,
       "shared": 7,
-      "strength": 0.777778
+      "strength": 0.5
     },
     {
       "a": "docs/canon/README.md",
@@ -4875,41 +4875,6 @@
       "either": 7,
       "shared": 5,
       "strength": 0.714286
-    },
-    {
-      "a": "docs/canon/data-fixes.md",
-      "b": "docs/canon/ports/al_manar.md",
-      "either": 9,
-      "shared": 5,
-      "strength": 0.555556
-    },
-    {
-      "a": "docs/canon/data-fixes.md",
-      "b": "docs/canon/ports/ironhaven.md",
-      "either": 9,
-      "shared": 5,
-      "strength": 0.555556
-    },
-    {
-      "a": "docs/canon/data-fixes.md",
-      "b": "docs/canon/ports/sun_harbor.md",
-      "either": 9,
-      "shared": 6,
-      "strength": 0.666667
-    },
-    {
-      "a": "docs/canon/data-fixes.md",
-      "b": "docs/canon/ports/thornport.md",
-      "either": 9,
-      "shared": 5,
-      "strength": 0.555556
-    },
-    {
-      "a": "docs/canon/data-fixes.md",
-      "b": "docs/canon/ports/typhoon_anchorage.md",
-      "either": 9,
-      "shared": 5,
-      "strength": 0.555556
     },
     {
       "a": "docs/canon/ports/al_manar.md",
@@ -5057,6 +5022,13 @@
       "either": 8,
       "shared": 4,
       "strength": 0.5
+    },
+    {
+      "a": "tools/parity/check.py",
+      "b": "tools/parity/test_check.py",
+      "either": 6,
+      "shared": 5,
+      "strength": 0.833333
     }
   ],
   "parameters": {
@@ -5069,16 +5041,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-10-17T18:00:10-07:00",
+    "headDate": "2026-10-18T00:03:39-04:00",
     "inScopeFiles": 873,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 106,
+    "qualifyingCommits": 112,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-21T01:00:10.000Z",
+    "since": "2026-04-21T04:03:39.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",
@@ -5094,7 +5066,7 @@
     ],
     "sourceFileReach": 20,
     "sourceFileRise": 25,
-    "sourceFilesReachingStrongFloor": 11,
+    "sourceFilesReachingStrongFloor": 13,
     "strength": 0.5,
     "windowDays": 180
   },
