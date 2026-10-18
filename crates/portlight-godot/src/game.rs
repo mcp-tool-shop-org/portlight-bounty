@@ -16,9 +16,10 @@
 //! `Session::resolve_boarding`. Hire and provisions
 //! call `hire_crew` and `provision`; a `SimError` is shown with its `Display`.
 //! The docked Crew desk calls `hire_crew`, `fire_crew`, `provision`,
-//! `train_crew`, `recruit_companion`, and `spend_skill_point`. Train and
-//! Learn show the day advance before the call. Session ignores injury gates
-//! on train, so the desk does not. The provision line is the effective price.
+//! `train_crew`, `equip_style`, `recruit_companion`, and `spend_skill_point`.
+//! Train and Learn show the day advance before the call. `train_crew` and
+//! `equip_style` enforce active injury gates. The provision line is the
+//! effective price.
 //! Chart Hire (one sailor) and Stores +5 stay one-shot shortcuts.
 //!
 //! An encounter that opens on a sea day (`tick_sea_captain_agency`) or a
@@ -82,18 +83,19 @@ use crate::logic::{
     buy_result_line, captain_button_label, capture_frame_rejected, chart_host_width, crew_desk,
     cycle_index, day_log_lines, departed_line, dimmed_frame_rejected, display_or_humanized,
     dock_confirm_line, duel_button_enabled, empty_lane_note, encounter_frame_rejected,
-    facts_for_catalog_captain, facts_from_agency, facts_from_step, frame_mostly_flat,
-    frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id, install_confirm_line,
-    layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship, present,
-    recruit_confirm_line, save_confirm_title, save_slot_label, sell_confirm_line, services_line,
-    session_text, shipyard_frame_rejected, shipyard_model, skill_confirm_line, stance_duel_visible,
-    status_header, template_player_ship, train_confirm_line, ui_sentence, victory_receipt_lines,
-    CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase,
-    ShipyardModel, StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE,
-    CREW_STORES_SUBHEAD, NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE,
-    NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION,
-    SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME,
-    SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
+    equip_style_notice_line, facts_for_catalog_captain, facts_from_agency, facts_from_step,
+    frame_mostly_flat, frame_samples, hire_confirm_line, hire_needs_confirm, humanize_id,
+    install_confirm_line, layout_fits_window, newgame_copy, newgame_frame_rejected, player_ship,
+    present, recruit_confirm_line, recruit_notice_line, save_confirm_title, save_slot_label,
+    sell_confirm_line, services_line, session_text, shipyard_frame_rejected, shipyard_model,
+    skill_confirm_line, skill_notice_line, stance_duel_visible, status_header,
+    template_player_ship, train_confirm_line, train_notice_line, ui_sentence,
+    victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts, NewgamePage, PointPool,
+    ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE,
+    CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD, NEWGAME_SHOT_H, NEWGAME_SHOT_W,
+    NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_SHIPYARD_BODY, PANEL_MIN_W,
+    ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT,
+    SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -153,6 +155,7 @@ pub(crate) enum Action {
     },
     CrewProvision(i64),
     CrewTrain(String),
+    CrewEquipStyle(String),
     CrewSkill(String),
     CrewRecruit(String),
     CrewConfirm,
@@ -4317,6 +4320,7 @@ impl PortlightGame {
             Action::CrewFire { role, count } => self.crew_fire(&role, count),
             Action::CrewProvision(days) => self.crew_provision(days),
             Action::CrewTrain(id) => self.arm_train(&id),
+            Action::CrewEquipStyle(id) => self.crew_equip_style(&id),
             Action::CrewSkill(id) => self.arm_skill(&id),
             Action::CrewRecruit(id) => self.arm_recruit(&id),
             Action::CrewConfirm => self.confirm_crew(),
@@ -5705,7 +5709,24 @@ impl PortlightGame {
                     .zip(day_after)
                     .map(|(before, after)| after - before)
                     .unwrap_or(0);
-                self.crew_notice = format!("Learned {id}. The calendar advanced {advanced} days.");
+                self.crew_notice = train_notice_line(id, advanced);
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn crew_equip_style(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.equip_style(Some(id))
+        };
+        match result {
+            Ok(()) => {
+                self.crew_notice = equip_style_notice_line(id);
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -5728,7 +5749,7 @@ impl PortlightGame {
                     .zip(day_after)
                     .map(|(before, after)| after - before)
                     .unwrap_or(0);
-                self.crew_notice = format!("Trained {id}. The calendar advanced {advanced} days.");
+                self.crew_notice = skill_notice_line(id, advanced);
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -5745,7 +5766,7 @@ impl PortlightGame {
         };
         match result {
             Ok(()) => {
-                self.crew_notice = format!("Recruited {id}.");
+                self.crew_notice = recruit_notice_line(id);
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -5894,6 +5915,12 @@ impl PortlightGame {
         let mut training = crew_section(crew_screen::SECTION_TRAINING);
         training.add_child(&crew_subhead("Training"));
         training.add_child(&crew_copy(&desk.known_styles));
+        for style in &desk.learned_styles {
+            training.add_child(&crew_copy(&style.text));
+            let mut equip = crew_button("Equip", game_id, Action::CrewEquipStyle(style.id.clone()));
+            equip.set_disabled(locked || style.active || !style.usable);
+            training.add_child(&equip);
+        }
         if desk.styles.is_empty() {
             training.add_child(&crew_copy(NO_FIGHTING_MASTER));
         }
@@ -6187,6 +6214,14 @@ impl PortlightGame {
         });
         if !trained {
             self.fail_crew("Crew smoke: train did not learn La Destreza or advance 5 days.");
+            return;
+        }
+        self.crew_equip_style("la_destreza");
+        let equipped = self.session.as_ref().is_some_and(|session| {
+            session.world().captain.active_style.as_deref() == Some("la_destreza")
+        }) && self.crew_notice == "Equipped La Destreza.";
+        if !equipped {
+            self.fail_crew("Crew smoke: equip did not set active_style to La Destreza.");
             return;
         }
         let day_trained = self.session.as_ref().map(|session| session.world().day);

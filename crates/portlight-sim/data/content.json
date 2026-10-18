@@ -5948,7 +5948,7 @@
       "port_id": "thornport",
       "title": "Bladesmith",
       "personality": "gruff",
-      "description": "A Highland smith who forges axes and broadswords in a workshop built into the cliff face.",
+      "description": "A Highland smith who forges axes and blades in a workshop built into the cliff face.",
       "greeting": "If it's sharp and it swings, I made it. If it's dull, someone else made it.",
       "inventory_types": [
         "melee",
@@ -6033,7 +6033,7 @@
       "port_id": "silk_haven",
       "title": "Mechanist",
       "personality": "shrewd",
-      "description": "A craftsman who builds hand crossbows from bamboo and horn. Quiet weapons for quiet work.",
+      "description": "A craftsman who builds blowguns and arquebus pistols from bamboo and brass. Quiet weapons for quiet work.",
       "greeting": "Silk Haven values discretion. So do my weapons.",
       "inventory_types": [
         "ranged",
@@ -6182,7 +6182,7 @@
       "name": "Se\u00f1ora Vega",
       "style_id": "la_destreza",
       "port_id": "al_manar",
-      "description": "A Castilian expatriate who runs the only fencing school east of Gibraltar.",
+      "description": "A Castilian expatriate who runs a fencing school east of Gibraltar.",
       "dialog": "\"You fight like a dockhand. I will teach you to fight like a mathematician.\""
     },
     {
@@ -11349,7 +11349,7 @@
           "institution": "customs",
           "personality": "fierce",
           "description": "The Coral King's military commander \u2014 a warrior whose war canoes escort every entering ship and whose inspection is the closest thing Coral Throne has to customs: he checks your cargo for weapons, not to confiscate them but to ASSESS them. The King wants weapons. Tane decides if yours are good enough.",
-          "agenda": "The Crown's defense. Tane wants weapons \u2014 swords, bows, gunpowder, anything that gives the war canoes an edge. He's the reason weapons sell for 700% markup at Coral Throne. He also assesses every visiting captain as a potential ally or threat. His war canoes can sink a galleon in the shallows.",
+          "agenda": "The Crown's defense. Tane wants weapons \u2014 swords, bows, gunpowder, anything that gives the war canoes an edge. He's the reason weapons are dear at Coral Throne. He also assesses every visiting captain as a potential ally or threat. His war canoes can sink a galleon in the shallows.",
           "greeting_neutral": "\"Your weapons. Show them. The King demands tribute of arms. If yours are worthy, the price will be generous. If not... tribute in silk.\"",
           "greeting_friendly": "\"Captain! You brought the blades I asked for? Show me. Ah \u2014 yes. The King will be pleased. Your tribute is weapons today. A GOOD tribute.\"",
           "greeting_hostile": "\"Stand on your deck. My warriors will inspect your hold. Do not resist. The reef is shallow here, and war canoes are faster than anything you sail.\"",

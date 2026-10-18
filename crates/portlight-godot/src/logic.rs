@@ -1814,6 +1814,13 @@ pub(crate) struct CrewRoleLine {
     pub text: String,
 }
 
+pub(crate) struct CrewLearnedStyleLine {
+    pub id: String,
+    pub active: bool,
+    pub usable: bool,
+    pub text: String,
+}
+
 pub(crate) struct CrewStyleLine {
     pub id: String,
     pub name: String,
@@ -1854,6 +1861,7 @@ pub(crate) struct CrewDesk {
     pub roles: Vec<CrewRoleLine>,
     pub officers: Vec<String>,
     pub known_styles: String,
+    pub learned_styles: Vec<CrewLearnedStyleLine>,
     pub styles: Vec<CrewStyleLine>,
     pub skills: Vec<CrewSkillLine>,
     pub party_line: String,
@@ -1879,7 +1887,6 @@ pub(crate) fn hire_confirm_line(count: i64, name: &str, cost: i64) -> String {
 }
 
 /// Silver and the day advance. `train_crew` calls `Session::advance` once per day.
-/// Session ignores injury gates on this path, so the line does not mention them.
 pub(crate) fn train_confirm_line(name: &str, cost: i64, days: i64) -> String {
     format!("Train {name} for {cost} silver. The calendar will advance {days} days.")
 }
@@ -1922,6 +1929,47 @@ pub(crate) fn full_repair_price(world: &portlight_sim::model::World) -> i64 {
 
 pub(crate) fn recruit_confirm_line(name: &str, cost: i64) -> String {
     format!("Recruit {name} for {cost} silver.")
+}
+
+pub(crate) fn train_notice_line(id: &str, advanced: i64) -> String {
+    let name = display_or_humanized(
+        portlight_sim::content::content()
+            .fighting_style(id)
+            .map(|style| style.name.as_str()),
+        id,
+    );
+    format!("Learned {name}. The calendar advanced {advanced} days.")
+}
+
+pub(crate) fn equip_style_notice_line(id: &str) -> String {
+    let name = display_or_humanized(
+        portlight_sim::content::content()
+            .fighting_style(id)
+            .map(|style| style.name.as_str()),
+        id,
+    );
+    format!("Equipped {name}.")
+}
+
+pub(crate) fn skill_notice_line(id: &str, advanced: i64) -> String {
+    let resolved = portlight_sim::skills::resolve_skill_id(id);
+    let name = display_or_humanized(
+        portlight_sim::content::content()
+            .skill(&resolved)
+            .map(|skill| skill.name.as_str()),
+        id,
+    );
+    format!("Trained {name}. The calendar advanced {advanced} days.")
+}
+
+pub(crate) fn recruit_notice_line(id: &str) -> String {
+    let name = display_or_humanized(
+        portlight_sim::content::content()
+            .companion(id)
+            .map(|comp| comp.name.as_str()),
+        id,
+    );
+    format!("Recruited {name}.")
 }
 
 fn ascii_owned(text: &str, fallback: &str) -> String {
@@ -2026,6 +2074,32 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         })
         .unwrap_or_default();
     let learned = &world.captain.learned_styles;
+    let injured = portlight_sim::injuries::injured_body_parts(&world.captain.injuries);
+    let active_style = world.captain.active_style.as_deref();
+    let learned_styles: Vec<CrewLearnedStyleLine> = learned
+        .iter()
+        .map(|id| {
+            let name = display_or_humanized(
+                catalog.fighting_style(id).map(|style| style.name.as_str()),
+                id,
+            );
+            let active = active_style == Some(id.as_str());
+            let usable = portlight_sim::training::style_usable(id, &injured);
+            let status = if active {
+                "active"
+            } else if !usable {
+                "injured"
+            } else {
+                "ready"
+            };
+            CrewLearnedStyleLine {
+                id: id.clone(),
+                active,
+                usable,
+                text: format!("{name}  {status}"),
+            }
+        })
+        .collect();
     let styles: Vec<CrewStyleLine> = portlight_sim::training::available_training(port_id)
         .into_iter()
         .filter_map(|id| {
@@ -2033,6 +2107,11 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
             let name = display_or_humanized(Some(&style.name), &style.id);
             let known = learned.iter().any(|learned_id| learned_id == &id);
             let known_word = if known { "yes" } else { "no" };
+            let style_word = if style.prerequisite_styles == 1 {
+                "style"
+            } else {
+                "styles"
+            };
             Some(CrewStyleLine {
                 id: style.id.clone(),
                 name: name.clone(),
@@ -2040,7 +2119,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                 days: style.training_days,
                 known,
                 text: format!(
-                    "{name}  {} silver  {} days  needs {} styles  known {known_word}",
+                    "{name}  {} silver  {} days  needs {} {style_word}  known {known_word}",
                     style.silver_cost, style.training_days, style.prerequisite_styles
                 ),
             })
@@ -2072,6 +2151,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
             let trainers = catalog.trainers_at(port_id, Some(&skill.id));
             if trainers.is_empty() {
                 let text = format!("{skill_name}  {display}.");
+                let empty_trainer = Some(format!("No {skill_name} trainer at this port."));
                 return CrewSkillLine {
                     id: skill.id.clone(),
                     skill_name,
@@ -2081,7 +2161,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                     can_train: false,
                     text,
                     next_text: String::new(),
-                    empty_trainer: Some(format!("No {} trainer at this port.", skill.id)),
+                    empty_trainer,
                 };
             }
             let max_teach = trainers
@@ -2187,6 +2267,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         roles,
         officers,
         known_styles,
+        learned_styles,
         styles,
         skills,
         party_line,
@@ -3917,6 +3998,9 @@ mod tests {
         for style in &desk.styles {
             assert!(style.text.is_ascii(), "{}", style.text);
         }
+        for learned in &desk.learned_styles {
+            assert!(learned.text.is_ascii(), "{}", learned.text);
+        }
         for skill in &desk.skills {
             assert!(skill.text.is_ascii(), "{}", skill.text);
             assert!(skill.next_text.is_ascii(), "{}", skill.next_text);
@@ -3963,7 +4047,9 @@ mod tests {
         assert!(desk.styles.iter().any(|style| {
             style.id == "la_destreza" && style.cost == 80 && style.days == 5 && !style.known
         }));
+        assert!(desk.styles[0].text.contains("needs 0 styles"));
         assert_eq!(desk.known_styles, "Known styles: none");
+        assert!(desk.learned_styles.is_empty());
         let skill = desk
             .skills
             .iter()
@@ -3991,6 +4077,48 @@ mod tests {
         desk_strings_are_ascii(&desk);
         assert!(NO_COMPANIONS_FOR_HIRE.is_ascii());
         assert!(NO_FIGHTING_MASTER.is_ascii());
+    }
+
+    #[test]
+    fn crew_notices_and_learned_styles_use_display_names() {
+        assert_eq!(
+            train_notice_line("la_destreza", 5),
+            "Learned La Destreza. The calendar advanced 5 days."
+        );
+        assert_eq!(
+            equip_style_notice_line("la_destreza"),
+            "Equipped La Destreza."
+        );
+        assert_eq!(
+            skill_notice_line("blacksmith", 3),
+            "Trained Blacksmithing. The calendar advanced 3 days."
+        );
+        assert_eq!(recruit_notice_line("iron_marta"), "Recruited Iron Marta.");
+
+        let session = Session::new("Ada", "merchant", 1, Some("jade_port")).unwrap();
+        let jade_desk = crew_desk(&session).unwrap();
+        assert!(
+            jade_desk.styles[0].text.contains("needs 1 style  "),
+            "{}",
+            jade_desk.styles[0].text
+        );
+        assert!(!jade_desk.styles[0].text.contains("needs 1 styles"));
+
+        let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
+        session.train_crew("la_destreza").unwrap();
+        let desk = crew_desk(&session).unwrap();
+        assert_eq!(desk.learned_styles.len(), 1);
+        assert_eq!(desk.learned_styles[0].id, "la_destreza");
+        assert!(!desk.learned_styles[0].active);
+        assert!(desk.learned_styles[0].usable);
+        assert_eq!(desk.learned_styles[0].text, "La Destreza  ready");
+
+        session.equip_style(Some("la_destreza")).unwrap();
+        let active_desk = crew_desk(&session).unwrap();
+        assert!(active_desk.learned_styles[0].active);
+        assert!(active_desk.learned_styles[0].usable);
+        assert_eq!(active_desk.learned_styles[0].text, "La Destreza  active");
+        desk_strings_are_ascii(&active_desk);
     }
 
     #[test]
@@ -4023,7 +4151,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             skill.empty_trainer.as_deref(),
-            Some("No blacksmith trainer at this port.")
+            Some("No Blacksmithing trainer at this port.")
         );
         desk_strings_are_ascii(&desk);
     }

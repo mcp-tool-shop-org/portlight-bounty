@@ -87,5 +87,5 @@ Stock at Coral Throne, computed at the base commit: every catalog item of a type
 ## 7. Flags and open questions
 
 - DF-46 (merchants never reach Godot; no reader for their text), DF-47 (coverage gaps): see ../data-fixes.md.
-- DF-44: the War Chief Tane of Coral Throne is blamed for a 700% markup; this shop's markup is 1.08. DF-37: same-port namesake. Given-name overlap: officer name Tane (officers/south_seas.md; DF-38).
+- DF-44 (resolved): War Chief Tane's agenda now says weapons are dear at Coral Throne via `COPY_OVERRIDES` in tools/extract_content.py; this shop's markup is 1.08. DF-37: same-port namesake. Given-name overlap: officer name Tane (officers/south_seas.md; DF-38).
 - Building a shop, or showing any merchant text, is out of scope for canon; it is a design decision.

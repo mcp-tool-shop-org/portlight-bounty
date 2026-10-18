@@ -446,6 +446,26 @@ COPY_OVERRIDES = [
         "Calm water, clear sky. The Grain Road earns its reputation as a gentle route.",
     ),
     ("privateer title", "Licensed Hunter", "Letter of Marque"),
+    (
+        "style master description",
+        "A Castilian expatriate who runs the only fencing school east of Gibraltar.",
+        "A Castilian expatriate who runs a fencing school east of Gibraltar.",
+    ),
+    (
+        "merchant description",
+        "A craftsman who builds hand crossbows from bamboo and horn. Quiet weapons for quiet work.",
+        "A craftsman who builds blowguns and arquebus pistols from bamboo and brass. Quiet weapons for quiet work.",
+    ),
+    (
+        "merchant description",
+        "A Highland smith who forges axes and broadswords in a workshop built into the cliff face.",
+        "A Highland smith who forges axes and blades in a workshop built into the cliff face.",
+    ),
+    (
+        "npc agenda",
+        "The Crown's defense. Tane wants weapons \u2014 swords, bows, gunpowder, anything that gives the war canoes an edge. He's the reason weapons sell for 700% markup at Coral Throne. He also assesses every visiting captain as a potential ally or threat. His war canoes can sink a galleon in the shallows.",
+        "The Crown's defense. Tane wants weapons \u2014 swords, bows, gunpowder, anything that gives the war canoes an edge. He's the reason weapons are dear at Coral Throne. He also assesses every visiting captain as a potential ally or threat. His war canoes can sink a galleon in the shallows.",
+    ),
 ]
 
 
@@ -464,6 +484,23 @@ def apply_copy_overrides(data: dict) -> None:
                     if enc["text"] == python_text:
                         enc["text"] = port_text
                         hits += 1
+        elif what == "style master description":
+            for master in data["style_masters"]:
+                if master["description"] == python_text:
+                    master["description"] = port_text
+                    hits += 1
+        elif what == "merchant description":
+            for merchant in data["merchants"]:
+                if merchant["description"] == python_text:
+                    merchant["description"] = port_text
+                    hits += 1
+        elif what == "npc agenda":
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    for npc in profile["npcs"]:
+                        if npc["agenda"] == python_text:
+                            npc["agenda"] = port_text
+                            hits += 1
         else:
             for captain in data["captains"]:
                 if captain["id"] == "privateer" and captain["title"] == python_text:
