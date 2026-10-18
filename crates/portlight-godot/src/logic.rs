@@ -1828,6 +1828,9 @@ pub(crate) struct CrewStyleLine {
     pub days: i64,
     pub known: bool,
     pub text: String,
+    pub master_line: Option<String>,
+    pub master_dialog: Option<String>,
+    pub style_description: String,
 }
 
 pub(crate) struct CrewSkillLine {
@@ -1839,6 +1842,9 @@ pub(crate) struct CrewSkillLine {
     pub can_train: bool,
     pub text: String,
     pub next_text: String,
+    pub trainer_description: Option<String>,
+    pub trainer_dialog: Option<String>,
+    pub level_description: Option<String>,
     /// Set when this port has no trainer for the skill.
     pub empty_trainer: Option<String>,
 }
@@ -1856,6 +1862,18 @@ pub(crate) struct CrewGearLine {
     pub merchant_name: String,
     pub cost: i64,
     pub equipped: bool,
+    pub text: String,
+}
+
+pub(crate) struct CrewCarriedGearLine {
+    pub id: String,
+    pub name: String,
+    pub maintain_cost: i64,
+    pub can_maintain: bool,
+    pub upgrade_target: Option<String>,
+    pub upgrade_cost: i64,
+    pub upgrade_days: i64,
+    pub can_upgrade: bool,
     pub text: String,
 }
 
@@ -1877,6 +1895,7 @@ pub(crate) struct CrewDesk {
     pub party: Vec<String>,
     pub offers: Vec<CrewOfferLine>,
     pub gear_line: String,
+    pub carried_gear: Vec<CrewCarriedGearLine>,
     pub merchant_header: Option<String>,
     pub merchant_description: Option<String>,
     pub merchant_greeting: Option<String>,
@@ -1966,6 +1985,30 @@ pub(crate) fn gear_notice_line(id: &str, silver: i64) -> String {
     format!("Bought {name}. Silver {silver}.")
 }
 
+pub(crate) fn maintain_gear_confirm_line(name: &str, cost: i64) -> String {
+    format!("Maintain {name} for {cost} silver.")
+}
+
+pub(crate) fn maintain_gear_notice_line(id: &str, silver: i64) -> String {
+    let name = gear_item_name(id);
+    format!("Maintained {name}. Usage reset. Silver {silver}.")
+}
+
+pub(crate) fn upgrade_gear_confirm_line(name: &str, target: &str, cost: i64, days: i64) -> String {
+    format!("Upgrade {name} to {target} for {cost} silver. The calendar will advance {days} days.")
+}
+
+pub(crate) fn upgrade_gear_notice_line(
+    id: &str,
+    new_quality: &str,
+    advanced: i64,
+    silver: i64,
+) -> String {
+    let name = gear_item_name(id);
+    let label = portlight_sim::weapon_quality::effects(new_quality).label;
+    format!("Upgraded {name} to {label}. The calendar advanced {advanced} days. Silver {silver}.")
+}
+
 fn captain_gear_line(captain: &portlight_sim::model::Captain) -> String {
     let melee = captain
         .melee
@@ -1998,6 +2041,86 @@ fn captain_gear_line(captain: &portlight_sim::model::Captain) -> String {
         ranged.join(", ")
     };
     format!("Carried: Melee {melee} - Armor {armor} - Ranged {ranged_text}.")
+}
+
+fn captain_carried_gear_rows(
+    captain: &portlight_sim::model::Captain,
+    at_smith: bool,
+) -> Vec<CrewCarriedGearLine> {
+    let mut items: Vec<(String, String, &'static str)> = Vec::new();
+    if let Some(w) = &captain.melee {
+        items.push((
+            w.id.clone(),
+            display_or_humanized(Some(&w.name), &w.id),
+            "melee",
+        ));
+    }
+    if let Some(a) = &captain.armor {
+        items.push((
+            a.id.clone(),
+            display_or_humanized(Some(&a.name), &a.id),
+            "armor",
+        ));
+    }
+    if let Some(w) = &captain.firearm {
+        items.push((
+            w.id.clone(),
+            display_or_humanized(Some(&w.name), &w.id),
+            "firearm",
+        ));
+    }
+    if let Some(w) = &captain.mechanical {
+        items.push((
+            w.id.clone(),
+            display_or_humanized(Some(&w.name), &w.id),
+            "mechanical",
+        ));
+    }
+    let bs_level = portlight_sim::skills::skill_level(&captain.skills, "blacksmith");
+    let bonus = portlight_sim::skills::degrade_threshold_bonus(bs_level);
+    items
+        .into_iter()
+        .map(|(id, name, kind)| {
+            let quality = captain.quality_of(&id);
+            let quality_label = portlight_sim::weapon_quality::effects(quality).label;
+            let usage = captain.usage_of(&id);
+            let degrade_at = portlight_sim::weapon_quality::threshold(kind) + bonus;
+            let base_maint =
+                portlight_sim::weapon_quality::maintenance_cost(&captain.weapon_quality, &id);
+            let maintain_cost =
+                portlight_sim::skills::apply_maintenance_discount(base_maint, bs_level);
+            let can_maintain = usage > 0;
+            let next_tier = portlight_sim::weapon_quality::next_tier(quality);
+            let upgrade_target =
+                next_tier.map(|tier| portlight_sim::weapon_quality::effects(tier).label.to_string());
+            let base_upgrade = portlight_sim::weapon_quality::upgrade_cost(quality);
+            let upgrade_cost =
+                portlight_sim::skills::apply_upgrade_discount(base_upgrade, bs_level);
+            let upgrade_days = portlight_sim::weapon_quality::upgrade_days(quality);
+            let can_upgrade = at_smith && upgrade_target.is_some();
+            let upgrade_clause = match (&upgrade_target, at_smith) {
+                (Some(target), true) => {
+                    format!("smith to {target} {upgrade_cost} silver ({upgrade_days} days)")
+                }
+                (Some(target), false) => format!("smith to {target} needs shipyard"),
+                (None, _) => "maximum quality".to_string(),
+            };
+            let text = format!(
+                "{name} ({quality_label}, {usage}/{degrade_at} uses)  maintain {maintain_cost} silver  {upgrade_clause}"
+            );
+            CrewCarriedGearLine {
+                id,
+                name,
+                maintain_cost,
+                can_maintain,
+                upgrade_target,
+                upgrade_cost,
+                upgrade_days,
+                can_upgrade,
+                text,
+            }
+        })
+        .collect()
 }
 
 pub(crate) fn train_notice_line(id: &str, advanced: i64) -> String {
@@ -2169,6 +2292,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
             }
         })
         .collect();
+    let port_masters = catalog.masters_at(port_id);
     let styles: Vec<CrewStyleLine> = portlight_sim::training::available_training(port_id)
         .into_iter()
         .filter_map(|id| {
@@ -2181,6 +2305,19 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
             } else {
                 "styles"
             };
+            let master = port_masters
+                .iter()
+                .copied()
+                .find(|master| master.style_id == style.id);
+            let (master_line, master_dialog) = if let Some(master) = master {
+                let master_name = display_or_humanized(Some(&master.name), &master.id);
+                let desc = ui_sentence(&master.description);
+                let dialog = ui_sentence(&master.dialog);
+                (Some(format!("{master_name} - {desc}")), Some(dialog))
+            } else {
+                (None, None)
+            };
+            let style_description = ui_sentence(&style.description);
             Some(CrewStyleLine {
                 id: style.id.clone(),
                 name: name.clone(),
@@ -2191,6 +2328,9 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                     "{name}  {} silver  {} days  needs {} {style_word}  known {known_word}",
                     style.silver_cost, style.training_days, style.prerequisite_styles
                 ),
+                master_line,
+                master_dialog,
+                style_description,
             })
         })
         .collect();
@@ -2230,6 +2370,9 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                     can_train: false,
                     text,
                     next_text: String::new(),
+                    trainer_description: None,
+                    trainer_dialog: None,
+                    level_description: None,
                     empty_trainer,
                 };
             }
@@ -2242,7 +2385,19 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                 .iter()
                 .map(|trainer| display_or_humanized(Some(&trainer.name), &trainer.id))
                 .collect();
+            let primary_trainer = trainers.first().copied();
+            let trainer_description = primary_trainer.map(|t| ui_sentence(&t.description));
+            let trainer_dialog = primary_trainer.map(|t| ui_sentence(&t.dialog));
             let next = skill.levels.get(current as usize);
+            let level_description = next
+                .or_else(|| {
+                    if current > 0 {
+                        skill.levels.get((current - 1) as usize)
+                    } else {
+                        None
+                    }
+                })
+                .map(|lvl| ui_sentence(&lvl.description));
             let can_train = next.is_some() && current < skill.max_level && current < max_teach;
             let (level_name, cost, days, next_text) = if let Some(next) = next {
                 let level_name = ascii_owned(&next.name, "level");
@@ -2271,6 +2426,9 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
                 can_train,
                 text,
                 next_text,
+                trainer_description,
+                trainer_dialog,
+                level_description,
                 empty_trainer: None,
             }
         })
@@ -2329,6 +2487,8 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         })
         .collect();
     let gear_line = captain_gear_line(&world.captain);
+    let at_smith = port.features.iter().any(|feature| feature == "shipyard");
+    let carried_gear = captain_carried_gear_rows(&world.captain, at_smith);
     let merchants = catalog.merchants_at(port_id);
     let (merchant_header, merchant_description, merchant_greeting, gear_offers) =
         if let Some(merchant) = merchants.first().copied() {
@@ -2494,6 +2654,7 @@ pub(crate) fn crew_desk(session: &Session) -> Option<CrewDesk> {
         party: party_rows,
         offers,
         gear_line,
+        carried_gear,
         merchant_header,
         merchant_description,
         merchant_greeting,
@@ -4232,6 +4393,17 @@ mod tests {
         }
         for style in &desk.styles {
             assert!(style.text.is_ascii(), "{}", style.text);
+            assert!(
+                style.style_description.is_ascii(),
+                "{}",
+                style.style_description
+            );
+            if let Some(line) = &style.master_line {
+                assert!(line.is_ascii(), "{line}");
+            }
+            if let Some(dialog) = &style.master_dialog {
+                assert!(dialog.is_ascii(), "{dialog}");
+            }
         }
         for learned in &desk.learned_styles {
             assert!(learned.text.is_ascii(), "{}", learned.text);
@@ -4239,6 +4411,15 @@ mod tests {
         for skill in &desk.skills {
             assert!(skill.text.is_ascii(), "{}", skill.text);
             assert!(skill.next_text.is_ascii(), "{}", skill.next_text);
+            if let Some(desc) = &skill.trainer_description {
+                assert!(desc.is_ascii(), "{desc}");
+            }
+            if let Some(dialog) = &skill.trainer_dialog {
+                assert!(dialog.is_ascii(), "{dialog}");
+            }
+            if let Some(level_desc) = &skill.level_description {
+                assert!(level_desc.is_ascii(), "{level_desc}");
+            }
             if let Some(empty) = &skill.empty_trainer {
                 assert!(empty.is_ascii(), "{empty}");
             }
@@ -4248,6 +4429,10 @@ mod tests {
         }
         for offer in &desk.offers {
             assert!(offer.text.is_ascii(), "{}", offer.text);
+        }
+        for carried in &desk.carried_gear {
+            assert!(carried.text.is_ascii(), "{}", carried.text);
+            assert!(!carried.text.contains('_'), "{}", carried.text);
         }
         for gear in &desk.gear_offers {
             assert!(gear.text.is_ascii(), "{}", gear.text);
@@ -4287,6 +4472,17 @@ mod tests {
             style.id == "la_destreza" && style.cost == 80 && style.days == 5 && !style.known
         }));
         assert!(desk.styles[0].text.contains("needs 0 styles"));
+        assert!(desk.styles[0]
+            .master_line
+            .as_deref()
+            .unwrap()
+            .starts_with("Maestro Luciano - "));
+        assert!(desk.styles[0]
+            .master_dialog
+            .as_deref()
+            .unwrap()
+            .contains("compass"));
+        assert!(desk.styles[0].style_description.contains("geometric"));
         assert_eq!(desk.known_styles, "Known styles: none");
         assert!(desk.learned_styles.is_empty());
         let skill = desk
@@ -4295,6 +4491,21 @@ mod tests {
             .find(|skill| skill.id == "blacksmith")
             .unwrap();
         assert!(skill.text.contains("Old Vasquez"));
+        assert!(skill
+            .trainer_description
+            .as_deref()
+            .unwrap()
+            .contains("retired armorer"));
+        assert!(skill
+            .trainer_dialog
+            .as_deref()
+            .unwrap()
+            .contains("blade sharp"));
+        assert!(skill
+            .level_description
+            .as_deref()
+            .unwrap()
+            .contains("Reduce maintenance costs by 25%"));
         assert!(skill.can_train);
         assert_eq!(skill.cost, 50);
         assert_eq!(skill.days, 3);
@@ -4342,6 +4553,22 @@ mod tests {
             gear_notice_line("matchlock_pistol", 445),
             "Bought Matchlock Pistol. Silver 445."
         );
+        assert_eq!(
+            maintain_gear_confirm_line("Cutlass", 15),
+            "Maintain Cutlass for 15 silver."
+        );
+        assert_eq!(
+            maintain_gear_notice_line("cutlass", 485),
+            "Maintained Cutlass. Usage reset. Silver 485."
+        );
+        assert_eq!(
+            upgrade_gear_confirm_line("Cutlass", "Fine", 100, 3),
+            "Upgrade Cutlass to Fine for 100 silver. The calendar will advance 3 days."
+        );
+        assert_eq!(
+            upgrade_gear_notice_line("cutlass", "fine", 3, 400),
+            "Upgraded Cutlass to Fine. The calendar advanced 3 days. Silver 400."
+        );
 
         let session = Session::new("Ada", "merchant", 1, Some("jade_port")).unwrap();
         let jade_desk = crew_desk(&session).unwrap();
@@ -4351,6 +4578,20 @@ mod tests {
             jade_desk.styles[0].text
         );
         assert!(!jade_desk.styles[0].text.contains("needs 1 styles"));
+        assert!(jade_desk.styles[0]
+            .master_line
+            .as_deref()
+            .unwrap()
+            .starts_with("Pak Reza - "));
+
+        let al_manar_session = Session::new("Ada", "merchant", 1, Some("al_manar")).unwrap();
+        let al_manar_desk = crew_desk(&al_manar_session).unwrap();
+        assert!(al_manar_desk.styles[0]
+            .master_line
+            .as_deref()
+            .unwrap()
+            .starts_with("Senora Vega - "));
+        desk_strings_are_ascii(&al_manar_desk);
 
         let mut session = Session::new("Ada", "merchant", 1, None).unwrap();
         session.train_crew("la_destreza").unwrap();
@@ -4377,6 +4618,7 @@ mod tests {
             desk.gear_line,
             "Carried: Melee none - Armor none - Ranged none."
         );
+        assert!(desk.carried_gear.is_empty());
         assert_eq!(
             desk.merchant_header.as_deref(),
             Some("Marco - Master Weaponsmith (Charming, markup +10%)")
@@ -4407,6 +4649,18 @@ mod tests {
         assert_eq!(
             armed_desk.gear_line,
             "Carried: Melee Cutlass - Armor none - Ranged Matchlock Pistol (3 shots), Throwing Knife x1."
+        );
+        assert_eq!(armed_desk.carried_gear.len(), 2);
+        let carried_cutlass = armed_desk
+            .carried_gear
+            .iter()
+            .find(|g| g.id == "cutlass")
+            .unwrap();
+        assert!(!carried_cutlass.can_maintain);
+        assert!(carried_cutlass.can_upgrade);
+        assert_eq!(
+            carried_cutlass.text,
+            "Cutlass (Standard, 0/10 uses)  maintain 15 silver  smith to Fine 100 silver (3 days)"
         );
         let cutlass = armed_desk
             .gear_offers
@@ -4440,7 +4694,7 @@ mod tests {
         );
         desk_strings_are_ascii(&armed_desk);
 
-        // Corsair's Rest has no merchant.
+        // Corsair's Rest has no merchant and no shipyard.
         let corsair_session = Session::new("Ada", "corsair", 1, None).unwrap();
         let corsair_desk = crew_desk(&corsair_session).unwrap();
         assert!(corsair_desk.merchant_header.is_none());

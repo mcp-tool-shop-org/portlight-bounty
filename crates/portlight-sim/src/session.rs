@@ -3279,6 +3279,67 @@ impl Session {
         Ok(())
     }
 
+    /// `portlight smith`. Upgrades weapon quality by one tier at a shipyard
+    /// port, applying the blacksmith upgrade discount and advancing the
+    /// calendar by the tier's upgrade days.
+    pub fn upgrade_weapon(&mut self, weapon_id: &str) -> Result<String, SimError> {
+        let port_id = current_port_id(&self.world)
+            .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        let at_smith = self
+            .world
+            .port(port_id)
+            .is_some_and(|port| port.features.iter().any(|feature| feature == "shipyard"));
+        if !at_smith {
+            return Err(SimError::Rejected(
+                "No smith at this port. Visit a port with a shipyard.".into(),
+            ));
+        }
+        let current = self.world.captain.quality_of(weapon_id).to_string();
+        let Some(new_quality) = weapon_quality::next_tier(&current).map(str::to_string) else {
+            return Err(SimError::Rejected(
+                "Already masterwork quality. This weapon cannot be improved further.".into(),
+            ));
+        };
+        let base = weapon_quality::upgrade_cost(&current);
+        let level = skills::skill_level(&self.world.captain.skills, "blacksmith");
+        let cost = skills::apply_upgrade_discount(base, level);
+        if self.world.captain.silver < cost {
+            return Err(SimError::Rejected(format!(
+                "Upgrade costs {cost} silver. You have {}.",
+                self.world.captain.silver
+            )));
+        }
+        let days = weapon_quality::upgrade_days(&current);
+        self.world.captain.silver -= cost;
+        self.world.captain.set_quality(weapon_id, &new_quality);
+        self.world.captain.set_usage(weapon_id, 0);
+        sync_equipped_quality(&mut self.world.captain, weapon_id, &new_quality);
+        for _ in 0..days {
+            self.advance()?;
+        }
+        Ok(new_quality)
+    }
+
+    /// `portlight field-repair`. Restores a worn or rusted weapon up to the
+    /// captain's field-repair cap and resets usage.
+    pub fn field_repair_weapon(&mut self, weapon_id: &str) -> Result<(), SimError> {
+        let level = skills::skill_level(&self.world.captain.skills, "blacksmith");
+        let mut quality: std::collections::BTreeMap<String, String> =
+            self.world.captain.weapon_quality.iter().cloned().collect();
+        let mut usage: std::collections::BTreeMap<String, i64> =
+            self.world.captain.weapon_usage.iter().cloned().collect();
+        skills::field_repair_weapon(weapon_id, &mut quality, &mut usage, level)
+            .map_err(SimError::Rejected)?;
+        if let Some(new_q) = quality.get(weapon_id) {
+            self.world.captain.set_quality(weapon_id, new_q);
+            sync_equipped_quality(&mut self.world.captain, weapon_id, new_q);
+        }
+        if let Some(&u) = usage.get(weapon_id) {
+            self.world.captain.set_usage(weapon_id, u);
+        }
+        Ok(())
+    }
+
     fn note_contract_on_books(&mut self, outcome: &ContractOutcome) {
         self.world.captain.silver += outcome.silver_delta;
         self.books.completed_contracts.push(CompletedContract {
@@ -3659,6 +3720,21 @@ fn apply_purchased_item(
             }
         }
         _ => {}
+    }
+}
+
+fn sync_equipped_quality(captain: &mut crate::model::Captain, weapon_id: &str, new_quality: &str) {
+    if let Some(melee) = captain.melee.as_mut().filter(|w| w.id == weapon_id) {
+        melee.quality = new_quality.to_string();
+    }
+    if let Some(armor) = captain.armor.as_mut().filter(|a| a.id == weapon_id) {
+        armor.quality = new_quality.to_string();
+    }
+    if let Some(firearm) = captain.firearm.as_mut().filter(|w| w.id == weapon_id) {
+        firearm.quality = new_quality.to_string();
+    }
+    if let Some(mech) = captain.mechanical.as_mut().filter(|w| w.id == weapon_id) {
+        mech.quality = new_quality.to_string();
     }
 }
 
@@ -4788,6 +4864,46 @@ mod tests {
         // Level 1 discount is 0.25. int(15 * 0.75) = 11.
         assert_eq!(session.world.captain.silver, before - 11);
         assert_eq!(session.world.captain.usage_of("cutlass"), 0);
+
+        // Level 1 cannot field-repair; Level 2 (Journeyman) restores worn -> standard.
+        session.world.captain.set_quality("cutlass", "worn");
+        session.world.captain.set_usage("cutlass", 3);
+        assert!(session.field_repair_weapon("cutlass").is_err());
+        session.world.captain.skills[0].level = 2;
+        session.field_repair_weapon("cutlass").unwrap();
+        assert_eq!(session.world.captain.quality_of("cutlass"), "standard");
+        assert_eq!(session.world.captain.usage_of("cutlass"), 0);
+        assert_eq!(
+            session.world.captain.melee.as_ref().unwrap().quality,
+            "standard"
+        );
+
+        // Non-shipyard port refuses smith upgrade.
+        session.world.voyage.destination_id = "al_manar".into();
+        let err = session.upgrade_weapon("cutlass").unwrap_err().to_string();
+        assert_eq!(err, "No smith at this port. Visit a port with a shipyard.");
+
+        // Level 3 (Master) gives 25% smith upgrade discount: standard->fine is 75 silver, 3 days.
+        session.world.voyage.destination_id = "porto_novo".into();
+        session.world.captain.skills[0].level = 3;
+        session.world.captain.silver = 500;
+        let day_before = session.world.day;
+        let new_q = session.upgrade_weapon("cutlass").unwrap();
+        assert_eq!(new_q, "fine");
+        assert_eq!(session.world.captain.quality_of("cutlass"), "fine");
+        assert_eq!(
+            session.world.captain.melee.as_ref().unwrap().quality,
+            "fine"
+        );
+        assert_eq!(session.world.day, day_before + 3);
+        // Fine->Masterwork is base 300 -> 225 with Master discount, 5 days.
+        let new_q = session.upgrade_weapon("cutlass").unwrap();
+        assert_eq!(new_q, "masterwork");
+        let err = session.upgrade_weapon("cutlass").unwrap_err().to_string();
+        assert_eq!(
+            err,
+            "Already masterwork quality. This weapon cannot be improved further."
+        );
     }
 
     #[test]

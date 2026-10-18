@@ -85,18 +85,19 @@ use crate::logic::{
     dock_confirm_line, duel_button_enabled, empty_lane_note, encounter_frame_rejected,
     equip_style_notice_line, facts_for_catalog_captain, facts_from_agency, facts_from_step,
     frame_mostly_flat, frame_samples, gear_confirm_line, gear_notice_line, hire_confirm_line,
-    hire_needs_confirm, humanize_id, install_confirm_line, layout_fits_window, newgame_copy,
-    newgame_frame_rejected, player_ship, present, recruit_confirm_line, recruit_notice_line,
-    save_confirm_title, save_slot_label, sell_confirm_line, services_line, session_text,
-    shipyard_frame_rejected, shipyard_model, skill_confirm_line, skill_notice_line,
-    stance_duel_visible, status_header, template_player_ship, train_confirm_line,
-    train_notice_line, ui_sentence, victory_receipt_lines, CrewDesk, CustomDraft, EncounterFacts,
-    NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel, StepInput, AT_SEA_LANE_NOTE,
-    CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD, NEWGAME_SHOT_H,
-    NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE, NO_GEAR_MERCHANT,
-    NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN, SCRIPTED_CAPTAIN_TYPE,
-    SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL, SCRIPTED_SEED, WINDOW_H,
-    WINDOW_W,
+    hire_needs_confirm, humanize_id, install_confirm_line, layout_fits_window,
+    maintain_gear_confirm_line, maintain_gear_notice_line, newgame_copy, newgame_frame_rejected,
+    player_ship, present, recruit_confirm_line, recruit_notice_line, save_confirm_title,
+    save_slot_label, sell_confirm_line, services_line, session_text, shipyard_frame_rejected,
+    shipyard_model, skill_confirm_line, skill_notice_line, stance_duel_visible, status_header,
+    template_player_ship, train_confirm_line, train_notice_line, ui_sentence,
+    upgrade_gear_confirm_line, upgrade_gear_notice_line, victory_receipt_lines, CrewDesk,
+    CustomDraft, EncounterFacts, NewgamePage, PointPool, ScreenAction, ScreenPhase, ShipyardModel,
+    StepInput, AT_SEA_LANE_NOTE, CREW_STORES_PLUS_FIVE, CREW_STORES_PLUS_ONE, CREW_STORES_SUBHEAD,
+    NEWGAME_SHOT_H, NEWGAME_SHOT_W, NO_COMPANIONS_FOR_HIRE, NO_FIGHTING_MASTER, NO_FLEET_HERE,
+    NO_GEAR_MERCHANT, NO_SHIPYARD_BODY, PANEL_MIN_W, ROW_SEPARATION, SCRIPTED_CAPTAIN,
+    SCRIPTED_CAPTAIN_TYPE, SCRIPTED_DEPART, SCRIPTED_FIGHT, SCRIPTED_NAME, SCRIPTED_NAVAL,
+    SCRIPTED_SEED, WINDOW_H, WINDOW_W,
 };
 use crate::market::{self, BuyRoom};
 use crate::newgame_screen::{self, NewgameNodes};
@@ -160,6 +161,8 @@ pub(crate) enum Action {
     CrewSkill(String),
     CrewRecruit(String),
     CrewBuyGear(String),
+    CrewMaintainGear(String),
+    CrewUpgradeGear(String),
     CrewConfirm,
     CrewCancel,
     Stance(Stance),
@@ -446,6 +449,8 @@ enum CrewPending {
     Skill { id: String },
     Recruit { id: String },
     Gear { id: String },
+    MaintainGear { id: String },
+    UpgradeGear { id: String },
 }
 
 #[derive(Clone, Copy)]
@@ -4327,6 +4332,8 @@ impl PortlightGame {
             Action::CrewSkill(id) => self.arm_skill(&id),
             Action::CrewRecruit(id) => self.arm_recruit(&id),
             Action::CrewBuyGear(id) => self.arm_gear(&id),
+            Action::CrewMaintainGear(id) => self.arm_maintain_gear(&id),
+            Action::CrewUpgradeGear(id) => self.arm_upgrade_gear(&id),
             Action::CrewConfirm => self.confirm_crew(),
             Action::CrewCancel => self.cancel_crew(),
             Action::Stance(stance) => self.push_stance(stance),
@@ -5698,6 +5705,52 @@ impl PortlightGame {
         self.refresh();
     }
 
+    fn arm_maintain_gear(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(desk) = self.session.as_ref().and_then(crew_desk) else {
+            return;
+        };
+        let Some(item) = desk.carried_gear.into_iter().find(|item| item.id == id) else {
+            self.crew_notice = "Item not carried.".to_string();
+            self.refresh();
+            return;
+        };
+        self.crew_notice = maintain_gear_confirm_line(&item.name, item.maintain_cost);
+        self.crew_pending = Some(CrewPending::MaintainGear { id: id.to_string() });
+        self.refresh();
+    }
+
+    fn arm_upgrade_gear(&mut self, id: &str) {
+        if self.crew_pending.is_some() {
+            return;
+        }
+        let Some(desk) = self.session.as_ref().and_then(crew_desk) else {
+            return;
+        };
+        let Some(item) = desk.carried_gear.into_iter().find(|item| item.id == id) else {
+            self.crew_notice = "Item not carried.".to_string();
+            self.refresh();
+            return;
+        };
+        let Some(target) = item.upgrade_target.as_deref() else {
+            self.crew_notice =
+                "Already masterwork quality. This weapon cannot be improved further.".to_string();
+            self.refresh();
+            return;
+        };
+        if !item.can_upgrade {
+            self.crew_notice = "No smith at this port. Visit a port with a shipyard.".to_string();
+            self.refresh();
+            return;
+        }
+        self.crew_notice =
+            upgrade_gear_confirm_line(&item.name, target, item.upgrade_cost, item.upgrade_days);
+        self.crew_pending = Some(CrewPending::UpgradeGear { id: id.to_string() });
+        self.refresh();
+    }
+
     fn confirm_crew(&mut self) {
         let Some(pending) = self.crew_pending.clone() else {
             return;
@@ -5709,6 +5762,8 @@ impl PortlightGame {
             CrewPending::Skill { id } => self.apply_skill(&id),
             CrewPending::Recruit { id } => self.apply_recruit(&id),
             CrewPending::Gear { id } => self.apply_gear(&id),
+            CrewPending::MaintainGear { id } => self.apply_maintain_gear(&id),
+            CrewPending::UpgradeGear { id } => self.apply_upgrade_gear(&id),
         }
     }
 
@@ -5812,6 +5867,48 @@ impl PortlightGame {
             Ok(()) => {
                 let (_, silver) = self.crew_counts();
                 self.crew_notice = gear_notice_line(id, silver);
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn apply_maintain_gear(&mut self, id: &str) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.maintain_weapon(id)
+        };
+        match result {
+            Ok(()) => {
+                let (_, silver) = self.crew_counts();
+                self.crew_notice = maintain_gear_notice_line(id, silver);
+                self.push_log(self.crew_notice.clone());
+            }
+            Err(err) => self.note_crew_error(err),
+        }
+        self.refresh();
+    }
+
+    fn apply_upgrade_gear(&mut self, id: &str) {
+        let day_before = self.session.as_ref().map(|session| session.world().day);
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            session.upgrade_weapon(id)
+        };
+        match result {
+            Ok(new_quality) => {
+                let day_after = self.session.as_ref().map(|session| session.world().day);
+                let advanced = day_before
+                    .zip(day_after)
+                    .map(|(before, after)| after - before)
+                    .unwrap_or(0);
+                let (_, silver) = self.crew_counts();
+                self.crew_notice = upgrade_gear_notice_line(id, &new_quality, advanced, silver);
                 self.push_log(self.crew_notice.clone());
             }
             Err(err) => self.note_crew_error(err),
@@ -5971,6 +6068,17 @@ impl PortlightGame {
         }
         for style in &desk.styles {
             training.add_child(&crew_copy(&style.text));
+            if self.crew_shot.is_none() {
+                if let Some(master_line) = &style.master_line {
+                    training.add_child(&crew_muted(master_line));
+                }
+                if let Some(dialog) = &style.master_dialog {
+                    training.add_child(&crew_muted(dialog));
+                }
+                if !style.style_description.is_empty() {
+                    training.add_child(&crew_muted(&style.style_description));
+                }
+            }
             let mut train = crew_button("Train", game_id, Action::CrewTrain(style.id.clone()));
             train.set_disabled(locked || style.known);
             training.add_child(&train);
@@ -5980,8 +6088,21 @@ impl PortlightGame {
             training.add_child(&crew_copy(&skill.text));
             if let Some(empty) = &skill.empty_trainer {
                 training.add_child(&crew_copy(empty));
-            } else if !skill.next_text.is_empty() {
-                training.add_child(&crew_muted(&skill.next_text));
+            } else {
+                if self.crew_shot.is_none() {
+                    if let Some(desc) = &skill.trainer_description {
+                        training.add_child(&crew_muted(desc));
+                    }
+                    if let Some(dialog) = &skill.trainer_dialog {
+                        training.add_child(&crew_muted(dialog));
+                    }
+                    if let Some(level_desc) = &skill.level_description {
+                        training.add_child(&crew_muted(level_desc));
+                    }
+                }
+                if !skill.next_text.is_empty() {
+                    training.add_child(&crew_muted(&skill.next_text));
+                }
             }
             if skill.can_train {
                 let mut train = crew_button("Learn", game_id, Action::CrewSkill(skill.id.clone()));
@@ -6022,6 +6143,23 @@ impl PortlightGame {
             let mut gear = crew_section(crew_screen::SECTION_GEAR);
             gear.add_child(&crew_subhead("Armoury"));
             gear.add_child(&crew_copy(&desk.gear_line));
+            for item in &desk.carried_gear {
+                gear.add_child(&crew_copy(&item.text));
+                let mut actions = HBoxContainer::new_alloc();
+                actions.add_theme_constant_override("separation", 8);
+                let mut maintain = crew_button(
+                    "Maintain",
+                    game_id,
+                    Action::CrewMaintainGear(item.id.clone()),
+                );
+                maintain.set_disabled(locked || !item.can_maintain);
+                let mut upgrade =
+                    crew_button("Upgrade", game_id, Action::CrewUpgradeGear(item.id.clone()));
+                upgrade.set_disabled(locked || !item.can_upgrade);
+                actions.add_child(&maintain);
+                actions.add_child(&upgrade);
+                gear.add_child(&actions);
+            }
             if let Some(header) = &desk.merchant_header {
                 gear.add_child(&crew_copy(header));
                 if let Some(desc) = &desk.merchant_description {
@@ -6346,12 +6484,30 @@ impl PortlightGame {
                 .captain
                 .firearm
                 .as_ref()
-                .is_some_and(|w| w.id == "matchlock_pistol" && w.ammo == 5)
+                .is_some_and(|w| w.id == "matchlock_pistol" && w.ammo == 3)
         }) && self.crew_notice.starts_with("Bought Pistol Shot & Powder.");
         if !armed {
-            self.fail_crew("Crew smoke: buying pistol and shot did not equip 5 shots.");
+            self.fail_crew("Crew smoke: buying pistol and shot did not equip 3 shots.");
             return;
         }
+        self.arm_maintain_gear("matchlock_pistol");
+        if self.crew_pending.is_none() || !self.crew_notice.starts_with("Maintain Matchlock Pistol")
+        {
+            self.fail_crew("Crew smoke: gear maintain did not arm.");
+            return;
+        }
+        self.confirm_crew();
+        if !self.crew_notice.starts_with("Maintained Matchlock Pistol") {
+            self.fail_crew("Crew smoke: gear maintain did not apply.");
+            return;
+        }
+        self.arm_upgrade_gear("matchlock_pistol");
+        if self.crew_pending.is_none() || !self.crew_notice.starts_with("Upgrade Matchlock Pistol")
+        {
+            self.fail_crew("Crew smoke: gear upgrade did not arm.");
+            return;
+        }
+        self.cancel_crew();
         self.close_crew();
         if self.crew_open {
             self.fail_crew("Crew smoke: Close left the desk open.");

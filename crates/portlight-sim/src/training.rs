@@ -19,7 +19,11 @@ pub fn can_learn_style(
     if learned_styles.iter().any(|id| id == style_id) {
         return Some(format!("You already know {}.", style.name));
     }
-    if !style.training_port_ids.iter().any(|id| id == port_id) {
+    let has_master = content::content()
+        .masters_at(port_id)
+        .into_iter()
+        .any(|master| master.style_id == style_id);
+    if !style.training_port_ids.iter().any(|id| id == port_id) || !has_master {
         return Some(format!("No {} master at this port.", style.name));
     }
     if silver < style.silver_cost {
@@ -63,9 +67,17 @@ pub fn learn_style(learned_styles: &mut Vec<String>, silver: &mut i64, style_id:
 }
 
 pub fn available_training(port_id: &str) -> Vec<String> {
-    content::content()
+    let master_ids = masters_at_port(port_id);
+    let catalog = content::content();
+    let masters = catalog.masters_at(port_id);
+    catalog
         .styles_at(port_id)
         .into_iter()
+        .filter(|style| {
+            masters
+                .iter()
+                .any(|master| master.style_id == style.id && master_ids.contains(&master.id))
+        })
         .map(|style| style.id.clone())
         .collect()
 }

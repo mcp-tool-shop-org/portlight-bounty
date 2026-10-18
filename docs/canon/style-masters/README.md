@@ -31,8 +31,8 @@ Every table row below that carries a cite is [exists] (a code or data fact); row
 | 'No fighting master at this port.' | Yes, at a port that teaches no style: the only line where the word master reaches the player | logic.rs:1864; game.rs:5904-5905 |
 | A confirm line: 'Train Name for N silver. The calendar will advance N days.' | Yes, every training asks first | logic.rs:1890; game.rs:5608-5625 |
 | A notice after training: 'Learned Dambe. The calendar advanced N days.' (or 'Equipped Dambe.' on Equip) | Yes, with the catalog name (DF-40, DF-41 resolved) | logic.rs:1934-1952; game.rs:5694-5732 |
-| Master name, description, dialog | No: no reader in the crates | content.rs:401-408 (fields only); rg of crates |
-| Style description, historical note, passives, special action | No on the desk: the desk shows name, cost, days, styles needed, known | logic.rs:2104-2128 |
+| Master name, description, dialog | Yes: `CrewStyleLine.master_line` and `master_dialog` on the Crew desk (DF-39 resolved) | content.rs:401-408; logic.rs; game.rs |
+| Style description, historical note, passives, special action | Style description reaches the desk (`CrewStyleLine.style_description`, DF-39 resolved); historical note, passives, and special action are data/duel only | logic.rs; game.rs |
 | Style passives and special action in a duel | Yes once a learned style is equipped (`Session::equip_style` / `Equip` button, DF-41 resolved) | combat.rs:273-283; session.rs:3356-3379 |
 | An injury refusal | Yes: `train_crew` and `equip_style` check active captain injuries (DF-41 resolved) | session.rs:3331-3379; injuries.rs:60-69 |
 | Character art | None: the character hold stands | crew_screen.rs:3-6 |
@@ -98,7 +98,7 @@ The two lore columns are data, shown to no player today (section 1). Quotes are 
 
 - [exists] The call chain: the crew desk button asks to confirm, then calls train_crew, which calls can_learn_style and then learn_style, and advances the calendar one day at a time (game.rs:5608-5625, 5694-5715; session.rs:3331-3354; training.rs:9-65).
 - [exists] can_learn_style refuses, in order: an unknown style; a style already known; a port not in the style's list ('No <style> master at this port.'); too little silver; too few styles known; injured body parts (training.rs:9-52). The desk lists only styles taught at the port, so the third refusal is not reachable from the desk (logic.rs:2104-2106).
-- [exists] Masters play no part: masters_at (content.rs:1027-1032) and masters_at_port (training.rs:73-79) have no non-test caller (training.rs:101). All 10 master ports sit in their style's port list today (computed from C:6171-6250 and the style lists; DF-39).
+- [exists] Masters gate training alongside the style's port list: `can_learn_style` and `available_training` check `masters_at_port` / `content().masters_at` in addition to `style.training_port_ids` (training.rs; DF-39 resolved). All 10 master ports sit in their style's port list today (computed from C:6171-6250 and the style lists).
 - [exists] Injuries are checked: a lost personal fight can add an injury to the captain (session.rs:1905-1912; model.rs:535), and `train_crew` and `equip_style` pass `injuries::injured_body_parts(&self.world.captain.injuries)` into `can_learn_style` / `style_usable` (session.rs:3334-3379; DF-41 resolved).
 - [exists] Equip: `Session::equip_style` sets or clears the active style and the Crew desk offers an `Equip` button per learned style (`Action::CrewEquipStyle` / `crew.equip.<id>`, DF-41 resolved).
 
@@ -106,7 +106,7 @@ The two lore columns are data, shown to no player today (section 1). Quotes are 
 
 - [exists] The Godot duel screen has no style word: rg for special, style and the style fields in encounter_screen.rs finds only UI style boxes (crates/portlight-godot/src/encounter_screen.rs).
 - [exists] The only authored style text in the duel path is a special action's flavour line, shown as the round's flavour when the captain uses the active style's special action (combat.rs:273-283; resolve_style_action, combat.rs:414-433; the flavour at 426; the round text path, session.rs:2231-2232, logic.rs:313-319; DF-41 resolved).
-- [exists] The style description and historical note have no reader in the Godot crate; the sim reads only the passives and the special action (rg of crates).
+- [exists] The style description is shown on the Crew desk (`CrewStyleLine.style_description`, DF-39 resolved); the historical note has no reader in the Godot crate.
 - [exists] The built refusal 'Your Estocada is countered!' and 'Your Estocada meets resistance.' are code strings that use the special action's catalog name (combat.rs:429-431).
 
 ## 6. Python reference
@@ -120,13 +120,11 @@ The two lore columns are data, shown to no player today (section 1). Quotes are 
 
 - Names are the catalog names; ids appear only in cite tables and file names. The Maestro, the Senora, the Jarl and the Pak are part of the catalog name; keep them.
 - Quote every data line with its C:n; mark every addition [invented]; put contradictions in data-fixes.md and never fix the data in a canon PR.
-- A master is never described as gating training or as visible to the player: the sim does neither (DF-39).
-- The Senora Vega name is folded to ASCII here (the data carries a tilde on the n, in Rust and in Python) and tagged [ascii-folded]; the accent never reaches the desk, because no master name does.
+- The Senora Vega name is folded to ASCII on the Godot desk (`ascii_clean`, DF-39 resolved) and tagged [ascii-folded].
 
 ## F. Flags
 
-- DF-39: masters and the master text are unread; the real gate is the style's port list. DF-40 (resolved): Senora Vega's description now reads 'a fencing school east of Gibraltar' and the train/skill notices use catalog names. DF-41 (resolved): the style injury gate and `equip_style` / `Equip` button are wired.
-- Showing master text is out of scope for canon; it is a design decision.
+- DF-39 (resolved): `can_learn_style` and `available_training` check `masters_at_port` alongside `style.training_port_ids`, and the Godot Crew desk shows `master_line`, `master_dialog`, and `style_description`. DF-40 (resolved): Senora Vega's description now reads 'a fencing school east of Gibraltar' and the train/skill notices use catalog names. DF-41 (resolved): the style injury gate and `equip_style` / `Equip` button are wired.
 - DF-48 (resolved): the row now says 'needs 1 style' for Silat and Lua (logic.rs:2111-2125).
 
 ## G. Gaps in the data (computed from content.json at the base commit)

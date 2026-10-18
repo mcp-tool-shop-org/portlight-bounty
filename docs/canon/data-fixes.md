@@ -425,7 +425,9 @@ Why: a hired navigator named Tane can stand beside War Chief Tane of Coral Thron
 
 Status: declined - resolved in lore. A hired officer is a namesake of the authored person, not that person; two officers who share a name are told apart by role (officers/README.md section 5). Logged so the choice is on record.
 
-## DF-39. Style masters and skill trainers are authored and unread; the real gates are other lists
+## DF-39. Style masters and skill trainers are authored and unread; the real gates are other lists (resolved)
+
+Status: resolved (sim + Godot). `training::can_learn_style` and `training::available_training` now check `masters_at_port` alongside `style.training_port_ids`; `skills::can_learn_skill` checks `skill.training_port_feature` against the docked port's features alongside `catalog.trainers_at`; `Session::upgrade_weapon` and `Session::field_repair_weapon` wire `skills::apply_upgrade_discount` and `skills::field_repair_weapon` (plus `"smith"` and `"field_repair"` in `script.rs`); and the Godot Crew desk renders style master / skill trainer descriptions and dialog on `SECTION_TRAINING` and `Maintain` / `Upgrade` actions on carried gear in `SECTION_GEAR`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/src/content.rs:1027-1032 and crates/portlight-sim/src/training.rs:73-79 (masters_at and masters_at_port: no caller outside the test at training.rs:101)
@@ -438,8 +440,6 @@ Where:
 Proposed fix: none proposed; logged only. Showing master and trainer text on the crew desk, reading the master list as the gate, or building a gear shop so the blacksmith effects have a route, are separate design decisions (owner: UI and sim, size M). Until then canon says no master gates training and no trainer text is seen.
 
 Why: two lists (master port, style port list) hold one fact and can diverge silently; authored text reaches no player; and a 600-silver skill has no Godot route to its effects. Canon documents each as it is.
-
-Status: open, log only.
 
 ## DF-40. Senora Vega's 'only fencing school east of Gibraltar' contradicts Maestro Luciano; the train and skill notices print raw ids (resolved)
 

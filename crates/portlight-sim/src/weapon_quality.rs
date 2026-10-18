@@ -165,13 +165,8 @@ pub fn upgrade_weapon(
 ) -> (String, i64, i64) {
     let current = quality_of(quality, weapon_id);
     let cost = upgrade_cost(&current);
-    let days = UPGRADE_DAYS
-        .iter()
-        .find(|(name, _)| *name == current)
-        .map(|(_, days)| *days)
-        .unwrap_or(3);
-    let idx = tier_index(&current);
-    let new_quality = TIERS[idx.saturating_add(1).min(TIERS.len() - 1)];
+    let days = upgrade_days(&current);
+    let new_quality = next_tier(&current).unwrap_or("masterwork");
     set_string(quality, weapon_id, new_quality);
     set_i64(usage, weapon_id, 0);
     (new_quality.to_string(), silver - cost, days)
@@ -222,12 +217,29 @@ pub fn assign_loot_quality(opponent_strength: i64, rng: &mut PyRandom) -> &'stat
     }
 }
 
-fn upgrade_cost(tier: &str) -> i64 {
+pub fn upgrade_cost(tier: &str) -> i64 {
     UPGRADE_COST
         .iter()
         .find(|(name, _)| *name == tier)
         .map(|(_, cost)| *cost)
         .unwrap_or(100)
+}
+
+pub fn upgrade_days(tier: &str) -> i64 {
+    UPGRADE_DAYS
+        .iter()
+        .find(|(name, _)| *name == tier)
+        .map(|(_, days)| *days)
+        .unwrap_or(3)
+}
+
+pub fn next_tier(tier: &str) -> Option<&'static str> {
+    let idx = tier_index(tier);
+    if idx + 1 < TIERS.len() {
+        Some(TIERS[idx + 1])
+    } else {
+        None
+    }
 }
 
 fn quality_of(map: &[(String, String)], weapon_id: &str) -> String {

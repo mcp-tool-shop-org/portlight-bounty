@@ -528,6 +528,20 @@ fn dispatch(
             }
             session.maintain_weapon(&tokens[1])
         }
+        "smith" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: smith <weapon_id>".into()));
+            }
+            session.upgrade_weapon(&tokens[1]).map(|_| ())
+        }
+        "field_repair" => {
+            let session = active(session)?;
+            if tokens.len() != 2 {
+                return Err(SimError::Sentence("Usage: field_repair <weapon_id>".into()));
+            }
+            session.field_repair_weapon(&tokens[1])
+        }
         "hunt" => {
             let session = active(session)?;
             if tokens.len() != 1 {

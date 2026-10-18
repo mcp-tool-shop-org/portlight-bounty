@@ -48,8 +48,14 @@ pub fn can_learn_skill(
             .unwrap_or("");
         return Some(format!("Already at maximum {} level ({name}).", skill.name));
     }
+    let has_feature = skill.training_port_feature.is_empty()
+        || catalog.port(port_id).is_some_and(|port| {
+            port.features
+                .iter()
+                .any(|f| f == &skill.training_port_feature)
+        });
     let trainers = catalog.trainers_at(port_id, Some(skill_id));
-    if trainers.is_empty() {
+    if !has_feature || trainers.is_empty() {
         return Some(format!("No {} trainer at this port.", skill.name));
     }
     let max_teach = trainers

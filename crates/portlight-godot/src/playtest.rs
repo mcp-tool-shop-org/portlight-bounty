@@ -64,6 +64,8 @@ pub(crate) fn action_playtest_id(action: &Action) -> String {
         Action::CrewSkill(id) => format!("crew.skill.{id}"),
         Action::CrewRecruit(id) => format!("crew.recruit.{id}"),
         Action::CrewBuyGear(id) => format!("crew.gear.{id}"),
+        Action::CrewMaintainGear(id) => format!("crew.maintain.{id}"),
+        Action::CrewUpgradeGear(id) => format!("crew.upgrade.{id}"),
         Action::CrewConfirm => "crew.confirm".into(),
         Action::CrewCancel => "crew.cancel".into(),
         Action::Stance(stance) => format!("encounter.stance.{}", stance.as_str()),
@@ -220,6 +222,12 @@ fn action_from_id(id: &str) -> Option<Action> {
     }
     if let Some(rest) = id.strip_prefix("crew.gear.") {
         return Some(Action::CrewBuyGear(rest.to_string()));
+    }
+    if let Some(rest) = id.strip_prefix("crew.maintain.") {
+        return Some(Action::CrewMaintainGear(rest.to_string()));
+    }
+    if let Some(rest) = id.strip_prefix("crew.upgrade.") {
+        return Some(Action::CrewUpgradeGear(rest.to_string()));
     }
     if let Some(rest) = id.strip_prefix("encounter.stance.") {
         return Some(Action::Stance(stance_from(rest)?));
@@ -1582,6 +1590,8 @@ mod tests {
         });
         roundtrip_action(Action::CrewEquipStyle("la_destreza".into()));
         roundtrip_action(Action::CrewBuyGear("cutlass".into()));
+        roundtrip_action(Action::CrewMaintainGear("cutlass".into()));
+        roundtrip_action(Action::CrewUpgradeGear("cutlass".into()));
         roundtrip_action(Action::Stance(Stance::Parry));
         roundtrip_action(Action::ShipyardArm(ShipyardArm::Buy("sloop".into())));
         roundtrip_action(Action::HarbourPrepare(HarbourIntent::OpenBroker {
