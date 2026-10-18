@@ -673,7 +673,9 @@ pub struct TradeBlocDef {
     pub preferred_partners: Vec<String>,
     pub rivals: Vec<String>,
     pub hostile_to: Vec<String>,
+    /// Read only by `culture::price_multiplier` in unit tests; no live caller (DF-15).
     pub loyalty_bonus: f64,
+    /// Read only by `culture::price_multiplier` in unit tests; no live caller (DF-15).
     pub disloyalty_penalty: f64,
 }
 
@@ -681,6 +683,7 @@ pub struct TradeBlocDef {
 pub struct PortPoliticalProfileDef {
     pub port_id: String,
     pub bloc_id: String,
+    /// Directional port grievance rather than a mutual feud (DF-6).
     pub local_rival_port: Option<String>,
     pub rivalry_reason: String,
     pub trade_embargo: Vec<String>,
@@ -694,6 +697,7 @@ pub struct BlocRelationshipDef {
     pub bloc_b: String,
     pub disposition: String,
     pub description: String,
+    /// Authored in catalog data; currently unread by the simulation (DF-15).
     pub spillover: f64,
 }
 
@@ -714,7 +718,9 @@ pub struct FactionRelationshipDef {
     pub faction_b: String,
     pub disposition: String,
     pub description: String,
+    /// Authored in catalog data; currently unread by the simulation (DF-28).
     pub spillover: f64,
+    /// Authored in catalog data; currently unread by the simulation (DF-28).
     pub vendetta_trigger: String,
 }
 

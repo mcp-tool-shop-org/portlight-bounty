@@ -2625,7 +2625,7 @@
       "id": "bounty_hunter",
       "name": "The Bounty Hunter",
       "title": "Licensed Hunter",
-      "home_region": "North Atlantic",
+      "home_region": "East Indies",
       "home_port_id": "crosswind_isle",
       "mentor_npc_id": "ci_dock_master_tao",
       "starting_silver": 425,
@@ -8368,7 +8368,7 @@
           "id": "tp_boat_yard",
           "name": "Bones' Boat Yard",
           "port_id": "thornport",
-          "institution_type": "shipyard",
+          "institution_type": "boatyard",
           "description": "Not a shipyard \u2014 a boat yard. Small-craft repairs, hull patches, mast work. A whale skeleton stands on the dock as a monument. Tools are hung on pegs that have been worn smooth by decades of use.",
           "function": "Small-vessel repair and maintenance. No new construction \u2014 Bones patches, not builds. For serious work, go to Silva Bay.",
           "political_leaning": "Practical. Bones fixes what needs fixing. Politics don't float.",
@@ -8592,7 +8592,7 @@
           "id": "sh_cotton_house",
           "name": "The Cotton House",
           "port_id": "sun_harbor",
-          "institution_type": "shipyard",
+          "institution_type": "warehouse",
           "description": "A multi-story warehouse where cotton is stored, graded, and prepared for export. Kofi's family has run it for four generations.",
           "function": "Cotton storage, grading, and preparation. The closest thing Sun Harbor has to a shipyard \u2014 but for cargo, not ships.",
           "political_leaning": "Compact tradition. Four generations of quality.",
@@ -8836,7 +8836,7 @@
           "id": "pc_dock",
           "name": "The Working Dock",
           "port_id": "palm_cove",
-          "institution_type": "shipyard",
+          "institution_type": "dock",
           "description": "The actual operational dock that keeps Palm Cove functioning. Esi's domain. Barrel loading ramps, basic repair equipment, and tide tables.",
           "function": "Cargo logistics and basic repairs. Esi runs it while Abel sleeps. Three generations of women keeping the harbor from chaos.",
           "political_leaning": "Practical. The dock serves the work, not the politics.",
@@ -9256,7 +9256,7 @@
           "id": "ps_dye_workshop",
           "name": "The Color Workshop",
           "port_id": "pearl_shallows",
-          "institution_type": "shipyard",
+          "institution_type": "workshop",
           "description": "An open-air workshop where Yaw grinds pigments from reef organisms. Shells, algae, and sea urchins become impossible colors.",
           "function": "Dye production from reef-exclusive organisms. Colors no other port can replicate.",
           "political_leaning": "Artistic independence. Yaw answers to the palette.",
@@ -9460,7 +9460,7 @@
         },
         {
           "id": "jp_quality",
-          "name": "The Inspection Hall",
+          "name": "The Quality Hall",
           "port_id": "jade_port",
           "institution_type": "customs",
           "description": "A well-lit room with magnifying equipment, sound-testing stations, and Zhao's desk. Confiscated counterfeits displayed in cases \u2014 a gallery of shame.",
@@ -9932,7 +9932,7 @@
           "id": "slh_warehouse",
           "name": "The Silk Warehouse",
           "port_id": "silk_haven",
-          "institution_type": "shipyard",
+          "institution_type": "warehouse",
           "description": "Climate-controlled silk storage. Humidity, temperature, light managed. Feng runs it with Guild-demanded precision.",
           "function": "Export packaging. The practical bridge between loom and ship.",
           "political_leaning": "Commercial.",
@@ -10868,7 +10868,7 @@
           "id": "ei_dye_works",
           "name": "The Pigment Cave",
           "port_id": "ember_isle",
-          "institution_type": "shipyard",
+          "institution_type": "workshop",
           "description": "A cave near the vents where Lono grinds volcanic pigments. Impossible colors from impossible heat.",
           "function": "Dye production from volcanic sources \u2014 colors no other island can produce.",
           "political_leaning": "Artistic. The volcano is the palette.",
@@ -13422,7 +13422,8 @@
           "gold_coast"
         ],
         "hostile_to": [
-          "shadow_ports"
+          "shadow_ports",
+          "silk_circle"
         ],
         "loyalty_bonus": 0.06,
         "disloyalty_penalty": 0.12
@@ -13463,7 +13464,8 @@
           "coral_crown"
         ],
         "rivals": [
-          "exchange_alliance"
+          "exchange_alliance",
+          "shadow_ports"
         ],
         "hostile_to": [
           "iron_pact"
@@ -13499,7 +13501,9 @@
         "description": "The black market. Two ports outside all legitimate trade agreements. They answer to pirate factions, not merchant guilds. The legitimate blocs despise them; the smart captains use them.",
         "trade_philosophy": "No names, no questions, no manifests.",
         "preferred_partners": [],
-        "rivals": [],
+        "rivals": [
+          "silk_circle"
+        ],
         "hostile_to": [
           "exchange_alliance",
           "iron_pact"
@@ -13560,9 +13564,7 @@
         "bloc_id": "iron_pact",
         "local_rival_port": "iron_point",
         "rivalry_reason": "Both export iron. Ironhaven's is refined; Iron Point's is raw and cheaper. The foundry masters resent the undercutting.",
-        "trade_embargo": [
-          "weapons"
-        ],
+        "trade_embargo": [],
         "political_flavor": "Ironhaven IS the Pact. The Iron Guild's word is law north of the strait.",
         "port_grudge": "A shipment of Ironhaven weapons was found at Corsair's Rest. The merchant who sold them was never seen again."
       },

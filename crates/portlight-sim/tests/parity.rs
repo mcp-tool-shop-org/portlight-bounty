@@ -100,6 +100,22 @@ fn andros_sighting_reworded(path: &str, a: &str, b: &str) -> bool {
     false
 }
 
+fn on_scarlet_ana_bounty_region_path(path: &str) -> bool {
+    if let Some(idx) = path
+        .strip_prefix("$.log[")
+        .and_then(|s| s.strip_suffix("].bounty.targets[2].region"))
+    {
+        return is_digits(idx);
+    }
+    false
+}
+
+fn scarlet_ana_bounty_region_reworded(path: &str, a: &str, b: &str) -> bool {
+    on_scarlet_ana_bounty_region_path(path)
+        && ((a == "North Atlantic" && b == "Mediterranean")
+            || (a == "Mediterranean" && b == "North Atlantic"))
+}
+
 fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
     match (left, right) {
         (Value::Number(a), Value::Number(b)) => {
@@ -111,7 +127,11 @@ fn close(left: &Value, right: &Value, path: &str, errors: &mut Vec<String>) {
             }
         }
         (Value::String(a), Value::String(b)) => {
-            if a != b && !shortage_reworded(path, a, b) && !andros_sighting_reworded(path, a, b) {
+            if a != b
+                && !shortage_reworded(path, a, b)
+                && !andros_sighting_reworded(path, a, b)
+                && !scarlet_ana_bounty_region_reworded(path, a, b)
+            {
                 errors.push(format!("{path}: {a:?} != {b:?}"));
             }
         }

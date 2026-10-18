@@ -527,6 +527,23 @@ COPY_OVERRIDES = [
     ("merchant name", "tane_warrior:Tane", "Outfitter Tane"),
     ("merchant name", "chen_forge:Master Chen", "Bladesmith Chen"),
     ("merchant name", "li_crossbow:Li Wei", "Mechanist Li Wei"),
+    # DF-3: Bounty hunter home region matches home_port_id crosswind_isle
+    ("captain home region", "bounty_hunter:North Atlantic", "East Indies"),
+    # DF-4: Institutions of type shipyard at ports without the shipyard feature
+    ("institution type", "tp_boat_yard:shipyard", "boatyard"),
+    ("institution type", "sh_cotton_house:shipyard", "warehouse"),
+    ("institution type", "pc_dock:shipyard", "dock"),
+    ("institution type", "ps_dye_workshop:shipyard", "workshop"),
+    ("institution type", "slh_warehouse:shipyard", "warehouse"),
+    ("institution type", "ei_dye_works:shipyard", "workshop"),
+    # DF-5: Ironhaven exports weapons; remove weapons from its trade_embargo
+    ("port embargo remove", "ironhaven", "weapons"),
+    # DF-7 & DF-27: Symmetric bloc rival and hostile lists
+    ("bloc hostile add", "iron_pact", "silk_circle"),
+    ("bloc rival add", "silk_circle", "shadow_ports"),
+    ("bloc rival add", "shadow_ports", "silk_circle"),
+    # DF-20: Disambiguate Jade Port's Inspection Hall
+    ("institution name", "jp_quality:The Inspection Hall", "The Quality Hall"),
 ]
 
 
@@ -601,6 +618,43 @@ def apply_copy_overrides(data: dict) -> None:
                         if inst["function"] == python_text:
                             inst["function"] = port_text
                             hits += 1
+        elif what == "institution type":
+            inst_id, old_type = python_text.split(":", 1)
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    for inst in profile["institutions"]:
+                        if inst["id"] == inst_id and inst["institution_type"] == old_type:
+                            inst["institution_type"] = port_text
+                            hits += 1
+        elif what == "institution name":
+            inst_id, old_name = python_text.split(":", 1)
+            for key in ("port_institutions", "port_institutions_east"):
+                for profile in data[key]:
+                    for inst in profile["institutions"]:
+                        if inst["id"] == inst_id and inst["name"] == old_name:
+                            inst["name"] = port_text
+                            hits += 1
+        elif what == "captain home region":
+            cap_id, old_region = python_text.split(":", 1)
+            for captain in data["captains"]:
+                if captain["id"] == cap_id and captain["home_region"] == old_region:
+                    captain["home_region"] = port_text
+                    hits += 1
+        elif what == "port embargo remove":
+            for port_pol in data["port_politics"]["ports"]:
+                if port_pol["port_id"] == python_text and port_text in port_pol["trade_embargo"]:
+                    port_pol["trade_embargo"].remove(port_text)
+                    hits += 1
+        elif what == "bloc hostile add":
+            for bloc in data["port_politics"]["blocs"]:
+                if bloc["id"] == python_text and port_text not in bloc["hostile_to"]:
+                    bloc["hostile_to"].append(port_text)
+                    hits += 1
+        elif what == "bloc rival add":
+            for bloc in data["port_politics"]["blocs"]:
+                if bloc["id"] == python_text and port_text not in bloc["rivals"]:
+                    bloc["rivals"].append(port_text)
+                    hits += 1
         elif what == "port grudge":
             for port_pol in data["port_politics"]["ports"]:
                 if port_pol["port_grudge"] == python_text:
@@ -998,7 +1052,7 @@ def main() -> None:
     apply_copy_overrides(data)
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "crates", "portlight-sim", "data", "content.json")
-    with open(path, "w", encoding="utf-8") as fh:
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(data, fh, indent=2)
         fh.write("\n")
     print(f"wrote {path}")

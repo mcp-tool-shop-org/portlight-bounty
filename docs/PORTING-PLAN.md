@@ -231,7 +231,7 @@ Scripts checked in are exactly the `.txt` files in `parity/scripts/`. The README
 | `inspection_rep.txt` | Seed 4, patrol inspection, inspection incident on the standing list |
 | `cargo_loss.txt` | Seed 2, damaged grain, plus lighthouse, pirates, and star navigation |
 | `crew_minimum.txt` | Provisions burned in port, a sea day with `crew_delta`, then `depart` refuses a short crew. That voyage's progress also locks below-minimum speed |
-| `contraband_sell.txt` | Opium bought at Corsairs Rest, sale refused at Porto Novo |
+| `contraband_sell.txt` | Opium bought at Corsair's Rest, sale refused at Porto Novo |
 | `event_musician.txt`, `event_whale.txt`, `event_foreign.txt`, `event_ceremony.txt` | Musician, whale, foreign vessel, sea ceremony. Together with the scripts above, every event type in the table appears in a golden |
 | `parity/golden/victory_cases.json` | Nine victory fixtures from `tools/parity/victory_cases.py`, including a completed commercial empire and a recorded `commercial_empire` summary |
 | `contract_accept.txt`, `contract_complete.txt`, `contract_expire.txt`, `contract_arrival_rng.txt` | Accept, complete, expire, and the arrival board drawn from the session RNG |

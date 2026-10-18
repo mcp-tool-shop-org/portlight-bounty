@@ -94,6 +94,14 @@ class AndrosSightingTest(unittest.TestCase):
         for wrong_path in ("$.captain.name", "$.log[6].events[1].flavor"):
             self.assertEqual(len(check.close(check.PY_ANDROS_TEXT, check.RS_ANDROS_TEXT, wrong_path)), 1)
 
+    def test_scarlet_ana_bounty_region_passes_only_on_target_2(self) -> None:
+        path = "$.log[1].bounty.targets[2].region"
+        self.assertEqual(check.close("North Atlantic", "Mediterranean", path), [])
+        self.assertEqual(check.close("Mediterranean", "North Atlantic", path), [])
+        self.assertEqual(len(check.close("North Atlantic", "East Indies", path)), 1)
+        for wrong_path in ("$.log[1].bounty.targets[0].region", "$.captain.region"):
+            self.assertEqual(len(check.close("North Atlantic", "Mediterranean", wrong_path)), 1)
+
 
 class AllowlistTest(unittest.TestCase):
     def test_broker_board_gamesession_allowlist_is_closed(self) -> None:

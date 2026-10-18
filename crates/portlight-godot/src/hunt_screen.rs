@@ -60,7 +60,7 @@ const CATALOG: &[CatalogRow] = &[
         id: "scarlet_ana",
         name: "Scarlet Ana",
         faction_id: "crimson_tide",
-        region: "North Atlantic",
+        region: "Mediterranean",
         reward: 150,
         difficulty: "moderate",
         description: "Captain of the Crimson Tide's diplomatic fleet. Deals first, fights well.",
@@ -124,7 +124,7 @@ const CATALOG: &[CatalogRow] = &[
         name: "Gnaw",
         faction_id: "iron_wolves",
         region: "North Atlantic",
-        reward: 200,
+        reward: 250,
         difficulty: "hard",
         description: "Most feared pirate in the North Atlantic. Destroys what he cannot take.",
     },
@@ -1341,7 +1341,7 @@ mod tests {
         let model = hunt_model(&session, &desk);
         let row = model.active.iter().find(|row| row.id == "gnaw").unwrap();
         assert!(row.text.contains("Gnaw"));
-        assert!(row.text.contains("200 silver"));
+        assert!(row.text.contains("250 silver"));
         assert!(!row.claim_enabled);
     }
 

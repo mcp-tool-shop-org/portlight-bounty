@@ -227,6 +227,17 @@ def andros_sighting_reworded(path: str, a, b) -> bool:
     return False
 
 
+SCARLET_ANA_BOUNTY_REGION_PATH = re.compile(r"^\$\.log\[\d+\]\.bounty\.targets\[2\]\.region$")
+
+
+def scarlet_ana_bounty_region_reworded(path: str, a, b) -> bool:
+    if not (isinstance(a, str) and isinstance(b, str)):
+        return False
+    if SCARLET_ANA_BOUNTY_REGION_PATH.search(path):
+        return (a, b) in (("North Atlantic", "Mediterranean"), ("Mediterranean", "North Atlantic"))
+    return False
+
+
 def close(a, b, path: str) -> list[str]:
     if isinstance(a, bool) or isinstance(b, bool):
         if a != b:
@@ -239,7 +250,12 @@ def close(a, b, path: str) -> list[str]:
             return []
         return [f"{path}: {a!r} != {b!r}"]
     if isinstance(a, str) and isinstance(b, str):
-        if a != b and not shortage_reworded(path, a, b) and not andros_sighting_reworded(path, a, b):
+        if (
+            a != b
+            and not shortage_reworded(path, a, b)
+            and not andros_sighting_reworded(path, a, b)
+            and not scarlet_ana_bounty_region_reworded(path, a, b)
+        ):
             return [f"{path}: {a!r} != {b!r}"]
         return []
     if a is None and b is None:

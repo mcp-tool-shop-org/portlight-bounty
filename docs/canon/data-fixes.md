@@ -29,7 +29,9 @@ Proposed fix: Replace 'the Brotherhood answers to craft, not politics' with 'the
 
 Why: 'Brotherhood' is Silva Bay's governing body and cultural group.
 
-## DF-3. Bounty hunter home region does not match home port
+## DF-3. Bounty hunter home region does not match home port (resolved)
+
+Status: resolved (data override + parity note). `bounty_hunter.home_region` is now `"East Indies"` (matching `home_port_id: "crosswind_isle"`) via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:2628-2629 (bounty_hunter: home_region North Atlantic, home_port_id crosswind_isle)
@@ -40,7 +42,9 @@ Proposed fix: Set `home_region` to `East Indies`, or move `home_port_id` to a No
 
 Why: The region and port fields disagree, and the oracle has the same disagreement, so this is inherited, not a port error. This is a sim data change and needs a parity note naming the Python value it departs from.
 
-## DF-4. Institutions of type `shipyard` at ports without the shipyard feature
+## DF-4. Institutions of type `shipyard` at ports without the shipyard feature (resolved)
+
+Status: resolved (data override). The six institutions now carry non-gating `institution_type` values matching their prose (`tp_boat_yard` -> `boatyard`, `sh_cotton_house` -> `warehouse`, `pc_dock` -> `dock`, `ps_dye_workshop` -> `workshop`, `slh_warehouse` -> `warehouse`, `ei_dye_works` -> `workshop`) via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - content.json:8368 (Thornport, `tp_boat_yard`)
@@ -54,7 +58,9 @@ Proposed fix: Change `institution_type` to a non-gating type that matches each i
 
 Why: The sim gates shipyard use on the feature (crates/portlight-sim/src/session.rs:1395), so these labels promise a service the port does not give.
 
-## DF-5. Ironhaven embargoes the weapons it exports
+## DF-5. Ironhaven embargoes the weapons it exports (resolved)
+
+Status: resolved (data override). `"weapons"` is removed from Ironhaven's `trade_embargo` via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - content.json:13559 area (trade_embargo weapons)
@@ -64,7 +70,9 @@ Proposed fix: Remove `weapons` from Ironhaven's `trade_embargo`. Its intent ('an
 
 Why: The field is unread by the sim (content.rs:676), so there is no gameplay change, but the data says the opposite of the description.
 
-## DF-6. Local rivals are one-sided
+## DF-6. Local rivals are one-sided (resolved)
+
+Status: resolved (doc comment). `PortPoliticalProfileDef::local_rival_port` is documented in `crates/portlight-sim/src/content.rs` as a directional port grievance rather than a mutual feud. The text below records the problem as found.
 
 Where:
 - Corsair's Rest names Porto Novo as local rival (C:13671); Porto Novo names Al-Manar (C:13532). Canon reads local_rival_port as directional: a grievance, not a mutual feud. See DF-6.
@@ -75,7 +83,9 @@ Proposed fix: No data change. Document `local_rival_port` as directional in cont
 
 Why: Canon renders each rivalry as one side's grievance and flags it in section F.
 
-## DF-7. Bloc rival and hostile lists are not symmetric
+## DF-7. Bloc rival and hostile lists are not symmetric (resolved)
+
+Status: resolved (data override). `iron_pact.hostile_to` now includes `"silk_circle"`, `silk_circle.rivals` includes `"shadow_ports"`, and `shadow_ports.rivals` includes `"silk_circle"` via `COPY_OVERRIDES` in `tools/extract_content.py` (with `DF-27`). The text below records the problem as found.
 
 Where:
 - The Silk Circle lists The Iron Pact in `hostile_to` (C:13453) but not the reverse (C:13410); the relationships table says `hostile` (C:13767).
@@ -165,7 +175,9 @@ Proposed fix: Reword Elena's agenda to 'will never build a war fleet to a power'
 
 Why: Design ruling 2: the sim sells the Royal Man-of-War at Silva Bay (session.rs:3037-3043), so the lore now says the yard builds single hulls of every class but no fleets for powers.
 
-## DF-15. Bloc loyalty_bonus and disloyalty_penalty have no live caller; spillover is unread
+## DF-15. Bloc loyalty_bonus and disloyalty_penalty have no live caller; spillover is unread (resolved)
+
+Status: resolved (doc comments). `TradeBlocDef::loyalty_bonus`, `TradeBlocDef::disloyalty_penalty`, and `BlocRelationshipDef::spillover` are documented in `crates/portlight-sim/src/content.rs` as unread by live simulation paths. The text below records the problem as found.
 
 Where:
 - C:13388 and the other blocs; relationships from C:13718
@@ -176,7 +188,9 @@ Proposed fix: No data change. Add content.rs doc comments: on TradeBlocDef.loyal
 
 Why: the rates exist in code but no live path applies them, so copy and canon must not promise a price effect.
 
-## DF-16. 'Corsairs Rest' spelling in docs
+## DF-16. 'Corsairs Rest' spelling in docs (resolved)
+
+Status: resolved (docs). `docs/PORTING-PLAN.md` now spells `Corsair's Rest` with an apostrophe. The text below records the problem as found.
 
 Where:
 - docs/PORTING-PLAN.md:232
@@ -217,7 +231,9 @@ Proposed fix: Pick only beacons in or next to the voyage's origin or destination
 
 Why: a captain on a South Seas lane can see Porto Novo's beacon or the Whale Arch. Canon does not explain this away.
 
-## DF-20. Two institutions share the name 'The Inspection Hall'
+## DF-20. Two institutions share the name 'The Inspection Hall' (resolved)
+
+Status: resolved (data override). Jade Port's `jp_quality` institution is now named `"The Quality Hall"` via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/data/content.json:8173 (Stormwall, customs, `sw_inspection`)
@@ -300,7 +316,9 @@ Proposed fix: retitle one. Suggested: The Privateer 'Letter of Marque' (garrison
 
 Why: two of nine choices read the same title on one screen, so the title does not tell them apart.
 
-## DF-27. Silk Circle and Shadow Ports are rivals in the table but in neither bloc's list
+## DF-27. Silk Circle and Shadow Ports are rivals in the table but in neither bloc's list (resolved)
+
+Status: resolved (data override). Folded into `DF-7`: `silk_circle.rivals` now includes `"shadow_ports"` and `shadow_ports.rivals` includes `"silk_circle"` via `COPY_OVERRIDES` in `tools/extract_content.py`. The text below records the problem as found.
 
 Where:
 - content.json:13830-13833 (relationships: silk_circle - shadow_ports, rival)
@@ -310,7 +328,9 @@ Proposed fix: fold into the DF-7 fix: add shadow_ports to the Silk Circle's `riv
 
 Why: DF-7 names only the hostile gap; this is the matching rival gap. No live effect today (DF-15).
 
-## DF-28. Faction spillover and vendetta triggers are unread, but journal copy implies an effect
+## DF-28. Faction spillover and vendetta triggers are unread, but journal copy implies an effect (resolved)
+
+Status: resolved (doc comments). `FactionRelationshipDef::spillover` and `FactionRelationshipDef::vendetta_trigger` are documented in `crates/portlight-sim/src/content.rs` as unread by live simulation paths. The text below records the problem as found.
 
 Where:
 - content.json:13866-13914 (`faction_relationships`: spillover and vendetta_trigger on every row)
@@ -333,7 +353,9 @@ Proposed fix: when perk copy is ported to the Rust/Godot build, write it from co
 
 Why: the copy is not shipped today (Python only), but it is the only perk text and would mislead players if ported as is.
 
-## DF-30. Gnaw (strength 9) pays the same bounty as strength-7 pirates
+## DF-30. Gnaw (strength 9) pays the same bounty as strength-7 pirates (resolved)
+
+Status: resolved (sim + Godot + parity note). Gnaw's bounty reward is now `250` silver in `PIRATE_BOUNTIES` (`crates/portlight-sim/src/bounty.rs`) and `CATALOG` (`crates/portlight-godot/src/hunt_screen.rs`). The text below records the problem as found.
 
 Where:
 - content.json:2968 (Gnaw strength 9); crates/portlight-sim/src/bounty.rs:104 (reward 200)
@@ -344,7 +366,9 @@ Proposed fix: raise Gnaw's reward above The Butcher's (suggested 250), or record
 
 Why: the strongest pirate pays less than a weaker one, so the hardest hunt is the worst deal.
 
-## DF-31. Scarlet Ana is on the North Atlantic board but sighted at Corsair's Rest
+## DF-31. Scarlet Ana is on the North Atlantic board but sighted at Corsair's Rest (resolved)
+
+Status: resolved (sim + Godot + parity note). Scarlet Ana's bounty region is now `"Mediterranean"` in `PIRATE_BOUNTIES` (`crates/portlight-sim/src/bounty.rs`) and `CATALOG` (`crates/portlight-godot/src/hunt_screen.rs`), with a parity allowance on `$.log[n].bounty.targets[2].region` in `tools/parity/check.py` and `crates/portlight-sim/tests/parity.rs`. The text below records the problem as found.
 
 Where:
 - crates/portlight-sim/src/bounty.rs:40 (scarlet_ana region North Atlantic)
@@ -355,7 +379,9 @@ Proposed fix: set the bounty region to Mediterranean, or move the sighting to a 
 
 Why: the board sends a hunter to one sea while the game shows her in another.
 
-## DF-32. The Privateer's negative Iron Wolves start is lost on the first duel win
+## DF-32. The Privateer's negative Iron Wolves start is lost on the first duel win (resolved)
+
+Status: resolved (sim + parity note). `record_duel_standing` (`crates/portlight-sim/src/session.rs`) now clamps existing negative underworld standing to `-100..=100` rather than `0..=100`, so a take-all duel win against the Iron Wolves moves `-5` to `-3`. The text below records the problem as found.
 
 Where:
 - content.json:2466 (privateer underworld iron_wolves -5)

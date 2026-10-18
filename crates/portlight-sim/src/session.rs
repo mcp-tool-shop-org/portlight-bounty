@@ -3894,7 +3894,8 @@ fn record_duel_standing(
         .iter_mut()
         .find(|(id, _)| id == faction_id)
     {
-        slot.1 = (slot.1 + delta).clamp(0, 100);
+        let min_standing = if slot.1 < 0 { -100 } else { 0 };
+        slot.1 = (slot.1 + delta).clamp(min_standing, 100);
     } else {
         standing
             .underworld
@@ -7290,5 +7291,90 @@ mod bank_tests {
             }
         }
         assert!(hit_checked);
+    }
+
+    #[test]
+    fn sim_and_bounty_balance_fixes_df3_through_df32() {
+        let cat = content::content();
+        // DF-3: Bounty hunter home_region matches Crosswind Isle (East Indies)
+        let bh = cat.captain("bounty_hunter").unwrap();
+        assert_eq!(bh.home_port_id, "crosswind_isle");
+        assert_eq!(bh.home_region, "East Indies");
+
+        // DF-4: Institutions at ports without the shipyard feature do not claim institution_type "shipyard"
+        for (inst_id, expected_type) in [
+            ("tp_boat_yard", "boatyard"),
+            ("sh_cotton_house", "warehouse"),
+            ("pc_dock", "dock"),
+            ("ps_dye_workshop", "workshop"),
+            ("slh_warehouse", "warehouse"),
+            ("ei_dye_works", "workshop"),
+        ] {
+            let inst = cat
+                .port_institutions
+                .iter()
+                .chain(cat.port_institutions_east.iter())
+                .flat_map(|p| p.institutions.iter())
+                .find(|i| i.id == inst_id)
+                .unwrap();
+            assert_eq!(inst.institution_type, expected_type, "{inst_id}");
+        }
+
+        // DF-5: Ironhaven embargoes contraband, not weapons
+        let ih_pol = cat.port_politics("ironhaven").unwrap();
+        assert_eq!(ih_pol.trade_embargo, vec!["contraband"]);
+
+        // DF-7 & DF-27: Symmetric bloc rival and hostile lists
+        let iron_pact = cat.trade_bloc("iron_pact").unwrap();
+        assert!(iron_pact.hostile_to.iter().any(|b| b == "silk_circle"));
+        let silk_circle = cat.trade_bloc("silk_circle").unwrap();
+        assert!(silk_circle.rivals.iter().any(|b| b == "shadow_ports"));
+        let shadow_ports = cat.trade_bloc("shadow_ports").unwrap();
+        assert!(shadow_ports.rivals.iter().any(|b| b == "silk_circle"));
+
+        // DF-20: Jade Port's jp_quality is The Quality Hall
+        let jp_quality = cat
+            .port_institution("jade_port")
+            .unwrap()
+            .institutions
+            .iter()
+            .find(|i| i.id == "jp_quality")
+            .unwrap();
+        assert_eq!(jp_quality.name, "The Quality Hall");
+
+        // DF-30 & DF-31: Gnaw pays 250 silver; Scarlet Ana is in the Mediterranean
+        let rewards = bounty::table_rewards();
+        assert!(rewards.contains(&("gnaw", 250)));
+        let mut rng = crate::rng::PyRandom::from_seed(1);
+        let full_board = bounty::generate_bounty_board(&[], &mut rng, 10);
+        let ana = full_board
+            .iter()
+            .find(|t| t.captain_id == "scarlet_ana")
+            .unwrap();
+        assert_eq!(ana.region, "Mediterranean");
+
+        // DF-32: Privateer's -5 Iron Wolves grudge stays negative (-3) on a take-all duel win
+        let mut priv_session = Session::new("Ada", "privateer", 1, None).unwrap();
+        assert_eq!(
+            priv_session.world.captain.standing.underworld,
+            vec![("crimson_tide".to_string(), 10), ("iron_wolves".to_string(), -5)]
+        );
+        let delta = record_duel_standing(
+            &mut priv_session.world.captain.standing,
+            "iron_wolves",
+            true,
+            false,
+        );
+        assert_eq!(delta, 2);
+        let wolves = priv_session
+            .world
+            .captain
+            .standing
+            .underworld
+            .iter()
+            .find(|(id, _)| id == "iron_wolves")
+            .unwrap()
+            .1;
+        assert_eq!(wolves, -3);
     }
 }
