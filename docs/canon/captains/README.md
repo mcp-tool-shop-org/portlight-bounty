@@ -16,7 +16,7 @@ The new game screen lists these in `CAPTAIN_ORDER` (crates/portlight-sim/src/cus
 | The Scholar | Wind Temple Student | [Monsoon Reach](../ports/monsoon_reach.md) | East Indies | Brother Anand | 400 | Coastal Sloop | - | C:2511 | [scholar.md](scholar.md) |
 | The Merchant Prince | Khoury Dynasty Scion | [Al-Manar](../ports/al_manar.md) | Mediterranean | Senhora Nadia Khoury | 700 | Coastal Sloop | - | C:2549 | [merchant_prince.md](merchant_prince.md) |
 | The Dockhand | Self-Made Captain | [Crosswind Isle](../ports/crosswind_isle.md) | East Indies | Dock Master Tao | 300 | Coastal Sloop | - | C:2587 | [dockhand.md](dockhand.md) |
-| The Bounty Hunter | Licensed Hunter | [Crosswind Isle](../ports/crosswind_isle.md) | North Atlantic | Dock Master Tao | 425 | Swift Cutter | - | C:2625 | [bounty_hunter.md](bounty_hunter.md) |
+| The Bounty Hunter | Licensed Hunter | [Crosswind Isle](../ports/crosswind_isle.md) | East Indies | Dock Master Tao | 425 | Swift Cutter | - | C:2625 | [bounty_hunter.md](bounty_hunter.md) |
 
 ## Pirate captains (8)
 

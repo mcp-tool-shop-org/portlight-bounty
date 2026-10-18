@@ -140,7 +140,8 @@ pub fn resolve_duel(
         history.push(stance.clone());
         rounds.push(round);
     }
-    let player_won = opponent_hp <= 0 && player_hp > 0;
+    let player_won = (opponent_hp <= 0 && player_hp > 0)
+        || (player_hp > 0 && opponent_hp > 0 && (player_hp - opponent_hp) >= 3);
     let draw = player_hp <= 0 && opponent_hp <= 0;
     let (silver_delta, standing_delta) = if player_won {
         (20 + strength * 5, 5)

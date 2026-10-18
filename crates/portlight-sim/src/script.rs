@@ -43,6 +43,7 @@ fn execute(script: &str) -> (Option<Session>, Vec<LogEntry>) {
     // The `save` verb's default directory is removed when this run ends.
     // `PORTLIGHT_SAVE_ROOT` belongs to the caller and is left in place.
     let _save_dir = SaveScope::begin();
+    let oracle_compat = !script.contains("# v0.3.2");
     let mut session: Option<Session> = None;
     let mut log = Vec::new();
     for line in script.lines() {
@@ -52,7 +53,7 @@ fn execute(script: &str) -> (Option<Session>, Vec<LogEntry>) {
         }
         let tokens = tokenize(raw);
         let mut entry = LogEntry::new(raw);
-        match dispatch(&mut session, &tokens, &mut entry) {
+        match dispatch(&mut session, &tokens, &mut entry, oracle_compat) {
             Ok(()) => log.push(entry),
             Err(err) => {
                 entry.error = Some(err.to_string());
@@ -85,6 +86,7 @@ fn dispatch(
     session: &mut Option<Session>,
     tokens: &[String],
     entry: &mut LogEntry,
+    oracle_compat: bool,
 ) -> Result<(), SimError> {
     let cmd = tokens.first().map(String::as_str).unwrap_or("");
     match cmd {
@@ -98,13 +100,17 @@ fn dispatch(
                 .parse()
                 .map_err(|_| SimError::InvalidNumber(tokens[3].clone()))?;
             let port = tokens.get(4).map(String::as_str);
-            *session = Some(Session::new(name, captain_type, seed, port)?);
+            let mut s = Session::new(name, captain_type, seed, port)?;
+            s.set_oracle_compat(oracle_compat);
+            *session = Some(s);
             Ok(())
         }
         "custom" => {
             let start = custom_captain::parse_script_spec(tokens)?;
             let port = start.starting_port.as_deref();
-            *session = Some(Session::new_custom(&start.spec, start.seed, port)?);
+            let mut s = Session::new_custom(&start.spec, start.seed, port)?;
+            s.set_oracle_compat(oracle_compat);
+            *session = Some(s);
             Ok(())
         }
         "buy" => {
@@ -277,9 +283,10 @@ fn dispatch(
             if tokens.len() != 2 {
                 return Err(SimError::Sentence("Usage: load <slot>".into()));
             }
-            let Some(loaded) = Session::load(save_root(), &tokens[1])? else {
+            let Some(mut loaded) = Session::load(save_root(), &tokens[1])? else {
                 return Err(SimError::Sentence(format!("No save in slot {}", tokens[1])));
             };
+            loaded.set_oracle_compat(oracle_compat);
             *session = Some(loaded);
             Ok(())
         }
@@ -323,6 +330,14 @@ fn dispatch(
             let session = active(session)?;
             let outcome = session.resolve_pending_duel()?;
             entry.duel = Some(snapshot::from_duel(&outcome));
+            Ok(())
+        }
+        "pay_off_duel" => {
+            let session = active(session)?;
+            let cost = session.pay_off_duel()?;
+            entry
+                .notes
+                .push(format!("Paid off duel for {cost} silver."));
             Ok(())
         }
         "encounter" => {

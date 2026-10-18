@@ -62,14 +62,14 @@ Script commands, one per line:
   buy_infrastructure, take_credit, buy_insurance
   deposit, withdraw, repay_credit, save, load
   bank_deposit, bank_withdraw, bank_letter
-  hire, provision, work, duel, resolve_duel
+  hire, provision, work, duel, resolve_duel, pay_off_duel
   encounter, naval, board, fight, capture, spare, take_all
-  train, equip_style, recruit, dismiss_companion, skill, remember, agency, gear
+  train, equip_style, recruit, dismiss (or dismiss_companion), skill, remember, agency, gear
   buy_ship, upgrade, form_convoy, repair_fleet, repair
   rename_ship, dock_current_ship, board_fleet_ship, sell_fleet_ship
   fire, transfer, maintain, smith, field_repair, hunt, bounty, wanted
 
-bounty takes accept, hunt, or claim, then a captain id.
+bounty alone (or bounty list) lists the board; bounty accept, hunt, or claim takes a captain id.
 ",
         version = env!("CARGO_PKG_VERSION"),
     );
@@ -146,7 +146,14 @@ fn script_cmd(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     }
-    if snap.log.iter().any(|entry| entry.error.is_some()) {
+    let mut had_error = false;
+    for (idx, entry) in snap.log.iter().enumerate() {
+        if let Some(err) = &entry.error {
+            eprintln!("step {} ({}): {err}", idx + 1, entry.command);
+            had_error = true;
+        }
+    }
+    if had_error {
         ExitCode::from(1)
     } else {
         ExitCode::SUCCESS

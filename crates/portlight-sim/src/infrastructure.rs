@@ -682,11 +682,12 @@ pub fn purchase_policy(
             spec.name, captain.silver
         )));
     }
-    if state
-        .policies
-        .iter()
-        .any(|policy| policy.active && policy.spec_id == spec.id && policy.target_id == target_id)
-    {
+    if state.policies.iter().any(|policy| {
+        policy.active
+            && (policy.spec_id == spec.id
+                || (policy.family == spec.family
+                    && (spec.family != "contract_guarantee" || policy.target_id == target_id)))
+    }) {
         return Err(reject(format!("Already have active {}", spec.name)));
     }
     captain.silver -= adjusted;
@@ -774,13 +775,17 @@ fn settle_claim(
 ) -> Vec<InsuranceClaim> {
     let mut claims = Vec::new();
     let catalog = content::content();
+    let mut remaining_loss = loss_value.max(0);
     for policy in &mut state.policies {
         if !policy.active {
             continue;
         }
         let family_ok = match policy.family.as_str() {
-            "hull" => matches!(incident_type, "storm" | "pirates"),
-            "premium_cargo" => matches!(incident_type, "pirates" | "storm" | "inspection"),
+            "hull" => cargo_category.is_empty() && matches!(incident_type, "storm" | "pirates"),
+            "premium_cargo" => {
+                !cargo_category.is_empty()
+                    && matches!(incident_type, "pirates" | "storm" | "inspection")
+            }
             "contract_guarantee" => incident_type == "contract_failure",
             _ => false,
         };
@@ -823,11 +828,12 @@ fn settle_claim(
         }
         let raw = py_trunc(loss_value as f64 * policy.coverage_pct);
         let remaining = policy.coverage_cap - policy.total_paid_out;
-        let payout = raw.min(remaining).max(0);
+        let payout = raw.min(remaining).min(remaining_loss).max(0);
         if payout > 0 {
             captain.silver += payout;
             policy.claims_made += 1;
             policy.total_paid_out += payout;
+            remaining_loss -= payout;
         }
         let claim = InsuranceClaim {
             policy_id: policy.id.clone(),
@@ -981,20 +987,27 @@ pub fn draw_credit(
     Ok(())
 }
 
-/// `repay_credit`. Interest is paid before principal.
+/// `repay_credit`. Interest is paid before principal, then any unpaid deferred
+/// fees / emergency loans.
 pub fn repay_credit(
     state: &mut InfrastructureRecord,
     captain: &mut Captain,
     amount: i64,
 ) -> Result<(), SimError> {
+    let fee_owed: i64 = captain.deferred_fees.iter().map(|f| f.amount.max(0)).sum();
     let credit = ensure_credit(state);
-    if !credit.active {
+    if !credit.active && fee_owed == 0 {
         return Err(reject("No credit line"));
     }
     if amount <= 0 {
         return Err(reject("Amount must be positive"));
     }
-    let total_owed = credit.outstanding + credit.interest_accrued;
+    let credit_owed = if credit.active {
+        credit.outstanding + credit.interest_accrued
+    } else {
+        0
+    };
+    let total_owed = credit_owed + fee_owed;
     if total_owed == 0 {
         return Err(reject("No outstanding debt"));
     }
@@ -1006,14 +1019,30 @@ pub fn repay_credit(
         )));
     }
     captain.silver -= amount;
-    credit.total_repaid += amount;
-    if credit.interest_accrued > 0 {
-        let interest_payment = amount.min(credit.interest_accrued);
-        credit.interest_accrued -= interest_payment;
-        amount -= interest_payment;
+    if credit.active && credit_owed > 0 {
+        let credit_payment = amount.min(credit_owed);
+        credit.total_repaid += credit_payment;
+        let mut rem = credit_payment;
+        if credit.interest_accrued > 0 {
+            let interest_payment = rem.min(credit.interest_accrued);
+            credit.interest_accrued -= interest_payment;
+            rem -= interest_payment;
+        }
+        if rem > 0 {
+            credit.outstanding -= rem;
+        }
+        amount -= credit_payment;
     }
     if amount > 0 {
-        credit.outstanding -= amount;
+        for fee in &mut captain.deferred_fees {
+            if amount <= 0 {
+                break;
+            }
+            let pay = amount.min(fee.amount.max(0));
+            fee.amount -= pay;
+            amount -= pay;
+        }
+        captain.deferred_fees.retain(|f| f.amount > 0);
     }
     Ok(())
 }
@@ -1090,6 +1119,7 @@ pub fn tick_credit(
 
 /// `emergency_loan`. The player receives `amount` and owes `amount + interest`
 /// as a deferred fee. Interest is `max(1, int(amount * 0.15))`.
+/// Capped at 1 active emergency loan (200 silver max principal).
 pub fn emergency_loan(captain: &mut Captain, amount: i64) -> Result<i64, SimError> {
     if amount <= 0 {
         return Err(reject("Amount must be positive"));
@@ -1097,9 +1127,18 @@ pub fn emergency_loan(captain: &mut Captain, amount: i64) -> Result<i64, SimErro
     if amount > 200 {
         return Err(reject("Emergency loans capped at 200 silver"));
     }
+    if captain
+        .deferred_fees
+        .iter()
+        .any(|f| f.fee_type == "emergency_loan" && f.amount > 0)
+    {
+        return Err(reject(
+            "Already have an unpaid emergency loan. Repay your debt first.",
+        ));
+    }
     let interest = 1.max(py_trunc(amount as f64 * 0.15));
     let total_debt = amount + interest;
-    captain.silver += amount;
+    captain.silver = captain.silver.saturating_add(amount);
     captain.deferred_fees.push(crate::model::DeferredFee {
         fee_type: "emergency_loan".to_string(),
         amount: total_debt,

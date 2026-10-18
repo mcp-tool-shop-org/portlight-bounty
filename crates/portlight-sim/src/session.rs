@@ -359,6 +359,7 @@ pub struct Session {
     /// Personal-combat win is waiting on spare or take-all.
     pending_victory: bool,
     narrative: NarrativeState,
+    oracle_compat: bool,
 }
 
 impl Session {
@@ -419,9 +420,18 @@ impl Session {
             infra: InfrastructureRecord::default(),
             pending_victory: false,
             narrative: NarrativeState::default(),
+            oracle_compat: false,
         };
         session.refresh_new_game_board();
         session
+    }
+
+    pub fn set_oracle_compat(&mut self, oracle_compat: bool) {
+        self.oracle_compat = oracle_compat;
+    }
+
+    pub fn is_oracle_compat(&self) -> bool {
+        self.oracle_compat
     }
 
     /// Write this game to a Python version-12 JSON slot under `base_path/saves`.
@@ -505,6 +515,7 @@ impl Session {
             infra: loaded.infra,
             pending_victory: loaded.pending_victory,
             narrative: loaded.narrative,
+            oracle_compat: false,
         };
         reprice_all(&mut session.world);
         session.project_books();
@@ -582,9 +593,29 @@ impl Session {
         campaign::compute_victory_progress(&self.world, &self.books)
     }
 
+    pub fn quote_buy(&self, good_id: &str, qty: i64) -> Option<(i64, i64)> {
+        let port_id = current_port_id(&self.world)?;
+        let port = self.world.port(port_id)?;
+        let mods = pricing(&self.world);
+        economy::quote_buy(port, good_id, qty, Some(&mods))
+    }
+
+    pub fn quote_sell(&self, good_id: &str, qty: i64) -> Option<(i64, i64)> {
+        let port_id = current_port_id(&self.world)?;
+        let port = self.world.port(port_id)?;
+        let mods = pricing(&self.world);
+        economy::quote_sell(&self.world.captain, port, good_id, qty, Some(&mods))
+    }
+
     pub fn buy(&mut self, good_id: &str, qty: i64) -> Result<TradeReceipt, SimError> {
         let Some(port_id) = current_port_id(&self.world).map(str::to_string) else {
             return Err(SimError::NotDocked);
+        };
+        let mods = pricing(&self.world);
+        let curve = if self.oracle_compat {
+            None
+        } else {
+            Some(&mods)
         };
         let seq = self.trade_seq;
         let receipt = {
@@ -594,7 +625,7 @@ impl Session {
                 .iter_mut()
                 .find(|port| port.id == port_id)
                 .ok_or(SimError::NotDocked)?;
-            economy::execute_buy(&mut world.captain, port, good_id, qty, seq)?
+            economy::execute_buy_order(&mut world.captain, port, good_id, qty, seq, curve)?
         };
         record_receipt(self, &receipt);
         if content::content()
@@ -606,7 +637,7 @@ impl Session {
         }
         let mods = pricing(&self.world);
         if let Some(port) = self.world.port_mut(&port_id) {
-            recalculate_prices(port, Some(&mods));
+            economy::recalculate_prices_ext(port, Some(&mods), !self.oracle_compat);
         }
         Ok(receipt)
     }
@@ -633,15 +664,21 @@ impl Session {
             .map(|item| (item.acquired_port.clone(), item.acquired_region.clone()))
             .unwrap_or_default();
         let pre_sale_basis = economy::estimate_cost_basis(&self.world.captain, good_id, qty);
+        let mods = pricing(&self.world);
+        let curve = if self.oracle_compat {
+            None
+        } else {
+            Some(&mods)
+        };
         let seq = self.trade_seq;
-        let receipt = {
+        let (receipt, slices) = {
             let world = &mut self.world;
             let port = world
                 .ports
                 .iter_mut()
                 .find(|port| port.id == port_id)
                 .ok_or(SimError::NotDocked)?;
-            economy::execute_sell(&mut world.captain, port, good_id, qty, seq)?
+            economy::execute_sell_order(&mut world.captain, port, good_id, qty, seq, curve)?
         };
         record_receipt(self, &receipt);
         let cost_basis =
@@ -677,14 +714,28 @@ impl Session {
             companion::apply_morale_trigger(&mut self.world.captain, "profitable_trade");
         }
         companion::check_departures(&mut self.world.captain);
-        let credited = contracts::check_delivery(
-            &mut self.board,
-            &port_id,
-            good_id,
-            receipt.quantity,
-            &source_port,
-            &source_region,
-        );
+        let mut credited = Vec::new();
+        if slices.is_empty() {
+            credited.extend(contracts::check_delivery(
+                &mut self.board,
+                &port_id,
+                good_id,
+                receipt.quantity,
+                &source_port,
+                &source_region,
+            ));
+        } else {
+            for slice in &slices {
+                credited.extend(contracts::check_delivery(
+                    &mut self.board,
+                    &port_id,
+                    good_id,
+                    slice.quantity,
+                    &slice.acquired_port,
+                    &slice.acquired_region,
+                ));
+            }
+        }
         let contracts = if credited.is_empty() {
             Vec::new()
         } else {
@@ -692,7 +743,7 @@ impl Session {
         };
         let mods = pricing(&self.world);
         if let Some(port) = self.world.port_mut(&port_id) {
-            recalculate_prices(port, Some(&mods));
+            economy::recalculate_prices_ext(port, Some(&mods), !self.oracle_compat);
         }
         self.evaluate_narrative(&[]);
         Ok(Sale { receipt, contracts })
@@ -801,7 +852,7 @@ impl Session {
             });
         }
         self.world.captain.silver -= cost;
-        self.world.captain.provisions += days;
+        self.world.captain.provisions = self.world.captain.provisions.saturating_add(days);
         Ok(())
     }
 
@@ -848,7 +899,11 @@ impl Session {
         self.world.day = self.world.captain.day;
         if result.success {
             if result.provisions_gained > 0 {
-                self.world.captain.provisions += result.provisions_gained;
+                self.world.captain.provisions = self
+                    .world
+                    .captain
+                    .provisions
+                    .saturating_add(result.provisions_gained);
             }
             if result.pelts_gained > 0 {
                 if let Some(existing) = self
@@ -858,7 +913,7 @@ impl Session {
                     .iter_mut()
                     .find(|item| item.good_id == "pelts")
                 {
-                    existing.quantity += result.pelts_gained;
+                    existing.quantity = existing.quantity.saturating_add(result.pelts_gained);
                 } else {
                     let acquired_port = current_port_id(&self.world).unwrap_or("").to_string();
                     let acquired_day = self.world.captain.day;
@@ -873,7 +928,11 @@ impl Session {
                 }
             }
             if result.silver_gained > 0 {
-                self.world.captain.silver += result.silver_gained;
+                self.world.captain.silver = self
+                    .world
+                    .captain
+                    .silver
+                    .saturating_add(result.silver_gained);
             }
         }
         if result.crew_lost > 0 {
@@ -973,8 +1032,7 @@ impl Session {
 
     /// Fight the pending pirate with the given stances (`portlight duel`).
     ///
-    /// Clears the challenge and applies `silver_delta`. `standing_delta` is
-    /// returned and not written onto reputation, matching the Python CLI.
+    /// Clears the challenge and applies `silver_delta`.
     pub fn duel(&mut self, stances: &[String]) -> Result<DuelOutcome, SimError> {
         if self.world.pending_duel.is_none() {
             return Err(SimError::NoPendingDuel);
@@ -1003,6 +1061,32 @@ impl Session {
         self.finish_duel(stances)
     }
 
+    /// Pay off the pending pirate challenge to clear `pending_duel` without fighting.
+    pub fn pay_off_duel(&mut self) -> Result<i64, SimError> {
+        let pending = self
+            .world
+            .pending_duel
+            .clone()
+            .ok_or(SimError::NoPendingDuel)?;
+        let cost = 15 + pending.strength.max(1) * 5;
+        if self.world.captain.silver < cost {
+            return Err(SimError::NeedSilver {
+                need: cost,
+                have: self.world.captain.silver,
+            });
+        }
+        self.world.captain.silver -= cost;
+        self.world.captain.encounters.push(PirateEncounterRecord {
+            captain_id: pending.captain_id,
+            faction_id: pending.faction_id,
+            day: self.world.day,
+            outcome: "pay_off".to_string(),
+            region: pending.region,
+        });
+        self.world.pending_duel = None;
+        Ok(cost)
+    }
+
     fn finish_duel(&mut self, stances: Vec<String>) -> Result<DuelOutcome, SimError> {
         let pending = self
             .world
@@ -1026,6 +1110,24 @@ impl Session {
             crew,
         );
         self.world.captain.silver = 0.max(self.world.captain.silver + outcome.silver_delta);
+        if !self.oracle_compat && !pending.faction_id.is_empty() && outcome.standing_delta != 0 {
+            if let Some(slot) = self
+                .world
+                .captain
+                .standing
+                .underworld
+                .iter_mut()
+                .find(|(id, _)| id == &pending.faction_id)
+            {
+                let min_standing = if slot.1 < 0 { -100 } else { 0 };
+                slot.1 = (slot.1 + outcome.standing_delta).clamp(min_standing, 100);
+            } else {
+                self.world.captain.standing.underworld.push((
+                    pending.faction_id.clone(),
+                    outcome.standing_delta.clamp(0, 100),
+                ));
+            }
+        }
         let outcome_str = if outcome.player_won {
             "duel_win"
         } else if outcome.draw {
@@ -1391,8 +1493,8 @@ impl Session {
             .ok_or_else(|| SimError::Sentence("Must be docked to repair".into()))?
             .repair_cost;
         let ship = self.world.captain.ship.as_ref().ok_or(SimError::NoShip)?;
-        let damage = ship.hull_max - ship.hull;
-        if damage == 0 {
+        let damage = ship.hull_max.saturating_sub(ship.hull);
+        if damage <= 0 {
             return Err(SimError::Sentence(
                 "Ship is already in perfect condition".into(),
             ));
@@ -2584,20 +2686,32 @@ impl Session {
     /// pending duel returns no events and does not spend the day. Call
     /// [`Session::duel`] or [`Session::resolve_pending_duel`] first.
     pub fn advance(&mut self) -> Result<Turn, SimError> {
+        if !self.oracle_compat && self.world.pending_duel.is_some() {
+            return Ok(Turn {
+                events: Vec::new(),
+                shocks: Vec::new(),
+                contracts: Vec::new(),
+                notes: Vec::new(),
+                sink: None,
+            });
+        }
         reputation::tick_reputation(&mut self.world.captain.standing);
         // Same position as GameSession.advance: after the reputation tick,
         // before infrastructure upkeep. The captain is omitted, so a default
         // does not record a breach.
         let contracts = self.expire_contracts();
-        self.file_contract_claims(&contracts);
+        let contract_claim_notes = self.file_contract_claims(&contracts);
         let mut notes = self.tick_upkeep();
+        if !self.oracle_compat {
+            notes.extend(contract_claim_notes);
+        }
         notes.extend(self.heal_injuries());
         let sailed = self.world.voyage.status == VoyageStatus::AtSea;
         let mut day_sink: Option<SinkOutcome> = None;
         let mut turn = if !sailed {
             let shocks = economy::tick_markets(&mut self.world.ports, 1, &mut self.rng, 0);
-            self.world.day += 1;
-            self.world.captain.day += 1;
+            self.world.day = self.world.day.saturating_add(1);
+            self.world.captain.day = self.world.captain.day.saturating_add(1);
             if self.world.captain.provisions > 0 {
                 self.world.captain.provisions -= 1;
             }
@@ -2615,8 +2729,18 @@ impl Session {
                 sink: None,
             }
         } else {
+            let provisions_before = self.world.captain.provisions;
+            let wage_shortfall_before = self.world.captain.ship.as_ref().is_some_and(|s| {
+                let wage = wage_bill(s) + fleet::fleet_daily_wages(&self.world.captain);
+                wage > 0 && self.world.captain.silver < wage
+            });
             let breaches = self.board.breaches.len() as i64;
-            let mut events = voyage::advance_day(&mut self.world, &mut self.rng, breaches)?;
+            let mut events = voyage::advance_day_ext(
+                &mut self.world,
+                &mut self.rng,
+                breaches,
+                self.oracle_compat,
+            )?;
             events = crate::sea_culture::enrich_voyage_day(
                 &mut self.world,
                 events,
@@ -2626,7 +2750,16 @@ impl Session {
                 &self.board,
             );
             let destination = self.world.voyage.destination_id.clone();
-            record_sea_consequences(&mut self.world, &mut self.infra, &events, &destination);
+            let claim_notes =
+                record_sea_consequences(&mut self.world, &mut self.infra, &events, &destination);
+            if !self.oracle_compat {
+                notes.extend(claim_notes);
+                if provisions_before <= 0 && events.iter().any(|event| event.crew_delta < 0) {
+                    notes.push("Crew suffered from 0 provisions at sea.".to_string());
+                } else if wage_shortfall_before && events.iter().any(|event| event.crew_delta < 0) {
+                    notes.push("Unpaid wages caused crew desertion at sea.".to_string());
+                }
+            }
             if events.iter().any(|event| event.crew_delta < 0) {
                 companion::apply_morale_trigger(&mut self.world.captain, "crew_killed");
             }
@@ -2867,14 +3000,15 @@ impl Session {
 
     /// `GameSession.advance` files a `contract_failure` claim for expiry and
     /// abandonment before infrastructure upkeep.
-    fn file_contract_claims(&mut self, outcomes: &[ContractOutcome]) {
+    fn file_contract_claims(&mut self, outcomes: &[ContractOutcome]) -> Vec<String> {
         let day = self.world.day;
+        let mut notes = Vec::new();
         for outcome in outcomes {
             if outcome.outcome_type != "expired" && outcome.outcome_type != "abandoned" {
                 continue;
             }
             let loss = outcome.trust_delta.abs() * 50 + outcome.standing_delta.abs() * 30;
-            infrastructure::resolve_claim(
+            let claims = infrastructure::resolve_claim(
                 &mut self.infra,
                 &mut self.world.captain,
                 "contract_failure",
@@ -2884,7 +3018,9 @@ impl Session {
                 &outcome.contract_id,
                 "",
             );
+            notes.extend(format_claim_notes(&claims));
         }
+        notes
     }
 
     fn tick_upkeep(&mut self) -> Vec<String> {
@@ -2895,7 +3031,7 @@ impl Session {
             .iter()
             .any(|message| message.to_lowercase().contains("seized"));
         if seized {
-            infrastructure::resolve_claim(
+            let claims = infrastructure::resolve_claim(
                 &mut self.infra,
                 &mut self.world.captain,
                 "cargo_damage",
@@ -2905,6 +3041,9 @@ impl Session {
                 "",
                 "",
             );
+            if !self.oracle_compat {
+                notes.extend(format_claim_notes(&claims));
+            }
         }
         let credit_notes =
             infrastructure::tick_credit(&mut self.infra, &mut self.world.captain, day);
@@ -3395,6 +3534,9 @@ impl Session {
     pub fn maintain_weapon(&mut self, weapon_id: &str) -> Result<(), SimError> {
         let _port = current_port_id(&self.world)
             .ok_or_else(|| SimError::Sentence("Must be docked".into()))?;
+        if !self.oracle_compat && !captain_owns_weapon(&self.world.captain, weapon_id) {
+            return Err(SimError::Rejected(format!("You do not own '{weapon_id}'.")));
+        }
         let base = weapon_quality::maintenance_cost(&self.world.captain.weapon_quality, weapon_id);
         let level = skills::skill_level(&self.world.captain.skills, "blacksmith");
         let cost = skills::apply_maintenance_discount(base, level);
@@ -3423,6 +3565,9 @@ impl Session {
             return Err(SimError::Rejected(
                 "No smith at this port. Visit a port with a shipyard.".into(),
             ));
+        }
+        if !self.oracle_compat && !captain_owns_weapon(&self.world.captain, weapon_id) {
+            return Err(SimError::Rejected(format!("You do not own '{weapon_id}'.")));
         }
         let current = self.world.captain.quality_of(weapon_id).to_string();
         let Some(new_quality) = weapon_quality::next_tier(&current).map(str::to_string) else {
@@ -3453,6 +3598,9 @@ impl Session {
     /// `portlight field-repair`. Restores a worn or rusted weapon up to the
     /// captain's field-repair cap and resets usage.
     pub fn field_repair_weapon(&mut self, weapon_id: &str) -> Result<(), SimError> {
+        if !self.oracle_compat && !captain_owns_weapon(&self.world.captain, weapon_id) {
+            return Err(SimError::Rejected(format!("You do not own '{weapon_id}'.")));
+        }
         let level = skills::skill_level(&self.world.captain.skills, "blacksmith");
         let mut quality: std::collections::BTreeMap<String, String> =
             self.world.captain.weapon_quality.iter().cloned().collect();
@@ -3471,7 +3619,35 @@ impl Session {
     }
 
     fn note_contract_on_books(&mut self, outcome: &ContractOutcome) {
-        self.world.captain.silver += outcome.silver_delta;
+        self.world.captain.silver = self
+            .world
+            .captain
+            .silver
+            .saturating_add(outcome.silver_delta);
+        if !self.oracle_compat {
+            self.world.captain.standing.commercial_trust =
+                (self.world.captain.standing.commercial_trust + outcome.trust_delta).clamp(0, 100);
+            if let Some(region) = self
+                .world
+                .port(&outcome.destination_port_id)
+                .map(|port| port.region.clone())
+            {
+                if outcome.standing_delta != 0 {
+                    let cur = self.world.captain.standing.regional_of(&region);
+                    self.world
+                        .captain
+                        .standing
+                        .set_regional(&region, (cur + outcome.standing_delta).clamp(0, 100));
+                }
+                if outcome.heat_delta != 0 {
+                    let cur = self.world.captain.standing.heat_of(&region);
+                    self.world
+                        .captain
+                        .standing
+                        .set_heat(&region, (cur + outcome.heat_delta).clamp(0, 100));
+                }
+            }
+        }
         self.books.completed_contracts.push(CompletedContract {
             outcome_type: outcome.outcome_type.clone(),
             family: Some(outcome.family.clone()),
@@ -3526,7 +3702,7 @@ impl Session {
     /// New-game board only: save the session RNG, draw `Random(seed + 7919)`, restore.
     fn refresh_new_game_board(&mut self) {
         let seed = self.world.seed;
-        let saved = std::mem::replace(&mut self.rng, PyRandom::from_seed(seed + 7919));
+        let saved = std::mem::replace(&mut self.rng, PyRandom::from_seed(seed.wrapping_add(7919)));
         self.refresh_contract_board();
         self.rng = saved;
     }
@@ -3978,18 +4154,52 @@ fn credit_rank(tier: &str) -> i64 {
     }
 }
 
+fn captain_owns_weapon(captain: &crate::model::Captain, weapon_id: &str) -> bool {
+    captain.melee.as_ref().is_some_and(|w| w.id == weapon_id)
+        || captain.armor.as_ref().is_some_and(|a| a.id == weapon_id)
+        || captain.firearm.as_ref().is_some_and(|w| w.id == weapon_id)
+        || captain
+            .mechanical
+            .as_ref()
+            .is_some_and(|w| w.id == weapon_id)
+        || captain.throwing.iter().any(|w| w.id == weapon_id)
+        || captain.weapon_quality.iter().any(|(id, _)| id == weapon_id)
+}
+
+fn format_claim_notes(claims: &[crate::model::InsuranceClaim]) -> Vec<String> {
+    claims
+        .iter()
+        .filter_map(|claim| {
+            if claim.payout > 0 {
+                Some(format!(
+                    "Insurance claim paid: +{} silver ({})",
+                    claim.payout, claim.policy_id
+                ))
+            } else if !claim.denial_reason.is_empty() {
+                Some(format!(
+                    "Insurance claim denied ({}): {}",
+                    claim.policy_id, claim.denial_reason
+                ))
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 fn record_sea_consequences(
     world: &mut World,
     infra: &mut InfrastructureRecord,
     events: &[VoyageEvent],
     destination: &str,
-) {
+) -> Vec<String> {
     let region = world
         .port(&world.voyage.destination_id)
         .map(|port| port.region.clone())
         .unwrap_or_else(|| "Mediterranean".to_string());
     let port_id = world.voyage.origin_id.clone();
     let day = world.day;
+    let mut notes = Vec::new();
     for event in events {
         if event.event_type == voyage::EventType::Inspection {
             let seized = !event.cargo_lost.is_empty();
@@ -4002,8 +4212,15 @@ fn record_sea_consequences(
                 seized,
             );
         }
-        settle_event_insurance(world, infra, event, destination, day);
+        notes.extend(settle_event_insurance(
+            world,
+            infra,
+            event,
+            destination,
+            day,
+        ));
     }
+    notes
 }
 
 fn settle_event_insurance(
@@ -4012,10 +4229,11 @@ fn settle_event_insurance(
     event: &VoyageEvent,
     destination: &str,
     day: i64,
-) {
+) -> Vec<String> {
     let incident = event.event_type.as_str();
+    let mut notes = Vec::new();
     if event.hull_delta < 0 {
-        infrastructure::resolve_claim(
+        let claims = infrastructure::resolve_claim(
             infra,
             &mut world.captain,
             incident,
@@ -4025,6 +4243,7 @@ fn settle_event_insurance(
             "",
             destination,
         );
+        notes.extend(format_claim_notes(&claims));
     }
     for (good_id, qty) in &event.cargo_lost {
         let Some(good) = content::content().good(good_id) else {
@@ -4032,7 +4251,7 @@ fn settle_event_insurance(
         };
         let category = good.category.clone();
         let value = good.base_price * qty;
-        infrastructure::resolve_claim(
+        let claims = infrastructure::resolve_claim(
             infra,
             &mut world.captain,
             incident,
@@ -4042,7 +4261,9 @@ fn settle_event_insurance(
             "",
             destination,
         );
+        notes.extend(format_claim_notes(&claims));
     }
+    notes
 }
 
 fn reprice_all(world: &mut World) {
@@ -7416,5 +7637,146 @@ mod bank_tests {
         assert!(s.transfer_cargo("grain", max, "sloop", "sloop").is_err());
         assert!(s.transfer_cargo("grain", -1, "sloop", "sloop").is_err());
         assert!(s.capture(max).is_err());
+    }
+
+    #[test]
+    fn v0_3_2_gameplay_and_safety_fixes_hold() {
+        // 1. i128::MAX seed does not overflow in Session::new
+        let max_seed = Session::new("Ada", "merchant", i128::MAX, None);
+        assert!(max_seed.is_ok());
+
+        // 2. Unowned weapons cannot be maintained, upgraded, or field-repaired
+        let mut s = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let silver_before = s.world().captain.silver;
+        assert!(s.maintain_weapon("cutlass").is_err());
+        assert!(s.upgrade_weapon("cutlass").is_err());
+        assert!(s.field_repair_weapon("cutlass").is_err());
+        assert_eq!(s.world().captain.silver, silver_before);
+
+        // 3. Pending-duel freeze & pay_off_duel
+        s.world.pending_duel = Some(crate::model::PendingDuel {
+            captain_id: "scarlet_ana".into(),
+            captain_name: "Scarlet Ana".into(),
+            faction_id: "crimson_tide".into(),
+            personality: "balanced".into(),
+            strength: 5,
+            region: "Mediterranean".into(),
+        });
+        let day_before = s.world().day;
+        let turn = s.advance().unwrap();
+        assert!(turn.events.is_empty());
+        assert_eq!(s.world().day, day_before);
+        assert!(s.depart("al_manar").is_err());
+        let tribute = s.pay_off_duel().unwrap();
+        assert_eq!(tribute, 40);
+        assert!(s.world().pending_duel.is_none());
+
+        // 4. 3-stance duel win by HP lead against 11-HP pirate
+        let mut found_hp_lead_win = false;
+        for seed in 1..50 {
+            let mut rng_win = crate::pyrand::PyRandom::from_seed(seed);
+            let out = crate::duel::resolve_duel(
+                &[
+                    "parry".to_string(),
+                    "parry".to_string(),
+                    "parry".to_string(),
+                ],
+                "scarlet_ana",
+                "Scarlet Ana",
+                "aggressive",
+                5,
+                &mut rng_win,
+                0,
+            );
+            let opp_dmg: i64 = out.rounds.iter().map(|r| r.damage_to_opponent).sum();
+            let plr_dmg: i64 = out.rounds.iter().map(|r| r.damage_to_player).sum();
+            if (10 - plr_dmg) - (11 - opp_dmg) >= 3 {
+                assert!(out.player_won, "seed {seed} should win by HP lead");
+                found_hp_lead_win = true;
+                break;
+            }
+        }
+        assert!(found_hp_lead_win);
+
+        // 5. Curved multi-unit order pricing
+        let mut trade_s = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let (q1, _) = trade_s.quote_buy("grain", 1).unwrap();
+        let (q10, avg10) = trade_s.quote_buy("grain", 10).unwrap();
+        assert!(q10 >= q1 * 10, "10-unit buy walks the scarcity curve");
+        assert!(avg10 >= q1);
+        let receipt = trade_s.buy("grain", 10).unwrap();
+        assert_eq!(receipt.total_price, q10);
+
+        // 6. Contract destination-stock loophole closed
+        let mut contract_s = Session::new("Ada", "merchant", 1, Some("corsairs_rest")).unwrap();
+        contract_s.board.active.push(crate::model::ActiveContract {
+            offer_id: "test-offer".into(),
+            template_id: "shortage".into(),
+            family: "shortage".into(),
+            title: "Grain for Corsair's Rest".into(),
+            accepted_day: 1,
+            deadline_day: 20,
+            good_id: "grain".into(),
+            required_quantity: 5,
+            delivered_quantity: 0,
+            destination_port_id: "corsairs_rest".into(),
+            reward_silver: 100,
+            bonus_reward: 20,
+            source_region: None,
+            source_port: None,
+            inspection_modifier: 1.0,
+            status: "accepted".into(),
+        });
+        contract_s.buy("grain", 5).unwrap();
+        let sale = contract_s.sell("grain", 5).unwrap();
+        assert!(
+            sale.contracts.is_empty(),
+            "same-port cargo must not credit delivery contract"
+        );
+        assert_eq!(contract_s.board.active[0].delivered_quantity, 0);
+
+        // 7. Emergency loan cap & repayment
+        let mut loan_s = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        let borrowed = loan_s.take_credit("emergency", 200).unwrap();
+        assert_eq!(borrowed, 200);
+        // Second emergency loan while first is unpaid must fail
+        assert!(loan_s.take_credit("emergency", 50).is_err());
+        assert_eq!(loan_s.world().captain.deferred_fees[0].amount, 230);
+        loan_s.repay_credit(230).unwrap();
+        assert!(loan_s.world().captain.deferred_fees.is_empty());
+
+        // 8. Insurance 1-per-family cap & hull vs cargo claim separation
+        let mut ins_s = Session::new("Ada", "merchant", 1, Some("porto_novo")).unwrap();
+        ins_s.buy_insurance("hull_basic", "", "", "").unwrap();
+        assert!(
+            ins_s
+                .buy_insurance("hull_comprehensive", "", "", "")
+                .is_err(),
+            "cannot stack two hull policies"
+        );
+        ins_s.buy_insurance("cargo_standard", "", "", "").unwrap();
+        // Hull incident (empty cargo_category) must trigger hull policy only, not cargo policy
+        let hull_claims = crate::infrastructure::resolve_claim(
+            &mut ins_s.infra,
+            &mut ins_s.world.captain,
+            "storm",
+            100,
+            1,
+            "",
+            "",
+            "",
+        );
+        assert_eq!(hull_claims.len(), 1);
+        assert_eq!(ins_s.infra.policies[0].claims_made, 1);
+        assert_eq!(ins_s.infra.policies[1].claims_made, 0);
+
+        // 9. Atomic save creates .bak on overwrite
+        let dir = std::env::temp_dir().join(format!("portlight-v032-save-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let path = ins_s.save(&dir, "atomic").unwrap();
+        ins_s.save(&dir, "atomic").unwrap();
+        let bak = path.with_file_name("atomic.json.bak");
+        assert!(bak.exists(), "overwrite should preserve .bak");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

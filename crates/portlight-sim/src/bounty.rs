@@ -209,6 +209,9 @@ pub fn hunt_bounty(
     {
         return Err("No active bounty for this target".into());
     }
+    if times_defeated(&world.captain_memories, target_id) > 0 {
+        return Err("Target already defeated; claim the bounty first".into());
+    }
     encounter::create_encounter(world, rng, Some(target_id)).ok_or_else(|| "Unknown captain".into())
 }
 

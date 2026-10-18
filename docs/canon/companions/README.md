@@ -67,7 +67,7 @@ The cite is the record's id line; every field line is in the entity file. Rows a
 | Quartermaster | trade bonus 0.05 | Coin Mariam, Dockhand Pete | C:5530 | [roles/quartermaster.md](roles/quartermaster.md) |
 <!-- hand-maintained:end -->
 
-All seven effect fields are summed by `party_combat_bonus` and nothing calls it (companion.rs:193-209; the only call is a test, companion.rs:327). See DF-34.
+All seven effect fields are summed by `party_combat_bonus` and wired across voyage speed, route danger, inspection evasion, market pricing, injury healing, and personal combat (DF-34 resolved).
 
 ## 4. Hire flow
 
@@ -103,7 +103,7 @@ Triggers (hand-maintained from C:5704-5835; deltas by role in data order: Marine
 | nemesis_defeated | +8, +3, +2, +3, +3 | Session (DF-35 resolved) | C:5826 |
 <!-- hand-maintained:end -->
 
-Personality modifiers (added to the role delta, only where the role delta is not zero):
+Personality modifiers (added to the role delta, including when the role base delta is zero; DF-35 resolved):
 
 <!-- hand-maintained:begin -->
 | Personality | Deltas | Cite |
@@ -114,7 +114,7 @@ Personality modifiers (added to the role delta, only where the role delta is not
 | gentle | crew_killed -3, spared_enemy +3, took_all -3, combat_won -1 | C:5858 |
 <!-- hand-maintained:end -->
 
-What the two live triggers do to each companion today [inferred from companion.rs:124-176; no test was run]:
+What the duel triggers (`spared_enemy` and `took_all`) do to each companion (with personality deltas applied even on zero role base deltas; DF-35 resolved):
 
 <!-- hand-maintained:begin -->
 | Companion | Spared enemy | Took all | Take-all victories in a row from 70 to departure |
@@ -127,11 +127,11 @@ What the two live triggers do to each companion today [inferred from companion.r
 | Patches | +5 | -3 | 20 |
 | Shadow Kai | +0 | +3 | never |
 | Rosa the Fence | +0 | +3 | never |
-| Coin Mariam | +0 | +0 | never |
+| Coin Mariam | +2 | +0 | never |
 | Dockhand Pete | +0 | +2 | never |
 <!-- hand-maintained:end -->
 
-The departure path is real for navigators and surgeons only; marines, smugglers and quartermasters gain or hold morale on both live triggers. The test at session.rs:5396-5409 seats a surgeon at morale 0 and checks the departure line.
+With all 13 morale triggers active (DF-35 resolved), every companion role can gain or lose morale across combat, trade, contraband, injuries, and voyages. The test at session.rs:5396-5409 seats a surgeon at morale 0 and checks the departure line.
 
 ## 6. Canon conventions
 
@@ -145,7 +145,7 @@ The departure path is real for navigators and surgeons only; marines, smugglers 
 
 - Ports: [Al-Manar](../ports/al_manar.md), [Corsair's Rest](../ports/corsairs_rest.md), [Ironhaven](../ports/ironhaven.md), [Thornport](../ports/thornport.md), [Sun Harbor](../ports/sun_harbor.md), [Palm Cove](../ports/palm_cove.md), [Crosswind Isle](../ports/crosswind_isle.md), [Spice Narrows](../ports/spice_narrows.md), [Typhoon Anchorage](../ports/typhoon_anchorage.md)
 - Crew system: [officers/README.md](../officers/README.md); captains: [captains/README.md](../captains/README.md); factions: [factions/README.md](../factions/README.md)
-- Open data issues: [data-fixes.md](../data-fixes.md) (DF-34 to DF-37)
+- Data issues (resolved): [data-fixes.md](../data-fixes.md) (DF-34 to DF-37)
 
 ## F. Flags
 

@@ -813,6 +813,11 @@ pub fn depart(world: &mut World, destination_id: &str, defer_fee: bool) -> Resul
     if world.voyage.status == VoyageStatus::AtSea {
         return Err(SimError::AlreadyAtSea);
     }
+    if world.pending_duel.is_some() {
+        return Err(SimError::Sentence(
+            "Resolve the pending duel before departing.".into(),
+        ));
+    }
     let current = world.voyage.destination_id.clone();
     if current == destination_id {
         return Err(SimError::AlreadyAtThisPort);
@@ -880,6 +885,15 @@ pub fn advance_day(
     rng: &mut PyRandom,
     breach_count: i64,
 ) -> Result<Vec<VoyageEvent>, SimError> {
+    advance_day_ext(world, rng, breach_count, true)
+}
+
+pub fn advance_day_ext(
+    world: &mut World,
+    rng: &mut PyRandom,
+    breach_count: i64,
+    oracle_compat: bool,
+) -> Result<Vec<VoyageEvent>, SimError> {
     if world.voyage.status != VoyageStatus::AtSea || world.captain.ship.is_none() {
         return Ok(Vec::new());
     }
@@ -925,7 +939,13 @@ pub fn advance_day(
         true
     } else if wage_cost > 0 {
         let mut ev = VoyageEvent::new(EventType::Nothing, "Can't pay crew wages! Morale drops.");
-        ev.crew_delta = -1;
+        let can_desert = oracle_compat
+            || world
+                .captain
+                .ship
+                .as_ref()
+                .is_some_and(|s| s.crew > template_crew_min(s));
+        ev.crew_delta = if can_desert { -1 } else { 0 };
         events.push(ev);
         false
     } else {
@@ -934,7 +954,18 @@ pub fn advance_day(
     let provisions_ok = world.captain.provisions > 0;
     let days_elapsed = world.voyage.days_elapsed;
     if let Some(ship) = world.captain.ship.as_mut() {
-        ship.morale = tick_morale_at_sea(ship, wages_paid, provisions_ok, days_elapsed);
+        if oracle_compat || ship.crew > 0 {
+            ship.morale = tick_morale_at_sea(ship, wages_paid, provisions_ok, days_elapsed);
+        } else if !provisions_ok || !wages_paid || days_elapsed > 10 {
+            let mut delta = if wages_paid { 0 } else { -5 };
+            if !provisions_ok {
+                delta -= 3;
+            }
+            if days_elapsed > 10 {
+                delta -= 1;
+            }
+            ship.morale = (ship.morale + delta).clamp(0, 100);
+        }
     }
 
     let route_danger = world
@@ -1060,10 +1091,10 @@ pub fn advance_day(
         base_speed *= season_speed;
         py_trunc(base_speed * route_event.speed_modifier)
     };
-    world.voyage.progress += day_progress;
-    world.voyage.days_elapsed += 1;
-    world.day += 1;
-    world.captain.day += 1;
+    world.voyage.progress = world.voyage.progress.saturating_add(day_progress);
+    world.voyage.days_elapsed = world.voyage.days_elapsed.saturating_add(1);
+    world.day = world.day.saturating_add(1);
+    world.captain.day = world.captain.day.saturating_add(1);
 
     if world.voyage.days_elapsed > 0 && world.voyage.days_elapsed % 20 == 0 {
         if let Some(ship) = world.captain.ship.as_mut() {
@@ -1073,6 +1104,12 @@ pub fn advance_day(
             }
         }
         fleet::wear_convoy(&mut world.captain);
+    }
+    if !oracle_compat
+        && world.pending_duel.is_some()
+        && world.voyage.progress >= world.voyage.distance
+    {
+        world.voyage.progress = (world.voyage.distance - 1).max(0);
     }
     if world.voyage.progress >= world.voyage.distance {
         world.voyage.status = VoyageStatus::Arrived;

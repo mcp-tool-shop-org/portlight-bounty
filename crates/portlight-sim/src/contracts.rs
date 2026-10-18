@@ -273,6 +273,9 @@ pub fn check_delivery(
         if remaining <= 0 {
             continue;
         }
+        if !source_port.is_empty() && source_port == port_id {
+            continue;
+        }
         if let Some(region) = contract.source_region.as_deref() {
             if !region.is_empty() && source_region != region {
                 continue;

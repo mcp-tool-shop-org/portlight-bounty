@@ -27,29 +27,176 @@ pub struct TradeReceipt {
     pub stock_after: i64,
 }
 
+pub fn slot_buy_price(
+    slot: &crate::model::MarketSlot,
+    base_price: i64,
+    pricing: Option<&PricingDef>,
+    stock: i64,
+    cap_scarcity: bool,
+) -> i64 {
+    let mut scarcity = slot.stock_target as f64 / stock.max(1) as f64;
+    if cap_scarcity {
+        scarcity = scarcity.min(3.5);
+    }
+    let raw = base_price as f64 * scarcity / slot.local_affinity.max(0.1);
+    let buy_mult = pricing.map(|p| p.buy_price_mult).unwrap_or(1.0);
+    1.max(py_round(raw * (1.0 + slot.spread / 2.0) * buy_mult))
+}
+
+pub fn slot_sell_price(
+    slot: &crate::model::MarketSlot,
+    base_price: i64,
+    category: &str,
+    pricing: Option<&PricingDef>,
+    stock: i64,
+    flood_penalty: f64,
+    cap_scarcity: bool,
+) -> i64 {
+    let mut scarcity = slot.stock_target as f64 / stock.max(1) as f64;
+    if cap_scarcity {
+        scarcity = scarcity.min(3.5);
+    }
+    let raw = base_price as f64 * scarcity / slot.local_affinity.max(0.1);
+    let mut sell_mult = 1.0;
+    if let Some(pricing) = pricing {
+        sell_mult = pricing.sell_price_mult;
+        if pricing.luxury_sell_bonus > 0.0 && category == "luxury" {
+            sell_mult += pricing.luxury_sell_bonus;
+        }
+    }
+    let flood_mult = 1.0 - flood_penalty * 0.5;
+    1.max(py_round(
+        raw * (1.0 - slot.spread / 2.0) * flood_mult * sell_mult,
+    ))
+}
+
 pub fn recalculate_prices(port: &mut Port, pricing: Option<&PricingDef>) {
+    recalculate_prices_ext(port, pricing, false);
+}
+
+pub fn recalculate_prices_ext(port: &mut Port, pricing: Option<&PricingDef>, cap_scarcity: bool) {
     let catalog = content::content();
     for slot in &mut port.market {
         let Some(good) = catalog.good(&slot.good_id) else {
             continue;
         };
-        let scarcity = slot.stock_target as f64 / slot.stock_current.max(1) as f64;
-        let raw = good.base_price as f64 * scarcity / slot.local_affinity.max(0.1);
-        let mut buy_mult = 1.0;
-        let mut sell_mult = 1.0;
-        if let Some(pricing) = pricing {
-            buy_mult = pricing.buy_price_mult;
-            sell_mult = pricing.sell_price_mult;
-            if pricing.luxury_sell_bonus > 0.0 && good.category == "luxury" {
-                sell_mult += pricing.luxury_sell_bonus;
+        slot.buy_price = slot_buy_price(
+            slot,
+            good.base_price,
+            pricing,
+            slot.stock_current,
+            cap_scarcity,
+        );
+        slot.sell_price = slot_sell_price(
+            slot,
+            good.base_price,
+            &good.category,
+            pricing,
+            slot.stock_current,
+            slot.flood_penalty,
+            cap_scarcity,
+        );
+    }
+}
+
+/// Quote `(total_price, avg_unit_price)` for buying `qty` units of `good_id`
+/// walking the per-unit scarcity curve.
+pub fn quote_buy(
+    port: &Port,
+    good_id: &str,
+    qty: i64,
+    pricing: Option<&PricingDef>,
+) -> Option<(i64, i64)> {
+    if qty <= 0 {
+        return None;
+    }
+    let slot = port.slot(good_id)?;
+    let good = content::content().good(good_id)?;
+    let mut total = 0i64;
+    for u in 0..qty {
+        let s = (slot.stock_current - u).max(0);
+        let unit = if u == 0 && pricing.is_none() {
+            slot.buy_price
+        } else {
+            slot_buy_price(slot, good.base_price, pricing, s, true)
+        };
+        total = total.saturating_add(unit);
+    }
+    let avg = py_round(total as f64 / qty as f64).max(1);
+    Some((total, avg))
+}
+
+/// Quote `(total_price, avg_unit_price)` for selling `qty` units of `good_id`
+/// walking the per-unit stock and flood-penalty curve.
+pub fn quote_sell(
+    captain: &Captain,
+    port: &Port,
+    good_id: &str,
+    qty: i64,
+    pricing: Option<&PricingDef>,
+) -> Option<(i64, i64)> {
+    if qty <= 0 {
+        return None;
+    }
+    let slot = port.slot(good_id)?;
+    let good = content::content().good(good_id)?;
+    let mut cargo_copy = captain.cargo.clone();
+    let slices = consume_cargo_fifo(&mut cargo_copy, good_id, qty);
+    let target = slot.stock_target.max(1) as f64;
+    let mut sim_stock = slot.stock_current;
+    let mut sim_flood = slot.flood_penalty;
+    let mut total = 0i64;
+    if slices.is_empty() {
+        for u in 0..qty {
+            let unit = if u == 0 && pricing.is_none() {
+                slot.sell_price
+            } else {
+                slot_sell_price(
+                    slot,
+                    good.base_price,
+                    &good.category,
+                    pricing,
+                    sim_stock,
+                    sim_flood,
+                    true,
+                )
+            };
+            total = total.saturating_add(unit);
+            sim_stock = sim_stock.saturating_add(1);
+            sim_flood = 1.0_f64.min(sim_flood + 1.0 / target * 0.3);
+        }
+    } else {
+        for slice in &slices {
+            let same_port =
+                slice.acquired_port == port.id && (captain.day - slice.acquired_day) <= 3;
+            let cost_per_unit = if same_port && slice.quantity > 0 {
+                Some(slice.cost_basis as f64 / slice.quantity as f64)
+            } else {
+                None
+            };
+            for _ in 0..slice.quantity {
+                let mut unit_price = slot_sell_price(
+                    slot,
+                    good.base_price,
+                    &good.category,
+                    pricing,
+                    sim_stock,
+                    sim_flood,
+                    true,
+                );
+                if let Some(cpu) = cost_per_unit {
+                    if (unit_price as f64) > cpu {
+                        unit_price = 1.max(py_round(cpu));
+                    }
+                }
+                total = total.saturating_add(unit_price);
+                sim_stock = sim_stock.saturating_add(1);
+                sim_flood = 1.0_f64.min(sim_flood + 1.0 / target * 0.3);
             }
         }
-        slot.buy_price = 1.max(py_round(raw * (1.0 + slot.spread / 2.0) * buy_mult));
-        let flood_mult = 1.0 - slot.flood_penalty * 0.5;
-        slot.sell_price = 1.max(py_round(
-            raw * (1.0 - slot.spread / 2.0) * flood_mult * sell_mult,
-        ));
     }
+    let avg = py_round(total as f64 / qty as f64).max(1);
+    Some((total, avg))
 }
 
 /// Advance every port market `days` times.
@@ -195,8 +342,8 @@ pub fn consume_cargo_fifo(items: &mut Vec<CargoItem>, good_id: &str, qty: i64) -
 /// does not tick markets, provisions, wages, or reputation.
 pub fn work_docks(captain: &mut Captain, rng: &mut PyRandom) -> i64 {
     let earned = rng.randint(3, 5);
-    captain.silver += earned;
-    captain.day += 1;
+    captain.silver = captain.silver.saturating_add(earned);
+    captain.day = captain.day.saturating_add(1);
     earned
 }
 
@@ -218,6 +365,17 @@ pub fn execute_buy(
     good_id: &str,
     qty: i64,
     seq: u64,
+) -> Result<TradeReceipt, SimError> {
+    execute_buy_order(captain, port, good_id, qty, seq, None)
+}
+
+pub fn execute_buy_order(
+    captain: &mut Captain,
+    port: &mut Port,
+    good_id: &str,
+    qty: i64,
+    seq: u64,
+    curve_pricing: Option<&PricingDef>,
 ) -> Result<TradeReceipt, SimError> {
     let Some(slot_idx) = port.market.iter().position(|s| s.good_id == good_id) else {
         let catalog = content::content();
@@ -249,8 +407,17 @@ pub fn execute_buy(
             good_id: good_id.to_string(),
         });
     }
-    let unit = port.market[slot_idx].buy_price;
-    let total = unit.saturating_mul(qty);
+    let (total, unit) = if let Some(pricing) = curve_pricing {
+        if let Some((q_total, q_avg)) = quote_buy(port, good_id, qty, Some(pricing)) {
+            (q_total, q_avg)
+        } else {
+            let u = port.market[slot_idx].buy_price;
+            (u.saturating_mul(qty), u)
+        }
+    } else {
+        let u = port.market[slot_idx].buy_price;
+        (u.saturating_mul(qty), u)
+    };
     if total > captain.silver {
         return Err(SimError::NeedSilver {
             need: total,
@@ -280,8 +447,8 @@ pub fn execute_buy(
         .iter_mut()
         .find(|c| c.good_id == good_id && c.acquired_port == port_id)
     {
-        existing.cost_basis += total;
-        existing.quantity += qty;
+        existing.cost_basis = existing.cost_basis.saturating_add(total);
+        existing.quantity = existing.quantity.saturating_add(qty);
         existing.acquired_day = existing.acquired_day.max(captain.day);
     } else {
         captain.cargo.push(CargoItem {
@@ -316,6 +483,18 @@ pub fn execute_sell(
     qty: i64,
     seq: u64,
 ) -> Result<TradeReceipt, SimError> {
+    let (receipt, _) = execute_sell_order(captain, port, good_id, qty, seq, None)?;
+    Ok(receipt)
+}
+
+pub fn execute_sell_order(
+    captain: &mut Captain,
+    port: &mut Port,
+    good_id: &str,
+    qty: i64,
+    seq: u64,
+    curve_pricing: Option<&PricingDef>,
+) -> Result<(TradeReceipt, Vec<CargoItem>), SimError> {
     if let Some(good) = content::content().good(good_id) {
         if good.category == "contraband" && !port.has_feature("black_market") {
             return Err(SimError::Harbormaster {
@@ -343,21 +522,55 @@ pub fn execute_sell(
     let slices = consume_cargo_fifo(&mut captain.cargo, good_id, qty);
     let stock_before = port.market[slot_idx].stock_current;
     let sell_price = port.market[slot_idx].sell_price;
+    let target = port.market[slot_idx].stock_target.max(1) as f64;
     let mut total = 0i64;
-    for slice in &slices {
-        let mut unit_price = sell_price;
-        let same_port = slice.acquired_port == port.id && (captain.day - slice.acquired_day) <= 3;
-        if same_port && slice.quantity > 0 {
-            let cost_per_unit = slice.cost_basis as f64 / slice.quantity as f64;
-            if (unit_price as f64) > cost_per_unit {
-                unit_price = 1.max(py_round(cost_per_unit));
+    if let (Some(pricing), Some(good)) = (curve_pricing, content::content().good(good_id)) {
+        let mut sim_stock = port.market[slot_idx].stock_current;
+        let mut sim_flood = port.market[slot_idx].flood_penalty;
+        for slice in &slices {
+            let same_port =
+                slice.acquired_port == port.id && (captain.day - slice.acquired_day) <= 3;
+            let cost_per_unit = if same_port && slice.quantity > 0 {
+                Some(slice.cost_basis as f64 / slice.quantity as f64)
+            } else {
+                None
+            };
+            for _ in 0..slice.quantity {
+                let mut unit_price = slot_sell_price(
+                    &port.market[slot_idx],
+                    good.base_price,
+                    &good.category,
+                    Some(pricing),
+                    sim_stock,
+                    sim_flood,
+                    true,
+                );
+                if let Some(cpu) = cost_per_unit {
+                    if (unit_price as f64) > cpu {
+                        unit_price = 1.max(py_round(cpu));
+                    }
+                }
+                total = total.saturating_add(unit_price);
+                sim_stock = sim_stock.saturating_add(1);
+                sim_flood = 1.0_f64.min(sim_flood + 1.0 / target * 0.3);
             }
         }
-        total = total.saturating_add(unit_price.saturating_mul(slice.quantity));
+    } else {
+        for slice in &slices {
+            let mut unit_price = sell_price;
+            let same_port =
+                slice.acquired_port == port.id && (captain.day - slice.acquired_day) <= 3;
+            if same_port && slice.quantity > 0 {
+                let cost_per_unit = slice.cost_basis as f64 / slice.quantity as f64;
+                if (unit_price as f64) > cost_per_unit {
+                    unit_price = 1.max(py_round(cost_per_unit));
+                }
+            }
+            total = total.saturating_add(unit_price.saturating_mul(slice.quantity));
+        }
     }
-    captain.silver += total;
-    port.market[slot_idx].stock_current += qty;
-    let target = port.market[slot_idx].stock_target.max(1) as f64;
+    captain.silver = captain.silver.saturating_add(total);
+    port.market[slot_idx].stock_current = port.market[slot_idx].stock_current.saturating_add(qty);
     let flood_increase = qty as f64 / target * 0.3;
     port.market[slot_idx].flood_penalty =
         1.0_f64.min(port.market[slot_idx].flood_penalty + flood_increase);
@@ -367,19 +580,22 @@ pub fn execute_sell(
         0
     };
     let stock_after = port.market[slot_idx].stock_current;
-    Ok(TradeReceipt {
-        receipt_id: receipt_id(&captain.name, &port.id, good_id, captain.day, seq),
-        captain_name: captain.name.clone(),
-        port_id: port.id.clone(),
-        good_id: good_id.to_string(),
-        action: "sell",
-        quantity: qty,
-        unit_price,
-        total_price: total,
-        day: captain.day,
-        stock_before,
-        stock_after,
-    })
+    Ok((
+        TradeReceipt {
+            receipt_id: receipt_id(&captain.name, &port.id, good_id, captain.day, seq),
+            captain_name: captain.name.clone(),
+            port_id: port.id.clone(),
+            good_id: good_id.to_string(),
+            action: "sell",
+            quantity: qty,
+            unit_price,
+            total_price: total,
+            day: captain.day,
+            stock_before,
+            stock_after,
+        },
+        slices,
+    ))
 }
 
 /// Session's post-sell cost estimate. Looks at cargo *after* the sale.

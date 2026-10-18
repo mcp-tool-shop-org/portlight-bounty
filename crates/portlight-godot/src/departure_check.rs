@@ -148,6 +148,9 @@ pub(crate) fn gate_allows_panel(
 /// Facts for a Sail press toward `dest`. `None` on any gate case.
 pub(crate) fn departure_facts(session: &Session, dest: &str) -> Option<DepartureFacts> {
     let world = session.world();
+    if world.pending_duel.is_some() {
+        return None;
+    }
     let docked = world.voyage.status == VoyageStatus::InPort;
     let flagship = world.captain.ship.as_ref()?;
     let lanes = session.sail_lanes();
@@ -371,14 +374,16 @@ pub(crate) fn build_departure_check(facts: &DepartureFacts) -> Option<DepartureD
             days_text(e)
         );
         let short = facts.provisions < e;
-        if short {
+        if facts.provisions <= 0 {
+            text.push_str(" - crew will starve");
+        } else if short {
             text.push_str(" - may run out");
         }
         ranked.push(Ranked {
             line: DepartureLine {
                 text,
                 kind: DepartureKind::Stores,
-                warn: short,
+                warn: short || facts.provisions <= 0,
             },
             deadline_day: 0,
             title: String::new(),

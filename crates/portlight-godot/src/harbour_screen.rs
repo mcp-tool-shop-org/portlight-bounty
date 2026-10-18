@@ -486,6 +486,12 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         });
     }
 
+    let fee_debt: i64 = world
+        .captain
+        .deferred_fees
+        .iter()
+        .map(|f| f.amount.max(0))
+        .sum();
     let credit = infra.credit.as_ref().filter(|credit| {
         credit.active
             || credit.outstanding != 0
@@ -505,8 +511,13 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
     } else {
         credit_lines.push("No credit line.".to_string());
     }
+    if fee_debt > 0 {
+        credit_lines.push(format!(
+            "Deferred fees / emergency loan owed: {fee_debt} silver."
+        ));
+    }
     credit_lines.push(
-        "Emergency loans are capped at 200 silver and add a deferred fee of about 15%.".to_string(),
+        "Emergency loans are capped at 200 silver (max 1 active) and add a deferred fee of about 15%.".to_string(),
     );
 
     let active_tier = infra
@@ -562,13 +573,15 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
         format!("Unknown credit tier: {draw_tier}")
     };
 
-    let repay_all = infra
+    let credit_debt = infra
         .credit
         .as_ref()
         .filter(|credit| credit.active)
         .map(|credit| credit.outstanding + credit.interest_accrued)
         .unwrap_or(0);
-    let repay_block = if infra.credit.as_ref().is_none_or(|credit| !credit.active) {
+    let repay_all = credit_debt + fee_debt;
+    let repay_block = if infra.credit.as_ref().is_none_or(|credit| !credit.active) && fee_debt <= 0
+    {
         "No credit line".to_string()
     } else if repay_all <= 0 {
         "No outstanding debt".to_string()
@@ -654,6 +667,13 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
                         && policy.target_id == contract.offer_id
                 }) {
                     block = format!("Already have active {name}");
+                } else if infra.policies.iter().any(|policy| {
+                    policy.active
+                        && catalog
+                            .policy(&policy.spec_id)
+                            .is_some_and(|p| p.family == spec.family)
+                }) {
+                    block = format!("Already have active {family} policy");
                 }
                 let title_name = ascii_copy(&contract.title);
                 insurance_offers.push(ActionRow {
@@ -688,6 +708,15 @@ pub(crate) fn harbour_model(session: &Session) -> Option<HarbourModel> {
             .any(|policy| policy.active && policy.spec_id == spec.id && policy.target_id.is_empty())
         {
             block = format!("Already have active {name}");
+        } else if !session.is_oracle_compat()
+            && infra.policies.iter().any(|policy| {
+                policy.active
+                    && catalog
+                        .policy(&policy.spec_id)
+                        .is_some_and(|p| p.family == spec.family)
+            })
+        {
+            block = format!("Already have active {family} policy");
         }
         insurance_offers.push(ActionRow {
             title: format!("{family}: {name}"),
@@ -1134,6 +1163,7 @@ pub(crate) fn bank_stage_session(accounts: &[(&str, i64)]) -> Result<Session, St
 /// guarantee's claim.
 pub(crate) fn insurance_stage_session() -> Result<Session, String> {
     let mut session = Session::new("Ada", "merchant", 1, None).map_err(|err| err.to_string())?;
+    session.set_oracle_compat(true);
     let here = session.world().voyage.destination_id.clone();
     session
         .buy_insurance("hull_basic", "", &here, "corsairs_rest")

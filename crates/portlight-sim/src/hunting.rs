@@ -155,7 +155,7 @@ pub fn hunt(
             silver = 0;
         }
     }
-    captain.day += 1;
+    captain.day = captain.day.saturating_add(1);
     HuntResult {
         success,
         provisions_gained: provisions,

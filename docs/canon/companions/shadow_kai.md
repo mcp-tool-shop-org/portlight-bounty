@@ -76,5 +76,5 @@ Quotes are as in content.json; only an em dash is folded to ' - ' and tagged.
 
 - DF-34 (resolved: role effects, cohesion, party summary, and dismiss wired), DF-35 (resolved: all 13 morale triggers and loyalty/warning lines wired), DF-36 (resolved: catalog name in recruit notice): see ../data-fixes.md.
 - Given-name overlap with Elder Kai (C:10891) and Kai the Shaper (C:5436): DF-37, resolved in lore.
-- warning_line uses 'heat' (C:5652), a term canon does not use as a player word (Option A); the line is unreachable today (DF-35).
+- warning_line uses 'heat' (C:5652), a term canon does not use as a player word (Option A); the line reaches the Crew desk when morale <= 29 (DF-35 resolved).
 - Crew role and companion role share a name but are separate systems: resolved in lore (../data-fixes.md).

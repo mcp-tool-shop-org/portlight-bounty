@@ -10,7 +10,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 | Name | The Bounty Hunter | C:2626 |
 | Title | Licensed Hunter | C:2627 |
 | Home port | [Crosswind Isle](../ports/crosswind_isle.md) | C:2629 |
-| Home region (data) | North Atlantic | C:2628 |
+| Home region (data) | East Indies | C:2628 |
 | Mentor | Dock Master Tao, Dock Master, at [Crosswind Isle](../ports/crosswind_isle.md) | C:2630; C:10220-10222 |
 | Starting silver | 425 | C:2631 |
 | Starting ship | Swift Cutter (cutter) | C:2632; C:148 |
@@ -24,7 +24,7 @@ Cites `C:n` are crates/portlight-sim/data/content.json line n. Legend: [cite] gr
 
 ## 1. The archetype (cited)
 
-A licensed hunter working out of Crosswind Isle under Dock Master Tao (C:2627-2630). Holds the title 'Licensed Hunter' alone (DF-26, resolved) and has a home-region mismatch (DF-3).
+A licensed hunter working out of Crosswind Isle under Dock Master Tao (C:2627-2630). Holds the title 'Licensed Hunter' alone (DF-26, resolved) and has its home region aligned to East Indies (DF-3, resolved).
 
 ## 2. Background (all [invented])
 
@@ -39,5 +39,5 @@ Archetypes are roles, not fixed people: the player names the captain (custom_cap
 
 ## 4. Flags
 
-- Home region North Atlantic against home port Crosswind Isle (East Indies) (DF-3).
+- Home region aligned to East Indies to match home port Crosswind Isle (DF-3, resolved).
 - Title 'Licensed Hunter' (C:2627); no longer shared (DF-26, resolved).

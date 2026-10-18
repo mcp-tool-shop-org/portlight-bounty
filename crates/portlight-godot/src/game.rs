@@ -170,6 +170,7 @@ pub(crate) enum Action {
     ClearStances,
     Duel,
     AutoResolve,
+    PayOffDuel,
     Sail(String),
     DepartureSail,
     DepartureStay,
@@ -655,6 +656,7 @@ struct PortlightGame {
     /// does not stop the boarding script.
     capture_failed: bool,
     save_button: Option<Gd<Button>>,
+    next_day_button: Option<Gd<Button>>,
     newgame_nodes: Option<NewgameNodes>,
     newgame_page: NewgamePage,
     newgame_built: Option<NewgamePage>,
@@ -892,6 +894,7 @@ impl IControl for PortlightGame {
             galleon_frame: false,
             capture_failed: false,
             save_button: None,
+            next_day_button: None,
             newgame_nodes: None,
             newgame_page: NewgamePage::Hidden,
             newgame_built: None,
@@ -1028,7 +1031,11 @@ impl IControl for PortlightGame {
             .ok()
             .filter(|path| !path.is_empty())
             .map(|path| resolve_repo_path(&path));
-        self.save_base = std::path::PathBuf::from(resolve_repo_path("."));
+        self.save_base = std::env::var("PORTLIGHT_SAVE_ROOT")
+            .ok()
+            .filter(|path| !path.trim().is_empty())
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| std::path::PathBuf::from(resolve_repo_path(".")));
         self.build_ui();
         self.check_layer_order();
         self.check_scrim_above_chrome();
@@ -1669,7 +1676,9 @@ impl PortlightGame {
 
         let mut buttons = HBoxContainer::new_alloc();
         buttons.add_child(&action_button("New game", game_id, Action::NewGame));
-        buttons.add_child(&action_button("Next day", game_id, Action::NextDay));
+        let next_day = action_button("Next day", game_id, Action::NextDay);
+        buttons.add_child(&next_day);
+        self.next_day_button = Some(next_day);
         // Same control as New game and Next day. The docked port row is already
         // full, and it is hidden at sea, so Save stays on this row.
         let save = action_button("Save", game_id, Action::SaveGame);
@@ -1757,6 +1766,7 @@ impl PortlightGame {
         let duel = action_button("Duel", game_id, Action::Duel);
         resolve_buttons.add_child(&duel);
         resolve_buttons.add_child(&action_button("Auto-resolve", game_id, Action::AutoResolve));
+        resolve_buttons.add_child(&action_button("Pay off", game_id, Action::PayOffDuel));
         encounter.add_child(&resolve_buttons);
         column.add_child(&encounter);
         self.encounter_box = Some(encounter);
@@ -2174,7 +2184,18 @@ impl PortlightGame {
                 self.newgame_built = None;
                 self.refresh();
             }
-            Ok(None) => self.note_newgame(format!("Could not load slot '{slot}'.")),
+            Ok(None) => {
+                let exists = self
+                    .save_base
+                    .join("saves")
+                    .join(portlight_sim::save::save_filename(slot))
+                    .exists();
+                if exists {
+                    self.note_newgame(format!("Save slot '{slot}' is damaged or unreadable."));
+                } else {
+                    self.note_newgame(format!("Could not load slot '{slot}'."));
+                }
+            }
             Err(err) => self.note_newgame(err.to_string()),
         }
     }
@@ -3831,6 +3852,13 @@ impl PortlightGame {
             if self.docked_id() == Some("al_manar") {
                 break;
             }
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                self.perform(Action::AutoResolve);
+            }
             self.perform(Action::NextDay);
         }
         if self.docked_id() != Some("al_manar") {
@@ -4208,10 +4236,6 @@ impl PortlightGame {
             return;
         }
         let day_before = self.session.as_ref().map(|session| session.world().day);
-        let standing_before = self
-            .session
-            .as_ref()
-            .map(|session| format!("{:?}", session.world().captain.standing));
         if auto {
             self.auto_resolve();
         } else {
@@ -4227,16 +4251,6 @@ impl PortlightGame {
             self.push_log("Duel: the challenge is still pending.".to_string());
             self.refresh();
             return;
-        }
-        let standing_after = self
-            .session
-            .as_ref()
-            .map(|session| format!("{:?}", session.world().captain.standing));
-        if standing_before != standing_after {
-            self.smoke_ok = false;
-            self.push_log(
-                "Duel: standing changed. standing_delta is information only.".to_string(),
-            );
         }
         self.next_day();
         let day_after = self.session.as_ref().map(|session| session.world().day);
@@ -4346,6 +4360,7 @@ impl PortlightGame {
             }
             Action::Duel => self.fight_duel(),
             Action::AutoResolve => self.auto_resolve(),
+            Action::PayOffDuel => self.pay_off_duel(),
             Action::ToggleMarket => {
                 if self.docked_id().is_some() {
                     let opening = !self.market_open;
@@ -4828,7 +4843,15 @@ impl PortlightGame {
                 .map(|def| def.weight_per_unit)
                 .unwrap_or(1.0),
         };
-        market::clamp_buy(self.trade_qty, &room)
+        let mut clamped = market::clamp_buy(self.trade_qty, &room);
+        while clamped > 1
+            && session
+                .quote_buy(good, clamped)
+                .is_some_and(|(total, _)| total > world.captain.silver)
+        {
+            clamped -= 1;
+        }
+        clamped
     }
 
     /// AV.1: a new paid notice sits at the top of the Market pane, so the pane
@@ -6644,8 +6667,36 @@ impl PortlightGame {
         self.finish_duel_result(result);
     }
 
-    /// `standing_delta` is reported and not applied. `Session` already leaves
-    /// reputation alone; the view does not write it either.
+    fn pay_off_duel(&mut self) {
+        let result = {
+            let Some(session) = self.session.as_mut() else {
+                return;
+            };
+            let opponent = session
+                .world()
+                .pending_duel
+                .as_ref()
+                .map(|duel| duel.captain_name.clone())
+                .unwrap_or_else(|| "the challenger".to_string());
+            session
+                .pay_off_duel()
+                .map(|tribute| format!("Paid off {opponent} for {tribute} silver."))
+        };
+        match result {
+            Ok(line) => {
+                self.stances.clear();
+                self.push_log(line);
+            }
+            Err(err) => {
+                if self.smoke {
+                    self.smoke_ok = false;
+                }
+                self.push_log(err.to_string());
+            }
+        }
+        self.refresh();
+    }
+
     fn finish_duel_result(&mut self, result: Result<DuelOutcome, portlight_sim::SimError>) {
         match result {
             Ok(outcome) => {
@@ -6654,6 +6705,9 @@ impl PortlightGame {
                 }
                 self.stances.clear();
                 self.push_log(duel_outcome_line(&outcome));
+                for line in crate::logic::duel_exchange_lines(&outcome) {
+                    self.push_log(line);
+                }
             }
             Err(err) => {
                 if self.smoke {
@@ -6858,6 +6912,13 @@ impl PortlightGame {
                 }
                 self.close_day_report();
                 self.encounter = None;
+                if self
+                    .session
+                    .as_ref()
+                    .is_some_and(|session| session.world().pending_duel.is_some())
+                {
+                    self.auto_resolve();
+                }
                 self.next_day();
             }
             self.close_day_report();
@@ -7180,6 +7241,13 @@ impl PortlightGame {
             if self.encounter.is_some() {
                 self.encounter = None;
             }
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                self.auto_resolve();
+            }
             self.next_day();
         }
         if self.docked_id() != Some("corsairs_rest") {
@@ -7476,6 +7544,14 @@ impl PortlightGame {
         }
         if let Some(button) = self.duel_button.as_mut() {
             button.set_disabled(!can_duel);
+        }
+        if let Some(button) = self.next_day_button.as_mut() {
+            button.set_disabled(self.session.is_none() || pending);
+            button.set_text(if pending {
+                "Resolve the duel first"
+            } else {
+                "Next day"
+            });
         }
         if let Some(button) = self.save_button.as_mut() {
             button.set_disabled(self.session.is_none());
@@ -8122,6 +8198,13 @@ impl PortlightGame {
             }
             self.close_day_report();
             self.encounter = None;
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                self.auto_resolve();
+            }
             self.next_day();
         }
         if self.docked_id() != Some("corsairs_rest") {
@@ -10756,6 +10839,13 @@ impl PortlightGame {
             if self.encounter.is_some() {
                 self.encounter = None;
             }
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                self.auto_resolve();
+            }
             self.next_day();
             if self.docked_id() == Some("al_manar") {
                 arrived = true;
@@ -11740,6 +11830,11 @@ impl PortlightGame {
     /// then finishes the settle.
     fn run_trade_settle_to(&mut self, pause: bool) -> bool {
         self.start_game();
+        if pause {
+            if let Some(session) = self.session.as_mut() {
+                session.set_oracle_compat(true);
+            }
+        }
         if self.trade_qty != 1 {
             self.fail_trade("Trade smoke: a new game did not start at Qty 1.");
         }
@@ -11800,6 +11895,13 @@ impl PortlightGame {
             self.close_day_report();
             if self.encounter.is_some() {
                 self.encounter = None;
+            }
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                self.auto_resolve();
             }
             self.next_day();
         }
@@ -13178,6 +13280,13 @@ impl PortlightGame {
             }
             self.close_day_report();
             self.encounter = None;
+            if self
+                .session
+                .as_ref()
+                .is_some_and(|session| session.world().pending_duel.is_some())
+            {
+                self.auto_resolve();
+            }
             self.next_day();
         }
         self.close_day_report();
@@ -14761,10 +14870,32 @@ fn fight_result_line(step: &EncounterStep, silver_delta: i64) -> Option<String> 
 
 fn ledger_line(session: &Session) -> String {
     let books = session.books();
-    format!(
-        "Ledger: {} trades, net {} silver",
-        books.trade_count, books.net_profit
-    )
+    let credit_debt = session
+        .infrastructure()
+        .credit
+        .as_ref()
+        .filter(|c| c.active)
+        .map(|c| c.outstanding + c.interest_accrued)
+        .unwrap_or(0);
+    let fee_debt: i64 = session
+        .world()
+        .captain
+        .deferred_fees
+        .iter()
+        .map(|f| f.amount.max(0))
+        .sum();
+    let debt = credit_debt + fee_debt;
+    if debt > 0 {
+        format!(
+            "Ledger: {} trades, net {} silver, debt {} silver",
+            books.trade_count, books.net_profit, debt
+        )
+    } else {
+        format!(
+            "Ledger: {} trades, net {} silver",
+            books.trade_count, books.net_profit
+        )
+    }
 }
 
 fn victory_line(session: &Session) -> String {

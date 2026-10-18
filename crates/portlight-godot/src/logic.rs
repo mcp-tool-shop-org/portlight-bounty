@@ -2751,15 +2751,13 @@ pub(crate) fn duel_prompt(duel: &portlight_sim::model::PendingDuel) -> String {
     .collect::<Vec<_>>()
     .join(" - ");
     format!(
-        "Duel: {}.\nFaction {facts}.\nNext day ticks reputation and does not move the day. Pick stances, or auto-resolve.",
+        "Duel: {}.\nFaction {facts}.\nNext day is blocked until the duel is resolved. Pick stances, auto-resolve, or pay off.",
         duel.captain_name,
     )
 }
 
 /// R11. One log line for a finished duel, zero terms dropped (R4).
-/// `result` is `Won`, `Drew` or `Lost`. `standing` is not applied by
-/// `Session::duel` / `Session::resolve_pending_duel`, so it is omitted from
-/// player copy rather than printed with a debug disclaimer.
+/// `result` is `Won`, `Drew` or `Lost`.
 pub(crate) fn duel_result_line(
     result: &str,
     opponent: &str,
@@ -2775,6 +2773,25 @@ pub(crate) fn duel_result_line(
         line.push_str(&format!(" Silver {silver:+}."));
     }
     line
+}
+
+/// Round-by-round exchanges and underworld standing delta for a finished duel.
+pub(crate) fn duel_exchange_lines(outcome: &portlight_sim::duel::DuelOutcome) -> Vec<String> {
+    let mut lines = Vec::new();
+    for (idx, round) in outcome.rounds.iter().enumerate() {
+        lines.push(format!(
+            "Round {}: {} vs {} - target -{} HP, you -{} HP.",
+            idx + 1,
+            round.player_stance,
+            round.opponent_stance,
+            round.damage_to_opponent,
+            round.damage_to_player,
+        ));
+    }
+    if outcome.standing_delta != 0 {
+        lines.push(format!("Underworld standing {:+}.", outcome.standing_delta));
+    }
+    lines
 }
 
 /// R12. Drops sim rich-text tags (`[bold]`, `[/dim]`, `[bold yellow]`, `[/]`)

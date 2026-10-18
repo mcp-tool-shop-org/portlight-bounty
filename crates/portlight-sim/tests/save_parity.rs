@@ -113,6 +113,7 @@ fn snap(session: &Session) -> Value {
 
 fn played() -> Session {
     let mut session = Session::new("Ada", "merchant", 42, None).unwrap();
+    session.set_oracle_compat(true);
     session.buy("grain", 8).unwrap();
     session.sell("grain", 3).unwrap();
     session.hire_crew(1, "navigator").unwrap();

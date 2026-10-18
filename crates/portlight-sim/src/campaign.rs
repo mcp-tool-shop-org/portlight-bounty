@@ -358,9 +358,19 @@ fn infra_regions(world: &World, books: &HouseBooks) -> Vec<String> {
     regions
 }
 
-/// Carried plus banked silver: banking never costs progress.
+/// Carried plus banked silver minus unpaid emergency loans.
 fn wealth(world: &World, books: &HouseBooks) -> i64 {
-    world.captain.silver + books.banked
+    let fee_debt: i64 = world
+        .captain
+        .deferred_fees
+        .iter()
+        .filter(|f| f.fee_type == "emergency_loan")
+        .fold(0i64, |acc, f| acc.saturating_add(f.amount.max(0)));
+    world
+        .captain
+        .silver
+        .saturating_add(books.banked)
+        .saturating_sub(fee_debt)
 }
 
 fn scored(strength: f64) -> f64 {
@@ -417,7 +427,10 @@ fn evaluate_lawful(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         String::new()
     };
     let silver_action = if wealth(world, books) < 2000 {
-        format!("Earn {} more silver", 2000 - wealth(world, books))
+        format!(
+            "Earn {} more silver",
+            2000i64.saturating_sub(wealth(world, books))
+        )
     } else {
         String::new()
     };
@@ -500,13 +513,23 @@ fn evaluate_shadow(world: &World, books: &HouseBooks) -> VictoryPathStatus {
     let trades = books.trade_count;
     let discreet = discreet_completions(books);
     let seizures = seizure_count(world);
+    let fee_debt: i64 = world
+        .captain
+        .deferred_fees
+        .iter()
+        .filter(|f| f.fee_type == "emergency_loan")
+        .fold(0i64, |acc, f| acc.saturating_add(f.amount.max(0)));
+    let net_silver = world.captain.silver.saturating_sub(fee_debt);
     let discreet_action = if discreet < 2 {
         format!("Complete {} more discreet luxury deliveries", 2 - discreet)
     } else {
         String::new()
     };
-    let silver_action = if world.captain.silver < 1500 {
-        format!("Accumulate {} more silver", 1500 - world.captain.silver)
+    let silver_action = if net_silver < 1500 {
+        format!(
+            "Accumulate {} more silver",
+            1500i64.saturating_sub(net_silver)
+        )
     } else {
         String::new()
     };
@@ -543,8 +566,8 @@ fn evaluate_shadow(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         ),
         req(
             "1500+ silver on hand",
-            world.captain.silver >= 1500,
-            format!("Silver: {}", world.captain.silver),
+            net_silver >= 1500,
+            format!("Silver: {net_silver}"),
             silver_action,
             false,
         ),
@@ -561,7 +584,7 @@ fn evaluate_shadow(world: &World, books: &HouseBooks) -> VictoryPathStatus {
     if profit >= 2000 && max_h >= 10 {
         strength += 10.0;
     }
-    if seizures > 0 && world.captain.silver >= 200 {
+    if seizures > 0 && net_silver >= 200 {
         strength += 8.0;
     }
     if max_h < 3 {
@@ -596,7 +619,10 @@ fn evaluate_oceanic(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         String::new()
     };
     let silver_action = if wealth(world, books) < 2000 {
-        format!("Earn {} more silver", 2000 - wealth(world, books))
+        format!(
+            "Earn {} more silver",
+            2000i64.saturating_sub(wealth(world, books))
+        )
     } else {
         String::new()
     };
@@ -700,7 +726,10 @@ fn evaluate_empire(world: &World, books: &HouseBooks) -> VictoryPathStatus {
         String::new()
     };
     let silver_action = if wealth(world, books) < 3000 {
-        format!("Earn {} more silver", 3000 - wealth(world, books))
+        format!(
+            "Earn {} more silver",
+            3000i64.saturating_sub(wealth(world, books))
+        )
     } else {
         String::new()
     };

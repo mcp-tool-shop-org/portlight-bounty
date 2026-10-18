@@ -95,6 +95,6 @@ Words, not art direction. Character plates stay held; canon sets no face, age, g
 
 ## 8. Flags
 
-- DF-3 region mismatch
+- DF-3 resolved: home region aligned to East Indies (`crosswind_isle`)
 - DF-26 resolved: the Privateer was retitled; 'Licensed Hunter' is now the Bounty Hunter's alone
 - DF-33: shares home port and mentor with the Dockhand

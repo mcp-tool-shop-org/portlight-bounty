@@ -267,13 +267,33 @@ pub(crate) fn write_save(
 ) -> Result<PathBuf, SimError> {
     let dir = base.join(SAVE_DIR);
     fs::create_dir_all(&dir).map_err(io_err)?;
-    let path = dir.join(save_filename(slot));
+    let filename = save_filename(slot);
+    let path = dir.join(&filename);
+    let tmp_path = dir.join(format!(".{filename}.tmp"));
+    let bak_path = dir.join(format!("{filename}.bak"));
     let value = encode(
         world, receipts, run_id, books, board, live, infra, narrative,
     );
     let text =
         serde_json::to_string_pretty(&value).map_err(|err| SimError::SaveIo(err.to_string()))?;
-    fs::write(&path, text).map_err(io_err)?;
+    let write_res = (|| -> std::io::Result<()> {
+        use std::io::Write;
+        let mut file = fs::File::create(&tmp_path)?;
+        file.write_all(text.as_bytes())?;
+        file.sync_all()?;
+        Ok(())
+    })();
+    if let Err(err) = write_res {
+        let _ = fs::remove_file(&tmp_path);
+        return Err(io_err(err));
+    }
+    if path.exists() {
+        let _ = fs::copy(&path, &bak_path);
+    }
+    if let Err(err) = fs::rename(&tmp_path, &path) {
+        let _ = fs::remove_file(&tmp_path);
+        return Err(io_err(err));
+    }
     Ok(path)
 }
 
@@ -726,7 +746,13 @@ fn decode(data: &Value) -> Option<LoadedGame> {
     }
     refill_lane_names(&mut routes);
     let voyage = voyage_from(truthy(data.get("voyage"))?)?;
-    let day = json_i64(data.get("day")?)?;
+    if !ports.is_empty()
+        && (!ports.iter().any(|p| p.id == voyage.origin_id)
+            || !ports.iter().any(|p| p.id == voyage.destination_id))
+    {
+        return None;
+    }
+    let day = json_i64(data.get("day")?)?.clamp(1, 1_000_000);
     let seed = match data.get("seed") {
         None => 0,
         Some(value) => json_i128(value)?,
@@ -736,10 +762,10 @@ fn decode(data: &Value) -> Option<LoadedGame> {
         None => PirateLoaded::default(),
     };
     let mut captain = captain;
-    captain.duels_won = pirate.duels_won;
-    captain.duels_lost = pirate.duels_lost;
-    captain.naval_victories = pirate.naval_victories;
-    captain.naval_defeats = pirate.naval_defeats;
+    captain.duels_won = pirate.duels_won.clamp(0, 1_000_000);
+    captain.duels_lost = pirate.duels_lost.clamp(0, 1_000_000);
+    captain.naval_victories = pirate.naval_victories.clamp(0, 1_000_000);
+    captain.naval_defeats = pirate.naval_defeats.clamp(0, 1_000_000);
     captain.encounters = pirate.encounters;
     let pending_duel = pirate.pending_duel;
     let ledger = match truthy(data.get("ledger")) {
@@ -911,17 +937,19 @@ fn captain_from(value: &Value) -> Option<Captain> {
     Some(Captain {
         name: req_str(map, "name")?,
         captain_type: opt_str(map, "captain_type").unwrap_or_else(|| "merchant".to_string()),
-        silver: req_i64(map, "silver")?,
-        reputation: opt_i64(map, "reputation").unwrap_or(0),
+        silver: req_i64(map, "silver")?.clamp(0, 1_000_000_000_000),
+        reputation: opt_i64(map, "reputation")
+            .unwrap_or(0)
+            .clamp(-1_000_000, 1_000_000),
         ship: match truthy(map.get("ship")) {
             Some(ship) => Some(ship_from(ship)?),
             None => None,
         },
         cargo: cargo_list(map.get("cargo"))?,
-        provisions: req_i64(map, "provisions")?,
-        day: req_i64(map, "day")?,
+        provisions: req_i64(map, "provisions")?.clamp(0, 1_000_000),
+        day: req_i64(map, "day")?.clamp(1, 1_000_000),
         standing,
-        wanted_level: opt_i64(map, "wanted_level").unwrap_or(0),
+        wanted_level: opt_i64(map, "wanted_level").unwrap_or(0).clamp(0, 3),
         active_bounties: string_list(map.get("active_bounties"))?,
         claimed_bounties: string_list(map.get("claimed_bounties"))?,
         deferred_fees: fee_list(map.get("deferred_fees"))?,
@@ -1467,21 +1495,40 @@ fn ship_from(value: &Value) -> Option<Ship> {
     let cannons = match map.get("cannons").and_then(json_i64) {
         Some(cannons) if map.contains_key("cannons") => cannons,
         _ => template.map(|ship| ship.cannons).unwrap_or(0),
-    };
+    }
+    .clamp(0, 10_000);
     let maneuver = match map.get("maneuver").and_then(json_f64) {
         Some(maneuver) if map.contains_key("maneuver") => maneuver,
         _ => template.map(|ship| ship.maneuver).unwrap_or(0.5),
     };
-    let crew = req_i64(map, "crew")?;
+    let maneuver = if maneuver.is_finite() {
+        maneuver.clamp(0.0, 1.0)
+    } else {
+        0.5
+    };
+    let hull_max = req_i64(map, "hull_max")?.clamp(1, 100_000);
+    let hull = req_i64(map, "hull")?.clamp(0, hull_max);
+    let crew_max = req_i64(map, "crew_max")?.clamp(1, 100_000);
+    let crew = req_i64(map, "crew")?.clamp(0, crew_max);
+    let speed = req_f64(map, "speed")?;
+    let speed = if speed.is_finite() {
+        speed.clamp(0.5, 100.0)
+    } else {
+        1.0
+    };
     let (sailors, gunners, navigators, surgeons, marines, quartermasters) = match map.get("roster")
     {
         Some(Value::Object(roster)) => (
-            opt_i64(roster, "sailors").unwrap_or(0),
-            opt_i64(roster, "gunners").unwrap_or(0),
-            opt_i64(roster, "navigators").unwrap_or(0),
-            opt_i64(roster, "surgeons").unwrap_or(0),
-            opt_i64(roster, "marines").unwrap_or(0),
-            opt_i64(roster, "quartermasters").unwrap_or(0),
+            opt_i64(roster, "sailors").unwrap_or(0).clamp(0, crew_max),
+            opt_i64(roster, "gunners").unwrap_or(0).clamp(0, crew_max),
+            opt_i64(roster, "navigators")
+                .unwrap_or(0)
+                .clamp(0, crew_max),
+            opt_i64(roster, "surgeons").unwrap_or(0).clamp(0, crew_max),
+            opt_i64(roster, "marines").unwrap_or(0).clamp(0, crew_max),
+            opt_i64(roster, "quartermasters")
+                .unwrap_or(0)
+                .clamp(0, crew_max),
         ),
         Some(_) => return None,
         None => (crew, 0, 0, 0, 0, 0),
@@ -1489,16 +1536,16 @@ fn ship_from(value: &Value) -> Option<Ship> {
     Some(Ship {
         template_id,
         name: req_str(map, "name")?,
-        hull: req_i64(map, "hull")?,
-        hull_max: req_i64(map, "hull_max")?,
-        cargo_capacity: req_i64(map, "cargo_capacity")?,
-        speed: req_f64(map, "speed")?,
+        hull,
+        hull_max,
+        cargo_capacity: req_i64(map, "cargo_capacity")?.clamp(0, 1_000_000),
+        speed,
         crew,
-        crew_max: req_i64(map, "crew_max")?,
+        crew_max,
         cannons,
         maneuver,
-        upgrade_slots: opt_i64(map, "upgrade_slots").unwrap_or(2),
-        morale: opt_i64(map, "morale").unwrap_or(50),
+        upgrade_slots: opt_i64(map, "upgrade_slots").unwrap_or(2).clamp(0, 100),
+        morale: opt_i64(map, "morale").unwrap_or(50).clamp(0, 100),
         sailors,
         gunners,
         navigators,
@@ -1596,11 +1643,15 @@ fn cargo_list(value: Option<&Value>) -> Option<Vec<CargoItem>> {
         let map = item.as_object()?;
         cargo.push(CargoItem {
             good_id: req_str(map, "good_id")?,
-            quantity: req_i64(map, "quantity")?,
-            cost_basis: opt_i64(map, "cost_basis").unwrap_or(0),
+            quantity: req_i64(map, "quantity")?.clamp(0, 1_000_000),
+            cost_basis: opt_i64(map, "cost_basis")
+                .unwrap_or(0)
+                .clamp(0, 1_000_000_000_000),
             acquired_port: opt_str(map, "acquired_port").unwrap_or_default(),
             acquired_region: opt_str(map, "acquired_region").unwrap_or_default(),
-            acquired_day: opt_i64(map, "acquired_day").unwrap_or(0),
+            acquired_day: opt_i64(map, "acquired_day")
+                .unwrap_or(0)
+                .clamp(0, 1_000_000),
         });
     }
     Some(cargo)
@@ -1792,10 +1843,12 @@ fn port_from(value: &Value) -> Option<Port> {
         region: req_str(map, "region")?,
         features,
         market,
-        port_fee: opt_i64(map, "port_fee").unwrap_or(5),
-        provision_cost: opt_i64(map, "provision_cost").unwrap_or(2),
-        repair_cost: opt_i64(map, "repair_cost").unwrap_or(3),
-        crew_cost: opt_i64(map, "crew_cost").unwrap_or(5),
+        port_fee: opt_i64(map, "port_fee").unwrap_or(5).clamp(0, 1_000_000),
+        provision_cost: opt_i64(map, "provision_cost")
+            .unwrap_or(2)
+            .clamp(0, 1_000_000),
+        repair_cost: opt_i64(map, "repair_cost").unwrap_or(3).clamp(0, 1_000_000),
+        crew_cost: opt_i64(map, "crew_cost").unwrap_or(5).clamp(0, 1_000_000),
         map_x: opt_i64(map, "map_x").unwrap_or(0),
         map_y: opt_i64(map, "map_y").unwrap_or(0),
     })
@@ -1817,15 +1870,25 @@ fn slot_value(slot: &MarketSlot) -> Value {
 
 fn slot_from(value: &Value) -> Option<MarketSlot> {
     let map = value.as_object()?;
+    let restock_rate = req_f64(map, "restock_rate")?;
+    let restock_rate = if restock_rate.is_finite() {
+        restock_rate.clamp(0.0, 10_000.0)
+    } else {
+        1.0
+    };
     Some(MarketSlot {
         good_id: req_str(map, "good_id")?,
-        stock_current: req_i64(map, "stock_current")?,
-        stock_target: req_i64(map, "stock_target")?,
-        restock_rate: req_f64(map, "restock_rate")?,
+        stock_current: req_i64(map, "stock_current")?.clamp(0, 1_000_000),
+        stock_target: req_i64(map, "stock_target")?.clamp(1, 1_000_000),
+        restock_rate,
         local_affinity: opt_f64(map, "local_affinity").unwrap_or(1.0),
         spread: opt_f64(map, "spread").unwrap_or(0.15),
-        buy_price: opt_i64(map, "buy_price").unwrap_or(0),
-        sell_price: opt_i64(map, "sell_price").unwrap_or(0),
+        buy_price: opt_i64(map, "buy_price")
+            .unwrap_or(0)
+            .clamp(0, 1_000_000_000),
+        sell_price: opt_i64(map, "sell_price")
+            .unwrap_or(0)
+            .clamp(0, 1_000_000_000),
         flood_penalty: opt_f64(map, "flood_penalty").unwrap_or(0.0),
     })
 }
@@ -1845,7 +1908,7 @@ fn route_from(value: &Value) -> Option<Route> {
     Some(Route {
         port_a: req_str(map, "port_a")?,
         port_b: req_str(map, "port_b")?,
-        distance: req_i64(map, "distance")?,
+        distance: req_i64(map, "distance")?.clamp(1, 1_000_000),
         danger: opt_f64(map, "danger").unwrap_or(0.1),
         min_ship_class: opt_str(map, "min_ship_class").unwrap_or_else(|| "sloop".to_string()),
         lore_name: String::new(),
@@ -2040,9 +2103,11 @@ fn voyage_from(value: &Value) -> Option<Voyage> {
     Some(Voyage {
         origin_id: req_str(map, "origin_id")?,
         destination_id: req_str(map, "destination_id")?,
-        distance: req_i64(map, "distance")?,
-        progress: opt_i64(map, "progress").unwrap_or(0),
-        days_elapsed: opt_i64(map, "days_elapsed").unwrap_or(0),
+        distance: req_i64(map, "distance")?.clamp(0, 1_000_000),
+        progress: opt_i64(map, "progress").unwrap_or(0).clamp(0, 1_000_000),
+        days_elapsed: opt_i64(map, "days_elapsed")
+            .unwrap_or(0)
+            .clamp(0, 1_000_000),
         status,
         recent_events,
     })
