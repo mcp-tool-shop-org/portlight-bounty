@@ -1,11 +1,11 @@
 ---
 title: Pictures and the license
-description: The pictures are MIT, and where the deck props came from.
+description: The pictures are CC BY 4.0, and where the deck props came from.
 sidebar:
   order: 4
 ---
 
-The MIT license covers this repository, including the pictures in `godot/assets/` and `docs/screenshots/`.
+The pictures in `godot/assets/` and `docs/screenshots/` are made by mcp-tool-shop and licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): anyone may share and adapt them, for any purpose, including commercially, as long as they credit "mcp-tool-shop" and say if they changed them. The code is MIT. Pictures in releases before this change were published under MIT, and those copies stay available under it.
 
 ## What we know
 

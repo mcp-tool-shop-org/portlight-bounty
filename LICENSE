@@ -22,8 +22,16 @@ SOFTWARE.
 
 ---
 
-The MIT license above covers this repository, including the pictures
-in godot/assets/ and docs/screenshots/.
+The MIT license above covers the code in this repository.
+
+The pictures in godot/assets/ and docs/screenshots/ are made by
+mcp-tool-shop and licensed under the Creative Commons Attribution 4.0
+International license (CC BY 4.0): anyone may share and adapt them,
+for any purpose, including commercially, provided they credit
+"mcp-tool-shop" and indicate if changes were made. The full license
+is at https://creativecommons.org/licenses/by/4.0/legalcode. Pictures
+in releases before this change were published under the MIT license
+above, and those copies stay available under it.
 
 The barrel, bollard, cart, crate, and torch are built by build_prop()
 in ai-rpg-stage, file assets/dimetric/camera/dimetric_60_45.py, from
