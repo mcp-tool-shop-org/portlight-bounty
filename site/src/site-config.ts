@@ -8,7 +8,7 @@ export const config: SiteConfig = {
   brandName: 'Portlight Bounty',
   repoUrl: 'https://github.com/mcp-tool-shop-org/portlight-bounty',
   footerText:
-    'MIT license. Built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
+    'Code MIT, pictures CC BY 4.0. Built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
     badge: 'v0.3.2',
@@ -51,7 +51,7 @@ export const config: SiteConfig = {
         },
         {
           title: 'Pictures you can use',
-          desc: 'The plates ship in the repository, under the same MIT license as the code.',
+          desc: 'The plates ship in the repository under CC BY 4.0: use them freely, with credit to mcp-tool-shop.',
         },
       ],
     },

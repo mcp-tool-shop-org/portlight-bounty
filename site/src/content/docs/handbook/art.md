@@ -5,7 +5,7 @@ sidebar:
   order: 4
 ---
 
-The pictures in `godot/assets/` and `docs/screenshots/` are made by mcp-tool-shop and licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): anyone may share and adapt them, for any purpose, including commercially, as long as they credit "mcp-tool-shop" and say if they changed them. The code is MIT. Pictures in releases before this change were published under MIT, and those copies stay available under it.
+The pictures (every .png, .jpg, .jpeg, .svg, .webp and .gif file in the repository) are made by mcp-tool-shop and licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode). In short, and the license's legal code governs: anyone may share and adapt them for any purpose, including commercially, with credit to "mcp-tool-shop". Everything else in the repository is MIT. Pictures published in v0.3.2 and earlier were released under MIT, and those pictures, including identical copies in later versions, stay available under MIT too. The license grants no trademark rights in the mcp-tool-shop name or logo.
 
 ## What we know
 
@@ -19,7 +19,7 @@ There is no ElevenLabs voice in this release.
 
 ## Credit
 
-Code and art in this release are credited to mcp-tool-shop contributors. That is the public name. The copyright line on the code is mcp-tool-shop, 2026.
+Code and art in this release are credited to mcp-tool-shop. That is the public name. The copyright line on the code is mcp-tool-shop, 2026.
 
 ## A batch that is not in the game
 
