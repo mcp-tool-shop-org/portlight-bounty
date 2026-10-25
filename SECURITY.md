@@ -52,5 +52,5 @@ a pinned commit. That job is CI, not the game.
 ## Out of scope
 
 Godot editor bugs, a stolen copy of a third-party model weight, and
-the generator account terms on pictures that are not under the MIT
-grant. Those stay with their owners.
+material that is not shipped in this repository or is owned by a third
+party. Those stay with their owners.
