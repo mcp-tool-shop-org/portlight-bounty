@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Licence:** the pictures (every .png, .jpg, .jpeg, .svg, .webp and .gif file) are now licensed CC BY 4.0, credit "mcp-tool-shop"; everything else stays MIT. Pictures in v0.3.2 and earlier, and identical copies of them later, also remain available under MIT. README (8 languages), the handbook art page, the landing card and the footer say so.
+
 ## [0.3.2] - 2026-10-18
 
 Source-only developer release closing the 11-seat `v0.3.1` audit across simulation data safety, economy & contract balance, duel resolution, insurance & debt rules, Godot UI feedback, CLI diagnostics, canon sync, and GitHub Pages workflow hardening.

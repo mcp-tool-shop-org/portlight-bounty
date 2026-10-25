@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/portlight-bounty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/portlight-bounty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://codecov.io/gh/mcp-tool-shop-org/portlight-bounty"><img src="https://codecov.io/gh/mcp-tool-shop-org/portlight-bounty/branch/main/graph/badge.svg" alt="Coverage"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20CC%20BY%204.0-blue" alt="MIT code, CC BY 4.0 pictures"></a>
   <a href="https://mcp-tool-shop-org.github.io/portlight-bounty/"><img src="https://img.shields.io/badge/docs-landing%20page-b08900" alt="Landing page"></a>
 </p>
 
@@ -63,7 +63,7 @@ A playable chart across 20 ports and 43 sea lanes: market, contracts, crew with 
 
 ## Pictures
 
-The pictures in `godot/assets/` and `docs/screenshots/` are under the same MIT license as the code.
+The pictures (every image file in the repository) are made by mcp-tool-shop and licensed under CC BY 4.0: anyone may use and adapt them, including commercially, with credit to "mcp-tool-shop". Everything else is MIT. See [LICENSE](LICENSE).
 
 The barrel, bollard, cart, crate, and torch are built by `build_prop()` in [ai-rpg-stage](https://github.com/mcp-tool-shop-org/ai-rpg-stage) (`assets/dimetric/camera/dimetric_60_45.py`) from Blender primitives. That function landed in `55ac9b2`. The manifest called the copy a vendor drop. That meant copied from our own repository, not remade.
 
@@ -79,6 +79,6 @@ Report a vulnerability in private on this repository. See [SECURITY.md](SECURITY
 
 ## Support
 
-0.3.2 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code and the pictures are MIT.
+0.3.2 is the supported release. Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send one. The code is MIT and the pictures are CC BY 4.0.
 
-Built by [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code and art: mcp-tool-shop contributors.
+Built by [MCP Tool Shop](https://mcp-tool-shop.github.io/). Code and art: mcp-tool-shop.

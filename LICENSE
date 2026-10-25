@@ -22,8 +22,21 @@ SOFTWARE.
 
 ---
 
-The MIT license above covers this repository, including the pictures
-in godot/assets/ and docs/screenshots/.
+The MIT license above covers everything in this repository except the
+pictures.
+
+The pictures are every .png, .jpg, .jpeg, .svg, .webp and .gif file in
+this repository. They are made by mcp-tool-shop and licensed under the
+Creative Commons Attribution 4.0 International license (CC BY 4.0). The
+legal code is at https://creativecommons.org/licenses/by/4.0/legalcode
+and it governs. In short, and only as a summary: you may share and adapt
+the pictures for any purpose, including commercially, if you give
+credit to "mcp-tool-shop" as section 3(a) of the license requires. The
+license grants no trademark rights in the mcp-tool-shop name or logo.
+
+Pictures published in v0.3.2 and earlier were released under the MIT
+license above. Those pictures, including byte-identical copies of them
+in later versions, remain available under MIT as well.
 
 The barrel, bollard, cart, crate, and torch are built by build_prop()
 in ai-rpg-stage, file assets/dimetric/camera/dimetric_60_45.py, from
