@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Hugging Face landing art dataset (`mcp-tool-shop/portlight-bounty-landing-art`):** added the dataset card ([`hf/portlight-bounty-landing-art/README.md`](hf/portlight-bounty-landing-art/README.md)), derived `ImageFolder` metadata for all 78 landing plates ([`hf/portlight-bounty-landing-art/metadata.jsonl`](hf/portlight-bounty-landing-art/metadata.jsonl)), the stdlib generator and `--stage` verifier (`tools/build_hf_art_dataset.py`), and tests (`tools/test_build_hf_art_dataset.py`).
+
 ### Changed
 
 - **Licence:** the pictures (every .png, .jpg, .jpeg, .svg, .webp and .gif file) are now licensed CC BY 4.0, credit "mcp-tool-shop"; everything else stays MIT. Pictures in v0.3.2 and earlier, and identical copies of them later, also remain available under MIT. README (8 languages), the handbook art page, the landing card and the footer say so.
