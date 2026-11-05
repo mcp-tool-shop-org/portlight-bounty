@@ -1,14 +1,20 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-10-18 from commit 429510b by Atlas 1.24.0.
+Mapped at 2026-11-05 from commit a4efd53 by Atlas 1.24.0.
 
 ## What this is
 
-12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
+12 parts, mostly Rust (83 files), Python (15), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-18 (3ccd897)
+## What changed since 2026-10-18 (429510b)
 
-Nothing structural changed since 2026-10-18; 7 files changed content.
+- godot/assets/landing/MANIFEST.json is now also read by tools/build_hf_art_dataset.py.
+- hf/portlight-bounty-landing-art/README.md is now read by tools/build_hf_art_dataset.py.
+- hf/portlight-bounty-landing-art/metadata.jsonl is now read by tools/build_hf_art_dataset.py.
+- And 1 more new writer or reader of a place.
+- hf/portlight-bounty-landing-art/README.md is new and belongs to no part, so atlas check fails on it against the previous map.
+- hf/portlight-bounty-landing-art/metadata.jsonl is new and belongs to no part, so atlas check fails on it against the previous map.
+- 4 files added and 17 changed content, across 4 parts.
 
 ## What comes in
 
@@ -78,6 +84,8 @@ portlight-godot is tested only by the unit tests in its own files.
 
 scripts holds only PowerShell and shell files, which this map does not read, so whether a test touches it cannot be seen.
 
+tools/test_build_hf_art_dataset.py runs in no workflow.
+
 ## Written but never read
 
 Every written place has a reader.
@@ -109,9 +117,9 @@ Read those in order to follow one run of gen_placeholders end to end. This path 
 - 2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.
 - 6 writes and 19 reads use paths built at run time and are not named here.
 - 1 write goes to places this repository does not track, so it is not listed as generated.
-- 9 writes and 16 reads go to a path their caller passes, not to this repository.
+- 12 writes and 19 reads go to a path their caller passes, not to this repository.
 - 1 write and 1 read go to a temporary directory, not to this repository.
-- 3 files belong to no part: playtest/README.md, playtest/portlight-godot.playtest.json and playtest/probe-bridge.mjs.
+- 5 files belong to no part: hf/portlight-bounty-landing-art/README.md, hf/portlight-bounty-landing-art/metadata.jsonl, playtest/README.md and 2 more.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
 Regenerate with `npx --yes @dogfood-lab/atlas map`.
