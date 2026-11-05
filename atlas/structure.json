@@ -688,7 +688,7 @@
           "path": "docs/screenshots/chart-hint-first-contract.png"
         },
         {
-          "hash": "ebd78b69645d3be56b52959c05c045367bfb7d0cc4d6db19bbb269d20c84fdf9",
+          "hash": "905e76d19c7bfce06c3eef6fcf2011dd1164ce82fe27830bd3240f1e38d00aa2",
           "path": "docs/screenshots/chart-status-banked.png"
         },
         {
@@ -824,11 +824,11 @@
           "path": "docs/screenshots/harbour-bank.png"
         },
         {
-          "hash": "b1fe1ecf3f16d03395a8635c5366a123e1159c7b945fa1f83cb633e8ae9d4ec6",
+          "hash": "daf8170c6e327c74b2b5acf87f8114e80ca286f48e80fcdf1d751802c6155601",
           "path": "docs/screenshots/harbour-broker.png"
         },
         {
-          "hash": "891390972a68d4b8bbd9ba511492c952dc251000e799843b802806a68e076c32",
+          "hash": "1d07267d6bab20a20103d53384db76d309add4f879638a087cc4746103435d8a",
           "path": "docs/screenshots/harbour-finance.png"
         },
         {
@@ -848,7 +848,7 @@
           "path": "docs/screenshots/harbour-seam-z100.png"
         },
         {
-          "hash": "3b6c507176430104b72967aeb47c628090231778fb7999e9140976de1fa50390",
+          "hash": "66aa049cfd41f8614de573694531503a76ff66bec1b76d5926a47f1e5208a335",
           "path": "docs/screenshots/harbour-warehouse.png"
         },
         {
@@ -7334,7 +7334,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "aaa490572986c1699ace7a14eeba1107da4753030f74d7f099d726191d592297",
+          "hash": "edb28b983864b743575dae7af9fc3be42633a65ae5469bf45dd7786a86de1b01",
           "path": "CHANGELOG.md"
         },
         {
@@ -7350,39 +7350,39 @@
           "path": "Cargo.toml"
         },
         {
-          "hash": "0d06c4ab6570ee04b3c316dfda85dcdb5cc926d8abb004dd683f7db143abedf9",
+          "hash": "e04b89176b93f1a004fb6c7573dbbb750a449621a19976ad6075a878a5027b45",
           "path": "LICENSE"
         },
         {
-          "hash": "1520986de8b91bd12fe2b5e9b68de514336c5a390e437cd68757a3b1bf7d09e2",
+          "hash": "22cb1345d187f1da85206ae76d30882b1c10922b19cfa3eba4416846d34ad323",
           "path": "README.es.md"
         },
         {
-          "hash": "81760047b3ae35d3c421c2d650e9dc14af103ad3e12993436fba10deb4112ec1",
+          "hash": "6627901bc683ecd74e63267c95c9a877891a3d75694072013c07cea2cb4538c6",
           "path": "README.fr.md"
         },
         {
-          "hash": "1f3e9210ebf586169b942f703dc67cb631bcaef4d6326ef5bd8c2a62fbf76c21",
+          "hash": "cd9080f22dbb4e2a0c9e11b1f508d153478a2a9c091a4375c6e6f581ef5c76ff",
           "path": "README.hi.md"
         },
         {
-          "hash": "b8d10551af8978e80ad9cee0cfe4e216c3aa21fb312a5d167cf3d9b9fa8cd72f",
+          "hash": "c7fae217d58b74d34353fb4c7656062e11e1bc395e678383dc89ef9f02eb8439",
           "path": "README.it.md"
         },
         {
-          "hash": "891eaf1ce8250bb260285cd03784e2d84ae48470d6be3350a729f5a50f6f9e82",
+          "hash": "f35879b1174c601eebdd78363583ddabefceff67efba9065b75b29e1bcdd8426",
           "path": "README.ja.md"
         },
         {
-          "hash": "d29c76c7311613419c01a80f527c0cac28c85eafa8732363467cc00072b7f326",
+          "hash": "6c7e87f362ba52c6a2fddf0e2caf284376e4e50ebeae52eaa5628f90717316fd",
           "path": "README.md"
         },
         {
-          "hash": "200f81b887cfa446ab358bd76b54d739f4ea48c33f9c05e8917dd492ef23f19a",
+          "hash": "190d5f8e80585aa1c8ca91c77d673c51134d9939d438e4a0439842cf50e0b8db",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "37765dba883237fb3d8857f90e91b9baf94766e938a72bd18e5b3b3141661931",
+          "hash": "4b873acb33aa0269d6f7b1c5a7bd43d1cbb30d3d35484eed8447937aa3f33eb5",
           "path": "README.zh.md"
         },
         {
@@ -7390,7 +7390,7 @@
           "path": "SCORECARD.md"
         },
         {
-          "hash": "5d6ff296e5ddc8c2164847590a0e45b108e4f5560e65484f2acb4e0bb1f790e0",
+          "hash": "3fc9757f4a70702e3677561d109c819752481a62041cab32daa1d1870554abce",
           "path": "SECURITY.md"
         },
         {
@@ -7477,7 +7477,7 @@
           "path": "site/src/content.config.ts"
         },
         {
-          "hash": "39387a32cd7c948697765f6c088190a899134d3663cf374d0c2bcce5fbef66b8",
+          "hash": "1e74ec58e799a27e89f1a09f6ed54fac082d0d8a496f28a4e5012c528933e861",
           "path": "site/src/content/docs/handbook/art.md"
         },
         {
@@ -7514,7 +7514,7 @@
         },
         {
           "constantOnly": true,
-          "hash": "ea794277c69e38ca6718e36f9a78a542c8e2a5d705bdb829400330b5f8af3405",
+          "hash": "1bd5ed362e3bd003b715087327cb792eb2144c0feb3629dcbcb1c8c069c33683",
           "path": "site/src/site-config.ts"
         },
         {
@@ -7548,6 +7548,70 @@
       "entryPoints": [],
       "externals": 0,
       "files": [
+        {
+          "exports": [
+            "build_rows",
+            "derive_file_name",
+            "derive_text",
+            "main",
+            "sha256_file",
+            "stage_bundle",
+            "write_jsonl"
+          ],
+          "failurePaths": [
+            {
+              "in": "build_rows",
+              "kind": "raise",
+              "line": 81
+            },
+            {
+              "in": "build_rows",
+              "kind": "raise",
+              "line": 91
+            },
+            {
+              "in": "build_rows",
+              "kind": "raise",
+              "line": 96
+            },
+            {
+              "in": "build_rows",
+              "kind": "raise",
+              "line": 102
+            },
+            {
+              "in": "stage_bundle",
+              "kind": "raise",
+              "line": 140
+            },
+            {
+              "in": "stage_bundle",
+              "kind": "raise",
+              "line": 142
+            },
+            {
+              "in": "stage_bundle",
+              "kind": "raise",
+              "line": 148
+            },
+            {
+              "in": "stage_bundle",
+              "kind": "raise",
+              "line": 157
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 204
+            },
+            {
+              "kind": "raise",
+              "line": 210
+            }
+          ],
+          "hash": "0e48c16cc85715c16148aa9e121e1a746c92ce3fac81c9a71aca635a1c7cc4d2",
+          "path": "tools/build_hf_art_dataset.py"
+        },
         {
           "exports": [
             "bind_inventory",
@@ -9482,6 +9546,20 @@
           "sequences": []
         },
         {
+          "exports": [
+            "test_build_rows_covers_all_78_unique_and_sha_matches",
+            "test_committed_metadata_jsonl_matches_generator",
+            "test_stage_copies_and_verifies_all_78_files",
+            "test_stage_refuses_non_empty_dir"
+          ],
+          "hash": "aba8fa3a0a6e25eb73cabc17d8b8ffbad83dfe02027b8175b33ae21b1be9fcfd",
+          "importsFiles": [
+            "tools/build_hf_art_dataset.py"
+          ],
+          "path": "tools/test_build_hf_art_dataset.py",
+          "testFramework": "pytest"
+        },
+        {
           "entry": "studio",
           "entryRule": 4,
           "exports": [
@@ -9616,11 +9694,11 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 12,
+          "reads": 15,
           "where": [
             "caller"
           ],
-          "writes": 0
+          "writes": 3
         },
         {
           "reads": 1,
@@ -9630,13 +9708,13 @@
           "writes": 1
         }
       ],
-      "outsideReads": 13,
-      "outsideWrites": 1,
+      "outsideReads": 16,
+      "outsideWrites": 4,
       "role": "code",
       "testRunners": [
         "python"
       ],
-      "testedBy": 2,
+      "testedBy": 3,
       "unresolvedSites": 0
     }
   ],
@@ -11312,8 +11390,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "429510b11cb85c39b2686bbfa688949475b3f2a8",
-    "tracked": 859
+    "commit": "a4efd53e3e77bb2ebdf4051e9c3752c7774cce68",
+    "tracked": 863
   },
   "landings": [
     {
@@ -11593,6 +11671,11 @@
         {
           "by": "crates/portlight-chart/src/assets.rs",
           "call": "include_str",
+          "confidence": "ast"
+        },
+        {
+          "by": "tools/build_hf_art_dataset.py",
+          "call": "literal",
           "confidence": "ast"
         },
         {
@@ -12499,6 +12582,28 @@
     {
       "readers": [
         {
+          "by": "tools/build_hf_art_dataset.py",
+          "call": "literal",
+          "confidence": "ast"
+        }
+      ],
+      "target": "hf/portlight-bounty-landing-art/README.md",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "tools/build_hf_art_dataset.py",
+          "call": "literal",
+          "confidence": "ast"
+        }
+      ],
+      "target": "hf/portlight-bounty-landing-art/metadata.jsonl",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "tools/parity/check.py",
           "call": "literal",
           "confidence": "ast"
@@ -12686,6 +12791,18 @@
     {
       "readers": [
         {
+          "by": "tools/test_build_hf_art_dataset.py",
+          "call": "literal",
+          "confidence": "ast",
+          "fromTests": true
+        }
+      ],
+      "target": "tools/build_hf_art_dataset.py",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "godot/assets/landing/MANIFEST.json",
           "call": "configuration",
           "confidence": "config"
@@ -12742,8 +12859,19 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 65,
+  "testFiles": 66,
+  "testsNotRun": [
+    "tools/test_build_hf_art_dataset.py"
+  ],
   "unassigned": [
+    {
+      "hash": "99613ac3501e5fb0c4b3ad965d47b55ef26e31cd82b7811b00e2f9dcbc3b6356",
+      "path": "hf/portlight-bounty-landing-art/README.md"
+    },
+    {
+      "hash": "04c8277c414ca26b03419eecab23687eea16343a09b4178f6998d4c0e6c760e3",
+      "path": "hf/portlight-bounty-landing-art/metadata.jsonl"
+    },
     {
       "hash": "21d5fd749b7c12747cc08b93c99dabff98a757498270e401400c4b069ec6f0ec",
       "path": "playtest/README.md"

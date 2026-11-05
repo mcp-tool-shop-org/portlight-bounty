@@ -67,24 +67,67 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 0,
-      "changed": 7,
+      "added": 4,
+      "changed": 17,
       "moved": 0,
-      "parts": 3,
+      "parts": 4,
       "removed": 0
     },
     "items": [
       {
+        "kind": "landing",
+        "sentence": "godot/assets/landing/MANIFEST.json is now also read by tools/build_hf_art_dataset.py.",
+        "subjects": [
+          "godot/assets/landing/MANIFEST.json",
+          "tools/build_hf_art_dataset.py"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "hf/portlight-bounty-landing-art/README.md is now read by tools/build_hf_art_dataset.py.",
+        "subjects": [
+          "hf/portlight-bounty-landing-art/README.md",
+          "tools/build_hf_art_dataset.py"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "hf/portlight-bounty-landing-art/metadata.jsonl is now read by tools/build_hf_art_dataset.py.",
+        "subjects": [
+          "hf/portlight-bounty-landing-art/metadata.jsonl",
+          "tools/build_hf_art_dataset.py"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "And 1 more new writer or reader of a place.",
+        "subjects": []
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "hf/portlight-bounty-landing-art/README.md is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "hf/portlight-bounty-landing-art/README.md"
+        ]
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "hf/portlight-bounty-landing-art/metadata.jsonl is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "hf/portlight-bounty-landing-art/metadata.jsonl"
+        ]
+      },
+      {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-10-18; 7 files changed content.",
+        "sentence": "4 files added and 17 changed content, across 4 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "3ccd897105989a3e4994e3368b43a11e12a032d1",
-      "generatedAt": "2026-10-18T18:03:08.391Z"
+      "commit": "429510b11cb85c39b2686bbfa688949475b3f2a8",
+      "generatedAt": "2026-10-18T18:30:16.580Z"
     },
-    "unchanged": true
+    "unchanged": false
   },
   "changesTogether": [
     {
@@ -169,9 +212,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 14 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 1,
-  "commit": "429510b11cb85c39b2686bbfa688949475b3f2a8",
+  "commit": "a4efd53e3e77bb2ebdf4051e9c3752c7774cce68",
   "defaultBranch": "main",
-  "derived": "12 parts, mostly Rust (83 files), Python (13), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
+  "derived": "12 parts, mostly Rust (83 files), Python (15), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).",
   "doors": [
     {
       "checks": [
@@ -478,14 +521,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-18T18:30:16.580Z",
+  "generatedAt": "2026-11-05T22:19:34.524Z",
   "limits": [
     "2 imports could not be resolved: `crates/portlight-sim/src/memory.rs` imports `md5::Digest`; `crates/portlight-sim/src/memory.rs` imports `md5::Md5`.",
     "6 writes and 19 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
-    "9 writes and 16 reads go to a path their caller passes, not to this repository.",
+    "12 writes and 19 reads go to a path their caller passes, not to this repository.",
     "1 write and 1 read go to a temporary directory, not to this repository.",
-    "3 files belong to no part: playtest/README.md, playtest/portlight-godot.playtest.json and playtest/probe-bridge.mjs.",
+    "5 files belong to no part: hf/portlight-bounty-landing-art/README.md, hf/portlight-bounty-landing-art/metadata.jsonl, playtest/README.md and 2 more.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",
@@ -545,7 +588,7 @@
   "startReason": "This path follows gen_placeholders (a command built from crates/portlight-chart, which nothing ships) from its entry, since CI runs only tests, scripts that import no code here and checks.",
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 65,
+  "testFiles": 66,
   "testedBy": {
     "godot": 0,
     "portlight-chart": 7,
@@ -553,7 +596,7 @@
     "portlight-godot": 16,
     "portlight-sim": 38,
     "site": 0,
-    "tools": 2
+    "tools": 3
   },
   "testedInside": [
     "portlight-chart",
@@ -584,7 +627,8 @@
     "portlight-chart is tested only by the unit tests in its own files.",
     "portlight-cli is tested only by the unit tests in its own files.",
     "portlight-godot is tested only by the unit tests in its own files.",
-    "scripts holds only PowerShell and shell files, which this map does not read, so whether a test touches it cannot be seen."
+    "scripts holds only PowerShell and shell files, which this map does not read, so whether a test touches it cannot be seen.",
+    "tools/test_build_hf_art_dataset.py runs in no workflow."
   ],
   "written": 5
 }

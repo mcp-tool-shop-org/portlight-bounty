@@ -64,6 +64,7 @@ A playable chart across 20 ports and 43 sea lanes: market, contracts, crew with 
 ## Pictures
 
 The pictures (every image file in the repository) are made by mcp-tool-shop and licensed under CC BY 4.0: anyone may use and adapt them, including commercially, with credit to "mcp-tool-shop". Everything else is MIT. See [LICENSE](LICENSE).
+The 78 landing bundle pictures and their per-file provenance are also packaged for Hugging Face as `mcp-tool-shop/portlight-bounty-landing-art`; see the dataset card source at [`hf/portlight-bounty-landing-art/README.md`](hf/portlight-bounty-landing-art/README.md).
 
 The barrel, bollard, cart, crate, and torch are built by `build_prop()` in [ai-rpg-stage](https://github.com/mcp-tool-shop-org/ai-rpg-stage) (`assets/dimetric/camera/dimetric_60_45.py`) from Blender primitives. That function landed in `55ac9b2`. The manifest called the copy a vendor drop. That meant copied from our own repository, not remade.
 
