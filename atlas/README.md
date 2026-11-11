@@ -1,20 +1,14 @@
 # portlight-bounty: how it works
 
-Mapped at 2026-11-05 from commit a4efd53 by Atlas 1.24.0.
+Mapped at 2026-11-11 from commit 0b72cb9 by Atlas 1.26.0.
 
 ## What this is
 
 12 parts, mostly Rust (83 files), Python (15), CSS (2), JavaScript (2), TypeScript (2), Astro (1), GDScript (1), PowerShell (1) and shell (1). Work enters through 5 doors; the busiest is CI, which reaches 6 parts. It deploys a site to GitHub Pages. People run portlight. People run the game. gen_placeholders is a command built from crates/portlight-chart (nothing ships it).
 
-## What changed since 2026-10-18 (429510b)
+## What changed since 2026-11-05 (a4efd53)
 
-- godot/assets/landing/MANIFEST.json is now also read by tools/build_hf_art_dataset.py.
-- hf/portlight-bounty-landing-art/README.md is now read by tools/build_hf_art_dataset.py.
-- hf/portlight-bounty-landing-art/metadata.jsonl is now read by tools/build_hf_art_dataset.py.
-- And 1 more new writer or reader of a place.
-- hf/portlight-bounty-landing-art/README.md is new and belongs to no part, so atlas check fails on it against the previous map.
-- hf/portlight-bounty-landing-art/metadata.jsonl is new and belongs to no part, so atlas check fails on it against the previous map.
-- 4 files added and 17 changed content, across 4 parts.
+Nothing structural changed since 2026-11-05; 1 file changed content.
 
 ## What comes in
 
@@ -108,7 +102,7 @@ People write .github/, docs/ and the repository root; 6 writes with paths built 
 
 ## Where to start
 
-crates/portlight-chart/src/bin/gen_placeholders.rs → crates/portlight-chart/src/lib.rs
+crates/portlight-chart/src/bin/gen_placeholders.rs → crates/portlight-chart/src/lib.rs → crates/portlight-chart/src/assets.rs → crates/portlight-sim/src/content.rs → crates/portlight-sim/src/tuned.rs → crates/portlight-sim/data/content.json → tools/extract_content.py
 
 Read those in order to follow one run of gen_placeholders end to end. This path follows gen_placeholders (a command built from crates/portlight-chart, which nothing ships) from its entry, since CI runs only tests, scripts that import no code here and checks.
 
