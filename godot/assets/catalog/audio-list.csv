@@ -1,0 +1,8 @@
+id,file,family,channels,sample_rate_hz,loudness_target,locked,note
+sfx_ui_newgame_start,audio/sfx/sfx_ui_newgame_start.ogg,sfx_ui,1,44100,-20_LUFS-S,false,P0 cue1; EAR HOLD; take1; viz in sfx-p0/viz
+sfx_ui_port_open,audio/sfx/sfx_ui_port_open.ogg,sfx_ui,1,44100,-20_LUFS-S,false,P0 cue2; EAR HOLD; take3; quieter—volume_db later
+sfx_ui_contracts_open,audio/sfx/sfx_ui_contracts_open.ogg,sfx_ui,1,44100,-20_LUFS-S,false,P0 cue3; EAR HOLD; take1
+sfx_ui_contract_accept,audio/sfx/sfx_ui_contract_accept.ogg,sfx_ui,1,44100,-20_LUFS-S,false,P0 cue4; EAR HOLD; take1
+sfx_ui_trade_coin,audio/sfx/sfx_ui_trade_coin.ogg,sfx_ui,1,44100,-20_LUFS-S,false,P0 cue5; EAR HOLD; take1
+sfx_chart_sail_depart,audio/sfx/sfx_chart_sail_depart.ogg,sfx_chart,1,44100,-18_LUFS-S,false,P0 cue6; EAR HOLD; take1; quieter—volume_db later
+sfx_chart_next_day,audio/sfx/sfx_chart_next_day.ogg,sfx_chart,1,44100,-18_LUFS-S,false,P0 cue7; EAR HOLD; take2 hourglass (pitched bell take1 REJECT)
